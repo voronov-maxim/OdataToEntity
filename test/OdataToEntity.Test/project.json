@@ -1,0 +1,38 @@
+﻿{
+  "version": "1.0.0-*",
+  "buildOptions": {
+    "debugType": "portable"
+  },
+  "dependencies": {
+    "dotnet-test-xunit": "2.2.0-preview2-build1029",
+    "Microsoft.EntityFrameworkCore": "1.0.1",
+    "Microsoft.EntityFrameworkCore.InMemory": "1.0.1",
+    "Microsoft.OData.Core": "7.0.0",
+    "Microsoft.OData.Edm": "7.0.0",
+    "Newtonsoft.Json": "9.0.1",
+    "OdataToEntity": "1.0.0-*",
+    "OdataToEntity.EfCore": "1.0.0-*",
+    "System.Runtime.Serialization.Primitives": "4.1.1",
+    "xunit": "2.2.0-beta2-build3300",
+    "xunit.runner.console": "2.2.0-beta2-build3300",
+    "xunit.runner.visualstudio": "2.1.0"
+  },
+  "testRunner": "xunit",
+  "runtimes": {
+    "win": {}
+  },
+  "frameworks": {
+    "netcoreapp1.0": {
+      "imports": "portable-net45+win8+wpa81",
+      "dependencies": {
+        "Microsoft.NETCore.App": {
+          "version": "1.0.1",
+          "type": "platform"
+        }
+      }
+    },
+    "net462": {
+      "frameworkAssemblies": {}
+    }
+  }
+}

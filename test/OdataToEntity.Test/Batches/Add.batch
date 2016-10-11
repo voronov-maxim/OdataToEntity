@@ -1,0 +1,187 @@
+﻿--batch_6263d2a1-1ddc-4b02-a1c1-7031cfa93691
+Content-Type: multipart/mixed; boundary=changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
+
+--changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
+Content-Type: application/http
+Content-Transfer-Encoding: binary
+Content-ID: 1
+
+POST http://dummy/Customers HTTP/1.1
+OData-Version: 4.0
+OData-MaxVersion: 4.0
+Content-Type: application/json;odata.metadata=minimal
+Accept: application/json;odata.metadata=minimal
+Accept-Charset: UTF-8
+User-Agent: Microsoft ADO.NET Data Services
+
+{"@odata.type":"#OdataToEntity.Test.Model.Customer","Address":"Moscow","Id":1,"Name":"Ivan","Sex@odata.type":"#OdataToEntity.Test.Model.Sex","Sex":"Male"}
+--changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
+Content-Type: application/http
+Content-Transfer-Encoding: binary
+Content-ID: 2
+
+POST http://dummy/Customers HTTP/1.1
+OData-Version: 4.0
+OData-MaxVersion: 4.0
+Content-Type: application/json;odata.metadata=minimal
+Accept: application/json;odata.metadata=minimal
+Accept-Charset: UTF-8
+User-Agent: Microsoft ADO.NET Data Services
+
+{"@odata.type":"#OdataToEntity.Test.Model.Customer","Address":"Tambov","Id":2,"Name":"Natasha","Sex@odata.type":"#OdataToEntity.Test.Model.Sex","Sex":"Female"}
+--changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
+Content-Type: application/http
+Content-Transfer-Encoding: binary
+Content-ID: 3
+
+POST http://dummy/Customers HTTP/1.1
+OData-Version: 4.0
+OData-MaxVersion: 4.0
+Content-Type: application/json;odata.metadata=minimal
+Accept: application/json;odata.metadata=minimal
+Accept-Charset: UTF-8
+User-Agent: Microsoft ADO.NET Data Services
+
+{"@odata.type":"#OdataToEntity.Test.Model.Customer","Address":"Tula","Id":3,"Name":"Sasha","Sex@odata.type":"#OdataToEntity.Test.Model.Sex","Sex":"Female"}
+--changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
+Content-Type: application/http
+Content-Transfer-Encoding: binary
+Content-ID: 4
+
+POST http://dummy/Customers HTTP/1.1
+OData-Version: 4.0
+OData-MaxVersion: 4.0
+Content-Type: application/json;odata.metadata=minimal
+Accept: application/json;odata.metadata=minimal
+Accept-Charset: UTF-8
+User-Agent: Microsoft ADO.NET Data Services
+
+{"@odata.type":"#OdataToEntity.Test.Model.Customer","Address":null,"Id":4,"Name":"Unknown","Sex@odata.type":"#OdataToEntity.Test.Model.Sex","Sex":null}
+--changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
+Content-Type: application/http
+Content-Transfer-Encoding: binary
+Content-ID: 5
+
+POST http://dummy/Orders HTTP/1.1
+OData-Version: 4.0
+OData-MaxVersion: 4.0
+Content-Type: application/json;odata.metadata=minimal
+Accept: application/json;odata.metadata=minimal
+Accept-Charset: UTF-8
+User-Agent: Microsoft ADO.NET Data Services
+
+{"@odata.type":"#OdataToEntity.Test.Model.Order","CustomerId":1,"Date":"2016-07-04T19:10:10.8237573+03:00","Id":1,"Name":"Order 1","Status@odata.type":"#OdataToEntity.Test.Model.OrderStatus","Status":"Processing"}
+--changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
+Content-Type: application/http
+Content-Transfer-Encoding: binary
+Content-ID: 6
+
+POST http://dummy/Orders HTTP/1.1
+OData-Version: 4.0
+OData-MaxVersion: 4.0
+Content-Type: application/json;odata.metadata=minimal
+Accept: application/json;odata.metadata=minimal
+Accept-Charset: UTF-8
+User-Agent: Microsoft ADO.NET Data Services
+
+{"@odata.type":"#OdataToEntity.Test.Model.Order","CustomerId":2,"Date":"2016-07-04T19:10:11.0000000+03:00","Id":2,"Name":"Order 2","Status@odata.type":"#OdataToEntity.Test.Model.OrderStatus","Status":"Processing"}
+--changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
+Content-Type: application/http
+Content-Transfer-Encoding: binary
+Content-ID: 7
+
+POST http://dummy/Orders HTTP/1.1
+OData-Version: 4.0
+OData-MaxVersion: 4.0
+Content-Type: application/json;odata.metadata=minimal
+Accept: application/json;odata.metadata=minimal
+Accept-Charset: UTF-8
+User-Agent: Microsoft ADO.NET Data Services
+
+{"@odata.type":"#OdataToEntity.Test.Model.Order","CustomerId":4,"Date":null,"Id":3,"Name":"Order unknown","Status@odata.type":"#OdataToEntity.Test.Model.OrderStatus","Status":"Unknown"}
+--changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
+Content-Type: application/http
+Content-Transfer-Encoding: binary
+Content-ID: 8
+
+POST http://dummy/OrderItems HTTP/1.1
+OData-Version: 4.0
+OData-MaxVersion: 4.0
+Content-Type: application/json;odata.metadata=minimal
+Accept: application/json;odata.metadata=minimal
+Accept-Charset: UTF-8
+User-Agent: Microsoft ADO.NET Data Services
+
+{"@odata.type":"#OdataToEntity.Test.Model.OrderItem","Count":1,"Id":1,"OrderId":1,"Price":1.1,"Product":"Product order 1 item 1"}
+--changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
+Content-Type: application/http
+Content-Transfer-Encoding: binary
+Content-ID: 9
+
+POST http://dummy/OrderItems HTTP/1.1
+OData-Version: 4.0
+OData-MaxVersion: 4.0
+Content-Type: application/json;odata.metadata=minimal
+Accept: application/json;odata.metadata=minimal
+Accept-Charset: UTF-8
+User-Agent: Microsoft ADO.NET Data Services
+
+{"@odata.type":"#OdataToEntity.Test.Model.OrderItem","Count":2,"Id":2,"OrderId":1,"Price":1.2,"Product":"Product order 1 item 2"}
+--changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
+Content-Type: application/http
+Content-Transfer-Encoding: binary
+Content-ID: 10
+
+POST http://dummy/OrderItems HTTP/1.1
+OData-Version: 4.0
+OData-MaxVersion: 4.0
+Content-Type: application/json;odata.metadata=minimal
+Accept: application/json;odata.metadata=minimal
+Accept-Charset: UTF-8
+User-Agent: Microsoft ADO.NET Data Services
+
+{"@odata.type":"#OdataToEntity.Test.Model.OrderItem","Count":3,"Id":3,"OrderId":1,"Price":1.3,"Product":"Product order 1 item 3"}
+--changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
+Content-Type: application/http
+Content-Transfer-Encoding: binary
+Content-ID: 11
+
+POST http://dummy/OrderItems HTTP/1.1
+OData-Version: 4.0
+OData-MaxVersion: 4.0
+Content-Type: application/json;odata.metadata=minimal
+Accept: application/json;odata.metadata=minimal
+Accept-Charset: UTF-8
+User-Agent: Microsoft ADO.NET Data Services
+
+{"@odata.type":"#OdataToEntity.Test.Model.OrderItem","Count":1,"Id":4,"OrderId":2,"Price":2.1,"Product":"Product order 2 item 1"}
+--changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
+Content-Type: application/http
+Content-Transfer-Encoding: binary
+Content-ID: 12
+
+POST http://dummy/OrderItems HTTP/1.1
+OData-Version: 4.0
+OData-MaxVersion: 4.0
+Content-Type: application/json;odata.metadata=minimal
+Accept: application/json;odata.metadata=minimal
+Accept-Charset: UTF-8
+User-Agent: Microsoft ADO.NET Data Services
+
+{"@odata.type":"#OdataToEntity.Test.Model.OrderItem","Count":2,"Id":5,"OrderId":2,"Price":2.2,"Product":"Product order 2 item 2"}
+--changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
+Content-Type: application/http
+Content-Transfer-Encoding: binary
+Content-ID: 13
+
+POST http://dummy/OrderItems HTTP/1.1
+OData-Version: 4.0
+OData-MaxVersion: 4.0
+Content-Type: application/json;odata.metadata=minimal
+Accept: application/json;odata.metadata=minimal
+Accept-Charset: UTF-8
+User-Agent: Microsoft ADO.NET Data Services
+
+{"@odata.type":"#OdataToEntity.Test.Model.OrderItem","Count":null,"Id":6,"OrderId":3,"Price":null,"Product":"Product order 3 item 1 (unknown)"}
+--changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6--
+--batch_6263d2a1-1ddc-4b02-a1c1-7031cfa93691--

@@ -1,0 +1,41 @@
+﻿--batch_db22a6f6-5d78-4544-8f02-143ce15292f5
+Content-Type: multipart/mixed; boundary=changeset_f2abd6ba-43c9-4d85-b1a8-433a85631664
+
+--changeset_f2abd6ba-43c9-4d85-b1a8-433a85631664
+Content-Type: application/http
+Content-Transfer-Encoding: binary
+Content-ID: 3
+
+DELETE http://dummy/OrderItems(1) HTTP/1.1
+OData-Version: 4.0
+OData-MaxVersion: 4.0
+Accept: application/json;odata.metadata=minimal
+Accept-Charset: UTF-8
+User-Agent: Microsoft ADO.NET Data Services
+
+--changeset_f2abd6ba-43c9-4d85-b1a8-433a85631664
+Content-Type: application/http
+Content-Transfer-Encoding: binary
+Content-ID: 4
+
+DELETE http://dummy/OrderItems(2) HTTP/1.1
+OData-Version: 4.0
+OData-MaxVersion: 4.0
+Accept: application/json;odata.metadata=minimal
+Accept-Charset: UTF-8
+User-Agent: Microsoft ADO.NET Data Services
+
+--changeset_f2abd6ba-43c9-4d85-b1a8-433a85631664
+Content-Type: application/http
+Content-Transfer-Encoding: binary
+Content-ID: 5
+
+DELETE http://dummy/Orders(2) HTTP/1.1
+OData-Version: 4.0
+OData-MaxVersion: 4.0
+Accept: application/json;odata.metadata=minimal
+Accept-Charset: UTF-8
+User-Agent: Microsoft ADO.NET Data Services
+
+--changeset_f2abd6ba-43c9-4d85-b1a8-433a85631664--
+--batch_db22a6f6-5d78-4544-8f02-143ce15292f5--

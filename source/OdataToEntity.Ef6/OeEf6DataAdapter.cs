@@ -1,0 +1,144 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data.Entity;
+using System.Data.Entity.Core;
+using System.Data.Entity.Core.Metadata.Edm;
+using System.Data.Entity.Core.Objects;
+using System.Data.Entity.Infrastructure;
+using System.Linq;
+using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace OdataToEntity.Ef6
+{
+    public class OeEf6DataAdapter<T> : Db.OeDataAdapter where T : DbContext
+    {
+        private sealed class DbSetAdapterImpl<TEntity> : Db.OeEntitySetMetaAdapter where TEntity : class
+        {
+            private readonly String _entitySetName;
+            private readonly Func<T, IDbSet<TEntity>> _getEntitySet;
+
+            public DbSetAdapterImpl(Func<T, IDbSet<TEntity>> getEntitySet, String entitySetName)
+            {
+                _getEntitySet = getEntitySet;
+                _entitySetName = entitySetName;
+            }
+
+            public override void AddEntity(Object dataContext, Object entity)
+            {
+                IDbSet<TEntity> dbSet = _getEntitySet((T)dataContext);
+                dbSet.Add((TEntity)entity);
+            }
+            public override void AttachEntity(Object dataContext, Object entity)
+            {
+                AttachEntity(dataContext, entity, EntityState.Modified);
+            }
+            private void AttachEntity(Object dataContext, Object entity, EntityState entityState)
+            {
+                ObjectContext objectContext = ((IObjectContextAdapter)dataContext).ObjectContext;
+                EntityKey entityKey = objectContext.CreateEntityKey(EntitySetName, entity);
+
+                ObjectStateEntry objectStateEntry;
+                if (objectContext.ObjectStateManager.TryGetObjectStateEntry(entityKey, out objectStateEntry))
+                {
+                    if (entityState == EntityState.Modified)
+                        objectStateEntry.ApplyCurrentValues(entity);
+                    else
+                        objectStateEntry.ChangeState(entityState);
+                }
+                else
+                {
+                    var context = (T)dataContext;
+                    IDbSet<TEntity> dbSet = _getEntitySet(context);
+                    dbSet.Attach((TEntity)entity);
+                    context.Entry(entity).State = entityState;
+                }
+            }
+            public override IQueryable GetEntitySet(Object dataContext)
+            {
+                return _getEntitySet((T)dataContext);
+            }
+            public override void RemoveEntity(Object dataContext, Object entity)
+            {
+                AttachEntity(dataContext, entity, EntityState.Deleted);
+            }
+
+            public override Type EntityType
+            {
+                get
+                {
+                    return typeof(TEntity);
+                }
+            }
+            public override String EntitySetName
+            {
+                get
+                {
+                    return _entitySetName;
+                }
+            }
+        }
+
+        private readonly static Db.OeEntitySetMetaAdapterCollection _entitySetMetaAdapters = CreateEntitySetMetaAdapters();
+
+        public override void CloseDataContext(Object dataContext)
+        {
+            var dbContext = (T)dataContext;
+            dbContext.Dispose();
+        }
+        public override Object CreateDataContext()
+        {
+            T dbContext = Activator.CreateInstance<T>();
+            dbContext.Configuration.AutoDetectChangesEnabled = false;
+            dbContext.Configuration.ProxyCreationEnabled = false;
+            return dbContext;
+        }
+        private static Db.OeEntitySetMetaAdapterCollection CreateEntitySetMetaAdapters()
+        {
+            var entitySetMetaAdapters = new List<Db.OeEntitySetMetaAdapter>();
+            foreach (PropertyInfo property in typeof(T).GetProperties())
+            {
+                Type dbSetType = property.PropertyType.GetInterface(typeof(IDbSet<>).FullName);
+                if (dbSetType != null)
+                    entitySetMetaAdapters.Add(CreateDbSetInvoker(property, dbSetType));
+            }
+            return new Db.OeEntitySetMetaAdapterCollection(entitySetMetaAdapters.ToArray());
+        }
+        private static Db.OeEntitySetMetaAdapter CreateDbSetInvoker(PropertyInfo property, Type dbSetType)
+        {
+            MethodInfo mi = ((Func<PropertyInfo, Db.OeEntitySetMetaAdapter>)CreateDbSetInvoker<Object>).Method.GetGenericMethodDefinition();
+            Type entityType = dbSetType.GetGenericArguments()[0];
+            MethodInfo func = mi.GetGenericMethodDefinition().MakeGenericMethod(entityType);
+            return (Db.OeEntitySetMetaAdapter)func.Invoke(null, new Object[] { property });
+        }
+        private static Db.OeEntitySetMetaAdapter CreateDbSetInvoker<TEntity>(PropertyInfo property) where TEntity : class
+        {
+            var getDbSet = (Func<T, IDbSet<TEntity>>)Delegate.CreateDelegate(typeof(Func<T, IDbSet<TEntity>>), property.GetGetMethod());
+            return new DbSetAdapterImpl<TEntity>(getDbSet, property.Name);
+        }
+        public override Db.OeEntityAsyncEnumerator ExecuteEnumerator(IQueryable query, CancellationToken cancellationToken)
+        {
+            var queryAsync = (IDbAsyncEnumerable)query;
+            return new OeEf6EntityAsyncEnumerator(queryAsync.GetAsyncEnumerator(), cancellationToken);
+        }
+        public override Db.OeEntitySetAdapter GetEntitySetAdapter(String entitySetName)
+        {
+            return new Db.OeEntitySetAdapter(_entitySetMetaAdapters.FindByEntitySetName(entitySetName), this);
+        }
+        public override Task<int> SaveChangesAsync(Object dataContext, CancellationToken cancellationToken)
+        {
+            var dbContext = (T)dataContext;
+            return dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        public override Db.OeEntitySetMetaAdapterCollection EntitySetMetaAdapters
+        {
+            get
+            {
+                return _entitySetMetaAdapters;
+            }
+        }
+    }
+}

@@ -1,0 +1,64 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+
+namespace OdataToEntity.Db
+{
+    public abstract class OeEntitySetMetaAdapter
+    {
+        public abstract void AddEntity(Object dataContext, Object entity);
+        public abstract void AttachEntity(Object dataContext, Object entity);
+        public abstract IQueryable GetEntitySet(Object dataContext);
+        public abstract void RemoveEntity(Object dataContext, Object entity);
+
+        public abstract Type EntityType
+        {
+            get;
+        }
+        public abstract String EntitySetName
+        {
+            get;
+        }
+    }
+
+    public sealed class OeEntitySetMetaAdapterCollection : ReadOnlyCollection<OeEntitySetMetaAdapter>
+    {
+        public OeEntitySetMetaAdapterCollection(OeEntitySetMetaAdapter[] entitySetMetaAdapter) : base(entitySetMetaAdapter)
+        {
+        }
+
+        public OeEntitySetMetaAdapter FindByClrType(Type entityType)
+        {
+            var entitySetMetaAdapters = (OeEntitySetMetaAdapter[])base.Items;
+            foreach (OeEntitySetMetaAdapter entitySetMetaAdapter in entitySetMetaAdapters)
+                if (entitySetMetaAdapter.EntityType == entityType)
+                    return entitySetMetaAdapter;
+            return null;
+        }
+        public OeEntitySetMetaAdapter FindByEntitySetName(String entitySetName)
+        {
+            var entitySetMetaAdapters = (OeEntitySetMetaAdapter[])base.Items;
+            foreach (OeEntitySetMetaAdapter entitySetMetaAdapter in entitySetMetaAdapters)
+                if (entitySetMetaAdapter.EntitySetName == entitySetName)
+                    return entitySetMetaAdapter;
+            return null;
+        }
+        public OeEntitySetMetaAdapter FindByTypeName(String typeName)
+        {
+            var entitySetMetaAdapters = (OeEntitySetMetaAdapter[])base.Items;
+            foreach (OeEntitySetMetaAdapter entitySetMetaAdapter in entitySetMetaAdapters)
+                if (entitySetMetaAdapter.EntityType.FullName == typeName)
+                    return entitySetMetaAdapter;
+            return null;
+        }
+        public IDictionary<String, Type> ToDictionary()
+        {
+            var entitySets = new Dictionary<String, Type>(base.Count);
+            var entitySetMetaAdapters = (OeEntitySetMetaAdapter[])base.Items;
+            foreach (OeEntitySetMetaAdapter entitySetMetaAdapter in entitySetMetaAdapters)
+                entitySets.Add(entitySetMetaAdapter.EntitySetName, entitySetMetaAdapter.EntityType);
+            return entitySets;
+        }
+    }
+}
