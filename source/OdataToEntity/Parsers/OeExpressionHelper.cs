@@ -3,6 +3,7 @@ using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -36,15 +37,41 @@ namespace OdataToEntity.Parsers
             value = Convert.ChangeType(constantExpression.Value, targetType);
             return Expression.Constant(value);
         }
-        public static MemberInitExpression CreateTupleExpression(IReadOnlyList<Expression> expressions)
+        public static NewExpression CreateTupleExpression(IReadOnlyList<Expression> expressions)
         {
-            Type[] typeArguments = new Type[expressions.Count];
-            for (int i = 0; i < typeArguments.Length; i++)
-                typeArguments[i] = expressions[i].Type;
+            if (expressions.Count < 9)
+            {
+                Type[] typeArguments = new Type[expressions.Count];
+                for (int i = 0; i < typeArguments.Length; i++)
+                    typeArguments[i] = expressions[i].Type;
+                Type tupleType = GetTupleType(typeArguments);
+                ConstructorInfo ctorInfo = tupleType.GetTypeInfo().GetConstructor(typeArguments);
+                return Expression.New(ctorInfo, expressions, tupleType.GetTypeInfo().GetProperties());
+            }
 
-            Type tupleType = GetTupleType(typeArguments);
-            ConstructorInfo ctorInfo = tupleType.GetTypeInfo().GetConstructor(typeArguments);
-            return Expression.MemberInit(Expression.New(ctorInfo, expressions));
+            NewExpression restNew = null;
+            int count = expressions.Count;
+            while (count > 0)
+            {
+                int len = count % 7;
+                if (len == 0)
+                    len = 8;
+                else if (len == 1 && count > 8)
+                    len = 7;
+
+                Expression[] restExpressions;
+                if (restNew == null)
+                    restExpressions = new Expression[len];
+                else
+                {
+                    restExpressions = new Expression[len + 1];
+                    restExpressions[len] = restNew;
+                }
+                for (; len > 0; len--, count--)
+                    restExpressions[len - 1] = expressions[count - 1];
+                restNew = CreateTupleExpression(restExpressions);
+            }
+            return restNew;
         }
         public static Type GetCollectionItemType(Type collectionType)
         {
@@ -94,12 +121,18 @@ namespace OdataToEntity.Parsers
 
             return tupleType.MakeGenericType(typeArguments);
         }
-        public static MemberExpression[] GetPropertyExpression(Expression expression)
+        public static IReadOnlyList<MemberExpression> GetPropertyExpression(Expression expression)
         {
             PropertyInfo[] properties = expression.Type.GetTypeInfo().GetProperties();
-            var expressions = new MemberExpression[properties.Length];
+            var expressions = new List<MemberExpression>(properties.Length);
             for (int i = 0; i < properties.Length; i++)
-                expressions[i] = Expression.Property(expression, properties[i]);
+            {
+                MemberExpression propertyExpression = Expression.Property(expression, properties[i]);
+                if (i == 7 && IsTupleType(properties[7].PropertyType))
+                    expressions.AddRange(GetPropertyExpression(propertyExpression))                    ;
+                else
+                    expressions.Add(propertyExpression);
+            }
             return expressions;
         }
         public static bool IsNull(Expression expression)
@@ -118,7 +151,7 @@ namespace OdataToEntity.Parsers
                 return false;
 
             Type tupleType = type.GetGenericTypeDefinition();
-            return 
+            return
                 tupleType == typeof(Tuple<>) ||
                 tupleType == typeof(Tuple<,>) ||
                 tupleType == typeof(Tuple<,,>) ||

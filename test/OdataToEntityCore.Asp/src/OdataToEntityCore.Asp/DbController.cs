@@ -6,16 +6,16 @@ using OdataToEntity.Test.Model;
 
 namespace OdataToEntityCore.Asp
 {
-    public sealed class CommandController : Controller
+    public sealed class DbController : Controller
     {
         private readonly OrderDataAdapter _dataAdapter;
 
-        public CommandController(OrderDataAdapter dataAdapter)
+        public DbController(OrderDataAdapter dataAdapter)
         {
             _dataAdapter = dataAdapter;
         }
 
-        public async Task InitDb()
+        public async Task Init()
         {
             var customer1 = new Customer()
             {
@@ -148,7 +148,7 @@ namespace OdataToEntityCore.Asp
                     _dataAdapter.CloseDataContext(dbContext);
             }
         }
-        public void ResetDb()
+        public void Reset()
         {
             _dataAdapter.ResetDatabase();
         }

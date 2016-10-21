@@ -15,7 +15,6 @@ namespace OdataToEntityCore.Asp
             var host = new WebHostBuilder()
                 .UseKestrel()
                 .UseContentRoot(Directory.GetCurrentDirectory())
-                //.UseIISIntegration()
                 .UseStartup<Startup>()
                 .Build();
 

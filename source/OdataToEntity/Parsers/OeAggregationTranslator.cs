@@ -107,9 +107,9 @@ namespace OdataToEntity.Parsers
                 _aggProperties.Add(CreateEdmProperty(_model, e.Type, aggExpression.Alias, false));
             }
 
-            MemberInitExpression initExpression = OeExpressionHelper.CreateTupleExpression(expressions);
-            MethodInfo selectMethodInfo = OeMethodInfoHelper.GetSelectMethodInfo(sourceType, initExpression.Type);
-            LambdaExpression lambda = Expression.Lambda(initExpression, sourceParameter);
+            NewExpression newExpression = OeExpressionHelper.CreateTupleExpression(expressions);
+            MethodInfo selectMethodInfo = OeMethodInfoHelper.GetSelectMethodInfo(sourceType, newExpression.Type);
+            LambdaExpression lambda = Expression.Lambda(newExpression, sourceParameter);
             return Expression.Call(selectMethodInfo, source, lambda);
         }
         private MethodCallExpression ApplyFilter(Expression source, FilterTransformationNode transformation)
@@ -152,10 +152,10 @@ namespace OdataToEntity.Parsers
                     _aggProperties.Add(CreateEdmProperty(_model, e.Type, node.Name, true));
                 }
 
-            MemberInitExpression initExpression = OeExpressionHelper.CreateTupleExpression(expressions);
-            LambdaExpression lambda = Expression.Lambda(initExpression, sourceParameter);
+            NewExpression newExpression = OeExpressionHelper.CreateTupleExpression(expressions);
+            LambdaExpression lambda = Expression.Lambda(newExpression, sourceParameter);
 
-            MethodInfo groupByMethodInfo = OeMethodInfoHelper.GetGroupByMethodInfo(sourceType, initExpression.Type);
+            MethodInfo groupByMethodInfo = OeMethodInfoHelper.GetGroupByMethodInfo(sourceType, newExpression.Type);
             MethodCallExpression groupByCall = Expression.Call(groupByMethodInfo, source, lambda);
 
             var aggTransformation = (AggregateTransformationNode)transformation.ChildTransformations;
@@ -165,10 +165,10 @@ namespace OdataToEntity.Parsers
                 sourceType = OeExpressionHelper.GetCollectionItemType(groupByCall.Type);
                 sourceParameter = Expression.Parameter(sourceType);
                 expressions.Add(Expression.Property(sourceParameter, nameof(IGrouping<Object, Object>.Key)));
-                initExpression = OeExpressionHelper.CreateTupleExpression(expressions);
+                newExpression = OeExpressionHelper.CreateTupleExpression(expressions);
 
-                MethodInfo selectMethodInfo = OeMethodInfoHelper.GetSelectMethodInfo(sourceType, initExpression.Type);
-                lambda = Expression.Lambda(initExpression, sourceParameter);
+                MethodInfo selectMethodInfo = OeMethodInfoHelper.GetSelectMethodInfo(sourceType, newExpression.Type);
+                lambda = Expression.Lambda(newExpression, sourceParameter);
                 return Expression.Call(selectMethodInfo, groupByCall, lambda);
             }
 
@@ -237,7 +237,7 @@ namespace OdataToEntity.Parsers
             if (_aggProperties.Count == 0)
                 accessors = OePropertyAccessor.CreateFromType(entityType, entitySet);
             else
-                accessors = OePropertyAccessor.CreateFromTuple(sourceType, _aggProperties);
+                accessors = OePropertyAccessor.CreateFromTuple(sourceType, _aggProperties, 0);
             return OeEntryFactory.CreateEntryFactory(entitySet, accessors);
         }
         private OeQueryNodeVisitor CreateVisitor(ParameterExpression parameter)

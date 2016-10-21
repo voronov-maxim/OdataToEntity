@@ -5,7 +5,7 @@ using System.IO;
 
 namespace OdataToEntity
 {
-    internal class OeInMemoryMessage : IODataRequestMessage, IODataResponseMessage
+    public sealed class OeInMemoryMessage : IODataRequestMessage, IODataResponseMessage
     {
         private readonly Dictionary<String, String> _headers;
         private readonly Stream _stream;

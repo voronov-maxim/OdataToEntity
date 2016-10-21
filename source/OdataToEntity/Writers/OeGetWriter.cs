@@ -33,7 +33,7 @@ namespace OdataToEntity.Writers
         {
             ODataResource entry = entryFactory.CreateEntry(entity);
             if (metadataLevel == OeMetadataLevel.Full)
-                entry.Id = OeUriHelper.ComputeId(_baseUri, entryFactory.EntitySet, entity);
+                entry.Id = OeUriHelper.ComputeId(_baseUri, entryFactory.EntitySet, entry);
             return entry;
         }
         public async Task SerializeAsync(ODataUri odataUri, OeEntryFactory entryFactory, Db.OeEntityAsyncEnumerator asyncEnumerator, OeRequestHeaders headers, Stream stream)

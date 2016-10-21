@@ -55,13 +55,11 @@
     <Compile Include="Db\OeEntityAsyncEnumerator.cs" />
     <Compile Include="ModelBuilder\EntityTypeInfo.cs" />
     <Compile Include="ModelBuilder\FKeyInfo.cs" />
-    <Compile Include="ModelBuilder\OeModelBuilderHelper.cs" />
     <Compile Include="ModelBuilder\PrimitiveTypeHelper.cs" />
     <Compile Include="Parsers\OeAggregationTranslator.cs" />
     <Compile Include="Parsers\OeExpressionHelper.cs" />
     <Compile Include="Parsers\OeFunctionBinder.cs" />
     <Compile Include="Parsers\OeMethodInfoHelper.cs" />
-    <Compile Include="Parsers\OeResponseReader.cs" />
     <Compile Include="Parsers\OePropertyAccessor.cs" />
     <Compile Include="Writers\OeUriHelper.cs" />
     <Compile Include="ModelBuilder\OeEdmModelBuilder.cs" />

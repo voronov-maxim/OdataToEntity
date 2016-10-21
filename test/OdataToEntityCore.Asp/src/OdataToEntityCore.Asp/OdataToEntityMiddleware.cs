@@ -1,15 +1,17 @@
-﻿using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Server.Kestrel.Internal.Http;
 using Microsoft.OData.Edm;
+using Microsoft.OData.Edm.Csdl;
+using Microsoft.OData.Edm.Validation;
 using OdataToEntity;
 using OdataToEntity.Db;
 using OdataToEntity.ModelBuilder;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml;
 
 namespace OdataToEntityCore.Asp
 {
@@ -32,6 +34,15 @@ namespace OdataToEntityCore.Asp
             _edmModel = new OeEdmModelBuilder(_dataAdapter.EntitySetMetaAdapters.ToDictionary()).BuildEdmModel();
         }
 
+        private static bool GetCsdlSchema(IEdmModel edmModel, Stream stream)
+        {
+            IEnumerable<EdmError> errors;
+            using (XmlWriter xmlWriter = XmlWriter.Create(stream))
+                if (CsdlWriter.TryWriteCsdl(edmModel, xmlWriter, CsdlTarget.OData, out errors))
+                    return true;
+
+            return false;
+        }
         public async Task Invoke(HttpContext httpContext)
         {
             PathString remaining;
@@ -49,11 +60,11 @@ namespace OdataToEntityCore.Asp
         }
         private async Task Invoke(HttpContext httpContext, PathString remaining)
         {
-            var accept = "application/json;odata.metadata=minimal";
-            httpContext.Response.ContentType = accept;
+            var requestHeaders = (FrameRequestHeaders)httpContext.Request.Headers;
+            httpContext.Response.ContentType = requestHeaders.HeaderAccept;
 
             var uri = new Uri(_baseUri.OriginalString + remaining + httpContext.Request.QueryString);
-            OeRequestHeaders headers = OeRequestHeaders.Parse(accept);
+            OeRequestHeaders headers = OeRequestHeaders.Parse(requestHeaders.HeaderAccept);
             var parser = new OeParser(_baseUri, _dataAdapter, _edmModel);
             await parser.ExecuteQueryAsync(uri, headers, httpContext.Response.Body, CancellationToken.None);
         }
@@ -67,7 +78,7 @@ namespace OdataToEntityCore.Asp
         private void InvokeMetadata(HttpContext httpContext)
         {
             httpContext.Response.ContentType = "application/xml";
-            OeModelBuilderHelper.GetCsdlSchema(_edmModel, httpContext.Response.Body);
+            GetCsdlSchema(_edmModel, httpContext.Response.Body);
         }
     }
 }

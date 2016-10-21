@@ -12,7 +12,7 @@ namespace OdataToEntityCore.AspClient
     {
         static void Main(String[] args)
         {
-            //new SelectTest().FilterExpand().GetAwaiter().GetResult();
+            //new SelectTest().SelectName().Wait();
 
             RunTest(new BatchTest()).GetAwaiter().GetResult();
             RunTest(new SelectTest()).GetAwaiter().GetResult();

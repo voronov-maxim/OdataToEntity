@@ -2,6 +2,7 @@
 using Microsoft.OData.UriParser;
 using Microsoft.OData.UriParser.Aggregation;
 using System;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -54,6 +55,38 @@ namespace OdataToEntity.Parsers
             MethodInfo whereMethodInfo = OeMethodInfoHelper.GetWhereMethodInfo(ParameterType);
             return Expression.Call(whereMethodInfo, source, lambda);
         }
+        public MethodCallExpression ApplyNavigation(MethodCallExpression source, IEnumerable<NavigationPropertySegment> navigationSegments)
+        {
+            if (navigationSegments == null)
+                return source;
+
+            Type sourceItemType = OeExpressionHelper.GetCollectionItemType(source.Type);
+            foreach (NavigationPropertySegment navigationSegment in navigationSegments)
+            {
+                ParameterExpression parameter = Expression.Parameter(sourceItemType);
+                PropertyInfo navigationClrProperty = sourceItemType.GetTypeInfo().GetProperty(navigationSegment.NavigationProperty.Name);
+                Expression e = Expression.MakeMemberAccess(parameter, navigationClrProperty);
+
+                MethodInfo selectMethodInfo;
+                Type selectType = OeExpressionHelper.GetCollectionItemType(e.Type);
+                if (selectType == null)
+                {
+                    selectType = e.Type;
+                    selectMethodInfo = OeMethodInfoHelper.GetSelectMethodInfo(sourceItemType, selectType);
+                }
+                else
+                    selectMethodInfo = OeMethodInfoHelper.GetSelectManyMethodInfo(sourceItemType, selectType);
+
+                LambdaExpression lambda = Expression.Lambda(e, parameter);
+                source = Expression.Call(selectMethodInfo, source, lambda);
+
+                _entityType = selectType;
+                sourceItemType = selectType;
+            }
+
+            _visitor = new OeQueryNodeVisitor(_model, Expression.Parameter(_entityType));
+            return source;
+        }
         public MethodCallExpression ApplyOrderBy(MethodCallExpression source, OrderByClause orderByClause)
         {
             if (orderByClause == null)
@@ -69,17 +102,15 @@ namespace OdataToEntity.Parsers
 
             return ApplyThenBy(orderByCall, orderByClause.ThenBy);
         }
-        public MethodCallExpression ApplySelect(MethodCallExpression source, SelectExpandClause selectClause)
+        public MethodCallExpression ApplySelect(MethodCallExpression source, SelectExpandClause selectClause, OeMetadataLevel metadatLevel)
         {
             if (selectClause == null)
                 return source;
 
-            var selectTranslator = new OeSelectTranslator();
-            MethodCallExpression selectExpression = selectTranslator.Build(source, selectClause);
+            var selectTranslator = new OeSelectTranslator(_model);
+            MethodCallExpression selectExpression = selectTranslator.Build(source, selectClause, metadatLevel);
 
             _entryFactory = selectTranslator.CreateEntryFactory;
-            if (selectTranslator.LastNavigationType != null)
-                _entityType = selectTranslator.LastNavigationType;
 
             Type selectItemType = OeExpressionHelper.GetCollectionItemType(selectExpression.Type);
             _visitor = new OeQueryNodeVisitor(_model, Expression.Parameter(selectItemType));

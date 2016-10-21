@@ -18,8 +18,6 @@
     },
     "OdataToEntityCore.Asp": {
       "commandName": "Project",
-      "launchBrowser": true,
-      "launchUrl": "http://localhost:5000/odata/$metadata",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }

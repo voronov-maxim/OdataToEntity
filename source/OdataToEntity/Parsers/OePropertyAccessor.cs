@@ -24,27 +24,34 @@ namespace OdataToEntity.Parsers
             _typeAnnotation = new ODataTypeAnnotation(edmProperty.Type.ShortQualifiedName());
         }
 
-        private static OePropertyAccessor CreatePropertyAccessor(IEdmProperty edmProperty, Expression expression, ParameterExpression parameter)
+        public static OePropertyAccessor CreatePropertyAccessor(IEdmProperty edmProperty, Expression expression, ParameterExpression parameter)
         {
             UnaryExpression instance = Expression.Convert(expression, typeof(Object));
             var func = (Func<Object, Object>)Expression.Lambda(instance, parameter).Compile();
             IEdmPrimitiveType primitiveType = PrimitiveTypeHelper.GetPrimitiveType(expression.Type);
             return new OePropertyAccessor(edmProperty, func);
         }
-        public static OePropertyAccessor[] CreateFromTuple(Type tupleType, IReadOnlyList<IEdmProperty> edmProperties)
+        public static OePropertyAccessor[] CreateFromTuple(Type tupleType, IReadOnlyList<IEdmProperty> edmProperties, int groupItemIndex)
         {
             ParameterExpression tupleParameter = Expression.Parameter(tupleType);
             ParameterExpression parameter = Expression.Parameter(typeof(Object));
-            MemberExpression[] itemExpressions = OeExpressionHelper.GetPropertyExpression(Expression.Convert(parameter, tupleType));
+            IReadOnlyList<MemberExpression> itemExpressions = OeExpressionHelper.GetPropertyExpression(Expression.Convert(parameter, tupleType));
 
             int aliasIndex = 0;
             var accessors = new OePropertyAccessor[edmProperties.Count];
-            MemberExpression[] groupExpressions = OeExpressionHelper.GetPropertyExpression(itemExpressions[0]);
-            for (; aliasIndex < groupExpressions.Length; aliasIndex++)
-                accessors[aliasIndex] = CreatePropertyAccessor(edmProperties[aliasIndex], groupExpressions[aliasIndex], parameter);
+            if (groupItemIndex >= 0)
+            {
+                IReadOnlyList<MemberExpression> groupExpressions = OeExpressionHelper.GetPropertyExpression(itemExpressions[groupItemIndex]);
+                for (; aliasIndex < groupExpressions.Count; aliasIndex++)
+                    accessors[aliasIndex] = CreatePropertyAccessor(edmProperties[aliasIndex], groupExpressions[aliasIndex], parameter);
+            }
 
-            for (int itemIndex = 1; itemIndex < itemExpressions.Length; itemIndex++, aliasIndex++)
-                accessors[aliasIndex] = CreatePropertyAccessor(edmProperties[aliasIndex], itemExpressions[itemIndex], parameter);
+            for (int itemIndex = 0; itemIndex < itemExpressions.Count; itemIndex++)
+                if (itemIndex != groupItemIndex)
+                {
+                    accessors[aliasIndex] = CreatePropertyAccessor(edmProperties[aliasIndex], itemExpressions[itemIndex], parameter);
+                    aliasIndex++;
+                }
             return accessors;
         }
         public static OePropertyAccessor[] CreateFromType(Type clrType, IEdmEntitySet entitySet)

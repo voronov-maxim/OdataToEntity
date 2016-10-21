@@ -50,6 +50,7 @@
     <Compile Include="DbFixture.cs" />
     <Compile Include="Model\Order.cs" />
     <Compile Include="Model\OrderContext.cs" />
+    <Compile Include="ResponseReader.cs" />
     <Compile Include="OrderDataAdapter.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

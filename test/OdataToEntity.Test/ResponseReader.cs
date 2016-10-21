@@ -11,9 +11,9 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 
-namespace OdataToEntity.Parsers
+namespace OdataToEntity.Test
 {
-    public sealed class OeResponseReader
+    internal sealed class ResponseReader
     {
         private sealed class StackItem
         {
@@ -29,11 +29,31 @@ namespace OdataToEntity.Parsers
 
             public void AddEntry(Object value)
             {
-                var link = (ODataNestedResourceInfo)Item;
-                if (link.IsCollection.GetValueOrDefault())
+                var link = Item as ODataNestedResourceInfo;
+                if (link != null)
+                {
+                    if (link.IsCollection.GetValueOrDefault())
+                    {
+                        var list = value as IList;
+                        if (list == null)
+                            AddToList((dynamic)value);
+                        else
+                            foreach (Object item in list)
+                                AddToList((dynamic)item);
+                    }
+                    else
+                        _value = value;
+                    return;
+                }
+
+                var set = Item as ODataResourceSet;
+                if (set != null)
+                {
                     AddToList((dynamic)value);
-                else
-                    _value = value;
+                    return;
+                }
+
+                throw new NotSupportedException(Item.GetType().ToString());
             }
             public void AddLink(ODataNestedResourceInfo link, Object value)
             {
@@ -54,7 +74,7 @@ namespace OdataToEntity.Parsers
         private readonly IEdmModel _edmModel;
         private readonly Db.OeEntitySetMetaAdapterCollection _entitySetMetaAdapters;
 
-        public OeResponseReader(IEdmModel edmModel, Db.OeEntitySetMetaAdapterCollection entitySetMetaAdapters)
+        public ResponseReader(IEdmModel edmModel, Db.OeEntitySetMetaAdapterCollection entitySetMetaAdapters)
         {
             _edmModel = edmModel;
             _entitySetMetaAdapters = entitySetMetaAdapters;
@@ -78,17 +98,44 @@ namespace OdataToEntity.Parsers
 
             return entity;
         }
-        private JObject CreateOpenTypeEntity(StackItem stackItem)
+        private IList CreateEntityList(IList list)
+        {
+            var entities = new List<Object>(list.Count);
+            foreach (StackItem item in list)
+                entities.Add(CreateEntity(item));
+            return entities;
+        }
+        private Object CreateOpenTypeEntity(StackItem stackItem)
+        {
+            if (stackItem.Item is ODataResource)
+                return CreateOpenTypeEntity((ODataResource)stackItem.Item, stackItem.NavigationProperties);
+            else if (stackItem.Item is ODataResourceSet)
+                return CreateEntityList((IList)stackItem.Value);
+
+            throw new NotSupportedException(stackItem.Item.GetType().FullName);
+        }
+        private JObject CreateOpenTypeEntity(ODataResource resource, IReadOnlyList<KeyValuePair<String, Object>> navigationProperties)
         {
             var openType = new JObject();
-            var entry = (ODataResource)stackItem.Item;
-            foreach (ODataProperty property in entry.Properties.OrderBy(p => p.Name))
+            foreach (ODataProperty property in resource.Properties.OrderBy(p => p.Name))
                 if (property.Value is ODataUntypedValue)
                     openType.Add(property.Name, null);
                 else if (property.Value is ODataEnumValue)
                     openType.Add(property.Name, new JRaw(property.Value));
                 else
                     openType.Add(property.Name, new JValue(property.Value));
+
+            foreach (KeyValuePair<String, Object> pair in navigationProperties)
+            {
+                Object value = pair.Value;
+                if (value is StackItem)
+                {
+                    value = CreateEntity((StackItem)value);
+                    openType.Add(pair.Key, JObject.FromObject(value));
+                }
+                else
+                    openType.Add(pair.Key, JArray.FromObject(value));
+            }
             return openType;
         }
         private static String GetEntitSetName(Stream response)
@@ -111,6 +158,11 @@ namespace OdataToEntity.Parsers
 
             return null;
         }
+        private bool IsOpenType(StackItem stackItem)
+        {
+            var entry = (ODataResource)stackItem.Item;
+            return _entitySetMetaAdapters.FindByTypeName(entry.TypeName) == null;
+        }
         public IEnumerable ReadFeed(Stream response)
         {
             String entitySetName = GetEntitSetName(response);
@@ -130,30 +182,44 @@ namespace OdataToEntity.Parsers
             Db.OeEntitySetMetaAdapter entitySetMetaAdatpter = _entitySetMetaAdapters.FindByClrType(typeof(T));
             return ReadFeedImpl<T>(response, entitySetMetaAdatpter);
         }
-        public IEnumerable<JObject> ReadOpenType(Stream response)
+        public IEnumerable<JObject> ReadOpenType(Stream response, Type baseEntityType)
         {
             IODataRequestMessage responseMessage = new OeInMemoryMessage(response, null);
             var settings = new ODataMessageReaderSettings() { Validations = ValidationKinds.None, EnableMessageStreamDisposal = false };
             var messageReader = new ODataMessageReader(responseMessage, settings, _edmModel);
 
-            IEdmEntitySet entitySet = _edmModel.EntityContainer.FindEntitySet("OrderItems");
+            IEdmEntitySet entitySet = _edmModel.EntityContainer.EntitySets().Single(e => e.Type.AsElementType().FullTypeName() == baseEntityType.FullName);
             ODataReader reader = messageReader.CreateODataResourceSetReader(entitySet, entitySet.EntityType());
 
+            StackItem stackItem;
             var stack = new Stack<StackItem>();
             while (reader.Read())
             {
                 switch (reader.State)
                 {
+                    case ODataReaderState.ResourceSetStart:
+                        stack.Push(new StackItem((ODataResourceSet)reader.Item));
+                        break;
+                    case ODataReaderState.ResourceSetEnd:
+                        stackItem = stack.Pop();
+                        if (stack.Count == 0)
+                            foreach (StackItem entry in (IList)stackItem.Value)
+                                yield return (JObject)CreateOpenTypeEntity(entry);
+                        else
+                        {
+                            var entries = (IList)CreateOpenTypeEntity(stackItem);
+                            stack.Peek().AddEntry(entries);
+                        }
+                        break;
                     case ODataReaderState.ResourceStart:
                         stack.Push(new StackItem((ODataResource)reader.Item));
                         break;
                     case ODataReaderState.ResourceEnd:
-                        StackItem stackItem = stack.Pop();
-                        var entity = CreateOpenTypeEntity(stackItem);
+                        stackItem = stack.Pop();
                         if (stack.Count == 0)
-                            yield return entity;
+                            yield return (JObject)CreateOpenTypeEntity(stackItem);
                         else
-                            stack.Peek().AddEntry(entity);
+                            stack.Peek().AddEntry(stackItem);
                         break;
                     case ODataReaderState.NestedResourceInfoStart:
                         stack.Push(new StackItem((ODataNestedResourceInfo)reader.Item));
@@ -167,9 +233,6 @@ namespace OdataToEntity.Parsers
         }
         private IEnumerable<T> ReadFeedImpl<T>(Stream response, Db.OeEntitySetMetaAdapter entitySetMetaAdatpter)
         {
-            var zzz = new StreamReader(response).ReadToEnd();
-            response.Position = 0;
-
             IODataRequestMessage responseMessage = new OeInMemoryMessage(response, null);
             var settings = new ODataMessageReaderSettings() { EnableMessageStreamDisposal = false };
             var messageReader = new ODataMessageReader(responseMessage, settings, _edmModel);
@@ -187,6 +250,7 @@ namespace OdataToEntity.Parsers
                         break;
                     case ODataReaderState.ResourceEnd:
                         StackItem stackItem = stack.Pop();
+
                         Object entity = CreateEntity(stackItem);
                         if (stack.Count == 0)
                             yield return (T)entity;

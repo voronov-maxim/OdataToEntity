@@ -9,7 +9,7 @@ namespace OdataToEntity.Test
         {
             //new BatchTest().Delete().Wait();
             Console.WriteLine();
-            new SelectTest().OrderBy().Wait();
+            new SelectTest().SelectName().Wait();
 
             Console.ReadLine();
         }

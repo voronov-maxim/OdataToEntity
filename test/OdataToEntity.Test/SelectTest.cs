@@ -198,6 +198,15 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters);
         }
+        public async Task ExpandSelect()
+        {
+            var parameters = new QueryParameters<Order, Object>()
+            {
+                RequestUri = "Orders?$expand=Customer,Items&$select=CustomerId,Date,Id,Name,Status",
+                Expression = t => t.Select(o => new { o.Customer, o.Items, o.CustomerId, o.Date, o.Id, o.Name, o.Status }),
+            };
+            await Fixture.Execute(parameters);
+        }
         [Fact]
         public async Task ExpandStar()
         {
@@ -529,6 +538,26 @@ namespace OdataToEntity.Test
             await Fixture.Execute(parameters);
         }
         [Fact]
+        public async Task Select()
+        {
+            var parameters = new QueryParameters<Order, Object>()
+            {
+                RequestUri = "Orders?$select=Customer,CustomerId,Date,Id,Items,Name,Status,Customer",
+                Expression = t => t.Select(o => new { o.Customer, o.CustomerId, o.Date, o.Id, o.Items, o.Name, o.Status })
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Fact]
+        public async Task SelectName()
+        {
+            var parameters = new QueryParameters<Order, Object>()
+            {
+                RequestUri = "Orders?$select=Name",
+                Expression = t => t.Select(o => new { o.Name })
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Fact]
         public async Task SelectMultipleNavigationOne()
         {
             var parameters = new QueryParameters<OrderItem, Customer>()
@@ -549,26 +578,6 @@ namespace OdataToEntity.Test
                     CustomerId = g.Key,
                     min = g.Min(a => a.Status)
                 })
-            };
-            await Fixture.Execute(parameters);
-        }
-        [Fact]
-        public async Task SelectNavigationMany()
-        {
-            var parameters = new QueryParameters<Order, OrderItem>()
-            {
-                RequestUri = "Orders?$select=Items",
-                Expression = t => t.SelectMany(o => o.Items)
-            };
-            await Fixture.Execute(parameters);
-        }
-        [Fact]
-        public async Task SelectNavigationOne()
-        {
-            var parameters = new QueryParameters<Order, Customer>()
-            {
-                RequestUri = "Orders?$select=Customer",
-                Expression = t => t.Select(o => o.Customer)
             };
             await Fixture.Execute(parameters);
         }

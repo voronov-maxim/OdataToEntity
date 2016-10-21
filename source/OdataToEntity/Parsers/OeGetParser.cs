@@ -83,15 +83,13 @@ namespace OdataToEntity
             Db.OeEntitySetAdapter entitySetAdapter = _dataAdapter.GetEntitySetAdapter(entitySet.Name);
 
             FilterClause filterClause = odataUri.Filter;
-            SelectExpandClause navigationClause = null;
+            IEnumerable<NavigationPropertySegment> navigationSegments = null;
             if (odataPath.LastSegment is KeySegment)
                 filterClause = CreateFilterClause(entitySet, entityTypeRef, odataPath.LastSegment as KeySegment);
             else if (odataPath.LastSegment is NavigationPropertySegment)
             {
                 filterClause = CreateFilterClause(entitySet, entityTypeRef, odataPath.OfType<KeySegment>().Single());
-                IEnumerable<SelectItem> selectedItems =
-                    odataPath.OfType<NavigationPropertySegment>().Select(s => new PathSelectItem(new ODataSelectPath(s)));
-                navigationClause = new SelectExpandClause(selectedItems, true);
+                navigationSegments = odataPath.OfType<NavigationPropertySegment>();
             }
 
             Object dataContext = null;
@@ -104,9 +102,9 @@ namespace OdataToEntity
                 MethodCallExpression e = visitor.Source;
 
                 e = expressionBuilder.ApplyFilter(e, filterClause);
-                e = expressionBuilder.ApplySelect(e, navigationClause);
+                e = expressionBuilder.ApplyNavigation(e, navigationSegments);
                 e = expressionBuilder.ApplyAggregation(e, odataUri.Apply);
-                e = expressionBuilder.ApplySelect(e, odataUri.SelectAndExpand);
+                e = expressionBuilder.ApplySelect(e, odataUri.SelectAndExpand, headers.MetadataLevel);
                 e = expressionBuilder.ApplyOrderBy(e, odataUri.OrderBy);
                 e = expressionBuilder.ApplySkip(e, odataUri.Skip);
                 e = expressionBuilder.ApplyTake(e, odataUri.Top);

@@ -54,13 +54,13 @@ namespace OdataToEntity.Test
             _databaseName = OrderContext.GenerateDatabaseName();
 
             var client = new HttpClient() { BaseAddress = CreateContainer().BaseUri };
-            client.SendAsync(new HttpRequestMessage(HttpMethod.Get, "command/resetdb")).GetAwaiter().GetResult();
+            client.SendAsync(new HttpRequestMessage(HttpMethod.Get, "db/reset")).GetAwaiter().GetResult();
             if (!clear)
             {
                 using (var context = OrderContext.Create(_databaseName))
                     InitDb(context);
 
-                client.SendAsync(new HttpRequestMessage(HttpMethod.Get, "command/initdb")).GetAwaiter().GetResult();
+                client.SendAsync(new HttpRequestMessage(HttpMethod.Get, "db/init")).GetAwaiter().GetResult();
             }
         }
 

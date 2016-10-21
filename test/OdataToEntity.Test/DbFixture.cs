@@ -1,7 +1,6 @@
 ﻿using Microsoft.OData.Edm;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using OdataToEntity.Parsers;
 using OdataToEntity.Test.Model;
 using System;
 using System.Collections;
@@ -59,7 +58,7 @@ namespace OdataToEntity.Test
         }
         public async Task Execute<T, TResult>(QueryParametersScalar<T, TResult> parameters)
         {
-            IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri);
+            IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri, typeof(T));
             IList fromDb = ExecuteDb(parameters.Expression);
 
             var settings = new JsonSerializerSettings()
@@ -75,7 +74,7 @@ namespace OdataToEntity.Test
         }
         public async Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
         {
-            IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri);
+            IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri, typeof(T));
             IList fromDb = ExecuteDb(parameters.Expression);
 
             var settings = new JsonSerializerSettings()
@@ -134,7 +133,7 @@ namespace OdataToEntity.Test
                     DataAdapter.CloseDataContext(dataContext);
             }
         }
-        private async Task<IList> ExecuteOe<TResult>(String requestUri)
+        private async Task<IList> ExecuteOe<TResult>(String requestUri, Type baseEntityType)
         {
             var accept = "application/json;odata.metadata=minimal";
             var parser = new OeParser(new Uri("http://dummy/"), DataAdapter, EdmModel);
@@ -143,10 +142,13 @@ namespace OdataToEntity.Test
             await parser.ExecuteQueryAsync(new Uri("http://dummy/" + requestUri), headers, stream, CancellationToken.None);
             stream.Position = 0;
 
-            var reader = new OeResponseReader(EdmModel, DataAdapter.EntitySetMetaAdapters);
+            var reader = new ResponseReader(EdmModel, DataAdapter.EntitySetMetaAdapters);
             IList fromOe;
             if (typeof(TResult) == typeof(Object))
-                fromOe = reader.ReadOpenType(stream).Select(t => JRawToEnum(t)).ToList();
+            {
+                fromOe = reader.ReadOpenType(stream, baseEntityType).Select(t => JRawToEnum(t)).ToList();
+                fromOe = SortProperty(fromOe);
+            }
             else if (typeof(TResult).GetTypeInfo().IsPrimitive)
                 fromOe = new String[] { new StreamReader(stream).ReadToEnd() };
             else
@@ -168,17 +170,35 @@ namespace OdataToEntity.Test
             }
             return jobject;
         }
-        private static IList SortProperty(IList items)
+        private static IList SortProperty(IEnumerable items)
         {
-            var jobjects = new List<JObject>(items.Count);
+            var jobjects = new List<JObject>();
             foreach (Object item in items)
             {
                 var jobject = new JObject();
-                foreach (PropertyInfo property in item.GetType().GetProperties().OrderBy(p => p.Name))
-                {
-                    Object value = property.GetValue(item);
-                    jobject.Add(property.Name, new JValue(value));
-                }
+                if (item is JObject)
+                    foreach (JProperty jpropety in (item as JObject).Properties().OrderBy(p => p.Name))
+                        jobject.Add(jpropety.Name, jpropety.Value);
+                else
+                    foreach (PropertyInfo property in item.GetType().GetProperties().OrderBy(p => p.Name))
+                    {
+                        Object value = property.GetValue(item);
+                        if (value == null)
+                            jobject.Add(property.Name, JValue.CreateNull());
+                        else if (value.GetType().GetTypeInfo().IsPrimitive ||
+                                value is String ||
+                                value is DateTimeOffset ||
+                                value is DateTime ||
+                                value is Decimal ||
+                                value is Guid ||
+                                value.GetType().GetTypeInfo().IsEnum)
+                            jobject.Add(property.Name, new JValue(value));
+                        else if (value is IEnumerable)
+                            jobject.Add(property.Name, JArray.FromObject(value));
+                        else
+                            jobject.Add(property.Name, JObject.FromObject(value));
+                    }
+
                 jobjects.Add(jobject);
             }
             return jobjects;
