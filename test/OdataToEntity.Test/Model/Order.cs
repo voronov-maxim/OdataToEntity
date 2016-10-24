@@ -34,20 +34,6 @@ namespace OdataToEntity.Test.Model
         public int OrderId { get; set; }
         public Decimal? Price { get; set; }
         public String Product { get; set; }
-        public int CategoryId { get; set; }
-
-        public Category Category { get; set; }
-    }
-
-    public sealed class Category
-    {
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int Id { get; set; }
-        public int ParentId { get; set; }
-        public String Name { get; set; }
-
-        public Category Parent { get; set; }
-        public ICollection<Category> Child { get; set; }
     }
 
     public enum OrderStatus

@@ -104,7 +104,7 @@ namespace OdataToEntity.Parsers
                 MethodCallExpression aggCallExpression = AggCallExpression(aggExpression.Method, sourceParameter, aggLambda);
                 expressions.Add(aggCallExpression);
 
-                _aggProperties.Add(CreateEdmProperty(_model, e.Type, aggExpression.Alias, false));
+                _aggProperties.Add(CreateEdmProperty(_model, aggCallExpression.Type, aggExpression.Alias, false));
             }
 
             NewExpression newExpression = OeExpressionHelper.CreateTupleExpression(expressions);

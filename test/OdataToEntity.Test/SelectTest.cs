@@ -69,13 +69,13 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<OrderItem, Object>()
             {
-                RequestUri = "OrderItems?$apply=groupby((OrderId, Order/Status), aggregate(Price with average as avg, CategoryId with countdistinct as cnt, Price with max as max, Order/Status with max as max_status, Price with min as min, Price with sum as sum))",
+                RequestUri = "OrderItems?$apply=groupby((OrderId, Order/Status), aggregate(Price with average as avg, Product with countdistinct as cnt, Price with max as max, Order/Status with max as max_status, Price with min as min, Price with sum as sum))",
                 Expression = t => t.GroupBy(i => new { i.OrderId, i.Order.Status }).Select(g => new
                 {
                     OrderId = g.Key.OrderId,
                     Order_Status = g.Key.Status,
                     avg = g.Average(i => i.Price),
-                    cnt = g.Select(i => i.CategoryId).Distinct().Count(),
+                    cnt = g.Select(i => i.Product).Distinct().Count(),
                     max = g.Max(i => i.Price),
                     max_status = g.Max(i => i.Order.Status),
                     min = g.Min(i => i.Price),
