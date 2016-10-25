@@ -4,7 +4,7 @@ Content-Type: multipart/mixed; boundary=changeset_f2abd6ba-43c9-4d85-b1a8-433a85
 --changeset_f2abd6ba-43c9-4d85-b1a8-433a85631664
 Content-Type: application/http
 Content-Transfer-Encoding: binary
-Content-ID: 3
+Content-ID: 1
 
 DELETE http://dummy/OrderItems(1) HTTP/1.1
 OData-Version: 4.0
@@ -16,9 +16,33 @@ User-Agent: Microsoft ADO.NET Data Services
 --changeset_f2abd6ba-43c9-4d85-b1a8-433a85631664
 Content-Type: application/http
 Content-Transfer-Encoding: binary
-Content-ID: 4
+Content-ID: 2
 
 DELETE http://dummy/OrderItems(2) HTTP/1.1
+OData-Version: 4.0
+OData-MaxVersion: 4.0
+Accept: application/json;odata.metadata=minimal
+Accept-Charset: UTF-8
+User-Agent: Microsoft ADO.NET Data Services
+
+--changeset_f2abd6ba-43c9-4d85-b1a8-433a85631664
+Content-Type: application/http
+Content-Transfer-Encoding: binary
+Content-ID: 3
+
+DELETE http://dummy/OrderItems(4) HTTP/1.1
+OData-Version: 4.0
+OData-MaxVersion: 4.0
+Accept: application/json;odata.metadata=minimal
+Accept-Charset: UTF-8
+User-Agent: Microsoft ADO.NET Data Services
+
+--changeset_f2abd6ba-43c9-4d85-b1a8-433a85631664
+Content-Type: application/http
+Content-Transfer-Encoding: binary
+Content-ID: 4
+
+DELETE http://dummy/OrderItems(5) HTTP/1.1
 OData-Version: 4.0
 OData-MaxVersion: 4.0
 Accept: application/json;odata.metadata=minimal

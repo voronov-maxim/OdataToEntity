@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -31,8 +32,17 @@ namespace OdataToEntity.EfCore
 
             public override void AddEntity(Object dataContext, Object entity)
             {
-                DbSet<TEntity> dbSet = _getEntitySet((T)dataContext);
-                dbSet.Add((TEntity)entity);
+                var context = (T)dataContext;
+                DbSet<TEntity> dbSet = _getEntitySet(context);
+                EntityEntry<TEntity> entry = dbSet.Add((TEntity)entity);
+
+                InitKey(context);
+                for (int i = 0; i <  _key.Properties.Count; i++)
+                {
+                    IProperty property = _key.Properties[i];
+                    if (property.ValueGenerated == ValueGenerated.OnAdd)
+                        entry.GetInfrastructure().MarkAsTemporary(property);
+                }
             }
             public override void AttachEntity(Object dataContext, Object entity)
             {
@@ -66,14 +76,7 @@ namespace OdataToEntity.EfCore
             }
             private InternalEntityEntry GetEntityEntry(T context, Object entity)
             {
-                if (_keyGetters == null)
-                {
-                    IEntityType entityType = context.Model.FindEntityType(EntityType);
-                    _key = entityType.FindPrimaryKey();
-                    _keyGetters = _key.Properties.Select(k => k.GetGetter()).ToArray();
-                    _properties = entityType.GetProperties().Where(p => !p.IsPrimaryKey()).ToArray();
-                }
-
+                InitKey(context);
                 var keyValues = new Object[_keyGetters.Length];
                 for (int i = 0; i < keyValues.Length; i++)
                     keyValues[i] = _keyGetters[i].GetClrValue(entity);
@@ -85,6 +88,16 @@ namespace OdataToEntity.EfCore
             public override void RemoveEntity(Object dataContext, Object entity)
             {
                 AttachEntity(dataContext, entity, EntityState.Deleted);
+            }
+            private void InitKey(T context)
+            {
+                if (_keyGetters == null)
+                {
+                    IEntityType entityType = context.Model.FindEntityType(EntityType);
+                    _key = entityType.FindPrimaryKey();
+                    _keyGetters = _key.Properties.Select(k => k.GetGetter()).ToArray();
+                    _properties = entityType.GetProperties().Where(p => !p.IsPrimaryKey()).ToArray();
+                }
             }
 
             public override Type EntityType

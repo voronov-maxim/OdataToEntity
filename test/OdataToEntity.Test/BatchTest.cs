@@ -38,7 +38,7 @@ namespace OdataToEntity.Test
             {
                 Assert.Equal(4, orderContext.Customers.Count());
                 Assert.Equal(2, orderContext.Orders.Count());
-                Assert.Equal(4, orderContext.OrderItems.Count());
+                Assert.Equal(2, orderContext.OrderItems.Count());
 
                 var order1 = orderContext.Orders.Include(t => t.Items).Single(t => t.Name == "Order 1");
                 Assert.Equal("Product order 1 item 3", order1.Items.Single().Product);

@@ -89,12 +89,12 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<OrderItem, Object>()
             {
-                RequestUri = "OrderItems?$apply=groupby((OrderId), aggregate(Price with sum as sum))/filter(OrderId eq 2 and sum gt 4)",
+                RequestUri = "OrderItems?$apply=groupby((OrderId), aggregate(Price with sum as sum))/filter(OrderId eq 2 and sum ge 4)",
                 Expression = t => t.GroupBy(i => i.OrderId).Select(g => new
                 {
                     OrderId = g.Key,
                     sum = g.Sum(i => i.Price)
-                }).Where(a => a.OrderId == 2 && a.sum > 4)
+                }).Where(a => a.OrderId == 2 && a.sum >= 4)
             };
             await Fixture.Execute(parameters);
         }

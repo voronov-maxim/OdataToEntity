@@ -203,8 +203,11 @@ namespace OdataToEntity.Test
                     case ODataReaderState.ResourceSetEnd:
                         stackItem = stack.Pop();
                         if (stack.Count == 0)
-                            foreach (StackItem entry in (IList)stackItem.Value)
-                                yield return (JObject)CreateOpenTypeEntity(entry);
+                        {
+                            if (stackItem.Value != null)
+                                foreach (StackItem entry in (IList)stackItem.Value)
+                                    yield return (JObject)CreateOpenTypeEntity(entry);
+                        }
                         else
                         {
                             var entries = (IList)CreateOpenTypeEntity(stackItem);
