@@ -67,14 +67,6 @@ namespace OdataToEntity.Test.Model
 
             return new OrderContext(optionsBuilder.Options);
         }
-        protected override void OnModelCreating(Microsoft.EntityFrameworkCore.ModelBuilder modelBuilder)
-        {
-            base.OnModelCreating(modelBuilder);
-        }
-        public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
-        }
         public static String GenerateDatabaseName()
         {
             return Guid.NewGuid().ToString();

@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-// Generation date: 30.09.2016 15:51:53
+// Generation date: 25.10.2016 16:58:22
 namespace ODataClient.OdataToEntity.Test.Model
 {
     /// <summary>
@@ -508,15 +508,13 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// </summary>
         /// <param name="ID">Initial value of Id.</param>
         /// <param name="orderId">Initial value of OrderId.</param>
-        /// <param name="categoryId">Initial value of CategoryId.</param>
         /// <param name="order">Initial value of Order.</param>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        public static OrderItem CreateOrderItem(int ID, int orderId, int categoryId, global::ODataClient.OdataToEntity.Test.Model.Order order)
+        public static OrderItem CreateOrderItem(int ID, int orderId, global::ODataClient.OdataToEntity.Test.Model.Order order)
         {
             OrderItem orderItem = new OrderItem();
             orderItem.Id = ID;
             orderItem.OrderId = orderId;
-            orderItem.CategoryId = categoryId;
             if ((order == null))
             {
                 throw new global::System.ArgumentNullException("order");
@@ -639,29 +637,6 @@ namespace ODataClient.OdataToEntity.Test.Model
         private string _Product;
         partial void OnProductChanging(string value);
         partial void OnProductChanged();
-        /// <summary>
-        /// There are no comments for Property CategoryId in the schema.
-        /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("CategoryId")]
-        public int CategoryId
-        {
-            get
-            {
-                return this._CategoryId;
-            }
-            set
-            {
-                this.OnCategoryIdChanging(value);
-                this._CategoryId = value;
-                this.OnCategoryIdChanged();
-                this.OnPropertyChanged("CategoryId");
-            }
-        }
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        private int _CategoryId;
-        partial void OnCategoryIdChanging(int value);
-        partial void OnCategoryIdChanged();
         /// <summary>
         /// There are no comments for Property Order in the schema.
         /// </summary>
@@ -1006,7 +981,6 @@ namespace ODataClient.Default
         <Property Name=""OrderId"" Type=""Edm.Int32"" Nullable=""false"" />
         <Property Name=""Price"" Type=""Edm.Decimal"" />
         <Property Name=""Product"" Type=""Edm.String"" />
-        <Property Name=""CategoryId"" Type=""Edm.Int32"" Nullable=""false"" />
         <NavigationProperty Name=""Order"" Type=""OdataToEntity.Test.Model.Order"" Nullable=""false"" Partner=""Items"">
           <ReferentialConstraint Property=""OrderId"" ReferencedProperty=""Id"" />
         </NavigationProperty>
