@@ -180,7 +180,7 @@ namespace OdataToEntity.Test
                     foreach (JProperty jpropety in (item as JObject).Properties().OrderBy(p => p.Name))
                         jobject.Add(jpropety.Name, jpropety.Value);
                 else
-                    foreach (PropertyInfo property in item.GetType().GetProperties().OrderBy(p => p.Name))
+                    foreach (PropertyInfo property in item.GetType().GetTypeInfo().GetProperties().OrderBy(p => p.Name))
                     {
                         Object value = property.GetValue(item);
                         if (value == null)

@@ -1,10 +1,10 @@
-﻿{
+{
   "version": "1.0.0-*",
   "buildOptions": {
     "debugType": "portable"
   },
   "dependencies": {
-    "Microsoft.EntityFrameworkCore": "1.0.1",
+    "Microsoft.EntityFrameworkCore": "1.1.0-preview1-final",
     "OdataToEntity": "1.0.0-*"
   },
   "runtimes": {
@@ -12,11 +12,9 @@
   },
   "frameworks": {
     "netstandard1.6": {
-      "imports": [
-        "portable-net45+win8+wpa81"
-      ],
+      "imports": "portable-net45+win8+wpa81",
       "dependencies": {
-        "NETStandard.Library": "1.6.0"
+        "NETStandard.Library": "1.6.1-preview1-24530-04"
       }
     },
     "net462": {

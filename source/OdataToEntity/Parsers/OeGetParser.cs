@@ -75,6 +75,7 @@ namespace OdataToEntity
         public async Task ExecuteAsync(Uri requestUri, OeRequestHeaders headers, Stream stream, CancellationToken cancellationToken)
         {
             var odataParser = new ODataUriParser(_model, _baseUri, requestUri);
+            odataParser.Resolver.EnableCaseInsensitive = true;
             ODataPath odataPath = odataParser.ParsePath();
             ODataUri odataUri = odataParser.ParseUri();
 

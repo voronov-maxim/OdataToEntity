@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Update;
-using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -40,29 +39,16 @@ namespace OdataToEntity.Test.Model
 
         }
 
-        private static DbContextOptions<OrderContext> _options;
-
         private OrderContext(DbContextOptions options) : base(options)
         {
         }
 
         public static OrderContext Create(String databaseName)
         {
-            DbContextOptionsBuilder<OrderContext> optionsBuilder;
-            if (_options == null)
-            {
-                optionsBuilder = new DbContextOptionsBuilder<OrderContext>();
-                var services = new ServiceCollection();
-                services.AddScoped(typeof(IStateManager), typeof(ZStateManager));
-
-                var serviceProvider = services.AddEntityFrameworkInMemoryDatabase().BuildServiceProvider();
-                optionsBuilder.UseInternalServiceProvider(serviceProvider);
-                _options = optionsBuilder.Options;
-            }
-            else
-                optionsBuilder = new DbContextOptionsBuilder<OrderContext>(_options);
-
+            var optionsBuilder = new DbContextOptionsBuilder<OrderContext>();
             optionsBuilder.UseInMemoryDatabase(databaseName);
+            optionsBuilder.ReplaceService<IStateManager, ZStateManager>();
+
             //optionsBuilder.UseSqlServer(@"Server=.\sqlexpress;Initial Catalog=OdataToEntity;User ID=sa;Password=123456");
 
             return new OrderContext(optionsBuilder.Options);

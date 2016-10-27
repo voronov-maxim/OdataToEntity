@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Microsoft.OData;
+using System;
+using System.Collections.Generic;
 using System.Net.Http.Headers;
 
 namespace OdataToEntity
@@ -67,7 +69,10 @@ namespace OdataToEntity
             bool streaming = true;
             String charset = "utf-8";
 
-            MediaTypeHeaderValue mediaType = MediaTypeHeaderValue.Parse(acceptHeader);
+            MediaTypeHeaderValue mediaType;
+            if (!MediaTypeHeaderValue.TryParse(acceptHeader, out mediaType))
+                return new OeRequestHeaders(metadataLevel, streaming, charset);
+
             foreach (NameValueHeaderValue parameter in mediaType.Parameters)
             {
                 if (String.Compare(parameter.Name, "odata.metadata", StringComparison.OrdinalIgnoreCase) == 0)

@@ -15,6 +15,7 @@ namespace OdataToEntityCore.Asp
             var host = new WebHostBuilder()
                 .UseKestrel()
                 .UseContentRoot(Directory.GetCurrentDirectory())
+                .UseUrls(@"http://localhost:5000")
                 .UseStartup<Startup>()
                 .Build();
 
