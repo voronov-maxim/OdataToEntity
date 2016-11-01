@@ -15,6 +15,8 @@ namespace OdataToEntity.Test.Model
 
     public sealed class Order
     {
+        public Customer AltCustomer { get; set; }
+        public int? AltCustomerId { get; set; }
         public Customer Customer { get; set; }
         public int CustomerId { get; set; }
         public DateTimeOffset? Date { get; set; }

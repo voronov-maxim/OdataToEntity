@@ -98,7 +98,7 @@ Accept: application/json;odata.metadata=minimal
 Accept-Charset: UTF-8
 User-Agent: Microsoft ADO.NET Data Services
 
-{"@odata.type":"#OdataToEntity.Test.Model.Order","CustomerId":4,"Date":null,"Id":3,"Name":"Order unknown","Status@odata.type":"#OdataToEntity.Test.Model.OrderStatus","Status":"Unknown"}
+{"@odata.type":"#OdataToEntity.Test.Model.Order","AltCustomerId":3,"CustomerId":4,"Date":null,"Id":3,"Name":"Order unknown","Status@odata.type":"#OdataToEntity.Test.Model.OrderStatus","Status":"Unknown"}
 --changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
 Content-Type: application/http
 Content-Transfer-Encoding: binary

@@ -39,7 +39,7 @@ namespace OdataToEntity.Parsers
         }
         public static NewExpression CreateTupleExpression(IReadOnlyList<Expression> expressions)
         {
-            if (expressions.Count < 9)
+            if (expressions.Count < 8 || (expressions.Count == 8 && IsTupleType(expressions[7].Type)))
             {
                 Type[] typeArguments = new Type[expressions.Count];
                 for (int i = 0; i < typeArguments.Length; i++)
@@ -55,8 +55,6 @@ namespace OdataToEntity.Parsers
             {
                 int len = count % 7;
                 if (len == 0)
-                    len = 8;
-                else if (len == 1 && count > 8)
                     len = 7;
 
                 Expression[] restExpressions;

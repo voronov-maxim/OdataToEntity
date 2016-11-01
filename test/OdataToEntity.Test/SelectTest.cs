@@ -202,8 +202,8 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<Order, Object>()
             {
-                RequestUri = "Orders?$expand=Customer,Items&$select=CustomerId,Date,Id,Name,Status",
-                Expression = t => t.Select(o => new { o.Customer, o.Items, o.CustomerId, o.Date, o.Id, o.Name, o.Status }),
+                RequestUri = "Orders?$expand=AltCustomer,Customer,Items&$select=AltCustomerId,CustomerId,Date,Id,Name,Status",
+                Expression = t => t.Select(o => new { o.AltCustomer, o.Customer, o.Items, o.AltCustomerId, o.CustomerId, o.Date, o.Id, o.Name, o.Status }),
             };
             await Fixture.Execute(parameters);
         }
@@ -213,7 +213,7 @@ namespace OdataToEntity.Test
             var parameters = new QueryParameters<Order>()
             {
                 RequestUri = "Orders?$expand=*",
-                Expression = t => t.Include(o => o.Customer).Include(o => o.Items)
+                Expression = t => t.Include(o => o.AltCustomer).Include(o => o.Customer).Include(o => o.Items)
             };
             await Fixture.Execute(parameters);
         }
@@ -542,8 +542,8 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<Order, Object>()
             {
-                RequestUri = "Orders?$select=Customer,CustomerId,Date,Id,Items,Name,Status,Customer",
-                Expression = t => t.Select(o => new { o.Customer, o.CustomerId, o.Date, o.Id, o.Items, o.Name, o.Status })
+                RequestUri = "Orders?$select=AltCustomer,AltCustomerId,Customer,CustomerId,Date,Id,Items,Name,Status",
+                Expression = t => t.Select(o => new { o.AltCustomer, o.AltCustomerId, o.Customer, o.CustomerId, o.Date, o.Id, o.Items, o.Name, o.Status })
             };
             await Fixture.Execute(parameters);
         }
