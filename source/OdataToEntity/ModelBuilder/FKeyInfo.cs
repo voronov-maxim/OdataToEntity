@@ -48,7 +48,7 @@ namespace OdataToEntity.ModelBuilder
                 return null;
 
             PropertyDescriptor[] dependentStructuralProperties = GetDependentStructuralProperties(dependentInfo, dependentNavigationProperty);
-            PropertyDescriptor principalNavigationProperty = GetPrincipalNavigationProperty(principalInfo, dependentInfo);
+            PropertyDescriptor principalNavigationProperty = GetPrincipalNavigationProperty(principalInfo, dependentInfo, dependentNavigationProperty);
             if (dependentStructuralProperties.Length == 0 && principalNavigationProperty != null)
                 return null;
 
@@ -103,12 +103,23 @@ namespace OdataToEntity.ModelBuilder
 
             return EdmMultiplicity.One;
         }
-        private static PropertyDescriptor GetPrincipalNavigationProperty(EntityTypeInfo principalInfo, EntityTypeInfo dependentInfo)
+        private static PropertyDescriptor GetPrincipalNavigationProperty(EntityTypeInfo principalInfo, EntityTypeInfo dependentInfo, PropertyDescriptor dependentNavigationProperty)
         {
+            var inverseAttribute = (InversePropertyAttribute)dependentNavigationProperty.Attributes[typeof(InversePropertyAttribute)];
+            if (inverseAttribute != null)
+                return TypeDescriptor.GetProperties(principalInfo.ClrType)[inverseAttribute.Property];
+
             foreach (PropertyDescriptor clrProperty in TypeDescriptor.GetProperties(principalInfo.ClrType))
                 if (clrProperty.PropertyType == dependentInfo.ClrType ||
                     Parsers.OeExpressionHelper.GetCollectionItemType(clrProperty.PropertyType) == dependentInfo.ClrType)
-                    return clrProperty;
+                {
+                    inverseAttribute = (InversePropertyAttribute)clrProperty.Attributes[typeof(InversePropertyAttribute)];
+                    if (inverseAttribute == null)
+                        return clrProperty;
+
+                    if (TypeDescriptor.GetProperties(dependentInfo.ClrType)[inverseAttribute.Property] == dependentNavigationProperty)
+                        return clrProperty;
+                }
 
             return null;
         }

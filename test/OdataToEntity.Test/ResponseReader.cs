@@ -83,6 +83,9 @@ namespace OdataToEntity.Test
         private Object CreateEntity(StackItem stackItem)
         {
             var entry = (ODataResource)stackItem.Item;
+            if (entry == null)
+                return null;
+
             var entitySetMetaAdapter = _entitySetMetaAdapters.FindByTypeName(entry.TypeName);
             var entity = OeEntityItem.CreateEntity(entitySetMetaAdapter.EntityType, entry);
 
@@ -131,7 +134,8 @@ namespace OdataToEntity.Test
                 if (value is StackItem)
                 {
                     value = CreateEntity((StackItem)value);
-                    openType.Add(pair.Key, JObject.FromObject(value));
+                    if (value != null)
+                        openType.Add(pair.Key, JObject.FromObject(value));
                 }
                 else
                     openType.Add(pair.Key, JArray.FromObject(value));

@@ -7,9 +7,13 @@ namespace OdataToEntity.Test.Model
     public sealed class Customer
     {
         public String Address { get; set; }
+        [InverseProperty(nameof(Order.AltCustomer))]
+        public ICollection<Order> AltOrders { get; set; }
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
         public String Name { get; set; }
+        [InverseProperty(nameof(Order.Customer))]
+        public ICollection<Order> Orders { get; set; }
         public Sex? Sex { get; set; }
     }
 

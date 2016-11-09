@@ -64,6 +64,7 @@ namespace OdataToEntityCore.Asp
             };
             var order3 = new Order()
             {
+                AltCustomerId = 3,
                 Date = null,
                 Id = 3,
                 Name = "Order unknown",

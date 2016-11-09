@@ -80,10 +80,10 @@ namespace OdataToEntity.Test
 
             return Task.CompletedTask;
         }
-        public Task Execute<T, TResult>(QueryParameters<T, TResult> parameters, Action<dynamic> correction = null)
+        public Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
         {
             IList fromOe = ExecuteOe<T, TResult>(parameters.Expression);
-            IList fromDb = ExecuteDb<T>(parameters.Expression);
+            IList fromDb = ExecuteDb<T, TResult>(parameters.Expression);
 
             var settings = new JsonSerializerSettings()
             {
@@ -97,7 +97,7 @@ namespace OdataToEntity.Test
 
             return Task.CompletedTask;
         }
-        private IList ExecuteDb<T>(LambdaExpression lambda)
+        private IList ExecuteDb<T, TResult>(LambdaExpression lambda)
         {
             using (var context = OrderContext.Create(_databaseName))
             {
@@ -117,7 +117,10 @@ namespace OdataToEntity.Test
                     elementType = typeof(Object);
                     func = ExecuteQueryScalar<Object>;
                 }
-                return CreateDelegate(elementType, func)(query, call);
+
+                IList fromDb = CreateDelegate(elementType, func)(query, call);
+                TestHelper.SetNullCollection(fromDb);
+                return fromDb;
             }
         }
         private IList ExecuteOe<T, TResult>(LambdaExpression lambda)
@@ -142,14 +145,44 @@ namespace OdataToEntity.Test
 
             IList fromOe = CreateDelegate(elementType, func)(query, call);
 
-            if (elementType == typeof(ODataClient.OdataToEntity.Test.Model.Order))
+            TestHelper.SetNullCollection(fromOe);
+            //TestHelper.NormalizeOe<TResult>(fromOe);
+            //if (elementType == typeof(ODataClient.OdataToEntity.Test.Model.Order))
+            //{
+            //    if (!visitor.IncludeProperties.Any(p => p.Name == nameof(Order.Items)))
+            //        foreach (ODataClient.OdataToEntity.Test.Model.Order result in fromOe)
+            //            result.Items = null;
+
+            //    if (visitor.IncludeProperties.Any(p => p.Name == nameof(Order.AltCustomer)))
+            //        foreach (ODataClient.OdataToEntity.Test.Model.Order result in fromOe)
+            //            if (result.AltCustomer != null)
+            //            {
+            //                result.AltCustomer.Orders = null;
+            //                if (!fromOe.Cast<ODataClient.OdataToEntity.Test.Model.Order>().Any(o => o.AltCustomer == result.AltCustomer))
+            //                    result.AltCustomer.AltOrders = null;
+            //            }
+
+            //    if (visitor.IncludeProperties.Any(p => p.Name == nameof(Order.Customer)))
+            //        foreach (ODataClient.OdataToEntity.Test.Model.Order result in fromOe)
+            //            if (result.Customer != null)
+            //            {
+            //                result.Customer.AltOrders = null;
+            //                if (!fromOe.Cast<ODataClient.OdataToEntity.Test.Model.Order>().Any(o => o.Customer == result.Customer))
+            //                    result.Customer.Orders = null;
+            //            }
+            //}
+
+            if (elementType == typeof(ODataClient.OdataToEntity.Test.Model.Customer))
             {
-                if (!visitor.IncludeProperties.Any(p => p.Name == "Items"))
-                    foreach (ODataClient.OdataToEntity.Test.Model.Order result in fromOe)
-                        result.Items = null;
+                if (!visitor.IncludeProperties.Any(p => p.Name == nameof(Customer.AltOrders)))
+                    foreach (ODataClient.OdataToEntity.Test.Model.Customer result in fromOe)
+                        result.AltOrders = null;
 
-
+                if (!visitor.IncludeProperties.Any(p => p.Name == nameof(Customer.Orders)))
+                    foreach (ODataClient.OdataToEntity.Test.Model.Customer result in fromOe)
+                        result.Orders = null;
             }
+
             return fromOe;
         }
         private static IList ExecuteQuery<T>(IQueryable query, Expression expression)
@@ -233,6 +266,7 @@ namespace OdataToEntity.Test
             };
             var order3 = new Order()
             {
+                AltCustomerId = 3,
                 Date = null,
                 Id = 3,
                 Name = "Order unknown",

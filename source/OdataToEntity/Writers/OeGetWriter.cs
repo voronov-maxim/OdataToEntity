@@ -58,19 +58,24 @@ namespace OdataToEntity.Writers
                 writer.WriteEnd();
             }
         }
-        private void WriteNavigationLink(ODataWriter writer, Object value, OeEntryFactory navigationLink, OeMetadataLevel metadataLevel)
+        private void WriteNavigationLink(ODataWriter writer, Object value, OeEntryFactory entryFactory, OeMetadataLevel metadataLevel)
         {
-            writer.WriteStart(navigationLink.Link);
+            writer.WriteStart(entryFactory.Link);
 
-            Object navigationValue = navigationLink.GetValue(value);
-            if (navigationValue != null)
+            Object navigationValue = entryFactory.GetValue(value);
+            if (navigationValue == null)
             {
-                if (navigationLink.Link.IsCollection.GetValueOrDefault())
+                writer.WriteStart((ODataResource)null);
+                writer.WriteEnd();
+            }
+            else
+            {
+                if (entryFactory.Link.IsCollection.GetValueOrDefault())
                 {
                     writer.WriteStart(new ODataResourceSet());
                     foreach (Object entity in (IEnumerable)navigationValue)
                     {
-                        ODataResource entry = CreateEntry(navigationLink, entity, metadataLevel);
+                        ODataResource entry = CreateEntry(entryFactory, entity, metadataLevel);
                         writer.WriteStart(entry);
                         writer.WriteEnd();
                     }
@@ -78,7 +83,7 @@ namespace OdataToEntity.Writers
                 }
                 else
                 {
-                    ODataResource entry = CreateEntry(navigationLink, navigationValue, metadataLevel);
+                    ODataResource entry = CreateEntry(entryFactory, navigationValue, metadataLevel);
                     writer.WriteStart(entry);
                     writer.WriteEnd();
                 }

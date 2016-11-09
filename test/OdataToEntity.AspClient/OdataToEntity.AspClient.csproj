@@ -230,6 +230,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="..\OdataToEntity.Test\SelectTest.cs" />
+    <Compile Include="..\OdataToEntity.Test\TestHelper.cs" />
     <Compile Include="TypeMapperVisitor.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -125,6 +125,8 @@ namespace OdataToEntity.Test
                 IList fromDb = query.Provider.CreateQuery<TResult>(call).ToList();
                 if (typeof(TResult) == typeof(Object))
                     fromDb = SortProperty(fromDb);
+                else
+                    TestHelper.SetNullCollection(fromDb);
                 return fromDb;
             }
             finally
@@ -170,17 +172,6 @@ namespace OdataToEntity.Test
             }
             return jobject;
         }
-        private static bool IsEntity(Type type)
-        {
-            TypeInfo typeInfo = type.GetTypeInfo();
-            if (typeInfo.IsPrimitive)
-                return false;
-            if (typeInfo.IsValueType)
-                return false;
-            if (type == typeof(String))
-                return false;
-            return true;
-        }
         private static IList SortProperty(IEnumerable items)
         {
             var jobjects = new List<JObject>();
@@ -194,7 +185,7 @@ namespace OdataToEntity.Test
                     foreach (PropertyInfo property in item.GetType().GetTypeInfo().GetProperties().OrderBy(p => p.Name))
                     {
                         Object value = property.GetValue(item);
-                        if (IsEntity(property.PropertyType) && value == null)
+                        if (TestHelper.IsEntity(property.PropertyType) && value == null)
                             continue;
 
                         if (value == null)
