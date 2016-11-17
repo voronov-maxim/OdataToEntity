@@ -1,17 +1,17 @@
-﻿{
+{
   "version": "1.0.0-*",
   "buildOptions": {
     "debugType": "portable",
     "emitEntryPoint": true
   },
   "dependencies": {
-    "Microsoft.EntityFrameworkCore": "1.1.0-preview1-final",
-    "Microsoft.EntityFrameworkCore.InMemory": "1.1.0-preview1-final",
+    "Microsoft.EntityFrameworkCore": "1.1.0",
+    "Microsoft.EntityFrameworkCore.InMemory": "1.1.0",
     "Microsoft.OData.Core": "7.0.0",
     "Microsoft.OData.Edm": "7.0.0",
     "Newtonsoft.Json": "9.0.1",
-    "xunit": "2.2.0-beta3-build3402",
-    "xunit.runner.visualstudio": "2.2.0-beta3-build1187",
+    "xunit": "2.2.0-beta4-build3444",
+    "xunit.runner.visualstudio": "2.2.0-beta4-build1194",
     "dotnet-test-xunit": "2.2.0-preview2-build1029",
     "OdataToEntity": "1.0.0",
     "OdataToEntity.EfCore": "1.0.0"
@@ -25,7 +25,7 @@
       "imports": "portable-net45+win8+wpa81",
       "dependencies": {
         "Microsoft.NETCore.App": {
-          "version": "1.1.0-preview1-001100-00",
+          "version": "1.1.0",
           "type": "platform"
         }
       }

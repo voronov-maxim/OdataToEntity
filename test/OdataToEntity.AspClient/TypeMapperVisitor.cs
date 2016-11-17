@@ -124,7 +124,7 @@ namespace OdataToEntityCore.AspClient
                     return Expression.Call(instance, expandMethod, Expression.Constant(includeProperty.Name));
                 }
                 else
-                    throw new NotSupportedException(node.Method.Name);
+                    throw new NotSupportedException("The method '" + node.Method.Name + "' is not supported");
             }
 
             node = (MethodCallExpression)base.VisitMethodCall(node);

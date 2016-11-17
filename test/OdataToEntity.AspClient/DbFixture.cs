@@ -119,7 +119,9 @@ namespace OdataToEntity.Test
                 }
 
                 IList fromDb = CreateDelegate(elementType, func)(query, call);
-                TestHelper.SetNullCollection(fromDb);
+
+                IReadOnlyList<PropertyInfo> includeProperties = TestHelper.GetIncludeProperties(lambda);
+                TestHelper.SetNullCollection(fromDb, includeProperties);
                 return fromDb;
             }
         }
@@ -145,44 +147,7 @@ namespace OdataToEntity.Test
 
             IList fromOe = CreateDelegate(elementType, func)(query, call);
 
-            TestHelper.SetNullCollection(fromOe);
-            //TestHelper.NormalizeOe<TResult>(fromOe);
-            //if (elementType == typeof(ODataClient.OdataToEntity.Test.Model.Order))
-            //{
-            //    if (!visitor.IncludeProperties.Any(p => p.Name == nameof(Order.Items)))
-            //        foreach (ODataClient.OdataToEntity.Test.Model.Order result in fromOe)
-            //            result.Items = null;
-
-            //    if (visitor.IncludeProperties.Any(p => p.Name == nameof(Order.AltCustomer)))
-            //        foreach (ODataClient.OdataToEntity.Test.Model.Order result in fromOe)
-            //            if (result.AltCustomer != null)
-            //            {
-            //                result.AltCustomer.Orders = null;
-            //                if (!fromOe.Cast<ODataClient.OdataToEntity.Test.Model.Order>().Any(o => o.AltCustomer == result.AltCustomer))
-            //                    result.AltCustomer.AltOrders = null;
-            //            }
-
-            //    if (visitor.IncludeProperties.Any(p => p.Name == nameof(Order.Customer)))
-            //        foreach (ODataClient.OdataToEntity.Test.Model.Order result in fromOe)
-            //            if (result.Customer != null)
-            //            {
-            //                result.Customer.AltOrders = null;
-            //                if (!fromOe.Cast<ODataClient.OdataToEntity.Test.Model.Order>().Any(o => o.Customer == result.Customer))
-            //                    result.Customer.Orders = null;
-            //            }
-            //}
-
-            if (elementType == typeof(ODataClient.OdataToEntity.Test.Model.Customer))
-            {
-                if (!visitor.IncludeProperties.Any(p => p.Name == nameof(Customer.AltOrders)))
-                    foreach (ODataClient.OdataToEntity.Test.Model.Customer result in fromOe)
-                        result.AltOrders = null;
-
-                if (!visitor.IncludeProperties.Any(p => p.Name == nameof(Customer.Orders)))
-                    foreach (ODataClient.OdataToEntity.Test.Model.Customer result in fromOe)
-                        result.Orders = null;
-            }
-
+            TestHelper.SetNullCollection(fromOe, GetIncludeProperties(lambda));
             return fromOe;
         }
         private static IList ExecuteQuery<T>(IQueryable query, Expression expression)
@@ -194,6 +159,29 @@ namespace OdataToEntity.Test
         {
             T value = query.Provider.Execute<T>(expression);
             return new T[] { value };
+        }
+        private static IReadOnlyList<PropertyInfo> GetIncludeProperties(Expression expression)
+        {
+            var includeProperties = new List<PropertyInfo>();
+            foreach (PropertyInfo property in TestHelper.GetIncludeProperties(expression))
+            {
+                Type declaringType;
+                if (property.DeclaringType == typeof(Customer))
+                    declaringType = typeof(ODataClient.OdataToEntity.Test.Model.Customer);
+                else if (property.DeclaringType == typeof(OrderItem))
+                    declaringType = typeof(ODataClient.OdataToEntity.Test.Model.OrderItem);
+                else if (property.DeclaringType == typeof(Order))
+                    declaringType = typeof(ODataClient.OdataToEntity.Test.Model.Order);
+                else
+                    throw new InvalidOperationException("unknown type " + property.DeclaringType.FullName);
+
+                PropertyInfo mapProperty = declaringType.GetProperty(property.Name);
+                if (mapProperty == null)
+                    throw new InvalidOperationException("unknown property " + property.ToString());
+
+                includeProperties.Add(mapProperty);
+            }
+            return includeProperties;
         }
         private IQueryable GetQuerableDb<T>(OrderContext context)
         {

@@ -66,6 +66,16 @@ namespace OdataToEntity.Parsers
             }
             return propertyAccessors.ToArray();
         }
+        public static OePropertyAccessor[] CreateFromExpression(Expression source, ParameterExpression parameter, IEdmEntitySet entitySet)
+        {
+            var propertyAccessors = new List<OePropertyAccessor>();
+            foreach (IEdmStructuralProperty edmProperty in entitySet.EntityType().StructuralProperties())
+            {
+                MemberExpression expression = Expression.Property(source, source.Type.GetTypeInfo().GetProperty(edmProperty.Name));
+                propertyAccessors.Add(CreatePropertyAccessor(edmProperty, expression, parameter));
+            }
+            return propertyAccessors.ToArray();
+        }
 
         public Func<Object, Object> Accessor => _accessor;
         public IEdmProperty EdmProperty => _edmProperty;

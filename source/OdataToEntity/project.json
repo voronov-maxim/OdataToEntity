@@ -1,4 +1,4 @@
-{
+﻿{
   "version": "1.0.0-*",
   "buildOptions": {
     "debugType": "portable"
@@ -8,8 +8,8 @@
     "Microsoft.OData.Edm": "7.0.0",
     "Microsoft.Spatial": "7.0.0",
     "Newtonsoft.Json": "9.0.1",
-    "System.ComponentModel.TypeConverter": "4.3.0-preview1-24530-04",
-    "System.ComponentModel.Annotations": "4.3.0-preview1-24530-04",
+    "System.ComponentModel.Annotations": "4.3.0",
+    "System.ComponentModel.TypeConverter": "4.3.0"
   },
   "runtimes": {
     "win": {}
@@ -18,8 +18,8 @@
     "netstandard1.6": {
       "imports": "portable-net45+win8+wpa81",
       "dependencies": {
-        "NETStandard.Library": "1.6.1-preview1-24530-04",
-        "System.Net.Http": "4.3.0-preview1-24530-04"
+        "NETStandard.Library": "1.6.1",
+        "System.Net.Http": "4.3.0"
       }
     },
     "net462": {

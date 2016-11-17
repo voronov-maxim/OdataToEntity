@@ -68,7 +68,6 @@
     <None Include="Batches\Update.batch">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\source\OdataToEntity.EfCore\OdataToEntity.EfCore.csproj">

@@ -126,7 +126,10 @@ namespace OdataToEntity.Test
                 if (typeof(TResult) == typeof(Object))
                     fromDb = SortProperty(fromDb);
                 else
-                    TestHelper.SetNullCollection(fromDb);
+                {
+                    IReadOnlyList<PropertyInfo> includeProperties = TestHelper.GetIncludeProperties(expression);
+                    TestHelper.SetNullCollection(fromDb, includeProperties);
+                }
                 return fromDb;
             }
             finally

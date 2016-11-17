@@ -199,6 +199,26 @@ namespace OdataToEntity.Test
             await Fixture.Execute(parameters);
         }
         [Fact]
+        public async Task ExpandExpandMany()
+        {
+            var parameters = new QueryParameters<Customer, Customer>()
+            {
+                RequestUri = "Customers?$expand=AltOrders($expand=Items),Orders($expand=Items)",
+                Expression = t => t.Include(c => c.AltOrders).Include(c => c.Orders).ThenInclude(o => o.Items)
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Fact]
+        public async Task ExpandExpandOne()
+        {
+            var parameters = new QueryParameters<OrderItem, OrderItem>()
+            {
+                RequestUri = "OrderItems?$expand=Order($expand=AltCustomer,Customer)",
+                Expression = t => t.Include(i => i.Order).ThenInclude(o => o.AltCustomer).Include(i => i.Order).ThenInclude(o => o.Customer)
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Fact]
         public async Task ExpandInverseProperty()
         {
             var parameters = new QueryParameters<Customer, Customer>()

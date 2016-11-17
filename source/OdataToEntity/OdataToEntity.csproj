@@ -84,7 +84,6 @@
   <ItemGroup>
     <None Include="Writers\App.config" />
     <None Include="OdataToEntity.ruleset" />
-    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>

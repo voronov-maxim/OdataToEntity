@@ -11,8 +11,7 @@ namespace OdataToEntity.Parsers
         private readonly OePropertyAccessor[] _accessors;
         private readonly IEdmEntitySetBase _entitySet;
         private readonly IEdmEntityType _entityType;
-        private readonly ODataNestedResourceInfo _link;
-        private readonly Func<Object, Object> _linkAccessor;
+        private readonly ODataNestedResourceInfo _resourceInfo;
         private readonly IReadOnlyList<OeEntryFactory> _navigationLinks;
         private readonly ODataProperty[] _odataProperties;
         private readonly String _typeName;
@@ -30,17 +29,21 @@ namespace OdataToEntity.Parsers
             for (int i = 0; i < accessors.Length; i++)
                 _odataProperties[i] = new ODataProperty() { Name = accessors[i].Name };
         }
-        private OeEntryFactory(IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors, Func<Object, Object> linkAccessor, IReadOnlyList<OeEntryFactory> navigationLinks)
+        private OeEntryFactory(IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors, IReadOnlyList<OeEntryFactory> navigationLinks)
             : this(entitySet, accessors)
         {
             _navigationLinks = navigationLinks ?? Array.Empty<OeEntryFactory>();
-            _linkAccessor = linkAccessor;
         }
-        private OeEntryFactory(IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors, Func<Object, Object> linkAccessor, ODataNestedResourceInfo link)
+        private OeEntryFactory(IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors, ODataNestedResourceInfo resourceInfo)
             : this(entitySet, accessors)
         {
-            _link = link;
-            _linkAccessor = linkAccessor;
+            _resourceInfo = resourceInfo;
+        }
+        private OeEntryFactory(IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors, ODataNestedResourceInfo resourceInfo, IReadOnlyList<OeEntryFactory> navigationLinks)
+            : this(entitySet, accessors)
+        {
+            _resourceInfo = resourceInfo;
+            _navigationLinks = navigationLinks;
         }
 
         public ODataResource CreateEntry(Object entity)
@@ -75,24 +78,28 @@ namespace OdataToEntity.Parsers
         {
             return new OeEntryFactory(entitySet, accessors);
         }
-        public static OeEntryFactory CreateEntryFactoryChild(IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors,
-            Func<Object, Object> accessor, ODataNestedResourceInfo link)
+        public static OeEntryFactory CreateEntryFactoryChild(IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors, ODataNestedResourceInfo resourceInfo)
         {
-            return new OeEntryFactory(entitySet, accessors, accessor, link);
+            return new OeEntryFactory(entitySet, accessors, resourceInfo);
         }
-        public static OeEntryFactory CreateEntryFactoryParent(IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors,
-            Func<Object, Object> accessor, IReadOnlyList<OeEntryFactory> navigationLinks)
+        public static OeEntryFactory CreateEntryFactoryParent(IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors, IReadOnlyList<OeEntryFactory> navigationLinks)
         {
-            return new OeEntryFactory(entitySet, accessors, accessor, navigationLinks);
+            return new OeEntryFactory(entitySet, accessors, navigationLinks);
+        }
+        public static OeEntryFactory CreateEntryFactoryNested(IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors, ODataNestedResourceInfo resourceInfo, IReadOnlyList<OeEntryFactory> navigationLinks)
+        {
+            return new OeEntryFactory(entitySet, accessors, resourceInfo, navigationLinks);
         }
         public Object GetValue(Object value)
         {
-            return _linkAccessor == null ? value : _linkAccessor(value);
+            return LinkAccessor == null ? value : LinkAccessor(value);
         }
 
+        public OePropertyAccessor[] Accessors => _accessors;
         public IEdmEntitySetBase EntitySet => _entitySet;
         public IEdmEntityType EntityType => _entityType;
-        public ODataNestedResourceInfo Link => _link;
+        public Func<Object, Object> LinkAccessor { get; set; }
         public IReadOnlyList<OeEntryFactory> NavigationLinks => _navigationLinks;
+        public ODataNestedResourceInfo ResourceInfo => _resourceInfo;
     }
 }

@@ -1,13 +1,66 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
+using System.Linq.Expressions;
 using System.Reflection;
 
 namespace OdataToEntity.Test
 {
     internal static partial class TestHelper
     {
+        private sealed class IncludeVisitor : ExpressionVisitor
+        {
+            private sealed class IncludePropertyVisitor : ExpressionVisitor
+            {
+                private PropertyInfo _includeProperty;
+
+                protected override Expression VisitMember(MemberExpression node)
+                {
+                    _includeProperty = node.Member as PropertyInfo;
+                    return node;
+                }
+
+                public static PropertyInfo GetIncludeProperty(Expression e)
+                {
+                    var visitor = new IncludePropertyVisitor();
+                    visitor.Visit(e);
+                    return visitor._includeProperty;
+                }
+            }
+
+            private readonly List<PropertyInfo> _includeProperties;
+
+            public IncludeVisitor()
+            {
+                _includeProperties = new List<PropertyInfo>();
+            }
+
+            protected override Expression VisitMethodCall(MethodCallExpression node)
+            {
+                base.Visit(node.Arguments[0]);
+
+                if (node.Method.DeclaringType == typeof(EntityFrameworkQueryableExtensions))
+                {
+                    if (node.Method.Name == nameof(EntityFrameworkQueryableExtensions.Include) ||
+                        node.Method.Name == nameof(EntityFrameworkQueryableExtensions.ThenInclude))
+                    {
+                        PropertyInfo includeProperty = IncludePropertyVisitor.GetIncludeProperty(node.Arguments[1]);
+                        _includeProperties.Add(includeProperty);
+                    }
+                }
+                return node;
+            }
+
+            public IReadOnlyList<PropertyInfo> IncludeProperties => _includeProperties;
+        }
+
+        public static IReadOnlyList<PropertyInfo> GetIncludeProperties(Expression expression)
+        {
+            var visitor = new IncludeVisitor();
+            visitor.Visit(expression);
+            return visitor.IncludeProperties;
+        }
         private static bool IsCollection(Type collectionType)
         {
             if (collectionType.GetTypeInfo().IsGenericType && collectionType.GetGenericTypeDefinition() == typeof(IEnumerable<>))
@@ -30,48 +83,45 @@ namespace OdataToEntity.Test
                 return false;
             return true;
         }
-        public static void SetNullCollection(IList rootItems)
+        public static void SetNullCollection(IList rootItems, IEnumerable<PropertyInfo> includeProperties)
         {
             var visited = new HashSet<Object>();
             foreach (Object root in rootItems)
-                SetNullCollection(root, visited, true);
+                SetNullCollection(root, visited, new HashSet<PropertyInfo>(includeProperties));
         }
-        private static void SetNullCollection(Object entity, HashSet<Object> visited, bool isRoot)
+        private static void SetNullCollection(Object entity, HashSet<Object> visited, HashSet<PropertyInfo> includeProperties)
         {
             if (entity == null || visited.Contains(entity))
                 return;
 
             visited.Add(entity);
-            foreach (PropertyDescriptor property in TypeDescriptor.GetProperties(entity))
+            foreach (PropertyInfo property in entity.GetType().GetProperties())
                 if (IsEntity(property.PropertyType))
                 {
                     Object value = property.GetValue(entity);
                     if (value == null)
                         continue;
 
+                    if (!includeProperties.Contains(property))
+                        if (property.CanWrite)
+                        {
+                            property.SetValue(entity, null);
+                            continue;
+                        }
+
                     if (IsCollection(property.PropertyType))
                     {
-                        if (isRoot)
+                        bool isEmpty = true;
+                        foreach (Object item in (IEnumerable)value)
                         {
-                            bool isEmpty = true;
-                            foreach (Object item in (IEnumerable)value)
-                            {
-                                isEmpty = false;
-                                SetNullCollection(item, visited, false);
-                            }
-                            if (isEmpty)
-                                property.SetValue(entity, null);
+                            isEmpty = false;
+                            SetNullCollection(item, visited, includeProperties);
                         }
-                        else
+                        if (isEmpty)
                             property.SetValue(entity, null);
                     }
                     else
-                    {
-                        if (isRoot)
-                            SetNullCollection(value, visited, false);
-                        else
-                            property.SetValue(entity, null);
-                    }
+                        SetNullCollection(value, visited, includeProperties);
                 }
         }
     }
