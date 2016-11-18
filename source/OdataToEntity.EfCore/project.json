@@ -1,7 +1,15 @@
 ﻿{
   "version": "1.0.0-*",
+  "authors": [ "Maxim Voronov" ],
+  "title": "ODataToEntity support library Entity Framework Core",
+  "description": "Classes bridge from ODataToEntity to Entity Framework Core. Abstraction layer access to DataContext Entity Framework Core. Targets .NET Core with support for .NET 4.6",
   "buildOptions": {
     "debugType": "portable"
+  },
+  "packOptions": {
+    "licenseUrl": "https://github.com/voronov-maxim/OdataToEntity/blob/master/LICENSE",
+    "projectUrl": "https://github.com/voronov-maxim/OdataToEntity",
+    "tags": [ "data", "services", "odatalib", "odata", "edmlib", "ef", "spatial", "ado.net", "framework", "entity", "protocol", "open", "core" ]
   },
   "dependencies": {
     "Microsoft.EntityFrameworkCore": "1.1.0",

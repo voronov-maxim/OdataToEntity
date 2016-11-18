@@ -1,7 +1,15 @@
 ﻿{
   "version": "1.0.0-*",
+  "authors": [ "Maxim Voronov" ],
+  "title": "OData server via Entity Framework",
+  "description": "Classes to serialize, deserialize OData JSON payloads. Supports OData v4 only. Enables construction of OData services via Entity Framework DataContext (without controller). Targets .NET Core with support for .NET 4.6",
   "buildOptions": {
     "debugType": "portable"
+  },
+  "packOptions": {
+    "licenseUrl": "https://github.com/voronov-maxim/OdataToEntity/blob/master/LICENSE",
+    "projectUrl": "https://github.com/voronov-maxim/OdataToEntity",
+    "tags": [ "data", "services", "odatalib", "odata", "edmlib", "ef", "spatial", "ado.net", "framework", "entity", "protocol", "open", "core" ]
   },
   "dependencies": {
     "Microsoft.OData.Core": "7.0.0",
