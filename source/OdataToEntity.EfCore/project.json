@@ -1,7 +1,7 @@
 ﻿{
-  "version": "1.0.0-*",
+  "version": "1.0.0.1",
   "authors": [ "Maxim Voronov" ],
-  "title": "ODataToEntity support library Entity Framework Core",
+  "title": "Entity Framework Core Adapter for OdataEntity",
   "description": "Classes bridge from ODataToEntity to Entity Framework Core. Abstraction layer access to DataContext Entity Framework Core. Targets .NET Core with support for .NET 4.6",
   "buildOptions": {
     "debugType": "portable"
@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "Microsoft.EntityFrameworkCore": "1.1.0",
-    "OdataToEntity": "1.0.0"
+    "OdataToEntity": "1.0.0.*"
   },
   "runtimes": {
     "win": {}
