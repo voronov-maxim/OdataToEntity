@@ -100,20 +100,20 @@ namespace OdataToEntity
                 var expressionBuilder = new OeExpressionBuilder(_model, entitySetAdapter.EntityType);
                 IQueryable query = entitySetAdapter.GetEntitySet(dataContext);
                 var visitor = new SourceVisitor(query);
-                MethodCallExpression e = visitor.Source;
+                Expression expression = visitor.Source;
 
-                e = expressionBuilder.ApplyFilter(e, filterClause);
-                e = expressionBuilder.ApplyNavigation(e, navigationSegments);
-                e = expressionBuilder.ApplyAggregation(e, odataUri.Apply);
-                e = expressionBuilder.ApplySelect(e, odataUri.SelectAndExpand, headers.MetadataLevel);
-                e = expressionBuilder.ApplyOrderBy(e, odataUri.OrderBy);
-                e = expressionBuilder.ApplySkip(e, odataUri.Skip);
-                e = expressionBuilder.ApplyTake(e, odataUri.Top);
+                expression = expressionBuilder.ApplyFilter(expression, filterClause);
+                expression = expressionBuilder.ApplyNavigation(expression, navigationSegments);
+                expression = expressionBuilder.ApplyAggregation(expression, odataUri.Apply);
+                expression = expressionBuilder.ApplySelect(expression, odataUri.SelectAndExpand, headers.MetadataLevel);
+                expression = expressionBuilder.ApplyOrderBy(expression, odataUri.OrderBy);
+                expression = expressionBuilder.ApplySkip(expression, odataUri.Skip);
+                expression = expressionBuilder.ApplyTake(expression, odataUri.Top);
 
                 if (odataUri.QueryCount.GetValueOrDefault() || odataPath.LastSegment is CountSegment)
                 {
-                    e = expressionBuilder.ApplyCount(e);
-                    int count = query.Provider.Execute<int>(visitor.Visit(e));
+                    expression = expressionBuilder.ApplyCount(expression);
+                    int count = query.Provider.Execute<int>(visitor.Visit(expression));
                     byte[] buffer = System.Text.Encoding.UTF8.GetBytes(count.ToString());
                     stream.Write(buffer, 0, buffer.Length);
                     return;
@@ -128,7 +128,7 @@ namespace OdataToEntity
                 }
                 OeEntryFactory entryFactory = expressionBuilder.CreateEntryFactory(entitySet);
 
-                query = query.Provider.CreateQuery(visitor.Visit(e));
+                query = query.Provider.CreateQuery(visitor.Visit(expression));
                 using (Db.OeEntityAsyncEnumerator asyncEnumerator = _dataAdapter.ExecuteEnumerator(query, cancellationToken))
                 {
                     var writers = new Writers.OeGetWriter(_baseUri, _model);

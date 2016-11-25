@@ -174,7 +174,7 @@ namespace OdataToEntity.Parsers
 
             return ApplyAggregate(groupByCall, aggTransformation);
         }
-        public MethodCallExpression Build(MethodCallExpression source, ApplyClause applyClause)
+        public Expression Build(Expression source, ApplyClause applyClause)
         {
             _aggProperties.Clear();
             if (applyClause == null)

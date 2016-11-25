@@ -23,13 +23,13 @@ namespace OdataToEntity.Parsers
             _visitor = new OeQueryNodeVisitor(_model, Expression.Parameter(_entityType));
         }
 
-        public MethodCallExpression ApplyAggregation(MethodCallExpression source, ApplyClause applyClause)
+        public Expression ApplyAggregation(Expression source, ApplyClause applyClause)
         {
             if (applyClause == null)
                 return source;
 
             var aggTranslator = new OeAggregationTranslator(_model);
-            MethodCallExpression aggExpression = aggTranslator.Build(source, applyClause);
+            Expression aggExpression = aggTranslator.Build(source, applyClause);
 
             _entryFactory = aggTranslator.CreateEntryFactory;
 
@@ -39,12 +39,12 @@ namespace OdataToEntity.Parsers
 
             return aggExpression;
         }
-        public MethodCallExpression ApplyCount(MethodCallExpression source)
+        public Expression ApplyCount(Expression source)
         {
             MethodInfo countMethodInfo = OeMethodInfoHelper.GetCountMethodInfo(ParameterType);
             return Expression.Call(countMethodInfo, source);
         }
-        public MethodCallExpression ApplyFilter(MethodCallExpression source, FilterClause filterClause)
+        public Expression ApplyFilter(Expression source, FilterClause filterClause)
         {
             if (filterClause == null)
                 return source;
@@ -55,7 +55,7 @@ namespace OdataToEntity.Parsers
             MethodInfo whereMethodInfo = OeMethodInfoHelper.GetWhereMethodInfo(ParameterType);
             return Expression.Call(whereMethodInfo, source, lambda);
         }
-        public MethodCallExpression ApplyNavigation(MethodCallExpression source, IEnumerable<NavigationPropertySegment> navigationSegments)
+        public Expression ApplyNavigation(Expression source, IEnumerable<NavigationPropertySegment> navigationSegments)
         {
             if (navigationSegments == null)
                 return source;
@@ -87,7 +87,7 @@ namespace OdataToEntity.Parsers
             _visitor = new OeQueryNodeVisitor(_model, Expression.Parameter(_entityType));
             return source;
         }
-        public MethodCallExpression ApplyOrderBy(MethodCallExpression source, OrderByClause orderByClause)
+        public Expression ApplyOrderBy(Expression source, OrderByClause orderByClause)
         {
             if (orderByClause == null)
                 return source;
@@ -102,13 +102,13 @@ namespace OdataToEntity.Parsers
 
             return ApplyThenBy(orderByCall, orderByClause.ThenBy);
         }
-        public MethodCallExpression ApplySelect(MethodCallExpression source, SelectExpandClause selectClause, OeMetadataLevel metadatLevel)
+        public Expression ApplySelect(Expression source, SelectExpandClause selectClause, OeMetadataLevel metadatLevel)
         {
             if (selectClause == null)
                 return source;
 
             var selectTranslator = new OeSelectTranslator(_model);
-            MethodCallExpression selectExpression = selectTranslator.Build(source, selectClause, metadatLevel);
+            Expression selectExpression = selectTranslator.Build(source, selectClause, metadatLevel);
 
             _entryFactory = selectTranslator.CreateEntryFactory;
 
@@ -117,7 +117,7 @@ namespace OdataToEntity.Parsers
 
             return selectExpression;
         }
-        public MethodCallExpression ApplySkip(MethodCallExpression source, long? skip)
+        public Expression ApplySkip(Expression source, long? skip)
         {
             if (skip == null)
                 return source;
@@ -125,7 +125,7 @@ namespace OdataToEntity.Parsers
             MethodInfo skipMethodInfo = OeMethodInfoHelper.GetSkipMethodInfo(ParameterType);
             return Expression.Call(skipMethodInfo, source, Expression.Constant((int)skip.Value));
         }
-        public MethodCallExpression ApplyTake(MethodCallExpression source, long? top)
+        public Expression ApplyTake(Expression source, long? top)
         {
             if (top == null)
                 return source;
@@ -133,7 +133,7 @@ namespace OdataToEntity.Parsers
             MethodInfo takeMethodInfo = OeMethodInfoHelper.GetTakeMethodInfo(ParameterType);
             return Expression.Call(takeMethodInfo, source, Expression.Constant((int)top.Value));
         }
-        private MethodCallExpression ApplyThenBy(MethodCallExpression source, OrderByClause thenByClause)
+        private Expression ApplyThenBy(Expression source, OrderByClause thenByClause)
         {
             if (thenByClause == null)
                 return source;

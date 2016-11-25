@@ -19,7 +19,7 @@ namespace OdataToEntity.Test
     {
     }
 
-    public class QueryParametersScalar<T, TResult>
+    public sealed class QueryParametersScalar<T, TResult>
     {
         public String RequestUri { get; set; }
         public Expression<Func<IQueryable<T>, TResult>> Expression { get; set; }
@@ -199,6 +199,26 @@ namespace OdataToEntity.Test
             await Fixture.Execute(parameters);
         }
         [Fact]
+        public async Task ExpandAndSelect()
+        {
+            var parameters = new QueryParameters<Order, Object>()
+            {
+                RequestUri = "Orders?$expand=AltCustomer,Customer,Items&$select=AltCustomerId,CustomerId,Date,Id,Name,Status",
+                Expression = t => t.Select(o => new { o.AltCustomer, o.Customer, o.Items, o.AltCustomerId, o.CustomerId, o.Date, o.Id, o.Name, o.Status }),
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Fact]
+        public async Task ExpandExpandFilter()
+        {
+            var parameters = new QueryParameters<Customer, Customer>()
+            {
+                RequestUri = "Customers?$expand=AltOrders($expand=Items($filter=contains(Product,'unknown'))),Orders($expand=Items($filter=contains(Product,'unknown')))",
+                Expression = t => t.Include(c => c.AltOrders).Include(c => c.Orders).ThenInclude(o => o.Items.Where(i => i.Product.Contains("unknown")))
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Fact]
         public async Task ExpandExpandMany()
         {
             var parameters = new QueryParameters<Customer, Customer>()
@@ -219,6 +239,26 @@ namespace OdataToEntity.Test
             await Fixture.Execute(parameters);
         }
         [Fact]
+        public async Task ExpandExpandOrderBy()
+        {
+            var parameters = new QueryParameters<Customer, Customer>()
+            {
+                RequestUri = "Customers?$expand=Orders($expand=Items($orderby=Id desc))",
+                Expression = t => t.Include(c => c.Orders).ThenInclude(o => o.Items.OrderByDescending(i => i.Id))
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Fact]
+        public async Task ExpandFilter()
+        {
+            var parameters = new QueryParameters<Customer, Customer>()
+            {
+                RequestUri = "Customers?$expand=Orders($filter=Status eq OdataToEntity.Test.Model.OrderStatus'Processing')",
+                Expression = t => t.Include(c => c.Orders.Where(o => o.Status == OrderStatus.Processing))
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Fact]
         public async Task ExpandInverseProperty()
         {
             var parameters = new QueryParameters<Customer, Customer>()
@@ -228,12 +268,13 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters);
         }
-        public async Task ExpandSelect()
+        [Fact]
+        public async Task ExpandNestedSelect()
         {
-            var parameters = new QueryParameters<Order, Object>()
+            var parameters = new QueryParameters<Customer, Customer>()
             {
-                RequestUri = "Orders?$expand=AltCustomer,Customer,Items&$select=AltCustomerId,CustomerId,Date,Id,Name,Status",
-                Expression = t => t.Select(o => new { o.AltCustomer, o.Customer, o.Items, o.AltCustomerId, o.CustomerId, o.Date, o.Id, o.Name, o.Status }),
+                RequestUri = "Customers?$expand=Orders($select=AltCustomerId,CustomerId,Date,Id,Name,Status)",
+                Expression = t => t.Include(c => c.Orders)
             };
             await Fixture.Execute(parameters);
         }

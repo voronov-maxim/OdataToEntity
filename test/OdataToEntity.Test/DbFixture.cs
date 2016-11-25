@@ -122,14 +122,14 @@ namespace OdataToEntity.Test
                 var visitor = new QueryVisitor<T>(query);
                 Expression call = visitor.Visit(expression.Body);
 
+                var includeVisitor = new IncludeVisitor();
+                call = includeVisitor.Visit(call);
+
                 IList fromDb = query.Provider.CreateQuery<TResult>(call).ToList();
                 if (typeof(TResult) == typeof(Object))
                     fromDb = SortProperty(fromDb);
                 else
-                {
-                    IReadOnlyList<PropertyInfo> includeProperties = TestHelper.GetIncludeProperties(expression);
-                    TestHelper.SetNullCollection(fromDb, includeProperties);
-                }
+                    TestHelper.SetNullCollection(fromDb, includeVisitor.Includes);
                 return fromDb;
             }
             finally
