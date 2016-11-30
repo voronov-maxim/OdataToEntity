@@ -34,6 +34,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.CSharp" />
     <Reference Include="Microsoft.EntityFrameworkCore, Version=1.1.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
       <HintPath>..\..\..\sln\packages\Microsoft.EntityFrameworkCore.1.1.0\lib\net451\Microsoft.EntityFrameworkCore.dll</HintPath>
       <Private>True</Private>
@@ -134,11 +135,8 @@
     <Compile Include="..\..\OdataToEntity.Test\Model\*.cs">
       <Link>Model\%(FileName)</Link>
     </Compile>
-    <Compile Include="..\..\OdataToEntity.Test\SelectTest.cs">
-      <Link>SelectTest.cs</Link>
-    </Compile>
-    <Compile Include="..\..\OdataToEntity.Test\TestHelper.cs">
-      <Link>TestHelper.cs</Link>
+    <Compile Include="..\..\OdataToEntity.Test\Common\*.cs">
+      <Link>Model\%(FileName)</Link>
     </Compile>
     <Compile Include="..\OdataToEntity.WcfService\IOdataWcf.cs">
       <Link>IOdataWcf.cs</Link>

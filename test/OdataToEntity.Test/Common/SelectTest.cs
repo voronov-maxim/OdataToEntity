@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using OdataToEntity.Test.Model;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
@@ -245,6 +244,16 @@ namespace OdataToEntity.Test
             {
                 RequestUri = "Customers?$expand=Orders($expand=Items($orderby=Id desc))",
                 Expression = t => t.Include(c => c.Orders).ThenInclude(o => o.Items.OrderByDescending(i => i.Id))
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Fact]
+        public async Task ExpandExpandTop()
+        {
+            var parameters = new QueryParameters<Customer, Customer>()
+            {
+                RequestUri = "Customers?$expand=AltOrders($expand=Items($top=1)),Orders($expand=Items($top=1))",
+                Expression = t => t.Include(c => c.AltOrders).Include(c => c.Orders).ThenInclude(o => o.Items.Take(1))
             };
             await Fixture.Execute(parameters);
         }

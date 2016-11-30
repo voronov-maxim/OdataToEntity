@@ -1,4 +1,5 @@
-﻿using Microsoft.OData.Edm;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.OData.Edm;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OdataToEntity.Test.Model;
@@ -16,27 +17,6 @@ namespace OdataToEntity.Test
 {
     internal sealed class DbFixture
     {
-        private sealed class QueryVisitor<T> : ExpressionVisitor
-        {
-            private readonly IQueryable _query;
-            private ConstantExpression _parameter;
-
-            public QueryVisitor(IQueryable query)
-            {
-                _query = query;
-            }
-
-            protected override Expression VisitParameter(ParameterExpression node)
-            {
-                if (_parameter == null && node.Type == typeof(IQueryable<T>))
-                {
-                    _parameter = Expression.Constant(_query);
-                    return _parameter;
-                }
-                return base.VisitParameter(node);
-            }
-        }
-
         private readonly OrderDataAdapter _dataAdapter;
         private readonly String _databaseName;
         private readonly EdmModel _edmModel;
@@ -59,7 +39,9 @@ namespace OdataToEntity.Test
         public async Task Execute<T, TResult>(QueryParametersScalar<T, TResult> parameters)
         {
             IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri, typeof(T));
-            IList fromDb = ExecuteDb(parameters.Expression);
+            IList fromDb;
+            using (var dataContext = (DbContext)DataAdapter.CreateDataContext())
+                fromDb = TestHelper.ExecuteDb(dataContext, parameters.Expression);
 
             var settings = new JsonSerializerSettings()
             {
@@ -75,7 +57,9 @@ namespace OdataToEntity.Test
         public async Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
         {
             IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri, typeof(T));
-            IList fromDb = ExecuteDb(parameters.Expression);
+            IList fromDb;
+            using (var dataContext = (DbContext)DataAdapter.CreateDataContext())
+                fromDb = TestHelper.ExecuteDb(dataContext, parameters.Expression);
 
             var settings = new JsonSerializerSettings()
             {
@@ -95,49 +79,6 @@ namespace OdataToEntity.Test
             var responseStream = new MemoryStream();
             await parser.ExecuteBatchAsync(new MemoryStream(bytes), responseStream, CancellationToken.None);
         }
-        private IList ExecuteDb<T, TResult>(Expression<Func<IQueryable<T>, TResult>> expression)
-        {
-            Object dataContext = null;
-            try
-            {
-                dataContext = DataAdapter.CreateDataContext();
-                var query = (IQueryable<T>)DataAdapter.EntitySetMetaAdapters.FindByClrType(typeof(T)).GetEntitySet(dataContext);
-                var visitor = new QueryVisitor<T>(query);
-                Expression call = visitor.Visit(expression.Body);
-                return new[] { query.Provider.Execute<TResult>(call).ToString() };
-            }
-            finally
-            {
-                if (dataContext != null)
-                    DataAdapter.CloseDataContext(dataContext);
-            }
-        }
-        private IList ExecuteDb<T, TResult>(Expression<Func<IQueryable<T>, IQueryable<TResult>>> expression)
-        {
-            Object dataContext = null;
-            try
-            {
-                dataContext = DataAdapter.CreateDataContext();
-                var query = (IQueryable<T>)DataAdapter.EntitySetMetaAdapters.FindByClrType(typeof(T)).GetEntitySet(dataContext);
-                var visitor = new QueryVisitor<T>(query);
-                Expression call = visitor.Visit(expression.Body);
-
-                var includeVisitor = new IncludeVisitor();
-                call = includeVisitor.Visit(call);
-
-                IList fromDb = query.Provider.CreateQuery<TResult>(call).ToList();
-                if (typeof(TResult) == typeof(Object))
-                    fromDb = SortProperty(fromDb);
-                else
-                    TestHelper.SetNullCollection(fromDb, includeVisitor.Includes);
-                return fromDb;
-            }
-            finally
-            {
-                if (dataContext != null)
-                    DataAdapter.CloseDataContext(dataContext);
-            }
-        }
         private async Task<IList> ExecuteOe<TResult>(String requestUri, Type baseEntityType)
         {
             var accept = "application/json;odata.metadata=minimal";
@@ -151,8 +92,8 @@ namespace OdataToEntity.Test
             IList fromOe;
             if (typeof(TResult) == typeof(Object))
             {
-                fromOe = reader.ReadOpenType(stream, baseEntityType).Select(t => JRawToEnum(t)).ToList();
-                fromOe = SortProperty(fromOe);
+                IEnumerable<JObject> jobjects = reader.ReadOpenType(stream, baseEntityType).Select(t => JRawToEnum(t)).ToList();
+                fromOe = TestHelper.SortProperty(jobjects);
             }
             else if (typeof(TResult).GetTypeInfo().IsPrimitive)
                 fromOe = new String[] { new StreamReader(stream).ReadToEnd() };
@@ -174,42 +115,6 @@ namespace OdataToEntity.Test
                 }
             }
             return jobject;
-        }
-        private static IList SortProperty(IEnumerable items)
-        {
-            var jobjects = new List<JObject>();
-            foreach (Object item in items)
-            {
-                var jobject = new JObject();
-                if (item is JObject)
-                    foreach (JProperty jpropety in (item as JObject).Properties().OrderBy(p => p.Name))
-                        jobject.Add(jpropety.Name, jpropety.Value);
-                else
-                    foreach (PropertyInfo property in item.GetType().GetTypeInfo().GetProperties().OrderBy(p => p.Name))
-                    {
-                        Object value = property.GetValue(item);
-                        if (TestHelper.IsEntity(property.PropertyType) && value == null)
-                            continue;
-
-                        if (value == null)
-                            jobject.Add(property.Name, JValue.CreateNull());
-                        else if (value.GetType().GetTypeInfo().IsPrimitive ||
-                                value is String ||
-                                value is DateTimeOffset ||
-                                value is DateTime ||
-                                value is Decimal ||
-                                value is Guid ||
-                                value.GetType().GetTypeInfo().IsEnum)
-                            jobject.Add(property.Name, new JValue(value));
-                        else if (value is IEnumerable)
-                            jobject.Add(property.Name, JArray.FromObject(value));
-                        else
-                            jobject.Add(property.Name, JObject.FromObject(value));
-                    }
-
-                jobjects.Add(jobject);
-            }
-            return jobjects;
         }
 
         internal OrderDataAdapter DataAdapter => _dataAdapter;

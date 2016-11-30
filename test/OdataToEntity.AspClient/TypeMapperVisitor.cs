@@ -11,25 +11,6 @@ namespace OdataToEntity.Test.Model
 {
     internal sealed class TypeMapperVisitor : ExpressionVisitor
     {
-        private sealed class IncludeVisitor : ExpressionVisitor
-        {
-            private PropertyInfo _includeProperty;
-
-            protected override Expression VisitMember(MemberExpression node)
-            {
-                _includeProperty = node.Member as PropertyInfo;
-                return node;
-            }
-
-            public static PropertyInfo GetIncludeProperty(Expression e)
-            {
-                var visitor = new IncludeVisitor();
-                visitor.Visit(e);
-                return visitor._includeProperty;
-            }
-        }
-
-        private readonly List<PropertyInfo> _includeProperties;
         private readonly IQueryable _query;
         private readonly Dictionary<ParameterExpression, ParameterExpression> _parameters;
         private Expression _source;
@@ -37,7 +18,6 @@ namespace OdataToEntity.Test.Model
         public TypeMapperVisitor(IQueryable query)
         {
             _query = query;
-            _includeProperties = new List<PropertyInfo>();
             _parameters = new Dictionary<ParameterExpression, ParameterExpression>();
         }
 
@@ -111,17 +91,14 @@ namespace OdataToEntity.Test.Model
             {
                 if (node.Method.Name == nameof(EntityFrameworkQueryableExtensions.Include))
                 {
-                    PropertyInfo includeProperty = IncludeVisitor.GetIncludeProperty(node.Arguments[1]);
-                    _includeProperties.Add(includeProperty);
-
-                    Expression instance = base.Visit(node.Object);
                     ReadOnlyCollection<Expression> arguments = base.Visit(node.Arguments);
-
                     Type itemType = arguments[0].Type.GetGenericArguments()[0];
                     Type dataServiceQueryType = typeof(DataServiceQuery<>).MakeGenericType(itemType);
-                    MethodInfo expandMethod = dataServiceQueryType.GetMethod("Expand", new[] { typeof(String) });
-                    instance = Expression.Convert(arguments[0], dataServiceQueryType);
-                    return Expression.Call(instance, expandMethod, Expression.Constant(includeProperty.Name));
+                    var arg1 = (UnaryExpression)arguments[1];
+
+                    MethodInfo expandMethod = GetExpandMethodInfo((dynamic)_query, (dynamic)arg1.Operand);
+                    Expression instance = Expression.Convert(arguments[0], dataServiceQueryType);
+                    return Expression.Call(instance, expandMethod, arg1);
                 }
                 else
                     throw new NotSupportedException("The method '" + node.Method.Name + "' is not supported");
@@ -135,6 +112,11 @@ namespace OdataToEntity.Test.Model
                     return Expression.Property(node.Object, "Value");
             }
             return node;
+        }
+        private static MethodInfo GetExpandMethodInfo<TElement, TTarget>(DataServiceQuery<TElement> dsq, Expression<Func<TElement, TTarget>> navigationPropertyAccessor)
+        {
+            Func<Expression<Func<TElement, TTarget>>, DataServiceQuery<TElement>> expand = dsq.Expand<TTarget>;
+            return expand.GetMethodInfo();
         }
         protected override Expression VisitNew(NewExpression node)
         {
@@ -166,7 +148,6 @@ namespace OdataToEntity.Test.Model
             return Expression.MakeUnary(node.NodeType, operand, type, method);
         }
 
-        public IReadOnlyList<PropertyInfo> IncludeProperties => _includeProperties;
         public Func<Type, Type> TypeMap { get; set; }
     }
 }

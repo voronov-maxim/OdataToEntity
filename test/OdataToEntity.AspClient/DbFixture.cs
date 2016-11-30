@@ -17,35 +17,6 @@ namespace OdataToEntity.Test
     {
         private delegate IList ExecuteQueryFunc<out T>(IQueryable query, Expression expression);
 
-        private sealed class DbQueryVisitor<T> : ExpressionVisitor
-        {
-            private readonly IQueryable _query;
-            private ConstantExpression _parameter;
-
-            public DbQueryVisitor(IQueryable query)
-            {
-                _query = query;
-            }
-
-            protected override Expression VisitParameter(ParameterExpression node)
-            {
-                if (_parameter == null && node.Type == typeof(IQueryable<T>))
-                {
-                    _parameter = Expression.Constant(_query);
-                    return _parameter;
-                }
-                return base.VisitParameter(node);
-            }
-        }
-
-        private sealed class TestContractResolver : DefaultContractResolver
-        {
-            protected override IList<JsonProperty> CreateProperties(Type type, MemberSerialization memberSerialization)
-            {
-                return base.CreateProperties(type, memberSerialization).OrderBy(p => p.PropertyName).ToList();
-            }
-        }
-
         private readonly String _databaseName;
 
         public DbFixture(bool clear = false)
@@ -74,11 +45,13 @@ namespace OdataToEntity.Test
         public Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
         {
             IList fromOe = ExecuteOe<T, TResult>(parameters.Expression);
-            IList fromDb = ExecuteDb<T, TResult>(parameters.Expression);
+            IList fromDb;
+            using (var dataContext = OrderContext.Create(_databaseName))
+                fromDb = TestHelper.ExecuteDb<T, TResult>(dataContext, parameters.Expression);
 
             var settings = new JsonSerializerSettings()
             {
-                ContractResolver = new TestContractResolver(),
+                ContractResolver = new TestHelper.TestContractResolver(),
                 NullValueHandling = NullValueHandling.Ignore,
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
             };
@@ -87,34 +60,6 @@ namespace OdataToEntity.Test
             Xunit.Assert.Equal(jsonDb, jsonOe);
 
             return Task.CompletedTask;
-        }
-        private IList ExecuteDb<T, TResult>(LambdaExpression lambda)
-        {
-            using (var context = OrderContext.Create(_databaseName))
-            {
-                IQueryable query = GetQuerableDb<T>(context);
-                var visitor = new DbQueryVisitor<T>(query);
-                Expression call = visitor.Visit(lambda.Body);
-
-                Type elementType;
-                ExecuteQueryFunc<Object> func;
-                if (call.Type.GetTypeInfo().IsGenericType)
-                {
-                    elementType = call.Type.GetGenericArguments()[0];
-                    func = ExecuteQuery<Object>;
-                }
-                else
-                {
-                    elementType = typeof(Object);
-                    func = ExecuteQueryScalar<Object>;
-                }
-
-                IList fromDb = CreateDelegate(elementType, func)(query, call);
-
-                IReadOnlyList<PropertyInfo> includeProperties = TestHelper.GetIncludeProperties(lambda);
-                TestHelper.SetNullCollection(fromDb, includeProperties);
-                return fromDb;
-            }
         }
         private IList ExecuteOe<T, TResult>(LambdaExpression lambda)
         {
@@ -137,8 +82,10 @@ namespace OdataToEntity.Test
             }
 
             IList fromOe = CreateDelegate(elementType, func)(query, call);
+            TestHelper.SetNullCollection(fromOe, GetIncludes(lambda));
 
-            TestHelper.SetNullCollection(fromOe, GetIncludeProperties(lambda));
+            if (typeof(TResult) == typeof(Object))
+                fromOe = TestHelper.SortProperty(fromOe);
             return fromOe;
         }
         private static IList ExecuteQuery<T>(IQueryable query, Expression expression)
@@ -151,11 +98,14 @@ namespace OdataToEntity.Test
             T value = query.Provider.Execute<T>(expression);
             return new T[] { value };
         }
-        private static IReadOnlyList<PropertyInfo> GetIncludeProperties(Expression expression)
+        private static IReadOnlyList<IncludeVisitor.Include> GetIncludes(Expression expression)
         {
-            var includeProperties = new List<PropertyInfo>();
-            foreach (PropertyInfo property in TestHelper.GetIncludeProperties(expression))
+            var includes = new List<IncludeVisitor.Include>();
+            var includeVisitor = new IncludeVisitor();
+            includeVisitor.Visit(expression);
+            foreach (IncludeVisitor.Include include in includeVisitor.Includes)
             {
+                PropertyInfo property = include.Property;
                 Type declaringType;
                 if (property.DeclaringType == typeof(Customer))
                     declaringType = typeof(ODataClient.OdataToEntity.Test.Model.Customer);
@@ -170,20 +120,9 @@ namespace OdataToEntity.Test
                 if (mapProperty == null)
                     throw new InvalidOperationException("unknown property " + property.ToString());
 
-                includeProperties.Add(mapProperty);
+                includes.Add(new IncludeVisitor.Include(mapProperty, null));
             }
-            return includeProperties;
-        }
-        private IQueryable GetQuerableDb<T>(OrderContext context)
-        {
-            if (typeof(T) == typeof(Customer))
-                return context.Customers;
-            if (typeof(T) == typeof(OrderItem))
-                return context.OrderItems;
-            if (typeof(T) == typeof(Order))
-                return context.Orders;
-
-            throw new InvalidOperationException("unknown type " + typeof(T).Name);
+            return includes;
         }
         private IQueryable GetQuerableOe<T>(Container container)
         {

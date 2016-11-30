@@ -48,14 +48,15 @@
   <ItemGroup>
     <Compile Include="BatchTest.cs" />
     <Compile Include="DbFixture.cs" />
+    <Compile Include="Common\IncludeVisitor.cs" />
     <Compile Include="Model\Order.cs" />
     <Compile Include="Model\OrderContext.cs" />
     <Compile Include="ResponseReader.cs" />
     <Compile Include="OrderDataAdapter.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SelectTest.cs" />
-    <Compile Include="TestHelper.cs" />
+    <Compile Include="Common\SelectTest.cs" />
+    <Compile Include="Common\TestHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

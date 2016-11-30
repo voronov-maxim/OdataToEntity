@@ -134,7 +134,9 @@ namespace OdataToEntity.Test
                 if (value is StackItem)
                 {
                     value = CreateEntity((StackItem)value);
-                    if (value != null)
+                    if (value == null)
+                        openType.Add(pair.Key, JValue.CreateNull());
+                    else
                         openType.Add(pair.Key, JObject.FromObject(value));
                 }
                 else
@@ -188,6 +190,8 @@ namespace OdataToEntity.Test
         }
         public IEnumerable<JObject> ReadOpenType(Stream response, Type baseEntityType)
         {
+            //var zzz = new StreamReader(response).ReadToEnd();
+
             IODataRequestMessage responseMessage = new OeInMemoryMessage(response, null);
             var settings = new ODataMessageReaderSettings() { Validations = ValidationKinds.None, EnableMessageStreamDisposal = false };
             var messageReader = new ODataMessageReader(responseMessage, settings, _edmModel);
