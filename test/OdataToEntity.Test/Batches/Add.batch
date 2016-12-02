@@ -183,5 +183,19 @@ Accept-Charset: UTF-8
 User-Agent: Microsoft ADO.NET Data Services
 
 {"@odata.type":"#OdataToEntity.Test.Model.OrderItem","Count":null,"Id":6,"OrderId":3,"Price":null,"Product":"Product order 3 item 1 (unknown)"}
+--changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
+Content-Type: application/http
+Content-Transfer-Encoding: binary
+Content-ID: 14
+
+POST http://dummy/OrderItems HTTP/1.1
+OData-Version: 4.0
+OData-MaxVersion: 4.0
+Content-Type: application/json;odata.metadata=minimal
+Accept: application/json;odata.metadata=minimal
+Accept-Charset: UTF-8
+User-Agent: Microsoft ADO.NET Data Services
+
+{"@odata.type":"#OdataToEntity.Test.Model.OrderItem","Count":0,"Id":7,"OrderId":3,"Price":0,"Product":"{ null }.Sum() == 0"}
 --changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6--
 --batch_6263d2a1-1ddc-4b02-a1c1-7031cfa93691--

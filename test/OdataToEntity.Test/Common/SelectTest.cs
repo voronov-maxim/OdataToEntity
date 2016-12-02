@@ -676,8 +676,8 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<Customer>()
             {
-                RequestUri = "Customers?$top=3&$skip=2",
-                Expression = t => t.Skip(2).Take(3)
+                RequestUri = "Customers?$orderby=Id&$top=3&$skip=2",
+                Expression = t => t.OrderBy(c => c.Id).Skip(2).Take(3)
             };
             await Fixture.Execute(parameters);
         }

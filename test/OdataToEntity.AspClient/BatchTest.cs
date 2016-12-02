@@ -23,7 +23,7 @@ namespace OdataToEntityCore.AspClient
             container = DbFixture.CreateContainer();
 
             Assert.Equal(3, container.Orders.Count());
-            Assert.Equal(6, container.OrderItems.Count());
+            Assert.Equal(7, container.OrderItems.Count());
 
             var order1 = container.Orders.Expand(t => t.Items).Where(t => t.Name == "Order 1").Single();
             Assert.Equal(3, order1.Items.Count());
@@ -32,7 +32,7 @@ namespace OdataToEntityCore.AspClient
             Assert.Equal(2, order2.Items.Count());
 
             var order3 = container.Orders.Expand(t => t.Items).Where(t => t.Name == "Order unknown").Single();
-            Assert.Equal(1, order3.Items.Count());
+            Assert.Equal(2, order3.Items.Count());
 
             return Task.CompletedTask;
         }
@@ -141,6 +141,15 @@ namespace OdataToEntityCore.AspClient
                 Price = null,
                 Product = "Product order 3 item 1 (unknown)"
             };
+            var orderItem32 = new OrderItem()
+            {
+                Count = 0,
+                Id = 7,
+                OrderId = 3,
+                Price = 0,
+                Product = "{ null }.Sum() == 0"
+            };
+
 
             container.AddToCustomers(customer1);
             container.AddToCustomers(customer2);
@@ -155,6 +164,7 @@ namespace OdataToEntityCore.AspClient
             container.AddToOrderItems(orderItem21);
             container.AddToOrderItems(orderItem22);
             container.AddToOrderItems(orderItem31);
+            container.AddToOrderItems(orderItem32);
         }
         [Fact]
         public Task Delete()
@@ -169,7 +179,7 @@ namespace OdataToEntityCore.AspClient
 
             Assert.Equal(4, container.Customers.Count());
             Assert.Equal(2, container.Orders.Count());
-            Assert.Equal(4, container.OrderItems.Count());
+            Assert.Equal(5, container.OrderItems.Count());
 
             var order1 = container.Orders.Expand(t => t.Items).Where(t => t.Name == "Order 1").Single();
             Assert.Equal("Product order 1 item 3", order1.Items.Single().Product);
@@ -203,7 +213,7 @@ namespace OdataToEntityCore.AspClient
 
             Assert.Equal(4, container.Customers.Count());
             Assert.Equal(3, container.Orders.Count());
-            Assert.Equal(6, container.OrderItems.Count());
+            Assert.Equal(7, container.OrderItems.Count());
 
             var order1 = container.Orders.ByKey(1).Expand(t => t.Items).GetValue();
             Assert.Equal("New Order 1", order1.Name);

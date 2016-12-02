@@ -163,6 +163,14 @@ namespace OdataToEntity.Test.Model
                 Price = null,
                 Product = "Product order 3 item 1 (unknown)"
             };
+            var orderItem32 = new OrderItem()
+            {
+                Count = 0,
+                Id = 7,
+                OrderId = 3,
+                Price = 0,
+                Product = "{ null }.Sum() == 0"
+            };
 
             Customers.Add(customer1);
             Customers.Add(customer2);
@@ -177,6 +185,7 @@ namespace OdataToEntity.Test.Model
             OrderItems.Add(orderItem21);
             OrderItems.Add(orderItem22);
             OrderItems.Add(orderItem31);
+            OrderItems.Add(orderItem32);
 
             base.SaveChanges();
         }

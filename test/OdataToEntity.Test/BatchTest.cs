@@ -17,7 +17,7 @@ namespace OdataToEntity.Test
             using (var orderContext = fixture.CreateContext())
             {
                 Assert.Equal(3, orderContext.Orders.Count());
-                Assert.Equal(6, orderContext.OrderItems.Count());
+                Assert.Equal(7, orderContext.OrderItems.Count());
 
                 var order1 = orderContext.Orders.Include(t => t.Items).Single(t => t.Name == "Order 1");
                 Assert.Equal(3, order1.Items.Count());
@@ -26,7 +26,7 @@ namespace OdataToEntity.Test
                 Assert.Equal(2, order2.Items.Count());
 
                 var order3 = orderContext.Orders.Include(t => t.Items).Single(t => t.Name == "Order unknown");
-                Assert.Equal(1, order3.Items.Count());
+                Assert.Equal(2, order3.Items.Count());
             }
         }
         [Fact]
@@ -38,7 +38,7 @@ namespace OdataToEntity.Test
             {
                 Assert.Equal(4, orderContext.Customers.Count());
                 Assert.Equal(2, orderContext.Orders.Count());
-                Assert.Equal(2, orderContext.OrderItems.Count());
+                Assert.Equal(3, orderContext.OrderItems.Count());
 
                 var order1 = orderContext.Orders.Include(t => t.Items).Single(t => t.Name == "Order 1");
                 Assert.Equal("Product order 1 item 3", order1.Items.Single().Product);
@@ -53,7 +53,7 @@ namespace OdataToEntity.Test
             {
                 Assert.Equal(4, orderContext.Customers.Count());
                 Assert.Equal(3, orderContext.Orders.Count());
-                Assert.Equal(6, orderContext.OrderItems.Count());
+                Assert.Equal(7, orderContext.OrderItems.Count());
 
                 var order1 = orderContext.Orders.Include(t => t.Items).Single(t => t.Id == 1);
                 Assert.Equal("New Order 1", order1.Name);
