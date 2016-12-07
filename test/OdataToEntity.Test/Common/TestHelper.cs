@@ -176,7 +176,15 @@ namespace OdataToEntity.Test
                     if (jpropety.Value is JObject)
                         jobject.Add(jpropety.Name, SortProperty(jpropety.Value as JObject));
                     else
+                    {
+                        var jvalue = jpropety.Value as JValue;
+                        if (jvalue != null && jvalue.Value is Decimal) //fix precision sql.avg decimal(38,6)
+                        {
+                            var value = (Decimal)jvalue.Value;
+                            jvalue.Value = Decimal.Round(value, 2);
+                        }
                         jobject.Add(jpropety.Name, jpropety.Value);
+                    }
                 jobjects.Add(jobject);
             }
             return jobjects.ToArray();
