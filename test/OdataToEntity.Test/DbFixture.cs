@@ -25,7 +25,8 @@ namespace OdataToEntity.Test
             _databaseName = OrderContext.GenerateDatabaseName();
 
             _dataAdapter = new OrderDataAdapter(_databaseName);
-            _edmModel = new ModelBuilder.OeEdmModelBuilder(DataAdapter.EntitySetMetaAdapters.ToDictionary()).BuildEdmModel();
+            _edmModel = new ModelBuilder.OeEdmModelBuilder(DataAdapter.EntitySetMetaAdapters.EdmModelMetadataProvider,
+                DataAdapter.EntitySetMetaAdapters.ToDictionary()).BuildEdmModel();
 
             if (!clear)
                 ExecuteBatchAsync("Add").Wait();

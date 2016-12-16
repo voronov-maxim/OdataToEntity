@@ -181,7 +181,7 @@ namespace OdataToEntity.Test
                         if (jvalue != null && jvalue.Value is Decimal) //fix precision sql.avg decimal(38,6)
                         {
                             var value = (Decimal)jvalue.Value;
-                            jvalue.Value = Decimal.Round(value, 2);
+                            jvalue.Value = Math.Round(value, 2);
                         }
                         jobject.Add(jpropety.Name, jpropety.Value);
                     }

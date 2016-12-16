@@ -11,11 +11,11 @@ namespace OdataToEntity.ModelBuilder
         private readonly Dictionary<Type, EntityTypeInfo> _entityTypes;
         private readonly Dictionary<Type, EdmEnumType> _enumTypes;
 
-        public OeEdmModelBuilder(IDictionary<String, Type> entitySets)
+        public OeEdmModelBuilder(OeEdmModelMetadataProvider metadataProvider, IDictionary<String, Type> entitySets)
         {
             _entityTypes = new Dictionary<Type, EntityTypeInfo>(entitySets.Count);
             foreach (var pair in entitySets)
-                _entityTypes.Add(pair.Value, new EntityTypeInfo(pair.Value, pair.Key));
+                _entityTypes.Add(pair.Value, new EntityTypeInfo(metadataProvider, pair.Value, pair.Key));
 
             _complexTypes = new Dictionary<Type, EdmComplexType>();
             _enumTypes = new Dictionary<Type, EdmEnumType>();

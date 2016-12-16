@@ -138,7 +138,7 @@ namespace OdataToEntity.EfCore
                 if (dbSetType != null)
                     entitySetMetaAdapters.Add(CreateDbSetInvoker(property, dbSetType));
             }
-            return new Db.OeEntitySetMetaAdapterCollection(entitySetMetaAdapters.ToArray());
+            return new Db.OeEntitySetMetaAdapterCollection(entitySetMetaAdapters.ToArray(), new ModelBuilder.OeEdmModelMetadataProvider());
         }
         private static Db.OeEntitySetMetaAdapter CreateDbSetInvoker(PropertyInfo property, Type dbSetType)
         {
@@ -167,12 +167,6 @@ namespace OdataToEntity.EfCore
             return dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        public override Db.OeEntitySetMetaAdapterCollection EntitySetMetaAdapters
-        {
-            get
-            {
-                return _entitySetMetaAdapters;
-            }
-        }
+        public override Db.OeEntitySetMetaAdapterCollection EntitySetMetaAdapters => _entitySetMetaAdapters;
     }
 }

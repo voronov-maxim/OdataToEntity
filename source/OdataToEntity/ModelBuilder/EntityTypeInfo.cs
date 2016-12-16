@@ -1,10 +1,7 @@
 ﻿using Microsoft.OData.Edm;
-using Microsoft.OData.Edm.Vocabularies;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
@@ -17,10 +14,12 @@ namespace OdataToEntity.ModelBuilder
         private readonly EdmEntityType _edmType;
         private readonly String _entitySetName;
         private readonly List<KeyValuePair<PropertyDescriptor, EdmStructuralProperty>> _keyProperties;
+        private readonly OeEdmModelMetadataProvider _metadataProvider;
         private readonly List<FKeyInfo> _navigationClrProperties;
 
-        public EntityTypeInfo(Type clrType, String entitySetName)
+        public EntityTypeInfo(OeEdmModelMetadataProvider metadataProvider, Type clrType, String entitySetName)
         {
+            _metadataProvider = metadataProvider;
             _clrType = clrType;
             _entitySetName = entitySetName;
 
@@ -60,14 +59,14 @@ namespace OdataToEntity.ModelBuilder
             var keys = new Tuple<EdmStructuralProperty, int>[_keyProperties.Count];
             for (int i = 0; i < _keyProperties.Count; i++)
             {
-                var column = (ColumnAttribute)_keyProperties[i].Key.Attributes[typeof(ColumnAttribute)];
-                if (column == null)
+                int order = _metadataProvider.GetOrder(_keyProperties[i].Key);
+                if (order == -1)
                 {
                     _edmType.AddKeys(_keyProperties.Select(p => p.Value));
                     return;
                 }
 
-                keys[i] = new Tuple<EdmStructuralProperty, int>(_keyProperties[i].Value, column.Order);
+                keys[i] = new Tuple<EdmStructuralProperty, int>(_keyProperties[i].Value, order);
             }
             _edmType.AddKeys(keys.OrderBy(p => p.Item2).Select(p => p.Item1));
         }
@@ -97,7 +96,7 @@ namespace OdataToEntity.ModelBuilder
                         typeRef = new EdmComplexTypeReference(edmComplexType, clrProperty.PropertyType.GetTypeInfo().IsClass);
                     else
                     {
-                        FKeyInfo fkeyInfo = FKeyInfo.Create(entityTypes, this, clrProperty);
+                        FKeyInfo fkeyInfo = FKeyInfo.Create(_metadataProvider, entityTypes, this, clrProperty);
                         if (fkeyInfo != null)
                             _navigationClrProperties.Add(fkeyInfo);
                         return;
@@ -115,14 +114,14 @@ namespace OdataToEntity.ModelBuilder
 
             var edmProperty = new EdmStructuralProperty(_edmType, clrProperty.Name, typeRef);
             _edmType.AddProperty(edmProperty);
-            if (clrProperty.Attributes[typeof(KeyAttribute)] != null)
+            if (_metadataProvider.IsKey(clrProperty))
                 _keyProperties.Add(new KeyValuePair<PropertyDescriptor, EdmStructuralProperty>(clrProperty, edmProperty));
         }
         public void BuildProperties(Dictionary<Type, EntityTypeInfo> entityTypes,
             Dictionary<Type, EdmEnumType> enumTypes, Dictionary<Type, EdmComplexType> complexTypes)
         {
             foreach (PropertyDescriptor clrProperty in TypeDescriptor.GetProperties(_clrType))
-                if (clrProperty.Attributes[typeof(NotMappedAttribute)] == null)
+                if (!_metadataProvider.IsNotMapped(clrProperty))
                     BuildProperty(entityTypes, enumTypes, complexTypes, clrProperty);
             AddKeys();
         }

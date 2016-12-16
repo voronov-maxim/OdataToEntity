@@ -31,7 +31,8 @@ namespace OdataToEntityCore.Asp
             _baseUri = new Uri("http://dummy" + _endpointPath);
 
             _dataAdapter = (OeDataAdapter)serviceProvider.GetService(dataAdapterType);
-            _edmModel = new OeEdmModelBuilder(_dataAdapter.EntitySetMetaAdapters.ToDictionary()).BuildEdmModel();
+            _edmModel = new OeEdmModelBuilder(_dataAdapter.EntitySetMetaAdapters.EdmModelMetadataProvider,
+                _dataAdapter.EntitySetMetaAdapters.ToDictionary()).BuildEdmModel();
         }
 
         private static bool GetCsdlSchema(IEdmModel edmModel, Stream stream)

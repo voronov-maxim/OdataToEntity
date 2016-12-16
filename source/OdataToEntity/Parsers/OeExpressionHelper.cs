@@ -43,7 +43,13 @@ namespace OdataToEntity.Parsers
             {
                 Type[] typeArguments = new Type[expressions.Count];
                 for (int i = 0; i < typeArguments.Length; i++)
-                    typeArguments[i] = expressions[i].Type;
+                {
+                    Type type = expressions[i].Type;
+                    if (type.GetTypeInfo().IsGenericType && type.GetGenericTypeDefinition() == typeof(IOrderedEnumerable<>))
+                        typeArguments[i] = typeof(IEnumerable<>).MakeGenericType(type.GetTypeInfo().GetGenericArguments());
+                    else
+                        typeArguments[i] = type;
+                }
                 Type tupleType = GetTupleType(typeArguments);
                 ConstructorInfo ctorInfo = tupleType.GetTypeInfo().GetConstructor(typeArguments);
                 return Expression.New(ctorInfo, expressions, tupleType.GetTypeInfo().GetProperties());
@@ -127,7 +133,7 @@ namespace OdataToEntity.Parsers
             {
                 MemberExpression propertyExpression = Expression.Property(expression, properties[i]);
                 if (i == 7 && IsTupleType(properties[7].PropertyType))
-                    expressions.AddRange(GetPropertyExpression(propertyExpression))                    ;
+                    expressions.AddRange(GetPropertyExpression(propertyExpression));
                 else
                     expressions.Add(propertyExpression);
             }

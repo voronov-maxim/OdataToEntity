@@ -53,6 +53,7 @@
     <Compile Include="Db\OeEntityAsyncEnumerator.cs" />
     <Compile Include="ModelBuilder\EntityTypeInfo.cs" />
     <Compile Include="ModelBuilder\FKeyInfo.cs" />
+    <Compile Include="ModelBuilder\OeEdmModelMetadataProvider.cs" />
     <Compile Include="ModelBuilder\PrimitiveTypeHelper.cs" />
     <Compile Include="Parsers\OeAggregationTranslator.cs" />
     <Compile Include="Parsers\OeExpressionHelper.cs" />

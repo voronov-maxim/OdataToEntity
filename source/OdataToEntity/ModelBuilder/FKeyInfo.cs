@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 
 namespace OdataToEntity.ModelBuilder
@@ -31,13 +30,13 @@ namespace OdataToEntity.ModelBuilder
                 _principalMultiplicity = EdmMultiplicity.Unknown;
             else
             {
-                bool isCollection = Parsers.OeExpressionHelper.GetCollectionItemType(principalNavigationProperty.PropertyType) != null;
                 _principalNavigationProperty = principalNavigationProperty;
-                _principalMultiplicity = GetEdmMultiplicity(principalNavigationProperty.PropertyType, null);
+                _principalMultiplicity = GetEdmMultiplicity(principalNavigationProperty.PropertyType, dependentStructuralProperties);
             }
         }
 
-        public static FKeyInfo Create(Dictionary<Type, EntityTypeInfo> entityTypes, EntityTypeInfo dependentInfo, PropertyDescriptor dependentNavigationProperty)
+        public static FKeyInfo Create(OeEdmModelMetadataProvider metadataProvider,
+            Dictionary<Type, EntityTypeInfo> entityTypes, EntityTypeInfo dependentInfo, PropertyDescriptor dependentNavigationProperty)
         {
             Type clrType = Parsers.OeExpressionHelper.GetCollectionItemType(dependentNavigationProperty.PropertyType);
             if (clrType == null)
@@ -47,25 +46,26 @@ namespace OdataToEntity.ModelBuilder
             if (!entityTypes.TryGetValue(clrType, out principalInfo))
                 return null;
 
-            PropertyDescriptor[] dependentStructuralProperties = GetDependentStructuralProperties(dependentInfo, dependentNavigationProperty);
-            PropertyDescriptor principalNavigationProperty = GetPrincipalNavigationProperty(principalInfo, dependentInfo, dependentNavigationProperty);
+            PropertyDescriptor[] dependentStructuralProperties = GetDependentStructuralProperties(metadataProvider, dependentInfo, dependentNavigationProperty);
+            PropertyDescriptor principalNavigationProperty = GetPrincipalNavigationProperty(metadataProvider, principalInfo, dependentInfo, dependentNavigationProperty);
             if (dependentStructuralProperties.Length == 0 && principalNavigationProperty != null)
                 return null;
 
             return new FKeyInfo(dependentInfo, dependentNavigationProperty, dependentStructuralProperties, principalInfo, principalNavigationProperty);
         }
-        private static PropertyDescriptor[] GetDependentStructuralProperties(EntityTypeInfo dependentInfo, PropertyDescriptor dependentProperty)
+        private static PropertyDescriptor[] GetDependentStructuralProperties(OeEdmModelMetadataProvider metadataProvider,
+            EntityTypeInfo dependentInfo, PropertyDescriptor dependentProperty)
         {
             var dependentProperties = new List<PropertyDescriptor>(1);
             PropertyDescriptorCollection clrProperties = TypeDescriptor.GetProperties(dependentInfo.ClrType);
 
-            var fkey = (ForeignKeyAttribute)dependentProperty.Attributes[typeof(ForeignKeyAttribute)];
+            PropertyDescriptor fkey = metadataProvider.GetForeignKey(dependentProperty);
             if (fkey == null)
             {
                 foreach (PropertyDescriptor propertyDescriptor in clrProperties)
                 {
-                    fkey = (ForeignKeyAttribute)propertyDescriptor.Attributes[typeof(ForeignKeyAttribute)];
-                    if (fkey != null && String.Compare(fkey.Name, dependentProperty.Name, StringComparison.OrdinalIgnoreCase) == 0)
+                    fkey = metadataProvider.GetForeignKey(propertyDescriptor);
+                    if (fkey == dependentProperty)
                         dependentProperties.Add(propertyDescriptor);
                 }
 
@@ -78,16 +78,12 @@ namespace OdataToEntity.ModelBuilder
                 }
             }
             else
-            {
-                PropertyDescriptor dependentProperty2 = clrProperties.Find(fkey.Name, true);
-                if (dependentProperty2 != null)
-                    dependentProperties.Add(dependentProperty2);
-            }
+                dependentProperties.Add(fkey);
 
             if (dependentProperties.Count == 1)
                 return dependentProperties.ToArray();
             else
-                return SortClrPropertyByOrder(dependentProperties).ToArray();
+                return SortClrPropertyByOrder(metadataProvider, dependentProperties).ToArray();
         }
         private static EdmMultiplicity GetEdmMultiplicity(Type propertyType, PropertyDescriptor[] dependentStructuralProperties)
         {
@@ -103,36 +99,34 @@ namespace OdataToEntity.ModelBuilder
 
             return EdmMultiplicity.One;
         }
-        private static PropertyDescriptor GetPrincipalNavigationProperty(EntityTypeInfo principalInfo, EntityTypeInfo dependentInfo, PropertyDescriptor dependentNavigationProperty)
+        private static PropertyDescriptor GetPrincipalNavigationProperty(OeEdmModelMetadataProvider metadataProvider,
+            EntityTypeInfo principalInfo, EntityTypeInfo dependentInfo, PropertyDescriptor dependentNavigationProperty)
         {
-            var inverseAttribute = (InversePropertyAttribute)dependentNavigationProperty.Attributes[typeof(InversePropertyAttribute)];
-            if (inverseAttribute != null)
-                return TypeDescriptor.GetProperties(principalInfo.ClrType)[inverseAttribute.Property];
+            PropertyDescriptor inverseProperty = metadataProvider.GetInverseProperty(dependentNavigationProperty);
+            if (inverseProperty != null)
+                return inverseProperty;
 
             foreach (PropertyDescriptor clrProperty in TypeDescriptor.GetProperties(principalInfo.ClrType))
                 if (clrProperty.PropertyType == dependentInfo.ClrType ||
                     Parsers.OeExpressionHelper.GetCollectionItemType(clrProperty.PropertyType) == dependentInfo.ClrType)
                 {
-                    inverseAttribute = (InversePropertyAttribute)clrProperty.Attributes[typeof(InversePropertyAttribute)];
-                    if (inverseAttribute == null)
-                        return clrProperty;
-
-                    if (TypeDescriptor.GetProperties(dependentInfo.ClrType)[inverseAttribute.Property] == dependentNavigationProperty)
+                    inverseProperty = metadataProvider.GetInverseProperty(clrProperty);
+                    if (inverseProperty == null || inverseProperty == dependentNavigationProperty)
                         return clrProperty;
                 }
 
             return null;
         }
-        private static IEnumerable<PropertyDescriptor> SortClrPropertyByOrder(IEnumerable<PropertyDescriptor> clrProperties)
+        private static IEnumerable<PropertyDescriptor> SortClrPropertyByOrder(OeEdmModelMetadataProvider metadataProvider, IEnumerable<PropertyDescriptor> clrProperties)
         {
             var propertyList = new List<Tuple<PropertyDescriptor, int>>(2);
             foreach (PropertyDescriptor clrProperty in clrProperties)
             {
-                var column = (ColumnAttribute)clrProperty.Attributes[typeof(ColumnAttribute)];
-                if (column == null)
+                int order = metadataProvider.GetOrder(clrProperty);
+                if (order == -1)
                     return clrProperties;
 
-                propertyList.Add(new Tuple<PropertyDescriptor, int>(clrProperty, column.Order));
+                propertyList.Add(new Tuple<PropertyDescriptor, int>(clrProperty, order));
             }
             return propertyList.OrderBy(t => t.Item2).Select(t => t.Item1);
         }

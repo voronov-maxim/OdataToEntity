@@ -24,8 +24,12 @@ namespace OdataToEntity.Db
 
     public sealed class OeEntitySetMetaAdapterCollection : ReadOnlyCollection<OeEntitySetMetaAdapter>
     {
-        public OeEntitySetMetaAdapterCollection(OeEntitySetMetaAdapter[] entitySetMetaAdapter) : base(entitySetMetaAdapter)
+        private readonly ModelBuilder.OeEdmModelMetadataProvider _metadataProvider;
+
+        public OeEntitySetMetaAdapterCollection(OeEntitySetMetaAdapter[] entitySetMetaAdapter,
+            ModelBuilder.OeEdmModelMetadataProvider metadataProvider) : base(entitySetMetaAdapter)
         {
+            _metadataProvider = metadataProvider;
         }
 
         public OeEntitySetMetaAdapter FindByClrType(Type entityType)
@@ -60,5 +64,7 @@ namespace OdataToEntity.Db
                 entitySets.Add(entitySetMetaAdapter.EntitySetName, entitySetMetaAdapter.EntityType);
             return entitySets;
         }
+
+        public ModelBuilder.OeEdmModelMetadataProvider EdmModelMetadataProvider => _metadataProvider;
     }
 }
