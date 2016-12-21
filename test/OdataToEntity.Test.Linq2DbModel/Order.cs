@@ -13,6 +13,7 @@ using System.Reflection;
 using LinqToDB;
 using LinqToDB.DataProvider.SqlServer;
 using LinqToDB.Mapping;
+using OdataToEntity.Linq2Db;
 
 namespace OdataToEntity.Test.Model
 {
@@ -21,13 +22,19 @@ namespace OdataToEntity.Test.Model
 	/// Data Source    : .\sqlexpress
 	/// Server Version : 12.00.5203
 	/// </summary>
-	public partial class OdataToEntityDB : LinqToDB.Data.DataConnection
-	{
+	public partial class OdataToEntityDB : LinqToDB.Data.DataConnection, IOeLinq2DbDataContext
+    {
 		public ITable<Customer>  Customers  { get { return this.GetTable<Customer>(); } }
 		public ITable<Order>     Orders     { get { return this.GetTable<Order>(); } }
 		public ITable<OrderItem> OrderItems { get { return this.GetTable<OrderItem>(); } }
 
-		public OdataToEntityDB()
+        OeLinq2DbDataContext IOeLinq2DbDataContext.DataContext
+        {
+            get;
+            set;
+        }
+
+        public OdataToEntityDB()
 		{
 			InitDataContext();
 		}

@@ -188,7 +188,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\EfTest\OdataToEntity.Test.Linq2DbModel\OdataToEntity.Test.Linq2DbModel.csproj">
+    <ProjectReference Include="..\OdataToEntity.Test.Linq2DbModel\OdataToEntity.Test.Linq2DbModel.csproj">
       <Project>{e8d0f21e-d98f-4b7e-9a34-86a371355b68}</Project>
       <Name>OdataToEntity.Test.Linq2DbModel</Name>
       <Aliases>lq2db</Aliases>
