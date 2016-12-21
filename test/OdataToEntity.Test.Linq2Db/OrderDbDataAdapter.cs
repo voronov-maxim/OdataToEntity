@@ -3,14 +3,14 @@ using System;
 
 namespace OdataToEntity.Test
 {
-    public sealed class OrderDataAdapter : OeEfCoreDataAdapter<Model.OrderContext>
+    public sealed class OrderDbDataAdapter : OeEfCoreDataAdapter<Model.OrderContext>
     {
         private String _databaseName;
 
-        public OrderDataAdapter() : this(Model.OrderContext.GenerateDatabaseName())
+        public OrderDbDataAdapter() : this(Model.OrderContext.GenerateDatabaseName())
         {
         }
-        public OrderDataAdapter(String databaseName)
+        public OrderDbDataAdapter(String databaseName)
         {
             _databaseName = databaseName;
         }

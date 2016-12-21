@@ -7,9 +7,9 @@ namespace OdataToEntityCore.Asp
 {
     public sealed class DbController : Controller
     {
-        private readonly OrderDataAdapter _dataAdapter;
+        private readonly OrderOeDataAdapter _dataAdapter;
 
-        public DbController(OrderDataAdapter dataAdapter)
+        public DbController(OrderOeDataAdapter dataAdapter)
         {
             _dataAdapter = dataAdapter;
         }

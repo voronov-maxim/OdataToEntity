@@ -5,7 +5,7 @@ using System.Net.Http;
 
 namespace OdataToEntity.Test
 {
-    partial class DbFixture
+    partial class DbFixtureInitDb
     {
         partial void DbInit(String databaseName, bool clear)
         {

@@ -13,13 +13,13 @@ using Xunit;
 
 namespace OdataToEntity.Test
 {
-    internal sealed partial class DbFixture
+    public sealed partial class DbFixtureInitDb
     {
         private delegate IList ExecuteQueryFunc<out T>(IQueryable query, Expression expression);
 
         private readonly String _databaseName;
 
-        public DbFixture(bool clear = false)
+        public DbFixtureInitDb(bool clear = false)
         {
             _databaseName = OrderContext.GenerateDatabaseName();
             DbInit(_databaseName, clear);

@@ -18,7 +18,7 @@ namespace OdataToEntity.WcfService
 
     public sealed class OrderServiceBehaviorAttribute : OdataWcfServiceBehaviorAttribute
     {
-        public OrderServiceBehaviorAttribute() : base(typeof(OrderDataAdapter))
+        public OrderServiceBehaviorAttribute() : base(typeof(OrderOeDataAdapter))
         {
         }
 
@@ -52,7 +52,7 @@ namespace OdataToEntity.WcfService
         }
         public void Reset()
         {
-            ((OrderDataAdapter)base.DataAdapter).ResetDatabase();
+            ((OrderOeDataAdapter)base.DataAdapter).ResetDatabase();
         }
     }
 

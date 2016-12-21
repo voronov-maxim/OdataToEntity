@@ -21,7 +21,8 @@ namespace OdataToEntity.WcfService
             public ServiceInstanceProvider(OdataWcfServiceBehaviorAttribute odataWcfServiceBehavior)
             {
                 _odataWcfServiceBehavior = odataWcfServiceBehavior;
-                _dataAdapter = (OeDataAdapter)Activator.CreateInstance(odataWcfServiceBehavior._dataAdapterType);
+                var args = new Object[] { Test.Model.OrderContext.GenerateDatabaseName() };
+                _dataAdapter = (OeDataAdapter)Activator.CreateInstance(odataWcfServiceBehavior._dataAdapterType, args);
                 _edmModel = new OeEdmModelBuilder(_dataAdapter.EntitySetMetaAdapters.EdmModelMetadataProvider,
                     _dataAdapter.EntitySetMetaAdapters.ToDictionary()).BuildEdmModel();
             }

@@ -14,22 +14,22 @@ using System.Threading.Tasks;
 
 namespace OdataToEntity.Test
 {
-    internal sealed class DbFixture
+    public class DbFixture
     {
-        private readonly OrderDataAdapter _dataAdapter;
+        private readonly OrderDbDataAdapter _dbDataAdapter;
         private readonly String _databaseName;
         private readonly EdmModel _edmModel;
+        private readonly OrderOeDataAdapter _oeDataAdapter;
 
-        public DbFixture(bool clear = false)
+        public DbFixture()
         {
             _databaseName = OrderContext.GenerateDatabaseName();
+            _dbDataAdapter = new OrderDbDataAdapter(_databaseName);
+            _oeDataAdapter = new OrderOeDataAdapter(_databaseName);
 
-            _dataAdapter = new OrderDataAdapter(_databaseName);
-            _edmModel = new ModelBuilder.OeEdmModelBuilder(DataAdapter.EntitySetMetaAdapters.EdmModelMetadataProvider,
-                DataAdapter.EntitySetMetaAdapters.ToDictionary()).BuildEdmModel();
-
-            if (!clear)
-                ExecuteBatchAsync("Add").Wait();
+            Db.OeEntitySetMetaAdapterCollection metaAdapters = OeDataAdapter.EntitySetMetaAdapters;
+            var modelBuilder = new ModelBuilder.OeEdmModelBuilder(metaAdapters.EdmModelMetadataProvider, metaAdapters.ToDictionary());
+            _edmModel = modelBuilder.BuildEdmModel();
         }
 
         public OrderContext CreateContext()
@@ -40,7 +40,7 @@ namespace OdataToEntity.Test
         {
             IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri, typeof(T));
             IList fromDb;
-            using (var dataContext = (DbContext)DataAdapter.CreateDataContext())
+            using (var dataContext = (DbContext)DbDataAdapter.CreateDataContext())
                 fromDb = TestHelper.ExecuteDb(dataContext, parameters.Expression);
 
             var settings = new JsonSerializerSettings()
@@ -58,7 +58,7 @@ namespace OdataToEntity.Test
         {
             IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri, typeof(T));
             IList fromDb;
-            using (var dataContext = (DbContext)DataAdapter.CreateDataContext())
+            using (var dataContext = (DbContext)DbDataAdapter.CreateDataContext())
                 fromDb = TestHelper.ExecuteDb(dataContext, parameters.Expression);
 
             var settings = new JsonSerializerSettings()
@@ -74,7 +74,7 @@ namespace OdataToEntity.Test
         }
         internal async Task ExecuteBatchAsync(String batchName)
         {
-            var parser = new OeParser(new Uri("http://dummy/"), DataAdapter, EdmModel);
+            var parser = new OeParser(new Uri("http://dummy/"), OeDataAdapter, EdmModel);
             byte[] bytes = File.ReadAllBytes($"Batches\\{batchName}.batch");
             var responseStream = new MemoryStream();
             await parser.ExecuteBatchAsync(new MemoryStream(bytes), responseStream, CancellationToken.None);
@@ -82,13 +82,13 @@ namespace OdataToEntity.Test
         private async Task<IList> ExecuteOe<TResult>(String requestUri, Type baseEntityType)
         {
             var accept = "application/json;odata.metadata=minimal";
-            var parser = new OeParser(new Uri("http://dummy/"), DataAdapter, EdmModel);
+            var parser = new OeParser(new Uri("http://dummy/"), OeDataAdapter, EdmModel);
             OeRequestHeaders headers = OeRequestHeaders.Parse(accept);
             var stream = new MemoryStream();
             await parser.ExecuteQueryAsync(new Uri("http://dummy/" + requestUri), headers, stream, CancellationToken.None);
             stream.Position = 0;
 
-            var reader = new ResponseReader(EdmModel, DataAdapter.EntitySetMetaAdapters);
+            var reader = new ResponseReader(EdmModel, DbDataAdapter.EntitySetMetaAdapters);
             IList fromOe;
             if (typeof(TResult) == typeof(Object))
             {
@@ -117,7 +117,8 @@ namespace OdataToEntity.Test
             return jobject;
         }
 
-        internal OrderDataAdapter DataAdapter => _dataAdapter;
+        internal OrderDbDataAdapter DbDataAdapter => _dbDataAdapter;
         internal EdmModel EdmModel => _edmModel;
+        internal OrderOeDataAdapter OeDataAdapter => _oeDataAdapter;
     }
 }

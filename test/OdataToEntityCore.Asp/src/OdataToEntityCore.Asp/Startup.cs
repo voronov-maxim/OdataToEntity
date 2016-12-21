@@ -28,7 +28,7 @@ namespace OdataToEntityCore.Asp
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvcCore();
-            services.AddSingleton<OrderDataAdapter>();
+            services.AddSingleton<OrderOeDataAdapter>(sp => new OrderOeDataAdapter(OdataToEntity.Test.Model.OrderContext.GenerateDatabaseName()));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -37,7 +37,7 @@ namespace OdataToEntityCore.Asp
             loggerFactory.AddConsole(Configuration.GetSection("Logging"));
             loggerFactory.AddDebug();
 
-            app.UseMiddleware<OdataToEntityMiddleware>(typeof(OrderDataAdapter), "api");
+            app.UseMiddleware<OdataToEntityMiddleware>(typeof(OrderOeDataAdapter), "api");
             app.UseMvcWithDefaultRoute();
         }
     }

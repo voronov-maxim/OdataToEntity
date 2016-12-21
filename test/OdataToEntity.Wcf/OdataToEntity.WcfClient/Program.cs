@@ -19,10 +19,10 @@ namespace OdataToEntity.WcfClient
 
         static void Main(string[] args)
         {
-            DbFixture.ContainerFactory = ContainerFactory;
+            DbFixtureInitDb.ContainerFactory = ContainerFactory;
 
-            DbFixture.RunTest(new OdataToEntityCore.AspClient.BatchTest()).GetAwaiter().GetResult();
-            DbFixture.RunTest(new SelectTest()).GetAwaiter().GetResult();
+            DbFixtureInitDb.RunTest(new OdataToEntityCore.AspClient.BatchTest()).GetAwaiter().GetResult();
+            DbFixtureInitDb.RunTest(new SelectTest(new DbFixtureInitDb())).GetAwaiter().GetResult();
 
             Console.WriteLine();
             Console.WriteLine("Press any key to continue...");

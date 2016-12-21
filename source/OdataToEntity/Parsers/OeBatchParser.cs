@@ -59,7 +59,7 @@ namespace OdataToEntity.Parsers
                 dataContext = _dataAdapter.CreateDataContext();
                 foreach (OeOperationMessage operation in changeset)
                     AddToEntitySet(dataContext, operation);
-                await _dataAdapter.SaveChangesAsync(dataContext, cancellationToken).ConfigureAwait(false);
+                await _dataAdapter.SaveChangesAsync(_model, dataContext, cancellationToken).ConfigureAwait(false);
             }
             finally
             {
@@ -74,7 +74,7 @@ namespace OdataToEntity.Parsers
             {
                 dataContext = _dataAdapter.CreateDataContext();
                 AddToEntitySet(dataContext, operation);
-                await _dataAdapter.SaveChangesAsync(dataContext, cancellationToken).ConfigureAwait(false);
+                await _dataAdapter.SaveChangesAsync(_model, dataContext, cancellationToken).ConfigureAwait(false);
             }
             finally
             {

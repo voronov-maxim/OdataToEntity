@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.OData.Edm;
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,7 +12,7 @@ namespace OdataToEntity.Db
         public abstract Object CreateDataContext();
         public abstract OeEntityAsyncEnumerator ExecuteEnumerator(IQueryable query, CancellationToken cancellationToken);
         public abstract OeEntitySetAdapter GetEntitySetAdapter(String entitySetName);
-        public abstract Task<int> SaveChangesAsync(Object dataContext, CancellationToken cancellationToken);
+        public abstract Task<int> SaveChangesAsync(IEdmModel edmModel, Object dataContext, CancellationToken cancellationToken);
 
         public abstract OeEntitySetMetaAdapterCollection EntitySetMetaAdapters
         {

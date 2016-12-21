@@ -14,13 +14,13 @@ namespace OdataToEntityCore.AspClient
         [Fact]
         public Task Add()
         {
-            var fixture = new DbFixture(true);
+            var fixture = new DbFixtureInitDb(true);
 
-            Container container = DbFixture.CreateContainer();
+            Container container = DbFixtureInitDb.CreateContainer();
             Add(container);
             container.SaveChanges(SaveChangesOptions.BatchWithSingleChangeset);
 
-            container = DbFixture.CreateContainer();
+            container = DbFixtureInitDb.CreateContainer();
 
             Assert.Equal(3, container.Orders.Count());
             Assert.Equal(7, container.OrderItems.Count());
@@ -169,13 +169,13 @@ namespace OdataToEntityCore.AspClient
         [Fact]
         public Task Delete()
         {
-            var fixture = new DbFixture();
+            var fixture = new DbFixtureInitDb();
 
-            Container container = DbFixture.CreateContainer();
+            Container container = DbFixtureInitDb.CreateContainer();
             Delete(container);
             container.SaveChanges(SaveChangesOptions.BatchWithSingleChangeset);
 
-            container = DbFixture.CreateContainer();
+            container = DbFixtureInitDb.CreateContainer();
 
             Assert.Equal(4, container.Customers.Count());
             Assert.Equal(2, container.Orders.Count());
@@ -203,13 +203,13 @@ namespace OdataToEntityCore.AspClient
         [Fact]
         public Task Update()
         {
-            var fixture = new DbFixture();
+            var fixture = new DbFixtureInitDb();
 
-            Container container = DbFixture.CreateContainer();
+            Container container = DbFixtureInitDb.CreateContainer();
             Update(container);
             container.SaveChanges(SaveChangesOptions.BatchWithSingleChangeset);
 
-            container = DbFixture.CreateContainer();
+            container = DbFixtureInitDb.CreateContainer();
 
             Assert.Equal(4, container.Customers.Count());
             Assert.Equal(3, container.Orders.Count());

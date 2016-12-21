@@ -47,12 +47,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BatchTest.cs" />
+    <Compile Include="Common\QueryParameters.cs" />
     <Compile Include="DbFixture.cs" />
     <Compile Include="Common\IncludeVisitor.cs" />
+    <Compile Include="DbFixtureInitDb.cs" />
     <Compile Include="Model\Order.cs" />
     <Compile Include="Model\OrderContext.cs" />
     <Compile Include="ResponseReader.cs" />
-    <Compile Include="OrderDataAdapter.cs" />
+    <Compile Include="OrderDbDataAdapter.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Common\SelectTest.cs" />

@@ -1,9 +1,8 @@
-﻿using System;
+﻿using Microsoft.OData.Edm;
+using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data.Entity;
 using System.Data.Entity.Core;
-using System.Data.Entity.Core.Metadata.Edm;
 using System.Data.Entity.Core.Objects;
 using System.Data.Entity.Infrastructure;
 using System.Linq;
@@ -104,7 +103,7 @@ namespace OdataToEntity.Ef6
                 if (dbSetType != null)
                     entitySetMetaAdapters.Add(CreateDbSetInvoker(property, dbSetType));
             }
-            return new Db.OeEntitySetMetaAdapterCollection(entitySetMetaAdapters.ToArray());
+            return new Db.OeEntitySetMetaAdapterCollection(entitySetMetaAdapters.ToArray(), new ModelBuilder.OeEdmModelMetadataProvider());
         }
         private static Db.OeEntitySetMetaAdapter CreateDbSetInvoker(PropertyInfo property, Type dbSetType)
         {
@@ -127,7 +126,7 @@ namespace OdataToEntity.Ef6
         {
             return new Db.OeEntitySetAdapter(_entitySetMetaAdapters.FindByEntitySetName(entitySetName), this);
         }
-        public override Task<int> SaveChangesAsync(Object dataContext, CancellationToken cancellationToken)
+        public override Task<int> SaveChangesAsync(IEdmModel edmModel, Object dataContext, CancellationToken cancellationToken)
         {
             var dbContext = (T)dataContext;
             return dbContext.SaveChangesAsync(cancellationToken);

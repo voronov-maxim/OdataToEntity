@@ -13,7 +13,7 @@ namespace OdataToEntity.Test
         void Reset();
     }
 
-    partial class DbFixture
+    partial class DbFixtureInitDb
     {
         partial void DbInit(String databaseName, bool clear)
         {

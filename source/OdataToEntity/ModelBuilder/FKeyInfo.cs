@@ -71,8 +71,7 @@ namespace OdataToEntity.ModelBuilder
 
                 if (dependentProperties.Count == 0)
                 {
-                    String idName = dependentProperty.Name + "Id";
-                    PropertyDescriptor clrProperty = clrProperties.Find(idName, true);
+                    PropertyDescriptor clrProperty = clrProperties.Find(dependentProperty.Name + "Id", true);
                     if (clrProperty != null)
                         dependentProperties.Add(clrProperty);
                 }

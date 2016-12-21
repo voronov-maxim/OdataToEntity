@@ -13,12 +13,12 @@ namespace OdataToEntityCore.AspClient
 
         static void Main(String[] args)
         {
-            DbFixture.ContainerFactory = CreateContainer;
+            DbFixtureInitDb.ContainerFactory = CreateContainer;
 
             //new SelectTest().SelectName().Wait();
 
-            DbFixture.RunTest(new BatchTest()).GetAwaiter().GetResult();
-            DbFixture.RunTest(new SelectTest()).GetAwaiter().GetResult();
+            DbFixtureInitDb.RunTest(new BatchTest()).GetAwaiter().GetResult();
+            DbFixtureInitDb.RunTest(new SelectTest(new DbFixtureInitDb())).GetAwaiter().GetResult();
 
             Console.WriteLine();
             Console.WriteLine("Press any key to continue...");

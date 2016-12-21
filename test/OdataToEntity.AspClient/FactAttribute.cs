@@ -2,6 +2,10 @@
 
 namespace Xunit
 {
+    public interface IClassFixture<TFixture> where TFixture : class
+    {
+    }
+
     internal sealed class FactAttribute : Attribute
     {
     }

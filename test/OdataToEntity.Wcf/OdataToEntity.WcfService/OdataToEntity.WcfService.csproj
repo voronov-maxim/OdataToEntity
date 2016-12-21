@@ -204,8 +204,8 @@
     <Compile Include="..\..\OdataToEntity.Test\Model\*.cs">
       <Link>Model\%(FileName)</Link>
     </Compile>
-    <Compile Include="..\..\OdataToEntity.Test\OrderDataAdapter.cs">
-      <Link>OrderDataAdapter.cs</Link>
+    <Compile Include="..\..\OdataToEntity.Test\OrderDbDataAdapter.cs">
+      <Link>OrderDbDataAdapter.cs</Link>
     </Compile>
     <Compile Include="IOdataWcf.cs" />
     <Compile Include="OdataWcfService.cs" />
