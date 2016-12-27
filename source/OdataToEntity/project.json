@@ -26,13 +26,11 @@
     "netstandard1.6": {
       "imports": "portable-net45+win8+wpa81",
       "dependencies": {
-        "NETStandard.Library": "1.6.1",
-        "System.Net.Http": "4.3.0"
+        "NETStandard.Library": "1.6.1"
       }
     },
     "net462": {
       "frameworkAssemblies": {
-        "System.Net.Http": "4.0.0"
       }
     }
   }

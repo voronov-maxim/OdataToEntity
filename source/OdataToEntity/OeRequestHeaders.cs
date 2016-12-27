@@ -1,7 +1,4 @@
-﻿using Microsoft.OData;
-using System;
-using System.Collections.Generic;
-using System.Net.Http.Headers;
+﻿using System;
 
 namespace OdataToEntity
 {
@@ -16,35 +13,20 @@ namespace OdataToEntity
     {
         private readonly String _charset;
         private readonly String _contentType;
-        private readonly String _mediaType;
+        private static readonly OeRequestHeaders _default = new OeRequestHeaders(OeMetadataLevel.Minimal, true, "utf-8");
         private readonly OeMetadataLevel _metadataLevel;
+        private readonly bool _streaming;
 
-        public OeRequestHeaders()
-            : this(OeMetadataLevel.Minimal, true)
-        {
-        }
-        public OeRequestHeaders(OeMetadataLevel metadataLevel, bool streaming)
-            : this(metadataLevel, streaming, "utf-8")
-        {
-
-        }
-        public OeRequestHeaders(OeMetadataLevel metadataLevel, bool streaming, String charset)
-            : this(metadataLevel, true, charset, "application/json")
-        {
-        }
-        public OeRequestHeaders(OeMetadataLevel metadataLevel, bool streaming, String charset, String mediaType)
-            : this(metadataLevel, streaming, charset, mediaType, GetContentType(metadataLevel, streaming, charset, mediaType))
-        {
-        }
-        private OeRequestHeaders(OeMetadataLevel metadataLevel, bool streaming, String charset, String mediaType, String contentType)
+        private OeRequestHeaders(OeMetadataLevel metadataLevel, bool streaming, String charset)
         {
             _metadataLevel = metadataLevel;
+            _streaming = streaming;
             _charset = charset;
-            _mediaType = mediaType;
-            _contentType = contentType;
+
+            _contentType = GetContentType(metadataLevel, streaming, charset);
         }
 
-        private static String GetContentType(OeMetadataLevel metadataLevel, bool streaming, String charset, String mediaType)
+        private static String GetContentType(OeMetadataLevel metadataLevel, bool streaming, String charset)
         {
             String metadataArg;
             switch (metadataLevel)
@@ -61,42 +43,78 @@ namespace OdataToEntity
             }
 
             String streamingArg = streaming ? "true" : "false";
-            return $"{mediaType};odata.metadata={metadataArg};odata.streaming={streamingArg};charset={charset}";
+            return $"application/json;odata.metadata={metadataArg};odata.streaming={streamingArg};charset={charset}";
         }
-        public static OeRequestHeaders Parse(string acceptHeader)
+        private static int GetParameterValue(String acceptHeader, String parameterName, out int valueLength)
+        {
+            valueLength = 0;
+
+            int i = acceptHeader.IndexOf(parameterName, StringComparison.OrdinalIgnoreCase);
+            if (i == -1)
+                return -1;
+
+            if (i > 0)
+                if (!Char.IsWhiteSpace(acceptHeader, i - 1) && acceptHeader[i - 1] != ';')
+                    return -1;
+
+            i += parameterName.Length;
+            while (i < acceptHeader.Length && Char.IsWhiteSpace(acceptHeader, i))
+                i++;
+
+            if (acceptHeader[i] != '=')
+                return -1;
+
+            do
+            {
+                i++;
+            }
+            while (i < acceptHeader.Length && Char.IsWhiteSpace(acceptHeader, i));
+            int start = i;
+
+            do
+            {
+                i++;
+                valueLength++;
+            }
+            while (i < acceptHeader.Length && !(Char.IsWhiteSpace(acceptHeader, i) || acceptHeader[i] == ';'));
+
+            return start;
+        }
+        public static OeRequestHeaders Parse(String acceptHeader)
         {
             var metadataLevel = OeMetadataLevel.Minimal;
             bool streaming = true;
-            String charset = "utf-8";
 
-            MediaTypeHeaderValue mediaType;
-            if (!MediaTypeHeaderValue.TryParse(acceptHeader, out mediaType))
-                return new OeRequestHeaders(metadataLevel, streaming, charset);
+            int start;
+            int valueLength = 0;
 
-            foreach (NameValueHeaderValue parameter in mediaType.Parameters)
+            start = GetParameterValue(acceptHeader, "odata.metadata", out valueLength);
+            if (start != -1)
             {
-                if (String.Compare(parameter.Name, "odata.metadata", StringComparison.OrdinalIgnoreCase) == 0)
-                {
-                    if (String.Compare(parameter.Value, "none", StringComparison.OrdinalIgnoreCase) == 0)
-                        metadataLevel = OeMetadataLevel.None;
-                    else if (String.Compare(parameter.Value, "full", StringComparison.OrdinalIgnoreCase) == 0)
-                        metadataLevel = OeMetadataLevel.Full;
-                }
-                else if (String.Compare(parameter.Name, "charset", StringComparison.OrdinalIgnoreCase) == 0)
-                {
-                    charset = parameter.Value;
-                }
-                else if (String.Compare(parameter.Name, "streaming", StringComparison.OrdinalIgnoreCase) == 0)
-                {
-                    Boolean.TryParse(parameter.Value, out streaming);
-                }
+                if (String.Compare(acceptHeader, start, "none", 0, "none".Length, StringComparison.OrdinalIgnoreCase) == 0)
+                    metadataLevel = OeMetadataLevel.None;
+                else if (String.Compare(acceptHeader, start, "full", 0, "full".Length, StringComparison.OrdinalIgnoreCase) == 0)
+                    metadataLevel = OeMetadataLevel.Full;
             }
-            return new OeRequestHeaders(metadataLevel, streaming, charset, mediaType.MediaType);
+
+            start = GetParameterValue(acceptHeader, "charset", out valueLength);
+            if (start != -1)
+                if (String.Compare(acceptHeader, start, "utf-8", 0, "utf-8".Length, StringComparison.OrdinalIgnoreCase) != 0)
+                    throw new NotSupportedException("charset=" + acceptHeader.Substring(start, valueLength) + " not supported");
+
+            start = GetParameterValue(acceptHeader, "odata.streaming", out valueLength);
+            if (start != -1)
+                streaming = String.Compare(acceptHeader, start, "true", 0, "true".Length, StringComparison.OrdinalIgnoreCase) == 0;
+
+            if (metadataLevel == _default.MetadataLevel && streaming == _default.Streaming)
+                return _default;
+            else
+                return new OeRequestHeaders(metadataLevel, streaming, "utf-8");
         }
 
         public String Charset => _charset;
         public String ContentType => _contentType;
-        public String MediaType => _mediaType;
         public OeMetadataLevel MetadataLevel => _metadataLevel;
+        public bool Streaming => _streaming;
     }
 }
