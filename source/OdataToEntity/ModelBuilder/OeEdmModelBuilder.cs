@@ -14,7 +14,7 @@ namespace OdataToEntity.ModelBuilder
         public OeEdmModelBuilder(OeEdmModelMetadataProvider metadataProvider, IDictionary<String, Type> entitySets)
         {
             _entityTypes = new Dictionary<Type, EntityTypeInfo>(entitySets.Count);
-            foreach (var pair in entitySets)
+            foreach (KeyValuePair<String, Type> pair in entitySets)//.Where(p => p.Key == "Categories"))
                 _entityTypes.Add(pair.Value, new EntityTypeInfo(metadataProvider, pair.Value, pair.Key));
 
             _complexTypes = new Dictionary<Type, EdmComplexType>();
@@ -94,7 +94,7 @@ namespace OdataToEntity.ModelBuilder
                 TargetMultiplicity = fkeyInfo.DependentMultiplicity
             };
 
-            if (fkeyInfo.PrincipalNavigationProperty == null)
+            if (fkeyInfo.PrincipalNavigationProperty == null || fkeyInfo.PrincipalNavigationProperty == fkeyInfo.DependentNavigationProperty)
                 return edmDependent.AddUnidirectionalNavigation(edmDependentInfo);
 
             var edmPrincipalInfo = new EdmNavigationPropertyInfo()

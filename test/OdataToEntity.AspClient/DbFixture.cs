@@ -107,7 +107,9 @@ namespace OdataToEntity.Test
             {
                 PropertyInfo property = include.Property;
                 Type declaringType;
-                if (property.DeclaringType == typeof(Customer))
+                if (property.DeclaringType == typeof(Category))
+                    declaringType = typeof(ODataClient.OdataToEntity.Test.Model.Category);
+                else if (property.DeclaringType == typeof(Customer))
                     declaringType = typeof(ODataClient.OdataToEntity.Test.Model.Customer);
                 else if (property.DeclaringType == typeof(OrderItem))
                     declaringType = typeof(ODataClient.OdataToEntity.Test.Model.OrderItem);
@@ -126,6 +128,8 @@ namespace OdataToEntity.Test
         }
         private IQueryable GetQuerableOe<T>(Container container)
         {
+            if (typeof(T) == typeof(Category))
+                return container.Categories;
             if (typeof(T) == typeof(Customer))
                 return container.Customers;
             if (typeof(T) == typeof(OrderItem))

@@ -24,7 +24,8 @@ namespace OdataToEntity.Test.Model
 	/// </summary>
 	public partial class OdataToEntityDB : LinqToDB.Data.DataConnection, IOeLinq2DbDataContext
     {
-		public ITable<Customer>  Customers  { get { return this.GetTable<Customer>(); } }
+        public ITable<Category>  Categories { get { return this.GetTable<Category>(); } }
+        public ITable<Customer>  Customers  { get { return this.GetTable<Customer>(); } }
 		public ITable<Order>     Orders     { get { return this.GetTable<Order>(); } }
 		public ITable<OrderItem> OrderItems { get { return this.GetTable<OrderItem>(); } }
 
@@ -78,7 +79,34 @@ namespace OdataToEntity.Test.Model
 		#endregion
 	}
 
-	[Table(Schema="dbo", Name="Customers")]
+    [Table(Schema = "dbo", Name = "Categories")]
+    public partial class Category
+    {
+        [PrimaryKey, Identity]
+        public int Id { get; set; } // int
+        [Column, NotNull]
+        public string Name { get; set; } // varchar(128)
+        [Column, Nullable]
+        public int? ParentId { get; set; } // int
+
+        #region Associations
+
+        /// <summary>
+        /// FK_Categories_Categories_BackReference
+        /// </summary>
+        [Association(ThisKey = "Id", OtherKey = "ParentId", CanBeNull = true, IsBackReference = true)]
+        public IEnumerable<Category> Children { get; set; }
+
+        /// <summary>
+        /// FK_Categories_Categories
+        /// </summary>
+        [Association(ThisKey = "ParentId", OtherKey = "Id", CanBeNull = true, KeyName = "FK_Categories_Categories", BackReferenceName = "Children")]
+        public Category Parent { get; set; }
+
+        #endregion
+    }
+
+    [Table(Schema="dbo", Name="Customers")]
 	public partial class Customer
 	{
 		[Column,        Nullable] public string Address { get; set; } // varchar(256)

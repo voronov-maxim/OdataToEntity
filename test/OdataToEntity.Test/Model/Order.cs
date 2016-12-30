@@ -4,6 +4,15 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace OdataToEntity.Test.Model
 {
+    public sealed class Category
+    {
+        public ICollection<Category> Children { get; set; }
+        public int Id { get; set; }
+        public String Name { get; set; }
+        public Category Parent { get; set; }
+        public int? ParentId { get; set; }
+    }
+
     public sealed class Customer
     {
         public String Address { get; set; }

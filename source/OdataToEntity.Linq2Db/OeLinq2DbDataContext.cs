@@ -51,12 +51,18 @@ namespace OdataToEntity.Linq2Db
             var orderedTypes = new List<ClrTypeEdmSet>();
             while (clrTypeEdmSetList.Count > 0)
                 for (int i = 0; i < clrTypeEdmSetList.Count; i++)
-                    if (IsDependent(clrTypeEdmSetList[i].EdmSet.NavigationPropertyBindings, clrTypeEdmSetList))
+                {
+                    PropertyDescriptor selfRefProperty;
+                    if (IsDependent(clrTypeEdmSetList[i], clrTypeEdmSetList, out selfRefProperty))
                     {
+                        if (selfRefProperty != null)
+                            _tables[selfRefProperty.ComponentType].SelfRefProperty = selfRefProperty;
+
                         orderedTypes.Add(clrTypeEdmSetList[i]);
                         clrTypeEdmSetList.RemoveAt(i);
                         break;
                     }
+                }
             return orderedTypes;
         }
         private static List<PropertyDescriptor> GetDependentProperties(Type clrType, IEdmNavigationProperty navigationPropery)
@@ -85,15 +91,24 @@ namespace OdataToEntity.Linq2Db
 
             throw new InvalidOperationException("Table entity type " + entityType.FullName + " not found");
         }
-        private static bool IsDependent(IEnumerable<IEdmNavigationPropertyBinding> navigationBindings, List<ClrTypeEdmSet> clrTypeEdmSetList)
+        private static bool IsDependent(ClrTypeEdmSet clrTypeEdmSet, List<ClrTypeEdmSet> clrTypeEdmSetList, out PropertyDescriptor selfRefProperty)
         {
-            foreach (IEdmNavigationPropertyBinding navigationBinding in navigationBindings)
+            selfRefProperty = null;
+
+            foreach (IEdmNavigationPropertyBinding navigationBinding in clrTypeEdmSet.EdmSet.NavigationPropertyBindings)
             {
                 if (!navigationBinding.NavigationProperty.IsPrincipal())
-                    continue;
-
-                foreach (ClrTypeEdmSet clrTypeEdmSet in clrTypeEdmSetList)
+                {
                     if (clrTypeEdmSet.EdmSet == navigationBinding.Target)
+                    {
+                        IEdmStructuralProperty edmSelfRefProperty = navigationBinding.NavigationProperty.DependentProperties().Single();
+                        selfRefProperty = TypeDescriptor.GetProperties(clrTypeEdmSet.ClrType)[edmSelfRefProperty.Name];
+                    }
+                    continue;
+                }
+
+                foreach (ClrTypeEdmSet clrTypeEdmSet2 in clrTypeEdmSetList)
+                    if (clrTypeEdmSet2.EdmSet == navigationBinding.Target && clrTypeEdmSet.EdmSet != navigationBinding.Target)
                         return false;
             }
             return true;

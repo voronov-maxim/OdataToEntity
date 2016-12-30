@@ -15,8 +15,14 @@ namespace OdataToEntity.Test
             var fixture = new DbFixtureInitDb();
             using (var orderContext = fixture.CreateContext())
             {
+                Assert.Equal(8, orderContext.Categories.Count());
+                Assert.Equal(4, orderContext.Customers.Count());
                 Assert.Equal(3, orderContext.Orders.Count());
                 Assert.Equal(7, orderContext.OrderItems.Count());
+
+                var category = orderContext.Categories.Single(t => t.Name == "jackets");
+                Assert.Equal("clothes", orderContext.Categories.Single(t => t.Id == category.ParentId).Name);
+                Assert.Equal(2, orderContext.Categories.Where(t => t.ParentId == category.Id).Count());
 
                 var order1 = orderContext.Orders.Include(t => t.Items).Single(t => t.Name == "Order 1");
                 Assert.Equal(3, order1.Items.Count());
@@ -36,6 +42,7 @@ namespace OdataToEntity.Test
             await fixture.ExecuteBatchAsync("Delete");
             using (var orderContext = fixture.CreateContext())
             {
+                Assert.Equal(5, orderContext.Categories.Count());
                 Assert.Equal(4, orderContext.Customers.Count());
                 Assert.Equal(2, orderContext.Orders.Count());
                 Assert.Equal(3, orderContext.OrderItems.Count());
@@ -51,6 +58,9 @@ namespace OdataToEntity.Test
             await fixture.ExecuteBatchAsync("Update");
             using (var orderContext = fixture.CreateContext())
             {
+                var category = orderContext.Categories.Single(t => t.Name == "sombrero jacket");
+                Assert.Equal("jackets", orderContext.Categories.Single(t => t.Id == category.ParentId).Name);
+
                 Assert.Equal(4, orderContext.Customers.Count());
                 Assert.Equal(3, orderContext.Orders.Count());
                 Assert.Equal(7, orderContext.OrderItems.Count());

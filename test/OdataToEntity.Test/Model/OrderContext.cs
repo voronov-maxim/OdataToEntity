@@ -59,6 +59,55 @@ namespace OdataToEntity.Test.Model
         }
         public void InitDb()
         {
+            var category1 = new Category()
+            {
+                Id = 1,
+                Name = "clothes",
+                ParentId = null
+            };
+            var category2 = new Category()
+            {
+                Id = 2,
+                Name = "unknown",
+                ParentId = null
+            };
+            var category3 = new Category()
+            {
+                Id = 3,
+                Name = "hats",
+                ParentId = 1
+            };
+            var category4 = new Category()
+            {
+                Id = 4,
+                Name = "jackets",
+                ParentId = 1
+            };
+            var category5 = new Category()
+            {
+                Id = 5,
+                Name = "baseball cap",
+                ParentId = 3
+            };
+            var category6 = new Category()
+            {
+                Id = 6,
+                Name = "sombrero",
+                ParentId = 3
+            };
+            var category7 = new Category()
+            {
+                Id = 7,
+                Name = "fur coat",
+                ParentId = 4
+            };
+            var category8 = new Category()
+            {
+                Id = 8,
+                Name = "cloak",
+                ParentId = 4
+            };
+
             var customer1 = new Customer()
             {
                 Address = "Moscow",
@@ -172,6 +221,14 @@ namespace OdataToEntity.Test.Model
                 Product = "{ null }.Sum() == 0"
             };
 
+            Categories.Add(category1);
+            Categories.Add(category2);
+            Categories.Add(category3);
+            Categories.Add(category4);
+            Categories.Add(category5);
+            Categories.Add(category6);
+            Categories.Add(category7);
+            Categories.Add(category8);
             Customers.Add(customer1);
             Customers.Add(customer2);
             Customers.Add(customer3);
@@ -190,7 +247,7 @@ namespace OdataToEntity.Test.Model
             base.SaveChanges();
         }
 
-
+        public DbSet<Category> Categories { get; set; }
         public DbSet<Customer> Customers { get; set; }
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }

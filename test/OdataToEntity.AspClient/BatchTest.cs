@@ -22,8 +22,14 @@ namespace OdataToEntityCore.AspClient
 
             container = DbFixtureInitDb.CreateContainer();
 
+            Assert.Equal(8, container.Categories.Count());
+            Assert.Equal(4, container.Customers.Count());
             Assert.Equal(3, container.Orders.Count());
             Assert.Equal(7, container.OrderItems.Count());
+
+            var category = container.Categories.Where(t => t.Name == "jackets").Single();
+            Assert.Equal("clothes", container.Categories.Where(t => t.Id == category.ParentId).Single().Name);
+            Assert.Equal(2, container.Categories.Where(t => t.ParentId == category.Id).Count());
 
             var order1 = container.Orders.Expand(t => t.Items).Where(t => t.Name == "Order 1").Single();
             Assert.Equal(3, order1.Items.Count());
@@ -38,6 +44,55 @@ namespace OdataToEntityCore.AspClient
         }
         private static void Add(Container container)
         {
+            var category1 = new Category()
+            {
+                Id = 1,
+                Name = "clothes",
+                ParentId = null
+            };
+            var category2 = new Category()
+            {
+                Id = 2,
+                Name = "unknown",
+                ParentId = null
+            };
+            var category3 = new Category()
+            {
+                Id = 3,
+                Name = "hats",
+                ParentId = 1
+            };
+            var category4 = new Category()
+            {
+                Id = 4,
+                Name = "jackets",
+                ParentId = 1
+            };
+            var category5 = new Category()
+            {
+                Id = 5,
+                Name = "baseball cap",
+                ParentId = 3
+            };
+            var category6 = new Category()
+            {
+                Id = 6,
+                Name = "sombrero",
+                ParentId = 3
+            };
+            var category7 = new Category()
+            {
+                Id = 7,
+                Name = "fur coat",
+                ParentId = 4
+            };
+            var category8 = new Category()
+            {
+                Id = 8,
+                Name = "cloak",
+                ParentId = 4
+            };
+
             var customer1 = new Customer()
             {
                 Address = "Moscow",
@@ -150,6 +205,14 @@ namespace OdataToEntityCore.AspClient
                 Product = "{ null }.Sum() == 0"
             };
 
+            container.AddToCategories(category1);
+            container.AddToCategories(category2);
+            container.AddToCategories(category3);
+            container.AddToCategories(category4);
+            container.AddToCategories(category5);
+            container.AddToCategories(category6);
+            container.AddToCategories(category7);
+            container.AddToCategories(category8);
 
             container.AddToCustomers(customer1);
             container.AddToCustomers(customer2);
@@ -177,6 +240,7 @@ namespace OdataToEntityCore.AspClient
 
             container = DbFixtureInitDb.CreateContainer();
 
+            Assert.Equal(5, container.Categories.Count());
             Assert.Equal(4, container.Customers.Count());
             Assert.Equal(2, container.Orders.Count());
             Assert.Equal(5, container.OrderItems.Count());
@@ -188,6 +252,18 @@ namespace OdataToEntityCore.AspClient
         }
         private static void Delete(Container container)
         {
+            var category4 = new Category() { Id = 4 };
+            container.AttachTo("Categories", category4);
+            container.DeleteObject(category4);
+
+            var category7 = new Category() { Id = 7 };
+            container.AttachTo("Categories", category7);
+            container.DeleteObject(category7);
+
+            var category8 = new Category() { Id = 8 };
+            container.AttachTo("Categories", category8);
+            container.DeleteObject(category8);
+
             var orderItem1 = new OrderItem() { Id = 1 };
             container.AttachTo("OrderItems", orderItem1);
             container.DeleteObject(orderItem1);
@@ -211,6 +287,9 @@ namespace OdataToEntityCore.AspClient
 
             container = DbFixtureInitDb.CreateContainer();
 
+            var category = container.Categories.Where(t => t.Name == "sombrero jacket").Single();
+            Assert.Equal("jackets", container.Categories.Where(t => t.Id == category.ParentId).Single().Name);
+
             Assert.Equal(4, container.Customers.Count());
             Assert.Equal(3, container.Orders.Count());
             Assert.Equal(7, container.OrderItems.Count());
@@ -226,6 +305,11 @@ namespace OdataToEntityCore.AspClient
         }
         private static void Update(Container container)
         {
+            var category6 = container.Categories.ByKey(6).GetValue();
+            category6.ParentId = 4;
+            category6.Name = "sombrero jacket";
+            container.ChangeState(category6, EntityStates.Modified);
+
             var order1 = container.Orders.ByKey(1).GetValue();
             order1.Name = "New " + order1.Name;
             container.ChangeState(order1, EntityStates.Modified);

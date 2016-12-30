@@ -57,5 +57,19 @@ Accept-Charset: UTF-8
 User-Agent: Microsoft ADO.NET Data Services
 
 {"@odata.type":"#OdataToEntity.Test.Model.Customer","Address":"Tambov","Id":2,"Name":"Natasha","Sex@odata.type":"#OdataToEntity.Test.Model.Sex","Sex":null}
+--changeset_2ba34bb3-9be1-4fb5-8804-395055ed3eba
+Content-Type: application/http
+Content-Transfer-Encoding: binary
+Content-ID: 9
+
+PATCH http://dummy/Categories(6) HTTP/1.1
+OData-Version: 4.0
+OData-MaxVersion: 4.0
+Content-Type: application/json;odata.metadata=minimal
+Accept: application/json;odata.metadata=minimal
+Accept-Charset: UTF-8
+User-Agent: Microsoft ADO.NET Data Services
+
+{"@odata.type":"#OdataToEntity.Test.Model.Category","Id":6,"Name":"sombrero jacket","ParentId":4}
 --changeset_2ba34bb3-9be1-4fb5-8804-395055ed3eba--
 --batch_2aa63275-8b69-49c7-a3fc-4a66c831d624--
