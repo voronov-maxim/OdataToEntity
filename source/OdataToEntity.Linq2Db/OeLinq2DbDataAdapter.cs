@@ -102,8 +102,7 @@ namespace OdataToEntity.Linq2Db
             public override String EntitySetName => _entitySetName;
         }
 
-        private readonly static OeEntitySetMetaAdapterCollection _entitySetMetaAdapters = CreateEntitySetMetaAdapters();
-        private static int _initialized;
+        private readonly static Lazy<OeEntitySetMetaAdapterCollection> _entitySetMetaAdapters = new Lazy<OeEntitySetMetaAdapterCollection>(CreateEntitySetMetaAdapters);
 
         public override void CloseDataContext(Object dataContext)
         {
@@ -149,13 +148,10 @@ namespace OdataToEntity.Linq2Db
         }
         public override OeEntitySetAdapter GetEntitySetAdapter(String entitySetName)
         {
-            return new OeEntitySetAdapter(_entitySetMetaAdapters.FindByEntitySetName(entitySetName), this);
+            return new OeEntitySetAdapter(EntitySetMetaAdapters.FindByEntitySetName(entitySetName), this);
         }
         private static void InitializeLinq2Db()
         {
-            if (Interlocked.CompareExchange(ref _initialized, 1, 0) != 0)
-                return;
-
             Func<Sql.DateParts, DateTimeOffset, int> datePartFunc = SqlFunction.DatePart;
             ParameterExpression parameter = Expression.Parameter(typeof(DateTimeOffset));
 
@@ -178,6 +174,6 @@ namespace OdataToEntity.Linq2Db
             return Task.FromResult(count);
         }
 
-        public override OeEntitySetMetaAdapterCollection EntitySetMetaAdapters => _entitySetMetaAdapters;
+        public override OeEntitySetMetaAdapterCollection EntitySetMetaAdapters => _entitySetMetaAdapters.Value;
     }
 }

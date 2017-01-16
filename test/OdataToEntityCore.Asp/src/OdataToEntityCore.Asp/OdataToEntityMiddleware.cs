@@ -17,20 +17,18 @@ namespace OdataToEntityCore.Asp
 {
     public sealed class OdataToEntityMiddleware
     {
+        private readonly PathString _apiPath;
         private readonly Uri _baseUri;
-        private readonly PathString _endpointPath;
-        private readonly RequestDelegate _next;
 
         private OeDataAdapter _dataAdapter;
         private readonly IEdmModel _edmModel;
 
-        public OdataToEntityMiddleware(RequestDelegate next, Type dataAdapterType, String endpointPath, IServiceProvider serviceProvider)
+        public OdataToEntityMiddleware(RequestDelegate next, PathString apiPath, OeDataAdapter dataAdapter)
         {
-            _next = next;
-            _endpointPath = new PathString("/" + endpointPath);
-            _baseUri = new Uri("http://dummy" + _endpointPath);
+            _apiPath = apiPath;
+            _baseUri = new Uri("http://dummy" + apiPath);
 
-            _dataAdapter = (OeDataAdapter)serviceProvider.GetService(dataAdapterType);
+            _dataAdapter = dataAdapter;
             _edmModel = new OeEdmModelBuilder(_dataAdapter.EntitySetMetaAdapters.EdmModelMetadataProvider,
                 _dataAdapter.EntitySetMetaAdapters.ToDictionary()).BuildEdmModel();
         }
@@ -46,18 +44,12 @@ namespace OdataToEntityCore.Asp
         }
         public async Task Invoke(HttpContext httpContext)
         {
-            PathString remaining;
-            if (httpContext.Request.Path.StartsWithSegments(_endpointPath, StringComparison.Ordinal, out remaining))
-            {
-                if (remaining.StartsWithSegments("/$metadata"))
-                    InvokeMetadata(httpContext);
-                else if (remaining.StartsWithSegments("/$batch"))
-                    await InvokeBatch(httpContext);
-                else
-                    await Invoke(httpContext, remaining);
-            }
+            if (httpContext.Request.Path == "/$metadata")
+                InvokeMetadata(httpContext);
+            else if (httpContext.Request.Path == "/$batch")
+                await InvokeBatch(httpContext);
             else
-                await _next.Invoke(httpContext);
+                await Invoke(httpContext, httpContext.Request.Path);
         }
         private async Task Invoke(HttpContext httpContext, PathString remaining)
         {

@@ -48,24 +48,23 @@ namespace OdataToEntity.Linq2Db
         {
             _inserted.Add(entity);
         }
-        private List<T> OrderBy(List<T> items, PropertyDescriptor keyProperty)
+        private static void OrderBy(PropertyDescriptor selfRefProperty, PropertyDescriptor keyProperty, List<T> items)
         {
-            if (base.SelfRefProperty == null || items.Count == 0)
-                return items;
+            if (selfRefProperty == null || items.Count == 0)
+                return;
 
-            var sorted = new List<T>(items);
-            for (int i = 0; i < sorted.Count; i++)
+            for (int i = 0; i < items.Count; i++)
             {
-                Object parentKey = base.SelfRefProperty.GetValue(sorted[i]);
+                Object parentKey = selfRefProperty.GetValue(items[i]);
                 if (parentKey == null)
                     continue;
 
-                for (int j = i; j < sorted.Count; j++)
+                for (int j = i; j < items.Count; j++)
                 {
                     bool found = false;
-                    for (int k = j; k < sorted.Count; k++)
+                    for (int k = j; k < items.Count; k++)
                     {
-                        Object key = keyProperty.GetValue(sorted[k]);
+                        Object key = keyProperty.GetValue(items[k]);
                         if (key.Equals(parentKey))
                         {
                             found = true;
@@ -75,14 +74,13 @@ namespace OdataToEntity.Linq2Db
 
                     if (!found)
                     {
-                        T temp = sorted[i];
-                        sorted[i] = sorted[j];
-                        sorted[j] = temp;
+                        T temp = items[i];
+                        items[i] = items[j];
+                        items[j] = temp;
                         break;
                     }
                 }
             }
-            return sorted;
         }
         public override int SaveDeleted(DataConnection dc)
         {
@@ -94,9 +92,9 @@ namespace OdataToEntity.Linq2Db
             }
 
             List<PropertyDescriptor> identityProperties = GetDatabaseGenerated();
-            List<T> sorted = OrderBy(_deleted, identityProperties[0]);
-            for (int i = sorted.Count - 1; i >= 0; i--)
-                dc.Delete(sorted[i]);
+            OrderBy(base.SelfRefProperty, identityProperties[0], _deleted);
+            for (int i = _deleted.Count - 1; i >= 0; i--)
+                dc.Delete(_deleted[i]);
             return Deleted.Count;
         }
         public override int SaveInserted(DataConnection dc)
@@ -109,7 +107,8 @@ namespace OdataToEntity.Linq2Db
                 return Inserted.Count;
             }
 
-            foreach (T entity in OrderBy(_inserted, identityProperties[0]))
+            OrderBy(base.SelfRefProperty, identityProperties[0], _inserted);
+            foreach (T entity in _inserted)
             {
                 Object identity = dc.InsertWithIdentity<T>(entity);
                 identity = Convert.ChangeType(identity, identityProperties[0].PropertyType);
