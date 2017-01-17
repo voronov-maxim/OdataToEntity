@@ -73,6 +73,7 @@ namespace OdataToEntity.ModelBuilder
             {typeof(DateTime?), GetPrimitiveType(EdmPrimitiveTypeKind.DateTimeOffset)}
         };
         private readonly static Dictionary<EdmPrimitiveTypeKind, Type> _edmTypeMappings = CreateEdmTypeMappings(_clrTypeMappings);
+        public static readonly EdmComplexType TupleEdmType = new EdmComplexType("Default", "Tupe");
 
         public static Type GetClrType(EdmPrimitiveTypeKind primitiveKind)
         {

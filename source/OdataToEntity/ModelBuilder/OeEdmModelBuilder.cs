@@ -14,7 +14,7 @@ namespace OdataToEntity.ModelBuilder
         public OeEdmModelBuilder(OeEdmModelMetadataProvider metadataProvider, IDictionary<String, Type> entitySets)
         {
             _entityTypes = new Dictionary<Type, EntityTypeInfo>(entitySets.Count);
-            foreach (KeyValuePair<String, Type> pair in entitySets)//.Where(p => p.Key == "Categories"))
+            foreach (KeyValuePair<String, Type> pair in entitySets)
                 _entityTypes.Add(pair.Value, new EntityTypeInfo(metadataProvider, pair.Value, pair.Key));
 
             _complexTypes = new Dictionary<Type, EdmComplexType>();

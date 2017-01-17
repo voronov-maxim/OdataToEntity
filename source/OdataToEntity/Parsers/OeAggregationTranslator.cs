@@ -14,9 +14,8 @@ namespace OdataToEntity.Parsers
         private sealed class AggProperty : EdmStructuralProperty
         {
             private readonly bool _isGroup;
-            private static readonly EdmComplexType _tupleEdmType = new EdmComplexType("Default", "Tupe");
 
-            public AggProperty(String name, IEdmTypeReference type, bool isGroup) : base(_tupleEdmType, name, type)
+            public AggProperty(String name, IEdmTypeReference type, bool isGroup) : base(PrimitiveTypeHelper.TupleEdmType, name, type)
             {
                 _isGroup = isGroup;
             }

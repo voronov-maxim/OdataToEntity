@@ -21,7 +21,8 @@ namespace OdataToEntity.Parsers
             _accessor = accessor;
             _edmProperty = edmProperty;
 
-            _typeAnnotation = new ODataTypeAnnotation(edmProperty.Type.ShortQualifiedName());
+            if (edmProperty.DeclaringType == PrimitiveTypeHelper.TupleEdmType)
+                _typeAnnotation = new ODataTypeAnnotation(edmProperty.Type.ShortQualifiedName());
         }
 
         public static OePropertyAccessor CreatePropertyAccessor(IEdmProperty edmProperty, Expression expression, ParameterExpression parameter)

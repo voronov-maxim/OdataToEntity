@@ -1,20 +1,20 @@
-{
+﻿{
   "version": "1.0.0-*",
   "buildOptions": {
     "debugType": "portable",
     "emitEntryPoint": true
   },
   "dependencies": {
+    "dotnet-test-xunit": "2.2.0-preview2-build1029",
     "Microsoft.EntityFrameworkCore": "1.1.0",
     "Microsoft.EntityFrameworkCore.InMemory": "1.1.0",
     "Microsoft.OData.Core": "7.0.0",
     "Microsoft.OData.Edm": "7.0.0",
     "Newtonsoft.Json": "9.0.1",
-    "xunit": "2.2.0-beta4-build3444",
-    "xunit.runner.visualstudio": "2.2.0-beta4-build1194",
-    "dotnet-test-xunit": "2.2.0-preview2-build1029",
     "OdataToEntity": "1.0.0.*",
-    "OdataToEntity.EfCore": "1.0.0.*"
+    "OdataToEntity.EfCore": "1.0.0.*",
+    "xunit": "2.2.0-beta5-build3474",
+    "xunit.runner.visualstudio": "2.2.0-beta5-build1225"
   },
   "testRunner": "xunit",
   "runtimes": {
