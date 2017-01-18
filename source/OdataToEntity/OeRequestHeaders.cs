@@ -13,7 +13,7 @@ namespace OdataToEntity
     {
         private readonly String _charset;
         private readonly String _contentType;
-        private static readonly OeRequestHeaders _default = new OeRequestHeaders(OeMetadataLevel.Minimal, true, "utf-8");
+        public static readonly OeRequestHeaders Default = new OeRequestHeaders(OeMetadataLevel.Minimal, true, "utf-8");
         private readonly OeMetadataLevel _metadataLevel;
         private readonly bool _streaming;
 
@@ -106,8 +106,8 @@ namespace OdataToEntity
             if (start != -1)
                 streaming = String.Compare(acceptHeader, start, "true", 0, "true".Length, StringComparison.OrdinalIgnoreCase) == 0;
 
-            if (metadataLevel == _default.MetadataLevel && streaming == _default.Streaming)
-                return _default;
+            if (metadataLevel == Default.MetadataLevel && streaming == Default.Streaming)
+                return Default;
             else
                 return new OeRequestHeaders(metadataLevel, streaming, "utf-8");
         }
