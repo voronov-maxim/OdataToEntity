@@ -3,6 +3,7 @@ OData .net core
 
 ##Sample OData query
 
+```
 //Create adapter data access, where OrderContext your DbContext
 var dataAdapter = new OeEfCoreDataAdapter<Model.OrderContext>();
 //Create OData EDM model
@@ -15,9 +16,11 @@ var uri = new Uri("http://dummy/Orders?$select=Name");
 var response = new MemoryStream();
 //Execute query
 await parser.ExecuteQueryAsync(uri, OeRequestHeaders.Default, response, CancellationToken.None);
+```
 
 ##Sample OData batch request
 
+```
 //Create adapter data access, where OrderContext your DbContext
 var dataAdapter = new OeEfCoreDataAdapter<Model.OrderContext>();
 //Create OData EDM model
@@ -30,3 +33,4 @@ var request = new MemoryStream(File.ReadAllBytes("Batches\\Add.batch"));
 var response = new MemoryStream();
 //Execute query
 await parser.ExecuteBatchAsync(request, response, CancellationToken.None);
+```
