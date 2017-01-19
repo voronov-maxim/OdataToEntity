@@ -66,6 +66,11 @@ namespace OdataToEntity.ModelBuilder
             edmModel.AddElement(container);
             return edmModel;
         }
+        public static EdmModel BuildEdmModel(Db.OeDataAdapter dataAdapter)
+        {
+            var modelBuilder = new OeEdmModelBuilder(dataAdapter.EntitySetMetaAdapters.EdmModelMetadataProvider, dataAdapter.EntitySetMetaAdapters.ToDictionary());
+            return modelBuilder.BuildEdmModel();
+        }
         private static EdmStructuralProperty[] CreateDependentEdmProperties(EdmEntityType edmDependent, IReadOnlyList<PropertyDescriptor> dependentStructuralProperties)
         {
             if (dependentStructuralProperties.Count == 0)
