@@ -203,37 +203,6 @@ namespace OdataToEntity.Parsers
                     return true;
             return false;
         }
-        private Expression Translate(NavigationPropertySegment segment)
-        {
-            IEdmNavigationProperty navigationEdmProperty = segment.NavigationProperty;
-            var collectionType = navigationEdmProperty.Type.Definition as IEdmCollectionType;
-
-            var resourceInfo = new ODataNestedResourceInfo()
-            {
-                IsCollection = collectionType != null,
-                Name = navigationEdmProperty.Name
-            };
-
-            var entitySet = (IEdmEntitySet)segment.NavigationSource;
-            if (entitySet == null)
-            {
-                IEdmType entityType;
-                if (collectionType == null)
-                    entityType = navigationEdmProperty.Type.Definition;
-                else
-                    entityType = collectionType.ElementType.Definition;
-                foreach (IEdmEntitySet element in _model.EntityContainer.Elements)
-                    if (element.EntityType() == entityType)
-                    {
-                        entitySet = element;
-                        break;
-                    }
-            }
-            _selectItemInfo = new SelectItemInfo(entitySet, navigationEdmProperty, resourceInfo);
-
-            PropertyInfo navigationClrProperty = _parameter.Type.GetTypeInfo().GetProperty(navigationEdmProperty.Name);
-            return Expression.MakeMemberAccess(_parameter, navigationClrProperty);
-        }
         public override Expression Translate(ExpandedNavigationSelectItem item)
         {
             var segment = (NavigationPropertySegment)item.PathToNavigationProperty.LastSegment;
@@ -266,6 +235,37 @@ namespace OdataToEntity.Parsers
                 return nestedExpression;
             }
             return expression;
+        }
+        private Expression Translate(NavigationPropertySegment segment)
+        {
+            IEdmNavigationProperty navigationEdmProperty = segment.NavigationProperty;
+            var collectionType = navigationEdmProperty.Type.Definition as IEdmCollectionType;
+
+            var resourceInfo = new ODataNestedResourceInfo()
+            {
+                IsCollection = collectionType != null,
+                Name = navigationEdmProperty.Name
+            };
+
+            var entitySet = (IEdmEntitySet)segment.NavigationSource;
+            if (entitySet == null)
+            {
+                IEdmType entityType;
+                if (collectionType == null)
+                    entityType = navigationEdmProperty.Type.Definition;
+                else
+                    entityType = collectionType.ElementType.Definition;
+                foreach (IEdmEntitySet element in _model.EntityContainer.Elements)
+                    if (element.EntityType() == entityType)
+                    {
+                        entitySet = element;
+                        break;
+                    }
+            }
+            _selectItemInfo = new SelectItemInfo(entitySet, navigationEdmProperty, resourceInfo);
+
+            PropertyInfo navigationClrProperty = _parameter.Type.GetTypeInfo().GetProperty(navigationEdmProperty.Name);
+            return Expression.MakeMemberAccess(_parameter, navigationClrProperty);
         }
         public override Expression Translate(PathSelectItem item)
         {

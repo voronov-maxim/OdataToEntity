@@ -13,6 +13,8 @@ namespace OdataToEntity.Test
         public Task Add()
         {
             var fixture = new DbFixtureInitDb();
+            fixture.Initalize();
+
             using (var orderContext = fixture.CreateContext())
             {
                 Assert.Equal(8, orderContext.Categories.Count());
@@ -39,6 +41,8 @@ namespace OdataToEntity.Test
         public async Task Delete()
         {
             var fixture = new DbFixtureInitDb();
+            fixture.Initalize();
+
             await fixture.ExecuteBatchAsync("Delete");
             using (var orderContext = fixture.CreateContext())
             {
@@ -55,6 +59,8 @@ namespace OdataToEntity.Test
         public async Task Update()
         {
             var fixture = new DbFixtureInitDb();
+            fixture.Initalize();
+
             await fixture.ExecuteBatchAsync("Update");
             using (var orderContext = fixture.CreateContext())
             {

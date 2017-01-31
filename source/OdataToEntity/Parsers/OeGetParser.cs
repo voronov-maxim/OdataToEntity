@@ -74,24 +74,9 @@ namespace OdataToEntity
         }
         public async Task ExecuteAsync(Uri requestUri, OeRequestHeaders headers, Stream stream, CancellationToken cancellationToken)
         {
-            var odataParser = new ODataUriParser(_model, _baseUri, requestUri);
-            odataParser.Resolver.EnableCaseInsensitive = true;
-            ODataPath odataPath = odataParser.ParsePath();
-            ODataUri odataUri = odataParser.ParseUri();
-
-            IEdmEntitySet entitySet;
-            IEdmEntityTypeReference entityTypeRef = GetEdmEntityTypeRef(odataPath, out entitySet);
-            Db.OeEntitySetAdapter entitySetAdapter = _dataAdapter.GetEntitySetAdapter(entitySet.Name);
-
-            FilterClause filterClause = odataUri.Filter;
-            IEnumerable<NavigationPropertySegment> navigationSegments = null;
-            if (odataPath.LastSegment is KeySegment)
-                filterClause = CreateFilterClause(entitySet, entityTypeRef, odataPath.LastSegment as KeySegment);
-            else if (odataPath.LastSegment is NavigationPropertySegment)
-            {
-                filterClause = CreateFilterClause(entitySet, entityTypeRef, odataPath.OfType<KeySegment>().Single());
-                navigationSegments = odataPath.OfType<NavigationPropertySegment>();
-            }
+            OeParseUriContext parseUriContext = ParseUri(requestUri);
+            ODataUri odataUri = parseUriContext.ODataUri;
+            Db.OeEntitySetAdapter entitySetAdapter = _dataAdapter.GetEntitySetAdapter(parseUriContext.EntitySet.Name);
 
             Object dataContext = null;
             try
@@ -102,15 +87,15 @@ namespace OdataToEntity
                 var visitor = new SourceVisitor(query);
                 Expression expression = visitor.Source;
 
-                expression = expressionBuilder.ApplyFilter(expression, filterClause);
-                expression = expressionBuilder.ApplyNavigation(expression, navigationSegments);
+                expression = expressionBuilder.ApplyNavigation(expression, parseUriContext.ParseNavigationSegments);
+                expression = expressionBuilder.ApplyFilter(expression, odataUri.Filter);
                 expression = expressionBuilder.ApplyAggregation(expression, odataUri.Apply);
                 expression = expressionBuilder.ApplySelect(expression, odataUri.SelectAndExpand, headers.MetadataLevel);
                 expression = expressionBuilder.ApplyOrderBy(expression, odataUri.OrderBy);
                 expression = expressionBuilder.ApplySkip(expression, odataUri.Skip);
                 expression = expressionBuilder.ApplyTake(expression, odataUri.Top);
 
-                if (odataUri.QueryCount.GetValueOrDefault() || odataPath.LastSegment is CountSegment)
+                if (odataUri.QueryCount.GetValueOrDefault())
                 {
                     expression = expressionBuilder.ApplyCount(expression);
                     int count = query.Provider.Execute<int>(visitor.Visit(expression));
@@ -119,6 +104,7 @@ namespace OdataToEntity
                     return;
                 }
 
+                IEdmEntitySet entitySet = parseUriContext.EntitySet;
                 if (expressionBuilder.EntityType != entitySetAdapter.EntityType)
                 {
                     String typeName = expressionBuilder.EntityType.FullName;
@@ -131,7 +117,7 @@ namespace OdataToEntity
                 query = query.Provider.CreateQuery(visitor.Visit(expression));
                 using (Db.OeEntityAsyncEnumerator asyncEnumerator = _dataAdapter.ExecuteEnumerator(query, cancellationToken))
                 {
-                    var writers = new Writers.OeGetWriter(_baseUri, _model);
+                    var writers = new Writers.OeGetWriter(BaseUri, _model);
                     await writers.SerializeAsync(odataUri, entryFactory, asyncEnumerator, headers, stream).ConfigureAwait(false);
                 }
             }
@@ -141,20 +127,64 @@ namespace OdataToEntity
                     _dataAdapter.CloseDataContext(dataContext);
             }
         }
-        internal static IEdmEntityTypeReference GetEdmEntityTypeRef(ODataPath odataPath, out IEdmEntitySet entitySet)
+        public OeParseUriContext ParseUri(Uri requestUri)
         {
-            entitySet = null;
-            foreach (ODataPathSegment segment in odataPath)
+            var odataParser = new ODataUriParser(_model, BaseUri, requestUri);
+            odataParser.Resolver.EnableCaseInsensitive = true;
+            ODataUri odataUri = odataParser.ParseUri();
+
+            List<OeParseNavigationSegment> navigationSegments = null;
+            if (odataUri.Path.LastSegment is KeySegment ||
+                odataUri.Path.LastSegment is NavigationPropertySegment)
             {
-                var entitySegment = segment as EntitySetSegment;
-                if (entitySegment != null)
+                navigationSegments = new List<OeParseNavigationSegment>();
+                ODataPathSegment previousSegment = null;
+                foreach (ODataPathSegment segment in odataUri.Path)
                 {
-                    entitySet = entitySegment.EntitySet;
-                    return (IEdmEntityTypeReference)((IEdmCollectionType)entitySegment.EdmType).ElementType;
+                    if (segment is NavigationPropertySegment)
+                    {
+                        var navigationSegment = segment as NavigationPropertySegment;
+                        if (navigationSegment == odataUri.Path.LastSegment)
+                            navigationSegments.Add(new OeParseNavigationSegment(navigationSegment, null));
+                        else
+                            navigationSegments.Add(new OeParseNavigationSegment(navigationSegment, null));
+                    }
+                    else if (segment is KeySegment)
+                    {
+                        IEdmEntitySet previousEntitySet;
+                        IEdmEntityTypeReference entityTypeRef;
+
+                        var keySegment = segment as KeySegment;
+                        NavigationPropertySegment navigationSegment = null;
+                        if (previousSegment is EntitySetSegment)
+                        {
+                            var previousEntitySetSegment = previousSegment as EntitySetSegment;
+                            previousEntitySet = previousEntitySetSegment.EntitySet;
+                            entityTypeRef = (IEdmEntityTypeReference)((IEdmCollectionType)previousEntitySetSegment.EdmType).ElementType;
+                        }
+                        else if (previousSegment is NavigationPropertySegment)
+                        {
+                            navigationSegment = previousSegment as NavigationPropertySegment;
+                            previousEntitySet = (IEdmEntitySet)navigationSegment.NavigationSource;
+                            entityTypeRef = (IEdmEntityTypeReference)((IEdmCollectionType)navigationSegment.EdmType).ElementType;
+                        }
+                        else
+                            throw new InvalidOperationException("invalid segment");
+
+                        FilterClause keyFilter = CreateFilterClause(previousEntitySet, entityTypeRef, keySegment);
+                        navigationSegments.Add(new OeParseNavigationSegment(navigationSegment, keyFilter));
+                    }
+                    previousSegment = segment;
                 }
             }
-            throw new InvalidOperationException("not supported type ODataPath");
+
+            odataUri.QueryCount = odataUri.Path.LastSegment is CountSegment;
+
+            var entitySetSegment = (EntitySetSegment)odataUri.Path.FirstSegment;
+            IEdmEntitySet entitySet = entitySetSegment.EntitySet;
+            return new OeParseUriContext(odataUri, entitySet, navigationSegments);
         }
 
+        public Uri BaseUri => _baseUri;
     }
 }

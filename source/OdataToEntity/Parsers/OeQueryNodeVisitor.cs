@@ -52,6 +52,16 @@ namespace OdataToEntity.Parsers
             return node.Accept(this);
         }
 
+        public override Expression Visit(AllNode nodeIn)
+        {
+            var sourceNode = (CollectionNavigationNode)nodeIn.Source;
+            return Lambda(sourceNode, nodeIn.Body, nameof(Enumerable.All));
+        }
+        public override Expression Visit(AnyNode nodeIn)
+        {
+            var sourceNode = (CollectionNavigationNode)nodeIn.Source;
+            return Lambda(sourceNode, nodeIn.Body, nameof(Enumerable.Any));
+        }
         public override Expression Visit(BinaryOperatorNode nodeIn)
         {
             Expression left = TranslateNode(nodeIn.Left);
@@ -91,9 +101,19 @@ namespace OdataToEntity.Parsers
             ExpressionType binaryType = OeExpressionHelper.ToExpressionType(nodeIn.OperatorKind);
             return Expression.MakeBinary(binaryType, left, right);
         }
+        public override Expression Visit(CollectionNavigationNode nodeIn)
+        {
+            Expression source = TranslateNode(nodeIn.Source);
+            PropertyInfo propertyInfo = source.Type.GetTypeInfo().GetProperty(nodeIn.NavigationProperty.Name);
+            return Expression.Property(source, propertyInfo);
+        }
         public override Expression Visit(ConstantNode nodeIn)
         {
             return Expression.Constant(nodeIn.Value);
+        }
+        public override Expression Visit(ConvertNode nodeIn)
+        {
+            return TranslateNode(nodeIn.Source);
         }
         public override Expression Visit(CountNode nodeIn)
         {
@@ -102,31 +122,9 @@ namespace OdataToEntity.Parsers
             var typeArguments = new Type[] { OeExpressionHelper.GetCollectionItemType(property.Type) };
             return Expression.Call(typeof(Enumerable), nameof(Enumerable.Count), typeArguments, property);
         }
-        public override Expression Visit(SingleValuePropertyAccessNode nodeIn)
-        {
-            if (TuplePropertyMapper == null)
-                return Expression.Property(TranslateNode(nodeIn.Source), nodeIn.Property.Name);
-
-            Expression source;
-            String aliasName = nodeIn.Property.Name;
-            try
-            {
-                source = TranslateNode(nodeIn.Source);
-            }
-            catch (TupleNavigationPropertyException e)
-            {
-                source = Parameter;
-                aliasName = e.NavigationProperty.Name + "_" + aliasName;
-            }
-            return TuplePropertyMapper(source, aliasName);
-        }
         public override Expression Visit(ResourceRangeVariableReferenceNode nodeIn)
         {
             return Parameter;
-        }
-        public override Expression Visit(ConvertNode nodeIn)
-        {
-            return TranslateNode(nodeIn.Source);
         }
         public override Expression Visit(SingleNavigationNode nodeIn)
         {
@@ -145,21 +143,23 @@ namespace OdataToEntity.Parsers
 
             return Expression.Property(source, propertyInfo);
         }
-        public override Expression Visit(CollectionNavigationNode nodeIn)
+        public override Expression Visit(SingleValuePropertyAccessNode nodeIn)
         {
-            Expression source = TranslateNode(nodeIn.Source);
-            PropertyInfo propertyInfo = source.Type.GetTypeInfo().GetProperty(nodeIn.NavigationProperty.Name);
-            return Expression.Property(source, propertyInfo);
-        }
-        public override Expression Visit(AnyNode nodeIn)
-        {
-            var sourceNode = (CollectionNavigationNode)nodeIn.Source;
-            return Lambda(sourceNode, nodeIn.Body, nameof(Enumerable.Any));
-        }
-        public override Expression Visit(AllNode nodeIn)
-        {
-            var sourceNode = (CollectionNavigationNode)nodeIn.Source;
-            return Lambda(sourceNode, nodeIn.Body, nameof(Enumerable.All));
+            if (TuplePropertyMapper == null)
+                return Expression.Property(TranslateNode(nodeIn.Source), nodeIn.Property.Name);
+
+            Expression source;
+            String aliasName = nodeIn.Property.Name;
+            try
+            {
+                source = TranslateNode(nodeIn.Source);
+            }
+            catch (TupleNavigationPropertyException e)
+            {
+                source = Parameter;
+                aliasName = e.NavigationProperty.Name + "_" + aliasName;
+            }
+            return TuplePropertyMapper(source, aliasName);
         }
         public override Expression Visit(SingleValueFunctionCallNode nodeIn)
         {

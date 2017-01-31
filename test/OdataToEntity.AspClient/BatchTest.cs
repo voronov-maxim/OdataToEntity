@@ -280,6 +280,7 @@ namespace OdataToEntityCore.AspClient
         public Task Update()
         {
             var fixture = new DbFixtureInitDb();
+            fixture.Initalize();
 
             Container container = DbFixtureInitDb.CreateContainer();
             Update(container);

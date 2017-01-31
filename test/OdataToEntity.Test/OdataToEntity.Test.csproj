@@ -53,6 +53,7 @@
     <Compile Include="DbFixtureInitDb.cs" />
     <Compile Include="Model\Order.cs" />
     <Compile Include="Model\OrderContext.cs" />
+    <Compile Include="QueryComparerTest.cs" />
     <Compile Include="ResponseReader.cs" />
     <Compile Include="OrderDbDataAdapter.cs" />
     <Compile Include="Program.cs" />

@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace OdataToEntity.Test
 {
-    public class DbFixture
+    public abstract class DbFixture
     {
         private readonly OrderDbDataAdapter _dbDataAdapter;
         private readonly String _databaseName;
@@ -27,16 +27,14 @@ namespace OdataToEntity.Test
             _dbDataAdapter = new OrderDbDataAdapter(_databaseName);
             _oeDataAdapter = new OrderOeDataAdapter(_databaseName);
 
-            Db.OeEntitySetMetaAdapterCollection metaAdapters = OeDataAdapter.EntitySetMetaAdapters;
-            var modelBuilder = new ModelBuilder.OeEdmModelBuilder(metaAdapters.EdmModelMetadataProvider, metaAdapters.ToDictionary());
-            _edmModel = modelBuilder.BuildEdmModel();
+            _edmModel = ModelBuilder.OeEdmModelBuilder.BuildEdmModel(OeDataAdapter);
         }
 
         public OrderContext CreateContext()
         {
             return OrderContext.Create(_databaseName);
         }
-        public async Task Execute<T, TResult>(QueryParametersScalar<T, TResult> parameters)
+        public virtual async Task Execute<T, TResult>(QueryParametersScalar<T, TResult> parameters)
         {
             IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri, typeof(T));
             IList fromDb;
@@ -54,7 +52,7 @@ namespace OdataToEntity.Test
             Console.WriteLine(parameters.RequestUri);
             Xunit.Assert.Equal(jsonDb, jsonOe);
         }
-        public async Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
+        public virtual async Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
         {
             IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri, typeof(T));
             IList fromDb;
@@ -81,11 +79,10 @@ namespace OdataToEntity.Test
         }
         private async Task<IList> ExecuteOe<TResult>(String requestUri, Type baseEntityType)
         {
-            var accept = "application/json;odata.metadata=minimal";
             var parser = new OeParser(new Uri("http://dummy/"), OeDataAdapter, EdmModel);
-            OeRequestHeaders headers = OeRequestHeaders.Parse(accept);
+            var request = new Uri("http://dummy/" + requestUri);
             var stream = new MemoryStream();
-            await parser.ExecuteQueryAsync(new Uri("http://dummy/" + requestUri), headers, stream, CancellationToken.None);
+            await parser.ExecuteQueryAsync(request, OeRequestHeaders.Default, stream, CancellationToken.None);
             stream.Position = 0;
 
             var reader = new ResponseReader(EdmModel, DbDataAdapter.EntitySetMetaAdapters);
@@ -116,6 +113,7 @@ namespace OdataToEntity.Test
             }
             return jobject;
         }
+        public abstract void Initalize();
 
         internal OrderDbDataAdapter DbDataAdapter => _dbDataAdapter;
         internal EdmModel EdmModel => _edmModel;

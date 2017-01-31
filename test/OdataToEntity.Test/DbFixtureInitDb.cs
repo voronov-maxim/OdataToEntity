@@ -1,9 +1,17 @@
-﻿namespace OdataToEntity.Test
+﻿using System;
+
+namespace OdataToEntity.Test
 {
-    public sealed class DbFixtureInitDb : DbFixture
+    public class DbFixtureInitDb : DbFixture
     {
-        public DbFixtureInitDb()
+        private bool _initialized;
+
+        public override void Initalize()
         {
+            if (_initialized)
+                return;
+
+            _initialized = true;
             base.ExecuteBatchAsync("Add").GetAwaiter().GetResult();
         }
     }

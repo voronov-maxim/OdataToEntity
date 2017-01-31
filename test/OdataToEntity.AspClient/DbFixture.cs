@@ -17,12 +17,12 @@ namespace OdataToEntity.Test
     {
         private delegate IList ExecuteQueryFunc<out T>(IQueryable query, Expression expression);
 
-        private readonly String _databaseName;
+        private readonly bool _clear;
+        private String _databaseName;
 
         public DbFixtureInitDb(bool clear = false)
         {
-            _databaseName = OrderContext.GenerateDatabaseName();
-            DbInit(_databaseName, clear);
+            _clear = clear;
         }
 
         public static Container CreateContainer()
@@ -138,6 +138,11 @@ namespace OdataToEntity.Test
                 return container.Orders;
 
             throw new InvalidOperationException("unknown type " + typeof(T).Name);
+        }
+        public void Initalize()
+        {
+            _databaseName = OrderContext.GenerateDatabaseName();
+            DbInit(_databaseName, _clear);
         }
         internal async static Task RunTest<T>(T testClass)
         {

@@ -58,7 +58,12 @@
     <Compile Include="Parsers\OeExpressionHelper.cs" />
     <Compile Include="Parsers\OeFunctionBinder.cs" />
     <Compile Include="Parsers\OeMethodInfoHelper.cs" />
+    <Compile Include="Parsers\OeParseUriContext.cs" />
     <Compile Include="Parsers\OePropertyAccessor.cs" />
+    <Compile Include="Parsers\UriCompare\ODataPathComparer.cs" />
+    <Compile Include="Parsers\UriCompare\OeODataUriComparer.cs" />
+    <Compile Include="Parsers\UriCompare\OeQueryNodeComparer.cs" />
+    <Compile Include="Parsers\UriCompare\EnumerableComparer.cs" />
     <Compile Include="Writers\OeUriHelper.cs" />
     <Compile Include="ModelBuilder\OeEdmModelBuilder.cs" />
     <Compile Include="OeMessageContext.cs" />

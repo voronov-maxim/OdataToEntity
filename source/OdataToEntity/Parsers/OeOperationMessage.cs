@@ -37,11 +37,25 @@ namespace OdataToEntity.Parsers
             }
             return operation;
         }
+        private static IEdmEntityTypeReference GetEdmEntityTypeRef(ODataPath odataPath, out IEdmEntitySet entitySet)
+        {
+            entitySet = null;
+            foreach (ODataPathSegment segment in odataPath)
+            {
+                var entitySegment = segment as EntitySetSegment;
+                if (entitySegment != null)
+                {
+                    entitySet = entitySegment.EntitySet;
+                    return (IEdmEntityTypeReference)((IEdmCollectionType)entitySegment.EdmType).ElementType;
+                }
+            }
+            throw new InvalidOperationException("not supported type ODataPath");
+        }
         private OeEntityItem ReadEntityFromStream(OeMessageContext context, Stream content)
         {
             var parser = new ODataUriParser(context.Model, context.BaseUri, RequestUrl);
             IEdmEntitySet entitySet;
-            IEdmEntityTypeReference entityTypeRef = OeGetParser.GetEdmEntityTypeRef(parser.ParsePath(), out entitySet);
+            IEdmEntityTypeReference entityTypeRef = GetEdmEntityTypeRef(parser.ParsePath(), out entitySet);
             var entityType = (IEdmEntityType)entityTypeRef.Definition;
 
             IODataRequestMessage requestMessage = new OeInMemoryMessage(content, ContentType);

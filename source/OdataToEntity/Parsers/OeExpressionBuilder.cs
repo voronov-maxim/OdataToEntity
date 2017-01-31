@@ -55,30 +55,52 @@ namespace OdataToEntity.Parsers
             MethodInfo whereMethodInfo = OeMethodInfoHelper.GetWhereMethodInfo(ParameterType);
             return Expression.Call(whereMethodInfo, source, lambda);
         }
-        public Expression ApplyNavigation(Expression source, IEnumerable<NavigationPropertySegment> navigationSegments)
+        public Expression ApplyNavigation(Expression source, IEnumerable<OeParseNavigationSegment> parseNavigationSegments)
         {
-            if (navigationSegments == null)
+            if (parseNavigationSegments == null)
                 return source;
 
             Type sourceItemType = OeExpressionHelper.GetCollectionItemType(source.Type);
-            foreach (NavigationPropertySegment navigationSegment in navigationSegments)
+            foreach (OeParseNavigationSegment parseNavigationSegment in parseNavigationSegments)
             {
-                ParameterExpression parameter = Expression.Parameter(sourceItemType);
-                PropertyInfo navigationClrProperty = sourceItemType.GetTypeInfo().GetProperty(navigationSegment.NavigationProperty.Name);
-                Expression e = Expression.MakeMemberAccess(parameter, navigationClrProperty);
-
-                MethodInfo selectMethodInfo;
-                Type selectType = OeExpressionHelper.GetCollectionItemType(e.Type);
-                if (selectType == null)
+                Type selectType;
+                ParameterExpression parameter;
+                Expression e;
+                if (parseNavigationSegment.NavigationSegment == null) //EntitySetSegment
                 {
-                    selectType = e.Type;
-                    selectMethodInfo = OeMethodInfoHelper.GetSelectMethodInfo(sourceItemType, selectType);
+                    parameter = Parameter;
+                    e = source;
+                    selectType = sourceItemType;
                 }
                 else
-                    selectMethodInfo = OeMethodInfoHelper.GetSelectManyMethodInfo(sourceItemType, selectType);
+                {
+                    parameter = Expression.Parameter(sourceItemType);
+                    PropertyInfo navigationClrProperty = sourceItemType.GetTypeInfo().GetProperty(parseNavigationSegment.NavigationSegment.NavigationProperty.Name);
+                    e = Expression.MakeMemberAccess(parameter, navigationClrProperty);
 
-                LambdaExpression lambda = Expression.Lambda(e, parameter);
-                source = Expression.Call(selectMethodInfo, source, lambda);
+                    MethodInfo selectMethodInfo;
+                    selectType = OeExpressionHelper.GetCollectionItemType(e.Type);
+                    if (selectType == null)
+                    {
+                        selectType = e.Type;
+                        selectMethodInfo = OeMethodInfoHelper.GetSelectMethodInfo(sourceItemType, selectType);
+                    }
+                    else
+                        selectMethodInfo = OeMethodInfoHelper.GetSelectManyMethodInfo(sourceItemType, selectType);
+
+                    LambdaExpression lambda = Expression.Lambda(e, parameter);
+                    source = Expression.Call(selectMethodInfo, source, lambda);
+                }
+
+                if (parseNavigationSegment.Filter != null)
+                {
+                    var visitor = new OeQueryNodeVisitor(_model, Expression.Parameter(selectType));
+                    e = visitor.TranslateNode(parseNavigationSegment.Filter.Expression);
+                    LambdaExpression lambda = Expression.Lambda(e, visitor.Parameter);
+
+                    MethodInfo whereMethodInfo = OeMethodInfoHelper.GetWhereMethodInfo(selectType);
+                    source = Expression.Call(whereMethodInfo, source, lambda);
+                }
 
                 _entityType = selectType;
                 sourceItemType = selectType;

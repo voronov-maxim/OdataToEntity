@@ -135,7 +135,10 @@ namespace OdataToEntity.Parsers
             foreach (GroupByPropertyNode node in transformation.GroupingProperties)
                 if (node.ChildTransformations != null && node.ChildTransformations.Count > 0)
                 {
-                    GroupByPropertyNode childNode = node.ChildTransformations.Single();
+                    if (node.ChildTransformations.Count > 1)
+                        throw new NotSupportedException();
+
+                    GroupByPropertyNode childNode = node.ChildTransformations[0];
                     String propertyName = node.Name + "_" + childNode.Name;
 
                     Expression e = visitor.TranslateNode(childNode.Expression);
@@ -194,6 +197,10 @@ namespace OdataToEntity.Parsers
                 {
                     var filterTransformation = transformation as FilterTransformationNode;
                     source = ApplyFilter(source, filterTransformation);
+                }
+                else
+                {
+                    throw new NotSupportedException();
                 }
             }
 
