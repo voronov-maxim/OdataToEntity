@@ -73,7 +73,8 @@ namespace OdataToEntity.Test
         internal async Task ExecuteBatchAsync(String batchName)
         {
             var parser = new OeParser(new Uri("http://dummy/"), OeDataAdapter, EdmModel);
-            byte[] bytes = File.ReadAllBytes($"Batches\\{batchName}.batch");
+            String fileName = Directory.EnumerateFiles(".", batchName + ".batch", SearchOption.AllDirectories).First();
+            byte[] bytes = File.ReadAllBytes(fileName);
             var responseStream = new MemoryStream();
             await parser.ExecuteBatchAsync(new MemoryStream(bytes), responseStream, CancellationToken.None);
         }

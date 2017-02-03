@@ -95,6 +95,8 @@ namespace OdataToEntity
                 expression = expressionBuilder.ApplySkip(expression, odataUri.Skip);
                 expression = expressionBuilder.ApplyTake(expression, odataUri.Top);
 
+                expression = OeConstantToParamterVisitor.Translate(expression);
+
                 if (odataUri.QueryCount.GetValueOrDefault())
                 {
                     expression = expressionBuilder.ApplyCount(expression);

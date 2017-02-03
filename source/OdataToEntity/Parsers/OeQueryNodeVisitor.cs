@@ -113,7 +113,35 @@ namespace OdataToEntity.Parsers
         }
         public override Expression Visit(ConvertNode nodeIn)
         {
-            return TranslateNode(nodeIn.Source);
+            Expression e = TranslateNode(nodeIn.Source);
+            if (e.NodeType == ExpressionType.Constant)
+            {
+                var constantExpression = e as ConstantExpression;
+                if (constantExpression.Value == null && constantExpression.Type == typeof(Object))
+                {
+                    Type clrType;
+                    EdmPrimitiveTypeKind primitiveTypeKind = nodeIn.TypeReference.PrimitiveKind();
+                    if (primitiveTypeKind == EdmPrimitiveTypeKind.None)
+                    {
+                        if (nodeIn.TypeReference.IsEnum())
+                        {
+                            var clrTypeAnnotation = _model.GetAnnotationValue<ModelBuilder.OeClrTypeAnnotation>(nodeIn.TypeReference.Definition);
+                            if (clrTypeAnnotation == null)
+                                throw new InvalidOperationException("Add OeClrTypeAnnotation for " + nodeIn.TypeReference.FullName());
+
+                            clrType = clrTypeAnnotation.ClrType;
+                        }
+                        else
+                            throw new NotSupportedException(nodeIn.TypeReference.FullName());
+                    }
+                    else
+                        clrType = ModelBuilder.PrimitiveTypeHelper.GetClrType(primitiveTypeKind);
+                    if (nodeIn.TypeReference.IsNullable && clrType.GetTypeInfo().IsValueType)
+                        clrType = typeof(Nullable<>).MakeGenericType(clrType);
+                    e = Expression.Constant(null, clrType);
+                }
+            }
+            return e;
         }
         public override Expression Visit(CountNode nodeIn)
         {

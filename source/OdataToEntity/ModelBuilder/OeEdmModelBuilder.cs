@@ -28,8 +28,7 @@ namespace OdataToEntity.ModelBuilder
         }
         public void AddEnumType(Type enumType)
         {
-            var edmEnumType = new EdmEnumType(enumType.Namespace, enumType.Name);
-            _enumTypes.Add(enumType, edmEnumType);
+            _enumTypes.Add(enumType, EntityTypeInfo.CreateEdmEnumType(enumType));
         }
         public EdmModel BuildEdmModel()
         {
@@ -44,6 +43,9 @@ namespace OdataToEntity.ModelBuilder
             var container = new EdmEntityContainer("Default", "Container");
 
             edmModel.AddElements(_enumTypes.Values);
+            foreach (KeyValuePair<Type, EdmEnumType> enumType in _enumTypes)
+                edmModel.SetAnnotationValue<OeClrTypeAnnotation>(enumType.Value, new OeClrTypeAnnotation(enumType.Key));
+
             edmModel.AddElements(_complexTypes.Values);
             var entitySets = new Dictionary<IEdmEntityType, EdmEntitySet>(_entityTypes.Count);
             foreach (EntityTypeInfo typeInfo in _entityTypes.Values)

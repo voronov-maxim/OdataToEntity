@@ -125,7 +125,7 @@ namespace OdataToEntity.ModelBuilder
                     BuildProperty(entityTypes, enumTypes, complexTypes, clrProperty);
             AddKeys();
         }
-        private static EdmEnumType CreateEdmEnumType(Type clrEnumType)
+        internal static EdmEnumType CreateEdmEnumType(Type clrEnumType)
         {
             var edmEnumType = new EdmEnumType(clrEnumType.Namespace, clrEnumType.Name);
             foreach (Enum clrMember in Enum.GetValues(clrEnumType))

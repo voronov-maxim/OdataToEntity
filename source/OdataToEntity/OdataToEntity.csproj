@@ -50,11 +50,13 @@
   <ItemGroup>
     <Compile Include="CompositeReadStream.cs" />
     <Compile Include="Db\OeEntityAsyncEnumerator.cs" />
+    <Compile Include="ModelBuilder\OeClrTypeAnnotation.cs" />
     <Compile Include="ModelBuilder\EntityTypeInfo.cs" />
     <Compile Include="ModelBuilder\FKeyInfo.cs" />
     <Compile Include="ModelBuilder\OeEdmModelMetadataProvider.cs" />
     <Compile Include="ModelBuilder\PrimitiveTypeHelper.cs" />
     <Compile Include="Parsers\OeAggregationTranslator.cs" />
+    <Compile Include="Parsers\OeConstantToParamterVisitor.cs" />
     <Compile Include="Parsers\OeExpressionHelper.cs" />
     <Compile Include="Parsers\OeFunctionBinder.cs" />
     <Compile Include="Parsers\OeMethodInfoHelper.cs" />

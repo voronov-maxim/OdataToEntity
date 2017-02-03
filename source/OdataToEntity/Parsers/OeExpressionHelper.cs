@@ -90,7 +90,7 @@ namespace OdataToEntity.Parsers
                     return iface.GetTypeInfo().GetGenericArguments()[0];
             return null;
         }
-        public static Type GetTupleType(Type[] typeArguments)
+        private static Type GetTupleType(Type[] typeArguments)
         {
             Type tupleType;
             switch (typeArguments.Length)
