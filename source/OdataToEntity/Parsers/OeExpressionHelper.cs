@@ -15,6 +15,8 @@ namespace OdataToEntity.Parsers
         {
             if (constantExpression.Value == null)
                 return constantExpression;
+            if (constantExpression.Type == targetType)
+                return constantExpression;
 
             Object value;
             if (constantExpression.Type == typeof(DateTimeOffset))

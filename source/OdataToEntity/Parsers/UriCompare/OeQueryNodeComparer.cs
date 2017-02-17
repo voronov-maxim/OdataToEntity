@@ -2,15 +2,19 @@
 using Microsoft.OData.UriParser;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace OdataToEntity.Parsers.UriCompare
 {
-    public static class OeQueryNodeComparer
+    public struct OeQueryNodeComparer
     {
-        public static bool Compare(QueryNode node1, QueryNode node2)
+        private readonly OeODataUriComparerParameterValues _parameterValues;
+
+        public OeQueryNodeComparer(OeODataUriComparerParameterValues parameterValues)
+        {
+            _parameterValues = parameterValues;
+        }
+
+        public bool Compare(QueryNode node1, QueryNode node2)
         {
             if (node1 == node2)
                 return true;
@@ -50,19 +54,10 @@ namespace OdataToEntity.Parsers.UriCompare
 
             throw new NotSupportedException("node kind " + node1.Kind.ToString());
         }
-        public static bool IsEqual(this IEdmTypeReference @this, IEdmTypeReference edmTypeReference)
+        public bool Compare(RangeVariable rangeVariable1, RangeVariable rangeVariable2)
         {
-            if (@this == edmTypeReference)
-                return true;
-            if (@this == null || edmTypeReference == null)
-                return false;
-
-            return @this.Definition == edmTypeReference.Definition && @this.IsNullable == edmTypeReference.IsNullable;
-        }
-        public static bool IsEqual(this RangeVariable @this, RangeVariable rangeVariable)
-        {
-            var range1 = (ResourceRangeVariable)@this;
-            var range2 = (ResourceRangeVariable)rangeVariable;
+            var range1 = (ResourceRangeVariable)rangeVariable1;
+            var range2 = (ResourceRangeVariable)rangeVariable2;
 
             if (range1 == range2)
                 return true;
@@ -83,23 +78,23 @@ namespace OdataToEntity.Parsers.UriCompare
             return Compare(range1.CollectionResourceNode, range2.CollectionResourceNode);
         }
 
-        private static bool Visit(AllNode node1, AllNode node2)
+        private bool Visit(AllNode node1, AllNode node2)
         {
             return node1.TypeReference.IsEqual(node2.TypeReference) &&
                 Compare(node1.Source, node2.Source) && Compare(node1.Body, node2.Body);
         }
-        private static bool Visit(AnyNode node1, AnyNode node2)
+        private bool Visit(AnyNode node1, AnyNode node2)
         {
             return node1.TypeReference.IsEqual(node2.TypeReference) &&
                 Compare(node1.Source, node2.Source) && Compare(node1.Body, node2.Body);
         }
-        private static bool Visit(BinaryOperatorNode node1, BinaryOperatorNode node2)
+        private bool Visit(BinaryOperatorNode node1, BinaryOperatorNode node2)
         {
             return node1.OperatorKind == node1.OperatorKind &&
                 node1.TypeReference.IsEqual(node2.TypeReference) &&
                 Compare(node1.Left, node2.Left) && Compare(node1.Right, node2.Right);
         }
-        private static bool Visit(CollectionNavigationNode node1, CollectionNavigationNode node2)
+        private bool Visit(CollectionNavigationNode node1, CollectionNavigationNode node2)
         {
             if (node1.BindingPath != node2.BindingPath)
                 return false;
@@ -120,31 +115,32 @@ namespace OdataToEntity.Parsers.UriCompare
 
             return Compare(node1.Source, node2.Source);
         }
-        private static bool Visit(ConstantNode node1, ConstantNode node2)
+        private bool Visit(ConstantNode node1, ConstantNode node2)
         {
+            _parameterValues.AddParameter(node1, node2);
             return true;
         }
-        private static bool Visit(ConvertNode node1, ConvertNode node2)
+        private bool Visit(ConvertNode node1, ConvertNode node2)
         {
             return node1.TypeReference.IsEqual(node2.TypeReference) && Compare(node1.Source, node2.Source);
         }
-        private static bool Visit(CountNode node1, CountNode node2)
+        private bool Visit(CountNode node1, CountNode node2)
         {
             return node1.TypeReference.IsEqual(node2.TypeReference) && Compare(node1.Source, node2.Source);
         }
-        private static bool Visit(ResourceRangeVariableReferenceNode node1, ResourceRangeVariableReferenceNode node2)
+        private bool Visit(ResourceRangeVariableReferenceNode node1, ResourceRangeVariableReferenceNode node2)
         {
             if (node1.Name != node2.Name)
                 return false;
             if (node1.NavigationSource != node2.NavigationSource)
                 return false;
-            if (!node1.RangeVariable.IsEqual(node2.RangeVariable))
+            if (!Compare(node1.RangeVariable, node2.RangeVariable))
                 return false;
             if (!node1.StructuredTypeReference.IsEqual(node2.StructuredTypeReference))
                 return false;
             return node1.TypeReference.IsEqual(node2.TypeReference);
         }
-        private static bool Visit(SingleNavigationNode node1, SingleNavigationNode node2)
+        private bool Visit(SingleNavigationNode node1, SingleNavigationNode node2)
         {
             if (node1.BindingPath != node2.BindingPath)
                 return false;
@@ -165,7 +161,7 @@ namespace OdataToEntity.Parsers.UriCompare
 
             return Compare(node1.Source, node2.Source);
         }
-        private static bool Visit(SingleValueFunctionCallNode node1, SingleValueFunctionCallNode node2)
+        private bool Visit(SingleValueFunctionCallNode node1, SingleValueFunctionCallNode node2)
         {
             if (node1.Name != node2.Name)
                 return false;
@@ -203,17 +199,18 @@ namespace OdataToEntity.Parsers.UriCompare
 
             return true;
         }
-        private static bool Visit(SingleValueOpenPropertyAccessNode node1, SingleValueOpenPropertyAccessNode node2)
+        private bool Visit(SingleValueOpenPropertyAccessNode node1, SingleValueOpenPropertyAccessNode node2)
         {
             return node1.Name == node2.Name &&
                 node1.TypeReference.IsEqual(node2.TypeReference) &&
                 Compare(node1.Source, node2.Source);
         }
-        private static bool Visit(SingleValuePropertyAccessNode node1, SingleValuePropertyAccessNode node2)
+        private bool Visit(SingleValuePropertyAccessNode node1, SingleValuePropertyAccessNode node2)
         {
             return node1.Property == node2.Property &&
                 node1.TypeReference.IsEqual(node2.TypeReference) &&
                 Compare(node1.Source, node2.Source);
         }
     }
+
 }

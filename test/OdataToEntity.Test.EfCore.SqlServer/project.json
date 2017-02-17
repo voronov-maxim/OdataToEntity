@@ -1,0 +1,49 @@
+{
+  "version": "1.0.0-*",
+  "buildOptions": {
+    "debugType": "portable",
+    "emitEntryPoint": true,
+
+    "compile": {
+      "mappings": {
+        "Model/Order.cs": "../OdataToEntity.Test/Model/Order.cs",
+        "ResponseReader.cs": "../OdataToEntity.Test/ResponseReader.cs",
+        "DbFixture.cs": "../OdataToEntity.Test/DbFixture.cs",
+        "DbFixtureInitDb.cs": "../OdataToEntity.Test.Linq2Db/DbFixtureInitDb.cs",
+        "Common/": "../OdataToEntity.Test/Common/*.cs"
+      }
+    },
+
+    "copyToOutput": {
+      "mappings": {
+        "Batches/": "../OdataToEntity.Test/Batches/**/*"
+      }
+    }
+  },
+  "dependencies": {
+    "System.Runtime.Serialization.Primitives": "4.3.0",
+    "Microsoft.EntityFrameworkCore": "1.1.0",
+    "Microsoft.EntityFrameworkCore.SqlServer": "1.1.0",
+    "xunit": "2.2.0-beta5-build3474",
+    "dotnet-test-xunit": "2.2.0-preview2-build1029",
+    "xunit.runner.visualstudio": "2.2.0-beta5-build1225",
+    "OdataToEntity": "1.0.0.*",
+    "OdataToEntity.EfCore": "1.0.0.*",
+    "Microsoft.EntityFrameworkCore.Relational": "1.1.0"
+  },
+  "testRunner": "xunit",
+  "frameworks": {
+    "netcoreapp1.1": {
+      "dependencies": {
+        "Microsoft.NETCore.App": {
+          "type": "platform",
+          "version": "1.1.0"
+        }
+      },
+      "imports": [
+        "dotnet5.4",
+        "portable-net451+win8"
+      ]
+    }
+  }
+}

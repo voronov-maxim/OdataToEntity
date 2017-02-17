@@ -1,10 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using OdataToEntity.Test.Model;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace OdataToEntity.Test
 {
@@ -21,9 +16,9 @@ namespace OdataToEntity.Test
                 return;
 
             _initialized = true;
-            using (var context = new OrderContext())
-                context.Database.ExecuteSqlCommand("dbo.ResetDb");
-            base.ExecuteBatchAsync("Add").GetAwaiter().GetResult();
+            //using (var context = new OrderContext())
+            //    context.Database.ExecuteSqlCommand("dbo.ResetDb");
+            //base.ExecuteBatchAsync("Add").GetAwaiter().GetResult();
         }
     }
 }

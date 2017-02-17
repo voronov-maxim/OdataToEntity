@@ -24,11 +24,11 @@ namespace OdataToEntity.Parsers
         }
 
         private readonly List<AggProperty> _aggProperties;
-        private readonly IEdmModel _model;
+        private readonly OeQueryNodeVisitor _visitor;
 
-        public OeAggregationTranslator(IEdmModel model)
+        public OeAggregationTranslator(OeQueryNodeVisitor visitor)
         {
-            _model = model;
+            _visitor = visitor;
             _aggProperties = new List<AggProperty>();
         }
 
@@ -103,7 +103,7 @@ namespace OdataToEntity.Parsers
                 MethodCallExpression aggCallExpression = AggCallExpression(aggExpression.Method, sourceParameter, aggLambda);
                 expressions.Add(aggCallExpression);
 
-                _aggProperties.Add(CreateEdmProperty(_model, aggCallExpression.Type, aggExpression.Alias, false));
+                _aggProperties.Add(CreateEdmProperty(_visitor.EdmModel, aggCallExpression.Type, aggExpression.Alias, false));
             }
 
             NewExpression newExpression = OeExpressionHelper.CreateTupleExpression(expressions);
@@ -144,14 +144,14 @@ namespace OdataToEntity.Parsers
                     Expression e = visitor.TranslateNode(childNode.Expression);
                     expressions.Add(e);
 
-                    _aggProperties.Add(CreateEdmProperty(_model, e.Type, propertyName, true));
+                    _aggProperties.Add(CreateEdmProperty(_visitor.EdmModel, e.Type, propertyName, true));
                 }
                 else
                 {
                     Expression e = visitor.TranslateNode(node.Expression);
                     expressions.Add(e);
 
-                    _aggProperties.Add(CreateEdmProperty(_model, e.Type, node.Name, true));
+                    _aggProperties.Add(CreateEdmProperty(_visitor.EdmModel, e.Type, node.Name, true));
                 }
 
             NewExpression newExpression = OeExpressionHelper.CreateTupleExpression(expressions);
@@ -248,7 +248,7 @@ namespace OdataToEntity.Parsers
         }
         private OeQueryNodeVisitor CreateVisitor(ParameterExpression parameter)
         {
-            return new OeQueryNodeVisitor(_model, parameter);
+            return new OeQueryNodeVisitor(_visitor, parameter);
         }
         internal Expression TuplePropertyMapper(Expression source, String aliasName)
         {

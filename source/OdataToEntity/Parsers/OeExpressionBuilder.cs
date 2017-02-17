@@ -28,19 +28,22 @@ namespace OdataToEntity.Parsers
             if (applyClause == null)
                 return source;
 
-            var aggTranslator = new OeAggregationTranslator(_model);
+            var aggTranslator = new OeAggregationTranslator(_visitor);
             Expression aggExpression = aggTranslator.Build(source, applyClause);
 
             _entryFactory = aggTranslator.CreateEntryFactory;
 
             Type aggItemType = OeExpressionHelper.GetCollectionItemType(aggExpression.Type);
-            _visitor = new OeQueryNodeVisitor(_model, Expression.Parameter(aggItemType));
+            _visitor = new OeQueryNodeVisitor(_model, Expression.Parameter(aggItemType), _visitor.Constans);
             _visitor.TuplePropertyMapper = aggTranslator.TuplePropertyMapper;
 
             return aggExpression;
         }
-        public Expression ApplyCount(Expression source)
+        public Expression ApplyCount(Expression source, bool? queryCount)
         {
+            if (!queryCount.GetValueOrDefault())
+                return source;
+
             MethodInfo countMethodInfo = OeMethodInfoHelper.GetCountMethodInfo(ParameterType);
             return Expression.Call(countMethodInfo, source);
         }
@@ -94,7 +97,7 @@ namespace OdataToEntity.Parsers
 
                 if (parseNavigationSegment.Filter != null)
                 {
-                    var visitor = new OeQueryNodeVisitor(_model, Expression.Parameter(selectType));
+                    var visitor = new OeQueryNodeVisitor(_visitor, Expression.Parameter(selectType));
                     e = visitor.TranslateNode(parseNavigationSegment.Filter.Expression);
                     LambdaExpression lambda = Expression.Lambda(e, visitor.Parameter);
 
@@ -106,7 +109,7 @@ namespace OdataToEntity.Parsers
                 sourceItemType = selectType;
             }
 
-            _visitor = new OeQueryNodeVisitor(_model, Expression.Parameter(_entityType));
+            _visitor = new OeQueryNodeVisitor(_model, Expression.Parameter(_entityType), _visitor.Constans);
             return source;
         }
         public Expression ApplyOrderBy(Expression source, OrderByClause orderByClause)
@@ -135,7 +138,7 @@ namespace OdataToEntity.Parsers
             _entryFactory = selectTranslator.CreateEntryFactory;
 
             Type selectItemType = OeExpressionHelper.GetCollectionItemType(selectExpression.Type);
-            _visitor = new OeQueryNodeVisitor(_model, Expression.Parameter(selectItemType));
+            _visitor = new OeQueryNodeVisitor(_model, Expression.Parameter(selectItemType), _visitor.Constans);
 
             return selectExpression;
         }
@@ -178,6 +181,7 @@ namespace OdataToEntity.Parsers
             return OeEntryFactory.CreateEntryFactory(entitySet, accessors);
         }
 
+        public IReadOnlyDictionary<ConstantExpression, ConstantNode> Constants => _visitor.Constans;
         public Type EntityType => _entityType;
         private ParameterExpression Parameter => _visitor.Parameter;
         private Type ParameterType => _visitor.Parameter.Type;

@@ -103,6 +103,13 @@ namespace OdataToEntity.Linq2Db
         }
 
         private readonly static Lazy<OeEntitySetMetaAdapterCollection> _entitySetMetaAdapters = new Lazy<OeEntitySetMetaAdapterCollection>(CreateEntitySetMetaAdapters);
+ 
+        public OeLinq2DbDataAdapter() : this(null)
+        {
+        }
+        public OeLinq2DbDataAdapter(Db.OeQueryCache queryCache) : base(queryCache)
+        {
+        }
 
         public override void CloseDataContext(Object dataContext)
         {
@@ -138,13 +145,16 @@ namespace OdataToEntity.Linq2Db
             var getEntitySet = (Func<T, ITable<TEntity>>)property.GetGetMethod().CreateDelegate(typeof(Func<T, ITable<TEntity>>));
             return new TableAdapterImpl<TEntity>(getEntitySet, property.Name);
         }
-        public override OeEntityAsyncEnumerator ExecuteEnumerator(IQueryable query, CancellationToken cancellationToken)
+        public override TResult ExecuteScalar<TResult>(OeParseUriContext parseUriContext, object dataContext)
         {
-            var visitor = new ParameterVisitor();
-            Expression expression = visitor.Visit(query.Expression);
-            query = query.Provider.CreateQuery(expression);
-            IEnumerable<Object> queryAsync = (IQueryable<Object>)query;
-            return new OeLinq2DbEntityAsyncEnumerator(queryAsync.GetEnumerator(), cancellationToken);
+            IQueryable query = parseUriContext.EntitySetAdapter.GetEntitySet(dataContext);
+            Expression expression = parseUriContext.CreateExpression(query, new OeConstantToParamterVisitor());
+            return query.Provider.Execute<TResult>(expression);
+        }
+        public override OeEntityAsyncEnumerator ExecuteEnumerator(OeParseUriContext parseUriContext, Object dataContext, CancellationToken cancellationToken)
+        {
+            var query = (IQueryable<Object>)base.CreateQuery(parseUriContext, dataContext, new OeConstantToParamterVisitor());
+            return new OeLinq2DbEntityAsyncEnumerator(query.GetEnumerator(), cancellationToken);
         }
         public override OeEntitySetAdapter GetEntitySetAdapter(String entitySetName)
         {

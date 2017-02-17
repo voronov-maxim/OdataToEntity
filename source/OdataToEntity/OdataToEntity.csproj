@@ -50,20 +50,24 @@
   <ItemGroup>
     <Compile Include="CompositeReadStream.cs" />
     <Compile Include="Db\OeEntityAsyncEnumerator.cs" />
+    <Compile Include="Db\OeQueryCache.cs" />
     <Compile Include="ModelBuilder\OeClrTypeAnnotation.cs" />
     <Compile Include="ModelBuilder\EntityTypeInfo.cs" />
     <Compile Include="ModelBuilder\FKeyInfo.cs" />
     <Compile Include="ModelBuilder\OeEdmModelMetadataProvider.cs" />
     <Compile Include="ModelBuilder\PrimitiveTypeHelper.cs" />
     <Compile Include="Parsers\OeAggregationTranslator.cs" />
-    <Compile Include="Parsers\OeConstantToParamterVisitor.cs" />
+    <Compile Include="Parsers\OeConstantToParameterVisitor.cs" />
+    <Compile Include="Parsers\OeConstantToVariableVisitor.cs" />
     <Compile Include="Parsers\OeExpressionHelper.cs" />
     <Compile Include="Parsers\OeFunctionBinder.cs" />
     <Compile Include="Parsers\OeMethodInfoHelper.cs" />
     <Compile Include="Parsers\OeParseUriContext.cs" />
     <Compile Include="Parsers\OePropertyAccessor.cs" />
     <Compile Include="Parsers\UriCompare\ODataPathComparer.cs" />
+    <Compile Include="Parsers\UriCompare\OeComparerExtension.cs" />
     <Compile Include="Parsers\UriCompare\OeODataUriComparer.cs" />
+    <Compile Include="Parsers\UriCompare\OeODataUriComparerParameterValues.cs" />
     <Compile Include="Parsers\UriCompare\OeQueryNodeComparer.cs" />
     <Compile Include="Parsers\UriCompare\EnumerableComparer.cs" />
     <Compile Include="Writers\OeUriHelper.cs" />

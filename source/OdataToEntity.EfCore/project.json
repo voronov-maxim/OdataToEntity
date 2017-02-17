@@ -1,4 +1,4 @@
-﻿{
+{
   "version": "1.0.0.1",
   "authors": [ "Maxim Voronov" ],
   "title": "Entity Framework Core Adapter for OdataEntity",

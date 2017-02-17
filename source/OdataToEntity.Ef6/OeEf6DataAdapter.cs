@@ -1,4 +1,5 @@
 ﻿using Microsoft.OData.Edm;
+using OdataToEntity.Parsers;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
@@ -6,6 +7,7 @@ using System.Data.Entity.Core;
 using System.Data.Entity.Core.Objects;
 using System.Data.Entity.Infrastructure;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -82,6 +84,13 @@ namespace OdataToEntity.Ef6
 
         private readonly static Db.OeEntitySetMetaAdapterCollection _entitySetMetaAdapters = CreateEntitySetMetaAdapters();
 
+        public OeEf6DataAdapter() : base(new Db.OeQueryCache())
+        {
+        }
+        public OeEf6DataAdapter(Db.OeQueryCache queryCache) : base(queryCache)
+        {
+        }
+
         public override void CloseDataContext(Object dataContext)
         {
             var dbContext = (T)dataContext;
@@ -117,9 +126,15 @@ namespace OdataToEntity.Ef6
             var getDbSet = (Func<T, IDbSet<TEntity>>)Delegate.CreateDelegate(typeof(Func<T, IDbSet<TEntity>>), property.GetGetMethod());
             return new DbSetAdapterImpl<TEntity>(getDbSet, property.Name);
         }
-        public override Db.OeEntityAsyncEnumerator ExecuteEnumerator(IQueryable query, CancellationToken cancellationToken)
+        public override TResult ExecuteScalar<TResult>(OeParseUriContext parseUriContext, object dataContext)
         {
-            var queryAsync = (IDbAsyncEnumerable)query;
+            IQueryable query = parseUriContext.EntitySetAdapter.GetEntitySet(dataContext);
+            Expression expression = parseUriContext.CreateExpression(query, new OeConstantToVariableVisitor());
+            return query.Provider.Execute<TResult>(expression);
+        }
+        public override Db.OeEntityAsyncEnumerator ExecuteEnumerator(OeParseUriContext parseUriContext, Object dataContext, CancellationToken cancellationToken)
+        {
+            var queryAsync = (IDbAsyncEnumerable)base.CreateQuery(parseUriContext, dataContext, new OeConstantToVariableVisitor());
             return new OeEf6EntityAsyncEnumerator(queryAsync.GetAsyncEnumerator(), cancellationToken);
         }
         public override Db.OeEntitySetAdapter GetEntitySetAdapter(String entitySetName)

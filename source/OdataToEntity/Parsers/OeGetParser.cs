@@ -6,8 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,37 +13,6 @@ namespace OdataToEntity
 {
     public sealed class OeGetParser
     {
-        private sealed class SourceVisitor : ExpressionVisitor
-        {
-            private readonly MethodCallExpression _fakeSource;
-            private static readonly MethodInfo _fakeSourceMethodInfo = GetFakeSourceMethodInfo();
-            private readonly IQueryable _query;
-
-            public SourceVisitor(IQueryable query)
-            {
-                _query = query;
-                _fakeSource = Expression.Call(_fakeSourceMethodInfo.MakeGenericMethod(query.ElementType));
-            }
-
-            private static IEnumerable<T> FakeSource<T>()
-            {
-                throw new InvalidOperationException();
-            }
-            private static MethodInfo GetFakeSourceMethodInfo()
-            {
-                Func<IEnumerable<Object>> fakeSource = FakeSource<Object>;
-                return fakeSource.GetMethodInfo().GetGenericMethodDefinition();
-            }
-            protected override Expression VisitMethodCall(MethodCallExpression node)
-            {
-                if (node == _fakeSource)
-                    return _query.Expression;
-                return base.VisitMethodCall(node);
-            }
-
-            public MethodCallExpression Source => _fakeSource;
-        }
-
         private readonly Uri _baseUri;
         private readonly IEdmModel _model;
         private readonly Db.OeDataAdapter _dataAdapter;
@@ -75,53 +42,24 @@ namespace OdataToEntity
         public async Task ExecuteAsync(Uri requestUri, OeRequestHeaders headers, Stream stream, CancellationToken cancellationToken)
         {
             OeParseUriContext parseUriContext = ParseUri(requestUri);
-            ODataUri odataUri = parseUriContext.ODataUri;
-            Db.OeEntitySetAdapter entitySetAdapter = _dataAdapter.GetEntitySetAdapter(parseUriContext.EntitySet.Name);
+            parseUriContext.Headers = headers;
+            parseUriContext.EntitySetAdapter = _dataAdapter.GetEntitySetAdapter(parseUriContext.EntitySet.Name);
 
             Object dataContext = null;
             try
             {
                 dataContext = _dataAdapter.CreateDataContext();
-                var expressionBuilder = new OeExpressionBuilder(_model, entitySetAdapter.EntityType);
-                IQueryable query = entitySetAdapter.GetEntitySet(dataContext);
-                var visitor = new SourceVisitor(query);
-                Expression expression = visitor.Source;
 
-                expression = expressionBuilder.ApplyNavigation(expression, parseUriContext.ParseNavigationSegments);
-                expression = expressionBuilder.ApplyFilter(expression, odataUri.Filter);
-                expression = expressionBuilder.ApplyAggregation(expression, odataUri.Apply);
-                expression = expressionBuilder.ApplySelect(expression, odataUri.SelectAndExpand, headers.MetadataLevel);
-                expression = expressionBuilder.ApplyOrderBy(expression, odataUri.OrderBy);
-                expression = expressionBuilder.ApplySkip(expression, odataUri.Skip);
-                expression = expressionBuilder.ApplyTake(expression, odataUri.Top);
-
-                expression = OeConstantToParamterVisitor.Translate(expression);
-
-                if (odataUri.QueryCount.GetValueOrDefault())
+                if (parseUriContext.ODataUri.QueryCount.GetValueOrDefault())
                 {
-                    expression = expressionBuilder.ApplyCount(expression);
-                    int count = query.Provider.Execute<int>(visitor.Visit(expression));
+                    int count = _dataAdapter.ExecuteScalar<int>(parseUriContext, dataContext);
                     byte[] buffer = System.Text.Encoding.UTF8.GetBytes(count.ToString());
                     stream.Write(buffer, 0, buffer.Length);
                     return;
                 }
 
-                IEdmEntitySet entitySet = parseUriContext.EntitySet;
-                if (expressionBuilder.EntityType != entitySetAdapter.EntityType)
-                {
-                    String typeName = expressionBuilder.EntityType.FullName;
-                    Db.OeEntitySetMetaAdapter entitySetMetaAdapter = _dataAdapter.EntitySetMetaAdapters.FindByTypeName(typeName);
-                    if (entitySetMetaAdapter != null)
-                        entitySet = _model.FindDeclaredEntitySet(entitySetMetaAdapter.EntitySetName);
-                }
-                OeEntryFactory entryFactory = expressionBuilder.CreateEntryFactory(entitySet);
-
-                query = query.Provider.CreateQuery(visitor.Visit(expression));
-                using (Db.OeEntityAsyncEnumerator asyncEnumerator = _dataAdapter.ExecuteEnumerator(query, cancellationToken))
-                {
-                    var writers = new Writers.OeGetWriter(BaseUri, _model);
-                    await writers.SerializeAsync(odataUri, entryFactory, asyncEnumerator, headers, stream).ConfigureAwait(false);
-                }
+                using (Db.OeEntityAsyncEnumerator asyncEnumerator = _dataAdapter.ExecuteEnumerator(parseUriContext, dataContext, cancellationToken))
+                    await Writers.OeGetWriter.SerializeAsync(BaseUri, parseUriContext, asyncEnumerator, stream).ConfigureAwait(false);
             }
             finally
             {
@@ -184,7 +122,7 @@ namespace OdataToEntity
 
             var entitySetSegment = (EntitySetSegment)odataUri.Path.FirstSegment;
             IEdmEntitySet entitySet = entitySetSegment.EntitySet;
-            return new OeParseUriContext(odataUri, entitySet, navigationSegments);
+            return new OeParseUriContext(_model, odataUri, entitySet, navigationSegments);
         }
 
         public Uri BaseUri => _baseUri;

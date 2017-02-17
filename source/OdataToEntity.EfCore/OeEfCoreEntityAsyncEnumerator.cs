@@ -11,9 +11,9 @@ namespace OdataToEntity.EfCore
         private readonly IAsyncEnumerator<Object> _asyncEnumerator;
         private readonly CancellationToken _cancellationToken;
 
-        public OeEfCoreEntityAsyncEnumerator(IAsyncEnumerator<Object> asyncEnumerator, CancellationToken cancellationToken)
+        public OeEfCoreEntityAsyncEnumerator(IAsyncEnumerable<Object> asyncEnumerable, CancellationToken cancellationToken)
         {
-            _asyncEnumerator = asyncEnumerator;
+            _asyncEnumerator = asyncEnumerable.GetEnumerator();
             _cancellationToken = cancellationToken;
         }
 
@@ -26,12 +26,6 @@ namespace OdataToEntity.EfCore
             return _asyncEnumerator.MoveNext(_cancellationToken);
         }
 
-        public override Object Current
-        {
-            get
-            {
-                return _asyncEnumerator.Current;
-            }
-        }
+        public override Object Current => _asyncEnumerator.Current;
     }
 }

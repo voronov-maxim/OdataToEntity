@@ -2,11 +2,11 @@
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using OdataToEntity.Parsers;
+using OdataToEntity.Parsers.UriCompare;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -82,14 +82,17 @@ namespace OdataToEntity.Test
             {
                 OeParseUriContext parseUriContext1 = parser.ParseUri(new Uri(parser.BaseUri + requestMethodNames[i].Request));
                 OeParseUriContext parseUriContext2 = parser.ParseUri(new Uri(parser.BaseUri + requestMethodNames[i].Request));
-                bool result = Parsers.UriCompare.OeODataUriComparer.Compare(parseUriContext1, parseUriContext2);
+
+                var constantNodeNames = new FakeReadOnlyDictionary<ConstantNode, String>();
+                bool result = new OeODataUriComparer(constantNodeNames).Compare(parseUriContext1, parseUriContext2);
                 Assert.True(result);
 
                 for (int j = i + 1; j < requestMethodNames.Length; j++)
                 {
                     parseUriContext1 = parser.ParseUri(new Uri(parser.BaseUri + requestMethodNames[i].Request));
                     parseUriContext2 = parser.ParseUri(new Uri(parser.BaseUri + requestMethodNames[j].Request));
-                    result = Parsers.UriCompare.OeODataUriComparer.Compare(parseUriContext1, parseUriContext2);
+                    constantNodeNames = new FakeReadOnlyDictionary<ConstantNode, String>();
+                    result = new OeODataUriComparer(constantNodeNames).Compare(parseUriContext1, parseUriContext2);
 
                     if (result && requestMethodNames[j].EqualMethodNames != null &&
                         requestMethodNames[j].EqualMethodNames.Contains(requestMethodNames[i].MethodName))

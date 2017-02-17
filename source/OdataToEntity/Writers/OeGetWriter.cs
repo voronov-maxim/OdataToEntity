@@ -1,6 +1,5 @@
 ﻿using Microsoft.OData;
 using Microsoft.OData.Edm;
-using Microsoft.OData.UriParser.Aggregation;
 using OdataToEntity.Parsers;
 using System;
 using System.Collections;
@@ -9,91 +8,105 @@ using System.Threading.Tasks;
 
 namespace OdataToEntity.Writers
 {
-    public sealed class OeGetWriter
+    public static class OeGetWriter
     {
-        private readonly Uri _baseUri;
-        private readonly IEdmModel _model;
-        private readonly ODataMessageWriterSettings _settings;
-
-        public OeGetWriter(Uri baseUri, IEdmModel model)
+        private struct GetWriter
         {
-            _baseUri = baseUri;
-            _model = model;
+            private readonly Uri BaseUri;
+            private readonly OeMetadataLevel MetadataLevel;
+            private readonly ODataWriter Writer;
 
-            _settings = new ODataMessageWriterSettings()
+            public GetWriter(Uri baseUri, OeMetadataLevel metadataLevel, ODataWriter writer)
             {
-                BaseUri = _baseUri,
-                EnableMessageStreamDisposal = false,
-                Validations = ValidationKinds.ThrowIfTypeConflictsWithMetadata | ValidationKinds.ThrowOnDuplicatePropertyNames,
-                Version = ODataVersion.V4
-            };
-        }
+                BaseUri = baseUri;
+                MetadataLevel = metadataLevel;
+                Writer = writer;
+            }
 
-        private ODataResource CreateEntry(OeEntryFactory entryFactory, Object entity, OeMetadataLevel metadataLevel)
-        {
-            ODataResource entry = entryFactory.CreateEntry(entity);
-            if (metadataLevel == OeMetadataLevel.Full)
-                entry.Id = OeUriHelper.ComputeId(_baseUri, entryFactory.EntitySet, entry);
-            return entry;
-        }
-        public async Task SerializeAsync(ODataUri odataUri, OeEntryFactory entryFactory, Db.OeEntityAsyncEnumerator asyncEnumerator, OeRequestHeaders headers, Stream stream)
-        {
-            _settings.ODataUri = odataUri;
-
-            IODataResponseMessage responseMessage = new OeInMemoryMessage(stream, headers.ContentType);
-            using (ODataMessageWriter messageWriter = new ODataMessageWriter(responseMessage, _settings, _model))
+            private ODataResource CreateEntry(OeEntryFactory entryFactory, Object entity)
             {
-                ODataUtils.SetHeadersForPayload(messageWriter, ODataPayloadKind.ResourceSet);
-                ODataWriter writer = messageWriter.CreateODataResourceSetWriter(entryFactory.EntitySet, entryFactory.EntityType);
-                writer.WriteStart(new ODataResourceSet());
+                ODataResource entry = entryFactory.CreateEntry(entity);
+                if (MetadataLevel == OeMetadataLevel.Full)
+                    entry.Id = OeUriHelper.ComputeId(BaseUri, entryFactory.EntitySet, entry);
+                return entry;
+            }
+            public async Task SerializeAsync(OeEntryFactory entryFactory, Db.OeEntityAsyncEnumerator asyncEnumerator, Stream stream)
+            {
+                Writer.WriteStart(new ODataResourceSet());
                 while (await asyncEnumerator.MoveNextAsync().ConfigureAwait(false))
                 {
                     Object value = asyncEnumerator.Current;
-                    ODataResource entry = CreateEntry(entryFactory, entryFactory.GetValue(value), headers.MetadataLevel);
-                    writer.WriteStart(entry);
+                    ODataResource entry = CreateEntry(entryFactory, entryFactory.GetValue(value));
+                    Writer.WriteStart(entry);
                     foreach (OeEntryFactory navigationLink in entryFactory.NavigationLinks)
-                        WriteNavigationLink(writer, value, navigationLink, headers.MetadataLevel);
-                    writer.WriteEnd();
+                        WriteNavigationLink(value, navigationLink);
+                    Writer.WriteEnd();
                 }
-                writer.WriteEnd();
+                Writer.WriteEnd();
             }
-        }
-        private void WriteNavigationLink(ODataWriter writer, Object value, OeEntryFactory entryFactory, OeMetadataLevel metadataLevel)
-        {
-            writer.WriteStart(entryFactory.ResourceInfo);
+            private void WriteNavigationLink(Object value, OeEntryFactory entryFactory)
+            {
+                Writer.WriteStart(entryFactory.ResourceInfo);
 
-            Object navigationValue = entryFactory.GetValue(value);
-            if (navigationValue == null)
-            {
-                writer.WriteStart((ODataResource)null);
-                writer.WriteEnd();
-            }
-            else
-            {
-                if (entryFactory.ResourceInfo.IsCollection.GetValueOrDefault())
+                Object navigationValue = entryFactory.GetValue(value);
+                if (navigationValue == null)
                 {
-                    writer.WriteStart(new ODataResourceSet());
-                    foreach (Object entity in (IEnumerable)navigationValue)
-                    {
-                        ODataResource entry = CreateEntry(entryFactory, entity, metadataLevel);
-                        writer.WriteStart(entry);
-                        foreach (OeEntryFactory navigationLink in entryFactory.NavigationLinks)
-                            WriteNavigationLink(writer, entity, navigationLink, metadataLevel);
-                        writer.WriteEnd();
-                    }
-                    writer.WriteEnd();
+                    Writer.WriteStart((ODataResource)null);
+                    Writer.WriteEnd();
                 }
                 else
                 {
-                    ODataResource entry = CreateEntry(entryFactory, navigationValue, metadataLevel);
-                    writer.WriteStart(entry);
-                    foreach (OeEntryFactory navigationLink in entryFactory.NavigationLinks)
-                        WriteNavigationLink(writer, navigationValue, navigationLink, metadataLevel);
-                    writer.WriteEnd();
+                    if (entryFactory.ResourceInfo.IsCollection.GetValueOrDefault())
+                    {
+                        Writer.WriteStart(new ODataResourceSet());
+                        foreach (Object entity in (IEnumerable)navigationValue)
+                        {
+                            ODataResource entry = CreateEntry(entryFactory, entity);
+                            Writer.WriteStart(entry);
+                            foreach (OeEntryFactory navigationLink in entryFactory.NavigationLinks)
+                                WriteNavigationLink(entity, navigationLink);
+                            Writer.WriteEnd();
+                        }
+                        Writer.WriteEnd();
+                    }
+                    else
+                    {
+                        ODataResource entry = CreateEntry(entryFactory, navigationValue);
+                        Writer.WriteStart(entry);
+                        foreach (OeEntryFactory navigationLink in entryFactory.NavigationLinks)
+                            WriteNavigationLink(navigationValue, navigationLink);
+                        Writer.WriteEnd();
+                    }
                 }
-            }
 
-            writer.WriteEnd();
+                Writer.WriteEnd();
+            }
+        }
+
+        public static async Task SerializeAsync(Uri baseUri, OeParseUriContext parseUriContext, Db.OeEntityAsyncEnumerator asyncEnumerator, Stream stream)
+        {
+            IEdmModel edmModel = parseUriContext.EdmModel;
+            OeEntryFactory entryFactory = parseUriContext.EntryFactory;
+            String contentType = parseUriContext.Headers.ContentType;
+
+            var settings = new ODataMessageWriterSettings()
+            {
+                BaseUri = baseUri,
+                EnableMessageStreamDisposal = false,
+                ODataUri = parseUriContext.ODataUri,
+                Validations = ValidationKinds.ThrowIfTypeConflictsWithMetadata | ValidationKinds.ThrowOnDuplicatePropertyNames,
+                Version = ODataVersion.V4
+            };
+
+            IODataResponseMessage responseMessage = new OeInMemoryMessage(stream, contentType);
+            using (ODataMessageWriter messageWriter = new ODataMessageWriter(responseMessage, settings, edmModel))
+            {
+                ODataUtils.SetHeadersForPayload(messageWriter, ODataPayloadKind.ResourceSet);
+                ODataWriter writer = messageWriter.CreateODataResourceSetWriter(entryFactory.EntitySet, entryFactory.EntityType);
+                var getWriter = new GetWriter(baseUri, parseUriContext.Headers.MetadataLevel, writer);
+                await getWriter.SerializeAsync(entryFactory, asyncEnumerator, stream);
+            }
         }
     }
 }
+

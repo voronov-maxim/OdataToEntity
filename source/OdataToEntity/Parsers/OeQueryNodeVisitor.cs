@@ -22,16 +22,38 @@ namespace OdataToEntity.Parsers
             public IEdmNavigationProperty NavigationProperty => _navigationProperty;
         }
 
-        private readonly IEdmModel _model;
+        private readonly Dictionary<ConstantExpression, ConstantNode> _constants;
+        private readonly IEdmModel _edmModel;
         private readonly Stack<ParameterExpression> _parameters;
+        private readonly OeQueryNodeVisitor _parentVisitor;
 
-        public OeQueryNodeVisitor(IEdmModel model, ParameterExpression it)
+        public OeQueryNodeVisitor(IEdmModel edmModel, ParameterExpression it)
         {
-            _model = model;
+            _edmModel = edmModel;
             _parameters = new Stack<ParameterExpression>();
             _parameters.Push(it);
+
+            _constants = new Dictionary<ConstantExpression, ConstantNode>();
+        }
+        public OeQueryNodeVisitor(IEdmModel edmModel, ParameterExpression it, IReadOnlyDictionary<ConstantExpression, ConstantNode> constants)
+            : this(edmModel, it)
+        {
+            foreach (KeyValuePair<ConstantExpression, ConstantNode> pair in constants)
+                AddConstant(pair.Key, pair.Value);
+        }
+        public OeQueryNodeVisitor(OeQueryNodeVisitor parentVisitor, ParameterExpression it)
+            : this(parentVisitor._edmModel, it)
+        {
+            _parentVisitor = parentVisitor;
         }
 
+        private void AddConstant(ConstantExpression constantExpression, ConstantNode constantNode)
+        {
+            if (_parentVisitor == null)
+                _constants.Add(constantExpression, constantNode);
+            else
+                _parentVisitor.AddConstant(constantExpression, constantNode);
+        }
         private Expression Lambda(CollectionNavigationNode sourceNode, SingleValueNode body, String methodName)
         {
             Expression source = TranslateNode(sourceNode);
@@ -46,6 +68,17 @@ namespace OdataToEntity.Parsers
 
             var typeArguments = new Type[] { it.Type };
             return Expression.Call(typeof(Enumerable), methodName, typeArguments, source, lambda);
+        }
+        private void ReplaceConstant(ConstantExpression oldExpression, ConstantExpression newExpression)
+        {
+            if (_parentVisitor == null)
+            {
+                ConstantNode constantNode = _constants[oldExpression];
+                _constants.Remove(oldExpression);
+                AddConstant(newExpression, constantNode);
+            }
+            else
+                ReplaceConstant(oldExpression, newExpression);
         }
         public Expression TranslateNode(QueryNode node)
         {
@@ -85,13 +118,19 @@ namespace OdataToEntity.Parsers
                 {
                     if (left is ConstantExpression)
                     {
-                        left = OeExpressionHelper.ConstantChangeType(left as ConstantExpression, rightType);
-                        left = Expression.Convert(left, right.Type);
+                        ConstantExpression oldConstant = left as ConstantExpression;
+                        ConstantExpression newConstant = OeExpressionHelper.ConstantChangeType(oldConstant, rightType);
+                        if (oldConstant != newConstant)
+                            ReplaceConstant(oldConstant, newConstant);
+                        left = Expression.Convert(newConstant, right.Type);
                     }
                     else if (right is ConstantExpression)
                     {
-                        right = OeExpressionHelper.ConstantChangeType(right as ConstantExpression, leftType);
-                        right = Expression.Convert(right, left.Type);
+                        ConstantExpression oldConstant = right as ConstantExpression;
+                        ConstantExpression newConstant = OeExpressionHelper.ConstantChangeType(oldConstant, leftType);
+                        if (oldConstant != newConstant)
+                            ReplaceConstant(oldConstant, newConstant);
+                        right = Expression.Convert(newConstant, left.Type);
                     }
                     else
                         right = Expression.Convert(right, left.Type);
@@ -109,7 +148,9 @@ namespace OdataToEntity.Parsers
         }
         public override Expression Visit(ConstantNode nodeIn)
         {
-            return Expression.Constant(nodeIn.Value);
+            ConstantExpression e = Expression.Constant(nodeIn.Value);
+            AddConstant(e, nodeIn);
+            return e;
         }
         public override Expression Visit(ConvertNode nodeIn)
         {
@@ -125,7 +166,7 @@ namespace OdataToEntity.Parsers
                     {
                         if (nodeIn.TypeReference.IsEnum())
                         {
-                            var clrTypeAnnotation = _model.GetAnnotationValue<ModelBuilder.OeClrTypeAnnotation>(nodeIn.TypeReference.Definition);
+                            var clrTypeAnnotation = _edmModel.GetAnnotationValue<ModelBuilder.OeClrTypeAnnotation>(nodeIn.TypeReference.Definition);
                             if (clrTypeAnnotation == null)
                                 throw new InvalidOperationException("Add OeClrTypeAnnotation for " + nodeIn.TypeReference.FullName());
 
@@ -138,7 +179,10 @@ namespace OdataToEntity.Parsers
                         clrType = ModelBuilder.PrimitiveTypeHelper.GetClrType(primitiveTypeKind);
                     if (nodeIn.TypeReference.IsNullable && clrType.GetTypeInfo().IsValueType)
                         clrType = typeof(Nullable<>).MakeGenericType(clrType);
-                    e = Expression.Constant(null, clrType);
+
+                    ConstantExpression newConstantExpression = Expression.Constant(null, clrType);
+                    ReplaceConstant(constantExpression, newConstantExpression);
+                    e = newConstantExpression;
                 }
             }
             return e;
@@ -202,6 +246,8 @@ namespace OdataToEntity.Parsers
                 return TuplePropertyMapper(source, nodeIn.Name);
         }
 
+        public IReadOnlyDictionary<ConstantExpression, ConstantNode> Constans => _parentVisitor == null ? _constants : _parentVisitor.Constans;
+        public IEdmModel EdmModel => _edmModel;
         public ParameterExpression Parameter => _parameters.Peek();
         public Func<Expression, String, Expression> TuplePropertyMapper { get; set; }
     }
