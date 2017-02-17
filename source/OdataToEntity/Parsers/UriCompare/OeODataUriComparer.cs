@@ -11,7 +11,7 @@ namespace OdataToEntity.Parsers.UriCompare
         private readonly OeODataUriComparerParameterValues _parameterValues;
         private readonly OeQueryNodeComparer _queryNodeComparer;
 
-        public OeODataUriComparer(IReadOnlyDictionary<ConstantNode, String> constantNodeNames)
+        public OeODataUriComparer(IReadOnlyDictionary<ConstantNode, KeyValuePair<String, Type>> constantNodeNames)
         {
             _parameterValues = new OeODataUriComparerParameterValues(constantNodeNames);
             _queryNodeComparer = new OeQueryNodeComparer(_parameterValues);

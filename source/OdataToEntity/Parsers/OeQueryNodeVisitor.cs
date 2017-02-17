@@ -78,7 +78,7 @@ namespace OdataToEntity.Parsers
                 AddConstant(newExpression, constantNode);
             }
             else
-                ReplaceConstant(oldExpression, newExpression);
+                _parentVisitor.ReplaceConstant(oldExpression, newExpression);
         }
         public Expression TranslateNode(QueryNode node)
         {

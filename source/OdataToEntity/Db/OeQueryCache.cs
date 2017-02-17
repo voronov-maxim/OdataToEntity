@@ -8,18 +8,18 @@ namespace OdataToEntity.Db
 {
     public sealed class QueryCacheItem
     {
-        private readonly IReadOnlyDictionary<ConstantNode, String> _constantNodeNames;
+        private readonly IReadOnlyDictionary<ConstantNode, KeyValuePair<String, Type>> _constantNodeNames;
         private readonly OeEntryFactory _entryFactory;
         private readonly Object _query;
 
-        public QueryCacheItem(Object query, IReadOnlyDictionary<ConstantNode, String> constantNodeNames, OeEntryFactory entryFactory)
+        public QueryCacheItem(Object query, IReadOnlyDictionary<ConstantNode, KeyValuePair<String, Type>> constantNodeNames, OeEntryFactory entryFactory)
         {
             _query = query;
             _constantNodeNames = constantNodeNames;
             _entryFactory = entryFactory;
         }
 
-        public IReadOnlyDictionary<ConstantNode, String> ConstantNodeNames => _constantNodeNames;
+        public IReadOnlyDictionary<ConstantNode, KeyValuePair<String, Type>> ConstantNodeNames => _constantNodeNames;
         public OeEntryFactory EntryFactory => _entryFactory;
         public Object Query => _query;
     }
@@ -34,7 +34,7 @@ namespace OdataToEntity.Db
             AllowCache = true;
         }
 
-        public void AddQuery(OeParseUriContext parseUriContext, Object query, IReadOnlyDictionary<ConstantNode, String> constantNodeNames)
+        public void AddQuery(OeParseUriContext parseUriContext, Object query, IReadOnlyDictionary<ConstantNode, KeyValuePair<String, Type>> constantNodeNames)
         {
             var queryCacheItem = new QueryCacheItem(query, constantNodeNames, parseUriContext.EntryFactory);
             _cache.Add(new KeyValuePair<OeParseUriContext, QueryCacheItem>(parseUriContext, queryCacheItem));

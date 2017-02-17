@@ -7,12 +7,12 @@ namespace OdataToEntity.Parsers
 {
     public sealed class OeConstantToParameterVisitor : OeConstantToVariableVisitor
     {
-        private readonly Dictionary<ConstantNode, String> _constantNodeNames;
+        private readonly Dictionary<ConstantNode, KeyValuePair<String, Type>> _constantNodeNames;
         private KeyValuePair<String, Object>[] _parameterValues;
 
         public OeConstantToParameterVisitor()
         {
-            _constantNodeNames = new Dictionary<ConstantNode, String>();
+            _constantNodeNames = new Dictionary<ConstantNode, KeyValuePair<String, Type>>();
         }
 
         protected override IReadOnlyList<Expression> TranslateParameters(
@@ -27,7 +27,7 @@ namespace OdataToEntity.Parsers
                 String parameterName = "__p_" + i.ToString();
 
                 ConstantNode constantNode = constantMappings[constantExpression];
-                _constantNodeNames.Add(constantNode, parameterName);
+                _constantNodeNames.Add(constantNode, new KeyValuePair<String, Type>(parameterName, constantExpression.Type));
 
                 _parameterValues[i] = new KeyValuePair<String, Object>(parameterName, constantExpression.Value);
                 parameters[i] = Expression.Parameter(constantExpression.Type, parameterName);
@@ -35,7 +35,7 @@ namespace OdataToEntity.Parsers
             return parameters;
         }
 
-        public IReadOnlyDictionary<ConstantNode, String> ConstantNodeNames => _constantNodeNames;
+        public IReadOnlyDictionary<ConstantNode, KeyValuePair<String, Type>> ConstantNodeNames => _constantNodeNames;
         public IReadOnlyList<KeyValuePair<String, Object>> ParameterValues => _parameterValues ?? Array.Empty<KeyValuePair<String, Object>>();
     }
 }

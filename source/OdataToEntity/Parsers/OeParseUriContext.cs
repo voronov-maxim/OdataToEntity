@@ -96,7 +96,7 @@ namespace OdataToEntity.Parsers
             if (!ODataUri.QueryCount.GetValueOrDefault())
                 EntryFactory = CreateEntryFactory(expressionBuilder);
 
-            //expression = constantToParameterVisitor.Translate(expression, expressionBuilder.Constants);
+            expression = constantToParameterVisitor.Translate(expression, expressionBuilder.Constants);
             return SourceVisitor.Translate(query, expression);
         }
 

@@ -187,8 +187,8 @@ namespace OdataToEntity.EfCore
                     Expression expression = parseUriContext.CreateExpression(query, parameterVisitor);
                     queryExecutor = dbContext.CreateAsyncQueryExecutor(expression);
 
-                    //base.QueryCache.AddQuery(parseUriContext, queryExecutor, parameterVisitor.ConstantNodeNames);
-                    //parameterValues = parameterVisitor.ParameterValues;
+                    base.QueryCache.AddQuery(parseUriContext, queryExecutor, parameterVisitor.ConstantNodeNames);
+                    parameterValues = parameterVisitor.ParameterValues;
                 }
                 else
                 {
