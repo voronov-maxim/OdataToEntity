@@ -83,7 +83,7 @@ namespace OdataToEntity.Test
                 OeParseUriContext parseUriContext1 = parser.ParseUri(new Uri(parser.BaseUri + requestMethodNames[i].Request));
                 OeParseUriContext parseUriContext2 = parser.ParseUri(new Uri(parser.BaseUri + requestMethodNames[i].Request));
 
-                var constantNodeNames = new FakeReadOnlyDictionary<ConstantNode, String>();
+                var constantNodeNames = new FakeReadOnlyDictionary<ConstantNode, KeyValuePair<String, Type>>();
                 bool result = new OeODataUriComparer(constantNodeNames).Compare(parseUriContext1, parseUriContext2);
                 Assert.True(result);
 
@@ -91,7 +91,7 @@ namespace OdataToEntity.Test
                 {
                     parseUriContext1 = parser.ParseUri(new Uri(parser.BaseUri + requestMethodNames[i].Request));
                     parseUriContext2 = parser.ParseUri(new Uri(parser.BaseUri + requestMethodNames[j].Request));
-                    constantNodeNames = new FakeReadOnlyDictionary<ConstantNode, String>();
+                    constantNodeNames = new FakeReadOnlyDictionary<ConstantNode, KeyValuePair<String, Type>>();
                     result = new OeODataUriComparer(constantNodeNames).Compare(parseUriContext1, parseUriContext2);
 
                     if (result && requestMethodNames[j].EqualMethodNames != null &&
