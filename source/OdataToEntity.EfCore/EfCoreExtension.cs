@@ -52,19 +52,9 @@ namespace OdataToEntity.EfCore
         {
             QueryModel queryModel = CreateQueryModel(dbContext, expression);
             var queryCompilationContextFactory = dbContext.GetService<IQueryCompilationContextFactory>();
-
-            //var zzz = (Func<IQueryCompilationContextFactory, QueryModel, Object>)Zzz<Object>;
-            //var ozzz = zzz.GetMethodInfo().GetGenericMethodDefinition();
-            //Type itemType = OeExpressionHelper.GetCollectionItemType(expression.Type);
-            //var czzz = ozzz.MakeGenericMethod(itemType);
-            //var rez = czzz.Invoke(null, new object[] { queryCompilationContextFactory, queryModel });
             return queryCompilationContextFactory.Create(true).CreateQueryModelVisitor().CreateAsyncQueryExecutor<Object>(queryModel);
         }
-        private static Object Zzz<T>(IQueryCompilationContextFactory queryCompilationContextFactory, QueryModel queryModel)
-        {
-            return queryCompilationContextFactory.Create(true).CreateQueryModelVisitor().CreateAsyncQueryExecutor<T>(queryModel);
-        }
-        public static Func<QueryContext, IEnumerable> CreateQueryExecutor(this DbContext dbContext, Expression expression)
+        public static Func<QueryContext, IEnumerable<Object>> CreateQueryExecutor(this DbContext dbContext, Expression expression)
         {
             QueryModel queryModel = CreateQueryModel(dbContext, expression);
             var queryCompilationContextFactory = dbContext.GetService<IQueryCompilationContextFactory>();

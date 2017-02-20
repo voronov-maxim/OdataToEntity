@@ -51,6 +51,8 @@
     <Compile Include="CompositeReadStream.cs" />
     <Compile Include="Db\OeEntityAsyncEnumerator.cs" />
     <Compile Include="Db\OeQueryCache.cs" />
+    <Compile Include="Db\OeQueryCacheDbParameterDefinition.cs" />
+    <Compile Include="Db\OeQueryCacheDbParameterValue.cs" />
     <Compile Include="ModelBuilder\OeClrTypeAnnotation.cs" />
     <Compile Include="ModelBuilder\EntityTypeInfo.cs" />
     <Compile Include="ModelBuilder\FKeyInfo.cs" />

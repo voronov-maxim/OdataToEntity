@@ -55,10 +55,12 @@ namespace OdataToEntity.Parsers
         private bool _select;
         private SelectItemInfo _selectItemInfo;
         private readonly List<SelectItemInfo> _selectItemInfos;
+        private readonly OeQueryNodeVisitor _visitor;
 
-        public OeSelectTranslator(IEdmModel model)
+        public OeSelectTranslator(OeQueryNodeVisitor visitor)
         {
-            _model = model;
+            _visitor = visitor;
+            _model = visitor.EdmModel;
             _selectItemInfos = new List<SelectItemInfo>();
         }
 
@@ -216,11 +218,14 @@ namespace OdataToEntity.Parsers
                 expression = expressionBuilder.ApplyOrderBy(expression, item.OrderByOption);
                 expression = expressionBuilder.ApplySkip(expression, item.SkipOption);
                 expression = expressionBuilder.ApplyTake(expression, item.TopOption);
+
+                foreach (KeyValuePair<ConstantExpression, ConstantNode> constant in expressionBuilder.Constants)
+                    _visitor.AddConstant(constant.Key, constant.Value);
             }
 
             if (item.SelectAndExpand.SelectedItems.Any())
             {
-                var selectTranslator = new OeSelectTranslator(_model);
+                var selectTranslator = new OeSelectTranslator(_visitor);
                 Expression nestedExpression = selectTranslator.CreateExpression(expression, item.SelectAndExpand, OeMetadataLevel.Minimal);
 
                 Type nestedType = OeExpressionHelper.GetCollectionItemType(nestedExpression.Type);

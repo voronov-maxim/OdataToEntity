@@ -21,11 +21,15 @@ namespace OdataToEntity.Parsers
             Object value;
             if (constantExpression.Type == typeof(DateTimeOffset))
             {
+                if (targetType == typeof(Nullable<DateTimeOffset>))
+                    return constantExpression;
                 if (targetType == typeof(DateTime))
                     return Expression.Constant(((DateTimeOffset)constantExpression.Value).DateTime);
             }
             else if (constantExpression.Type == typeof(Date))
             {
+                if (targetType == typeof(Nullable<Date>))
+                    return constantExpression;
                 if (targetType == typeof(DateTime))
                     return Expression.Constant((DateTime)((Date)constantExpression.Value));
             }

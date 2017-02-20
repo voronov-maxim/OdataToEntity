@@ -90,7 +90,7 @@ namespace OdataToEntity.Parsers.UriCompare
         }
         private bool Visit(BinaryOperatorNode node1, BinaryOperatorNode node2)
         {
-            return node1.OperatorKind == node1.OperatorKind &&
+            return node1.OperatorKind == node2.OperatorKind &&
                 node1.TypeReference.IsEqual(node2.TypeReference) &&
                 Compare(node1.Left, node2.Left) && Compare(node1.Right, node2.Right);
         }

@@ -132,7 +132,7 @@ namespace OdataToEntity.Parsers
             if (selectClause == null)
                 return source;
 
-            var selectTranslator = new OeSelectTranslator(_model);
+            var selectTranslator = new OeSelectTranslator(_visitor);
             Expression selectExpression = selectTranslator.Build(source, selectClause, metadatLevel);
 
             _entryFactory = selectTranslator.CreateEntryFactory;
@@ -147,16 +147,22 @@ namespace OdataToEntity.Parsers
             if (skip == null)
                 return source;
 
+            ConstantExpression skipConstant = Expression.Constant((int)skip.Value, typeof(int));
+            _visitor.AddConstant(skipConstant, new ConstantNode(skipConstant.Value, "skip"));
+
             MethodInfo skipMethodInfo = OeMethodInfoHelper.GetSkipMethodInfo(ParameterType);
-            return Expression.Call(skipMethodInfo, source, Expression.Constant((int)skip.Value));
+            return Expression.Call(skipMethodInfo, source, skipConstant);
         }
         public Expression ApplyTake(Expression source, long? top)
         {
             if (top == null)
                 return source;
 
+            ConstantExpression topConstant = Expression.Constant((int)top.Value, typeof(int));
+            _visitor.AddConstant(topConstant, new ConstantNode(topConstant.Value, "top"));
+
             MethodInfo takeMethodInfo = OeMethodInfoHelper.GetTakeMethodInfo(ParameterType);
-            return Expression.Call(takeMethodInfo, source, Expression.Constant((int)top.Value));
+            return Expression.Call(takeMethodInfo, source, topConstant);
         }
         private Expression ApplyThenBy(Expression source, OrderByClause thenByClause)
         {

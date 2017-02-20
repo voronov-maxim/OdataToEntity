@@ -8,18 +8,18 @@ namespace OdataToEntity.Db
 {
     public sealed class QueryCacheItem
     {
-        private readonly IReadOnlyDictionary<ConstantNode, KeyValuePair<String, Type>> _constantNodeNames;
+        private readonly IReadOnlyDictionary<ConstantNode, OeQueryCacheDbParameterDefinition> _constantToParameterMapper;
         private readonly OeEntryFactory _entryFactory;
         private readonly Object _query;
 
-        public QueryCacheItem(Object query, IReadOnlyDictionary<ConstantNode, KeyValuePair<String, Type>> constantNodeNames, OeEntryFactory entryFactory)
+        public QueryCacheItem(Object query, IReadOnlyDictionary<ConstantNode, OeQueryCacheDbParameterDefinition> constantToParameterMapper, OeEntryFactory entryFactory)
         {
             _query = query;
-            _constantNodeNames = constantNodeNames;
+            _constantToParameterMapper = constantToParameterMapper;
             _entryFactory = entryFactory;
         }
 
-        public IReadOnlyDictionary<ConstantNode, KeyValuePair<String, Type>> ConstantNodeNames => _constantNodeNames;
+        public IReadOnlyDictionary<ConstantNode, OeQueryCacheDbParameterDefinition> ConstantToParameterMapper => _constantToParameterMapper;
         public OeEntryFactory EntryFactory => _entryFactory;
         public Object Query => _query;
     }
@@ -34,21 +34,25 @@ namespace OdataToEntity.Db
             AllowCache = true;
         }
 
-        public void AddQuery(OeParseUriContext parseUriContext, Object query, IReadOnlyDictionary<ConstantNode, KeyValuePair<String, Type>> constantNodeNames)
+        public void AddQuery(OeParseUriContext parseUriContext, Object query, IReadOnlyDictionary<ConstantNode, OeQueryCacheDbParameterDefinition> constantNodeNames)
         {
             var queryCacheItem = new QueryCacheItem(query, constantNodeNames, parseUriContext.EntryFactory);
-            _cache.Add(new KeyValuePair<OeParseUriContext, QueryCacheItem>(parseUriContext, queryCacheItem));
+            lock (_cache)
+                _cache.Add(new KeyValuePair<OeParseUriContext, QueryCacheItem>(parseUriContext, queryCacheItem));
         }
-        public QueryCacheItem GetQuery(OeParseUriContext parseUriContext, out IReadOnlyList<KeyValuePair<String, Object>> parameterValues)
+        public QueryCacheItem GetQuery(OeParseUriContext parseUriContext, out IReadOnlyList<OeQueryCacheDbParameterValue> parameterValues)
         {
             parameterValues = null;
-            foreach (KeyValuePair<OeParseUriContext, QueryCacheItem> cacheItem in _cache)
+            lock (_cache)
             {
-                var uriComparer = new OeODataUriComparer(cacheItem.Value.ConstantNodeNames);
-                if (uriComparer.Compare(cacheItem.Key, parseUriContext))
+                foreach (KeyValuePair<OeParseUriContext, QueryCacheItem> cacheItem in _cache)
                 {
-                    parameterValues = uriComparer.ParameterValues;
-                    return cacheItem.Value;
+                    var uriComparer = new OeODataUriComparer(cacheItem.Value.ConstantToParameterMapper);
+                    if (uriComparer.Compare(cacheItem.Key, parseUriContext))
+                    {
+                        parameterValues = uriComparer.ParameterValues;
+                        return cacheItem.Value;
+                    }
                 }
             }
             return null;

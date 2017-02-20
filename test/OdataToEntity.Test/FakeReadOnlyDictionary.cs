@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.OData.UriParser;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,7 +18,9 @@ namespace OdataToEntity.Test
                 if (base.TryGetValue(key, out value))
                     return value;
 
-                value = (TValue)(Object)("p_" + base.Count.ToString());
+                var constantNode = (ConstantNode)(Object)key;
+                Type type = constantNode.Value == null ? typeof(Object) : constantNode.Value.GetType();
+                value = (TValue)(Object)new KeyValuePair<String, Type>("p_" + base.Count.ToString(), type);
                 base[key] = value;
                 return value;
             }

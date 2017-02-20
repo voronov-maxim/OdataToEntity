@@ -47,7 +47,7 @@ namespace OdataToEntity.Parsers
             _parentVisitor = parentVisitor;
         }
 
-        private void AddConstant(ConstantExpression constantExpression, ConstantNode constantNode)
+        internal void AddConstant(ConstantExpression constantExpression, ConstantNode constantNode)
         {
             if (_parentVisitor == null)
                 _constants.Add(constantExpression, constantNode);

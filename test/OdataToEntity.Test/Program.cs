@@ -9,9 +9,9 @@ namespace OdataToEntity.Test
         {
             //new BatchTest().Add().Wait();
             Console.WriteLine();
-            new SelectTest(new DbFixtureInitDb()).KeyFilter().Wait();
-            new SelectTest(new DbFixtureInitDb()).KeyFilter().Wait();
-            //new QueryComparerTest().Test().GetAwaiter().GetResult();
+            //new SelectTest(new DbFixtureInitDb()).KeyFilter().Wait();
+            //new SelectTest(new DbFixtureInitDb()).KeyFilter().Wait();
+            new QueryComparerTest().Test().GetAwaiter().GetResult();
 
             Console.ReadLine();
         }

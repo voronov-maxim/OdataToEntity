@@ -28,4 +28,29 @@ namespace OdataToEntity.EfCore
 
         public override Object Current => _asyncEnumerator.Current;
     }
+
+    public sealed class OeEfCoreEntityAsyncEnumeratorAdapter : OeEntityAsyncEnumerator
+    {
+        private readonly IEnumerator<Object> _enumerator;
+        private readonly CancellationToken _cancellationToken;
+
+        public OeEfCoreEntityAsyncEnumeratorAdapter(IEnumerable<Object> enumerable, CancellationToken cancellationToken)
+        {
+            _enumerator = enumerable.GetEnumerator();
+            _cancellationToken = cancellationToken;
+        }
+
+        public override void Dispose()
+        {
+            _enumerator.Dispose();
+        }
+        public override Task<bool> MoveNextAsync()
+        {
+            _cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult<bool>(_enumerator.MoveNext());
+        }
+
+        public override Object Current => _enumerator.Current;
+
+    }
 }

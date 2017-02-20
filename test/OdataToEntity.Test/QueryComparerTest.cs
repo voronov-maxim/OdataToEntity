@@ -16,15 +16,13 @@ namespace OdataToEntity.Test
     {
         private struct RequestMethodName
         {
-            public readonly String[] EqualMethodNames;
             public readonly String MethodName;
             public readonly String Request;
 
-            public RequestMethodName(String request, String methodName, String[] equalMethodNames)
+            public RequestMethodName(String request, String methodName)
             {
                 Request = request;
                 MethodName = methodName;
-                EqualMethodNames = equalMethodNames;
             }
         }
 
@@ -39,12 +37,12 @@ namespace OdataToEntity.Test
 
             public override Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
             {
-                _requests.Add(new RequestMethodName(parameters.RequestUri, null, parameters.EqualMethodNames));
+                _requests.Add(new RequestMethodName(parameters.RequestUri, null));
                 return Task.CompletedTask;
             }
             public override Task Execute<T, TResult>(QueryParametersScalar<T, TResult> parameters)
             {
-                _requests.Add(new RequestMethodName(parameters.RequestUri, null, parameters.EqualMethodNames));
+                _requests.Add(new RequestMethodName(parameters.RequestUri, null));
                 return Task.CompletedTask;
 
             }
@@ -68,7 +66,7 @@ namespace OdataToEntity.Test
 
             var requestMethodNames = new RequestMethodName[methodNames.Count];
             for (int i = 0; i < methodNames.Count; i++)
-                requestMethodNames[i] = new RequestMethodName(fixture.Requests[i].Request, methodNames[i], fixture.Requests[i].EqualMethodNames);
+                requestMethodNames[i] = new RequestMethodName(fixture.Requests[i].Request, methodNames[i]);
             return requestMethodNames;
         }
         //[Fact]
@@ -83,22 +81,28 @@ namespace OdataToEntity.Test
                 OeParseUriContext parseUriContext1 = parser.ParseUri(new Uri(parser.BaseUri + requestMethodNames[i].Request));
                 OeParseUriContext parseUriContext2 = parser.ParseUri(new Uri(parser.BaseUri + requestMethodNames[i].Request));
 
-                var constantNodeNames = new FakeReadOnlyDictionary<ConstantNode, KeyValuePair<String, Type>>();
-                bool result = new OeODataUriComparer(constantNodeNames).Compare(parseUriContext1, parseUriContext2);
+                var constantToParameterMapper = new FakeReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition>();
+                if (parseUriContext1.ODataUri.Skip != null)
+                {
+                    var constantNode = new ConstantNode((int)parseUriContext1.ODataUri.Skip.Value, "skip");
+                    constantToParameterMapper.Add(constantNode, new Db.OeQueryCacheDbParameterDefinition("p_0", typeof(int)));
+                }
+                if (parseUriContext1.ODataUri.Top != null)
+                {
+                    var constantNode = new ConstantNode((int)parseUriContext1.ODataUri.Top.Value, "top");
+                    constantToParameterMapper.Add(constantNode, new Db.OeQueryCacheDbParameterDefinition($"p_{constantToParameterMapper.Count}", typeof(int)));
+                }
+
+                bool result = new OeODataUriComparer(constantToParameterMapper).Compare(parseUriContext1, parseUriContext2);
                 Assert.True(result);
 
                 for (int j = i + 1; j < requestMethodNames.Length; j++)
                 {
                     parseUriContext1 = parser.ParseUri(new Uri(parser.BaseUri + requestMethodNames[i].Request));
                     parseUriContext2 = parser.ParseUri(new Uri(parser.BaseUri + requestMethodNames[j].Request));
-                    constantNodeNames = new FakeReadOnlyDictionary<ConstantNode, KeyValuePair<String, Type>>();
-                    result = new OeODataUriComparer(constantNodeNames).Compare(parseUriContext1, parseUriContext2);
-
-                    if (result && requestMethodNames[j].EqualMethodNames != null &&
-                        requestMethodNames[j].EqualMethodNames.Contains(requestMethodNames[i].MethodName))
-                        Assert.True(result);
-                    else
-                        Assert.False(result);
+                    constantToParameterMapper = new FakeReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition>();
+                    result = new OeODataUriComparer(constantToParameterMapper).Compare(parseUriContext1, parseUriContext2);
+                    Assert.False(result);
                 }
             }
         }

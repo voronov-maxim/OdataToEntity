@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.OData.Edm;
 using OdataToEntity.Parsers;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -171,40 +172,40 @@ namespace OdataToEntity.EfCore
         }
         public override Db.OeEntityAsyncEnumerator ExecuteEnumerator(OeParseUriContext parseUriContext, Object dataContext, CancellationToken cancellationToken)
         {
-            IAsyncEnumerable<Object> asyncEnumerable;
+            IEnumerable<Object> enumerable;
             if (base.QueryCache.AllowCache)
             {
                 var dbContext = (T)dataContext;
 
-                IReadOnlyList<KeyValuePair<String, Object>> parameterValues;
+                IReadOnlyList<Db.OeQueryCacheDbParameterValue> parameterValues;
                 Db.QueryCacheItem queryCacheItem = base.QueryCache.GetQuery(parseUriContext, out parameterValues);
 
-                Func<QueryContext, IAsyncEnumerable<Object>> queryExecutor;
+                Func<QueryContext, IEnumerable<Object>> queryExecutor;
                 if (queryCacheItem == null)
                 {
                     IQueryable query = parseUriContext.EntitySetAdapter.GetEntitySet(dbContext);
                     var parameterVisitor = new OeConstantToParameterVisitor();
                     Expression expression = parseUriContext.CreateExpression(query, parameterVisitor);
-                    queryExecutor = dbContext.CreateAsyncQueryExecutor(expression);
+                    queryExecutor = dbContext.CreateQueryExecutor(expression);
 
-                    base.QueryCache.AddQuery(parseUriContext, queryExecutor, parameterVisitor.ConstantNodeNames);
+                    base.QueryCache.AddQuery(parseUriContext, queryExecutor, parameterVisitor.ConstantToParameterMapper);
                     parameterValues = parameterVisitor.ParameterValues;
                 }
                 else
                 {
-                    queryExecutor = (Func<QueryContext, IAsyncEnumerable<Object>>)queryCacheItem.Query;
+                    queryExecutor = (Func<QueryContext, IEnumerable<Object>>)queryCacheItem.Query;
                     parseUriContext.EntryFactory = queryCacheItem.EntryFactory;
                 }
 
                 var queryContextFactory = dbContext.GetService<IQueryContextFactory>();
                 var queryContext = queryContextFactory.Create();
-                foreach (KeyValuePair<String, Object> pair in parameterValues)
-                    queryContext.AddParameter(pair.Key, pair.Value);
-                asyncEnumerable = queryExecutor(queryContext);
+                foreach (Db.OeQueryCacheDbParameterValue parameterValue in parameterValues)
+                    queryContext.AddParameter(parameterValue.ParameterName, parameterValue.ParameterValue);
+                enumerable = queryExecutor(queryContext);
             }
             else
-                asyncEnumerable = ((IQueryable<Object>)base.CreateQuery(parseUriContext, dataContext, new OeConstantToVariableVisitor())).ToAsyncEnumerable();
-            return new OeEfCoreEntityAsyncEnumerator(asyncEnumerable, cancellationToken);
+                enumerable = ((IQueryable<Object>)base.CreateQuery(parseUriContext, dataContext, new OeConstantToVariableVisitor()));
+            return new OeEfCoreEntityAsyncEnumeratorAdapter(enumerable, cancellationToken);
         }
         public override Db.OeEntitySetAdapter GetEntitySetAdapter(String entitySetName)
         {

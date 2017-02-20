@@ -18,10 +18,10 @@ namespace OdataToEntity.Db
         }
 
         public abstract void CloseDataContext(Object dataContext);
-        protected IQueryable CreateQuery(OeParseUriContext parseUriContext, Object dataContext, OeConstantToVariableVisitor constantToParamterVisitor)
+        protected IQueryable CreateQuery(OeParseUriContext parseUriContext, Object dataContext, OeConstantToVariableVisitor constantToVariableVisitor)
         {
             IQueryable query = parseUriContext.EntitySetAdapter.GetEntitySet(dataContext);
-            Expression expression = parseUriContext.CreateExpression(query, constantToParamterVisitor);
+            Expression expression = parseUriContext.CreateExpression(query, constantToVariableVisitor);
             return query.Provider.CreateQuery(expression);
         }
         public abstract Object CreateDataContext();

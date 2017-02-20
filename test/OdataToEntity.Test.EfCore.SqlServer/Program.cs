@@ -15,8 +15,9 @@ namespace OdataToEntity.Test.EfCore.SqlServer
         static void Main(string[] args)
         {
             var fixture = new DbFixtureInitDb();
-            new SelectTest(fixture).ApplyGroupByAggregate().Wait();
-            new SelectTest(fixture).ApplyGroupByAggregate().Wait();
+            //new SelectTest(fixture).FilterEnumNotNullAndStringNotNull().GetAwaiter().GetResult();
+            new SelectTest(fixture).FilterEnumNullAndStringNull().GetAwaiter().GetResult();
+            new SelectTest(fixture).FilterEnumNullAndStringNotNull().GetAwaiter().GetResult();
         }
     }
 }

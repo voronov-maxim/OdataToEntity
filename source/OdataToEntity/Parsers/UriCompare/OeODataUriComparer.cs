@@ -11,9 +11,9 @@ namespace OdataToEntity.Parsers.UriCompare
         private readonly OeODataUriComparerParameterValues _parameterValues;
         private readonly OeQueryNodeComparer _queryNodeComparer;
 
-        public OeODataUriComparer(IReadOnlyDictionary<ConstantNode, KeyValuePair<String, Type>> constantNodeNames)
+        public OeODataUriComparer(IReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition> constantToParameterMapper)
         {
-            _parameterValues = new OeODataUriComparerParameterValues(constantNodeNames);
+            _parameterValues = new OeODataUriComparerParameterValues(constantToParameterMapper);
             _queryNodeComparer = new OeQueryNodeComparer(_parameterValues);
         }
 
@@ -43,10 +43,10 @@ namespace OdataToEntity.Parsers.UriCompare
             if (!CompareOrderBy(uri1.OrderBy, uri2.OrderBy))
                 return false;
 
-            if (uri1.Skip != uri2.Skip)
+            if (!CompareSkip(uri1.Skip, uri2.Skip))
                 return false;
 
-            if (uri1.Top != uri2.Top)
+            if (!CompareTop(uri1.Top, uri2.Top))
                 return false;
 
             if (!CompareHeaders(parseUriContext1.Headers, parseUriContext2.Headers))
@@ -220,6 +220,38 @@ namespace OdataToEntity.Parsers.UriCompare
             else
                 throw new NotSupportedException();
         }
+        private bool CompareSkip(long? skip1, long? skip2)
+        {
+            if (skip1 == skip2)
+            {
+                if (skip1 == null || skip2 == null)
+                    return true;
+            }
+            else
+            {
+                if (skip1 == null || skip2 == null)
+                    return false;
+            }
+
+            _parameterValues.AddSkipParameter(skip2.Value);
+            return true;
+        }
+        private bool CompareTop(long? top1, long? top2)
+        {
+            if (top1 == top2)
+            {
+                if (top1 == null || top2 == null)
+                    return true;
+            }
+            else
+            {
+                if (top1 == null || top2 == null)
+                    return false;
+            }
+
+            _parameterValues.AddTopParameter(top2.Value);
+            return true;
+        }
         private bool CompareTransformation(TransformationNode node1, TransformationNode node2)
         {
             if (node1.GetType() != node2.GetType())
@@ -250,6 +282,6 @@ namespace OdataToEntity.Parsers.UriCompare
             return true;
         }
 
-        public IReadOnlyList<KeyValuePair<String, Object>> ParameterValues => _parameterValues.ParameterValues;
+        public IReadOnlyList<Db.OeQueryCacheDbParameterValue> ParameterValues => _parameterValues.ParameterValues;
     }
 }

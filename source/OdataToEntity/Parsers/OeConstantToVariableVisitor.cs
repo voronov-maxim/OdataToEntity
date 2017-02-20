@@ -39,7 +39,9 @@ namespace OdataToEntity.Parsers
         {
             if (_parameterExpressions == null)
             {
-                if (ModelBuilder.PrimitiveTypeHelper.GetPrimitiveType(node.Type) != null || node.Type.GetTypeInfo().IsEnum)
+                Type underlyingType = null;
+                if (ModelBuilder.PrimitiveTypeHelper.GetPrimitiveType(node.Type) != null || node.Type.GetTypeInfo().IsEnum ||
+                    (underlyingType = Nullable.GetUnderlyingType(node.Type)) != null && underlyingType.GetTypeInfo().IsEnum)
                     _constantExpressions.Add(node);
                 return node;
             }

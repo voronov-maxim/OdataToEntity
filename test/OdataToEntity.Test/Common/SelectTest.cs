@@ -2,7 +2,6 @@
 using OdataToEntity.Test.Model;
 using System;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -328,8 +327,7 @@ namespace OdataToEntity.Test
             var parameters = new QueryParameters<Order>()
             {
                 RequestUri = "Orders?$filter=Date ge 2016-07-04T19:10:10.8237573%2B03:00",
-                Expression = t => t.Where(o => o.Date >= DateTimeOffset.Parse("2016-07-04T19:10:10.8237573+03:00")),
-                EqualMethodNames = new[] { nameof(FilterDateTimeOffsetNull) }
+                Expression = t => t.Where(o => o.Date >= DateTimeOffset.Parse("2016-07-04T19:10:10.8237573+03:00"))
             };
             await Fixture.Execute(parameters);
         }
@@ -349,8 +347,7 @@ namespace OdataToEntity.Test
             var parameters = new QueryParameters<Order>()
             {
                 RequestUri = "Orders?$filter=Date eq null",
-                Expression = t => t.Where(o => o.Date == null),
-                EqualMethodNames = new[] { nameof(FilterDateTimeOffset) }
+                Expression = t => t.Where(o => o.Date == null)
             };
             await Fixture.Execute(parameters);
         }
@@ -400,8 +397,7 @@ namespace OdataToEntity.Test
             var parameters = new QueryParameters<Customer>()
             {
                 RequestUri = "Customers?$filter=Sex ne null and Address ne null",
-                Expression = t => t.Where(c => c.Sex != null && c.Address != null),
-                EqualMethodNames = new[] { nameof(FilterEnumNullAndStringNotNull), nameof(FilterEnumNullAndStringNull) }
+                Expression = t => t.Where(c => c.Sex != null && c.Address != null)
             };
             await Fixture.Execute(parameters);
         }
@@ -411,8 +407,7 @@ namespace OdataToEntity.Test
             var parameters = new QueryParameters<Customer>()
             {
                 RequestUri = "Customers?$filter=Sex eq null and Address ne null",
-                Expression = t => t.Where(c => c.Sex == null && c.Address != null),
-                EqualMethodNames = new[] { nameof(FilterEnumNotNullAndStringNotNull), nameof(FilterEnumNullAndStringNull) }
+                Expression = t => t.Where(c => c.Sex == null && c.Address != null)
             };
             await Fixture.Execute(parameters);
         }
@@ -422,8 +417,7 @@ namespace OdataToEntity.Test
             var parameters = new QueryParameters<Customer>()
             {
                 RequestUri = "Customers?$filter=Sex eq null and Address eq null",
-                Expression = t => t.Where(c => c.Sex == null && c.Address == null),
-                EqualMethodNames = new[] { nameof(FilterEnumNotNullAndStringNotNull), nameof(FilterEnumNullAndStringNotNull) }
+                Expression = t => t.Where(c => c.Sex == null && c.Address == null)
             };
             await Fixture.Execute(parameters);
         }

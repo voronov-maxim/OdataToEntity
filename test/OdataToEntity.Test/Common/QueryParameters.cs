@@ -8,7 +8,7 @@ namespace OdataToEntity.Test
     {
         public String RequestUri { get; set; }
         public Expression<Func<IQueryable<T>, IQueryable<TResult>>> Expression { get; set; }
-        public String[] EqualMethodNames { get; set; }
+        //public String[] EqualMethodNames { get; set; }
     }
 
     public sealed class QueryParameters<T> : QueryParameters<T, T>
@@ -19,6 +19,6 @@ namespace OdataToEntity.Test
     {
         public String RequestUri { get; set; }
         public Expression<Func<IQueryable<T>, TResult>> Expression { get; set; }
-        public String[] EqualMethodNames { get; set; }
+        //public String[] EqualMethodNames { get; set; }
     }
 }
