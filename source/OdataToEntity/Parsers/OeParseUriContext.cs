@@ -87,10 +87,10 @@ namespace OdataToEntity.Parsers
             expression = expressionBuilder.ApplyNavigation(expression, ParseNavigationSegments);
             expression = expressionBuilder.ApplyFilter(expression, ODataUri.Filter);
             expression = expressionBuilder.ApplyAggregation(expression, ODataUri.Apply);
-            expression = expressionBuilder.ApplySelect(expression, ODataUri.SelectAndExpand, Headers.MetadataLevel);
+            expression = expressionBuilder.ApplySelect(expression, ODataUri.SelectAndExpand, ODataUri.Path, Headers.MetadataLevel);
             expression = expressionBuilder.ApplyOrderBy(expression, ODataUri.OrderBy);
-            expression = expressionBuilder.ApplySkip(expression, ODataUri.Skip);
-            expression = expressionBuilder.ApplyTake(expression, ODataUri.Top);
+            expression = expressionBuilder.ApplySkip(expression, ODataUri.Skip, ODataUri.Path);
+            expression = expressionBuilder.ApplyTake(expression, ODataUri.Top, ODataUri.Path);
             expression = expressionBuilder.ApplyCount(expression, ODataUri.QueryCount);
 
             if (!ODataUri.QueryCount.GetValueOrDefault())
@@ -100,12 +100,14 @@ namespace OdataToEntity.Parsers
             return SourceVisitor.Translate(query, expression);
         }
 
+        public IReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition> ConstantToParameterMapper { get; set; }
         public IEdmModel EdmModel => _edmModel;
         public IEdmEntitySet EntitySet => _entitySet;
         public Db.OeEntitySetAdapter EntitySetAdapter { get; set; }
         public OeEntryFactory EntryFactory { get; set; }
         public OeRequestHeaders Headers { get; set; }
-        public IReadOnlyList<OeParseNavigationSegment> ParseNavigationSegments => _parseNavigationSegments;
         public ODataUri ODataUri => _odataUri;
+        public IReadOnlyList<Db.OeQueryCacheDbParameterValue> ParameterValues { get; set; }
+        public IReadOnlyList<OeParseNavigationSegment> ParseNavigationSegments => _parseNavigationSegments;
     }
 }

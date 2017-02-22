@@ -25,6 +25,7 @@ namespace OdataToEntity.Test
     public sealed class OrderOeDataAdapter : OeEfCoreDataAdapter<Model.OrderContext>
     {
         private String _databaseName;
+        private readonly Db.OeQueryCache _queryCache;
 
         public OrderOeDataAdapter(String databaseName) : base(new Db.OeQueryCache())
         {
@@ -33,11 +34,13 @@ namespace OdataToEntity.Test
 
         public override Object CreateDataContext()
         {
-            return Model.OrderContext.Create(_databaseName);
+            return new Model.OrderContext();
         }
         public void ResetDatabase()
         {
             _databaseName = Model.OrderContext.GenerateDatabaseName();
         }
+
+        public new Db.OeQueryCache QueryCache => base.QueryCache;
     }
 }

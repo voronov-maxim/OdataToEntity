@@ -236,8 +236,8 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<Customer, Customer>()
             {
-                RequestUri = "Customers?$expand=AltOrders($expand=Items($top=1)),Orders($expand=Items($top=1))",
-                Expression = t => t.Include(c => c.AltOrders).Include(c => c.Orders).ThenInclude(o => o.Items.Take(1))
+                RequestUri = "Customers?$top=2&$expand=AltOrders($expand=Items($top=2)),Orders($expand=Items($top=1))",
+                Expression = t => t.Take(2).Include(c => c.AltOrders).Include(c => c.Orders).ThenInclude(o => o.Items.Take(1))
             };
             await Fixture.Execute(parameters);
         }

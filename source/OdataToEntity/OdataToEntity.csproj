@@ -70,8 +70,10 @@
     <Compile Include="Parsers\UriCompare\OeComparerExtension.cs" />
     <Compile Include="Parsers\UriCompare\OeODataUriComparer.cs" />
     <Compile Include="Parsers\UriCompare\OeODataUriComparerParameterValues.cs" />
+    <Compile Include="Parsers\UriCompare\OeParseUriContextEqualityComparer.cs" />
     <Compile Include="Parsers\UriCompare\OeQueryNodeComparer.cs" />
     <Compile Include="Parsers\UriCompare\EnumerableComparer.cs" />
+    <Compile Include="Parsers\UriCompare\OeQueryNodeHashVisitor.cs" />
     <Compile Include="Writers\OeUriHelper.cs" />
     <Compile Include="ModelBuilder\OeEdmModelBuilder.cs" />
     <Compile Include="OeMessageContext.cs" />

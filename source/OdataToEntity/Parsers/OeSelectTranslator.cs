@@ -52,14 +52,16 @@ namespace OdataToEntity.Parsers
 
         private readonly IEdmModel _model;
         private ParameterExpression _parameter;
+        private readonly ODataPath _path;
         private bool _select;
         private SelectItemInfo _selectItemInfo;
         private readonly List<SelectItemInfo> _selectItemInfos;
         private readonly OeQueryNodeVisitor _visitor;
 
-        public OeSelectTranslator(OeQueryNodeVisitor visitor)
+        public OeSelectTranslator(OeQueryNodeVisitor visitor, ODataPath path)
         {
             _visitor = visitor;
+            _path = path;
             _model = visitor.EdmModel;
             _selectItemInfos = new List<SelectItemInfo>();
         }
@@ -216,8 +218,10 @@ namespace OdataToEntity.Parsers
                 var expressionBuilder = new OeExpressionBuilder(_model, itemType);
                 expression = expressionBuilder.ApplyFilter(expression, item.FilterOption);
                 expression = expressionBuilder.ApplyOrderBy(expression, item.OrderByOption);
-                expression = expressionBuilder.ApplySkip(expression, item.SkipOption);
-                expression = expressionBuilder.ApplyTake(expression, item.TopOption);
+
+                var path = new ODataPath(_path.Union(item.PathToNavigationProperty));
+                expression = expressionBuilder.ApplySkip(expression, item.SkipOption, path);
+                expression = expressionBuilder.ApplyTake(expression, item.TopOption, path);
 
                 foreach (KeyValuePair<ConstantExpression, ConstantNode> constant in expressionBuilder.Constants)
                     _visitor.AddConstant(constant.Key, constant.Value);
@@ -225,7 +229,8 @@ namespace OdataToEntity.Parsers
 
             if (item.SelectAndExpand.SelectedItems.Any())
             {
-                var selectTranslator = new OeSelectTranslator(_visitor);
+                var path = new ODataPath(_path.Union(item.PathToNavigationProperty));
+                var selectTranslator = new OeSelectTranslator(_visitor, path);
                 Expression nestedExpression = selectTranslator.CreateExpression(expression, item.SelectAndExpand, OeMetadataLevel.Minimal);
 
                 Type nestedType = OeExpressionHelper.GetCollectionItemType(nestedExpression.Type);

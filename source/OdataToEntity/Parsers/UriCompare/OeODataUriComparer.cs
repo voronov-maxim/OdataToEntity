@@ -3,6 +3,7 @@ using Microsoft.OData.UriParser;
 using Microsoft.OData.UriParser.Aggregation;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace OdataToEntity.Parsers.UriCompare
 {
@@ -17,6 +18,10 @@ namespace OdataToEntity.Parsers.UriCompare
             _queryNodeComparer = new OeQueryNodeComparer(_parameterValues);
         }
 
+        private static int CombineHashCodes(int h1, int h2)
+        {
+            return (h1 << 5) + h1 ^ h2;
+        }
         public bool Compare(OeParseUriContext parseUriContext1, OeParseUriContext parseUriContext2)
         {
             if (parseUriContext1.EntitySet != parseUriContext2.EntitySet)
@@ -37,16 +42,16 @@ namespace OdataToEntity.Parsers.UriCompare
             if (!CompareFilter(uri1.Filter, uri2.Filter))
                 return false;
 
-            if (!CompareSelectAndExpand(uri1.SelectAndExpand, uri2.SelectAndExpand))
+            if (!CompareSelectAndExpand(uri1.SelectAndExpand, uri2.SelectAndExpand, uri1.Path))
                 return false;
 
             if (!CompareOrderBy(uri1.OrderBy, uri2.OrderBy))
                 return false;
 
-            if (!CompareSkip(uri1.Skip, uri2.Skip))
+            if (!CompareSkip(uri1.Skip, uri2.Skip, uri1.Path))
                 return false;
 
-            if (!CompareTop(uri1.Top, uri2.Top))
+            if (!CompareTop(uri1.Top, uri2.Top, uri1.Path))
                 return false;
 
             if (!CompareHeaders(parseUriContext1.Headers, parseUriContext2.Headers))
@@ -181,7 +186,7 @@ namespace OdataToEntity.Parsers.UriCompare
 
             return true;
         }
-        private bool CompareSelectAndExpand(SelectExpandClause clause1, SelectExpandClause clause2)
+        private bool CompareSelectAndExpand(SelectExpandClause clause1, SelectExpandClause clause2, ODataPath path)
         {
             if (clause1 == clause2)
                 return true;
@@ -189,9 +194,9 @@ namespace OdataToEntity.Parsers.UriCompare
                 return false;
 
             return clause1.AllSelected == clause2.AllSelected &&
-                EnumerableComparer.Compare(clause1.SelectedItems, clause2.SelectedItems, CompareSelectItem);
+                EnumerableComparer.Compare(clause1.SelectedItems, clause2.SelectedItems, path, CompareSelectItem);
         }
-        private bool CompareSelectItem(SelectItem selectItem1, SelectItem selectItem2)
+        private bool CompareSelectItem(SelectItem selectItem1, SelectItem selectItem2, ODataPath path)
         {
             if (selectItem1.GetType() != selectItem2.GetType())
                 return false;
@@ -201,15 +206,28 @@ namespace OdataToEntity.Parsers.UriCompare
                 var expand1 = selectItem1 as ExpandedNavigationSelectItem;
                 var expand2 = selectItem2 as ExpandedNavigationSelectItem;
 
-                return CompareLevelsClause(expand1.LevelsOption, expand2.LevelsOption) &&
-                    expand1.CountOption == expand2.CountOption &&
-                    CompareFilter(expand1.FilterOption, expand2.FilterOption) &&
-                    expand1.NavigationSource == expand2.NavigationSource &&
-                    CompareOrderBy(expand1.OrderByOption, expand2.OrderByOption) &&
-                    ODataPathComparer.Compare(expand1.PathToNavigationProperty, expand2.PathToNavigationProperty) &&
-                    CompareSelectAndExpand(expand1.SelectAndExpand, expand2.SelectAndExpand) &&
-                    expand1.SkipOption == expand2.SkipOption &&
-                    expand1.TopOption == expand2.TopOption;
+                if (!CompareLevelsClause(expand1.LevelsOption, expand2.LevelsOption))
+                    return false;
+
+                if (expand1.CountOption != expand2.CountOption)
+                    return false;
+
+                if (expand1.NavigationSource != expand2.NavigationSource)
+                    return false;
+
+                if (!CompareFilter(expand1.FilterOption, expand2.FilterOption))
+                    return false;
+
+                if (!CompareOrderBy(expand1.OrderByOption, expand2.OrderByOption))
+                    return false;
+
+                if (!ODataPathComparer.Compare(expand1.PathToNavigationProperty, expand2.PathToNavigationProperty))
+                    return false;
+
+                path = new ODataPath(path.Union(expand2.PathToNavigationProperty));
+                return CompareSkip(expand1.SkipOption, expand2.SkipOption, path) &&
+                    CompareTop(expand1.TopOption, expand2.TopOption, path) &&
+                    CompareSelectAndExpand(expand1.SelectAndExpand, expand2.SelectAndExpand, path);
             }
             else if (selectItem1 is PathSelectItem)
             {
@@ -220,36 +238,20 @@ namespace OdataToEntity.Parsers.UriCompare
             else
                 throw new NotSupportedException();
         }
-        private bool CompareSkip(long? skip1, long? skip2)
+        private bool CompareSkip(long? skip1, long? skip2, ODataPath path)
         {
-            if (skip1 == skip2)
-            {
-                if (skip1 == null || skip2 == null)
-                    return true;
-            }
-            else
-            {
-                if (skip1 == null || skip2 == null)
-                    return false;
-            }
+            if (skip1 == null || skip2 == null)
+                return skip1 == skip2;
 
-            _parameterValues.AddSkipParameter(skip2.Value);
+            _parameterValues.AddSkipParameter(skip2.Value, path);
             return true;
         }
-        private bool CompareTop(long? top1, long? top2)
+        private bool CompareTop(long? top1, long? top2, ODataPath path)
         {
-            if (top1 == top2)
-            {
-                if (top1 == null || top2 == null)
-                    return true;
-            }
-            else
-            {
-                if (top1 == null || top2 == null)
-                    return false;
-            }
+            if (top1 == null || top2 == null)
+                return top1 == top2;
 
-            _parameterValues.AddTopParameter(top2.Value);
+            _parameterValues.AddTopParameter(top2.Value, path);
             return true;
         }
         private bool CompareTransformation(TransformationNode node1, TransformationNode node2)
@@ -280,6 +282,86 @@ namespace OdataToEntity.Parsers.UriCompare
             }
 
             return true;
+        }
+        public static int GetCacheCode(OeParseUriContext parseUriContext)
+        {
+            var hashVistitor = new OeQueryNodeHashVisitor();
+
+            ODataUri uri = parseUriContext.ODataUri;
+            int hash = uri.Path.FirstSegment.Identifier.GetHashCode();
+            hash = CombineHashCodes(hash, uri.Path.LastSegment.Identifier.GetHashCode());
+
+            if (parseUriContext.ParseNavigationSegments != null)
+                for (int i = 0; i < parseUriContext.ParseNavigationSegments.Count; i++)
+                {
+                    OeParseNavigationSegment parseNavigationSegment = parseUriContext.ParseNavigationSegments[i];
+                    if (parseNavigationSegment.Filter != null)
+                    {
+                        int h = hashVistitor.TranslateNode(parseUriContext.ParseNavigationSegments[i].Filter.Expression);
+                        hash = CombineHashCodes(hash, h);
+                    }
+                }
+
+            if (uri.Filter != null)
+                hash = CombineHashCodes(hash, hashVistitor.TranslateNode(uri.Filter.Expression));
+
+            if (uri.Apply != null)
+            {
+                foreach (TransformationNode transformationNode in uri.Apply.Transformations)
+                {
+                    if (transformationNode is FilterTransformationNode)
+                    {
+                        FilterClause filter = (transformationNode as FilterTransformationNode).FilterClause;
+                        hash = CombineHashCodes(hash, hashVistitor.TranslateNode(filter.Expression));
+                    }
+                    else if (transformationNode is AggregateTransformationNode)
+                    {
+                        foreach (AggregateExpression aggregate in (transformationNode as AggregateTransformationNode).Expressions)
+                            hash = CombineHashCodes(hash, (int)aggregate.Method);
+                    }
+                    else if (transformationNode is GroupByTransformationNode)
+                    {
+                        foreach (GroupByPropertyNode group in (transformationNode as GroupByTransformationNode).GroupingProperties)
+                            hash = CombineHashCodes(hash, group.Name.GetHashCode());
+                    }
+                    else
+                        throw new InvalidProgramException("unknown TransformationNode " + transformationNode.GetType().ToString());
+                }
+            }
+
+            if (uri.SelectAndExpand != null)
+                hash = GetCacheCode(hash, uri.SelectAndExpand);
+
+            if (uri.OrderBy != null)
+            {
+                hash = CombineHashCodes(hash, (int)uri.OrderBy.Direction);
+                hash = CombineHashCodes(hash, hashVistitor.TranslateNode(uri.OrderBy.Expression));
+            }
+
+            return hash;
+        }
+        public static int GetCacheCode(int hash, SelectExpandClause selectExpandClause)
+        {
+            foreach (SelectItem selectItem in selectExpandClause.SelectedItems)
+            {
+                if (selectItem is ExpandedNavigationSelectItem)
+                {
+                    var expanded = selectItem as ExpandedNavigationSelectItem;
+                    hash = CombineHashCodes(hash, expanded.NavigationSource.Name.GetHashCode());
+                    if (expanded.SelectAndExpand != null)
+                        hash = CombineHashCodes(hash, GetCacheCode(hash, expanded.SelectAndExpand));
+                }
+                else if (selectItem is PathSelectItem)
+                {
+                    ODataSelectPath path = (selectItem as PathSelectItem).SelectedPath;
+                    hash = CombineHashCodes(hash, path.FirstSegment.Identifier.GetHashCode());
+                    hash = CombineHashCodes(hash, path.LastSegment.Identifier.GetHashCode());
+                }
+                else
+                    throw new InvalidOperationException("unknown SelectItem " + selectItem.GetType().ToString());
+            }
+
+            return hash;
         }
 
         public IReadOnlyList<Db.OeQueryCacheDbParameterValue> ParameterValues => _parameterValues.ParameterValues;

@@ -1,7 +1,9 @@
-﻿using Microsoft.OData.UriParser;
+﻿using Microsoft.OData.Edm;
+using Microsoft.OData.UriParser;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Text;
 
 namespace OdataToEntity.Parsers.UriCompare
 {
@@ -33,10 +35,11 @@ namespace OdataToEntity.Parsers.UriCompare
                     _parameterValues.Add(new Db.OeQueryCacheDbParameterValue(parameterDefinition.ParameterName, parameterConstanNode.Value));
             }
         }
-        public void AddSkipParameter(long value)
+        public void AddSkipParameter(long value, ODataPath path)
         {
+            String resourcePath = GetSegmentResourcePathSkip(path);
             foreach (KeyValuePair<ConstantNode, Db.OeQueryCacheDbParameterDefinition> pair in _constantToParameterMapper)
-                if (pair.Key.LiteralText == "skip")
+                if (pair.Value.ParameterType == typeof(int) && pair.Key.LiteralText == resourcePath)
                 {
                     _parameterValues.Add(new Db.OeQueryCacheDbParameterValue(pair.Value.ParameterName, (int)value));
                     return;
@@ -44,16 +47,50 @@ namespace OdataToEntity.Parsers.UriCompare
 
             throw new InvalidOperationException("skip not found");
         }
-        public void AddTopParameter(long value)
+        public void AddTopParameter(long value, ODataPath path)
         {
+            String resourcePath = GetSegmentResourcePathTop(path);
             foreach (KeyValuePair<ConstantNode, Db.OeQueryCacheDbParameterDefinition> pair in _constantToParameterMapper)
-                if (pair.Key.LiteralText == "top")
+                if (pair.Value.ParameterType == typeof(int) && pair.Key.LiteralText == resourcePath)
                 {
                     _parameterValues.Add(new Db.OeQueryCacheDbParameterValue(pair.Value.ParameterName, (int)value));
                     return;
                 }
 
             throw new InvalidOperationException("top not found");
+        }
+        public static ConstantNode CreateSkipConstantNode(int skip, ODataPath path)
+        {
+            return new ConstantNode(skip, GetSegmentResourcePathSkip(path));
+        }
+        public static ConstantNode CreateTopConstantNode(int top, ODataPath path)
+        {
+            return new ConstantNode(top, GetSegmentResourcePathTop(path));
+        }
+        private static String GetSegmentResourcePathSkip(ODataPath path)
+        {
+            return GetSegmentResourcePath(path, "skip");
+        }
+        private static String GetSegmentResourcePathTop(ODataPath path)
+        {
+            return GetSegmentResourcePath(path, "top");
+        }
+        private static String GetSegmentResourcePath(ODataPath path, String skipOrTop)
+        {
+            var stringBuilder = new StringBuilder();
+            foreach (ODataPathSegment pathSegment in path)
+            {
+                if (stringBuilder.Length > 0)
+                    stringBuilder.Append('/');
+
+                if (pathSegment is EntitySetSegment)
+                    stringBuilder.Append((pathSegment as EntitySetSegment).EntitySet.Name);
+                else if (pathSegment is NavigationPropertySegment)
+                    stringBuilder.Append((pathSegment as NavigationPropertySegment).NavigationProperty.Name);
+                else
+                    throw new InvalidOperationException("unknown ODataPathSegment " + pathSegment.GetType().ToString());
+            }
+            return stringBuilder.Append(':').Append(skipOrTop).ToString();
         }
 
         public IReadOnlyList<Db.OeQueryCacheDbParameterValue> ParameterValues => _parameterValues;

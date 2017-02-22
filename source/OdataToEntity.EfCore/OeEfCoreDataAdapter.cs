@@ -9,7 +9,6 @@ using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.OData.Edm;
 using OdataToEntity.Parsers;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -175,11 +174,9 @@ namespace OdataToEntity.EfCore
             IEnumerable<Object> enumerable;
             if (base.QueryCache.AllowCache)
             {
+                Db.QueryCacheItem queryCacheItem = base.QueryCache.GetQuery(parseUriContext);
+
                 var dbContext = (T)dataContext;
-
-                IReadOnlyList<Db.OeQueryCacheDbParameterValue> parameterValues;
-                Db.QueryCacheItem queryCacheItem = base.QueryCache.GetQuery(parseUriContext, out parameterValues);
-
                 Func<QueryContext, IEnumerable<Object>> queryExecutor;
                 if (queryCacheItem == null)
                 {
@@ -189,7 +186,7 @@ namespace OdataToEntity.EfCore
                     queryExecutor = dbContext.CreateQueryExecutor(expression);
 
                     base.QueryCache.AddQuery(parseUriContext, queryExecutor, parameterVisitor.ConstantToParameterMapper);
-                    parameterValues = parameterVisitor.ParameterValues;
+                    parseUriContext.ParameterValues = parameterVisitor.ParameterValues;
                 }
                 else
                 {
@@ -199,7 +196,7 @@ namespace OdataToEntity.EfCore
 
                 var queryContextFactory = dbContext.GetService<IQueryContextFactory>();
                 var queryContext = queryContextFactory.Create();
-                foreach (Db.OeQueryCacheDbParameterValue parameterValue in parameterValues)
+                foreach (Db.OeQueryCacheDbParameterValue parameterValue in parseUriContext.ParameterValues)
                     queryContext.AddParameter(parameterValue.ParameterName, parameterValue.ParameterValue);
                 enumerable = queryExecutor(queryContext);
             }

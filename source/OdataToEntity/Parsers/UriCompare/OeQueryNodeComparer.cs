@@ -1,5 +1,4 @@
-﻿using Microsoft.OData.Edm;
-using Microsoft.OData.UriParser;
+﻿using Microsoft.OData.UriParser;
 using System;
 using System.Collections.Generic;
 
@@ -16,10 +15,8 @@ namespace OdataToEntity.Parsers.UriCompare
 
         public bool Compare(QueryNode node1, QueryNode node2)
         {
-            if (node1 == node2)
-                return true;
             if (node1 == null || node2 == null)
-                return false;
+                return node1 == node2;
 
             if (node1.Kind != node2.Kind)
                 return false;
@@ -59,10 +56,8 @@ namespace OdataToEntity.Parsers.UriCompare
             var range1 = (ResourceRangeVariable)rangeVariable1;
             var range2 = (ResourceRangeVariable)rangeVariable2;
 
-            if (range1 == range2)
-                return true;
             if (range1 == null || range2 == null)
-                return false;
+                return range1 == range2;
 
             if (range1.Kind != range2.Kind)
                 return false;

@@ -47,12 +47,22 @@ namespace OdataToEntity.Parsers
             _parentVisitor = parentVisitor;
         }
 
-        internal void AddConstant(ConstantExpression constantExpression, ConstantNode constantNode)
+        public void AddConstant(ConstantExpression constantExpression, ConstantNode constantNode)
         {
             if (_parentVisitor == null)
                 _constants.Add(constantExpression, constantNode);
             else
                 _parentVisitor.AddConstant(constantExpression, constantNode);
+        }
+        public void AddSkipConstant(ConstantExpression skipConstant, ODataPath path)
+        {
+            ConstantNode skipNode = UriCompare.OeODataUriComparerParameterValues.CreateSkipConstantNode((int)skipConstant.Value, path);
+            AddConstant(skipConstant, skipNode);
+        }
+        public void AddTopConstant(ConstantExpression topConstant, ODataPath path)
+        {
+            ConstantNode topNode = UriCompare.OeODataUriComparerParameterValues.CreateTopConstantNode((int)topConstant.Value, path);
+            AddConstant(topConstant, topNode);
         }
         private Expression Lambda(CollectionNavigationNode sourceNode, SingleValueNode body, String methodName)
         {

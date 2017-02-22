@@ -51,7 +51,6 @@
     <Compile Include="DbFixture.cs" />
     <Compile Include="Common\IncludeVisitor.cs" />
     <Compile Include="DbFixtureInitDb.cs" />
-    <Compile Include="FakeReadOnlyDictionary.cs" />
     <Compile Include="Model\Order.cs" />
     <Compile Include="Model\OrderContext.cs" />
     <Compile Include="QueryComparerTest.cs" />
