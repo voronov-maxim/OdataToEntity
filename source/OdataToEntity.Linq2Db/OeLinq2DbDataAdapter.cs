@@ -47,7 +47,7 @@ namespace OdataToEntity.Linq2Db
                 {
                     Expression argument = base.Visit(node.Arguments[i]);
                     var call = argument as MethodCallExpression;
-                    if (call != null && call.Type.IsGenericType && call.Type.GetGenericTypeDefinition() == typeof(IOrderedEnumerable<>))
+                    if (call != null && call.Type.GetTypeInfo().IsGenericType && call.Type.GetGenericTypeDefinition() == typeof(IOrderedEnumerable<>))
                     {
                         Type type = call.Type.GetGenericArguments()[0];
                         MethodInfo selectMethodInfo = OeMethodInfoHelper.GetSelectMethodInfo(type, type);
@@ -148,12 +148,12 @@ namespace OdataToEntity.Linq2Db
         public override TResult ExecuteScalar<TResult>(OeParseUriContext parseUriContext, object dataContext)
         {
             IQueryable query = parseUriContext.EntitySetAdapter.GetEntitySet(dataContext);
-            Expression expression = parseUriContext.CreateExpression(query, new OeConstantToParamterVisitor());
+            Expression expression = parseUriContext.CreateExpression(query, new OeConstantToParameterVisitor());
             return query.Provider.Execute<TResult>(expression);
         }
         public override OeEntityAsyncEnumerator ExecuteEnumerator(OeParseUriContext parseUriContext, Object dataContext, CancellationToken cancellationToken)
         {
-            var query = (IQueryable<Object>)base.CreateQuery(parseUriContext, dataContext, new OeConstantToParamterVisitor());
+            var query = (IQueryable<Object>)base.CreateQuery(parseUriContext, dataContext, new OeConstantToParameterVisitor());
             return new OeLinq2DbEntityAsyncEnumerator(query.GetEnumerator(), cancellationToken);
         }
         public override OeEntitySetAdapter GetEntitySetAdapter(String entitySetName)
