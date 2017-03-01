@@ -3,7 +3,7 @@ using OdataToEntity.Test.Model;
 
 namespace OdataToEntity.Test
 {
-    public sealed class DbFixtureInitDb : DbFixture
+    public class DbFixtureInitDb : DbFixture
     {
         private bool _initialized;
 
@@ -16,9 +16,9 @@ namespace OdataToEntity.Test
                 return;
 
             _initialized = true;
-            //using (var context = new OrderContext())
-            //    context.Database.ExecuteSqlCommand("dbo.ResetDb");
-            //base.ExecuteBatchAsync("Add").GetAwaiter().GetResult();
+            using (var context = new OrderContext())
+                context.Database.ExecuteSqlCommand("dbo.ResetDb");
+            base.ExecuteBatchAsync("Add").GetAwaiter().GetResult();
         }
     }
 }

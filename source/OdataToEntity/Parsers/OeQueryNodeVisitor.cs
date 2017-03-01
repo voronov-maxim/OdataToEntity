@@ -64,6 +64,15 @@ namespace OdataToEntity.Parsers
             ConstantNode topNode = UriCompare.OeODataUriComparerParameterValues.CreateTopConstantNode((int)topConstant.Value, path);
             AddConstant(topConstant, topNode);
         }
+        private static PropertyInfo GetTuplePropertyByEntityType(Type tupleType, IEdmEntityType edmEntityType)
+        {
+            String fullName = edmEntityType.FullName();
+            foreach (PropertyInfo propertyInfo in tupleType.GetTypeInfo().GetProperties())
+                if (propertyInfo.PropertyType.FullName == fullName)
+                    return propertyInfo;
+
+            throw new InvalidOperationException("entity type " + fullName + " not found in tuple properties");
+        }
         private Expression Lambda(CollectionNavigationNode sourceNode, SingleValueNode body, String methodName)
         {
             Expression source = TranslateNode(sourceNode);
@@ -228,7 +237,22 @@ namespace OdataToEntity.Parsers
         public override Expression Visit(SingleValuePropertyAccessNode nodeIn)
         {
             if (TuplePropertyMapper == null)
-                return Expression.Property(TranslateNode(nodeIn.Source), nodeIn.Property.Name);
+            {
+                Expression e = TranslateNode(nodeIn.Source);
+                PropertyInfo property = e.Type.GetTypeInfo().GetProperty(nodeIn.Property.Name);
+                if (property == null)
+                {
+                    if (!OeExpressionHelper.IsTupleType(e.Type))
+                        throw new InvalidOperationException("must by Tuple " + e.Type.ToString());
+
+                    IEdmNavigationSource navigationSource = ((ResourceRangeVariableReferenceNode)nodeIn.Source).NavigationSource;
+                    property = GetTuplePropertyByEntityType(e.Type, navigationSource.EntityType());
+
+                    e = Expression.Property(e, property);
+                    property = e.Type.GetTypeInfo().GetProperty(nodeIn.Property.Name);
+                }
+                return Expression.Property(e, property);
+            }
 
             Expression source;
             String aliasName = nodeIn.Property.Name;

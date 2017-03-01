@@ -4,6 +4,7 @@
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">14.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
   </PropertyGroup>
+  <Import Project="..\..\sln\packages\xunit.runner.visualstudio.2.2.0\build\netcoreapp1.0\xunit.runner.visualstudio.props" Condition="Exists('..\..\sln\packages\xunit.runner.visualstudio.2.2.0\build\netcoreapp1.0\xunit.runner.visualstudio.props')" />
   <Import Project="$(VSToolsPath)\DotNet\Microsoft.DotNet.Props" Condition="'$(VSToolsPath)' != ''" />
   <PropertyGroup Label="Globals">
     <ProjectGuid>954cfe04-f057-4365-a857-5fab427ed086</ProjectGuid>

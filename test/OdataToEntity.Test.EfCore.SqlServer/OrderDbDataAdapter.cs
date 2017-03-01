@@ -25,7 +25,6 @@ namespace OdataToEntity.Test
     public sealed class OrderOeDataAdapter : OeEfCoreDataAdapter<Model.OrderContext>
     {
         private String _databaseName;
-        private readonly Db.OeQueryCache _queryCache;
 
         public OrderOeDataAdapter(String databaseName) : base(new Db.OeQueryCache())
         {

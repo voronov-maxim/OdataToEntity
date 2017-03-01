@@ -9,11 +9,88 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading.Tasks;
+using Xunit;
 
 namespace OdataToEntity.Test
 {
+    internal sealed class SelectTestDefinition
+    {
+        private readonly Func<DbContext, IList> _executorDb;
+        private readonly String _request;
+
+        public SelectTestDefinition(String request, Func<DbContext, IList> executorDb)
+        {
+            _request = request;
+            _executorDb = executorDb;
+        }
+
+        public Func<DbContext, IList> ExecutorDb => _executorDb;
+        public String MethodName { get; set; }
+        public String Request => _request;
+    }
+
     internal partial class TestHelper
     {
+        private sealed class ExpressionClosure<T, TResult>
+        {
+            private readonly Expression<Func<IQueryable<T>, IQueryable<TResult>>> _expression;
+
+            public ExpressionClosure(Expression<Func<IQueryable<T>, IQueryable<TResult>>> expression)
+            {
+                _expression = expression;
+            }
+
+            public IList Execute(DbContext dbContext)
+            {
+                return TestHelper.ExecuteDb(dbContext, _expression);
+            }
+        }
+
+        private sealed class ExpressionScalarClosure<T, TResult>
+        {
+            private readonly Expression<Func<IQueryable<T>, TResult>> _expression;
+
+            public ExpressionScalarClosure(Expression<Func<IQueryable<T>, TResult>> expression)
+            {
+                _expression = expression;
+            }
+
+            public IList Execute(DbContext dbContext)
+            {
+                return TestHelper.ExecuteDb(dbContext, _expression);
+            }
+        }
+
+        private sealed class SelectTestDefinitionFixture : DbFixtureInitDb
+        {
+            private readonly List<SelectTestDefinition> _selectTestDefinitions;
+
+            public SelectTestDefinitionFixture()
+            {
+                _selectTestDefinitions = new List<SelectTestDefinition>();
+            }
+
+            public override Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
+            {
+                var executorDb = (Func<DbContext, IList>)new ExpressionClosure<T, TResult>(parameters.Expression).Execute;
+                _selectTestDefinitions.Add(new SelectTestDefinition(parameters.RequestUri, executorDb));
+                return Task.CompletedTask;
+            }
+            public override Task Execute<T, TResult>(QueryParametersScalar<T, TResult> parameters)
+            {
+                var executorDb = (Func<DbContext, IList>)new ExpressionScalarClosure<T, TResult>(parameters.Expression).Execute;
+                _selectTestDefinitions.Add(new SelectTestDefinition(parameters.RequestUri, executorDb));
+                return Task.CompletedTask;
+
+            }
+            public override void Initalize()
+            {
+            }
+
+            public IReadOnlyList<SelectTestDefinition> SelectTestDefinitions => _selectTestDefinitions;
+        }
+
         private sealed class QueryVisitor<T> : ExpressionVisitor
         {
             private readonly IQueryable _query;
@@ -77,6 +154,23 @@ namespace OdataToEntity.Test
                 return (IQueryable<T>)orderContext.Orders;
 
             throw new InvalidOperationException("unknown type " + typeof(T).Name);
+        }
+        public static SelectTestDefinition[] GetSelectTestDefinitions()
+        {
+            var fixture = new SelectTestDefinitionFixture();
+            var selectTest = new SelectTest(fixture);
+
+            var methodNames = new List<String>();
+            foreach (MethodInfo methodInfo in selectTest.GetType().GetMethods().Where(m => m.GetCustomAttributes(typeof(FactAttribute), false).Count() == 1))
+            {
+                methodNames.Add(methodInfo.Name);
+                var testMethod = (Func<SelectTest, Task>)methodInfo.CreateDelegate(typeof(Func<SelectTest, Task>));
+                testMethod(selectTest).GetAwaiter().GetResult();
+            }
+
+            for (int i = 0; i < methodNames.Count; i++)
+                fixture.SelectTestDefinitions[i].MethodName = methodNames[i];
+            return fixture.SelectTestDefinitions.ToArray();
         }
         private static bool IsCollection(Type collectionType)
         {

@@ -1,13 +1,9 @@
-﻿using Microsoft.OData;
-using Microsoft.OData.Edm;
-using Microsoft.OData.UriParser;
+﻿using Microsoft.OData.UriParser;
 using OdataToEntity.Parsers;
 using OdataToEntity.Parsers.UriCompare;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace OdataToEntity.Test
@@ -33,69 +29,14 @@ namespace OdataToEntity.Test
             }
         }
 
-        private struct RequestMethodName
-        {
-            public readonly String MethodName;
-            public readonly String Request;
-
-            public RequestMethodName(String request, String methodName)
-            {
-                Request = request;
-                MethodName = methodName;
-            }
-        }
-
-        private sealed class QueryComparerFixture : DbFixtureInitDb
-        {
-            private readonly List<RequestMethodName> _requests;
-
-            public QueryComparerFixture()
-            {
-                _requests = new List<RequestMethodName>();
-            }
-
-            public override Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
-            {
-                _requests.Add(new RequestMethodName(parameters.RequestUri, null));
-                return Task.CompletedTask;
-            }
-            public override Task Execute<T, TResult>(QueryParametersScalar<T, TResult> parameters)
-            {
-                _requests.Add(new RequestMethodName(parameters.RequestUri, null));
-                return Task.CompletedTask;
-
-            }
-            public override void Initalize()
-            {
-            }
-
-            public IReadOnlyList<RequestMethodName> Requests => _requests;
-        }
-
-        private static async Task<RequestMethodName[]> GetRequestMethodNames(QueryComparerFixture fixture)
-        {
-            var methodNames = new List<String>();
-            var selectTest = new SelectTest(fixture);
-            foreach (MethodInfo methodInfo in selectTest.GetType().GetMethods().Where(m => m.GetCustomAttributes(typeof(FactAttribute), false).Count() == 1))
-            {
-                methodNames.Add(methodInfo.Name);
-                var testMethod = (Func<SelectTest, Task>)methodInfo.CreateDelegate(typeof(Func<SelectTest, Task>));
-                await testMethod(selectTest);
-            }
-
-            var requestMethodNames = new RequestMethodName[methodNames.Count];
-            for (int i = 0; i < methodNames.Count; i++)
-                requestMethodNames[i] = new RequestMethodName(fixture.Requests[i].Request, methodNames[i]);
-            return requestMethodNames;
-        }
         //[Fact]
-        public async Task CacheCode()
+        public void CacheCode()
         {
             var hashes = new Dictionary<int, List<String>>();
 
-            var fixture = new QueryComparerFixture();
-            RequestMethodName[] requestMethodNames = await GetRequestMethodNames(fixture);
+            SelectTestDefinition[] requestMethodNames = TestHelper.GetSelectTestDefinitions();
 
+            var fixture = new DbFixtureInitDb();
             var parser = new OeGetParser(new Uri("http://dummy/"), fixture.OeDataAdapter, fixture.EdmModel);
             for (int i = 0; i < requestMethodNames.Length; i++)
             {
@@ -112,12 +53,12 @@ namespace OdataToEntity.Test
 
             var duplicate = hashes.Where(p => p.Value.Count > 1).Select(p => p.Value).ToArray();
         }
-        public async Task Test()
+        public void Test()
         {
-            var fixture = new QueryComparerFixture();
-            RequestMethodName[] requestMethodNames = await GetRequestMethodNames(fixture);
+            SelectTestDefinition[] requestMethodNames = TestHelper.GetSelectTestDefinitions();
             requestMethodNames = requestMethodNames.Where(t => t.MethodName == "FilterEnum" || t.MethodName == "FilterEnumNull").ToArray();
 
+            var fixture = new DbFixtureInitDb();
             var parser = new OeGetParser(new Uri("http://dummy/"), fixture.OeDataAdapter, fixture.EdmModel);
             for (int i = 0; i < requestMethodNames.Length; i++)
             {

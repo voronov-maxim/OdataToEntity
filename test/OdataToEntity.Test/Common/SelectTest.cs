@@ -232,12 +232,13 @@ namespace OdataToEntity.Test
             await Fixture.Execute(parameters);
         }
         [Fact]
-        public async Task ExpandExpandTop()
+        public async Task ExpandExpandSkipTop()
         {
             var parameters = new QueryParameters<Customer, Customer>()
             {
-                RequestUri = "Customers?$top=2&$expand=AltOrders($expand=Items($top=2)),Orders($expand=Items($top=1))",
-                Expression = t => t.Take(2).Include(c => c.AltOrders).Include(c => c.Orders).ThenInclude(o => o.Items.Take(1))
+                RequestUri = "Customers?$orderby=Id&$skip=1&$top=3&$expand=AltOrders($expand=Items($top=1)),Orders($expand=Items($top=1))",
+                //RequestUri = "Customers?$orderby=Id&$skip=1&$top=3",
+                Expression = t => t.OrderBy(o => o.Id).Skip(1).Take(3).Include(c => c.AltOrders).Include(c => c.Orders).ThenInclude(o => o.Items.Take(1))
             };
             await Fixture.Execute(parameters);
         }

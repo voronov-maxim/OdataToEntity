@@ -27,7 +27,7 @@
     ]
   },
   "dependencies": {
-    "linq2db": "1.7.5",
+    "linq2db": "1.7.6",
     "OdataToEntity": "1.0.0.*"
   },
   "runtimes": {
