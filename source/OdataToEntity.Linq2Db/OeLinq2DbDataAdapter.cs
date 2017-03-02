@@ -148,12 +148,12 @@ namespace OdataToEntity.Linq2Db
         public override TResult ExecuteScalar<TResult>(OeParseUriContext parseUriContext, object dataContext)
         {
             IQueryable query = parseUriContext.EntitySetAdapter.GetEntitySet(dataContext);
-            Expression expression = parseUriContext.CreateExpression(query, new OeConstantToParameterVisitor());
+            Expression expression = parseUriContext.CreateExpression(query, new OeConstantToVariableVisitor());
             return query.Provider.Execute<TResult>(expression);
         }
         public override OeEntityAsyncEnumerator ExecuteEnumerator(OeParseUriContext parseUriContext, Object dataContext, CancellationToken cancellationToken)
         {
-            var query = (IQueryable<Object>)base.CreateQuery(parseUriContext, dataContext, new OeConstantToParameterVisitor());
+            var query = (IQueryable<Object>)base.CreateQuery(parseUriContext, dataContext, new OeConstantToVariableVisitor());
             return new OeLinq2DbEntityAsyncEnumerator(query.GetEnumerator(), cancellationToken);
         }
         public override OeEntitySetAdapter GetEntitySetAdapter(String entitySetName)
