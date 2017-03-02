@@ -47,7 +47,7 @@ namespace OdataToEntity.Linq2Db
                 {
                     Expression argument = base.Visit(node.Arguments[i]);
                     var call = argument as MethodCallExpression;
-                    if (call != null && call.Type.IsGenericType && call.Type.GetGenericTypeDefinition() == typeof(IOrderedEnumerable<>))
+                    if (call != null && call.Type.GetTypeInfo().IsGenericType && call.Type.GetGenericTypeDefinition() == typeof(IOrderedEnumerable<>))
                     {
                         Type type = call.Type.GetGenericArguments()[0];
                         MethodInfo selectMethodInfo = OeMethodInfoHelper.GetSelectMethodInfo(type, type);
