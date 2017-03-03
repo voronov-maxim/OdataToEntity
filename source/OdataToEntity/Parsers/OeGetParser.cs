@@ -50,16 +50,29 @@ namespace OdataToEntity
             {
                 dataContext = _dataAdapter.CreateDataContext();
 
-                if (parseUriContext.ODataUri.QueryCount.GetValueOrDefault())
+                if (parseUriContext.IsCountSegment)
                 {
                     int count = _dataAdapter.ExecuteScalar<int>(parseUriContext, dataContext);
                     byte[] buffer = System.Text.Encoding.UTF8.GetBytes(count.ToString());
                     stream.Write(buffer, 0, buffer.Length);
-                    return;
                 }
-
-                using (Db.OeEntityAsyncEnumerator asyncEnumerator = _dataAdapter.ExecuteEnumerator(parseUriContext, dataContext, cancellationToken))
-                    await Writers.OeGetWriter.SerializeAsync(BaseUri, parseUriContext, asyncEnumerator, stream).ConfigureAwait(false);
+                else
+                {
+                    long? count = null;
+                    if(parseUriContext.ODataUri.QueryCount==true)
+                    {
+                        var countParseUriContext = new OeParseUriContext(parseUriContext.EdmModel
+                                                                       , parseUriContext.ODataUri
+                                                                       , parseUriContext.EntitySet
+                                                                       , parseUriContext.ParseNavigationSegments
+                                                                       , true);
+                        countParseUriContext.Headers = parseUriContext.Headers;
+                        countParseUriContext.EntitySetAdapter = parseUriContext.EntitySetAdapter;
+                        count = _dataAdapter.ExecuteScalar<int>(countParseUriContext, dataContext);
+                    }
+                    using (Db.OeEntityAsyncEnumerator asyncEnumerator = _dataAdapter.ExecuteEnumerator(parseUriContext, dataContext, cancellationToken))
+                        await Writers.OeGetWriter.SerializeAsync(BaseUri, parseUriContext, asyncEnumerator, stream, count).ConfigureAwait(false);
+                }
             }
             finally
             {
@@ -118,11 +131,11 @@ namespace OdataToEntity
                 }
             }
 
-            odataUri.QueryCount = odataUri.Path.LastSegment is CountSegment;
+            var isCountSegment = odataUri.Path.LastSegment is CountSegment;
 
             var entitySetSegment = (EntitySetSegment)odataUri.Path.FirstSegment;
             IEdmEntitySet entitySet = entitySetSegment.EntitySet;
-            return new OeParseUriContext(_model, odataUri, entitySet, navigationSegments);
+            return new OeParseUriContext(_model, odataUri, entitySet, navigationSegments, isCountSegment);
         }
 
         public Uri BaseUri => _baseUri;
