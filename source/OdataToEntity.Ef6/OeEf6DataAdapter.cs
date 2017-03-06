@@ -84,7 +84,7 @@ namespace OdataToEntity.Ef6
 
         private readonly static Db.OeEntitySetMetaAdapterCollection _entitySetMetaAdapters = CreateEntitySetMetaAdapters();
 
-        public OeEf6DataAdapter() : base(new Db.OeQueryCache())
+        public OeEf6DataAdapter() : base(null)
         {
         }
         public OeEf6DataAdapter(Db.OeQueryCache queryCache) : base(queryCache)
@@ -134,7 +134,11 @@ namespace OdataToEntity.Ef6
         }
         public override Db.OeEntityAsyncEnumerator ExecuteEnumerator(OeParseUriContext parseUriContext, Object dataContext, CancellationToken cancellationToken)
         {
-            var queryAsync = (IDbAsyncEnumerable)base.CreateQuery(parseUriContext, dataContext, new OeConstantToVariableVisitor());
+            IQueryable query = parseUriContext.EntitySetAdapter.GetEntitySet(dataContext);
+            Expression expression = parseUriContext.CreateExpression(query, new OeConstantToVariableVisitor());
+
+            expression = new EnumerableToQuerableVisitor().Visit(expression);
+            var queryAsync = (IDbAsyncEnumerable)query.Provider.CreateQuery(expression);
             return new OeEf6EntityAsyncEnumerator(queryAsync.GetAsyncEnumerator(), cancellationToken);
         }
         public override Db.OeEntitySetAdapter GetEntitySetAdapter(String entitySetName)

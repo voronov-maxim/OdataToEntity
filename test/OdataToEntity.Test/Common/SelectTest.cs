@@ -146,8 +146,8 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<OrderItem, Object>()
             {
-                RequestUri = "OrderItems?$apply=groupby((OrderId))&$skip=1",
-                Expression = t => t.GroupBy(i => i.OrderId).Skip(1).Select(g => new { OrderId = g.Key })
+                RequestUri = "OrderItems?$apply=groupby((OrderId))&$orderby=OrderId&$skip=1",
+                Expression = t => t.GroupBy(i => i.OrderId).OrderBy(g => g.Key).Skip(1).Select(g => new { OrderId = g.Key })
             };
             await Fixture.Execute(parameters);
         }

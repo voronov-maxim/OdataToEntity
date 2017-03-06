@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OdataToEntity", "..\source\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OdataToEntity.Ef6", "..\source\OdataToEntity.Ef6\OdataToEntity.Ef6.csproj", "{BC8C07B9-92B0-46F6-A6BB-A9D8B3B78C91}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OdataToEntity.EfCore", "..\source\OdataToEntity.EfCore\OdataToEntity.EfCore.csproj", "{94E8BF46-2821-4890-9E07-D1FA5C797C92}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{BC8C07B9-92B0-46F6-A6BB-A9D8B3B78C91}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BC8C07B9-92B0-46F6-A6BB-A9D8B3B78C91}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BC8C07B9-92B0-46F6-A6BB-A9D8B3B78C91}.Release|Any CPU.Build.0 = Release|Any CPU
+		{94E8BF46-2821-4890-9E07-D1FA5C797C92}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{94E8BF46-2821-4890-9E07-D1FA5C797C92}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{94E8BF46-2821-4890-9E07-D1FA5C797C92}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{94E8BF46-2821-4890-9E07-D1FA5C797C92}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

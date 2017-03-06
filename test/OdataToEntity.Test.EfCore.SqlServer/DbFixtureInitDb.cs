@@ -20,9 +20,9 @@ namespace OdataToEntity.Test
                 return;
 
             _initialized = true;
-            //using (var context = new OrderContext())
-            //    context.Database.ExecuteSqlCommand("dbo.ResetDb");
-            //base.ExecuteBatchAsync("Add").GetAwaiter().GetResult();
+            using (var context = new OrderContext())
+                context.Database.ExecuteSqlCommand("dbo.ResetDb");
+            base.ExecuteBatchAsync("Add").GetAwaiter().GetResult();
         }
 
         public override async Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
@@ -34,7 +34,7 @@ namespace OdataToEntity.Test
         }
         public override async Task Execute<T, TResult>(QueryParametersScalar<T, TResult> parameters)
         {
-            //_queryCount++;
+            _queryCount++;
             Task t1 = base.Execute(parameters);
             Task t2 = base.Execute(parameters);
             await Task.WhenAll(t1, t2);
@@ -42,7 +42,8 @@ namespace OdataToEntity.Test
 
         public void Dispose()
         {
-            Xunit.Assert.Equal(_queryCount, base.OeDataAdapter.QueryCache.CacheCount);
+            if (base.OeDataAdapter.QueryCache.AllowCache)
+                Xunit.Assert.Equal(_queryCount, base.OeDataAdapter.QueryCache.CacheCount);
         }
     }
 }

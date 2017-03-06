@@ -19,13 +19,7 @@ namespace OdataToEntity.Test.Model
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
 
-        public static OrderContext Create(String databaseName)
-        {
-            return new OrderContext();
-        }
-        public static String GenerateDatabaseName()
-        {
-            return "dummy";
-        }
+        public static OrderContext Create(String databaseName) => new OrderContext();
+        public static String GenerateDatabaseName() => "dummy";
     }
 }

@@ -161,9 +161,6 @@
     <Compile Include="..\OdataToEntity.Test\DbFixture.cs">
       <Link>DbFixture.cs</Link>
     </Compile>
-    <Compile Include="..\OdataToEntity.Test\ResponseReader.cs">
-      <Link>ResponseReader.cs</Link>
-    </Compile>
     <Compile Include="DbFixtureInitDb.cs" />
     <Compile Include="OrderContext.cs" />
     <Compile Include="OrderDbDataAdapter.cs" />

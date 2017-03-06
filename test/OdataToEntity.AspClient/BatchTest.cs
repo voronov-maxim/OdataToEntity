@@ -15,6 +15,7 @@ namespace OdataToEntityCore.AspClient
         public Task Add()
         {
             var fixture = new DbFixtureInitDb(true);
+            fixture.Initalize();
 
             Container container = DbFixtureInitDb.CreateContainer();
             Add(container);
@@ -233,6 +234,7 @@ namespace OdataToEntityCore.AspClient
         public Task Delete()
         {
             var fixture = new DbFixtureInitDb();
+            fixture.Initalize();
 
             Container container = DbFixtureInitDb.CreateContainer();
             Delete(container);

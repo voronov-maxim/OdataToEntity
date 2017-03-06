@@ -7,7 +7,6 @@
     "compile": {
       "mappings": {
         "Model/Order.cs": "../OdataToEntity.Test/Model/Order.cs",
-        "ResponseReader.cs": "../OdataToEntity.Test/ResponseReader.cs",
         "DbFixture.cs": "../OdataToEntity.Test/DbFixture.cs",
         "QueryComparerTest.cs": "../OdataToEntity.Test/QueryComparerTest.cs",
         "Common/": "../OdataToEntity.Test/Common/*.cs"

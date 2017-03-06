@@ -7,8 +7,7 @@
             PerformanceCacheTest.RunTest(100);
 
             //var fixture = new DbFixtureInitDb();
-            //new SelectTest(fixture).FilterEnumNotNullAndStringNotNull().GetAwaiter().GetResult();
+            //new SelectTest(fixture).TopSkip().GetAwaiter().GetResult();
         }
-
     }
 }
