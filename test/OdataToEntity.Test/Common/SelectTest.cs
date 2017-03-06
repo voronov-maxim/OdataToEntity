@@ -172,6 +172,31 @@ namespace OdataToEntity.Test
             await Fixture.Execute(parameters);
         }
         [Fact]
+        public async Task CountQueryParameter()
+        {
+            var parser = new OeParser(new Uri("http://dummy/"), Fixture.OeDataAdapter, Fixture.EdmModel);
+            var request = new Uri("http://dummy/Orders?$expand=Items&$count=true");
+            Newtonsoft.Json.Linq.JObject responseJObject;
+            using (var stream = new System.IO.MemoryStream())
+            {
+                await parser.ExecuteQueryAsync(request, OeRequestHeaders.Default, stream, System.Threading.CancellationToken.None);
+                stream.Position = 0;
+                using (var reader = new System.IO.StreamReader(stream))
+                {
+                    string responseStr = await reader.ReadToEndAsync();
+                    responseJObject = Newtonsoft.Json.Linq.JObject.Parse(responseStr);
+                }
+            }
+
+            var actualCount = (int?)responseJObject["@odata.count"];
+
+            int? expectedCount = null;
+            using (var dbContext = Fixture.CreateContext())
+                expectedCount = dbContext.Orders.Count();
+
+            Assert.Equal(expectedCount, actualCount);
+        }
+        [Fact]
         public async Task Expand()
         {
             var parameters = new QueryParameters<Order>()
@@ -271,6 +296,32 @@ namespace OdataToEntity.Test
                 Expression = t => t.Include(c => c.Orders)
             };
             await Fixture.Execute(parameters);
+        }
+        [Fact]
+        public async Task ExpandNestedCount()
+        {
+            var parser = new OeParser(new Uri("http://dummy/"), Fixture.OeDataAdapter, Fixture.EdmModel);
+            var request = new Uri("http://dummy/Orders?$expand=Items($count=true)");
+            Newtonsoft.Json.Linq.JObject responseJObject;
+            using (var stream = new System.IO.MemoryStream())
+            {
+                await parser.ExecuteQueryAsync(request, OeRequestHeaders.Default, stream, System.Threading.CancellationToken.None);
+                stream.Position = 0;
+                using (var reader = new System.IO.StreamReader(stream))
+                {
+                    string responseStr = await reader.ReadToEndAsync();
+                    responseJObject = Newtonsoft.Json.Linq.JObject.Parse(responseStr);
+                }
+            }
+
+            var jArray = (Newtonsoft.Json.Linq.JArray)responseJObject["value"];
+            var actualCounts = jArray.Select(o=>(int?)o["Items@odata.count"]);
+
+            int?[] expectedCounts = null;
+            using (var dbContext = Fixture.CreateContext())
+                expectedCounts = dbContext.Orders.Select(i=>(int?)i.Items.Count()).ToArray();
+
+            Assert.Equal(expectedCounts, actualCounts);
         }
         [Fact]
         public async Task ExpandStar()

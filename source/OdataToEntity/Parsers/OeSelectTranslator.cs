@@ -185,6 +185,9 @@ namespace OdataToEntity.Parsers
                     if (itemInfo.EntryFactory == null)
                     {
                         Type type = expression.Type;
+                        if (typeof(OeNavigationLinkInfo).GetTypeInfo().IsAssignableFrom(type))
+                            type = type.GetTypeInfo().GetGenericArguments().First();
+
                         if (itemInfo.ResourceInfo.IsCollection.GetValueOrDefault())
                             type = OeExpressionHelper.GetCollectionItemType(type);
 
@@ -211,8 +214,9 @@ namespace OdataToEntity.Parsers
         {
             var segment = (NavigationPropertySegment)item.PathToNavigationProperty.LastSegment;
             Expression expression = Translate(segment);
+            var navigationItemType = expression.Type;
 
-            Type itemType = OeExpressionHelper.GetCollectionItemType(expression.Type);
+            Type itemType = OeExpressionHelper.GetCollectionItemType(navigationItemType);
             if (itemType != null)
             {
                 var expressionBuilder = new OeExpressionBuilder(_model, itemType);
@@ -225,6 +229,13 @@ namespace OdataToEntity.Parsers
 
                 foreach (KeyValuePair<ConstantExpression, ConstantNode> constant in expressionBuilder.Constants)
                     _visitor.AddConstant(constant.Key, constant.Value);
+            }
+
+            Expression countExpression = null;
+            if (item.CountOption == true)
+            {
+                var countMethodInfo = OeMethodInfoHelper.GetCountMethodInfo(itemType);
+                countExpression = Expression.Call(countMethodInfo, expression);
             }
 
             if (item.SelectAndExpand.SelectedItems.Any())
@@ -242,8 +253,12 @@ namespace OdataToEntity.Parsers
                 }
 
                 _selectItemInfo.EntryFactory = selectTranslator.CreateNestedEntryFactory(nestedType, _selectItemInfo.EntitySet, _selectItemInfo.ResourceInfo);
-                return nestedExpression;
+                expression = nestedExpression;
             }
+
+            if (countExpression != null)
+                return OeExpressionHelper.CreateNavigationLinkInfo(navigationItemType , expression, countExpression);
+
             return expression;
         }
         private Expression Translate(NavigationPropertySegment segment)

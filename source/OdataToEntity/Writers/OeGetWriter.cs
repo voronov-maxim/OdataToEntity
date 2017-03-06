@@ -30,9 +30,11 @@ namespace OdataToEntity.Writers
                     entry.Id = OeUriHelper.ComputeId(BaseUri, entryFactory.EntitySet, entry);
                 return entry;
             }
-            public async Task SerializeAsync(OeEntryFactory entryFactory, Db.OeEntityAsyncEnumerator asyncEnumerator, Stream stream)
+            public async Task SerializeAsync(OeEntryFactory entryFactory, Db.OeEntityAsyncEnumerator asyncEnumerator, Stream stream, long? count)
             {
-                Writer.WriteStart(new ODataResourceSet());
+                ODataResourceSet oDataResourceSet = new ODataResourceSet();
+                oDataResourceSet.Count = count;
+                Writer.WriteStart(oDataResourceSet);
                 while (await asyncEnumerator.MoveNextAsync().ConfigureAwait(false))
                 {
                     Object value = asyncEnumerator.Current;
@@ -58,7 +60,14 @@ namespace OdataToEntity.Writers
                 {
                     if (entryFactory.ResourceInfo.IsCollection.GetValueOrDefault())
                     {
-                        Writer.WriteStart(new ODataResourceSet());
+                        var resourceSet = new ODataResourceSet();
+                        var navigationLinkInfo = navigationValue as OeNavigationLinkInfo;
+                        if (navigationLinkInfo != null)
+                        {
+                            navigationValue = navigationLinkInfo.Collection;
+                            resourceSet.Count = navigationLinkInfo.Count;
+                        }
+                         Writer.WriteStart(resourceSet);
                         foreach (Object entity in (IEnumerable)navigationValue)
                         {
                             ODataResource entry = CreateEntry(entryFactory, entity);
@@ -83,7 +92,7 @@ namespace OdataToEntity.Writers
             }
         }
 
-        public static async Task SerializeAsync(Uri baseUri, OeParseUriContext parseUriContext, Db.OeEntityAsyncEnumerator asyncEnumerator, Stream stream)
+        public static async Task SerializeAsync(Uri baseUri, OeParseUriContext parseUriContext, Db.OeEntityAsyncEnumerator asyncEnumerator, Stream stream, long? count)
         {
             IEdmModel edmModel = parseUriContext.EdmModel;
             OeEntryFactory entryFactory = parseUriContext.EntryFactory;
@@ -104,7 +113,7 @@ namespace OdataToEntity.Writers
                 ODataUtils.SetHeadersForPayload(messageWriter, ODataPayloadKind.ResourceSet);
                 ODataWriter writer = messageWriter.CreateODataResourceSetWriter(entryFactory.EntitySet, entryFactory.EntityType);
                 var getWriter = new GetWriter(baseUri, parseUriContext.Headers.MetadataLevel, writer);
-                await getWriter.SerializeAsync(entryFactory, asyncEnumerator, stream);
+                await getWriter.SerializeAsync(entryFactory, asyncEnumerator, stream, count);
             }
         }
     }

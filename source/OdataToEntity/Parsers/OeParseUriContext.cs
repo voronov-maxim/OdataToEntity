@@ -57,12 +57,13 @@ namespace OdataToEntity.Parsers
         private readonly ODataUri _odataUri;
         private readonly IReadOnlyList<OeParseNavigationSegment> _parseNavigationSegments;
 
-        public OeParseUriContext(IEdmModel edmModel, ODataUri odataUri, IEdmEntitySet entitySet, IReadOnlyList<OeParseNavigationSegment> parseNavigationSegments)
+        public OeParseUriContext(IEdmModel edmModel, ODataUri odataUri, IEdmEntitySet entitySet, IReadOnlyList<OeParseNavigationSegment> parseNavigationSegments, bool isCountSegment)
         {
             _edmModel = edmModel;
             _odataUri = odataUri;
             _entitySet = entitySet;
             _parseNavigationSegments = parseNavigationSegments;
+            IsCountSegment = isCountSegment;
         }
 
         private OeEntryFactory CreateEntryFactory(OeExpressionBuilder expressionBuilder)
@@ -91,9 +92,9 @@ namespace OdataToEntity.Parsers
             expression = expressionBuilder.ApplyOrderBy(expression, ODataUri.OrderBy);
             expression = expressionBuilder.ApplySkip(expression, ODataUri.Skip, ODataUri.Path);
             expression = expressionBuilder.ApplyTake(expression, ODataUri.Top, ODataUri.Path);
-            expression = expressionBuilder.ApplyCount(expression, ODataUri.QueryCount);
+            expression = expressionBuilder.ApplyCount(expression, IsCountSegment);
 
-            if (!ODataUri.QueryCount.GetValueOrDefault())
+            if (!IsCountSegment)
                 EntryFactory = CreateEntryFactory(expressionBuilder);
 
             expression = constantToVariableVisitor.Translate(expression, expressionBuilder.Constants);
@@ -109,5 +110,6 @@ namespace OdataToEntity.Parsers
         public ODataUri ODataUri => _odataUri;
         public IReadOnlyList<Db.OeQueryCacheDbParameterValue> ParameterValues { get; set; }
         public IReadOnlyList<OeParseNavigationSegment> ParseNavigationSegments => _parseNavigationSegments;
+        public bool IsCountSegment { get;}
     }
 }
