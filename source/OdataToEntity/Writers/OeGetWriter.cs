@@ -60,7 +60,14 @@ namespace OdataToEntity.Writers
                 {
                     if (entryFactory.ResourceInfo.IsCollection.GetValueOrDefault())
                     {
-                        Writer.WriteStart(new ODataResourceSet());
+                        var resourceSet = new ODataResourceSet();
+                        var navigationLinkInfo = navigationValue as OeNavigationLinkInfo;
+                        if (navigationLinkInfo != null)
+                        {
+                            navigationValue = navigationLinkInfo.Collection;
+                            resourceSet.Count = navigationLinkInfo.Count;
+                        }
+                         Writer.WriteStart(resourceSet);
                         foreach (Object entity in (IEnumerable)navigationValue)
                         {
                             ODataResource entry = CreateEntry(entryFactory, entity);

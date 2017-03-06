@@ -83,6 +83,16 @@ namespace OdataToEntity.Parsers
             }
             return restNew;
         }
+        public static NewExpression CreateNavigationLinkInfo(Type valueType, Expression collectionExpression, Expression countExpression)
+        {
+            var navigationLinkInfoType = typeof(OeNavigationLinkInfo<>).MakeGenericType(valueType);
+            var constructorInfo = navigationLinkInfoType.GetTypeInfo().GetConstructors().First();
+            var expression = Expression.New(
+                                constructorInfo,
+                                collectionExpression,
+                                countExpression);
+            return expression;
+        }
         public static Type GetCollectionItemType(Type collectionType)
         {
             if (collectionType.GetTypeInfo().IsPrimitive)
