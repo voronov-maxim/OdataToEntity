@@ -59,7 +59,7 @@ namespace OdataToEntity
                 else
                 {
                     long? count = null;
-                    if(parseUriContext.ODataUri.QueryCount==true)
+                    if (parseUriContext.ODataUri.QueryCount.GetValueOrDefault())
                     {
                         var countParseUriContext = new OeParseUriContext(parseUriContext.EdmModel
                                                                        , parseUriContext.ODataUri
@@ -131,10 +131,9 @@ namespace OdataToEntity
                 }
             }
 
-            var isCountSegment = odataUri.Path.LastSegment is CountSegment;
-
             var entitySetSegment = (EntitySetSegment)odataUri.Path.FirstSegment;
             IEdmEntitySet entitySet = entitySetSegment.EntitySet;
+            bool isCountSegment = odataUri.Path.LastSegment is CountSegment;
             return new OeParseUriContext(_model, odataUri, entitySet, navigationSegments, isCountSegment);
         }
 

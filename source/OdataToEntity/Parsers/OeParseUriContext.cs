@@ -54,6 +54,7 @@ namespace OdataToEntity.Parsers
 
         private readonly IEdmModel _edmModel;
         private readonly IEdmEntitySet _entitySet;
+        private readonly bool _isCountSegment;
         private readonly ODataUri _odataUri;
         private readonly IReadOnlyList<OeParseNavigationSegment> _parseNavigationSegments;
 
@@ -63,7 +64,7 @@ namespace OdataToEntity.Parsers
             _odataUri = odataUri;
             _entitySet = entitySet;
             _parseNavigationSegments = parseNavigationSegments;
-            IsCountSegment = isCountSegment;
+            _isCountSegment = isCountSegment;
         }
 
         private OeEntryFactory CreateEntryFactory(OeExpressionBuilder expressionBuilder)
@@ -107,9 +108,9 @@ namespace OdataToEntity.Parsers
         public Db.OeEntitySetAdapter EntitySetAdapter { get; set; }
         public OeEntryFactory EntryFactory { get; set; }
         public OeRequestHeaders Headers { get; set; }
+        public bool IsCountSegment => _isCountSegment;
         public ODataUri ODataUri => _odataUri;
         public IReadOnlyList<Db.OeQueryCacheDbParameterValue> ParameterValues { get; set; }
         public IReadOnlyList<OeParseNavigationSegment> ParseNavigationSegments => _parseNavigationSegments;
-        public bool IsCountSegment { get;}
     }
 }

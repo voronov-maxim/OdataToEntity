@@ -262,7 +262,6 @@ namespace OdataToEntity.Test
             var parameters = new QueryParameters<Customer, Customer>()
             {
                 RequestUri = "Customers?$orderby=Id&$skip=1&$top=3&$expand=AltOrders($expand=Items($top=1)),Orders($expand=Items($top=1))",
-                //RequestUri = "Customers?$orderby=Id&$skip=1&$top=3",
                 Expression = t => t.OrderBy(o => o.Id).Skip(1).Take(3).Include(c => c.AltOrders).Include(c => c.Orders).ThenInclude(o => o.Items.Take(1))
             };
             await Fixture.Execute(parameters);
@@ -284,16 +283,6 @@ namespace OdataToEntity.Test
             {
                 RequestUri = "Customers?$expand=AltOrders,Orders",
                 Expression = t => t.Include(c => c.AltOrders).Include(c => c.Orders)
-            };
-            await Fixture.Execute(parameters);
-        }
-        [Fact]
-        public async Task ExpandNestedSelect()
-        {
-            var parameters = new QueryParameters<Customer, Customer>()
-            {
-                RequestUri = "Customers?$expand=Orders($select=AltCustomerId,CustomerId,Date,Id,Name,Status)",
-                Expression = t => t.Include(c => c.Orders)
             };
             await Fixture.Execute(parameters);
         }
@@ -322,6 +311,16 @@ namespace OdataToEntity.Test
                 expectedCounts = dbContext.Orders.Select(i=>(int?)i.Items.Count()).ToArray();
 
             Assert.Equal(expectedCounts, actualCounts);
+        }
+        [Fact]
+        public async Task ExpandNestedSelect()
+        {
+            var parameters = new QueryParameters<Customer, Customer>()
+            {
+                RequestUri = "Customers?$expand=Orders($select=AltCustomerId,CustomerId,Date,Id,Name,Status)",
+                Expression = t => t.Include(c => c.Orders)
+            };
+            await Fixture.Execute(parameters);
         }
         [Fact]
         public async Task ExpandStar()

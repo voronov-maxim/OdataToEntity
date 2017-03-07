@@ -148,6 +148,12 @@ namespace OdataToEntity.Parsers
             MethodInfo selectMethodInfo = OeMethodInfoHelper.GetSelectMethodInfo(_parameter.Type, newExpression.Type);
             return Expression.Call(selectMethodInfo, source, lambda);
         }
+        private static NewExpression CreateNavigationLinkInfo(Type valueType, Expression collectionExpression, Expression countExpression)
+        {
+            var navigationLinkInfoType = typeof(OeNavigationLinkInfo<>).MakeGenericType(valueType);
+            ConstructorInfo constructorInfo = navigationLinkInfoType.GetTypeInfo().GetConstructors()[0];
+            return Expression.New(constructorInfo, collectionExpression, countExpression);
+        }
         private OeEntryFactory CreateNestedEntryFactory(Type sourceType, IEdmEntitySet entitySet, ODataNestedResourceInfo resourceInfo)
         {
             ParameterExpression parameter = Expression.Parameter(typeof(Object));
@@ -214,7 +220,7 @@ namespace OdataToEntity.Parsers
         {
             var segment = (NavigationPropertySegment)item.PathToNavigationProperty.LastSegment;
             Expression expression = Translate(segment);
-            var navigationItemType = expression.Type;
+            Type navigationItemType = expression.Type;
 
             Type itemType = OeExpressionHelper.GetCollectionItemType(navigationItemType);
             if (itemType != null)
@@ -232,9 +238,9 @@ namespace OdataToEntity.Parsers
             }
 
             Expression countExpression = null;
-            if (item.CountOption == true)
+            if (item.CountOption.GetValueOrDefault())
             {
-                var countMethodInfo = OeMethodInfoHelper.GetCountMethodInfo(itemType);
+                MethodInfo countMethodInfo = OeMethodInfoHelper.GetCountMethodInfo(itemType);
                 countExpression = Expression.Call(countMethodInfo, expression);
             }
 
@@ -257,7 +263,7 @@ namespace OdataToEntity.Parsers
             }
 
             if (countExpression != null)
-                return OeExpressionHelper.CreateNavigationLinkInfo(navigationItemType , expression, countExpression);
+                return CreateNavigationLinkInfo(navigationItemType, expression, countExpression);
 
             return expression;
         }
