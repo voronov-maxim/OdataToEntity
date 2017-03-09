@@ -58,20 +58,8 @@ namespace OdataToEntity
                 }
                 else
                 {
-                    long? count = null;
-                    if (parseUriContext.ODataUri.QueryCount.GetValueOrDefault())
-                    {
-                        var countParseUriContext = new OeParseUriContext(parseUriContext.EdmModel
-                                                                       , parseUriContext.ODataUri
-                                                                       , parseUriContext.EntitySet
-                                                                       , parseUriContext.ParseNavigationSegments
-                                                                       , true);
-                        countParseUriContext.Headers = parseUriContext.Headers;
-                        countParseUriContext.EntitySetAdapter = parseUriContext.EntitySetAdapter;
-                        count = _dataAdapter.ExecuteScalar<int>(countParseUriContext, dataContext);
-                    }
                     using (Db.OeEntityAsyncEnumerator asyncEnumerator = _dataAdapter.ExecuteEnumerator(parseUriContext, dataContext, cancellationToken))
-                        await Writers.OeGetWriter.SerializeAsync(BaseUri, parseUriContext, asyncEnumerator, stream, count).ConfigureAwait(false);
+                        await Writers.OeGetWriter.SerializeAsync(BaseUri, parseUriContext, asyncEnumerator, stream).ConfigureAwait(false);
                 }
             }
             finally

@@ -28,6 +28,8 @@ namespace OdataToEntity.Test
         public Func<DbContext, IList> ExecutorDb => _executorDb;
         public String MethodName { get; set; }
         public String Request => _request;
+
+        public override String ToString() => _request;
     }
 
     internal partial class TestHelper

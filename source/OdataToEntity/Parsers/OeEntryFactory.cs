@@ -1,6 +1,7 @@
 ﻿using Microsoft.OData;
 using Microsoft.OData.Edm;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 
@@ -90,12 +91,43 @@ namespace OdataToEntity.Parsers
         {
             return new OeEntryFactory(entitySet, accessors, resourceInfo, navigationLinks);
         }
-        public Object GetValue(Object value)
+        public Object GetValue(Object value, out int? count)
         {
-            return LinkAccessor == null ? value : LinkAccessor(value);
+            count = null;
+            if (LinkAccessor == null)
+                return value;
+
+            value = LinkAccessor(value);
+            if (CountOption.GetValueOrDefault())
+            {
+                if (value == null)
+                    count = 0;
+                else if (value is IReadOnlyCollection<Object>)
+                    count = (value as IReadOnlyCollection<Object>).Count;
+                else if (value is ICollection)
+                    count = (value as ICollection).Count;
+                else if (value is IEnumerable)
+                {
+                    PropertyInfo property = value.GetType().GetTypeInfo().GetProperty("Count");
+                    if (property != null)
+                        count = (int)property.GetValue(value);
+                    else
+                    {
+                        var list = new List<Object>();
+                        foreach (Object item in value as IEnumerable)
+                            list.Add(item);
+                        count = list.Count;
+                        value = list;
+                    }
+                }
+                else
+                    count = 1;
+            }
+            return value;
         }
 
         public OePropertyAccessor[] Accessors => _accessors;
+        public bool? CountOption { get; set; }
         public IEdmEntitySetBase EntitySet => _entitySet;
         public IEdmEntityType EntityType => _entityType;
         public Func<Object, Object> LinkAccessor { get; set; }

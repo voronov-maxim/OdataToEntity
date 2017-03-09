@@ -1,7 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal;
-using Microsoft.EntityFrameworkCore.Storage;
-using OdataToEntity.EfCore;
 using System;
 
 namespace OdataToEntity.Test.Model

@@ -48,6 +48,7 @@
   <ItemGroup>
     <Compile Include="BatchTest.cs" />
     <Compile Include="Common\QueryParameters.cs" />
+    <Compile Include="Common\SelectTest2.cs" />
     <Compile Include="DbFixture.cs" />
     <Compile Include="Common\IncludeVisitor.cs" />
     <Compile Include="DbFixtureInitDb.cs" />

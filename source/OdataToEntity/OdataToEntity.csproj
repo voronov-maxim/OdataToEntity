@@ -64,7 +64,6 @@
     <Compile Include="Parsers\OeExpressionHelper.cs" />
     <Compile Include="Parsers\OeFunctionBinder.cs" />
     <Compile Include="Parsers\OeMethodInfoHelper.cs" />
-    <Compile Include="Parsers\OeNavigationLinkInfo.cs" />
     <Compile Include="Parsers\OeParseUriContext.cs" />
     <Compile Include="Parsers\OePropertyAccessor.cs" />
     <Compile Include="Parsers\UriCompare\ODataPathComparer.cs" />

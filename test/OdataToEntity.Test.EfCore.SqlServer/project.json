@@ -24,15 +24,15 @@
     "Microsoft.EntityFrameworkCore": "1.1.0",
     "Microsoft.EntityFrameworkCore.SqlServer": "1.1.0",
     "dotnet-test-xunit": "2.2.0-preview2-build1029",
-    "OdataToEntity": "1.0.0.*",
-    "OdataToEntity.EfCore": "1.0.0.*",
     "Microsoft.EntityFrameworkCore.Relational": "1.1.0",
     "xunit": "2.2.0",
-    "xunit.runner.visualstudio": "2.2.0"
+    "xunit.runner.visualstudio": "2.2.0",
+    "OdataToEntity": "1.0.0.*",
+    "OdataToEntity.EfCore": "1.0.0.*"
   },
   "testRunner": "xunit",
   "frameworks": {
-    "netcoreapp1.1": {
+    "netcoreapp1.6": {
       "dependencies": {
         "Microsoft.NETCore.App": {
           "type": "platform",

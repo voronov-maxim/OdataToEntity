@@ -78,7 +78,10 @@ namespace OdataToEntity.Parsers
                 if (entitySetMetaAdapter != null)
                     entitySet = EdmModel.FindDeclaredEntitySet(entitySetMetaAdapter.EntitySetName);
             }
-            return expressionBuilder.CreateEntryFactory(entitySet);
+
+            OeEntryFactory entryFactory = expressionBuilder.CreateEntryFactory(entitySet);
+            entryFactory.CountOption = ODataUri.QueryCount;
+            return entryFactory;
         }
         public Expression CreateExpression(IQueryable query, OeConstantToVariableVisitor constantToVariableVisitor)
         {
