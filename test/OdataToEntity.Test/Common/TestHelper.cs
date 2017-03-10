@@ -163,7 +163,7 @@ namespace OdataToEntity.Test
             var selectTest = new SelectTest(fixture);
 
             var methodNames = new List<String>();
-            foreach (MethodInfo methodInfo in selectTest.GetType().GetMethods().Where(m => m.GetCustomAttributes(typeof(FactAttribute), false).Count() == 1))
+            foreach (MethodInfo methodInfo in selectTest.GetType().GetTypeInfo().GetMethods().Where(m => m.GetCustomAttributes(typeof(FactAttribute), false).Count() == 1))
             {
                 methodNames.Add(methodInfo.Name);
                 var testMethod = (Func<SelectTest, Task>)methodInfo.CreateDelegate(typeof(Func<SelectTest, Task>));
@@ -221,7 +221,7 @@ namespace OdataToEntity.Test
                 return;
 
             visited.Add(entity);
-            foreach (PropertyInfo property in entity.GetType().GetProperties())
+            foreach (PropertyInfo property in entity.GetType().GetTypeInfo().GetProperties())
                 if (IsEntity(property.PropertyType))
                 {
                     Object value = property.GetValue(entity);

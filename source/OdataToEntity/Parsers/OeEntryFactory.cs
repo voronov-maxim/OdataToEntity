@@ -108,17 +108,11 @@ namespace OdataToEntity.Parsers
                     count = (value as ICollection).Count;
                 else if (value is IEnumerable)
                 {
-                    PropertyInfo property = value.GetType().GetTypeInfo().GetProperty("Count");
-                    if (property != null)
-                        count = (int)property.GetValue(value);
-                    else
-                    {
-                        var list = new List<Object>();
-                        foreach (Object item in value as IEnumerable)
-                            list.Add(item);
-                        count = list.Count;
-                        value = list;
-                    }
+                    var list = new List<Object>();
+                    foreach (Object item in value as IEnumerable)
+                        list.Add(item);
+                    count = list.Count;
+                    value = list;
                 }
                 else
                     count = 1;

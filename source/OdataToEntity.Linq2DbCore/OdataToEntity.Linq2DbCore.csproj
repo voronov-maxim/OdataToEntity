@@ -1,15 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Description>Classes bridge from ODataToEntity to Entity Framework Core. Abstraction layer access to DataContext Entity Framework Core. Targets .NET Core with support for .NET 4.6</Description>
-    <AssemblyTitle>Entity Framework Core Adapter for OdataEntity</AssemblyTitle>
+    <Description>Classes bridge from ODataToEntity to LinqToDb Core. Abstraction layer access to DataContext Entity Linq2Db. Targets .NET Core with support for .NET 4.6</Description>
+    <AssemblyTitle>LinqToDb Core Adapter for OdataEntity</AssemblyTitle>
     <VersionPrefix>1.0.0.1</VersionPrefix>
     <Authors>Maxim Voronov</Authors>
     <TargetFrameworks>netstandard1.6;net462</TargetFrameworks>
     <DebugType>portable</DebugType>
-    <AssemblyName>OdataToEntity.EfCore</AssemblyName>
-    <PackageId>OdataToEntity.EfCore</PackageId>
-    <PackageTags>data;services;odatalib;odata;edmlib;ef;spatial;ado.net;framework;entity;protocol;open;core</PackageTags>
+    <AssemblyName>OdataToEntity.Linq2DbCore</AssemblyName>
+    <PackageId>OdataToEntity.Linq2DbCore</PackageId>
+    <PackageTags>data;services;odatalib;odata;edmlib;linq2db;spatial;ado.net;framework;entity;protocol;open;core</PackageTags>
     <PackageProjectUrl>https://github.com/voronov-maxim/OdataToEntity</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/voronov-maxim/OdataToEntity/blob/master/LICENSE</PackageLicenseUrl>
     <RuntimeIdentifiers>win</RuntimeIdentifiers>
@@ -26,7 +26,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="App.config" />
+    <Compile Include="..\OdataToEntity.Linq2Db\**\*.cs" Exclude="bin\**;obj\**;**\*.xproj;packages\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -34,7 +34,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="1.1.1" />
+    <PackageReference Include="linq2db.Core" Version="1.7.5" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net462' ">
