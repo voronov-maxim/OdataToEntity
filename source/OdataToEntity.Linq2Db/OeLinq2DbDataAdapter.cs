@@ -118,7 +118,7 @@ namespace OdataToEntity.Linq2Db
         }
         public override Object CreateDataContext()
         {
-            return Activator.CreateInstance<T>();
+            return Db.FastActivator.CreateInstance<T>();
         }
         private static OeEntitySetMetaAdapterCollection CreateEntitySetMetaAdapters()
         {

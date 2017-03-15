@@ -45,25 +45,20 @@
       <HintPath>..\..\sln\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.SqlServer.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Microsoft.EntityFrameworkCore, Version=1.1.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
-      <HintPath>..\..\sln\packages\Microsoft.EntityFrameworkCore.1.1.0\lib\net451\Microsoft.EntityFrameworkCore.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="Microsoft.EntityFrameworkCore, Version=1.1.1.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
+      <HintPath>..\..\sln\packages\Microsoft.EntityFrameworkCore.1.1.1\lib\net451\Microsoft.EntityFrameworkCore.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.EntityFrameworkCore.Relational, Version=1.1.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
-      <HintPath>..\..\sln\packages\Microsoft.EntityFrameworkCore.Relational.1.1.0\lib\net451\Microsoft.EntityFrameworkCore.Relational.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="Microsoft.EntityFrameworkCore.Relational, Version=1.1.1.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
+      <HintPath>..\..\sln\packages\Microsoft.EntityFrameworkCore.Relational.1.1.1\lib\net451\Microsoft.EntityFrameworkCore.Relational.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.EntityFrameworkCore.SqlServer, Version=1.1.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
-      <HintPath>..\..\sln\packages\Microsoft.EntityFrameworkCore.SqlServer.1.1.0\lib\net451\Microsoft.EntityFrameworkCore.SqlServer.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="Microsoft.EntityFrameworkCore.SqlServer, Version=1.1.1.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
+      <HintPath>..\..\sln\packages\Microsoft.EntityFrameworkCore.SqlServer.1.1.1\lib\net451\Microsoft.EntityFrameworkCore.SqlServer.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Extensions.Caching.Abstractions, Version=1.1.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
-      <HintPath>..\..\sln\packages\Microsoft.Extensions.Caching.Abstractions.1.1.0\lib\netstandard1.0\Microsoft.Extensions.Caching.Abstractions.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="Microsoft.Extensions.Caching.Abstractions, Version=1.1.1.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
+      <HintPath>..\..\sln\packages\Microsoft.Extensions.Caching.Abstractions.1.1.1\lib\netstandard1.0\Microsoft.Extensions.Caching.Abstractions.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Extensions.Caching.Memory, Version=1.1.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
-      <HintPath>..\..\sln\packages\Microsoft.Extensions.Caching.Memory.1.1.0\lib\net451\Microsoft.Extensions.Caching.Memory.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="Microsoft.Extensions.Caching.Memory, Version=1.1.1.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
+      <HintPath>..\..\sln\packages\Microsoft.Extensions.Caching.Memory.1.1.1\lib\net451\Microsoft.Extensions.Caching.Memory.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Extensions.DependencyInjection, Version=1.1.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
       <HintPath>..\..\sln\packages\Microsoft.Extensions.DependencyInjection.1.1.0\lib\netstandard1.1\Microsoft.Extensions.DependencyInjection.dll</HintPath>
@@ -73,17 +68,14 @@
       <HintPath>..\..\sln\packages\Microsoft.Extensions.DependencyInjection.Abstractions.1.1.0\lib\netstandard1.0\Microsoft.Extensions.DependencyInjection.Abstractions.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Microsoft.Extensions.Logging, Version=1.1.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
-      <HintPath>..\..\sln\packages\Microsoft.Extensions.Logging.1.1.0\lib\netstandard1.1\Microsoft.Extensions.Logging.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="Microsoft.Extensions.Logging, Version=1.1.1.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
+      <HintPath>..\..\sln\packages\Microsoft.Extensions.Logging.1.1.1\lib\netstandard1.1\Microsoft.Extensions.Logging.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Extensions.Logging.Abstractions, Version=1.1.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
-      <HintPath>..\..\sln\packages\Microsoft.Extensions.Logging.Abstractions.1.1.0\lib\netstandard1.1\Microsoft.Extensions.Logging.Abstractions.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="Microsoft.Extensions.Logging.Abstractions, Version=1.1.1.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
+      <HintPath>..\..\sln\packages\Microsoft.Extensions.Logging.Abstractions.1.1.1\lib\netstandard1.1\Microsoft.Extensions.Logging.Abstractions.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Extensions.Options, Version=1.1.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
-      <HintPath>..\..\sln\packages\Microsoft.Extensions.Options.1.1.0\lib\netstandard1.0\Microsoft.Extensions.Options.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="Microsoft.Extensions.Options, Version=1.1.1.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
+      <HintPath>..\..\sln\packages\Microsoft.Extensions.Options.1.1.1\lib\netstandard1.0\Microsoft.Extensions.Options.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Extensions.Primitives, Version=1.1.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
       <HintPath>..\..\sln\packages\Microsoft.Extensions.Primitives.1.1.0\lib\netstandard1.0\Microsoft.Extensions.Primitives.dll</HintPath>
@@ -119,7 +111,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="System.Collections.Immutable, Version=1.2.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\..\sln\packages\System.Collections.Immutable.1.3.0\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
+      <HintPath>..\..\sln\packages\System.Collections.Immutable.1.3.1\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System.ComponentModel.Composition" />
@@ -141,9 +133,8 @@
       <HintPath>..\..\sln\packages\System.Globalization.Calendars.4.3.0\lib\net46\System.Globalization.Calendars.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="System.Interactive.Async, Version=3.0.0.0, Culture=neutral, PublicKeyToken=94bc3704cddfc263, processorArchitecture=MSIL">
-      <HintPath>..\..\sln\packages\System.Interactive.Async.3.0.0\lib\net45\System.Interactive.Async.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="System.Interactive.Async, Version=3.0.3000.0, Culture=neutral, PublicKeyToken=94bc3704cddfc263, processorArchitecture=MSIL">
+      <HintPath>..\..\sln\packages\System.Interactive.Async.3.1.1\lib\net46\System.Interactive.Async.dll</HintPath>
     </Reference>
     <Reference Include="System.IO, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\..\sln\packages\System.IO.4.3.0\lib\net462\System.IO.dll</HintPath>
@@ -164,14 +155,6 @@
     </Reference>
     <Reference Include="System.IO.FileSystem.Primitives, Version=4.0.2.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\..\sln\packages\System.IO.FileSystem.Primitives.4.3.0\lib\net46\System.IO.FileSystem.Primitives.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System.Net.Http, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\..\sln\packages\System.Net.Http.4.3.0\lib\net46\System.Net.Http.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System.Net.Sockets, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\..\sln\packages\System.Net.Sockets.4.3.0\lib\net46\System.Net.Sockets.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System.Numerics" />
@@ -267,10 +250,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>Batches\%(FileName)%(Extension)</Link>
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\source\OdataToEntity.Ef6\OdataToEntity.Ef6.csproj">

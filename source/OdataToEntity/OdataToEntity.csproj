@@ -9,7 +9,7 @@
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity</AssemblyName>
     <PackageId>OdataToEntity</PackageId>
-    <PackageTags>data;services;odatalib;odata;edmlib;ef;spatial;ado.net;framework;entity;protocol;open;core</PackageTags>
+    <PackageTags>odata;data;services;odatalib;edmlib;ef;entity framework;linq2db;entity;core</PackageTags>
     <PackageProjectUrl>https://github.com/voronov-maxim/OdataToEntity</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/voronov-maxim/OdataToEntity/blob/master/LICENSE</PackageLicenseUrl>
     <RuntimeIdentifiers>win</RuntimeIdentifiers>

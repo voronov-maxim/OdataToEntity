@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp1.6</TargetFramework>
+    <TargetFramework>netcoreapp1.1</TargetFramework>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity.Test.EfCore.SqlServer</AssemblyName>
     <OutputType>Exe</OutputType>
@@ -9,6 +9,10 @@
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     <PackageTargetFallback>$(PackageTargetFallback);dotnet5.4;portable-net451+win8</PackageTargetFallback>
     <RuntimeFrameworkVersion>1.1.1</RuntimeFrameworkVersion>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <StartupObject>OdataToEntity.Test.EfCore.SqlServer.Program</StartupObject>
   </PropertyGroup>
 
   <ItemGroup>

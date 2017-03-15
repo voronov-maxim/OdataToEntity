@@ -6,11 +6,11 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("OdataToEntity.Ef6")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Classes bridge from OdataToEntity to Entity Framework 6.1.3. Abstraction layer access to DataContext Entity Framework 6.1.3. Targets .NET 4.6")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("OdataToEntity.Ef6")]
-[assembly: AssemblyCopyright("Copyright ©  2016")]
+[assembly: AssemblyProduct("Entity Framework 6 Adapter for OdataEntity")]
+[assembly: AssemblyCopyright("LGPL-3.0")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

@@ -136,7 +136,7 @@ namespace OdataToEntity.EfCore
         }
         public override Object CreateDataContext()
         {
-            T dbContext = Activator.CreateInstance<T>();
+            T dbContext = Db.FastActivator.CreateInstance<T>();
             dbContext.ChangeTracker.AutoDetectChangesEnabled = false;
             return dbContext;
         }

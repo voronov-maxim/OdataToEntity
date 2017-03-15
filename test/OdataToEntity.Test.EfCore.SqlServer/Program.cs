@@ -2,7 +2,7 @@
 {
     class Program
     {
-        static void Main2(string[] args)
+        static void Main(string[] args)
         {
             PerformanceCacheTest.RunTest(100);
 

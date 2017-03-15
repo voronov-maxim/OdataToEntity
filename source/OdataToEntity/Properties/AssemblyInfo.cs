@@ -6,11 +6,11 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("OdataToEntity")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Classes to serialize, deserialize OData JSON payloads. Supports OData v4 only. Enables construction of OData services via Entity Framework (Linq2Db) DataContext (without controller). Targets .NET Core with support for .NET 4.6")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("OdataToEntity")]
-[assembly: AssemblyCopyright("Copyright ©  2016")]
+[assembly: AssemblyProduct("OData server via Entity Framework (Linq2Db)")]
+[assembly: AssemblyCopyright("LGPL-3.0")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

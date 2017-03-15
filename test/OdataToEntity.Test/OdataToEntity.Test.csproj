@@ -4,7 +4,7 @@
     <TargetFrameworks>netcoreapp1.1;net462</TargetFrameworks>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity.Test</AssemblyName>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
     <PackageId>OdataToEntity.Test</PackageId>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     <RuntimeIdentifiers>win</RuntimeIdentifiers>
@@ -23,6 +23,10 @@
     <StartupObject />
   </PropertyGroup>
 
+  <PropertyGroup>
+    <StartupObject>OdataToEntity.Test.Program</StartupObject>
+  </PropertyGroup>
+  
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>

@@ -98,7 +98,7 @@ namespace OdataToEntity.Ef6
         }
         public override Object CreateDataContext()
         {
-            T dbContext = Activator.CreateInstance<T>();
+            T dbContext = Db.FastActivator.CreateInstance<T>();
             dbContext.Configuration.AutoDetectChangesEnabled = false;
             dbContext.Configuration.ProxyCreationEnabled = false;
             return dbContext;
