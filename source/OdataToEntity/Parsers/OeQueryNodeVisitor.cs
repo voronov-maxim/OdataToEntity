@@ -184,13 +184,7 @@ namespace OdataToEntity.Parsers
                     if (primitiveTypeKind == EdmPrimitiveTypeKind.None)
                     {
                         if (nodeIn.TypeReference.IsEnum())
-                        {
-                            var clrTypeAnnotation = _edmModel.GetAnnotationValue<ModelBuilder.OeClrTypeAnnotation>(nodeIn.TypeReference.Definition);
-                            if (clrTypeAnnotation == null)
-                                throw new InvalidOperationException("Add OeClrTypeAnnotation for " + nodeIn.TypeReference.FullName());
-
-                            clrType = clrTypeAnnotation.ClrType;
-                        }
+                            clrType = ModelBuilder.OeEdmClrHelper.GetClrType(_edmModel, nodeIn.TypeReference.Definition);
                         else
                             throw new NotSupportedException(nodeIn.TypeReference.FullName());
                     }

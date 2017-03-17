@@ -20,11 +20,6 @@ namespace OdataToEntity
             _model = model;
         }
 
-        public async Task ExecuteQueryAsync(Uri requestUri, OeRequestHeaders headers, Stream stream, CancellationToken cancellationToken)
-        {
-            var parser = new OeGetParser(_baseUri, _dataAdapter, _model);
-            await parser.ExecuteAsync(requestUri, headers, stream, cancellationToken).ConfigureAwait(false);
-        }
         public async Task<String> ExecuteBatchAsync(Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
         {
             ArraySegment<byte> readedBytes;
@@ -37,6 +32,16 @@ namespace OdataToEntity
         {
             var paser = new Parsers.OeBatchParser(_baseUri, _dataAdapter, _model);
             await paser.ExecuteAsync(requestStream, responseStream, contentType, cancellationToken).ConfigureAwait(false);
+        }
+        public async Task ExecuteQueryAsync(Uri requestUri, OeRequestHeaders headers, Stream stream, CancellationToken cancellationToken)
+        {
+            var parser = new OeGetParser(_baseUri, _dataAdapter, _model);
+            await parser.ExecuteAsync(requestUri, headers, stream, cancellationToken).ConfigureAwait(false);
+        }
+        public async Task ExecutePostAsync(Uri requestUri, Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
+        {
+            var parser = new OePostParser(_baseUri, _dataAdapter, _model);
+            await parser.ExecuteAsync(requestUri, requestStream, OeRequestHeaders.Default, responseStream, cancellationToken);
         }
         private static String GetConentType(Stream stream, out ArraySegment<byte> readedBytes)
         {

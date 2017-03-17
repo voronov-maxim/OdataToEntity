@@ -100,6 +100,11 @@ namespace OdataToEntity.ModelBuilder
             _clrTypeMappings.TryGetValue(clrType, out edmType);
             return edmType;
         }
+        public static IEdmPrimitiveTypeReference GetPrimitiveTypeRef(Type clrType, bool nullable)
+        {
+            IEdmPrimitiveType primitiveEdmType = PrimitiveTypeHelper.GetPrimitiveType(clrType);
+            return primitiveEdmType == null ? null : EdmCoreModel.Instance.GetPrimitive(primitiveEdmType.PrimitiveKind, nullable);
+        }
         public static IEdmPrimitiveTypeReference GetPrimitiveTypeRef(PropertyDescriptor clrProperty)
         {
             IEdmPrimitiveType edmPrimitiveType = GetPrimitiveType(clrProperty.PropertyType);

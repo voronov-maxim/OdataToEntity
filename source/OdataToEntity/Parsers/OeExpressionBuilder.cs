@@ -12,7 +12,7 @@ namespace OdataToEntity.Parsers
     {
         private Type _entityType;
         private readonly IEdmModel _model;
-        private Func<Type, IEdmEntitySet, Type, OeEntryFactory> _entryFactory;
+        private Func<Type, IEdmEntitySetBase, Type, OeEntryFactory> _entryFactory;
         private OeQueryNodeVisitor _visitor;
 
         public OeExpressionBuilder(IEdmModel model, Type entityType)
@@ -178,7 +178,7 @@ namespace OdataToEntity.Parsers
             MethodCallExpression thenByCall = Expression.Call(thenByMethodInfo, source, lambda);
             return ApplyThenBy(thenByCall, thenByClause.ThenBy);
         }
-        public OeEntryFactory CreateEntryFactory(IEdmEntitySet entitySet)
+        public OeEntryFactory CreateEntryFactory(IEdmEntitySetBase entitySet)
         {
             if (_entryFactory != null)
                 return _entryFactory(EntityType, entitySet, ParameterType);

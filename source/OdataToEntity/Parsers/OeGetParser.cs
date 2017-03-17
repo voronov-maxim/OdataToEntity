@@ -52,13 +52,13 @@ namespace OdataToEntity
 
                 if (parseUriContext.IsCountSegment)
                 {
-                    int count = _dataAdapter.ExecuteScalar<int>(parseUriContext, dataContext);
+                    int count = _dataAdapter.ExecuteScalar<int>(dataContext, parseUriContext);
                     byte[] buffer = System.Text.Encoding.UTF8.GetBytes(count.ToString());
                     stream.Write(buffer, 0, buffer.Length);
                 }
                 else
                 {
-                    using (Db.OeEntityAsyncEnumerator asyncEnumerator = _dataAdapter.ExecuteEnumerator(parseUriContext, dataContext, cancellationToken))
+                    using (Db.OeEntityAsyncEnumerator asyncEnumerator = _dataAdapter.ExecuteEnumerator(dataContext, parseUriContext, cancellationToken))
                         await Writers.OeGetWriter.SerializeAsync(BaseUri, parseUriContext, asyncEnumerator, stream).ConfigureAwait(false);
                 }
             }

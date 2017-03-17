@@ -10,6 +10,7 @@ namespace OdataToEntity.ModelBuilder
         private readonly Dictionary<Type, EdmComplexType> _complexTypes;
         private readonly Dictionary<Type, EntityTypeInfo> _entityTypes;
         private readonly Dictionary<Type, EdmEnumType> _enumTypes;
+        private readonly List<OeOperationConfiguration> _operationConfigurations;
 
         public OeEdmModelBuilder(OeEdmModelMetadataProvider metadataProvider, IDictionary<String, Type> entitySets)
         {
@@ -19,8 +20,15 @@ namespace OdataToEntity.ModelBuilder
 
             _complexTypes = new Dictionary<Type, EdmComplexType>();
             _enumTypes = new Dictionary<Type, EdmEnumType>();
+            _operationConfigurations = new List<OeOperationConfiguration>();
         }
 
+        public OeOperationConfiguration AddFunction(String namespaceName, String name)
+        {
+            var functionConfiguration = new OeOperationConfiguration(namespaceName, name);
+            _operationConfigurations.Add(functionConfiguration);
+            return functionConfiguration;
+        }
         public void AddComplexType(Type complexType)
         {
             var edmComplexType = new EdmComplexType(complexType.Namespace, complexType.Name);
@@ -29,6 +37,20 @@ namespace OdataToEntity.ModelBuilder
         public void AddEnumType(Type enumType)
         {
             _enumTypes.Add(enumType, EntityTypeInfo.CreateEdmEnumType(enumType));
+        }
+        private EdmAction BuildAction(OeOperationConfiguration operationConfiguration)
+        {
+            var edmAction = new EdmAction(operationConfiguration.NamespaceName ?? "", operationConfiguration.Name, null);
+            foreach (OeFunctionParameterConfiguration parameterConfiguration in operationConfiguration.Parameters)
+            {
+                IEdmTypeReference edmTypeReference = GetEdmTypeReference(parameterConfiguration.ClrType);
+                if (edmTypeReference == null)
+                    return null;
+
+                edmAction.AddParameter(parameterConfiguration.Name, edmTypeReference);
+            }
+
+            return edmAction;
         }
         public EdmModel BuildEdmModel()
         {
@@ -44,13 +66,17 @@ namespace OdataToEntity.ModelBuilder
 
             edmModel.AddElements(_enumTypes.Values);
             foreach (KeyValuePair<Type, EdmEnumType> enumType in _enumTypes)
-                edmModel.SetAnnotationValue<OeClrTypeAnnotation>(enumType.Value, new OeClrTypeAnnotation(enumType.Key));
+                edmModel.SetAnnotationValue(enumType.Value, new OeClrTypeAnnotation(enumType.Key));
 
             edmModel.AddElements(_complexTypes.Values);
+            foreach (KeyValuePair<Type, EdmComplexType> complexType in _complexTypes)
+                edmModel.SetAnnotationValue(complexType.Value, new OeClrTypeAnnotation(complexType.Key));
+
             var entitySets = new Dictionary<IEdmEntityType, EdmEntitySet>(_entityTypes.Count);
             foreach (EntityTypeInfo typeInfo in _entityTypes.Values)
             {
                 edmModel.AddElement(typeInfo.EdmType);
+                edmModel.SetAnnotationValue(typeInfo.EdmType, new OeClrTypeAnnotation(typeInfo.ClrType));
                 entitySets.Add(typeInfo.EdmType, container.AddEntitySet(typeInfo.EntitySetName, typeInfo.EdmType));
             }
 
@@ -65,13 +91,80 @@ namespace OdataToEntity.ModelBuilder
                         principal.AddNavigationTarget(fkeyInfo.EdmNavigationProperty.Partner, dependent);
                 }
 
+
+            foreach (OeOperationConfiguration operationConfiguration in _operationConfigurations)
+            {
+                if (operationConfiguration.IsFunction)
+                {
+                    EdmFunction edmFunction = BuildFunction(operationConfiguration);
+                    if (edmFunction != null)
+                        container.AddFunctionImport(edmFunction);
+                }
+                else
+                {
+                    EdmAction edmAction = BuildAction(operationConfiguration);
+                    if (edmAction != null)
+                        container.AddActionImport(edmAction);
+                }
+            }
+
             edmModel.AddElement(container);
             return edmModel;
         }
-        public static EdmModel BuildEdmModel(Db.OeDataAdapter dataAdapter)
+        private EdmFunction BuildFunction(OeOperationConfiguration functionConfiguration)
         {
-            var modelBuilder = new OeEdmModelBuilder(dataAdapter.EntitySetMetaAdapters.EdmModelMetadataProvider, dataAdapter.EntitySetMetaAdapters.ToDictionary());
-            return modelBuilder.BuildEdmModel();
+            IEdmTypeReference edmTypeReference;
+            Type itemType = Parsers.OeExpressionHelper.GetCollectionItemType(functionConfiguration.ReturnType);
+            if (itemType == null)
+            {
+                edmTypeReference = GetEdmTypeReference(functionConfiguration.ReturnType);
+                if (edmTypeReference == null)
+                    return null;
+            }
+            else
+            {
+                edmTypeReference = GetEdmTypeReference(itemType);
+                if (edmTypeReference == null)
+                    return null;
+
+                edmTypeReference = new EdmCollectionTypeReference(new EdmCollectionType(edmTypeReference));
+            }
+
+            var edmFunction = new EdmFunction(functionConfiguration.NamespaceName ?? "", functionConfiguration.Name, edmTypeReference);
+            foreach (OeFunctionParameterConfiguration parameterConfiguration in functionConfiguration.Parameters)
+            {
+                edmTypeReference = GetEdmTypeReference(parameterConfiguration.ClrType);
+                if (edmTypeReference == null)
+                    return null;
+
+                edmFunction.AddParameter(parameterConfiguration.Name, edmTypeReference);
+            }
+
+            return edmFunction;
+        }
+        private IEdmTypeReference GetEdmTypeReference(Type clrType)
+        {
+            bool nullable = PrimitiveTypeHelper.IsNullable(clrType);
+            if (nullable)
+            {
+                Type underlyingType = Nullable.GetUnderlyingType(clrType);
+                if (underlyingType != null)
+                    clrType = underlyingType;
+            }
+
+            EntityTypeInfo entityTypeInfo;
+            if (_entityTypes.TryGetValue(clrType, out entityTypeInfo))
+                return new EdmEntityTypeReference(entityTypeInfo.EdmType, nullable);
+
+            EdmEnumType edmEnumType;
+            if (_enumTypes.TryGetValue(clrType, out edmEnumType))
+                return new EdmEnumTypeReference(edmEnumType, nullable);
+
+            EdmComplexType edmComplexType;
+            if (_complexTypes.TryGetValue(clrType, out edmComplexType))
+                return new EdmComplexTypeReference(edmComplexType, nullable);
+
+            return PrimitiveTypeHelper.GetPrimitiveTypeRef(clrType, nullable);
         }
         private static EdmStructuralProperty[] CreateDependentEdmProperties(EdmEntityType edmDependent, IReadOnlyList<PropertyDescriptor> dependentStructuralProperties)
         {

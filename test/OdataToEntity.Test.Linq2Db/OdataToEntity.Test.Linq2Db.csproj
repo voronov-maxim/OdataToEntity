@@ -184,9 +184,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\OdataToEntity.Test\BatchTest.cs">
-      <Link>BatchTest.cs</Link>
-    </Compile>
     <Compile Include="..\OdataToEntity.Test\DbFixture.cs">
       <Link>DbFixture.cs</Link>
     </Compile>

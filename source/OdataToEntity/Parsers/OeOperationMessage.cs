@@ -58,17 +58,19 @@ namespace OdataToEntity.Parsers
             IEdmEntityTypeReference entityTypeRef = GetEdmEntityTypeRef(parser.ParsePath(), out entitySet);
             var entityType = (IEdmEntityType)entityTypeRef.Definition;
 
+            ODataResource entry = null;
             IODataRequestMessage requestMessage = new OeInMemoryMessage(content, ContentType);
             var settings = new ODataMessageReaderSettings { EnableMessageStreamDisposal = false };
-            var messageReader = new ODataMessageReader(requestMessage, settings, context.Model);
-            ODataReader reader = messageReader.CreateODataResourceReader(entitySet, entityType);
+            using (var messageReader = new ODataMessageReader(requestMessage, settings, context.Model))
+            {
+                ODataReader reader = messageReader.CreateODataResourceReader(entitySet, entityType);
 
-            ODataResource entry = null;
-            while (reader.Read())
-                if (reader.State == ODataReaderState.ResourceEnd)
-                    entry = (ODataResource)reader.Item;
-            if (entry == null)
-                throw new InvalidOperationException("operation not contain entry");
+                while (reader.Read())
+                    if (reader.State == ODataReaderState.ResourceEnd)
+                        entry = (ODataResource)reader.Item;
+                if (entry == null)
+                    throw new InvalidOperationException("operation not contain entry");
+            }
 
             Db.OeEntitySetMetaAdapter entitySetMetaAdapter = context.EntitySetMetaAdapters.FindByEntitySetName(entitySet.Name);
             return new OeEntityItem(entitySet, entityType, entitySetMetaAdapter.EntityType, entry);

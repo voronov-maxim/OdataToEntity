@@ -1,6 +1,6 @@
 ﻿using Microsoft.OData.Edm;
+using OdataToEntity.Db;
 using OdataToEntity.EfCore;
-using OdataToEntity.ModelBuilder;
 using OdataToEntity.Test.Model;
 using System;
 using System.Diagnostics;
@@ -41,7 +41,7 @@ namespace OdataToEntity.Test.EfCore.SqlServer
         private static void PerformanceCacheOeTest(SelectTestDefinition[] testDefinitions, int testCount, bool cache)
         {
             var dataAdapter = new OeEfCoreDataAdapter<OrderContext>(new Db.OeQueryCache() { AllowCache = cache });
-            IEdmModel edmModel = OeEdmModelBuilder.BuildEdmModel(dataAdapter);
+            IEdmModel edmModel = dataAdapter.BuildEdmModel();
             var parser = new OeParser(new Uri("http://dummy"), dataAdapter, edmModel);
 
             GC.Collect();

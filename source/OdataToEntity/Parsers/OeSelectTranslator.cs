@@ -91,7 +91,7 @@ namespace OdataToEntity.Parsers
 
             return (MethodCallExpression)CreateExpression(source, selectClause, metadatLevel);
         }
-        public OeEntryFactory CreateEntryFactory(Type entityType, IEdmEntitySet entitySet, Type sourceType)
+        public OeEntryFactory CreateEntryFactory(Type entityType, IEdmEntitySetBase entitySet, Type sourceType)
         {
             ParameterExpression parameter = Expression.Parameter(typeof(Object));
             IReadOnlyList<MemberExpression> itemExpressions = OeExpressionHelper.GetPropertyExpression(Expression.Convert(parameter, sourceType));

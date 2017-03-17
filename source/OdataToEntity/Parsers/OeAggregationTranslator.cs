@@ -217,27 +217,24 @@ namespace OdataToEntity.Parsers
             MethodInfo countMethodInfo = OeMethodInfoHelper.GetCountMethodInfo(lambda.ReturnType);
             return Expression.Call(countMethodInfo, distinctCall);
         }
-        private static AggProperty CreateEdmProperty(IEdmModel model, Type type, String name, bool isGroup)
+        private static AggProperty CreateEdmProperty(IEdmModel model, Type clrType, String name, bool isGroup)
         {
-            Type underlyingType = Nullable.GetUnderlyingType(type);
+            Type underlyingType = Nullable.GetUnderlyingType(clrType);
             if (underlyingType != null)
-                type = underlyingType;
+                clrType = underlyingType;
 
-            bool nullable = PrimitiveTypeHelper.IsNullable(type);
+            bool nullable = PrimitiveTypeHelper.IsNullable(clrType);
             IEdmTypeReference edmTypeRef;
-            if (type.GetTypeInfo().IsEnum)
+            if (clrType.GetTypeInfo().IsEnum)
             {
-                var edmEnumType = (IEdmEnumType)model.FindType(type.FullName);
+                var edmEnumType = (IEdmEnumType)model.FindType(clrType.FullName);
                 edmTypeRef = new EdmEnumTypeReference(edmEnumType, nullable);
             }
             else
-            {
-                IEdmPrimitiveType edmPrimitiveType = PrimitiveTypeHelper.GetPrimitiveType(type);
-                edmTypeRef = EdmCoreModel.Instance.GetPrimitive(edmPrimitiveType.PrimitiveKind, nullable);
-            }
+                edmTypeRef = PrimitiveTypeHelper.GetPrimitiveTypeRef(clrType, nullable);
             return new AggProperty(name, edmTypeRef, isGroup);
         }
-        public OeEntryFactory CreateEntryFactory(Type entityType, IEdmEntitySet entitySet, Type sourceType)
+        public OeEntryFactory CreateEntryFactory(Type entityType, IEdmEntitySetBase entitySet, Type sourceType)
         {
             OePropertyAccessor[] accessors;
             if (_aggProperties.Count == 0)

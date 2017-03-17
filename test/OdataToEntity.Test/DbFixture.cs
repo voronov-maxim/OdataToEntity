@@ -2,6 +2,7 @@
 using Microsoft.OData.Edm;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using OdataToEntity.Db;
 using OdataToEntity.Test.Model;
 using System;
 using System.Collections;
@@ -27,7 +28,7 @@ namespace OdataToEntity.Test
             _dbDataAdapter = new OrderDbDataAdapter(_databaseName);
             _oeDataAdapter = new OrderOeDataAdapter(_databaseName);
 
-            _edmModel = ModelBuilder.OeEdmModelBuilder.BuildEdmModel(OeDataAdapter);
+            _edmModel = OeDataAdapter.BuildEdmModel();
         }
 
         public OrderContext CreateContext()

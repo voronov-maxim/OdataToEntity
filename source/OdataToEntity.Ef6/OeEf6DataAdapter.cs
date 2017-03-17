@@ -126,13 +126,7 @@ namespace OdataToEntity.Ef6
             var getDbSet = (Func<T, IDbSet<TEntity>>)Delegate.CreateDelegate(typeof(Func<T, IDbSet<TEntity>>), property.GetGetMethod());
             return new DbSetAdapterImpl<TEntity>(getDbSet, property.Name);
         }
-        public override TResult ExecuteScalar<TResult>(OeParseUriContext parseUriContext, object dataContext)
-        {
-            IQueryable query = parseUriContext.EntitySetAdapter.GetEntitySet(dataContext);
-            Expression expression = parseUriContext.CreateExpression(query, new OeConstantToVariableVisitor());
-            return query.Provider.Execute<TResult>(expression);
-        }
-        public override Db.OeEntityAsyncEnumerator ExecuteEnumerator(OeParseUriContext parseUriContext, Object dataContext, CancellationToken cancellationToken)
+        public override Db.OeEntityAsyncEnumerator ExecuteEnumerator(Object dataContext, OeParseUriContext parseUriContext, CancellationToken cancellationToken)
         {
             IQueryable query = parseUriContext.EntitySetAdapter.GetEntitySet(dataContext);
             Expression expression = parseUriContext.CreateExpression(query, new OeConstantToVariableVisitor());
@@ -140,6 +134,12 @@ namespace OdataToEntity.Ef6
             expression = new EnumerableToQuerableVisitor().Visit(expression);
             var queryAsync = (IDbAsyncEnumerable)query.Provider.CreateQuery(expression);
             return new OeEf6EntityAsyncEnumerator(queryAsync.GetAsyncEnumerator(), cancellationToken);
+        }
+        public override TResult ExecuteScalar<TResult>(Object dataContext, OeParseUriContext parseUriContext)
+        {
+            IQueryable query = parseUriContext.EntitySetAdapter.GetEntitySet(dataContext);
+            Expression expression = parseUriContext.CreateExpression(query, new OeConstantToVariableVisitor());
+            return query.Provider.Execute<TResult>(expression);
         }
         public override Db.OeEntitySetAdapter GetEntitySetAdapter(String entitySetName)
         {

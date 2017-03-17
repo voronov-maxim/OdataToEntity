@@ -27,29 +27,30 @@ namespace OdataToEntity.Parsers
         {
             IODataRequestMessage requestMessage = new OeInMemoryMessage(requestStream, contentType);
             var settings = new ODataMessageReaderSettings() { EnableMessageStreamDisposal = false };
-            var messageReader = new ODataMessageReader(requestMessage, settings);
-
-            var batchMessage = new List<OeBatchMessage>();
-            ODataBatchReader batchReader = messageReader.CreateODataBatchReader();
-            while (batchReader.Read())
+            using (var messageReader = new ODataMessageReader(requestMessage, settings))
             {
-                if (batchReader.State == ODataBatchReaderState.ChangesetStart)
+                var batchMessage = new List<OeBatchMessage>();
+                ODataBatchReader batchReader = messageReader.CreateODataBatchReader();
+                while (batchReader.Read())
                 {
-                    var operations = new List<OeOperationMessage>();
-                    while (batchReader.Read() && batchReader.State != ODataBatchReaderState.ChangesetEnd)
+                    if (batchReader.State == ODataBatchReaderState.ChangesetStart)
                     {
-                        if (batchReader.State == ODataBatchReaderState.Operation)
+                        var operations = new List<OeOperationMessage>();
+                        while (batchReader.Read() && batchReader.State != ODataBatchReaderState.ChangesetEnd)
                         {
-                            OeOperationMessage operation = OeOperationMessage.Create(context, batchReader);
-                            operations.Add(operation);
+                            if (batchReader.State == ODataBatchReaderState.Operation)
+                            {
+                                OeOperationMessage operation = OeOperationMessage.Create(context, batchReader);
+                                operations.Add(operation);
+                            }
                         }
+                        return new OeBatchMessage(contentType, operations);
                     }
-                    return new OeBatchMessage(contentType, operations);
-                }
-                else if (batchReader.State == ODataBatchReaderState.Operation)
-                {
-                    OeOperationMessage operation = OeOperationMessage.Create(context, batchReader);
-                    return new OeBatchMessage(contentType, operation);
+                    else if (batchReader.State == ODataBatchReaderState.Operation)
+                    {
+                        OeOperationMessage operation = OeOperationMessage.Create(context, batchReader);
+                        return new OeBatchMessage(contentType, operation);
+                    }
                 }
             }
 

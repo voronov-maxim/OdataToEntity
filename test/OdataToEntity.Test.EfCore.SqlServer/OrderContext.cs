@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
 
 namespace OdataToEntity.Test.Model
 {
@@ -18,5 +19,8 @@ namespace OdataToEntity.Test.Model
 
         public static OrderContext Create(String databaseName) => new OrderContext();
         public static String GenerateDatabaseName() => "dummy";
+
+        public IEnumerable<Order> GetOrders(int? id, String name, OrderStatus? status) => throw new NotImplementedException();
+        public void ResetDb() => throw new NotImplementedException();
     }
 }

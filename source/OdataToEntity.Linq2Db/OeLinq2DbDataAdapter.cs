@@ -145,20 +145,20 @@ namespace OdataToEntity.Linq2Db
             var getEntitySet = (Func<T, ITable<TEntity>>)property.GetGetMethod().CreateDelegate(typeof(Func<T, ITable<TEntity>>));
             return new TableAdapterImpl<TEntity>(getEntitySet, property.Name);
         }
-        public override TResult ExecuteScalar<TResult>(OeParseUriContext parseUriContext, object dataContext)
-        {
-            IQueryable query = parseUriContext.EntitySetAdapter.GetEntitySet(dataContext);
-            Expression expression = parseUriContext.CreateExpression(query, new OeConstantToVariableVisitor());
-            expression = new ParameterVisitor().Visit(expression);
-            return query.Provider.Execute<TResult>(expression);
-        }
-        public override OeEntityAsyncEnumerator ExecuteEnumerator(OeParseUriContext parseUriContext, Object dataContext, CancellationToken cancellationToken)
+        public override OeEntityAsyncEnumerator ExecuteEnumerator(Object dataContext, OeParseUriContext parseUriContext, CancellationToken cancellationToken)
         {
             IQueryable entitySet = parseUriContext.EntitySetAdapter.GetEntitySet(dataContext);
             Expression expression = parseUriContext.CreateExpression(entitySet, new OeConstantToVariableVisitor());
             expression = new ParameterVisitor().Visit(expression);
             var query = (IQueryable<Object>)entitySet.Provider.CreateQuery(expression);
             return new OeLinq2DbEntityAsyncEnumerator(query.GetEnumerator(), cancellationToken);
+        }
+        public override TResult ExecuteScalar<TResult>(Object dataContext, OeParseUriContext parseUriContext)
+        {
+            IQueryable query = parseUriContext.EntitySetAdapter.GetEntitySet(dataContext);
+            Expression expression = parseUriContext.CreateExpression(query, new OeConstantToVariableVisitor());
+            expression = new ParameterVisitor().Visit(expression);
+            return query.Provider.Execute<TResult>(expression);
         }
         public override OeEntitySetAdapter GetEntitySetAdapter(String entitySetName)
         {

@@ -53,12 +53,12 @@ namespace OdataToEntity.Parsers
         }
 
         private readonly IEdmModel _edmModel;
-        private readonly IEdmEntitySet _entitySet;
+        private readonly IEdmEntitySetBase _entitySet;
         private readonly bool _isCountSegment;
         private readonly ODataUri _odataUri;
         private readonly IReadOnlyList<OeParseNavigationSegment> _parseNavigationSegments;
 
-        public OeParseUriContext(IEdmModel edmModel, ODataUri odataUri, IEdmEntitySet entitySet, IReadOnlyList<OeParseNavigationSegment> parseNavigationSegments, bool isCountSegment)
+        public OeParseUriContext(IEdmModel edmModel, ODataUri odataUri, IEdmEntitySetBase entitySet, IReadOnlyList<OeParseNavigationSegment> parseNavigationSegments, bool isCountSegment)
         {
             _edmModel = edmModel;
             _odataUri = odataUri;
@@ -69,7 +69,7 @@ namespace OdataToEntity.Parsers
 
         private OeEntryFactory CreateEntryFactory(OeExpressionBuilder expressionBuilder)
         {
-            IEdmEntitySet entitySet = EntitySet;
+            IEdmEntitySetBase entitySet = EntitySet;
             if (expressionBuilder.EntityType != EntitySetAdapter.EntityType)
             {
                 String typeName = expressionBuilder.EntityType.FullName;
@@ -107,7 +107,7 @@ namespace OdataToEntity.Parsers
 
         public IReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition> ConstantToParameterMapper { get; set; }
         public IEdmModel EdmModel => _edmModel;
-        public IEdmEntitySet EntitySet => _entitySet;
+        public IEdmEntitySetBase EntitySet => _entitySet;
         public Db.OeEntitySetAdapter EntitySetAdapter { get; set; }
         public OeEntryFactory EntryFactory { get; set; }
         public OeRequestHeaders Headers { get; set; }

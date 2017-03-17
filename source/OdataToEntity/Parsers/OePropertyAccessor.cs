@@ -55,7 +55,7 @@ namespace OdataToEntity.Parsers
                 }
             return accessors;
         }
-        public static OePropertyAccessor[] CreateFromType(Type clrType, IEdmEntitySet entitySet)
+        public static OePropertyAccessor[] CreateFromType(Type clrType, IEdmEntitySetBase entitySet)
         {
             ParameterExpression parameter = Expression.Parameter(typeof(Object));
             Expression instance = Expression.Convert(parameter, clrType);
@@ -67,7 +67,7 @@ namespace OdataToEntity.Parsers
             }
             return propertyAccessors.ToArray();
         }
-        public static OePropertyAccessor[] CreateFromExpression(Expression source, ParameterExpression parameter, IEdmEntitySet entitySet)
+        public static OePropertyAccessor[] CreateFromExpression(Expression source, ParameterExpression parameter, IEdmEntitySetBase entitySet)
         {
             var propertyAccessors = new List<OePropertyAccessor>();
             foreach (IEdmStructuralProperty edmProperty in entitySet.EntityType().StructuralProperties())
