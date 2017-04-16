@@ -1,4 +1,8 @@
-﻿namespace OdataToEntity.Test.EfCore.SqlServer
+﻿using Xunit;
+
+[assembly: CollectionBehavior(DisableTestParallelization = true)]
+
+namespace OdataToEntity.Test.EfCore.SqlServer
 {
     class Program
     {

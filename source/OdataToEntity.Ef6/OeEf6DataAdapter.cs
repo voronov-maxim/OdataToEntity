@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.Entity.Core;
+using System.Data.Entity.Core.Metadata.Edm;
 using System.Data.Entity.Core.Objects;
 using System.Data.Entity.Infrastructure;
 using System.Linq;
@@ -20,6 +21,9 @@ namespace OdataToEntity.Ef6
         {
             private readonly String _entitySetName;
             private readonly Func<T, IDbSet<TEntity>> _getEntitySet;
+            private bool _isCascade;
+            private bool _isInitialized;
+            private bool _isSelfReference;
 
             public DbSetAdapterImpl(Func<T, IDbSet<TEntity>> getEntitySet, String entitySetName)
             {
@@ -61,9 +65,52 @@ namespace OdataToEntity.Ef6
             {
                 return _getEntitySet((T)dataContext);
             }
+            private void InitKey(T context)
+            {
+                if (_isInitialized)
+                    return;
+
+                ObjectContext objectContext = ((IObjectContextAdapter)context).ObjectContext;
+                var itemCollection = (ObjectItemCollection)objectContext.MetadataWorkspace.GetItemCollection(DataSpace.OSpace);
+                EntityType entityType = itemCollection.OfType<EntityType>().Single(e => itemCollection.GetClrType(e) == typeof(TEntity));
+
+                bool isCascade = true;
+                bool isSelfReference = false;
+                foreach (NavigationProperty navigationProperty in entityType.NavigationProperties)
+                {
+                    isCascade &= navigationProperty.ToEndMember.DeleteBehavior == OperationAction.Cascade;
+                    isSelfReference = navigationProperty.FromEndMember.GetEntityType() == navigationProperty.ToEndMember.GetEntityType();
+                }
+
+                Volatile.Write(ref _isCascade, isCascade);
+                Volatile.Write(ref _isSelfReference, isSelfReference);
+                Volatile.Write(ref _isInitialized, true);
+            }
             public override void RemoveEntity(Object dataContext, Object entity)
             {
-                AttachEntity(dataContext, entity, EntityState.Deleted);
+                var context = (T)dataContext;
+                InitKey(context);
+
+                ObjectContext objectContext = ((IObjectContextAdapter)context).ObjectContext;
+                EntityKey entityKey = objectContext.CreateEntityKey(EntitySetName, entity);
+
+                ObjectStateEntry objectStateEntry;
+                if (objectContext.ObjectStateManager.TryGetObjectStateEntry(entityKey, out objectStateEntry))
+                    objectStateEntry.ChangeState(EntityState.Deleted);
+                else
+                {
+                    if (_isCascade && !_isSelfReference)
+                        context.Entry(entity).State = EntityState.Deleted;
+                    else
+                    {
+                        var keyValues = new Object[entityKey.EntityKeyValues.Length];
+                        for (int i = 0; i < keyValues.Length; i++)
+                            keyValues[i] = entityKey.EntityKeyValues[i].Value;
+
+                        IDbSet<TEntity> dbSet = _getEntitySet(context);
+                        context.Entry(dbSet.Find(keyValues)).State = EntityState.Deleted;
+                    }
+                }
             }
 
             public override Type EntityType

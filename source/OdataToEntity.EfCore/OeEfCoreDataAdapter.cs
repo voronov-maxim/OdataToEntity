@@ -33,6 +33,7 @@ namespace OdataToEntity.EfCore
             private IKey _key;
             private IClrPropertyGetter[] _keyGetters;
             private IProperty[] _properties;
+            private IForeignKey _selfReferenceKey;
 
             public DbSetAdapterImpl(Func<T, DbSet<TEntity>> getEntitySet, String entitySetName)
             {
@@ -92,26 +93,48 @@ namespace OdataToEntity.EfCore
             private InternalEntityEntry GetEntityEntry(T context, Object entity)
             {
                 InitKey(context);
-                var keyValues = new Object[_keyGetters.Length];
-                for (int i = 0; i < keyValues.Length; i++)
-                    keyValues[i] = _keyGetters[i].GetClrValue(entity);
-                var buffer = new ValueBuffer(keyValues);
-
+                var buffer = new ValueBuffer(GetKeyValues((TEntity)entity));
                 var stateManager = (IInfrastructure<IStateManager>)context.ChangeTracker;
                 return stateManager.Instance.TryGetEntry(_key, buffer, false);
             }
+            private Object[] GetKeyValues(TEntity entity)
+            {
+                var keyValues = new Object[_keyGetters.Length];
+                for (int i = 0; i < keyValues.Length; i++)
+                    keyValues[i] = _keyGetters[i].GetClrValue(entity);
+                return keyValues;
+            }
             public override void RemoveEntity(Object dataContext, Object entity)
             {
-                AttachEntity(dataContext, entity, EntityState.Deleted);
+                var context = (T)dataContext;
+                InternalEntityEntry internalEntry = GetEntityEntry(context, entity);
+                if (internalEntry == null)
+                {
+                    DbSet<TEntity> dbSet = _getEntitySet(context);
+                    if (_selfReferenceKey == null)
+                        dbSet.Attach((TEntity)entity);
+                    else
+                        entity = dbSet.Find(GetKeyValues((TEntity)entity));
+                    context.Entry(entity).State = EntityState.Deleted;
+                }
+                else
+                    internalEntry.SetEntityState(EntityState.Deleted);
             }
             private void InitKey(T context)
             {
                 if (_keyGetters == null)
                 {
                     IEntityType entityType = context.Model.FindEntityType(EntityType);
-                    _key = entityType.FindPrimaryKey();
-                    _keyGetters = _key.Properties.Select(k => k.GetGetter()).ToArray();
-                    _properties = entityType.GetProperties().Where(p => !p.IsPrimaryKey()).ToArray();
+                    foreach (IForeignKey fkey in entityType.GetForeignKeys())
+                        if (fkey.IsSelfReferencing())
+                        {
+                            Volatile.Write(ref _selfReferenceKey, fkey);
+                            break;
+                        }
+
+                    Volatile.Write(ref _key, entityType.FindPrimaryKey());
+                    Volatile.Write(ref _properties, entityType.GetProperties().Where(p => !p.IsPrimaryKey()).ToArray());
+                    Volatile.Write(ref _keyGetters, _key.Properties.Select(k => k.GetGetter()).ToArray());
                 }
             }
 

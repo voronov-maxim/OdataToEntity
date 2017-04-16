@@ -28,7 +28,10 @@
     <Compile Include="..\OdataToEntity.Test\Model\Order.cs">
       <Link>Model/Order.cs</Link>
     </Compile>
-    <None Update="..\OdataToEntity.Test\Batches\**\*">
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\OdataToEntity.Test\Batches\**\*">
       <Link>Batches/%(FileName)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
