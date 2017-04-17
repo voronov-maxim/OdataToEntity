@@ -75,12 +75,21 @@ namespace OdataToEntity.Ef6
                 EntityType entityType = itemCollection.OfType<EntityType>().Single(e => itemCollection.GetClrType(e) == typeof(TEntity));
 
                 bool isCascade = true;
+                foreach (AssociationType associationType in objectContext.MetadataWorkspace.GetItems<AssociationType>(DataSpace.CSpace))
+                    if (associationType.Constraint.ToRole.GetEntityType().Name == typeof(TEntity).Name &&
+                        associationType.Constraint.ToRole.DeleteBehavior == OperationAction.None)
+                        {
+                            isCascade = false;
+                            break;
+                        }
+
                 bool isSelfReference = false;
                 foreach (NavigationProperty navigationProperty in entityType.NavigationProperties)
-                {
-                    isCascade &= navigationProperty.ToEndMember.DeleteBehavior == OperationAction.Cascade;
-                    isSelfReference = navigationProperty.FromEndMember.GetEntityType() == navigationProperty.ToEndMember.GetEntityType();
-                }
+                    if (navigationProperty.FromEndMember.GetEntityType() == navigationProperty.ToEndMember.GetEntityType())
+                    {
+                        isSelfReference = true;
+                        break;
+                    }
 
                 Volatile.Write(ref _isCascade, isCascade);
                 Volatile.Write(ref _isSelfReference, isSelfReference);
