@@ -59,7 +59,7 @@ namespace OdataToEntityCore.Asp
             var uri = new Uri(_baseUri.OriginalString + remaining + httpContext.Request.QueryString);
             OeRequestHeaders headers = OeRequestHeaders.Parse(requestHeaders.HeaderAccept);
             var parser = new OeParser(_baseUri, _dataAdapter, _edmModel);
-            await parser.ExecuteQueryAsync(uri, headers, httpContext.Response.Body, CancellationToken.None);
+            await parser.ExecuteGetAsync(uri, headers, httpContext.Response.Body, CancellationToken.None);
         }
         private async Task InvokeBatch(HttpContext httpContext)
         {

@@ -54,7 +54,7 @@ namespace OdataToEntity.Test.EfCore.SqlServer
                 {
                     var uri = new Uri("http://dummy/" + testDefinition.Request);
                     using (var response = new MemoryStream())
-                        parser.ExecuteQueryAsync(uri, OeRequestHeaders.Default, response, CancellationToken.None).GetAwaiter().GetResult();
+                        parser.ExecuteGetAsync(uri, OeRequestHeaders.Default, response, CancellationToken.None).GetAwaiter().GetResult();
                 }
             stopWatch.Stop();
             Console.WriteLine("OdataToEntity cache = " + cache + " " + stopWatch.Elapsed);

@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.OData;
 using Microsoft.OData.Edm;
+using Microsoft.OData.UriParser;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OdataToEntity.Db;
@@ -82,9 +84,8 @@ namespace OdataToEntity.Test
         private async Task<IList> ExecuteOe<TResult>(String requestUri, Type baseEntityType)
         {
             var parser = new OeParser(new Uri("http://dummy/"), OeDataAdapter, EdmModel);
-            var request = new Uri("http://dummy/" + requestUri);
             var stream = new MemoryStream();
-            await parser.ExecuteQueryAsync(request, OeRequestHeaders.Default, stream, CancellationToken.None);
+            await parser.ExecuteQueryAsync(ParseUri(requestUri), OeRequestHeaders.Default, stream, CancellationToken.None);
             stream.Position = 0;
 
             var reader = new ResponseReader(EdmModel, DbDataAdapter.EntitySetMetaAdapters);
@@ -116,6 +117,13 @@ namespace OdataToEntity.Test
             return jobject;
         }
         public abstract void Initalize();
+        public ODataUri ParseUri(String requestRelativeUri)
+        {
+            var baseUri = new Uri("http://dummy/");
+            var odataParser = new ODataUriParser(EdmModel, baseUri, new Uri(baseUri, requestRelativeUri));
+            odataParser.Resolver.EnableCaseInsensitive = true;
+            return odataParser.ParseUri();
+        }
 
         internal OrderDbDataAdapter DbDataAdapter => _dbDataAdapter;
         internal EdmModel EdmModel => _edmModel;

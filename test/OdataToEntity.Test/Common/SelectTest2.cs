@@ -1,7 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.OData;
+using Microsoft.OData.UriParser;
 using OdataToEntity.Test.Model;
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -20,12 +23,12 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters);
 
-            var parser = new OeParser(new Uri("http://dummy/"), Fixture.OeDataAdapter, Fixture.EdmModel);
-            var request = new Uri("http://dummy/Orders?$expand=Items($count=true)");
             Newtonsoft.Json.Linq.JObject responseJObject;
             using (var stream = new System.IO.MemoryStream())
             {
-                await parser.ExecuteQueryAsync(request, OeRequestHeaders.Default, stream, System.Threading.CancellationToken.None);
+                ODataUri odataUri = Fixture.ParseUri(parameters.RequestUri);
+                var parser = new OeParser(new Uri("http://dummy/"), Fixture.OeDataAdapter, Fixture.EdmModel);
+                await parser.ExecuteQueryAsync(odataUri, OeRequestHeaders.Default, stream, CancellationToken.None);
                 stream.Position = 0;
                 using (var reader = new System.IO.StreamReader(stream))
                 {
@@ -53,12 +56,12 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters);
 
-            var parser = new OeParser(new Uri("http://dummy/"), Fixture.OeDataAdapter, Fixture.EdmModel);
-            var request = new Uri("http://dummy/Orders?$expand=Items&$count=true");
             Newtonsoft.Json.Linq.JObject responseJObject;
             using (var stream = new System.IO.MemoryStream())
             {
-                await parser.ExecuteQueryAsync(request, OeRequestHeaders.Default, stream, System.Threading.CancellationToken.None);
+                ODataUri odataUri = Fixture.ParseUri(parameters.RequestUri);
+                var parser = new OeParser(new Uri("http://dummy/"), Fixture.OeDataAdapter, Fixture.EdmModel);
+                await parser.ExecuteQueryAsync(odataUri, OeRequestHeaders.Default, stream, CancellationToken.None);
                 stream.Position = 0;
                 using (var reader = new System.IO.StreamReader(stream))
                 {

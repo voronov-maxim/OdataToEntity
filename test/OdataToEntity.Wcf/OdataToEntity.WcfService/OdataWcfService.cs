@@ -26,7 +26,7 @@ namespace OdataToEntity.WcfService
 
             var uri = new Uri(_baseUri, new Uri(query, UriKind.Relative));
             var responseStream = new MemoryStream();
-            await parser.ExecuteQueryAsync(uri, headers, responseStream, CancellationToken.None);
+            await parser.ExecuteGetAsync(uri, headers, responseStream, CancellationToken.None);
             responseStream.Position = 0;
             return responseStream;
         }

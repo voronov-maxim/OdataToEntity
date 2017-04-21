@@ -39,9 +39,9 @@ namespace OdataToEntity
             var node = new BinaryOperatorNode(BinaryOperatorKind.Equal, left, right);
             return new FilterClause(node, range);
         }
-        public async Task ExecuteAsync(Uri requestUri, OeRequestHeaders headers, Stream stream, CancellationToken cancellationToken)
+        public async Task ExecuteAsync(ODataUri odataUri, OeRequestHeaders headers, Stream stream, CancellationToken cancellationToken)
         {
-            OeParseUriContext parseUriContext = ParseUri(requestUri);
+            OeParseUriContext parseUriContext = ParseUri(odataUri);
             parseUriContext.Headers = headers;
             parseUriContext.EntitySetAdapter = _dataAdapter.GetEntitySetAdapter(parseUriContext.EntitySet.Name);
 
@@ -68,12 +68,8 @@ namespace OdataToEntity
                     _dataAdapter.CloseDataContext(dataContext);
             }
         }
-        public OeParseUriContext ParseUri(Uri requestUri)
+        public OeParseUriContext ParseUri(ODataUri odataUri)
         {
-            var odataParser = new ODataUriParser(_model, BaseUri, requestUri);
-            odataParser.Resolver.EnableCaseInsensitive = true;
-            ODataUri odataUri = odataParser.ParseUri();
-
             List<OeParseNavigationSegment> navigationSegments = null;
             if (odataUri.Path.LastSegment is KeySegment ||
                 odataUri.Path.LastSegment is NavigationPropertySegment)

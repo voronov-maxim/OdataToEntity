@@ -24,11 +24,8 @@ namespace OdataToEntity
             _model = model;
         }
 
-        public async Task ExecuteAsync(Uri requestUri, Stream requestStream, OeRequestHeaders headers, Stream responseStream, CancellationToken cancellationToken)
+        public async Task ExecuteAsync(ODataUri odataUri, Stream requestStream, OeRequestHeaders headers, Stream responseStream, CancellationToken cancellationToken)
         {
-            var odataParser = new ODataUriParser(_model, _baseUri, requestUri);
-            odataParser.Resolver.EnableCaseInsensitive = true;
-            ODataUri odataUri = odataParser.ParseUri();
             var importSegment = (OperationImportSegment)odataUri.Path.LastSegment;
 
             List<KeyValuePair<String, Object>> parameters = GetParameters(importSegment, requestStream, headers.ContentType);
@@ -150,7 +147,7 @@ namespace OdataToEntity
             }
 
             var operation = (EdmOperation)importSegment.OperationImports.Single().Operation;
-            if (parameters.Count == 0)
+            if (parameters.Count == 0 && requestStream != null)
                 FillParameters(parameters, requestStream, operation, contentType);
             OrderParameters(operation.Parameters, parameters);
 

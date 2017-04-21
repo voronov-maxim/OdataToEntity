@@ -4,6 +4,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.IO;
 using System.Text;
+using Microsoft.OData;
+using Microsoft.OData.UriParser;
 
 namespace OdataToEntity
 {
@@ -33,15 +35,26 @@ namespace OdataToEntity
             var paser = new Parsers.OeBatchParser(_baseUri, _dataAdapter, _model);
             await paser.ExecuteAsync(requestStream, responseStream, contentType, cancellationToken).ConfigureAwait(false);
         }
-        public async Task ExecuteQueryAsync(Uri requestUri, OeRequestHeaders headers, Stream stream, CancellationToken cancellationToken)
+        public async Task ExecuteGetAsync(Uri requestUri, OeRequestHeaders headers, Stream responseStream, CancellationToken cancellationToken)
+        {
+            var odataParser = new ODataUriParser(_model, _baseUri, requestUri);
+            odataParser.Resolver.EnableCaseInsensitive = true;
+            ODataUri odataUri = odataParser.ParseUri();
+
+            if (odataUri.Path.LastSegment is OperationImportSegment)
+                await ExecuteOperationAsync(odataUri, null, responseStream, cancellationToken);
+            else
+                await ExecuteQueryAsync(odataUri, headers, responseStream, cancellationToken);
+        }
+        public async Task ExecuteQueryAsync(ODataUri odataUri, OeRequestHeaders headers, Stream responseStream, CancellationToken cancellationToken)
         {
             var parser = new OeGetParser(_baseUri, _dataAdapter, _model);
-            await parser.ExecuteAsync(requestUri, headers, stream, cancellationToken).ConfigureAwait(false);
+            await parser.ExecuteAsync(odataUri, headers, responseStream, cancellationToken).ConfigureAwait(false);
         }
-        public async Task ExecutePostAsync(Uri requestUri, Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
+        public async Task ExecuteOperationAsync(ODataUri odataUri, Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
         {
             var parser = new OePostParser(_baseUri, _dataAdapter, _model);
-            await parser.ExecuteAsync(requestUri, requestStream, OeRequestHeaders.Default, responseStream, cancellationToken);
+            await parser.ExecuteAsync(odataUri, requestStream, OeRequestHeaders.Default, responseStream, cancellationToken);
         }
         private static String GetConentType(Stream stream, out ArraySegment<byte> readedBytes)
         {

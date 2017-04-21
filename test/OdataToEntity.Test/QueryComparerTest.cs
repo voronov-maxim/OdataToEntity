@@ -1,4 +1,5 @@
-﻿using Microsoft.OData.UriParser;
+﻿using Microsoft.OData;
+using Microsoft.OData.UriParser;
 using OdataToEntity.Parsers;
 using OdataToEntity.Parsers.UriCompare;
 using System;
@@ -40,7 +41,7 @@ namespace OdataToEntity.Test
             var parser = new OeGetParser(new Uri("http://dummy/"), fixture.OeDataAdapter, fixture.EdmModel);
             for (int i = 0; i < requestMethodNames.Length; i++)
             {
-                OeParseUriContext parseUriContext = parser.ParseUri(new Uri(parser.BaseUri + requestMethodNames[i].Request));
+                OeParseUriContext parseUriContext = parser.ParseUri(fixture.ParseUri(requestMethodNames[i].Request));
                 int hash = OeODataUriComparer.GetCacheCode(parseUriContext);
                 List<String> value;
                 if (!hashes.TryGetValue(hash, out value))
@@ -59,11 +60,12 @@ namespace OdataToEntity.Test
             requestMethodNames = requestMethodNames.Where(t => t.MethodName == "FilterEnum" || t.MethodName == "FilterEnumNull").ToArray();
 
             var fixture = new DbFixtureInitDb();
-            var parser = new OeGetParser(new Uri("http://dummy/"), fixture.OeDataAdapter, fixture.EdmModel);
+            var baseUri = new Uri("http://dummy/");
+            var parser = new OeGetParser(baseUri, fixture.OeDataAdapter, fixture.EdmModel);
             for (int i = 0; i < requestMethodNames.Length; i++)
             {
-                OeParseUriContext parseUriContext1 = parser.ParseUri(new Uri(parser.BaseUri + requestMethodNames[i].Request));
-                OeParseUriContext parseUriContext2 = parser.ParseUri(new Uri(parser.BaseUri + requestMethodNames[i].Request));
+                OeParseUriContext parseUriContext1 = parser.ParseUri(fixture.ParseUri(requestMethodNames[i].Request));
+                OeParseUriContext parseUriContext2 = parser.ParseUri(fixture.ParseUri(requestMethodNames[i].Request));
 
                 var constantToParameterMapper = new FakeReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition>();
                 if (parseUriContext1.ODataUri.Skip != null)
@@ -82,8 +84,8 @@ namespace OdataToEntity.Test
 
                 for (int j = i + 1; j < requestMethodNames.Length; j++)
                 {
-                    parseUriContext1 = parser.ParseUri(new Uri(parser.BaseUri + requestMethodNames[i].Request));
-                    parseUriContext2 = parser.ParseUri(new Uri(parser.BaseUri + requestMethodNames[j].Request));
+                    parseUriContext2 = parser.ParseUri(fixture.ParseUri(requestMethodNames[j].Request));
+
                     constantToParameterMapper = new FakeReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition>();
                     result = new OeODataUriComparer(constantToParameterMapper).Compare(parseUriContext1, parseUriContext2);
                     Assert.False(result);
