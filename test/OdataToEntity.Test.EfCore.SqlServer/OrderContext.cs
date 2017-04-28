@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace OdataToEntity.Test.Model
 {
@@ -20,7 +21,22 @@ namespace OdataToEntity.Test.Model
         public static OrderContext Create(String databaseName) => new OrderContext();
         public static String GenerateDatabaseName() => "dummy";
 
-        public IEnumerable<Order> GetOrders(int? id, String name, OrderStatus? status) => throw new NotImplementedException();
+        public IEnumerable<Order> GetOrders(int? id, String name, OrderStatus? status)
+        {
+            if (id == null && name == null && status == null)
+                return Orders;
+
+            if (id != null)
+                return Orders.Where(o => o.Id == id);
+
+            if (name != null)
+                return Orders.Where(o => o.Name == name);
+
+            if (status != null)
+                return Orders.Where(o => o.Status == status);
+
+            return Enumerable.Empty<Order>();
+        }
         public void ResetDb() => throw new NotImplementedException();
     }
 }

@@ -206,7 +206,7 @@ namespace OdataToEntity.EfCore
                 enumerable = GetFromCache<Object>(parseUriContext, (T)dataContext, base.QueryCache);
             else
                 enumerable = ((IQueryable<Object>)base.CreateQuery(parseUriContext, dataContext, new OeConstantToVariableVisitor()));
-            return new OeEfCoreEntityAsyncEnumeratorAdapter(enumerable, cancellationToken);
+            return new Db.OeEntityAsyncEnumeratorAdapter(enumerable, cancellationToken);
         }
         public override Db.OeEntityAsyncEnumerator ExecuteProcedure(Object dataContext, String procedureName, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
         {
@@ -238,7 +238,7 @@ namespace OdataToEntity.EfCore
             if (returnType == null)
             {
                 int count = dbContext.Database.ExecuteSqlCommand(sql.ToString());
-                return new OeEfCoreEntityAsyncEnumeratorAdapter(new[] { (Object)count }, CancellationToken.None);
+                return new Db.OeEntityAsyncEnumeratorAdapter(new[] { (Object)count }, CancellationToken.None);
             }
 
             var fromSql = (IFromSql)EntitySetMetaAdapters.FindByClrType(returnType);
@@ -246,7 +246,7 @@ namespace OdataToEntity.EfCore
                 throw new NotSupportedException("supported only Entity type");
 
             var query = (IQueryable<Object>)fromSql.FromSql(dataContext, sql.ToString(), parameterValues);
-            return new OeEfCoreEntityAsyncEnumeratorAdapter(query, CancellationToken.None);
+            return new Db.OeEntityAsyncEnumeratorAdapter(query, CancellationToken.None);
         }
         public override TResult ExecuteScalar<TResult>(Object dataContext, OeParseUriContext parseUriContext)
         {

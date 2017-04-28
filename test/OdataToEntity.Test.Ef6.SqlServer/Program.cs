@@ -8,7 +8,7 @@ namespace OdataToEntity.Test.Ef6.SqlServer
     {
         static void Main(string[] args)
         {
-            new BatchTest().Delete().GetAwaiter().GetResult();
+            new ProcedureTest().GetOrders_get().GetAwaiter().GetResult();
             //new SelectTest(new DbFixtureInitDb()).ApplyGroupBySkip().GetAwaiter().GetResult();
         }
     }

@@ -42,7 +42,7 @@ namespace OdataToEntity
             ODataUri odataUri = odataParser.ParseUri();
 
             if (odataUri.Path.LastSegment is OperationImportSegment)
-                await ExecuteOperationAsync(odataUri, null, responseStream, cancellationToken);
+                await ExecuteOperationAsync(odataUri, headers, null, responseStream, cancellationToken);
             else
                 await ExecuteQueryAsync(odataUri, headers, responseStream, cancellationToken);
         }
@@ -51,10 +51,24 @@ namespace OdataToEntity
             var parser = new OeGetParser(_baseUri, _dataAdapter, _model);
             await parser.ExecuteAsync(odataUri, headers, responseStream, cancellationToken).ConfigureAwait(false);
         }
-        public async Task ExecuteOperationAsync(ODataUri odataUri, Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
+        public async Task ExecuteOperationAsync(ODataUri odataUri, OeRequestHeaders headers, Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
         {
             var parser = new OePostParser(_baseUri, _dataAdapter, _model);
-            await parser.ExecuteAsync(odataUri, requestStream, OeRequestHeaders.Default, responseStream, cancellationToken);
+            await parser.ExecuteAsync(odataUri, requestStream, headers, responseStream, cancellationToken);
+        }
+        public async Task ExecutePostAsync(Uri requestUri, OeRequestHeaders headers, Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
+        {
+            var odataParser = new ODataUriParser(_model, _baseUri, requestUri);
+            odataParser.Resolver.EnableCaseInsensitive = true;
+            ODataUri odataUri = odataParser.ParseUri();
+
+            if (odataUri.Path.LastSegment.Identifier == "$batch")
+                await ExecuteBatchAsync(responseStream, responseStream, cancellationToken, headers.ContentType);
+            else
+                if (odataUri.Path.LastSegment is OperationImportSegment)
+                    await ExecuteOperationAsync(odataUri, headers, requestStream, responseStream, cancellationToken);
+                else
+                    await ExecuteQueryAsync(odataUri, headers, responseStream, cancellationToken);
         }
         private static String GetConentType(Stream stream, out ArraySegment<byte> readedBytes)
         {

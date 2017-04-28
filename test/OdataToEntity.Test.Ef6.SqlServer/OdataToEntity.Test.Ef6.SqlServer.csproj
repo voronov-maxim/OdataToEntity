@@ -228,6 +228,9 @@
     <Compile Include="..\OdataToEntity.Test.EfCore.SqlServer\OrderContext.cs">
       <Link>OrderContext.cs</Link>
     </Compile>
+    <Compile Include="..\OdataToEntity.Test.EfCore.SqlServer\ProcedureTest.cs">
+      <Link>ProcedureTest.cs</Link>
+    </Compile>
     <Compile Include="..\OdataToEntity.Test\DbFixture.cs">
       <Link>DbFixture.cs</Link>
     </Compile>

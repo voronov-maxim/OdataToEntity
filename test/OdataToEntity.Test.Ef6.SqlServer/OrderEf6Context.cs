@@ -1,4 +1,6 @@
 ﻿using OdataToEntity.Test.Model;
+using System;
+using System.Collections.Generic;
 using System.Data.Entity;
 
 namespace OdataToEntity.Test.Ef6.SqlServer
@@ -13,5 +15,8 @@ namespace OdataToEntity.Test.Ef6.SqlServer
         public DbSet<Customer> Customers { get; set; }
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
+
+        public IEnumerable<Order> GetOrders(int? id, String name, OrderStatus? status) => throw new NotImplementedException();
+        public void ResetDb() => throw new NotImplementedException();
     }
 }

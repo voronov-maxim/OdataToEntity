@@ -10,6 +10,7 @@ using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -138,7 +139,9 @@ namespace OdataToEntity.Ef6
             }
         }
 
+        private static DummyCommandBuilder _dummyCommandBuilder;
         private readonly static Db.OeEntitySetMetaAdapterCollection _entitySetMetaAdapters = CreateEntitySetMetaAdapters();
+        private static MethodInfo[] _operations;
 
         public OeEf6DataAdapter() : base(null)
         {
@@ -191,15 +194,77 @@ namespace OdataToEntity.Ef6
             var queryAsync = (IDbAsyncEnumerable)query.Provider.CreateQuery(expression);
             return new OeEf6EntityAsyncEnumerator(queryAsync.GetAsyncEnumerator(), cancellationToken);
         }
+        public override Db.OeEntityAsyncEnumerator ExecuteProcedure(Object dataContext, String procedureName, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
+        {
+            var dbContext = (T)dataContext;
+
+            var sql = new StringBuilder(procedureName);
+            for (int i = 0; i < parameters.Count; i++)
+            {
+                if (i == 0)
+                    sql.Append(' ');
+
+                sql.Append(GetDbParameterName(dbContext, i));
+                if (i < parameters.Count - 1)
+                    sql.Append(',');
+            }
+
+            Object[] parameterValues = null;
+            if (parameters.Count > 0)
+            {
+                parameterValues = new Object[parameters.Count];
+                for (int i = 0; i < parameterValues.Length; i++)
+                    parameterValues[i] = parameters[i].Value;
+            }
+
+            if (returnType == null)
+            {
+                int count = dbContext.Database.ExecuteSqlCommand(sql.ToString(), parameterValues);
+                return new Db.OeEntityAsyncEnumeratorAdapter(new Object[] { count }, CancellationToken.None);
+            }
+            else
+            {
+                DbRawSqlQuery query = dbContext.Database.SqlQuery(returnType, sql.ToString(), parameterValues);
+                return new Db.OeEntityAsyncEnumeratorAdapter(query, CancellationToken.None);
+            }
+        }
         public override TResult ExecuteScalar<TResult>(Object dataContext, OeParseUriContext parseUriContext)
         {
             IQueryable query = parseUriContext.EntitySetAdapter.GetEntitySet(dataContext);
             Expression expression = parseUriContext.CreateExpression(query, new OeConstantToVariableVisitor());
             return query.Provider.Execute<TResult>(expression);
         }
+        private static String GetDbParameterName(DbContext dbContext, int parameterOrder)
+        {
+            if (_dummyCommandBuilder == null)
+                Volatile.Write(ref _dummyCommandBuilder, new DummyCommandBuilder(dbContext.Database.Connection));
+            return _dummyCommandBuilder.GetDbParameterName(parameterOrder);
+        }
         public override Db.OeEntitySetAdapter GetEntitySetAdapter(String entitySetName)
         {
             return new Db.OeEntitySetAdapter(_entitySetMetaAdapters.FindByEntitySetName(entitySetName), this);
+        }
+        public override MethodInfo[] GetOperations()
+        {
+            if (_operations == null)
+            {
+                MethodInfo[] operations = GetOperationsCore();
+                Interlocked.CompareExchange(ref _operations, operations, null);
+            }
+
+            return _operations;
+        }
+        protected virtual MethodInfo[] GetOperationsCore()
+        {
+            var methodInfos = new List<MethodInfo>();
+            foreach (MethodInfo methodInfo in typeof(T).GetTypeInfo().GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly))
+                if (!methodInfo.IsSpecialName)
+                {
+                    if (methodInfo.IsVirtual && methodInfo.GetBaseDefinition().DeclaringType != typeof(T))
+                        continue;
+                    methodInfos.Add(methodInfo);
+                }
+            return methodInfos.ToArray();
         }
         public override Task<int> SaveChangesAsync(IEdmModel edmModel, Object dataContext, CancellationToken cancellationToken)
         {

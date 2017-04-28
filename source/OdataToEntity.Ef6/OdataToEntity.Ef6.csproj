@@ -59,6 +59,12 @@
   <ItemGroup>
     <ProjectReference Include="..\OdataToEntity\OdataToEntity.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="DummyCommandBuilder.cs">
+      <SubType>Component</SubType>
+    </Compile>
+  </ItemGroup>
   
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

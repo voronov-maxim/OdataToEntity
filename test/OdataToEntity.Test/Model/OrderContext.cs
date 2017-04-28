@@ -247,6 +247,9 @@ namespace OdataToEntity.Test.Model
             base.SaveChanges();
         }
 
+        public IEnumerable<Order> GetOrders(int? id, String name, OrderStatus? status) => throw new NotImplementedException();
+        public void ResetDb() => throw new NotImplementedException();
+
         public DbSet<Category> Categories { get; set; }
         public DbSet<Customer> Customers { get; set; }
         public DbSet<Order> Orders { get; set; }

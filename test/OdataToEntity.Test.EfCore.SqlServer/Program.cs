@@ -8,7 +8,7 @@ namespace OdataToEntity.Test.EfCore.SqlServer
     {
         static void Main(string[] args)
         {
-            new BatchTest().Action();
+            new ProcedureTest().GetOrders_post().GetAwaiter().GetResult();
             //PerformanceCacheTest.RunTest(100);
 
             //var fixture = new DbFixtureInitDb();
