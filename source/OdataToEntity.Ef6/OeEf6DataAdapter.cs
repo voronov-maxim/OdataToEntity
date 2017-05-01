@@ -141,7 +141,6 @@ namespace OdataToEntity.Ef6
 
         private static DummyCommandBuilder _dummyCommandBuilder;
         private readonly static Db.OeEntitySetMetaAdapterCollection _entitySetMetaAdapters = CreateEntitySetMetaAdapters();
-        private static MethodInfo[] _operations;
 
         public OeEf6DataAdapter() : base(null)
         {
@@ -209,7 +208,7 @@ namespace OdataToEntity.Ef6
                     sql.Append(',');
             }
 
-            Object[] parameterValues = null;
+            Object[] parameterValues = Array.Empty<Object>();
             if (parameters.Count > 0)
             {
                 parameterValues = new Object[parameters.Count];
@@ -240,31 +239,10 @@ namespace OdataToEntity.Ef6
                 Volatile.Write(ref _dummyCommandBuilder, new DummyCommandBuilder(dbContext.Database.Connection));
             return _dummyCommandBuilder.GetDbParameterName(parameterOrder);
         }
+        protected override Type GetDataContextType() => typeof(T);
         public override Db.OeEntitySetAdapter GetEntitySetAdapter(String entitySetName)
         {
             return new Db.OeEntitySetAdapter(_entitySetMetaAdapters.FindByEntitySetName(entitySetName), this);
-        }
-        public override MethodInfo[] GetOperations()
-        {
-            if (_operations == null)
-            {
-                MethodInfo[] operations = GetOperationsCore();
-                Interlocked.CompareExchange(ref _operations, operations, null);
-            }
-
-            return _operations;
-        }
-        protected virtual MethodInfo[] GetOperationsCore()
-        {
-            var methodInfos = new List<MethodInfo>();
-            foreach (MethodInfo methodInfo in typeof(T).GetTypeInfo().GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly))
-                if (!methodInfo.IsSpecialName)
-                {
-                    if (methodInfo.IsVirtual && methodInfo.GetBaseDefinition().DeclaringType != typeof(T))
-                        continue;
-                    methodInfos.Add(methodInfo);
-                }
-            return methodInfos.ToArray();
         }
         public override Task<int> SaveChangesAsync(IEdmModel edmModel, Object dataContext, CancellationToken cancellationToken)
         {

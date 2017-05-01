@@ -180,11 +180,18 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\OdataToEntity.Test.EfCore.SqlServer\DbFixtureInitDb.cs">
+      <Link>DbFixtureInitDb.cs</Link>
+    </Compile>
+    <Compile Include="..\OdataToEntity.Test.EfCore.SqlServer\OrderContext.cs">
+      <Link>OrderContext.cs</Link>
+    </Compile>
+    <Compile Include="..\OdataToEntity.Test.EfCore.SqlServer\ProcedureTest.cs">
+      <Link>ProcedureTest.cs</Link>
+    </Compile>
     <Compile Include="..\OdataToEntity.Test\DbFixture.cs">
       <Link>DbFixture.cs</Link>
     </Compile>
-    <Compile Include="DbFixtureInitDb.cs" />
-    <Compile Include="OrderContext.cs" />
     <Compile Include="OrderDbDataAdapter.cs" />
     <Compile Include="OrderOeDataAdapter.cs" />
     <Compile Include="Program.cs" />

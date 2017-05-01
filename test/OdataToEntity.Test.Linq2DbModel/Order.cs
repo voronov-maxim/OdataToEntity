@@ -14,6 +14,7 @@ using LinqToDB;
 using LinqToDB.DataProvider.SqlServer;
 using LinqToDB.Mapping;
 using OdataToEntity.Linq2Db;
+using System.ComponentModel;
 
 namespace OdataToEntity.Test.Model
 {
@@ -76,10 +77,14 @@ namespace OdataToEntity.Test.Model
 				text);
 		}
 
-		#endregion
-	}
+        #endregion
 
-    [Table(Schema = "dbo", Name = "Categories")]
+        [Description("dbo.GetOrders")]
+        public IEnumerable<Order> GetOrders(int? id, String name, OrderStatus? status) => throw new NotImplementedException();
+        public void ResetDb() => throw new NotImplementedException();
+}
+
+[Table(Schema = "dbo", Name = "Categories")]
     public partial class Category
     {
         [PrimaryKey, Identity]

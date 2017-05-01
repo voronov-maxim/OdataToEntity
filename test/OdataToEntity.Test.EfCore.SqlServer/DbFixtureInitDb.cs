@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
-using OdataToEntity.Test.Model;
 using System;
+using System.IO;
+using System.Threading;
 
 namespace OdataToEntity.Test
 {
@@ -20,8 +20,8 @@ namespace OdataToEntity.Test
                 return;
 
             _initialized = true;
-            using (var context = new OrderContext())
-                context.Database.ExecuteSqlCommand("dbo.ResetDb");
+            var parser = new OeParser(new Uri("http://dummy/"), base.OeDataAdapter, base.EdmModel);
+            parser.ExecuteOperationAsync(base.ParseUri("ResetDb"), OeRequestHeaders.Default, null, new MemoryStream(), CancellationToken.None).GetAwaiter().GetResult();
             base.ExecuteBatchAsync("Add").GetAwaiter().GetResult();
         }
 

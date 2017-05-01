@@ -57,9 +57,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="script.sql" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="packages.config">
       <SubType>Designer</SubType>
     </None>

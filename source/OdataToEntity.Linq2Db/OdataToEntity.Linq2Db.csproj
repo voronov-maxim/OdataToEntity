@@ -46,7 +46,6 @@
     <Compile Include="OeLinq2DbDataAdapter.cs" />
     <Compile Include="OeLinq2DbDataContext.cs" />
     <Compile Include="OeLinq2DbEdmModelMetadataProvider.cs" />
-    <Compile Include="OeLinq2DbEntityAsyncEnumerator.cs" />
     <Compile Include="OeLinq2DbTable.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -55,11 +54,9 @@
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>
+  
   <ItemGroup>
-    <ProjectReference Include="..\OdataToEntity\OdataToEntity.csproj">
-      <Project>{70ed8ce4-4fa6-418a-a5bc-8697f5ca0b03}</Project>
-      <Name>OdataToEntity</Name>
-    </ProjectReference>
+    <ProjectReference Include="..\OdataToEntity\OdataToEntity.csproj" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

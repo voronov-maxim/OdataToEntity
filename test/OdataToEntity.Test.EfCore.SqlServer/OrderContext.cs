@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 
 namespace OdataToEntity.Test.Model
@@ -21,6 +22,7 @@ namespace OdataToEntity.Test.Model
         public static OrderContext Create(String databaseName) => new OrderContext();
         public static String GenerateDatabaseName() => "dummy";
 
+        [Description("dbo.GetOrders")]
         public IEnumerable<Order> GetOrders(int? id, String name, OrderStatus? status)
         {
             if (id == null && name == null && status == null)
@@ -30,7 +32,7 @@ namespace OdataToEntity.Test.Model
                 return Orders.Where(o => o.Id == id);
 
             if (name != null)
-                return Orders.Where(o => o.Name == name);
+                return Orders.Where(o => o.Name.Contains(name));
 
             if (status != null)
                 return Orders.Where(o => o.Status == status);

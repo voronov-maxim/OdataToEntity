@@ -17,5 +17,7 @@ namespace OdataToEntity.Test
 
             return new OdataToEntityDB("OdataToEntity");
         }
+
+        public new Db.OeQueryCache QueryCache => base.QueryCache;
     }
 }

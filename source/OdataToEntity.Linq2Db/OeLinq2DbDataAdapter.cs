@@ -102,8 +102,8 @@ namespace OdataToEntity.Linq2Db
             public override String EntitySetName => _entitySetName;
         }
 
-        private readonly static Lazy<OeEntitySetMetaAdapterCollection> _entitySetMetaAdapters = new Lazy<OeEntitySetMetaAdapterCollection>(CreateEntitySetMetaAdapters);
- 
+        private readonly static OeEntitySetMetaAdapterCollection _entitySetMetaAdapters = CreateEntitySetMetaAdapters();
+
         public OeLinq2DbDataAdapter() : this(null)
         {
         }
@@ -151,7 +151,28 @@ namespace OdataToEntity.Linq2Db
             Expression expression = parseUriContext.CreateExpression(entitySet, new OeConstantToVariableVisitor());
             expression = new ParameterVisitor().Visit(expression);
             var query = (IQueryable<Object>)entitySet.Provider.CreateQuery(expression);
-            return new OeLinq2DbEntityAsyncEnumerator(query.GetEnumerator(), cancellationToken);
+            return new OeEntityAsyncEnumeratorAdapter(query, cancellationToken);
+        }
+        public override OeEntityAsyncEnumerator ExecuteProcedure(Object dataContext, String procedureName, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
+        {
+            var dataParameters = new DataParameter[parameters.Count];
+            for (int i = 0; i < dataParameters.Length; i++)
+                dataParameters[i] = new DataParameter(parameters[i].Key, parameters[i].Value);
+
+            if (returnType == null)
+            {
+                var dataConnection = (T)dataContext;
+                int count = dataConnection.Execute(procedureName, dataParameters);
+                return new Db.OeEntityAsyncEnumeratorAdapter(new[] { (Object)count }, CancellationToken.None);
+            }
+
+            var queryProc = (Func<DataConnection, String, DataParameter[], IEnumerable<Object>>)DataConnectionExtensions.QueryProc<Object>;
+            MethodInfo queryProcMethodInfo =  queryProc.GetMethodInfo().GetGenericMethodDefinition().MakeGenericMethod(new Type[] { returnType });
+            Type queryProcType = typeof(Func<DataConnection, String, DataParameter[], IEnumerable<Object>>);
+            var queryProcFunc = (Func<DataConnection, String, DataParameter[], IEnumerable<Object>>)Delegate.CreateDelegate(queryProcType, queryProcMethodInfo);
+
+            IEnumerable<Object> result = queryProcFunc((T)dataContext, procedureName, dataParameters);
+            return new OeEntityAsyncEnumeratorAdapter(result, CancellationToken.None);
         }
         public override TResult ExecuteScalar<TResult>(Object dataContext, OeParseUriContext parseUriContext)
         {
@@ -160,6 +181,7 @@ namespace OdataToEntity.Linq2Db
             expression = new ParameterVisitor().Visit(expression);
             return query.Provider.Execute<TResult>(expression);
         }
+        protected override Type GetDataContextType() => typeof(T);
         public override OeEntitySetAdapter GetEntitySetAdapter(String entitySetName)
         {
             return new OeEntitySetAdapter(EntitySetMetaAdapters.FindByEntitySetName(entitySetName), this);
@@ -188,6 +210,6 @@ namespace OdataToEntity.Linq2Db
             return Task.FromResult(count);
         }
 
-        public override OeEntitySetMetaAdapterCollection EntitySetMetaAdapters => _entitySetMetaAdapters.Value;
+        public override OeEntitySetMetaAdapterCollection EntitySetMetaAdapters => _entitySetMetaAdapters;
     }
 }

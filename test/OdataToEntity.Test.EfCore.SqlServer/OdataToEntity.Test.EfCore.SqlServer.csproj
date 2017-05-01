@@ -26,7 +26,7 @@
       <Link>DbFixture.cs</Link>
     </Compile>
     <Compile Include="..\OdataToEntity.Test\Model\Order.cs">
-      <Link>Model/Order.cs</Link>
+      <Link>Model\Order.cs</Link>
     </Compile>
   </ItemGroup>
 

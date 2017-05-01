@@ -155,7 +155,6 @@ namespace OdataToEntity.EfCore
         }
 
         private readonly static Db.OeEntitySetMetaAdapterCollection _entitySetMetaAdapters = CreateEntitySetMetaAdapters();
-        private static MethodInfo[] _operations;
 
         public OeEfCoreDataAdapter() : this(null)
         {
@@ -257,6 +256,7 @@ namespace OdataToEntity.EfCore
             Expression expression = parseUriContext.CreateExpression(query, new OeConstantToVariableVisitor());
             return query.Provider.Execute<TResult>(expression);
         }
+        protected override Type GetDataContextType() => typeof(T);
         public override Db.OeEntitySetAdapter GetEntitySetAdapter(String entitySetName)
         {
             return new Db.OeEntitySetAdapter(_entitySetMetaAdapters.FindByEntitySetName(entitySetName), this);
@@ -288,28 +288,6 @@ namespace OdataToEntity.EfCore
                 queryContext.AddParameter(parameterValue.ParameterName, parameterValue.ParameterValue);
 
             return queryExecutor(queryContext);
-        }
-        public override MethodInfo[] GetOperations()
-        {
-            if (_operations == null)
-            {
-                MethodInfo[] operations = GetOperationsCore();
-                Interlocked.CompareExchange(ref _operations, operations, null);
-            }
-
-            return _operations;
-        }
-        protected virtual MethodInfo[] GetOperationsCore()
-        {
-            var methodInfos = new List<MethodInfo>();
-            foreach (MethodInfo methodInfo in typeof(T).GetTypeInfo().GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly))
-                if (!methodInfo.IsSpecialName)
-                {
-                    if (methodInfo.IsVirtual && methodInfo.GetBaseDefinition().DeclaringType != typeof(T))
-                        continue;
-                    methodInfos.Add(methodInfo);
-                }
-            return methodInfos.ToArray();
         }
         public override Task<int> SaveChangesAsync(IEdmModel edmModel, Object dataContext, CancellationToken cancellationToken)
         {
