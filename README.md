@@ -1,7 +1,7 @@
 # OdataToEntity
 OData .net core
 
-##Sample OData query
+## Sample OData query
 
 ```
 //Create adapter data access, where OrderContext your DbContext
@@ -18,7 +18,7 @@ var response = new MemoryStream();
 await parser.ExecuteQueryAsync(uri, OeRequestHeaders.Default, response, CancellationToken.None);
 ```
 
-##Sample OData batch request
+## Sample OData batch request
 
 ```
 //Create adapter data access, where OrderContext your DbContext
