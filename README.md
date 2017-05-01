@@ -1,8 +1,17 @@
 # OdataToEntity
 OData .net core
 
-## Sample OData query
+```
+public sealed class OrderContext : DbContext
+{
+    public DbSet<Customer> Customers { get; set; }
+    public DbSet<Order> Orders { get; set; }
 
+    public IEnumerable<Order> GetOrders(int? id, String name, OrderStatus? status) => throw new NotImplementedException();
+}
+```
+
+## Sample OData query
 ```
 //Create adapter data access, where OrderContext your DbContext
 var dataAdapter = new OeEfCoreDataAdapter<Model.OrderContext>();
@@ -17,7 +26,6 @@ await parser.ExecuteGetAsync(uri, OeRequestHeaders.Default, response, Cancellati
 ```
 
 ## Sample OData batch request
-
 ```
 string batch = @"
 --batch_6263d2a1-1ddc-4b02-a1c1-7031cfa93691
@@ -52,4 +60,16 @@ var request = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(batch));
 var response = new MemoryStream();
 //Execute query
 await parser.ExecuteBatchAsync(request, response, CancellationToken.None);
+```
+
+## Sample OData stored procedure
+```
+//Create adapter data access, where OrderContext your DbContext
+var dataAdapter = new OeEfCoreDataAdapter<Model.OrderContext>();
+//Create query parser
+var parser = new OeParser(new Uri("http://dummy"), dataAdapter, dataAdapter.BuildEdmModel());
+//The result of the stored procedure
+var response = new MemoryStream();
+//Execute sored procedure
+await parser.ExecuteGetAsync(new Uri("http://dummy/GetOrders(name='Order 1',id=1,status=null)"), OeRequestHeaders.Default, response, CancellationToken.None);
 ```
