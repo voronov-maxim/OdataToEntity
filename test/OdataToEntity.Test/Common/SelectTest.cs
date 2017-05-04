@@ -52,17 +52,18 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<OrderItem, Object>()
             {
-                RequestUri = "OrderItems?$apply=groupby((OrderId, Order/Status), aggregate(Price with average as avg, Product with countdistinct as cnt, Price with max as max, Order/Status with max as max_status, Price with min as min, Price with sum as sum))",
+                RequestUri = "OrderItems?$apply=groupby((OrderId, Order/Status), aggregate(Price with average as avg, Product with countdistinct as dcnt, Price with max as max, Order/Status with max as max_status, Price with min as min, Price with sum as sum, $count as cnt))",
                 Expression = t => t.GroupBy(i => new { i.OrderId, i.Order.Status }).Select(g => new
                 {
                     OrderId = g.Key.OrderId,
                     Order_Status = g.Key.Status,
                     avg = g.Average(i => i.Price),
-                    cnt = g.Select(i => i.Product).Distinct().Count(),
+                    dcnt = g.Select(i => i.Product).Distinct().Count(),
                     max = g.Max(i => i.Price),
                     max_status = g.Max(i => i.Order.Status),
                     min = g.Min(i => i.Price),
-                    sum = g.Sum(i => i.Price)
+                    sum = g.Sum(i => i.Price),
+                    cnt = g.Count()
                 })
             };
             await Fixture.Execute(parameters);
@@ -158,6 +159,22 @@ namespace OdataToEntity.Test
             {
                 RequestUri = "OrderItems?$apply=groupby((OrderId))&$top=1",
                 Expression = t => t.GroupBy(i => i.OrderId).Take(1).Select(g => new { OrderId = g.Key })
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Fact]
+        public async Task ApplyGroupByVirtualCount()
+        {
+            var parameters = new QueryParameters<OrderItem, Object>()
+            {
+                RequestUri = "OrderItems?$apply=groupby((OrderId), aggregate(substring(Product, 0, 10) with countdistinct as dcnt, $count as cnt))/filter(dcnt ne cnt)",
+                Expression = t => t.GroupBy(i => i.OrderId).Select(g => new
+                    {
+                        OrderId = g.Key,
+                        dcnt = g.Select(i => i.Product.Substring(0, 10)).Distinct().Count(),
+                        cnt = g.Count()
+                    }).Where(a => a.dcnt != a.cnt)
+
             };
             await Fixture.Execute(parameters);
         }

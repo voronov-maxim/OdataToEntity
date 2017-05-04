@@ -1,4 +1,5 @@
 ﻿using Microsoft.OData.Edm;
+using Microsoft.OData.UriParser;
 using Microsoft.OData.UriParser.Aggregation;
 using OdataToEntity.ModelBuilder;
 using System;
@@ -51,6 +52,8 @@ namespace OdataToEntity.Parsers
                 case AggregationMethod.Sum:
                     methodName = nameof(Enumerable.Sum);
                     break;
+                case AggregationMethod.VirtualPropertyCount:
+                    return CountExpression(sourceParameter);
                 default:
                     throw new NotSupportedException();
             }
@@ -98,8 +101,13 @@ namespace OdataToEntity.Parsers
             var visitor = CreateVisitor(lambdaParameter);
             foreach (AggregateExpression aggExpression in transformation.Expressions)
             {
-                Expression e = visitor.TranslateNode(aggExpression.Expression);
-                LambdaExpression aggLambda = Expression.Lambda(e, lambdaParameter);
+                LambdaExpression aggLambda = null;
+                if (aggExpression.Expression.Kind != QueryNodeKind.Count)
+                { 
+                    Expression e = visitor.TranslateNode(aggExpression.Expression);
+                    aggLambda = Expression.Lambda(e, lambdaParameter);
+                }
+
                 MethodCallExpression aggCallExpression = AggCallExpression(aggExpression.Method, sourceParameter, aggLambda);
                 expressions.Add(aggCallExpression);
 
@@ -216,6 +224,12 @@ namespace OdataToEntity.Parsers
 
             MethodInfo countMethodInfo = OeMethodInfoHelper.GetCountMethodInfo(lambda.ReturnType);
             return Expression.Call(countMethodInfo, distinctCall);
+        }
+        private static MethodCallExpression CountExpression(ParameterExpression sourceParameter)
+        {
+            Type itemType = OeExpressionHelper.GetCollectionItemType(sourceParameter.Type);
+            MethodInfo countMethodInfo = OeMethodInfoHelper.GetCountMethodInfo(itemType);
+            return Expression.Call(countMethodInfo, sourceParameter);
         }
         private static AggProperty CreateEdmProperty(IEdmModel model, Type clrType, String name, bool isGroup)
         {

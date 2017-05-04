@@ -36,7 +36,10 @@ namespace OdataToEntity.Parsers.UriCompare
                 case QueryNodeKind.Convert:
                     return Visit((ConvertNode)node1, (ConvertNode)node2);
                 case QueryNodeKind.Count:
-                    return Visit((CountNode)node1, (CountNode)node2);
+                    if (node1 is CountNode)
+                        return Visit((CountNode)node1, (CountNode)node2);
+                    else
+                        return Visit((CountVirtualPropertyNode)node1, (CountVirtualPropertyNode)node1);
                 case QueryNodeKind.ResourceRangeVariableReference:
                     return Visit((ResourceRangeVariableReferenceNode)node1, (ResourceRangeVariableReferenceNode)node2);
                 case QueryNodeKind.SingleNavigationNode:
@@ -122,6 +125,10 @@ namespace OdataToEntity.Parsers.UriCompare
         private bool Visit(CountNode node1, CountNode node2)
         {
             return node1.TypeReference.IsEqual(node2.TypeReference) && Compare(node1.Source, node2.Source);
+        }
+        private bool Visit(CountVirtualPropertyNode node1, CountVirtualPropertyNode node2)
+        {
+            return true;
         }
         private bool Visit(ResourceRangeVariableReferenceNode node1, ResourceRangeVariableReferenceNode node2)
         {
