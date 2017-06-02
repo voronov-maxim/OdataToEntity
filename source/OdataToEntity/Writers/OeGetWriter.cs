@@ -3,7 +3,6 @@ using Microsoft.OData.Edm;
 using OdataToEntity.Parsers;
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -33,36 +32,9 @@ namespace OdataToEntity.Writers
             }
             public async Task SerializeAsync(OeEntryFactory entryFactory, Db.OeEntityAsyncEnumerator asyncEnumerator, Stream stream)
             {
-                if (entryFactory.CountOption.GetValueOrDefault())
-                    await SerializeBuffered(entryFactory, asyncEnumerator, stream);
-                else
-                    await SerializeUnbuffered(entryFactory, asyncEnumerator, stream);
-            }
-            private async Task SerializeBuffered(OeEntryFactory entryFactory, Db.OeEntityAsyncEnumerator asyncEnumerator, Stream stream)
-            {
-                var values = new List<Object>();
-                while (await asyncEnumerator.MoveNextAsync().ConfigureAwait(false))
-                    values.Add(asyncEnumerator.Current);
-
                 var resourceSet = new ODataResourceSet();
-                resourceSet.Count = values.Count;
+                resourceSet.Count = asyncEnumerator.Count;
                 Writer.WriteStart(resourceSet);
-
-                foreach (Object value in values)
-                {
-                    int? dummy;
-                    ODataResource entry = CreateEntry(entryFactory, entryFactory.GetValue(value, out dummy));
-                    Writer.WriteStart(entry);
-                    foreach (OeEntryFactory navigationLink in entryFactory.NavigationLinks)
-                        WriteNavigationLink(value, navigationLink);
-                    Writer.WriteEnd();
-                }
-
-                Writer.WriteEnd();
-            }
-            private async Task SerializeUnbuffered(OeEntryFactory entryFactory, Db.OeEntityAsyncEnumerator asyncEnumerator, Stream stream)
-            {
-                Writer.WriteStart(new ODataResourceSet());
 
                 while (await asyncEnumerator.MoveNextAsync().ConfigureAwait(false))
                 {

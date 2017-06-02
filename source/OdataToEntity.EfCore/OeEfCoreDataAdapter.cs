@@ -205,7 +205,15 @@ namespace OdataToEntity.EfCore
                 enumerable = GetFromCache<Object>(parseUriContext, (T)dataContext, base.QueryCache);
             else
                 enumerable = ((IQueryable<Object>)base.CreateQuery(parseUriContext, dataContext, new OeConstantToVariableVisitor()));
-            return new Db.OeEntityAsyncEnumeratorAdapter(enumerable, cancellationToken);
+
+            Db.OeEntityAsyncEnumerator asyncEnumerator = new Db.OeEntityAsyncEnumeratorAdapter(enumerable, cancellationToken);
+            if (parseUriContext.CountExpression != null)
+            {
+                IQueryable query = parseUriContext.EntitySetAdapter.GetEntitySet(dataContext);
+                asyncEnumerator.Count = query.Provider.Execute<int>(parseUriContext.CountExpression);
+            }
+
+            return asyncEnumerator;
         }
         public override Db.OeEntityAsyncEnumerator ExecuteProcedure(Object dataContext, String procedureName, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
         {
@@ -266,26 +274,33 @@ namespace OdataToEntity.EfCore
             Db.QueryCacheItem queryCacheItem = queryCache.GetQuery(parseUriContext);
 
             Func<QueryContext, IEnumerable<TResult>> queryExecutor;
+            Expression countExpression;
             if (queryCacheItem == null)
             {
                 IQueryable query = parseUriContext.EntitySetAdapter.GetEntitySet(dbContext);
                 var parameterVisitor = new OeConstantToParameterVisitor();
+
+                parseUriContext.ODataUri.QueryCount = true;
                 Expression expression = parseUriContext.CreateExpression(query, parameterVisitor);
                 queryExecutor = dbContext.CreateQueryExecutor<TResult>(expression);
-
-                queryCache.AddQuery(parseUriContext, queryExecutor, parameterVisitor.ConstantToParameterMapper);
+                countExpression = parseUriContext.CountExpression;
+                queryCache.AddQuery(parseUriContext, queryExecutor, countExpression, parameterVisitor.ConstantToParameterMapper);
                 parseUriContext.ParameterValues = parameterVisitor.ParameterValues;
             }
             else
             {
                 queryExecutor = (Func<QueryContext, IEnumerable<TResult>>)queryCacheItem.Query;
                 parseUriContext.EntryFactory = queryCacheItem.EntryFactory;
+                countExpression = queryCacheItem.CountExpression;
             }
 
             var queryContextFactory = dbContext.GetService<IQueryContextFactory>();
-            var queryContext = queryContextFactory.Create();
+            QueryContext queryContext = queryContextFactory.Create();
             foreach (Db.OeQueryCacheDbParameterValue parameterValue in parseUriContext.ParameterValues)
                 queryContext.AddParameter(parameterValue.ParameterName, parameterValue.ParameterValue);
+
+            if (parseUriContext.ODataUri.QueryCount.GetValueOrDefault())
+                parseUriContext.CountExpression = new OeParameterToVariableVisitor().Translate(countExpression, parseUriContext.ParameterValues);
 
             return queryExecutor(queryContext);
         }

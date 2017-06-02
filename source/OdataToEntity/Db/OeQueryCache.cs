@@ -4,20 +4,24 @@ using OdataToEntity.Parsers.UriCompare;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 
 namespace OdataToEntity.Db
 {
     public sealed class QueryCacheItem
     {
+        private readonly Expression _countExpression;
         private readonly OeEntryFactory _entryFactory;
         private readonly Object _query;
 
-        public QueryCacheItem(Object query, OeEntryFactory entryFactory)
+        public QueryCacheItem(Object query, Expression countExpression, OeEntryFactory entryFactory)
         {
             _query = query;
+            _countExpression = countExpression;
             _entryFactory = entryFactory;
         }
 
+        public Expression CountExpression => _countExpression;
         public OeEntryFactory EntryFactory => _entryFactory;
         public Object Query => _query;
     }
@@ -32,10 +36,11 @@ namespace OdataToEntity.Db
             AllowCache = true;
         }
 
-        public void AddQuery(OeParseUriContext parseUriContext, Object query, IReadOnlyDictionary<ConstantNode, OeQueryCacheDbParameterDefinition> constantNodeNames)
+        public void AddQuery(OeParseUriContext parseUriContext, Object query, Expression countExpression,
+            IReadOnlyDictionary<ConstantNode, OeQueryCacheDbParameterDefinition> constantNodeNames)
         {
             parseUriContext.ConstantToParameterMapper = constantNodeNames;
-            var queryCacheItem = new QueryCacheItem(query, parseUriContext.EntryFactory);
+            var queryCacheItem = new QueryCacheItem(query, countExpression, parseUriContext.EntryFactory);
             _cache.TryAdd(parseUriContext, queryCacheItem);
         }
         public QueryCacheItem GetQuery(OeParseUriContext parseUriContext)

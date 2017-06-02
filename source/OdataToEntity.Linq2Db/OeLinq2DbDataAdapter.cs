@@ -150,8 +150,13 @@ namespace OdataToEntity.Linq2Db
             IQueryable entitySet = parseUriContext.EntitySetAdapter.GetEntitySet(dataContext);
             Expression expression = parseUriContext.CreateExpression(entitySet, new OeConstantToVariableVisitor());
             expression = new ParameterVisitor().Visit(expression);
+
             var query = (IQueryable<Object>)entitySet.Provider.CreateQuery(expression);
-            return new OeEntityAsyncEnumeratorAdapter(query, cancellationToken);
+            OeEntityAsyncEnumerator asyncEnumerator = new OeEntityAsyncEnumeratorAdapter(query, cancellationToken);
+            if (parseUriContext.CountExpression != null)
+                asyncEnumerator.Count = query.Provider.Execute<int>(parseUriContext.CountExpression);
+
+            return asyncEnumerator;
         }
         public override OeEntityAsyncEnumerator ExecuteProcedure(Object dataContext, String procedureName, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
         {

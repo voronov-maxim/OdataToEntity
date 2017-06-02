@@ -191,7 +191,11 @@ namespace OdataToEntity.Ef6
 
             expression = new EnumerableToQuerableVisitor().Visit(expression);
             var queryAsync = (IDbAsyncEnumerable)query.Provider.CreateQuery(expression);
-            return new OeEf6EntityAsyncEnumerator(queryAsync.GetAsyncEnumerator(), cancellationToken);
+            Db.OeEntityAsyncEnumerator asyncEnumerator = new OeEf6EntityAsyncEnumerator(queryAsync.GetAsyncEnumerator(), cancellationToken);
+            if (parseUriContext.CountExpression != null)
+                asyncEnumerator.Count = query.Provider.Execute<int>(parseUriContext.CountExpression);
+
+            return asyncEnumerator;
         }
         public override Db.OeEntityAsyncEnumerator ExecuteProcedure(Object dataContext, String procedureName, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
         {

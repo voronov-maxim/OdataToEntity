@@ -11,6 +11,7 @@ namespace OdataToEntity.Db
         public abstract void Dispose();
         public abstract Task<bool> MoveNextAsync();
 
+        public int? Count { get; set; }
         public abstract Object Current
         {
             get;

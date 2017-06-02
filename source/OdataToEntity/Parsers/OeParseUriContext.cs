@@ -26,6 +26,41 @@ namespace OdataToEntity.Parsers
 
     public sealed class OeParseUriContext
     {
+        private sealed class FilterVisitor : ExpressionVisitor
+        {
+            private readonly IQueryable _query;
+            private MethodCallExpression _whereExpression;
+
+            private FilterVisitor(IQueryable query)
+            {
+                _query = query;
+            }
+
+            public static Expression Translate(IQueryable query, Expression expression)
+            {
+                var visitor = new FilterVisitor(query);
+                visitor.Visit(expression);
+                return visitor._whereExpression;
+            }
+            protected override Expression VisitConstant(ConstantExpression node)
+            {
+                if (node.Type.GetTypeInfo().IsGenericType)
+                {
+                    Type[] args = node.Type.GetTypeInfo().GetGenericArguments();
+                    if (args.Length == 1 && args[0] == _query.ElementType)
+                        return _query.Expression;
+                }
+                return base.VisitConstant(node);
+            }
+            protected override Expression VisitMethodCall(MethodCallExpression node)
+            {
+                var e = (MethodCallExpression)base.VisitMethodCall(node);
+                if (e.Method.Name == nameof(Enumerable.Where) && e.Method.GetGenericArguments()[0] == _query.ElementType)
+                    _whereExpression = e;
+                return e;
+            }
+        }
+
         private sealed class SourceVisitor : ExpressionVisitor
         {
             private readonly IQueryable _query;
@@ -79,9 +114,7 @@ namespace OdataToEntity.Parsers
                     entitySet = EdmModel.FindDeclaredEntitySet(entitySetMetaAdapter.EntitySetName);
             }
 
-            OeEntryFactory entryFactory = expressionBuilder.CreateEntryFactory(entitySet);
-            entryFactory.CountOption = ODataUri.QueryCount;
-            return entryFactory;
+            return expressionBuilder.CreateEntryFactory(entitySet);
         }
         public Expression CreateExpression(IQueryable query, OeConstantToVariableVisitor constantToVariableVisitor)
         {
@@ -102,10 +135,18 @@ namespace OdataToEntity.Parsers
                 EntryFactory = CreateEntryFactory(expressionBuilder);
 
             expression = constantToVariableVisitor.Translate(expression, expressionBuilder.Constants);
+            if (ODataUri.QueryCount.GetValueOrDefault())
+            {
+                Expression filterExpression = ODataUri.Filter == null ? query.Expression : FilterVisitor.Translate(query, expression);
+                MethodInfo countMethodInfo = OeMethodInfoHelper.GetCountMethodInfo(query.ElementType);
+                CountExpression = Expression.Call(countMethodInfo, filterExpression);
+            }
+
             return SourceVisitor.Translate(query, expression);
         }
 
         public IReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition> ConstantToParameterMapper { get; set; }
+        public Expression CountExpression { get; set; }
         public IEdmModel EdmModel => _edmModel;
         public IEdmEntitySetBase EntitySet => _entitySet;
         public Db.OeEntitySetAdapter EntitySetAdapter { get; set; }
