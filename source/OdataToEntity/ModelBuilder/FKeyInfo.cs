@@ -59,13 +59,13 @@ namespace OdataToEntity.ModelBuilder
             var dependentProperties = new List<PropertyDescriptor>(1);
             PropertyDescriptorCollection clrProperties = TypeDescriptor.GetProperties(dependentInfo.ClrType);
 
-            PropertyDescriptor fkey = metadataProvider.GetForeignKey(dependentProperty);
+            PropertyDescriptor[] fkey = metadataProvider.GetForeignKey(dependentProperty);
             if (fkey == null)
             {
                 foreach (PropertyDescriptor propertyDescriptor in clrProperties)
                 {
                     fkey = metadataProvider.GetForeignKey(propertyDescriptor);
-                    if (fkey == dependentProperty)
+                    if (fkey != null && fkey.Length == 1 && fkey[0] == dependentProperty)
                         dependentProperties.Add(propertyDescriptor);
                 }
 
@@ -77,7 +77,7 @@ namespace OdataToEntity.ModelBuilder
                 }
             }
             else
-                dependentProperties.Add(fkey);
+                dependentProperties.AddRange(fkey);
 
             if (dependentProperties.Count == 1)
                 return dependentProperties.ToArray();

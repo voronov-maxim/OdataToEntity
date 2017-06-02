@@ -114,23 +114,24 @@ namespace OdataToEntity.Test.Model
     [Table(Schema="dbo", Name="Customers")]
 	public partial class Customer
 	{
-		[Column,        Nullable] public string Address { get; set; } // varchar(256)
-		[PrimaryKey,    Identity] public int    Id      { get; set; } // int
-		[Column,        NotNull ] public string Name    { get; set; } // varchar(128)
-		[Column,        Nullable] public Sex?   Sex     { get; set; } // int
+		[Column,     Nullable ] public string Address { get; set; } // varchar(256)
+        [PrimaryKey(Order = 0)] public string Country { get; set; } // char(2)
+        [PrimaryKey(Order = 1)] public int    Id      { get; set; } // int
+		[Column,     NotNull  ] public string Name    { get; set; } // varchar(128)
+		[Column,     Nullable ] public Sex?   Sex     { get; set; } // int
 
 		#region Associations
 
 		/// <summary>
 		/// FK_Orders_AltCustomers_BackReference
 		/// </summary>
-		[Association(ThisKey="Id", OtherKey="AltCustomerId", CanBeNull=true, IsBackReference=true)]
+		[Association(ThisKey="Country,Id", OtherKey="AltCustomerCountry,AltCustomerId", CanBeNull=true, IsBackReference=true)]
 		public IEnumerable<Order> AltOrders { get; set; }
 
 		/// <summary>
 		/// FK_Orders_Customers_BackReference
 		/// </summary>
-		[Association(ThisKey="Id", OtherKey="CustomerId", CanBeNull=true, IsBackReference=true)]
+		[Association(ThisKey="Country,Id", OtherKey="CustomerCountry,CustomerId", CanBeNull=true, IsBackReference=true)]
 		public IEnumerable<Order> Orders { get; set; }
 
 		#endregion
@@ -139,25 +140,27 @@ namespace OdataToEntity.Test.Model
 	[Table(Schema="dbo", Name="Orders")]
 	public partial class Order
 	{
-		[Column,        Nullable] public int?            AltCustomerId { get; set; } // int
-		[Column,     NotNull    ] public int             CustomerId    { get; set; } // int
-		[Column,        Nullable] public DateTimeOffset? Date          { get; set; } // datetimeoffset(7)
-		[PrimaryKey, Identity   ] public int             Id            { get; set; } // int
-		[Column,     NotNull    ] public string          Name          { get; set; } // varchar(256)
-		[Column,     NotNull    ] public OrderStatus     Status        { get; set; } // int
+        [Column,     Nullable ] public string          AltCustomerCountry { get; set; } // char(2)
+        [Column,     Nullable ] public int?            AltCustomerId      { get; set; } // int
+        [Column,     NotNull  ] public string          CustomerCountry    { get; set; } // char(2)
+        [Column,     NotNull  ] public int             CustomerId         { get; set; } // int
+		[Column,     Nullable ] public DateTimeOffset? Date               { get; set; } // datetimeoffset(7)
+		[PrimaryKey, Identity ] public int             Id                 { get; set; } // int
+		[Column,     NotNull  ] public string          Name               { get; set; } // varchar(256)
+		[Column,     NotNull  ] public OrderStatus     Status             { get; set; } // int
 
 		#region Associations
 
 		/// <summary>
 		/// FK_Orders_AltCustomers
 		/// </summary>
-		[Association(ThisKey="AltCustomerId", OtherKey="Id", CanBeNull=true, KeyName="FK_Orders_AltCustomers", BackReferenceName= "AltOrders")]
+		[Association(ThisKey= "AltCustomerCountry,AltCustomerId", OtherKey="Country,Id", CanBeNull=true, KeyName="FK_Orders_AltCustomers", BackReferenceName= "AltOrders")]
 		public Customer AltCustomer { get; set; }
 
 		/// <summary>
 		/// FK_Orders_Customers
 		/// </summary>
-		[Association(ThisKey="CustomerId", OtherKey="Id", CanBeNull=false, KeyName="FK_Orders_Customers", BackReferenceName="Orders")]
+		[Association(ThisKey= "CustomerCountry,CustomerId", OtherKey="Country,Id", CanBeNull=false, KeyName="FK_Orders_Customers", BackReferenceName="Orders")]
 		public Customer Customer { get; set; }
 
 		/// <summary>

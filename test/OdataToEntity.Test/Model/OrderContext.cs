@@ -111,28 +111,32 @@ namespace OdataToEntity.Test.Model
             var customer1 = new Customer()
             {
                 Address = "Moscow",
+                Country = "RU",
                 Id = 1,
                 Name = "Ivan",
                 Sex = Sex.Male
             };
             var customer2 = new Customer()
             {
-                Address = "Tambov",
-                Id = 2,
+                Address = "London",
+                Country = "EN",
+                Id = 1,
                 Name = "Natasha",
                 Sex = Sex.Female
             };
             var customer3 = new Customer()
             {
                 Address = "Tula",
-                Id = 3,
+                Country = "RU",
+                Id = 2,
                 Name = "Sasha",
                 Sex = Sex.Female
             };
             var customer4 = new Customer()
             {
                 Address = null,
-                Id = 4,
+                Country = "UN",
+                Id = 1,
                 Name = "Unknown",
                 Sex = null
             };
@@ -142,6 +146,7 @@ namespace OdataToEntity.Test.Model
                 Date = DateTimeOffset.Parse("2016-07-04T19:10:10.8237573+03:00"),
                 Id = 1,
                 Name = "Order 1",
+                CustomerCountry = "RU",
                 CustomerId = 1,
                 Status = OrderStatus.Processing
             };
@@ -150,16 +155,19 @@ namespace OdataToEntity.Test.Model
                 Date = DateTimeOffset.Parse("2016-07-04T19:10:11.0000000+03:00"),
                 Id = 2,
                 Name = "Order 2",
-                CustomerId = 2,
+                CustomerCountry = "EN",
+                CustomerId = 1,
                 Status = OrderStatus.Processing
             };
             var order3 = new Order()
             {
-                AltCustomerId = 3,
+                AltCustomerCountry = "RU",
+                AltCustomerId = 2,
                 Date = null,
                 Id = 3,
                 Name = "Order unknown",
-                CustomerId = 4,
+                CustomerCountry = "UN",
+                CustomerId = 1,
                 Status = OrderStatus.Unknown
             };
 
@@ -245,6 +253,11 @@ namespace OdataToEntity.Test.Model
             OrderItems.Add(orderItem32);
 
             base.SaveChanges();
+        }
+        protected override void OnModelCreating(Microsoft.EntityFrameworkCore.ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Customer>().HasKey(c => new { c.Country, c.Id });
+            base.OnModelCreating(modelBuilder);
         }
 
         public IEnumerable<Order> GetOrders(int? id, String name, OrderStatus? status) => throw new NotImplementedException();

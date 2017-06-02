@@ -71,7 +71,7 @@ namespace OdataToEntity.Parsers
                 if (propertyInfo.PropertyType.FullName == fullName)
                     return propertyInfo;
 
-            throw new InvalidOperationException("entity type " + fullName + " not found in tuple properties");
+            return null;
         }
         private Expression Lambda(CollectionNavigationNode sourceNode, SingleValueNode body, String methodName)
         {
@@ -221,8 +221,8 @@ namespace OdataToEntity.Parsers
 
             PropertyInfo propertyInfo = source.Type.GetTypeInfo().GetProperty(nodeIn.NavigationProperty.Name);
             if (propertyInfo == null)
-                if (TuplePropertyMapper == null)
-                    throw new InvalidOperationException($"Navigation property {nodeIn.NavigationProperty.Name} not found");
+                if (TuplePropertyByAliasName == null)
+                    throw new InvalidOperationException("Navigation property " + nodeIn.NavigationProperty.Name + " not found");
                 else
                     throw new TupleNavigationPropertyException(nodeIn.NavigationProperty);
 
@@ -230,7 +230,7 @@ namespace OdataToEntity.Parsers
         }
         public override Expression Visit(SingleValuePropertyAccessNode nodeIn)
         {
-            if (TuplePropertyMapper == null)
+            if (TuplePropertyByAliasName == null)
             {
                 Expression e = TranslateNode(nodeIn.Source);
                 PropertyInfo property = e.Type.GetTypeInfo().GetProperty(nodeIn.Property.Name);
@@ -241,9 +241,18 @@ namespace OdataToEntity.Parsers
 
                     IEdmNavigationSource navigationSource = ((ResourceRangeVariableReferenceNode)nodeIn.Source).NavigationSource;
                     property = GetTuplePropertyByEntityType(e.Type, navigationSource.EntityType());
+                    if (property == null)
+                    {
+                        if (TuplePropertyByEdmProperty == null)
+                            throw new InvalidOperationException("entity type " + navigationSource.EntityType().FullName() + " not found in tuple properties");
 
-                    e = Expression.Property(e, property);
-                    property = e.Type.GetTypeInfo().GetProperty(nodeIn.Property.Name);
+                        return TuplePropertyByEdmProperty(Parameter, nodeIn.Property);
+                    }
+                    else
+                    {
+                        e = Expression.Property(e, property);
+                        property = e.Type.GetTypeInfo().GetProperty(nodeIn.Property.Name);
+                    }
                 }
                 return Expression.Property(e, property);
             }
@@ -259,7 +268,7 @@ namespace OdataToEntity.Parsers
                 source = Parameter;
                 aliasName = e.NavigationProperty.Name + "_" + aliasName;
             }
-            return TuplePropertyMapper(source, aliasName);
+            return TuplePropertyByAliasName(source, aliasName);
         }
         public override Expression Visit(SingleValueFunctionCallNode nodeIn)
         {
@@ -268,15 +277,16 @@ namespace OdataToEntity.Parsers
         public override Expression Visit(SingleValueOpenPropertyAccessNode nodeIn)
         {
             Expression source = TranslateNode(nodeIn.Source);
-            if (TuplePropertyMapper == null)
+            if (TuplePropertyByAliasName == null)
                 return Expression.Property(source, nodeIn.Name);
             else
-                return TuplePropertyMapper(source, nodeIn.Name);
+                return TuplePropertyByAliasName(source, nodeIn.Name);
         }
 
         public IReadOnlyDictionary<ConstantExpression, ConstantNode> Constans => _parentVisitor == null ? _constants : _parentVisitor.Constans;
         public IEdmModel EdmModel => _edmModel;
         public ParameterExpression Parameter => _parameters.Peek();
-        public Func<Expression, String, Expression> TuplePropertyMapper { get; set; }
+        public Func<Expression, String, Expression> TuplePropertyByAliasName { get; set; }
+        public Func<Expression, IEdmProperty, Expression> TuplePropertyByEdmProperty { get; set; }
     }
 }

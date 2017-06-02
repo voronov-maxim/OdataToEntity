@@ -97,28 +97,32 @@ namespace OdataToEntityCore.AspClient
             var customer1 = new Customer()
             {
                 Address = "Moscow",
+                Country = "RU",
                 Id = 1,
                 Name = "Ivan",
                 Sex = Sex.Male
             };
             var customer2 = new Customer()
             {
-                Address = "Tambov",
-                Id = 2,
+                Address = "London",
+                Country = "EN",
+                Id = 1,
                 Name = "Natasha",
                 Sex = Sex.Female
             };
             var customer3 = new Customer()
             {
                 Address = "Tula",
-                Id = 3,
+                Country = "RU",
+                Id = 2,
                 Name = "Sasha",
                 Sex = Sex.Female
             };
             var customer4 = new Customer()
             {
                 Address = null,
-                Id = 4,
+                Country = "UN",
+                Id = 1,
                 Name = "Unknown",
                 Sex = null
             };
@@ -128,6 +132,7 @@ namespace OdataToEntityCore.AspClient
                 Date = DateTimeOffset.Now,
                 Id = 1,
                 Name = "Order 1",
+                CustomerCountry = "RU",
                 CustomerId = 1,
                 Status = OrderStatus.Processing
             };
@@ -136,15 +141,19 @@ namespace OdataToEntityCore.AspClient
                 Date = DateTimeOffset.Now,
                 Id = 2,
                 Name = "Order 2",
+                CustomerCountry = "EN",
                 CustomerId = 2,
                 Status = OrderStatus.Processing
             };
             var order3 = new Order()
             {
+                AltCustomerCountry = "RU",
+                AltCustomerId = 2,
                 Date = null,
                 Id = 3,
                 Name = "Order unknown",
-                CustomerId = 4,
+                CustomerCountry = "UN",
+                CustomerId = 1,
                 Status = OrderStatus.Unknown
             };
 
@@ -301,8 +310,8 @@ namespace OdataToEntityCore.AspClient
             Assert.Equal("New Order 1", order1.Name);
             Assert.Equal("New Product order 1 item 3", order1.Items.Single(t => t.Id == 3).Product);
 
-            Assert.Equal(Sex.Female, container.Customers.ByKey(1).GetValue().Sex);
-            Assert.Equal(null, container.Customers.ByKey(2).GetValue().Sex);
+            Assert.Equal(Sex.Female, container.Customers.ByKey("RU", 1).GetValue().Sex);
+            Assert.Equal(null, container.Customers.ByKey("EN", 1).GetValue().Sex);
 
             return Task.CompletedTask;
         }
@@ -321,11 +330,11 @@ namespace OdataToEntityCore.AspClient
             orderItem13.Product = "New " + orderItem13.Product;
             container.ChangeState(orderItem13, EntityStates.Modified);
 
-            var customer1 = container.Customers.ByKey(1).GetValue();
+            var customer1 = container.Customers.ByKey("RU", 1).GetValue();
             customer1.Sex = Sex.Female;
             container.ChangeState(customer1, EntityStates.Modified);
 
-            var customer2 = container.Customers.ByKey(2).GetValue();
+            var customer2 = container.Customers.ByKey("EN", 1).GetValue();
             customer2.Sex = null;
             container.ChangeState(customer2, EntityStates.Modified);
         }

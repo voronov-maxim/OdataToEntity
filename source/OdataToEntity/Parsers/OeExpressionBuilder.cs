@@ -35,7 +35,7 @@ namespace OdataToEntity.Parsers
 
             Type aggItemType = OeExpressionHelper.GetCollectionItemType(aggExpression.Type);
             _visitor = new OeQueryNodeVisitor(_model, Expression.Parameter(aggItemType), _visitor.Constans);
-            _visitor.TuplePropertyMapper = aggTranslator.TuplePropertyMapper;
+            _visitor.TuplePropertyByAliasName = aggTranslator.GetTuplePropertyByAliasName;
 
             return aggExpression;
         }
@@ -117,9 +117,10 @@ namespace OdataToEntity.Parsers
             if (orderByClause == null)
                 return source;
 
+            _visitor.TuplePropertyByEdmProperty = new TuplePropertyByEdmProperty(source).GetTuplePropertyByEdmProperty;
             Expression e = _visitor.TranslateNode(orderByClause.Expression);
-            LambdaExpression lambda = Expression.Lambda(e, Parameter);
 
+            LambdaExpression lambda = Expression.Lambda(e, Parameter);
             MethodInfo orderByMethodInfo = orderByClause.Direction == OrderByDirection.Ascending ?
                 OeMethodInfoHelper.GetOrderByMethodInfo(ParameterType, e.Type) :
                 OeMethodInfoHelper.GetOrderByDescendingMethodInfo(ParameterType, e.Type);

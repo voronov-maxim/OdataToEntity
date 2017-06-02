@@ -8,13 +8,33 @@ namespace OdataToEntity.Linq2Db
 {
     public sealed class OeLinq2DbEdmModelMetadataProvider : OeEdmModelMetadataProvider
     {
-        public override PropertyDescriptor GetForeignKey(PropertyDescriptor propertyDescriptor)
+        public override PropertyDescriptor[] GetForeignKey(PropertyDescriptor propertyDescriptor)
         {
             var association = (AssociationAttribute)propertyDescriptor.Attributes[typeof(AssociationAttribute)];
             if (association == null || association.IsBackReference)
                 return null;
 
-            return TypeDescriptor.GetProperties(propertyDescriptor.ComponentType).Find(association.ThisKey, true);
+            PropertyDescriptor property = TypeDescriptor.GetProperties(propertyDescriptor.ComponentType).Find(association.ThisKey, true);
+            if (property == null)
+            {
+                String[] propertyNames = association.GetThisKeys();
+                if (propertyNames.Length == 1)
+                    throw new InvalidOperationException("property " + association.KeyName + " foreign key " + propertyDescriptor.Name + " not found");
+
+                var properties = new PropertyDescriptor[propertyNames.Length];
+                for (int i = 0; i < properties.Length; i++)
+                {
+                    String propertyName = propertyNames[i].Trim();
+                    property = TypeDescriptor.GetProperties(propertyDescriptor.ComponentType).Find(propertyName, true);
+                    if (property == null)
+                        throw new InvalidOperationException("property " + propertyName + " foreign key " + propertyDescriptor.Name + " not found");
+
+                    properties[i] = property;
+                }
+                return properties;
+            }
+
+            return new PropertyDescriptor[] { property };
         }
         public override PropertyDescriptor GetInverseProperty(PropertyDescriptor propertyDescriptor)
         {

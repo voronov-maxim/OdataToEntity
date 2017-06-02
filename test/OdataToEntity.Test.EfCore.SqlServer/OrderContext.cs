@@ -21,6 +21,11 @@ namespace OdataToEntity.Test.Model
 
         public static OrderContext Create(String databaseName) => new OrderContext();
         public static String GenerateDatabaseName() => "dummy";
+        protected override void OnModelCreating(Microsoft.EntityFrameworkCore.ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Customer>().HasKey(c => new { c.Country, c.Id });
+            base.OnModelCreating(modelBuilder);
+        }
 
         [Description("dbo.GetOrders")]
         public IEnumerable<Order> GetOrders(int? id, String name, OrderStatus? status)

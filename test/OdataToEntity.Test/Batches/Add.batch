@@ -14,7 +14,7 @@ Accept: application/json;odata.metadata=minimal
 Accept-Charset: UTF-8
 User-Agent: Microsoft ADO.NET Data Services
 
-{"@odata.type":"#OdataToEntity.Test.Model.Customer","Address":"Moscow","Id":1,"Name":"Ivan","Sex@odata.type":"#OdataToEntity.Test.Model.Sex","Sex":"Male"}
+{"@odata.type":"#OdataToEntity.Test.Model.Customer","Address":"Moscow","Country":"RU","Id":1,"Name":"Ivan","Sex@odata.type":"#OdataToEntity.Test.Model.Sex","Sex":"Male"}
 --changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
 Content-Type: application/http
 Content-Transfer-Encoding: binary
@@ -28,7 +28,7 @@ Accept: application/json;odata.metadata=minimal
 Accept-Charset: UTF-8
 User-Agent: Microsoft ADO.NET Data Services
 
-{"@odata.type":"#OdataToEntity.Test.Model.Customer","Address":"Tambov","Id":2,"Name":"Natasha","Sex@odata.type":"#OdataToEntity.Test.Model.Sex","Sex":"Female"}
+{"@odata.type":"#OdataToEntity.Test.Model.Customer","Address":"London","Country":"EN","Id":1,"Name":"Natasha","Sex@odata.type":"#OdataToEntity.Test.Model.Sex","Sex":"Female"}
 --changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
 Content-Type: application/http
 Content-Transfer-Encoding: binary
@@ -42,7 +42,7 @@ Accept: application/json;odata.metadata=minimal
 Accept-Charset: UTF-8
 User-Agent: Microsoft ADO.NET Data Services
 
-{"@odata.type":"#OdataToEntity.Test.Model.Customer","Address":"Tula","Id":3,"Name":"Sasha","Sex@odata.type":"#OdataToEntity.Test.Model.Sex","Sex":"Female"}
+{"@odata.type":"#OdataToEntity.Test.Model.Customer","Address":"Tula","Country":"RU","Id":2,"Name":"Sasha","Sex@odata.type":"#OdataToEntity.Test.Model.Sex","Sex":"Female"}
 --changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
 Content-Type: application/http
 Content-Transfer-Encoding: binary
@@ -56,7 +56,7 @@ Accept: application/json;odata.metadata=minimal
 Accept-Charset: UTF-8
 User-Agent: Microsoft ADO.NET Data Services
 
-{"@odata.type":"#OdataToEntity.Test.Model.Customer","Address":null,"Id":4,"Name":"Unknown","Sex@odata.type":"#OdataToEntity.Test.Model.Sex","Sex":null}
+{"@odata.type":"#OdataToEntity.Test.Model.Customer","Address":null,"Country":"UN","Id":1,"Name":"Unknown","Sex@odata.type":"#OdataToEntity.Test.Model.Sex","Sex":null}
 --changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
 Content-Type: application/http
 Content-Transfer-Encoding: binary
@@ -70,7 +70,7 @@ Accept: application/json;odata.metadata=minimal
 Accept-Charset: UTF-8
 User-Agent: Microsoft ADO.NET Data Services
 
-{"@odata.type":"#OdataToEntity.Test.Model.Order","CustomerId":1,"Date":"2016-07-04T19:10:10.8237573+03:00","Id":1,"Name":"Order 1","Status@odata.type":"#OdataToEntity.Test.Model.OrderStatus","Status":"Processing"}
+{"@odata.type":"#OdataToEntity.Test.Model.Order","CustomerCountry":"RU","CustomerId":1,"Date":"2016-07-04T19:10:10.8237573+03:00","Id":1,"Name":"Order 1","Status@odata.type":"#OdataToEntity.Test.Model.OrderStatus","Status":"Processing"}
 --changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
 Content-Type: application/http
 Content-Transfer-Encoding: binary
@@ -84,7 +84,7 @@ Accept: application/json;odata.metadata=minimal
 Accept-Charset: UTF-8
 User-Agent: Microsoft ADO.NET Data Services
 
-{"@odata.type":"#OdataToEntity.Test.Model.Order","CustomerId":2,"Date":"2016-07-04T19:10:11.0000000+03:00","Id":2,"Name":"Order 2","Status@odata.type":"#OdataToEntity.Test.Model.OrderStatus","Status":"Processing"}
+{"@odata.type":"#OdataToEntity.Test.Model.Order","CustomerCountry":"EN","CustomerId":1,"Date":"2016-07-04T19:10:11.0000000+03:00","Id":2,"Name":"Order 2","Status@odata.type":"#OdataToEntity.Test.Model.OrderStatus","Status":"Processing"}
 --changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
 Content-Type: application/http
 Content-Transfer-Encoding: binary
@@ -98,7 +98,7 @@ Accept: application/json;odata.metadata=minimal
 Accept-Charset: UTF-8
 User-Agent: Microsoft ADO.NET Data Services
 
-{"@odata.type":"#OdataToEntity.Test.Model.Order","AltCustomerId":3,"CustomerId":4,"Date":null,"Id":3,"Name":"Order unknown","Status@odata.type":"#OdataToEntity.Test.Model.OrderStatus","Status":"Unknown"}
+{"@odata.type":"#OdataToEntity.Test.Model.Order","AltCustomerCountry":"RU","AltCustomerId":2,"CustomerCountry":"UN","CustomerId":1,"Date":null,"Id":3,"Name":"Order unknown","Status@odata.type":"#OdataToEntity.Test.Model.OrderStatus","Status":"Unknown"}
 --changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
 Content-Type: application/http
 Content-Transfer-Encoding: binary

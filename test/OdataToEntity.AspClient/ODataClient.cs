@@ -8,255 +8,9 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-// Generation date: 30.12.2016 15:44:00
+// Generation date: 01.06.2017 14:00:25
 namespace ODataClient.OdataToEntity.Test.Model
 {
-    /// <summary>
-    /// There are no comments for CustomerSingle in the schema.
-    /// </summary>
-    [global::Microsoft.OData.Client.OriginalNameAttribute("CustomerSingle")]
-    public partial class CustomerSingle : global::Microsoft.OData.Client.DataServiceQuerySingle<Customer>
-    {
-        /// <summary>
-        /// Initialize a new CustomerSingle object.
-        /// </summary>
-        public CustomerSingle(global::Microsoft.OData.Client.DataServiceContext context, string path)
-            : base(context, path) {}
-
-        /// <summary>
-        /// Initialize a new CustomerSingle object.
-        /// </summary>
-        public CustomerSingle(global::Microsoft.OData.Client.DataServiceContext context, string path, bool isComposable)
-            : base(context, path, isComposable) {}
-
-        /// <summary>
-        /// Initialize a new CustomerSingle object.
-        /// </summary>
-        public CustomerSingle(global::Microsoft.OData.Client.DataServiceQuerySingle<Customer> query)
-            : base(query) {}
-
-        /// <summary>
-        /// There are no comments for AltOrders in the schema.
-        /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("AltOrders")]
-        public global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Order> AltOrders
-        {
-            get
-            {
-                if (!this.IsComposable)
-                {
-                    throw new global::System.NotSupportedException("The previous function is not composable.");
-                }
-                if ((this._AltOrders == null))
-                {
-                    this._AltOrders = Context.CreateQuery<global::ODataClient.OdataToEntity.Test.Model.Order>(GetPath("AltOrders"));
-                }
-                return this._AltOrders;
-            }
-        }
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        private global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Order> _AltOrders;
-        /// <summary>
-        /// There are no comments for Orders in the schema.
-        /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Orders")]
-        public global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Order> Orders
-        {
-            get
-            {
-                if (!this.IsComposable)
-                {
-                    throw new global::System.NotSupportedException("The previous function is not composable.");
-                }
-                if ((this._Orders == null))
-                {
-                    this._Orders = Context.CreateQuery<global::ODataClient.OdataToEntity.Test.Model.Order>(GetPath("Orders"));
-                }
-                return this._Orders;
-            }
-        }
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        private global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Order> _Orders;
-    }
-    /// <summary>
-    /// There are no comments for Customer in the schema.
-    /// </summary>
-    /// <KeyProperties>
-    /// Id
-    /// </KeyProperties>
-    [global::Microsoft.OData.Client.Key("Id")]
-    [global::Microsoft.OData.Client.OriginalNameAttribute("Customer")]
-    public partial class Customer : global::Microsoft.OData.Client.BaseEntityType, global::System.ComponentModel.INotifyPropertyChanged
-    {
-        /// <summary>
-        /// Create a new Customer object.
-        /// </summary>
-        /// <param name="ID">Initial value of Id.</param>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        public static Customer CreateCustomer(int ID)
-        {
-            Customer customer = new Customer();
-            customer.Id = ID;
-            return customer;
-        }
-        /// <summary>
-        /// There are no comments for Property Address in the schema.
-        /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Address")]
-        public string Address
-        {
-            get
-            {
-                return this._Address;
-            }
-            set
-            {
-                this.OnAddressChanging(value);
-                this._Address = value;
-                this.OnAddressChanged();
-                this.OnPropertyChanged("Address");
-            }
-        }
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        private string _Address;
-        partial void OnAddressChanging(string value);
-        partial void OnAddressChanged();
-        /// <summary>
-        /// There are no comments for Property Id in the schema.
-        /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Id")]
-        public int Id
-        {
-            get
-            {
-                return this._Id;
-            }
-            set
-            {
-                this.OnIdChanging(value);
-                this._Id = value;
-                this.OnIdChanged();
-                this.OnPropertyChanged("Id");
-            }
-        }
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        private int _Id;
-        partial void OnIdChanging(int value);
-        partial void OnIdChanged();
-        /// <summary>
-        /// There are no comments for Property Name in the schema.
-        /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Name")]
-        public string Name
-        {
-            get
-            {
-                return this._Name;
-            }
-            set
-            {
-                this.OnNameChanging(value);
-                this._Name = value;
-                this.OnNameChanged();
-                this.OnPropertyChanged("Name");
-            }
-        }
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        private string _Name;
-        partial void OnNameChanging(string value);
-        partial void OnNameChanged();
-        /// <summary>
-        /// There are no comments for Property Sex in the schema.
-        /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Sex")]
-        public global::System.Nullable<global::ODataClient.OdataToEntity.Test.Model.Sex> Sex
-        {
-            get
-            {
-                return this._Sex;
-            }
-            set
-            {
-                this.OnSexChanging(value);
-                this._Sex = value;
-                this.OnSexChanged();
-                this.OnPropertyChanged("Sex");
-            }
-        }
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        private global::System.Nullable<global::ODataClient.OdataToEntity.Test.Model.Sex> _Sex;
-        partial void OnSexChanging(global::System.Nullable<global::ODataClient.OdataToEntity.Test.Model.Sex> value);
-        partial void OnSexChanged();
-        /// <summary>
-        /// There are no comments for Property AltOrders in the schema.
-        /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("AltOrders")]
-        public global::Microsoft.OData.Client.DataServiceCollection<global::ODataClient.OdataToEntity.Test.Model.Order> AltOrders
-        {
-            get
-            {
-                return this._AltOrders;
-            }
-            set
-            {
-                this.OnAltOrdersChanging(value);
-                this._AltOrders = value;
-                this.OnAltOrdersChanged();
-                this.OnPropertyChanged("AltOrders");
-            }
-        }
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        private global::Microsoft.OData.Client.DataServiceCollection<global::ODataClient.OdataToEntity.Test.Model.Order> _AltOrders = new global::Microsoft.OData.Client.DataServiceCollection<global::ODataClient.OdataToEntity.Test.Model.Order>(null, global::Microsoft.OData.Client.TrackingMode.None);
-        partial void OnAltOrdersChanging(global::Microsoft.OData.Client.DataServiceCollection<global::ODataClient.OdataToEntity.Test.Model.Order> value);
-        partial void OnAltOrdersChanged();
-        /// <summary>
-        /// There are no comments for Property Orders in the schema.
-        /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Orders")]
-        public global::Microsoft.OData.Client.DataServiceCollection<global::ODataClient.OdataToEntity.Test.Model.Order> Orders
-        {
-            get
-            {
-                return this._Orders;
-            }
-            set
-            {
-                this.OnOrdersChanging(value);
-                this._Orders = value;
-                this.OnOrdersChanged();
-                this.OnPropertyChanged("Orders");
-            }
-        }
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        private global::Microsoft.OData.Client.DataServiceCollection<global::ODataClient.OdataToEntity.Test.Model.Order> _Orders = new global::Microsoft.OData.Client.DataServiceCollection<global::ODataClient.OdataToEntity.Test.Model.Order>(null, global::Microsoft.OData.Client.TrackingMode.None);
-        partial void OnOrdersChanging(global::Microsoft.OData.Client.DataServiceCollection<global::ODataClient.OdataToEntity.Test.Model.Order> value);
-        partial void OnOrdersChanged();
-        /// <summary>
-        /// This event is raised when the value of the property is changed
-        /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        public event global::System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
-        /// <summary>
-        /// The value of the property is changed
-        /// </summary>
-        /// <param name="property">property name</param>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        protected virtual void OnPropertyChanged(string property)
-        {
-            if ((this.PropertyChanged != null))
-            {
-                this.PropertyChanged(this, new global::System.ComponentModel.PropertyChangedEventArgs(property));
-            }
-        }
-    }
     /// <summary>
     /// There are no comments for CategorySingle in the schema.
     /// </summary>
@@ -267,19 +21,19 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// Initialize a new CategorySingle object.
         /// </summary>
         public CategorySingle(global::Microsoft.OData.Client.DataServiceContext context, string path)
-            : base(context, path) {}
+            : base(context, path) { }
 
         /// <summary>
         /// Initialize a new CategorySingle object.
         /// </summary>
         public CategorySingle(global::Microsoft.OData.Client.DataServiceContext context, string path, bool isComposable)
-            : base(context, path, isComposable) {}
+            : base(context, path, isComposable) { }
 
         /// <summary>
         /// Initialize a new CategorySingle object.
         /// </summary>
         public CategorySingle(global::Microsoft.OData.Client.DataServiceQuerySingle<Category> query)
-            : base(query) {}
+            : base(query) { }
 
         /// <summary>
         /// There are no comments for Parent in the schema.
@@ -481,6 +235,276 @@ namespace ODataClient.OdataToEntity.Test.Model
         }
     }
     /// <summary>
+    /// There are no comments for CustomerSingle in the schema.
+    /// </summary>
+    [global::Microsoft.OData.Client.OriginalNameAttribute("CustomerSingle")]
+    public partial class CustomerSingle : global::Microsoft.OData.Client.DataServiceQuerySingle<Customer>
+    {
+        /// <summary>
+        /// Initialize a new CustomerSingle object.
+        /// </summary>
+        public CustomerSingle(global::Microsoft.OData.Client.DataServiceContext context, string path)
+            : base(context, path) { }
+
+        /// <summary>
+        /// Initialize a new CustomerSingle object.
+        /// </summary>
+        public CustomerSingle(global::Microsoft.OData.Client.DataServiceContext context, string path, bool isComposable)
+            : base(context, path, isComposable) { }
+
+        /// <summary>
+        /// Initialize a new CustomerSingle object.
+        /// </summary>
+        public CustomerSingle(global::Microsoft.OData.Client.DataServiceQuerySingle<Customer> query)
+            : base(query) { }
+
+        /// <summary>
+        /// There are no comments for AltOrders in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        [global::Microsoft.OData.Client.OriginalNameAttribute("AltOrders")]
+        public global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Order> AltOrders
+        {
+            get
+            {
+                if (!this.IsComposable)
+                {
+                    throw new global::System.NotSupportedException("The previous function is not composable.");
+                }
+                if ((this._AltOrders == null))
+                {
+                    this._AltOrders = Context.CreateQuery<global::ODataClient.OdataToEntity.Test.Model.Order>(GetPath("AltOrders"));
+                }
+                return this._AltOrders;
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Order> _AltOrders;
+        /// <summary>
+        /// There are no comments for Orders in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        [global::Microsoft.OData.Client.OriginalNameAttribute("Orders")]
+        public global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Order> Orders
+        {
+            get
+            {
+                if (!this.IsComposable)
+                {
+                    throw new global::System.NotSupportedException("The previous function is not composable.");
+                }
+                if ((this._Orders == null))
+                {
+                    this._Orders = Context.CreateQuery<global::ODataClient.OdataToEntity.Test.Model.Order>(GetPath("Orders"));
+                }
+                return this._Orders;
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Order> _Orders;
+    }
+    /// <summary>
+    /// There are no comments for Customer in the schema.
+    /// </summary>
+    /// <KeyProperties>
+    /// Country
+    /// Id
+    /// </KeyProperties>
+    [global::Microsoft.OData.Client.Key("Country", "Id")]
+    [global::Microsoft.OData.Client.OriginalNameAttribute("Customer")]
+    public partial class Customer : global::Microsoft.OData.Client.BaseEntityType, global::System.ComponentModel.INotifyPropertyChanged
+    {
+        /// <summary>
+        /// Create a new Customer object.
+        /// </summary>
+        /// <param name="ID">Initial value of Id.</param>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public static Customer CreateCustomer(int ID)
+        {
+            Customer customer = new Customer();
+            customer.Id = ID;
+            return customer;
+        }
+        /// <summary>
+        /// There are no comments for Property Address in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        [global::Microsoft.OData.Client.OriginalNameAttribute("Address")]
+        public string Address
+        {
+            get
+            {
+                return this._Address;
+            }
+            set
+            {
+                this.OnAddressChanging(value);
+                this._Address = value;
+                this.OnAddressChanged();
+                this.OnPropertyChanged("Address");
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private string _Address;
+        partial void OnAddressChanging(string value);
+        partial void OnAddressChanged();
+        /// <summary>
+        /// There are no comments for Property Country in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        [global::Microsoft.OData.Client.OriginalNameAttribute("Country")]
+        public string Country
+        {
+            get
+            {
+                return this._Country;
+            }
+            set
+            {
+                this.OnCountryChanging(value);
+                this._Country = value;
+                this.OnCountryChanged();
+                this.OnPropertyChanged("Country");
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private string _Country;
+        partial void OnCountryChanging(string value);
+        partial void OnCountryChanged();
+        /// <summary>
+        /// There are no comments for Property Id in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        [global::Microsoft.OData.Client.OriginalNameAttribute("Id")]
+        public int Id
+        {
+            get
+            {
+                return this._Id;
+            }
+            set
+            {
+                this.OnIdChanging(value);
+                this._Id = value;
+                this.OnIdChanged();
+                this.OnPropertyChanged("Id");
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private int _Id;
+        partial void OnIdChanging(int value);
+        partial void OnIdChanged();
+        /// <summary>
+        /// There are no comments for Property Name in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        [global::Microsoft.OData.Client.OriginalNameAttribute("Name")]
+        public string Name
+        {
+            get
+            {
+                return this._Name;
+            }
+            set
+            {
+                this.OnNameChanging(value);
+                this._Name = value;
+                this.OnNameChanged();
+                this.OnPropertyChanged("Name");
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private string _Name;
+        partial void OnNameChanging(string value);
+        partial void OnNameChanged();
+        /// <summary>
+        /// There are no comments for Property Sex in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        [global::Microsoft.OData.Client.OriginalNameAttribute("Sex")]
+        public global::System.Nullable<global::ODataClient.OdataToEntity.Test.Model.Sex> Sex
+        {
+            get
+            {
+                return this._Sex;
+            }
+            set
+            {
+                this.OnSexChanging(value);
+                this._Sex = value;
+                this.OnSexChanged();
+                this.OnPropertyChanged("Sex");
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private global::System.Nullable<global::ODataClient.OdataToEntity.Test.Model.Sex> _Sex;
+        partial void OnSexChanging(global::System.Nullable<global::ODataClient.OdataToEntity.Test.Model.Sex> value);
+        partial void OnSexChanged();
+        /// <summary>
+        /// There are no comments for Property AltOrders in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        [global::Microsoft.OData.Client.OriginalNameAttribute("AltOrders")]
+        public global::Microsoft.OData.Client.DataServiceCollection<global::ODataClient.OdataToEntity.Test.Model.Order> AltOrders
+        {
+            get
+            {
+                return this._AltOrders;
+            }
+            set
+            {
+                this.OnAltOrdersChanging(value);
+                this._AltOrders = value;
+                this.OnAltOrdersChanged();
+                this.OnPropertyChanged("AltOrders");
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private global::Microsoft.OData.Client.DataServiceCollection<global::ODataClient.OdataToEntity.Test.Model.Order> _AltOrders = new global::Microsoft.OData.Client.DataServiceCollection<global::ODataClient.OdataToEntity.Test.Model.Order>(null, global::Microsoft.OData.Client.TrackingMode.None);
+        partial void OnAltOrdersChanging(global::Microsoft.OData.Client.DataServiceCollection<global::ODataClient.OdataToEntity.Test.Model.Order> value);
+        partial void OnAltOrdersChanged();
+        /// <summary>
+        /// There are no comments for Property Orders in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        [global::Microsoft.OData.Client.OriginalNameAttribute("Orders")]
+        public global::Microsoft.OData.Client.DataServiceCollection<global::ODataClient.OdataToEntity.Test.Model.Order> Orders
+        {
+            get
+            {
+                return this._Orders;
+            }
+            set
+            {
+                this.OnOrdersChanging(value);
+                this._Orders = value;
+                this.OnOrdersChanged();
+                this.OnPropertyChanged("Orders");
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private global::Microsoft.OData.Client.DataServiceCollection<global::ODataClient.OdataToEntity.Test.Model.Order> _Orders = new global::Microsoft.OData.Client.DataServiceCollection<global::ODataClient.OdataToEntity.Test.Model.Order>(null, global::Microsoft.OData.Client.TrackingMode.None);
+        partial void OnOrdersChanging(global::Microsoft.OData.Client.DataServiceCollection<global::ODataClient.OdataToEntity.Test.Model.Order> value);
+        partial void OnOrdersChanged();
+        /// <summary>
+        /// This event is raised when the value of the property is changed
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public event global::System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+        /// <summary>
+        /// The value of the property is changed
+        /// </summary>
+        /// <param name="property">property name</param>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        protected virtual void OnPropertyChanged(string property)
+        {
+            if ((this.PropertyChanged != null))
+            {
+                this.PropertyChanged(this, new global::System.ComponentModel.PropertyChangedEventArgs(property));
+            }
+        }
+    }
+    /// <summary>
     /// There are no comments for OrderSingle in the schema.
     /// </summary>
     [global::Microsoft.OData.Client.OriginalNameAttribute("OrderSingle")]
@@ -490,19 +514,19 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// Initialize a new OrderSingle object.
         /// </summary>
         public OrderSingle(global::Microsoft.OData.Client.DataServiceContext context, string path)
-            : base(context, path) {}
+            : base(context, path) { }
 
         /// <summary>
         /// Initialize a new OrderSingle object.
         /// </summary>
         public OrderSingle(global::Microsoft.OData.Client.DataServiceContext context, string path, bool isComposable)
-            : base(context, path, isComposable) {}
+            : base(context, path, isComposable) { }
 
         /// <summary>
         /// Initialize a new OrderSingle object.
         /// </summary>
         public OrderSingle(global::Microsoft.OData.Client.DataServiceQuerySingle<Order> query)
-            : base(query) {}
+            : base(query) { }
 
         /// <summary>
         /// There are no comments for AltCustomer in the schema.
@@ -587,21 +611,38 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// <param name="customerId">Initial value of CustomerId.</param>
         /// <param name="ID">Initial value of Id.</param>
         /// <param name="status">Initial value of Status.</param>
-        /// <param name="customer">Initial value of Customer.</param>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        public static Order CreateOrder(int customerId, int ID, global::ODataClient.OdataToEntity.Test.Model.OrderStatus status, global::ODataClient.OdataToEntity.Test.Model.Customer customer)
+        public static Order CreateOrder(int customerId, int ID, global::ODataClient.OdataToEntity.Test.Model.OrderStatus status)
         {
             Order order = new Order();
             order.CustomerId = customerId;
             order.Id = ID;
             order.Status = status;
-            if ((customer == null))
-            {
-                throw new global::System.ArgumentNullException("customer");
-            }
-            order.Customer = customer;
             return order;
         }
+        /// <summary>
+        /// There are no comments for Property AltCustomerCountry in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        [global::Microsoft.OData.Client.OriginalNameAttribute("AltCustomerCountry")]
+        public string AltCustomerCountry
+        {
+            get
+            {
+                return this._AltCustomerCountry;
+            }
+            set
+            {
+                this.OnAltCustomerCountryChanging(value);
+                this._AltCustomerCountry = value;
+                this.OnAltCustomerCountryChanged();
+                this.OnPropertyChanged("AltCustomerCountry");
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private string _AltCustomerCountry;
+        partial void OnAltCustomerCountryChanging(string value);
+        partial void OnAltCustomerCountryChanged();
         /// <summary>
         /// There are no comments for Property AltCustomerId in the schema.
         /// </summary>
@@ -625,6 +666,29 @@ namespace ODataClient.OdataToEntity.Test.Model
         private global::System.Nullable<int> _AltCustomerId;
         partial void OnAltCustomerIdChanging(global::System.Nullable<int> value);
         partial void OnAltCustomerIdChanged();
+        /// <summary>
+        /// There are no comments for Property CustomerCountry in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        [global::Microsoft.OData.Client.OriginalNameAttribute("CustomerCountry")]
+        public string CustomerCountry
+        {
+            get
+            {
+                return this._CustomerCountry;
+            }
+            set
+            {
+                this.OnCustomerCountryChanging(value);
+                this._CustomerCountry = value;
+                this.OnCustomerCountryChanged();
+                this.OnPropertyChanged("CustomerCountry");
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private string _CustomerCountry;
+        partial void OnCustomerCountryChanging(string value);
+        partial void OnCustomerCountryChanged();
         /// <summary>
         /// There are no comments for Property CustomerId in the schema.
         /// </summary>
@@ -837,19 +901,19 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// Initialize a new OrderItemSingle object.
         /// </summary>
         public OrderItemSingle(global::Microsoft.OData.Client.DataServiceContext context, string path)
-            : base(context, path) {}
+            : base(context, path) { }
 
         /// <summary>
         /// Initialize a new OrderItemSingle object.
         /// </summary>
         public OrderItemSingle(global::Microsoft.OData.Client.DataServiceContext context, string path, bool isComposable)
-            : base(context, path, isComposable) {}
+            : base(context, path, isComposable) { }
 
         /// <summary>
         /// Initialize a new OrderItemSingle object.
         /// </summary>
         public OrderItemSingle(global::Microsoft.OData.Client.DataServiceQuerySingle<OrderItem> query)
-            : base(query) {}
+            : base(query) { }
 
         /// <summary>
         /// There are no comments for Order in the schema.
@@ -1093,29 +1157,6 @@ namespace ODataClient.OdataToEntity.Test.Model
     public static class ExtensionMethods
     {
         /// <summary>
-        /// Get an entity of type global::ODataClient.OdataToEntity.Test.Model.Customer as global::ODataClient.OdataToEntity.Test.Model.CustomerSingle specified by key from an entity set
-        /// </summary>
-        /// <param name="source">source entity set</param>
-        /// <param name="keys">dictionary with the names and values of keys</param>
-        public static global::ODataClient.OdataToEntity.Test.Model.CustomerSingle ByKey(this global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Customer> source, global::System.Collections.Generic.Dictionary<string, object> keys)
-        {
-            return new global::ODataClient.OdataToEntity.Test.Model.CustomerSingle(source.Context, source.GetKeyPath(global::Microsoft.OData.Client.Serializer.GetKeyString(source.Context, keys)));
-        }
-        /// <summary>
-        /// Get an entity of type global::ODataClient.OdataToEntity.Test.Model.Customer as global::ODataClient.OdataToEntity.Test.Model.CustomerSingle specified by key from an entity set
-        /// </summary>
-        /// <param name="source">source entity set</param>
-        /// <param name="id">The value of id</param>
-        public static global::ODataClient.OdataToEntity.Test.Model.CustomerSingle ByKey(this global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Customer> source,
-            int id)
-        {
-            global::System.Collections.Generic.Dictionary<string, object> keys = new global::System.Collections.Generic.Dictionary<string, object>
-            {
-                { "Id", id }
-            };
-            return new global::ODataClient.OdataToEntity.Test.Model.CustomerSingle(source.Context, source.GetKeyPath(global::Microsoft.OData.Client.Serializer.GetKeyString(source.Context, keys)));
-        }
-        /// <summary>
         /// Get an entity of type global::ODataClient.OdataToEntity.Test.Model.Category as global::ODataClient.OdataToEntity.Test.Model.CategorySingle specified by key from an entity set
         /// </summary>
         /// <param name="source">source entity set</param>
@@ -1137,6 +1178,32 @@ namespace ODataClient.OdataToEntity.Test.Model
                 { "Id", id }
             };
             return new global::ODataClient.OdataToEntity.Test.Model.CategorySingle(source.Context, source.GetKeyPath(global::Microsoft.OData.Client.Serializer.GetKeyString(source.Context, keys)));
+        }
+        /// <summary>
+        /// Get an entity of type global::ODataClient.OdataToEntity.Test.Model.Customer as global::ODataClient.OdataToEntity.Test.Model.CustomerSingle specified by key from an entity set
+        /// </summary>
+        /// <param name="source">source entity set</param>
+        /// <param name="keys">dictionary with the names and values of keys</param>
+        public static global::ODataClient.OdataToEntity.Test.Model.CustomerSingle ByKey(this global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Customer> source, global::System.Collections.Generic.Dictionary<string, object> keys)
+        {
+            return new global::ODataClient.OdataToEntity.Test.Model.CustomerSingle(source.Context, source.GetKeyPath(global::Microsoft.OData.Client.Serializer.GetKeyString(source.Context, keys)));
+        }
+        /// <summary>
+        /// Get an entity of type global::ODataClient.OdataToEntity.Test.Model.Customer as global::ODataClient.OdataToEntity.Test.Model.CustomerSingle specified by key from an entity set
+        /// </summary>
+        /// <param name="source">source entity set</param>
+        /// <param name="country">The value of country</param>
+        /// <param name="id">The value of id</param>
+        public static global::ODataClient.OdataToEntity.Test.Model.CustomerSingle ByKey(this global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Customer> source,
+            string country,
+            int id)
+        {
+            global::System.Collections.Generic.Dictionary<string, object> keys = new global::System.Collections.Generic.Dictionary<string, object>
+            {
+                { "Country", country },
+                { "Id", id }
+            };
+            return new global::ODataClient.OdataToEntity.Test.Model.CustomerSingle(source.Context, source.GetKeyPath(global::Microsoft.OData.Client.Serializer.GetKeyString(source.Context, keys)));
         }
         /// <summary>
         /// Get an entity of type global::ODataClient.OdataToEntity.Test.Model.Order as global::ODataClient.OdataToEntity.Test.Model.OrderSingle specified by key from an entity set
@@ -1198,7 +1265,7 @@ namespace ODataClient.Default
         /// Initialize a new Container object.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        public Container(global::System.Uri serviceRoot) : 
+        public Container(global::System.Uri serviceRoot) :
                 base(serviceRoot, global::Microsoft.OData.Client.ODataProtocolVersion.V4)
         {
             this.ResolveName = new global::System.Func<global::System.Type, string>(this.ResolveNameFromType);
@@ -1256,24 +1323,6 @@ namespace ODataClient.Default
             return null;
         }
         /// <summary>
-        /// There are no comments for Customers in the schema.
-        /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Customers")]
-        public global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Customer> Customers
-        {
-            get
-            {
-                if ((this._Customers == null))
-                {
-                    this._Customers = base.CreateQuery<global::ODataClient.OdataToEntity.Test.Model.Customer>("Customers");
-                }
-                return this._Customers;
-            }
-        }
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        private global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Customer> _Customers;
-        /// <summary>
         /// There are no comments for Categories in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
@@ -1291,6 +1340,24 @@ namespace ODataClient.Default
         }
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
         private global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Category> _Categories;
+        /// <summary>
+        /// There are no comments for Customers in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        [global::Microsoft.OData.Client.OriginalNameAttribute("Customers")]
+        public global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Customer> Customers
+        {
+            get
+            {
+                if ((this._Customers == null))
+                {
+                    this._Customers = base.CreateQuery<global::ODataClient.OdataToEntity.Test.Model.Customer>("Customers");
+                }
+                return this._Customers;
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Customer> _Customers;
         /// <summary>
         /// There are no comments for Orders in the schema.
         /// </summary>
@@ -1328,20 +1395,20 @@ namespace ODataClient.Default
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
         private global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.OrderItem> _OrderItems;
         /// <summary>
-        /// There are no comments for Customers in the schema.
-        /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        public void AddToCustomers(global::ODataClient.OdataToEntity.Test.Model.Customer customer)
-        {
-            base.AddObject("Customers", customer);
-        }
-        /// <summary>
         /// There are no comments for Categories in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
         public void AddToCategories(global::ODataClient.OdataToEntity.Test.Model.Category category)
         {
             base.AddObject("Categories", category);
+        }
+        /// <summary>
+        /// There are no comments for Customers in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public void AddToCustomers(global::ODataClient.OdataToEntity.Test.Model.Customer customer)
+        {
+            base.AddObject("Customers", customer);
         }
         /// <summary>
         /// There are no comments for Orders in the schema.
@@ -1379,17 +1446,6 @@ namespace ODataClient.Default
         <Member Name=""Delivering"" Value=""3"" />
         <Member Name=""Cancelled"" Value=""4"" />
       </EnumType>
-      <EntityType Name=""Customer"">
-        <Key>
-          <PropertyRef Name=""Id"" />
-        </Key>
-        <Property Name=""Address"" Type=""Edm.String"" />
-        <Property Name=""Id"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Name"" Type=""Edm.String"" />
-        <Property Name=""Sex"" Type=""OdataToEntity.Test.Model.Sex"" />
-        <NavigationProperty Name=""AltOrders"" Type=""Collection(OdataToEntity.Test.Model.Order)"" Partner=""AltCustomer"" />
-        <NavigationProperty Name=""Orders"" Type=""Collection(OdataToEntity.Test.Model.Order)"" Partner=""Customer"" />
-      </EntityType>
       <EntityType Name=""Category"">
         <Key>
           <PropertyRef Name=""Id"" />
@@ -1402,20 +1458,37 @@ namespace ODataClient.Default
         </NavigationProperty>
         <NavigationProperty Name=""Children"" Type=""Collection(OdataToEntity.Test.Model.Category)"" Partner=""Parent"" />
       </EntityType>
+      <EntityType Name=""Customer"">
+        <Key>
+          <PropertyRef Name=""Country"" />
+          <PropertyRef Name=""Id"" />
+        </Key>
+        <Property Name=""Address"" Type=""Edm.String"" />
+        <Property Name=""Country"" Type=""Edm.String"" />
+        <Property Name=""Id"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Name"" Type=""Edm.String"" />
+        <Property Name=""Sex"" Type=""OdataToEntity.Test.Model.Sex"" />
+        <NavigationProperty Name=""AltOrders"" Type=""Collection(OdataToEntity.Test.Model.Order)"" Partner=""AltCustomer"" />
+        <NavigationProperty Name=""Orders"" Type=""Collection(OdataToEntity.Test.Model.Order)"" Partner=""Customer"" />
+      </EntityType>
       <EntityType Name=""Order"">
         <Key>
           <PropertyRef Name=""Id"" />
         </Key>
+        <Property Name=""AltCustomerCountry"" Type=""Edm.String"" />
         <Property Name=""AltCustomerId"" Type=""Edm.Int32"" />
+        <Property Name=""CustomerCountry"" Type=""Edm.String"" />
         <Property Name=""CustomerId"" Type=""Edm.Int32"" Nullable=""false"" />
         <Property Name=""Date"" Type=""Edm.DateTimeOffset"" />
         <Property Name=""Id"" Type=""Edm.Int32"" Nullable=""false"" />
         <Property Name=""Name"" Type=""Edm.String"" />
         <Property Name=""Status"" Type=""OdataToEntity.Test.Model.OrderStatus"" Nullable=""false"" />
         <NavigationProperty Name=""AltCustomer"" Type=""OdataToEntity.Test.Model.Customer"" Partner=""AltOrders"">
+          <ReferentialConstraint Property=""AltCustomerCountry"" ReferencedProperty=""Country"" />
           <ReferentialConstraint Property=""AltCustomerId"" ReferencedProperty=""Id"" />
         </NavigationProperty>
-        <NavigationProperty Name=""Customer"" Type=""OdataToEntity.Test.Model.Customer"" Nullable=""false"" Partner=""Orders"">
+        <NavigationProperty Name=""Customer"" Type=""OdataToEntity.Test.Model.Customer"" Partner=""Orders"">
+          <ReferentialConstraint Property=""CustomerCountry"" ReferencedProperty=""Country"" />
           <ReferentialConstraint Property=""CustomerId"" ReferencedProperty=""Id"" />
         </NavigationProperty>
         <NavigationProperty Name=""Items"" Type=""Collection(OdataToEntity.Test.Model.OrderItem)"" Partner=""Order"" />
@@ -1436,13 +1509,13 @@ namespace ODataClient.Default
     </Schema>
     <Schema Namespace=""Default"" xmlns=""http://docs.oasis-open.org/odata/ns/edm"">
       <EntityContainer Name=""Container"">
-        <EntitySet Name=""Customers"" EntityType=""OdataToEntity.Test.Model.Customer"">
-          <NavigationPropertyBinding Path=""AltOrders"" Target=""Orders"" />
-          <NavigationPropertyBinding Path=""Orders"" Target=""Orders"" />
-        </EntitySet>
         <EntitySet Name=""Categories"" EntityType=""OdataToEntity.Test.Model.Category"">
           <NavigationPropertyBinding Path=""Parent"" Target=""Categories"" />
           <NavigationPropertyBinding Path=""Children"" Target=""Categories"" />
+        </EntitySet>
+        <EntitySet Name=""Customers"" EntityType=""OdataToEntity.Test.Model.Customer"">
+          <NavigationPropertyBinding Path=""AltOrders"" Target=""Orders"" />
+          <NavigationPropertyBinding Path=""Orders"" Target=""Orders"" />
         </EntitySet>
         <EntitySet Name=""Orders"" EntityType=""OdataToEntity.Test.Model.Order"">
           <NavigationPropertyBinding Path=""AltCustomer"" Target=""Customers"" />

@@ -193,8 +193,8 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<Order>()
             {
-                RequestUri = "Orders?$expand=Customer,Items",
-                Expression = t => t.Include(o => o.Customer).Include(o => o.Items),
+                RequestUri = "Orders?$expand=Customer,Items&$orderby=Id",
+                Expression = t => t.Include(o => o.Customer).Include(o => o.Items).OrderBy(o => o.Id),
             };
             await Fixture.Execute(parameters);
         }
@@ -203,8 +203,8 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<Order, Object>()
             {
-                RequestUri = "Orders?$expand=AltCustomer,Customer,Items&$select=AltCustomerId,CustomerId,Date,Id,Name,Status",
-                Expression = t => t.Select(o => new { o.AltCustomer, o.Customer, o.Items, o.AltCustomerId, o.CustomerId, o.Date, o.Id, o.Name, o.Status }),
+                RequestUri = "Orders?$expand=AltCustomer,Customer,Items&$select=AltCustomerCountry,AltCustomerId,CustomerCountry,CustomerId,Date,Id,Name,Status&$orderby=Id",
+                Expression = t => t.Select(o => new { o.AltCustomer, o.Customer, o.Items, o.AltCustomerCountry, o.AltCustomerId, o.CustomerCountry, o.CustomerId, o.Date, o.Id, o.Name, o.Status }).OrderBy(o => o.Id),
             };
             await Fixture.Execute(parameters);
         }
@@ -233,8 +233,8 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<OrderItem, OrderItem>()
             {
-                RequestUri = "OrderItems?$expand=Order($expand=AltCustomer,Customer)",
-                Expression = t => t.Include(i => i.Order).ThenInclude(o => o.AltCustomer).Include(i => i.Order).ThenInclude(o => o.Customer)
+                RequestUri = "OrderItems?$expand=Order($expand=AltCustomer,Customer)&$orderby=Id",
+                Expression = t => t.Include(i => i.Order).ThenInclude(o => o.AltCustomer).Include(i => i.Order).ThenInclude(o => o.Customer).OrderBy(i => i.Id)
             };
             await Fixture.Execute(parameters);
         }
@@ -283,7 +283,7 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<Customer, Customer>()
             {
-                RequestUri = "Customers?$expand=Orders($select=AltCustomerId,CustomerId,Date,Id,Name,Status)",
+                RequestUri = "Customers?$expand=Orders($select=AltCustomerCountry,AltCustomerId,CustomerCountry,CustomerId,Date,Id,Name,Status)",
                 Expression = t => t.Include(c => c.Orders)
             };
             await Fixture.Execute(parameters);
@@ -293,8 +293,8 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<Order>()
             {
-                RequestUri = "Orders?$expand=*",
-                Expression = t => t.Include(o => o.AltCustomer).Include(o => o.Customer).Include(o => o.Items)
+                RequestUri = "Orders?$expand=*&$orderby=Id",
+                Expression = t => t.Include(o => o.AltCustomer).Include(o => o.Customer).Include(o => o.Items).OrderBy(o => o.Id)
             };
             await Fixture.Execute(parameters);
         }
@@ -579,6 +579,16 @@ namespace OdataToEntity.Test
             await Fixture.Execute(parameters);
         }
         [Fact]
+        public async Task KeyComposition()
+        {
+            var parameters = new QueryParameters<Customer>()
+            {
+                RequestUri = "Customers(Country='RU',Id=1)",
+                Expression = t => t.Where(c => c.Country == "RU" && c.Id == 1)
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Fact]
         public async Task KeyExpand()
         {
             var parameters = new QueryParameters<Order>()
@@ -669,8 +679,8 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<Order, Object>()
             {
-                RequestUri = "Orders?$select=AltCustomer,AltCustomerId,Customer,CustomerId,Date,Id,Items,Name,Status",
-                Expression = t => t.Select(o => new { o.AltCustomer, o.AltCustomerId, o.Customer, o.CustomerId, o.Date, o.Id, o.Items, o.Name, o.Status })
+                RequestUri = "Orders?$select=AltCustomer,AltCustomerId,Customer,CustomerId,Date,Id,Items,Name,Status&$orderby=Id",
+                Expression = t => t.Select(o => new { o.AltCustomer, o.AltCustomerId, o.Customer, o.CustomerId, o.Date, o.Id, o.Items, o.Name, o.Status }).OrderBy(o => o.Id)
             };
             await Fixture.Execute(parameters);
         }

@@ -126,7 +126,7 @@ namespace OdataToEntity.Parsers
 
             var visitor = CreateVisitor(sourceParameter);
             if (_aggProperties.Count > 0)
-                visitor.TuplePropertyMapper = TuplePropertyMapper;
+                visitor.TuplePropertyByAliasName = GetTuplePropertyByAliasName;
             Expression e = visitor.TranslateNode(transformation.FilterClause.Expression);
 
             MethodInfo whereMethodInfo = OeMethodInfoHelper.GetWhereMethodInfo(sourceParameter.Type);
@@ -261,7 +261,7 @@ namespace OdataToEntity.Parsers
         {
             return new OeQueryNodeVisitor(_visitor, parameter);
         }
-        internal Expression TuplePropertyMapper(Expression source, String aliasName)
+        internal Expression GetTuplePropertyByAliasName(Expression source, String aliasName)
         {
             int groupCount = 0;
             for (int i = 0; i < _aggProperties.Count; i++)

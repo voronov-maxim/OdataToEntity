@@ -8,10 +8,33 @@ namespace OdataToEntity.ModelBuilder
 {
     public class OeEdmModelMetadataProvider
     {
-        public virtual PropertyDescriptor GetForeignKey(PropertyDescriptor propertyDescriptor)
+        public virtual PropertyDescriptor[] GetForeignKey(PropertyDescriptor propertyDescriptor)
         {
             var fkey = (ForeignKeyAttribute)propertyDescriptor.Attributes[typeof(ForeignKeyAttribute)];
-            return fkey == null ? null : TypeDescriptor.GetProperties(propertyDescriptor.ComponentType).Find(fkey.Name, true);
+            if (fkey == null)
+                return null;
+
+            PropertyDescriptor property = TypeDescriptor.GetProperties(propertyDescriptor.ComponentType).Find(fkey.Name, true);
+            if (property == null)
+            {
+                String[] propertyNames = fkey.Name.Split(',');
+                if (propertyNames.Length == 1)
+                    throw new InvalidOperationException("property " + fkey.Name + " foreign key " + propertyDescriptor.Name + " not found");
+
+                var properties = new PropertyDescriptor[propertyNames.Length];
+                for (int i = 0; i < properties.Length; i++)
+                {
+                    String propertyName = propertyNames[i].Trim();
+                    property = TypeDescriptor.GetProperties(propertyDescriptor.ComponentType).Find(propertyName, true);
+                    if (property == null)
+                        throw new InvalidOperationException("property " + propertyName + " foreign key " + propertyDescriptor.Name + " not found");
+
+                    properties[i] = property;
+                }
+                return properties;
+            }
+
+            return new PropertyDescriptor[] { property };
         }
         public virtual PropertyDescriptor GetInverseProperty(PropertyDescriptor propertyDescriptor)
         {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace OdataToEntity.Test.Model
@@ -18,7 +19,9 @@ namespace OdataToEntity.Test.Model
         public String Address { get; set; }
         [InverseProperty(nameof(Order.AltCustomer))]
         public ICollection<Order> AltOrders { get; set; }
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        [Key, Column(Order = 0)]
+        public String Country { get; set; }
+        [Key, Column(Order = 1)]
         public int Id { get; set; }
         public String Name { get; set; }
         [InverseProperty(nameof(Order.Customer))]
@@ -28,10 +31,20 @@ namespace OdataToEntity.Test.Model
 
     public sealed class Order
     {
+        [ForeignKey("AltCustomerCountry,AltCustomerId")]
         public Customer AltCustomer { get; set; }
+        //[ForeignKey(nameof(AltCustomer)), Column(Order = 0)]
+        public String AltCustomerCountry { get; set; }
+        //[ForeignKey(nameof(AltCustomer)), Column(Order = 1)]
         public int? AltCustomerId { get; set; }
+
+        [ForeignKey("CustomerCountry,CustomerId")]
         public Customer Customer { get; set; }
+        //[ForeignKey(nameof(Customer)), Column(Order = 0)]
+        public String CustomerCountry { get; set; }
+        //[ForeignKey(nameof(Customer)), Column(Order = 1)]
         public int CustomerId { get; set; }
+
         public DateTimeOffset? Date { get; set; }
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }

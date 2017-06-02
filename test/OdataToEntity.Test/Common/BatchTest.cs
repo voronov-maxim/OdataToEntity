@@ -74,8 +74,8 @@ namespace OdataToEntity.Test
                 Assert.Equal("New Order 1", order1.Name);
                 Assert.Equal("New Product order 1 item 3", order1.Items.Single(t => t.Id == 3).Product);
 
-                Assert.Equal(Sex.Female, orderContext.Customers.Single(c => c.Id == 1).Sex);
-                Assert.Equal(null, orderContext.Customers.Single(c => c.Id == 2).Sex);
+                Assert.Equal(Sex.Female, orderContext.Customers.Single(c => c.Country == "RU" && c.Id == 1).Sex);
+                Assert.Equal(null, orderContext.Customers.Single(c => c.Country == "EN" && c.Id == 1).Sex);
             }
         }
     }

@@ -1,4 +1,5 @@
-﻿--batch_2aa63275-8b69-49c7-a3fc-4a66c831d624
+﻿
+--batch_2aa63275-8b69-49c7-a3fc-4a66c831d624
 Content-Type: multipart/mixed; boundary=changeset_2ba34bb3-9be1-4fb5-8804-395055ed3eba
 
 --changeset_2ba34bb3-9be1-4fb5-8804-395055ed3eba
@@ -14,7 +15,7 @@ Accept: application/json;odata.metadata=minimal
 Accept-Charset: UTF-8
 User-Agent: Microsoft ADO.NET Data Services
 
-{"@odata.type":"#OdataToEntity.Test.Model.Order","CustomerId":1,"Date":"2016-06-16T19:03:48.3128472+03:00","Id":1,"Name":"New Order 1","Status@odata.type":"#OdataToEntity.Test.Model.OrderStatus","Status":"Processing"}
+{"@odata.type":"#OdataToEntity.Test.Model.Order","CustomerCountry":"RU","CustomerId":1,"Date":"2016-06-16T19:03:48.3128472+03:00","Id":1,"Name":"New Order 1","Status@odata.type":"#OdataToEntity.Test.Model.OrderStatus","Status":"Processing"}
 --changeset_2ba34bb3-9be1-4fb5-8804-395055ed3eba
 Content-Type: application/http
 Content-Transfer-Encoding: binary
@@ -34,7 +35,7 @@ Content-Type: application/http
 Content-Transfer-Encoding: binary
 Content-ID: 6
 
-PATCH http://dummy/Customers(1) HTTP/1.1
+PATCH http://dummy/Customers(Country='RU',Id=1) HTTP/1.1
 OData-Version: 4.0
 OData-MaxVersion: 4.0
 Content-Type: application/json;odata.metadata=minimal
@@ -42,13 +43,13 @@ Accept: application/json;odata.metadata=minimal
 Accept-Charset: UTF-8
 User-Agent: Microsoft ADO.NET Data Services
 
-{"@odata.type":"#OdataToEntity.Test.Model.Customer","Address":"Moscow","Id":1,"Name":"Ivan","Sex@odata.type":"#OdataToEntity.Test.Model.Sex","Sex":"Female"}
+{"@odata.type":"#OdataToEntity.Test.Model.Customer","Address":"Moscow","Country":"RU","Id":1,"Name":"Ivan","Sex@odata.type":"#OdataToEntity.Test.Model.Sex","Sex":"Female"}
 --changeset_2ba34bb3-9be1-4fb5-8804-395055ed3eba
 Content-Type: application/http
 Content-Transfer-Encoding: binary
 Content-ID: 8
 
-PATCH http://dummy/Customers(2) HTTP/1.1
+PATCH http://dummy/Customers(Country='EN',Id=1) HTTP/1.1
 OData-Version: 4.0
 OData-MaxVersion: 4.0
 Content-Type: application/json;odata.metadata=minimal
@@ -56,7 +57,7 @@ Accept: application/json;odata.metadata=minimal
 Accept-Charset: UTF-8
 User-Agent: Microsoft ADO.NET Data Services
 
-{"@odata.type":"#OdataToEntity.Test.Model.Customer","Address":"Tambov","Id":2,"Name":"Natasha","Sex@odata.type":"#OdataToEntity.Test.Model.Sex","Sex":null}
+{"@odata.type":"#OdataToEntity.Test.Model.Customer","Address":"Southampton","Country":"EN","Id":1,"Name":"Natasha","Sex@odata.type":"#OdataToEntity.Test.Model.Sex","Sex":null}
 --changeset_2ba34bb3-9be1-4fb5-8804-395055ed3eba
 Content-Type: application/http
 Content-Transfer-Encoding: binary

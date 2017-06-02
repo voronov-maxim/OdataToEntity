@@ -9,7 +9,7 @@ namespace OdataToEntity.Test
         {
             //new BatchTest().Add().Wait();
             Console.WriteLine();
-            //new SelectTest(new DbFixtureInitDb()).KeyFilter().Wait();
+            new SelectTest(new DbFixtureInitDb()).KeyComposition().Wait();
 
             Console.ReadLine();
         }

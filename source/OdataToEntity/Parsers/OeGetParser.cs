@@ -29,15 +29,22 @@ namespace OdataToEntity
             var range = new ResourceRangeVariable("", entityTypeRef, entitySet);
             var refNode = new ResourceRangeVariableReferenceNode("$it", range);
 
-            var pair = keySegment.Keys.Single();
-            var entityType = (IEdmEntityType)keySegment.EdmType;
-            IEdmProperty property = entityType.FindProperty(pair.Key);
+            BinaryOperatorNode compositeNode = null;
+            foreach (KeyValuePair<String, Object> pair in keySegment.Keys)
+            {
+                var entityType = (IEdmEntityType)keySegment.EdmType;
+                IEdmProperty property = entityType.FindProperty(pair.Key);
 
-            var left = new SingleValuePropertyAccessNode(refNode, property);
-            var right = new ConstantNode(pair.Value, ODataUriUtils.ConvertToUriLiteral(pair.Value, ODataVersion.V4));
+                var left = new SingleValuePropertyAccessNode(refNode, property);
+                var right = new ConstantNode(pair.Value, ODataUriUtils.ConvertToUriLiteral(pair.Value, ODataVersion.V4));
+                var node = new BinaryOperatorNode(BinaryOperatorKind.Equal, left, right);
 
-            var node = new BinaryOperatorNode(BinaryOperatorKind.Equal, left, right);
-            return new FilterClause(node, range);
+                if (compositeNode == null)
+                    compositeNode = node;
+                else
+                    compositeNode = new BinaryOperatorNode(BinaryOperatorKind.And, compositeNode, node);
+            }
+            return new FilterClause(compositeNode, range);
         }
         public async Task ExecuteAsync(ODataUri odataUri, OeRequestHeaders headers, Stream stream, CancellationToken cancellationToken)
         {
