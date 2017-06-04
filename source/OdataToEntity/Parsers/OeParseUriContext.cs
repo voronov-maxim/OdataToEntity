@@ -102,6 +102,12 @@ namespace OdataToEntity.Parsers
             _isCountSegment = isCountSegment;
         }
 
+        public Expression CreateCountExpression(IQueryable query, Expression expression)
+        {
+            Expression filterExpression = ODataUri.Filter == null ? query.Expression : FilterVisitor.Translate(query, expression);
+            MethodInfo countMethodInfo = OeMethodInfoHelper.GetCountMethodInfo(query.ElementType);
+            return Expression.Call(countMethodInfo, filterExpression);
+        }
         private OeEntryFactory CreateEntryFactory(OeExpressionBuilder expressionBuilder)
         {
             IEdmEntitySetBase entitySet = EntitySet;
@@ -136,11 +142,7 @@ namespace OdataToEntity.Parsers
 
             expression = constantToVariableVisitor.Translate(expression, expressionBuilder.Constants);
             if (ODataUri.QueryCount.GetValueOrDefault())
-            {
-                Expression filterExpression = ODataUri.Filter == null ? query.Expression : FilterVisitor.Translate(query, expression);
-                MethodInfo countMethodInfo = OeMethodInfoHelper.GetCountMethodInfo(query.ElementType);
-                CountExpression = Expression.Call(countMethodInfo, filterExpression);
-            }
+                CountExpression = CreateCountExpression(query, expression);
 
             return SourceVisitor.Translate(query, expression);
         }

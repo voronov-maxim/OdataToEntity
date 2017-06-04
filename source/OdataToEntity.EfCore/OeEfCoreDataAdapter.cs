@@ -280,10 +280,9 @@ namespace OdataToEntity.EfCore
                 IQueryable query = parseUriContext.EntitySetAdapter.GetEntitySet(dbContext);
                 var parameterVisitor = new OeConstantToParameterVisitor();
 
-                parseUriContext.ODataUri.QueryCount = true;
                 Expression expression = parseUriContext.CreateExpression(query, parameterVisitor);
                 queryExecutor = dbContext.CreateQueryExecutor<TResult>(expression);
-                countExpression = parseUriContext.CountExpression;
+                countExpression = parseUriContext.CreateCountExpression(query, expression);
                 queryCache.AddQuery(parseUriContext, queryExecutor, countExpression, parameterVisitor.ConstantToParameterMapper);
                 parseUriContext.ParameterValues = parameterVisitor.ParameterValues;
             }

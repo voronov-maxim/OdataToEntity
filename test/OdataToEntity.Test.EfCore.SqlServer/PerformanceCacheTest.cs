@@ -28,6 +28,7 @@ namespace OdataToEntity.Test.EfCore.SqlServer
         {
             GC.Collect();
             GC.WaitForPendingFinalizers();
+            GC.Collect();
 
             var stopWatch = new Stopwatch();
             stopWatch.Start();
@@ -46,6 +47,7 @@ namespace OdataToEntity.Test.EfCore.SqlServer
 
             GC.Collect();
             GC.WaitForPendingFinalizers();
+            GC.Collect();
 
             var stopWatch = new Stopwatch();
             stopWatch.Start();
