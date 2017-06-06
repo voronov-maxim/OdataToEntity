@@ -25,7 +25,7 @@ namespace OdataToEntity.ModelBuilder
 
             _edmType = new EdmEntityType(clrType.Namespace, clrType.Name);
             _keyProperties = new List<KeyValuePair<PropertyDescriptor, EdmStructuralProperty>>(1);
-            _navigationClrProperties = new List<FKeyInfo>(1);
+            _navigationClrProperties = new List<FKeyInfo>();
         }
 
         private void AddKeys()

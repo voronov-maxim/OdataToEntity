@@ -5,7 +5,7 @@ using Microsoft.OData.Edm.Csdl;
 using Microsoft.OData.Edm.Validation;
 using OdataToEntity;
 using OdataToEntity.Db;
-using OdataToEntity.ModelBuilder;
+using OdataToEntity.EfCore;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -29,8 +29,7 @@ namespace OdataToEntityCore.Asp
             _baseUri = new Uri("http://dummy" + apiPath);
 
             _dataAdapter = dataAdapter;
-            _edmModel = new OeEdmModelBuilder(_dataAdapter.EntitySetMetaAdapters.EdmModelMetadataProvider,
-                _dataAdapter.EntitySetMetaAdapters.ToDictionary()).BuildEdmModel();
+            _edmModel = _dataAdapter.BuildEdmModelFromEfCoreModel();
         }
 
         private static bool GetCsdlSchema(IEdmModel edmModel, Stream stream)
