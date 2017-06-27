@@ -233,6 +233,7 @@
     <Compile Include="..\OdataToEntity.Test\Model\Order.cs">
       <Link>Order.cs</Link>
     </Compile>
+    <Compile Include="EdmModelBuilderTest.cs" />
     <Compile Include="OrderDbAdapter.cs" />
     <Compile Include="OrderEf6Context.cs" />
     <Compile Include="Program.cs" />

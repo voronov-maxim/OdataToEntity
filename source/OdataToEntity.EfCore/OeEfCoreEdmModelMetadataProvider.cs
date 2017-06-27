@@ -24,20 +24,21 @@ namespace OdataToEntity.EfCore
             IEntityType efEntityType = _entityTypes[propertyDescriptor.ComponentType];
             foreach (IForeignKey fkey in efEntityType.GetForeignKeys())
             {
-                bool isPrincipal = fkey.PrincipalEntityType == efEntityType;
-                IReadOnlyList<IProperty> structuralProperties = isPrincipal ? fkey.PrincipalKey.Properties : fkey.Properties;
-                INavigation navigationProperty = isPrincipal ? fkey.PrincipalToDependent : fkey.DependentToPrincipal;
+                if (fkey.PrincipalEntityType == efEntityType && fkey.PrincipalEntityType != fkey.DeclaringEntityType)
+                    continue;
 
-                if (navigationProperty.Name == propertyDescriptor.Name)
-                    return fkey.PrincipalEntityType == fkey.DeclaringEntityType ? null : GetPropertyDescriptors(structuralProperties);
+                if (fkey.DependentToPrincipal.Name == propertyDescriptor.Name)
+                {
+                    PropertyDescriptorCollection clrProperties = TypeDescriptor.GetProperties(propertyDescriptor.ComponentType);
+                    var propertyDescriptors = new PropertyDescriptor[fkey.Properties.Count];
+                    for (int i = 0; i < fkey.Properties.Count; i++)
+                        propertyDescriptors[i] = clrProperties[fkey.Properties[i].Name];
+                    return propertyDescriptors;
+                }
 
-                for (int i = 0; i < structuralProperties.Count; i++)
-                    if (structuralProperties[i].IsForeignKey() && structuralProperties[i].Name == propertyDescriptor.Name)
-                        return new PropertyDescriptor[] { TypeDescriptor.GetProperties(propertyDescriptor.ComponentType)[navigationProperty.Name] };
-
-                if (fkey.PrincipalEntityType == fkey.DeclaringEntityType)
-                    if (fkey.DependentToPrincipal.Name == propertyDescriptor.Name)
-                        return GetPropertyDescriptors(fkey.Properties);
+                for (int i = 0; i < fkey.Properties.Count; i++)
+                    if (fkey.Properties[i].Name == propertyDescriptor.Name)
+                        return new PropertyDescriptor[] { TypeDescriptor.GetProperties(propertyDescriptor.ComponentType)[fkey.DependentToPrincipal.Name] };
             }
 
             return null;
@@ -46,30 +47,17 @@ namespace OdataToEntity.EfCore
         {
             IEntityType efEntityType = _entityTypes[propertyDescriptor.ComponentType];
             foreach (IForeignKey fkey in efEntityType.GetForeignKeys())
-            {
-                INavigation navigationProperty = fkey.PrincipalEntityType == efEntityType ? fkey.PrincipalToDependent : fkey.DependentToPrincipal;
-                if (navigationProperty.Name == propertyDescriptor.Name)
+                if (fkey.DependentToPrincipal.Name == propertyDescriptor.Name)
                 {
-                    INavigation inverseProperty = navigationProperty.FindInverse();
-                    return inverseProperty == null ? null : TypeDescriptor.GetProperties(propertyDescriptor.ComponentType)[inverseProperty.Name];
+                    INavigation inverseProperty = fkey.DependentToPrincipal.FindInverse();
+                    return inverseProperty == null ? null : TypeDescriptor.GetProperties(inverseProperty.DeclaringEntityType.ClrType)[inverseProperty.Name];
                 }
 
-                if (fkey.PrincipalEntityType == fkey.DeclaringEntityType)
-                    if (fkey.DependentToPrincipal.Name == propertyDescriptor.Name)
-                    {
-                        INavigation inverseProperty = fkey.DependentToPrincipal.FindInverse();
-                        return inverseProperty == null ? null : TypeDescriptor.GetProperties(propertyDescriptor.ComponentType)[inverseProperty.Name];
-                    }
-            }
-
             foreach (IForeignKey fkey in efEntityType.GetReferencingForeignKeys())
-                if (fkey.PrincipalToDependent.Name == propertyDescriptor.Name)
+                if (fkey.PrincipalToDependent != null && fkey.PrincipalToDependent.Name == propertyDescriptor.Name)
                 {
                     INavigation inverseProperty = fkey.PrincipalToDependent.FindInverse();
-                    if (inverseProperty == null)
-                        break;
-
-                    return TypeDescriptor.GetProperties(inverseProperty.DeclaringEntityType.ClrType)[inverseProperty.Name];
+                    return inverseProperty == null ? null : TypeDescriptor.GetProperties(inverseProperty.DeclaringEntityType.ClrType)[inverseProperty.Name];
                 }
 
             return null;
@@ -83,21 +71,11 @@ namespace OdataToEntity.EfCore
                         return i;
 
             foreach (IForeignKey fkey in efEntityType.GetForeignKeys())
-            {
-                IReadOnlyList<IProperty> structuralProperties = fkey.PrincipalEntityType == efEntityType ? fkey.PrincipalKey.Properties : fkey.Properties;
-                for (int i = 0; i < structuralProperties.Count; i++)
-                    if (structuralProperties[i].Name == propertyDescriptor.Name)
+                for (int i = 0; i < fkey.Properties.Count; i++)
+                    if (fkey.Properties[i].Name == propertyDescriptor.Name)
                         return i;
-            }
 
             return -1;
-        }
-        private static PropertyDescriptor[] GetPropertyDescriptors(IReadOnlyList<IProperty> structuralProperties)
-        {
-            var propertyDescriptors = new PropertyDescriptor[structuralProperties.Count];
-            for (int i = 0; i < structuralProperties.Count; i++)
-                propertyDescriptors[i] = TypeDescriptor.GetProperties(structuralProperties[i].PropertyInfo.DeclaringType)[structuralProperties[i].Name];
-            return propertyDescriptors;
         }
         public override bool IsKey(PropertyDescriptor propertyDescriptor)
         {
@@ -115,16 +93,8 @@ namespace OdataToEntity.EfCore
                     return false;
 
             foreach (IForeignKey fkey in efEntityType.GetForeignKeys())
-            {
-                INavigation navigationProperty = fkey.PrincipalEntityType == efEntityType ? fkey.PrincipalToDependent : fkey.DependentToPrincipal;
-                if (navigationProperty.Name == propertyDescriptor.Name)
+                if (fkey.DependentToPrincipal.Name == propertyDescriptor.Name)
                     return false;
-
-
-                if (fkey.PrincipalEntityType == fkey.DeclaringEntityType)
-                    if (fkey.DependentToPrincipal.Name == propertyDescriptor.Name)
-                        return false;
-            }
 
             foreach (IForeignKey fkey in efEntityType.GetReferencingForeignKeys())
                 if (fkey.PrincipalToDependent.Name == propertyDescriptor.Name)

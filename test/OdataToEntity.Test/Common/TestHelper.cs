@@ -1,4 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.OData.Edm;
+using Microsoft.OData.Edm.Csdl;
+using Microsoft.OData.Edm.Validation;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
@@ -6,10 +9,13 @@ using OdataToEntity.Test.Model;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 using Xunit;
 
 namespace OdataToEntity.Test
@@ -145,6 +151,21 @@ namespace OdataToEntity.Test
                 SetNullCollection(fromDb, includeVisitor.Includes);
             return fromDb;
         }
+        public static String GetCsdlSchema(IEdmModel edmModel)
+        {
+            using (var stream = new MemoryStream())
+            {
+                using (XmlWriter xmlWriter = XmlWriter.Create(stream, new XmlWriterSettings() { Indent = true }))
+                {
+                    IEnumerable<EdmError> errors;
+                    if (!CsdlWriter.TryWriteCsdl(edmModel, xmlWriter, CsdlTarget.OData, out errors))
+                        return null;
+                }
+
+                return Encoding.UTF8.GetString(stream.ToArray());
+            }
+        }
+
         private static IQueryable<T> GetQuerableDb<T>(DbContext dataContext)
         {
             var orderContext = (OrderContext)dataContext;
