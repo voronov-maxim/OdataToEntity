@@ -2,12 +2,13 @@
 OData .net core
 
 This library provides a simple approach to creating OData service from ORM data context.
+This translates the OData query into an expression tree and passes it to the ORM framework.
 Supported ORM: Entity Framework 6, Entity Framework .Core, Linq2Db
 
-Example Asp.Net .Core OData service in \sln\OdataToEntityCore.Asp.sln, client Microsoft.OData.Client in \sln\OdataToEntity.AspClient.sln 
+Example Asp.Net Core OData service in \sln\OdataToEntityCore.Asp.sln, client Microsoft.OData.Client in \sln\OdataToEntity.AspClient.sln 
 
 Script create database \test\OdataToEntity.Test.EfCore.SqlServer\script.sql
-```
+```c#
 public sealed class OrderContext : DbContext
 {
     public DbSet<Customer> Customers { get; set; }
@@ -17,8 +18,33 @@ public sealed class OrderContext : DbContext
 }
 ```
 
-## Sample OData query
+### Build OData EdmModel
+Buid from entity classes marked data annotation attribute, the general case for all providers
+```c#
+//Create adapter data access, where OrderContext your DbContext
+var dataAdapter = new OeEfCoreDataAdapter<Model.OrderContext>();
+//Build OData Edm Model
+EdmModel edmModel = dataAdapter.BuildEdmModel();
 ```
+
+Build from the Entity Framework Core where the data context uses the "Fluent API" (without using attributes)
+```c#
+//Create adapter data access, where OrderContext your DbContext
+var dataAdapter = new OeEfCoreDataAdapter<Model.OrderContext>();
+//Build OData Edm Model
+EdmModel edmModel = dataAdapter.BuildEdmModelFromEfCoreModel();
+```
+Build from the Entity Framework 6 where the data context uses the "Fluent API" (without using attributes)
+```c#
+//Create adapter data access, where OrderEf6Context your DbContext
+var dataAdapter = new OeEf6DataAdapter<OrderEf6Context>();
+//Build OData Edm Model
+EdmModel edmModel = dataAdapter.BuildEdmModelFromEf6Model();
+```
+
+
+### Sample OData query
+```c#
 //Create adapter data access, where OrderContext your DbContext
 var dataAdapter = new OeEfCoreDataAdapter<Model.OrderContext>();
 //Create query parser
@@ -31,8 +57,8 @@ var response = new MemoryStream();
 await parser.ExecuteGetAsync(uri, OeRequestHeaders.Default, response, CancellationToken.None);
 ```
 
-## Sample OData batch request
-```
+### Sample OData batch request
+```c#
 string batch = @"
 --batch_6263d2a1-1ddc-4b02-a1c1-7031cfa93691
 Content-Type: multipart/mixed; boundary=changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
@@ -68,8 +94,8 @@ var response = new MemoryStream();
 await parser.ExecuteBatchAsync(request, response, CancellationToken.None);
 ```
 
-## Sample OData stored procedure
-```
+### Sample OData stored procedure
+```c#
 //Create adapter data access, where OrderContext your DbContext
 var dataAdapter = new OeEfCoreDataAdapter<Model.OrderContext>();
 //Create query parser

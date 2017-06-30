@@ -172,6 +172,7 @@ namespace OdataToEntity.EfCore
         {
             T dbContext = Db.FastActivator.CreateInstance<T>();
             dbContext.ChangeTracker.AutoDetectChangesEnabled = false;
+            dbContext.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
             return dbContext;
         }
         private static Db.OeEntitySetMetaAdapterCollection CreateEntitySetMetaAdapters()
