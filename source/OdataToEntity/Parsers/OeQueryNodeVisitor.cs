@@ -10,18 +10,6 @@ namespace OdataToEntity.Parsers
 {
     public sealed class OeQueryNodeVisitor : QueryNodeVisitor<Expression>
     {
-        private sealed class TupleNavigationPropertyException : Exception
-        {
-            private readonly IEdmNavigationProperty _navigationProperty;
-
-            public TupleNavigationPropertyException(IEdmNavigationProperty navigationProperty)
-            {
-                _navigationProperty = navigationProperty;
-            }
-
-            public IEdmNavigationProperty NavigationProperty => _navigationProperty;
-        }
-
         private readonly Dictionary<ConstantExpression, ConstantNode> _constants;
         private readonly IEdmModel _edmModel;
         private readonly Stack<ParameterExpression> _parameters;
@@ -221,10 +209,12 @@ namespace OdataToEntity.Parsers
 
             PropertyInfo propertyInfo = source.Type.GetTypeInfo().GetProperty(nodeIn.NavigationProperty.Name);
             if (propertyInfo == null)
+            {
                 if (TuplePropertyByAliasName == null)
                     throw new InvalidOperationException("Navigation property " + nodeIn.NavigationProperty.Name + " not found");
-                else
-                    throw new TupleNavigationPropertyException(nodeIn.NavigationProperty);
+
+                return null;
+            }
 
             return Expression.Property(source, propertyInfo);
         }
@@ -257,18 +247,14 @@ namespace OdataToEntity.Parsers
                 return Expression.Property(e, property);
             }
 
-            Expression source;
-            String aliasName = nodeIn.Property.Name;
-            try
+            Expression source = TranslateNode(nodeIn.Source);
+            if (source == null)
             {
-                source = TranslateNode(nodeIn.Source);
+                var navigationNode = (SingleNavigationNode)nodeIn.Source;
+                String aliasName = navigationNode.NavigationProperty.Name + "_" + nodeIn.Property.Name;
+                return TuplePropertyByAliasName(Parameter, aliasName);
             }
-            catch (TupleNavigationPropertyException e)
-            {
-                source = Parameter;
-                aliasName = e.NavigationProperty.Name + "_" + aliasName;
-            }
-            return TuplePropertyByAliasName(source, aliasName);
+            return TuplePropertyByAliasName(source, nodeIn.Property.Name);
         }
         public override Expression Visit(SingleValueFunctionCallNode nodeIn)
         {
