@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.ServiceModel;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -158,6 +159,10 @@ namespace OdataToEntity.Test
                     TestWriteException(e, ConsoleColor.Yellow);
                 }
                 catch (InvalidOperationException e)
+                {
+                    TestWriteException(e, ConsoleColor.Red);
+                }
+                catch (CommunicationObjectFaultedException e)
                 {
                     TestWriteException(e, ConsoleColor.Red);
                 }

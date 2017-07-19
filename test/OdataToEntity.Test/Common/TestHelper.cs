@@ -179,6 +179,8 @@ namespace OdataToEntity.Test
                 return (IQueryable<T>)orderContext.OrderItems;
             if (typeof(T) == typeof(Order))
                 return (IQueryable<T>)orderContext.Orders;
+            if (typeof(T) == typeof(Category))
+                return (IQueryable<T>)orderContext.Categories;
 
             throw new InvalidOperationException("unknown type " + typeof(T).Name);
         }

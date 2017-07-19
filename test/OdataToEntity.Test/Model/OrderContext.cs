@@ -63,7 +63,8 @@ namespace OdataToEntity.Test.Model
             {
                 Id = 1,
                 Name = "clothes",
-                ParentId = null
+                ParentId = null,
+                DateTime = DateTime.Parse("2016-07-04T19:10:10.8237573+03:00")
             };
             var category2 = new Category()
             {
@@ -75,31 +76,36 @@ namespace OdataToEntity.Test.Model
             {
                 Id = 3,
                 Name = "hats",
-                ParentId = 1
+                ParentId = 1,
+                DateTime = DateTime.Parse("2016-07-04T19:10:10.8237573+03:00")
             };
             var category4 = new Category()
             {
                 Id = 4,
                 Name = "jackets",
-                ParentId = 1
+                ParentId = 1,
+                DateTime = DateTime.Parse("2016-07-04T19:10:10.8237573+03:00")
             };
             var category5 = new Category()
             {
                 Id = 5,
                 Name = "baseball cap",
-                ParentId = 3
+                ParentId = 3,
+                DateTime = DateTime.Parse("2000-01-01T00:00:00Z")
             };
             var category6 = new Category()
             {
                 Id = 6,
                 Name = "sombrero",
-                ParentId = 3
+                ParentId = 3,
+                DateTime = DateTime.Parse("3000-01-01T00:00:00Z")
             };
             var category7 = new Category()
             {
                 Id = 7,
                 Name = "fur coat",
-                ParentId = 4
+                ParentId = 4,
+                DateTime = DateTime.Parse("2016-07-04T19:10:11.0000000+03:00")
             };
             var category8 = new Category()
             {

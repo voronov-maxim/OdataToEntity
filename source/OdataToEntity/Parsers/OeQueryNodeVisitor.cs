@@ -106,19 +106,32 @@ namespace OdataToEntity.Parsers
         {
             Expression left = TranslateNode(nodeIn.Left);
             Expression right = TranslateNode(nodeIn.Right);
-            if (left.Type != right.Type && !(OeExpressionHelper.IsNull(left) || OeExpressionHelper.IsNull(right)))
+            if (left.Type != right.Type)
             {
                 Type leftType = left.Type;
                 Type rightType = right.Type;
-                if (OeExpressionHelper.IsNullable(left))
+
+                if (OeExpressionHelper.IsNullable(left) && !OeExpressionHelper.IsNull(left))
                 {
-                    leftType = Nullable.GetUnderlyingType(left.Type);
-                    left = Expression.Convert(left, left.Type);
+                    if (OeExpressionHelper.IsNull(right))
+                    {
+                        ConstantExpression newConstant = Expression.Constant(null, leftType);
+                        ReplaceConstant((ConstantExpression)right, newConstant);
+                        right = newConstant;
+                    }
+                    else
+                        leftType = Nullable.GetUnderlyingType(left.Type);
                 }
-                else if (OeExpressionHelper.IsNullable(right))
+                else if (OeExpressionHelper.IsNullable(right) && !OeExpressionHelper.IsNull(right))
                 {
-                    rightType = Nullable.GetUnderlyingType(right.Type);
-                    right = Expression.Convert(right, right.Type);
+                    if (OeExpressionHelper.IsNull(left))
+                    {
+                        ConstantExpression newConstant = Expression.Constant(null, rightType);
+                        ReplaceConstant((ConstantExpression)left, newConstant);
+                        left = newConstant;
+                    }
+                    else
+                        rightType = Nullable.GetUnderlyingType(right.Type);
                 }
 
                 if (right.Type != left.Type)

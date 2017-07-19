@@ -27,6 +27,7 @@ namespace OdataToEntity
         public static Object CreateEntity(Type clrType, ODataResource entry)
         {
             Object entity = Activator.CreateInstance(clrType);
+
             PropertyDescriptorCollection clrProperties = TypeDescriptor.GetProperties(clrType);
             foreach (ODataProperty property in entry.Properties)
             {
@@ -45,7 +46,15 @@ namespace OdataToEntity
                         clrProperty.SetValue(entity, value);
                     }
                     else
-                        clrProperty.SetValue(entity, property.Value);
+                    {
+                        if (property.Value != null && (clrProperty.PropertyType == typeof(DateTime) || clrProperty.PropertyType == typeof(DateTime?)))
+                        {
+                            DateTime dateTime = ((DateTimeOffset)property.Value).UtcDateTime;
+                            clrProperty.SetValue(entity, dateTime);
+                        }
+                        else
+                            clrProperty.SetValue(entity, property.Value);
+                    }
                 }
             }
             return entity;
@@ -57,7 +66,12 @@ namespace OdataToEntity
             {
                 PropertyDescriptor clrProperty = clrProperties[property.Name];
                 if (clrProperty != null)
-                    property.Value = clrProperty.GetValue(_entity);
+                {
+                    Object value = clrProperty.GetValue(_entity);
+                    if (value != null && (clrProperty.PropertyType == typeof(DateTime) || clrProperty.PropertyType == typeof(DateTime?)))
+                        value = new DateTimeOffset(((DateTime)value));
+                    property.Value = value;
+                }
             }
         }
 

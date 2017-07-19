@@ -54,7 +54,23 @@ namespace OdataToEntity.Parsers
                 OePropertyAccessor accessor = _accessors[i];
                 Object value = accessor.Accessor(entity);
                 if (value is DateTime)
-                    value = (DateTimeOffset)(DateTime)value;
+                {
+                    var dateTime = (DateTime)value;
+                    switch (dateTime.Kind)
+                    {
+                        case DateTimeKind.Unspecified:
+                            value = new DateTimeOffset(DateTime.SpecifyKind(dateTime, DateTimeKind.Utc));
+                            break;
+                        case DateTimeKind.Utc:
+                            value = new DateTimeOffset(dateTime);
+                            break;
+                        case DateTimeKind.Local:
+                            value = new DateTimeOffset(dateTime.ToUniversalTime());
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException("unknown DateTimeKind " + dateTime.Kind.ToString());
+                    }
+                }
                 ODataValue odataValue = null;
                 if (value == null)
                     odataValue = new ODataNullValue() { TypeAnnotation = accessor.TypeAnnotation };

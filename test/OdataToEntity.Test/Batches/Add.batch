@@ -210,7 +210,7 @@ Accept: application/json;odata.metadata=minimal
 Accept-Charset: UTF-8
 User-Agent: Microsoft ADO.NET Data Services
 
-{"@odata.type":"#OdataToEntity.Test.Model.Category","Id":1,"Name":"clothes","ParentId":null}
+{"@odata.type":"#OdataToEntity.Test.Model.Category","Id":1,"Name":"clothes","ParentId":null,"DateTime":"2016-07-04T19:10:10.8237573+03:00"}
 --changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
 Content-Type: application/http
 Content-Transfer-Encoding: binary
@@ -238,7 +238,7 @@ Accept: application/json;odata.metadata=minimal
 Accept-Charset: UTF-8
 User-Agent: Microsoft ADO.NET Data Services
 
-{"@odata.type":"#OdataToEntity.Test.Model.Category","Id":3,"Name":"hats","ParentId":1}
+{"@odata.type":"#OdataToEntity.Test.Model.Category","Id":3,"Name":"hats","ParentId":1,"DateTime":"2016-07-04T19:10:10.8237573+03:00"}
 --changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
 Content-Type: application/http
 Content-Transfer-Encoding: binary
@@ -252,7 +252,7 @@ Accept: application/json;odata.metadata=minimal
 Accept-Charset: UTF-8
 User-Agent: Microsoft ADO.NET Data Services
 
-{"@odata.type":"#OdataToEntity.Test.Model.Category","Id":4,"Name":"jackets","ParentId":1}
+{"@odata.type":"#OdataToEntity.Test.Model.Category","Id":4,"Name":"jackets","ParentId":1,"DateTime":"2016-07-04T19:10:10.8237573+03:00"}
 --changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
 Content-Type: application/http
 Content-Transfer-Encoding: binary
@@ -266,7 +266,7 @@ Accept: application/json;odata.metadata=minimal
 Accept-Charset: UTF-8
 User-Agent: Microsoft ADO.NET Data Services
 
-{"@odata.type":"#OdataToEntity.Test.Model.Category","Id":5,"Name":"baseball cap","ParentId":3}
+{"@odata.type":"#OdataToEntity.Test.Model.Category","Id":5,"Name":"baseball cap","ParentId":3,"DateTime":"2000-01-01T00:00:00Z"}
 --changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
 Content-Type: application/http
 Content-Transfer-Encoding: binary
@@ -280,7 +280,7 @@ Accept: application/json;odata.metadata=minimal
 Accept-Charset: UTF-8
 User-Agent: Microsoft ADO.NET Data Services
 
-{"@odata.type":"#OdataToEntity.Test.Model.Category","Id":6,"Name":"sombrero","ParentId":3}
+{"@odata.type":"#OdataToEntity.Test.Model.Category","Id":6,"Name":"sombrero","ParentId":3,"DateTime":"3000-01-01T00:00:00Z"}
 --changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
 Content-Type: application/http
 Content-Transfer-Encoding: binary
@@ -294,7 +294,7 @@ Accept: application/json;odata.metadata=minimal
 Accept-Charset: UTF-8
 User-Agent: Microsoft ADO.NET Data Services
 
-{"@odata.type":"#OdataToEntity.Test.Model.Category","Id":7,"Name":"fur coat","ParentId":4}
+{"@odata.type":"#OdataToEntity.Test.Model.Category","Id":7,"Name":"fur coat","ParentId":4,"DateTime":"2016-07-04T19:10:11.0000000+03:00"}
 --changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
 Content-Type: application/http
 Content-Transfer-Encoding: binary

@@ -84,7 +84,7 @@ namespace OdataToEntity.Test.Model
         public void ResetDb() => throw new NotImplementedException();
 }
 
-[Table(Schema = "dbo", Name = "Categories")]
+    [Table(Schema = "dbo", Name = "Categories")]
     public partial class Category
     {
         [PrimaryKey, Identity]
@@ -93,6 +93,8 @@ namespace OdataToEntity.Test.Model
         public string Name { get; set; } // varchar(128)
         [Column, Nullable]
         public int? ParentId { get; set; } // int
+        [Column, Nullable]
+        public DateTime? DateTime { get; set; } //datetime2(7)
 
         #region Associations
 

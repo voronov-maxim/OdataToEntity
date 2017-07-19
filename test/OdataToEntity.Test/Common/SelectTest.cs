@@ -339,12 +339,42 @@ namespace OdataToEntity.Test
             await Fixture.Execute(parameters);
         }
         [Fact]
+        public async Task FilterDateTime()
+        {
+            var parameters = new QueryParameters<Category>()
+            {
+                RequestUri = "Categories?$filter=DateTime ge 2016-07-04T19:10:10.8237573%2B03:00",
+                Expression = t => t.Where(o => o.DateTime.GetValueOrDefault().ToLocalTime() >= DateTime.Parse("2016-07-04T19:10:10.8237573+03:00"))
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Fact]
+        public async Task FilterDateTimeNull()
+        {
+            var parameters = new QueryParameters<Category>()
+            {
+                RequestUri = "Categories?$filter=DateTime eq null",
+                Expression = t => t.Where(o => o.DateTime == null)
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Fact]
         public async Task FilterDateTimeOffset()
         {
             var parameters = new QueryParameters<Order>()
             {
                 RequestUri = "Orders?$filter=Date ge 2016-07-04T19:10:10.8237573%2B03:00",
                 Expression = t => t.Where(o => o.Date >= DateTimeOffset.Parse("2016-07-04T19:10:10.8237573+03:00"))
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Fact]
+        public async Task FilterDateTimeOffsetNull()
+        {
+            var parameters = new QueryParameters<Order>()
+            {
+                RequestUri = "Orders?$filter=Date eq null",
+                Expression = t => t.Where(o => o.Date == null)
             };
             await Fixture.Execute(parameters);
         }
@@ -359,12 +389,12 @@ namespace OdataToEntity.Test
             await Fixture.Execute(parameters);
         }
         [Fact]
-        public async Task FilterDateTimeOffsetNull()
+        public async Task FilterDateTimeYearMonthDay()
         {
-            var parameters = new QueryParameters<Order>()
+            var parameters = new QueryParameters<Category>()
             {
-                RequestUri = "Orders?$filter=Date eq null",
-                Expression = t => t.Where(o => o.Date == null)
+                RequestUri = "Categories?$filter=year(DateTime) eq 2016 and month(DateTime) gt 3 and day(DateTime) lt 20",
+                Expression = t => t.Where(c => c.DateTime.GetValueOrDefault().Year == 2016 && c.DateTime.GetValueOrDefault().Month > 3 && c.DateTime.GetValueOrDefault().Day < 20)
             };
             await Fixture.Execute(parameters);
         }

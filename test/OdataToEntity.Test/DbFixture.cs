@@ -46,6 +46,8 @@ namespace OdataToEntity.Test
 
             var settings = new JsonSerializerSettings()
             {
+                DateFormatString = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'ffffff",
+                DateTimeZoneHandling = DateTimeZoneHandling.Utc,
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
                 NullValueHandling = NullValueHandling.Ignore
             };
@@ -64,6 +66,8 @@ namespace OdataToEntity.Test
 
             var settings = new JsonSerializerSettings()
             {
+                DateFormatString = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'ffffff",
+                DateTimeZoneHandling = DateTimeZoneHandling.Utc,
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
                 NullValueHandling = NullValueHandling.Ignore
             };

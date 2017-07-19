@@ -166,6 +166,9 @@ namespace ODataClient.OdataToEntity.Test.Model
                 this.OnPropertyChanged("ParentId");
             }
         }
+
+        public global::System.DateTime? DateTime { get; set; }
+
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
         private global::System.Nullable<int> _ParentId;
         partial void OnParentIdChanging(global::System.Nullable<int> value);

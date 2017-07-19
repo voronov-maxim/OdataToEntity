@@ -12,6 +12,7 @@ namespace OdataToEntity.Test.Model
         public String Name { get; set; }
         public Category Parent { get; set; }
         public int? ParentId { get; set; }
+        public DateTime? DateTime { get; set; }
     }
 
     public sealed class Customer
