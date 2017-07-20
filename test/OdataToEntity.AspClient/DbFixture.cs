@@ -52,6 +52,8 @@ namespace OdataToEntity.Test
             var settings = new JsonSerializerSettings()
             {
                 ContractResolver = new TestHelper.TestContractResolver(),
+                DateFormatString = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'ffffff",
+                DateTimeZoneHandling = DateTimeZoneHandling.Utc,
                 NullValueHandling = NullValueHandling.Ignore,
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
             };

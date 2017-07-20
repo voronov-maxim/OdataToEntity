@@ -341,10 +341,11 @@ namespace OdataToEntity.Test
         [Fact]
         public async Task FilterDateTime()
         {
+            var dt = DateTime.Parse("2016-07-04T19:10:10.8237573+03:00", null, System.Globalization.DateTimeStyles.AdjustToUniversal);
             var parameters = new QueryParameters<Category>()
             {
                 RequestUri = "Categories?$filter=DateTime ge 2016-07-04T19:10:10.8237573%2B03:00",
-                Expression = t => t.Where(o => o.DateTime.GetValueOrDefault().ToLocalTime() >= DateTime.Parse("2016-07-04T19:10:10.8237573+03:00"))
+                Expression = t => t.Where(o => o.DateTime >= dt)
             };
             await Fixture.Execute(parameters);
         }
