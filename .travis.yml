@@ -4,7 +4,6 @@ dist: trusty
 mono: none
 dotnet: 1.1.0
 before_script:
-  - cd $TRAVIS_BUILD_DIR/test/OdataToEntity.Test
-  - dotnet restore
+  - dotnet restore ./test/OdataToEntity.Test 
 script:  
-  - dotnet test -c Release -f netcoreapp1.1
+  - dotnet test ./test/OdataToEntity.Test/OdataToEntity.Test.csproj -c Release -f netcoreapp1.1
