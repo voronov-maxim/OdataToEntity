@@ -1,4 +1,6 @@
 # OdataToEntity
+[![Travis](https://img.shields.io/travis/voronov-maxim/OdataToEntity.svg)](https://travis-ci.org/voronov-maxim/OdataToEntity)
+
 OData .net core
 
 This library provides a simple approach to creating OData service from ORM data context.
