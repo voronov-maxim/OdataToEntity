@@ -6,4 +6,4 @@ dotnet: 1.1.0
 before_script:
   - dotnet restore ./test/OdataToEntity.Test
 script:  
-  - dotnet test ./test/OdataToEntity.Test -c Release -f netcoreapp1.1
+  - dotnet test ./test/OdataToEntity.Test/OdataToEntity.Test.csproj -c Release -f netcoreapp1.1
