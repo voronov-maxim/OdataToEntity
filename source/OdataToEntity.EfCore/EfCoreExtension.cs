@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Query;
+using Microsoft.EntityFrameworkCore.Query.Internal;
 using Remotion.Linq;
 using Remotion.Linq.Parsing.ExpressionVisitors.Transformation;
 using Remotion.Linq.Parsing.ExpressionVisitors.TreeEvaluation;
@@ -31,7 +32,8 @@ namespace OdataToEntity.EfCore
         }
         private static QueryModel CreateQueryModel(this DbContext dbContext, Expression expression)
         {
-            INodeTypeProvider nodeTypeProvider = dbContext.GetService<MethodInfoBasedNodeTypeRegistry>();
+            var nodeTypeProviderFactory = dbContext.GetService<INodeTypeProviderFactory>();
+            INodeTypeProvider nodeTypeProvider = nodeTypeProviderFactory.Create();
             var queryParser = new QueryParser(
                 new ExpressionTreeParser(nodeTypeProvider,
                 new CompoundExpressionTreeProcessor(

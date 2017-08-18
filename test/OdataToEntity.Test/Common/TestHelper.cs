@@ -122,9 +122,49 @@ namespace OdataToEntity.Test
 
         public sealed class TestContractResolver : DefaultContractResolver
         {
+            private sealed class NullValueProvider : IValueProvider
+            {
+                public object GetValue(object target) => null;
+                public void SetValue(object target, object value) { }
+            }
+
+            private readonly IReadOnlyList<IncludeVisitor.Include> _includes;
+
+            public TestContractResolver(IReadOnlyList<IncludeVisitor.Include> includes)
+            {
+                _includes = includes;
+            }
+
             protected override IList<JsonProperty> CreateProperties(Type type, MemberSerialization memberSerialization)
             {
-                return base.CreateProperties(type, memberSerialization).OrderBy(p => p.PropertyName).ToList();
+                IList<JsonProperty> jproperties = base.CreateProperties(type, memberSerialization);
+                if (IsTestModelType(type))
+                {
+                    var propertyNames = new HashSet<String>();
+                    foreach (PropertyInfo property in type.GetProperties())
+                    {
+                        Type propertyType = Parsers.OeExpressionHelper.GetCollectionItemType(property.PropertyType);
+                        if (propertyType == null)
+                            propertyType = property.PropertyType;
+
+
+                        if (!propertyType.IsValueType && propertyType.Namespace == typeof(Order).Namespace)
+                            if (!_includes.Any(i => i.Property == property))
+                                continue;
+
+                        propertyNames.Add(property.Name);
+                    }
+
+                    foreach (JsonProperty jproperty in jproperties)
+                        if (!propertyNames.Contains(jproperty.PropertyName))
+                            jproperty.ValueProvider = new NullValueProvider();
+                }
+
+                return jproperties.OrderBy(p => p.PropertyName).ToList();
+            }
+            private static bool IsTestModelType(Type type)
+            {
+                return type.IsClass && type.Namespace == typeof(Order).Namespace;
             }
         }
 
@@ -146,7 +186,7 @@ namespace OdataToEntity.Test
 
             IList fromDb = query.Provider.CreateQuery<TResult>(call).ToList();
             if (typeof(TResult) == typeof(Object))
-                fromDb = SortProperty(fromDb);
+                fromDb = SortProperty(fromDb, includeVisitor.Includes);
             else
                 SetNullCollection(fromDb, includeVisitor.Includes);
             return fromDb;
@@ -201,17 +241,6 @@ namespace OdataToEntity.Test
                 fixture.SelectTestDefinitions[i].MethodName = methodNames[i];
             return fixture.SelectTestDefinitions.ToArray();
         }
-        private static bool IsCollection(Type collectionType)
-        {
-            if (collectionType.GetTypeInfo().IsGenericType && collectionType.GetGenericTypeDefinition() == typeof(IEnumerable<>))
-                return true;
-
-            foreach (Type iface in collectionType.GetTypeInfo().GetInterfaces())
-                if (iface.GetTypeInfo().IsGenericType && iface.GetGenericTypeDefinition() == typeof(IEnumerable<>))
-                    return true;
-
-            return false;
-        }
         public static bool IsEntity(Type type)
         {
             TypeInfo typeInfo = type.GetTypeInfo();
@@ -262,7 +291,9 @@ namespace OdataToEntity.Test
                             continue;
                         }
 
-                    if (IsCollection(property.PropertyType))
+                    if (Parsers.OeExpressionHelper.GetCollectionItemType(property.PropertyType) == null)
+                        SetNullCollection(value, visited, includes);
+                    else
                     {
                         bool isEmpty = true;
                         foreach (Object item in (IEnumerable)value)
@@ -285,8 +316,6 @@ namespace OdataToEntity.Test
                             }
                         }
                     }
-                    else
-                        SetNullCollection(value, visited, includes);
                 }
         }
         public static JObject[] SortProperty(IEnumerable<JObject> items)
@@ -312,10 +341,12 @@ namespace OdataToEntity.Test
             }
             return jobjects.ToArray();
         }
-        public static IList SortProperty(IEnumerable items)
+        public static IList SortProperty(IEnumerable items, IReadOnlyList<IncludeVisitor.Include> includes)
         {
             var serializer = new JsonSerializer();
-            serializer.ContractResolver = new TestContractResolver();
+            serializer.ContractResolver = new TestContractResolver(includes);
+            serializer.Formatting = Newtonsoft.Json.Formatting.Indented;
+            serializer.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
             return JArray.FromObject(items, serializer);
         }
         private static JObject SortProperty(JObject jobject)

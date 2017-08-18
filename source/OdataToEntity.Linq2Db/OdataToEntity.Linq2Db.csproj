@@ -5,7 +5,7 @@
     <AssemblyTitle>Linq2Db adapter for OdataEntity</AssemblyTitle>
     <VersionPrefix>1.0.0.1</VersionPrefix>
     <Authors>Maxim Voronov</Authors>
-    <TargetFrameworks>net462</TargetFrameworks>
+    <TargetFrameworks>net461</TargetFrameworks>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity.Linq2Db</AssemblyName>
     <PackageId>OdataToEntity.Linq2Db</PackageId>
@@ -32,7 +32,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>OdataToEntity.Linq2Db</RootNamespace>
     <AssemblyName>OdataToEntity.Linq2Db</AssemblyName>
-    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
     <SccProjectName>SAK</SccProjectName>

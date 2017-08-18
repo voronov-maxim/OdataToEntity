@@ -99,6 +99,8 @@ namespace OdataToEntity.Test
                     _includes.Add(new Include(visitor.Property.Member as PropertyInfo, predicate));
                 }
             }
+            else
+                node = Expression.Call(node.Object, node.Method, expression, node.Arguments[1]);
             return node;
         }
 

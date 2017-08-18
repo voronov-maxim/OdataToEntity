@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -15,25 +16,25 @@ namespace OdataToEntity.Test.Model
     {
         private sealed class ZStateManager : StateManager
         {
-            public ZStateManager(IInternalEntityEntryFactory factory, IInternalEntityEntrySubscriber subscriber, IInternalEntityEntryNotifier notifier, IValueGenerationManager valueGeneration, IModel model, IDatabase database, IConcurrencyDetector concurrencyDetector, ICurrentDbContext currentContext)
-                : base(factory, subscriber, notifier, valueGeneration, model, database, concurrencyDetector, currentContext)
+            public ZStateManager(IInternalEntityEntryFactory factory, IInternalEntityEntrySubscriber subscriber, IInternalEntityEntryNotifier notifier, IValueGenerationManager valueGeneration, IModel model, IDatabase database, IConcurrencyDetector concurrencyDetector, ICurrentDbContext currentContext, ILoggingOptions loggingOptions, IDiagnosticsLogger<DbLoggerCategory.Update> updateLogger)
+                : base(factory, subscriber, notifier, valueGeneration, model, database, concurrencyDetector, currentContext, loggingOptions, updateLogger)
             {
             }
             protected override async Task<int> SaveChangesAsync(IReadOnlyList<InternalEntityEntry> entriesToSave, CancellationToken cancellationToken = default(CancellationToken))
             {
-                int count = await base.SaveChangesAsync(entriesToSave, cancellationToken);
                 UpdateTemporaryKey(entriesToSave);
+                int count = await base.SaveChangesAsync(entriesToSave, cancellationToken);
                 return count;
             }
-            internal static void UpdateTemporaryKey(IReadOnlyList<IUpdateEntry> entries)
+            internal static void UpdateTemporaryKey(IReadOnlyList<InternalEntityEntry> entries)
             {
-                foreach (IUpdateEntry entry in entries)
+                foreach (InternalEntityEntry entry in entries)
                     foreach (IKey key in entry.EntityType.GetKeys())
                         foreach (IProperty property in key.Properties)
                             if (entry.HasTemporaryValue(property))
                             {
-                                Object value = entry.GetCurrentValue(property);
-                                entry.SetCurrentValue(property, value);
+                                int id = (int)entry.GetCurrentValue(property);
+                                entry.SetProperty(property, -id, false);
                             }
             }
 
