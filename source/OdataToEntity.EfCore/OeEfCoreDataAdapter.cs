@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
+using Microsoft.EntityFrameworkCore.Extensions.Internal;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
@@ -201,13 +202,13 @@ namespace OdataToEntity.EfCore
         }
         public override Db.OeEntityAsyncEnumerator ExecuteEnumerator(Object dataContext, OeParseUriContext parseUriContext, CancellationToken cancellationToken)
         {
-            IEnumerable<Object> enumerable;
+            IAsyncEnumerable<Object> asyncEnumerable;
             if (base.QueryCache.AllowCache)
-                enumerable = GetFromCache<Object>(parseUriContext, (T)dataContext, base.QueryCache);
+                asyncEnumerable = GetFromCache<Object>(parseUriContext, (T)dataContext, base.QueryCache);
             else
-                enumerable = ((IQueryable<Object>)base.CreateQuery(parseUriContext, dataContext, new OeConstantToVariableVisitor()));
+                asyncEnumerable = ((IQueryable<Object>)base.CreateQuery(parseUriContext, dataContext, new OeConstantToVariableVisitor())).AsAsyncEnumerable();
 
-            Db.OeEntityAsyncEnumerator asyncEnumerator = new Db.OeEntityAsyncEnumeratorAdapter(enumerable, cancellationToken);
+            Db.OeEntityAsyncEnumerator asyncEnumerator = new Db.OeEntityAsyncEnumerator(asyncEnumerable.GetEnumerator(), cancellationToken);
             if (parseUriContext.CountExpression != null)
             {
                 IQueryable query = parseUriContext.EntitySetAdapter.GetEntitySet(dataContext);
@@ -259,7 +260,7 @@ namespace OdataToEntity.EfCore
         public override TResult ExecuteScalar<TResult>(Object dataContext, OeParseUriContext parseUriContext)
         {
             if (base.QueryCache.AllowCache)
-                return GetFromCache<TResult>(parseUriContext, (T)dataContext, base.QueryCache).Single();
+                return GetFromCache<TResult>(parseUriContext, (T)dataContext, base.QueryCache).Single().GetAwaiter().GetResult();
 
             IQueryable query = parseUriContext.EntitySetAdapter.GetEntitySet(dataContext);
             Expression expression = parseUriContext.CreateExpression(query, new OeConstantToVariableVisitor());
@@ -270,11 +271,11 @@ namespace OdataToEntity.EfCore
         {
             return new Db.OeEntitySetAdapter(_entitySetMetaAdapters.FindByEntitySetName(entitySetName), this);
         }
-        private static IEnumerable<TResult> GetFromCache<TResult>(OeParseUriContext parseUriContext, T dbContext, Db.OeQueryCache queryCache)
+        private static IAsyncEnumerable<TResult> GetFromCache<TResult>(OeParseUriContext parseUriContext, T dbContext, Db.OeQueryCache queryCache)
         {
             Db.QueryCacheItem queryCacheItem = queryCache.GetQuery(parseUriContext);
 
-            Func<QueryContext, IEnumerable<TResult>> queryExecutor;
+            Func<QueryContext, IAsyncEnumerable<TResult>> queryExecutor;
             Expression countExpression;
             if (queryCacheItem == null)
             {
@@ -282,14 +283,14 @@ namespace OdataToEntity.EfCore
                 var parameterVisitor = new OeConstantToParameterVisitor();
 
                 Expression expression = parseUriContext.CreateExpression(query, parameterVisitor);
-                queryExecutor = dbContext.CreateQueryExecutor<TResult>(expression);
+                queryExecutor = dbContext.CreateAsyncQueryExecutor<TResult>(expression);
                 countExpression = parseUriContext.CreateCountExpression(query, expression);
                 queryCache.AddQuery(parseUriContext, queryExecutor, countExpression, parameterVisitor.ConstantToParameterMapper);
                 parseUriContext.ParameterValues = parameterVisitor.ParameterValues;
             }
             else
             {
-                queryExecutor = (Func<QueryContext, IEnumerable<TResult>>)queryCacheItem.Query;
+                queryExecutor = (Func<QueryContext, IAsyncEnumerable<TResult>>)queryCacheItem.Query;
                 parseUriContext.EntryFactory = queryCacheItem.EntryFactory;
                 countExpression = queryCacheItem.CountExpression;
             }
@@ -301,6 +302,28 @@ namespace OdataToEntity.EfCore
 
             if (parseUriContext.ODataUri.QueryCount.GetValueOrDefault())
                 parseUriContext.CountExpression = new OeParameterToVariableVisitor().Translate(countExpression, parseUriContext.ParameterValues);
+
+            return queryExecutor(queryContext);
+        }
+        private static IAsyncEnumerable<TResult> GetQueryExecutor<TResult>(OeParseUriContext parseUriContext, T dbContext)
+        {
+            IQueryable query = parseUriContext.EntitySetAdapter.GetEntitySet(dbContext);
+
+            var parameterVisitor = new OeConstantToParameterVisitor();
+            Expression expression = parseUriContext.CreateExpression(query, parameterVisitor);
+            Func<QueryContext, IAsyncEnumerable<TResult>> queryExecutor = dbContext.CreateAsyncQueryExecutor<TResult>(expression);
+            parseUriContext.ParameterValues = parameterVisitor.ParameterValues;
+
+            var queryContextFactory = dbContext.GetService<IQueryContextFactory>();
+            QueryContext queryContext = queryContextFactory.Create();
+            foreach (Db.OeQueryCacheDbParameterValue parameterValue in parseUriContext.ParameterValues)
+                queryContext.AddParameter(parameterValue.ParameterName, parameterValue.ParameterValue);
+
+            if (parseUriContext.ODataUri.QueryCount.GetValueOrDefault())
+            {
+                Expression countExpression = parseUriContext.CreateCountExpression(query, expression);
+                parseUriContext.CountExpression = new OeParameterToVariableVisitor().Translate(countExpression, parseUriContext.ParameterValues);
+            }
 
             return queryExecutor(queryContext);
         }

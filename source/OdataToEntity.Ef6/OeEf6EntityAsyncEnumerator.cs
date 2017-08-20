@@ -9,29 +9,15 @@ namespace OdataToEntity.Ef6
     public sealed class OeEf6EntityAsyncEnumerator : OeEntityAsyncEnumerator
     {
         private readonly IDbAsyncEnumerator _asyncEnumerator;
-        private readonly CancellationToken _cancellationToken;
 
         public OeEf6EntityAsyncEnumerator(IDbAsyncEnumerator asyncEnumerator, CancellationToken cancellationToken)
+            : base(null, cancellationToken)
         {
             _asyncEnumerator = asyncEnumerator;
-            _cancellationToken = cancellationToken;
         }
 
-        public override void Dispose()
-        {
-            _asyncEnumerator.Dispose();
-        }
-        public override Task<bool> MoveNextAsync()
-        {
-            return _asyncEnumerator.MoveNextAsync(_cancellationToken);
-        }
-
-        public override Object Current
-        {
-            get
-            {
-                return _asyncEnumerator.Current;
-            }
-        }
+        public override void Dispose() => _asyncEnumerator.Dispose();
+        public override Task<bool> MoveNextAsync() => _asyncEnumerator.MoveNextAsync(base.CancellationToken);
+        public override Object Current => _asyncEnumerator.Current;
     }
 }

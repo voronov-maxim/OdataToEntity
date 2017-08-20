@@ -728,9 +728,9 @@ namespace OdataToEntity.Test
         [Fact]
         public async Task Table()
         {
-            var parameters = new QueryParameters<Customer>()
+            var parameters = new QueryParameters<Order>()
             {
-                RequestUri = "Customers",
+                RequestUri = "Orders",
                 Expression = t => t
             };
             await Fixture.Execute(parameters);

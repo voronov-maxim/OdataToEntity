@@ -14,7 +14,6 @@ namespace OdataToEntity.Parsers
         private readonly IEdmEntityType _entityType;
         private readonly ODataNestedResourceInfo _resourceInfo;
         private readonly IReadOnlyList<OeEntryFactory> _navigationLinks;
-        private readonly ODataProperty[] _odataProperties;
         private readonly String _typeName;
 
         private OeEntryFactory(IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors)
@@ -25,10 +24,6 @@ namespace OdataToEntity.Parsers
             _entityType = entitySet.EntityType();
             _navigationLinks = Array.Empty<OeEntryFactory>();
             _typeName = EntityType.FullName();
-
-            _odataProperties = new ODataProperty[accessors.Length];
-            for (int i = 0; i < accessors.Length; i++)
-                _odataProperties[i] = new ODataProperty() { Name = accessors[i].Name };
         }
         private OeEntryFactory(IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors, IReadOnlyList<OeEntryFactory> navigationLinks)
             : this(entitySet, accessors)
@@ -49,6 +44,10 @@ namespace OdataToEntity.Parsers
 
         public ODataResource CreateEntry(Object entity)
         {
+            var odataProperties = new ODataProperty[_accessors.Length];
+            for (int i = 0; i < _accessors.Length; i++)
+                odataProperties[i] = new ODataProperty() { Name = _accessors[i].Name };
+
             for (int i = 0; i < _accessors.Length; i++)
             {
                 OePropertyAccessor accessor = _accessors[i];
@@ -82,13 +81,13 @@ namespace OdataToEntity.Parsers
                         odataValue = new ODataPrimitiveValue(value);
                     odataValue.TypeAnnotation = accessor.TypeAnnotation;
                 }
-                _odataProperties[i].Value = odataValue;
+                odataProperties[i].Value = odataValue;
             }
 
             return new ODataResource
             {
                 TypeName = _typeName,
-                Properties = _odataProperties
+                Properties = odataProperties
             };
         }
         public static OeEntryFactory CreateEntryFactory(IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors)

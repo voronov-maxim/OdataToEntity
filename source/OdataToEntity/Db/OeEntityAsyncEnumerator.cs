@@ -1,31 +1,38 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace OdataToEntity.Db
 {
-    public abstract class OeEntityAsyncEnumerator : IDisposable
+    public class OeEntityAsyncEnumerator : IDisposable
     {
-        public abstract void Dispose();
-        public abstract Task<bool> MoveNextAsync();
+        private readonly IAsyncEnumerator<Object> _asyncEnumerator;
+        private readonly CancellationToken _cancellationToken;
+
+        public OeEntityAsyncEnumerator(IAsyncEnumerator<Object> asyncEnumerator, CancellationToken cancellationToken)
+        {
+            _asyncEnumerator = asyncEnumerator;
+            _cancellationToken = cancellationToken;
+        }
+
+        protected CancellationToken CancellationToken => _cancellationToken; 
+        public virtual void Dispose() => _asyncEnumerator.Dispose();
+        public virtual Task<bool> MoveNextAsync() => _asyncEnumerator.MoveNext(_cancellationToken);
 
         public int? Count { get; set; }
-        public abstract Object Current
-        {
-            get;
-        }
+        public virtual Object Current => _asyncEnumerator.Current;
     }
 
     public sealed class OeEntityAsyncEnumeratorAdapter : OeEntityAsyncEnumerator
     {
         private readonly IEnumerator _enumerator;
-        private readonly CancellationToken _cancellationToken;
 
         public OeEntityAsyncEnumeratorAdapter(IEnumerable enumerable, CancellationToken cancellationToken)
+            : base(null, cancellationToken)
         {
             _enumerator = enumerable.GetEnumerator();
-            _cancellationToken = cancellationToken;
         }
 
         public override void Dispose()
@@ -36,7 +43,7 @@ namespace OdataToEntity.Db
         }
         public override Task<bool> MoveNextAsync()
         {
-            _cancellationToken.ThrowIfCancellationRequested();
+            base.CancellationToken.ThrowIfCancellationRequested();
             return Task.FromResult<bool>(_enumerator.MoveNext());
         }
 
