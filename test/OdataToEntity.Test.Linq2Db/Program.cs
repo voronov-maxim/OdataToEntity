@@ -12,8 +12,8 @@ namespace OdataToEntity.Test.Linq2Db
     {
         static void Main(string[] args)
         {
-            new SelectTest(new DbFixtureInitDb()).ApplyGroupByAggregateFilter().GetAwaiter().GetResult();
-            //new BatchTest().Delete().GetAwaiter().GetResult();
+            //new SelectTest(new DbFixtureInitDb()).ApplyGroupByAggregateFilter().GetAwaiter().GetResult();
+            new BatchTest().Add().GetAwaiter().GetResult();
 
             //using (var ctx = new OdataToEntityDB("OdataToEntity"))
             //{

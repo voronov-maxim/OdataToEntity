@@ -143,13 +143,13 @@ namespace OdataToEntity.Test
                     var propertyNames = new HashSet<String>();
                     foreach (PropertyInfo property in type.GetProperties())
                     {
-                        Type propertyType = Parsers.OeExpressionHelper.GetCollectionItemType(property.PropertyType);
+                        Type propertyType = GetCollectionItemType(property.PropertyType);
                         if (propertyType == null)
                             propertyType = property.PropertyType;
 
 
                         if (!propertyType.IsValueType && propertyType.Namespace == typeof(Order).Namespace)
-                            if (!_includes.Any(i => i.Property == property))
+                            if (_includes != null && !_includes.Any(i => i.Property == property))
                                 continue;
 
                         propertyNames.Add(property.Name);
@@ -209,7 +209,19 @@ namespace OdataToEntity.Test
                 return Encoding.UTF8.GetString(stream.ToArray());
             }
         }
+        private static Type GetCollectionItemType(Type collectionType)
+        {
+            if (collectionType.GetTypeInfo().IsPrimitive)
+                return null;
 
+            if (collectionType.GetTypeInfo().IsGenericType && collectionType.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+                return collectionType.GetTypeInfo().GetGenericArguments()[0];
+
+            foreach (Type iface in collectionType.GetTypeInfo().GetInterfaces())
+                if (iface.GetTypeInfo().IsGenericType && iface.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+                    return iface.GetTypeInfo().GetGenericArguments()[0];
+            return null;
+        }
         private static IQueryable<T> GetQuerableDb<T>(DbContext dataContext)
         {
             var orderContext = (OrderContext)dataContext;
@@ -291,7 +303,7 @@ namespace OdataToEntity.Test
                             continue;
                         }
 
-                    if (Parsers.OeExpressionHelper.GetCollectionItemType(property.PropertyType) == null)
+                    if (GetCollectionItemType(property.PropertyType) == null)
                         SetNullCollection(value, visited, includes);
                     else
                     {

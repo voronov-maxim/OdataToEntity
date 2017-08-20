@@ -108,13 +108,17 @@ namespace OdataToEntity.Linq2Db
             }
 
             OrderBy(base.SelfRefProperty, identityProperties[0], _inserted);
-            foreach (T entity in _inserted)
+            for(int i = 0; i < _inserted.Count; i++)
             {
+                T entity = _inserted[i];
                 Object identity = dc.InsertWithIdentity<T>(entity);
                 identity = Convert.ChangeType(identity, identityProperties[0].PropertyType);
                 Object old = identityProperties[0].GetValue(entity);
                 identityProperties[0].SetValue(entity, identity);
                 _identities.Add(old, identity);
+
+                if (base.SelfRefProperty != null)
+                    UpdateParentIdentity(old, identity, i);
             }
             return Inserted.Count;
         }
@@ -127,6 +131,18 @@ namespace OdataToEntity.Linq2Db
         public void Update(T entity)
         {
             _updated.Add(entity);
+        }
+        private void UpdateParentIdentity(Object oldIdentity, Object newIdentity, int entityIndex)
+        {
+            if (newIdentity.Equals(oldIdentity))
+                return;
+
+            for (int i = entityIndex + 1; i < _inserted.Count; i++)
+            {
+                Object parentIdentity = base.SelfRefProperty.GetValue(_inserted[i]);
+                if (oldIdentity.Equals(parentIdentity))
+                    base.SelfRefProperty.SetValue(_inserted[i], newIdentity);
+            }
         }
         public override void UpdateIdentities(PropertyDescriptor fkeyProperty, IDictionary<Object, Object> identities)
         {

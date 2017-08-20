@@ -100,7 +100,10 @@ namespace OdataToEntity.Test
                 }
             }
             else
-                node = Expression.Call(node.Object, node.Method, expression, node.Arguments[1]);
+                if (node.Arguments.Count == 1)
+                node = Expression.Call(node.Object, node.Method, expression);
+            else
+                    node = Expression.Call(node.Object, node.Method, expression, node.Arguments[1]);
             return node;
         }
 

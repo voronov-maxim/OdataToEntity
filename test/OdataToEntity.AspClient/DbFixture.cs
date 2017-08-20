@@ -1,5 +1,5 @@
 ﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
+using Newtonsoft.Json.Linq;
 using ODataClient.Default;
 using OdataToEntity.Test.Model;
 using System;
@@ -51,9 +51,10 @@ namespace OdataToEntity.Test
 
             var settings = new JsonSerializerSettings()
             {
-                ContractResolver = new TestHelper.TestContractResolver(),
+                ContractResolver = new TestHelper.TestContractResolver(null),
                 DateFormatString = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'ffffff",
                 DateTimeZoneHandling = DateTimeZoneHandling.Utc,
+                Formatting = Formatting.Indented,
                 NullValueHandling = NullValueHandling.Ignore,
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
             };
@@ -87,7 +88,7 @@ namespace OdataToEntity.Test
             TestHelper.SetNullCollection(fromOe, GetIncludes(lambda));
 
             if (typeof(TResult) == typeof(Object))
-                fromOe = TestHelper.SortProperty(fromOe);
+                fromOe = TestHelper.SortProperty(fromOe.Cast<Object>().Select(o => JObject.FromObject(o)));
             return fromOe;
         }
         private static IList ExecuteQuery<T>(IQueryable query, Expression expression)
