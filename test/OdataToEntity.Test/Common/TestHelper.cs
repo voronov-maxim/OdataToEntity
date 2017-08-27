@@ -233,6 +233,8 @@ namespace OdataToEntity.Test
                 return (IQueryable<T>)orderContext.Orders;
             if (typeof(T) == typeof(Category))
                 return (IQueryable<T>)orderContext.Categories;
+            if (typeof(T) == typeof(ManyColumns))
+                return (IQueryable<T>)orderContext.ManyColumns;
 
             throw new InvalidOperationException("unknown type " + typeof(T).Name);
         }

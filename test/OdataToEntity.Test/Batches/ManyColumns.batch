@@ -1,0 +1,96 @@
+﻿--batch_6263d2a1-1ddc-4b02-a1c1-7031cfa93691
+Content-Type: multipart/mixed; boundary=changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
+
+--changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
+Content-Type: application/http
+Content-Transfer-Encoding: binary
+Content-ID: 1
+
+POST http://dummy/ManyColumns HTTP/1.1
+OData-Version: 4.0
+OData-MaxVersion: 4.0
+Content-Type: application/json;odata.metadata=minimal
+Accept: application/json;odata.metadata=minimal
+Accept-Charset: UTF-8
+User-Agent: Microsoft ADO.NET Data Services
+
+{"@odata.type":"#OdataToEntity.Test.Model.ManyColumns",
+"Column01":"1",
+"Column02":"2",
+"Column03":"3",
+"Column04":"4",
+"Column05":"5",
+"Column06":"6",
+"Column07":"7",
+"Column08":"8",
+"Column09":"9",
+"Column10":"10",
+"Column11":"11",
+"Column12":"12",
+"Column13":"13",
+"Column14":"14",
+"Column15":"15",
+"Column16":"16",
+"Column17":"17",
+"Column18":"18",
+"Column19":"19",
+"Column20":"20",
+"Column21":"21",
+"Column22":"22",
+"Column23":"23",
+"Column24":"24",
+"Column25":"25",
+"Column26":"26",
+"Column27":"27",
+"Column28":"28",
+"Column29":"29",
+"Column30":"30"
+}
+
+--changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
+Content-Type: application/http
+Content-Transfer-Encoding: binary
+Content-ID: 2
+
+POST http://dummy/ManyColumns HTTP/1.1
+OData-Version: 4.0
+OData-MaxVersion: 4.0
+Content-Type: application/json;odata.metadata=minimal
+Accept: application/json;odata.metadata=minimal
+Accept-Charset: UTF-8
+User-Agent: Microsoft ADO.NET Data Services
+
+{"@odata.type":"#OdataToEntity.Test.Model.ManyColumns",
+"Column01":"101",
+"Column02":"102",
+"Column03":"103",
+"Column04":"104",
+"Column05":"105",
+"Column06":"106",
+"Column07":"107",
+"Column08":"108",
+"Column09":"109",
+"Column10":"110",
+"Column11":"111",
+"Column12":"112",
+"Column13":"113",
+"Column14":"114",
+"Column15":"115",
+"Column16":"116",
+"Column17":"117",
+"Column18":"118",
+"Column19":"119",
+"Column20":"120",
+"Column21":"121",
+"Column22":"122",
+"Column23":"123",
+"Column24":"124",
+"Column25":"125",
+"Column26":"126",
+"Column27":"127",
+"Column28":"128",
+"Column29":"129",
+"Column30":"130"}
+--changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6--
+
+--batch_6263d2a1-1ddc-4b02-a1c1-7031cfa93691--

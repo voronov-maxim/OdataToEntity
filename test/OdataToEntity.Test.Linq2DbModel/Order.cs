@@ -25,10 +25,11 @@ namespace OdataToEntity.Test.Model
 	/// </summary>
 	public partial class OdataToEntityDB : LinqToDB.Data.DataConnection, IOeLinq2DbDataContext
     {
-        public ITable<Category>  Categories { get { return this.GetTable<Category>(); } }
-        public ITable<Customer>  Customers  { get { return this.GetTable<Customer>(); } }
-		public ITable<Order>     Orders     { get { return this.GetTable<Order>(); } }
-		public ITable<OrderItem> OrderItems { get { return this.GetTable<OrderItem>(); } }
+        public ITable<Category>    Categories  { get { return this.GetTable<Category>(); } }
+        public ITable<Customer>    Customers   { get { return this.GetTable<Customer>(); } }
+        public ITable<ManyColumns> ManyColumns { get { return this.GetTable<ManyColumns>(); } }
+        public ITable<Order>       Orders      { get { return this.GetTable<Order>(); } }
+		public ITable<OrderItem>   OrderItems  { get { return this.GetTable<OrderItem>(); } }
 
         OeLinq2DbDataContext IOeLinq2DbDataContext.DataContext
         {
@@ -82,7 +83,8 @@ namespace OdataToEntity.Test.Model
         [Description("dbo.GetOrders")]
         public IEnumerable<Order> GetOrders(int? id, String name, OrderStatus? status) => throw new NotImplementedException();
         public void ResetDb() => throw new NotImplementedException();
-}
+        public void ResetManyColumns() => throw new NotImplementedException();
+    }
 
     [Table(Schema = "dbo", Name = "Categories")]
     public partial class Category
@@ -139,7 +141,42 @@ namespace OdataToEntity.Test.Model
 		#endregion
 	}
 
-	[Table(Schema="dbo", Name="Orders")]
+    [Table(Schema = "dbo", Name = "ManyColumns")]
+    public partial class ManyColumns
+    {
+        [Column, PrimaryKey] public int Column01 { get; set; } // int
+        [Column, NotNull]    public int Column02 { get; set; } // int
+        [Column, NotNull]    public int Column03 { get; set; } // int
+        [Column, NotNull]    public int Column04 { get; set; } // int
+        [Column, NotNull]    public int Column05 { get; set; } // int
+        [Column, NotNull]    public int Column06 { get; set; } // int
+        [Column, NotNull]    public int Column07 { get; set; } // int
+        [Column, NotNull]    public int Column08 { get; set; } // int
+        [Column, NotNull]    public int Column09 { get; set; } // int
+        [Column, NotNull]    public int Column10 { get; set; } // int
+        [Column, NotNull]    public int Column11 { get; set; } // int
+        [Column, NotNull]    public int Column12 { get; set; } // int
+        [Column, NotNull]    public int Column13 { get; set; } // int
+        [Column, NotNull]    public int Column14 { get; set; } // int
+        [Column, NotNull]    public int Column15 { get; set; } // int
+        [Column, NotNull]    public int Column16 { get; set; } // int
+        [Column, NotNull]    public int Column17 { get; set; } // int
+        [Column, NotNull]    public int Column18 { get; set; } // int
+        [Column, NotNull]    public int Column19 { get; set; } // int
+        [Column, NotNull]    public int Column20 { get; set; } // int
+        [Column, NotNull]    public int Column21 { get; set; } // int
+        [Column, NotNull]    public int Column22 { get; set; } // int
+        [Column, NotNull]    public int Column23 { get; set; } // int
+        [Column, NotNull]    public int Column24 { get; set; } // int
+        [Column, NotNull]    public int Column25 { get; set; } // int
+        [Column, NotNull]    public int Column26 { get; set; } // int
+        [Column, NotNull]    public int Column27 { get; set; } // int
+        [Column, NotNull]    public int Column28 { get; set; } // int
+        [Column, NotNull]    public int Column29 { get; set; } // int
+        [Column, NotNull]    public int Column30 { get; set; } // int
+    }
+
+    [Table(Schema="dbo", Name="Orders")]
 	public partial class Order
 	{
         [Column,     Nullable ] public string          AltCustomerCountry { get; set; } // char(2)
@@ -174,7 +211,7 @@ namespace OdataToEntity.Test.Model
 		#endregion
 	}
 
-	[Table(Schema="dbo", Name="OrderItems")]
+    [Table(Schema="dbo", Name="OrderItems")]
 	public partial class OrderItem
 	{
 		[Column,        Nullable] public int?     Count   { get; set; } // int

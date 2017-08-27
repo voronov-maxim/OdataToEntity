@@ -15,4 +15,18 @@ namespace OdataToEntity.Test
             base.ExecuteBatchAsync("Add").GetAwaiter().GetResult();
         }
     }
+
+    public class ManyColumnsFixtureInitDb : DbFixture
+    {
+        private bool _initialized;
+
+        public override void Initalize()
+        {
+            if (_initialized)
+                return;
+
+            _initialized = true;
+            base.ExecuteBatchAsync("ManyColumns").GetAwaiter().GetResult();
+        }
+    }
 }

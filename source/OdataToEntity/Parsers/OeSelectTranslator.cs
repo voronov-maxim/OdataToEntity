@@ -59,6 +59,7 @@ namespace OdataToEntity.Parsers
         private bool _pathSelect;
         private SelectItemInfo _selectItemInfo;
         private readonly List<SelectItemInfo> _selectItemInfos;
+        private Expression _source;
         private readonly OeQueryNodeVisitor _visitor;
 
         public OeSelectTranslator(OeQueryNodeVisitor visitor, ODataPath path)
@@ -119,6 +120,7 @@ namespace OdataToEntity.Parsers
         }
         private Expression CreateExpression(Expression source, SelectExpandClause selectClause, OeMetadataLevel metadatLevel)
         {
+            _source = source;
             Type itemType = OeExpressionHelper.GetCollectionItemType(source.Type);
             if (itemType == null)
                 _parameter = Expression.Parameter(source.Type);
@@ -299,7 +301,10 @@ namespace OdataToEntity.Parsers
                 _selectItemInfo = new SelectItemInfo(null, segment.Property, null, null);
 
                 PropertyInfo property = _parameter.Type.GetTypeInfo().GetProperty(segment.Property.Name);
-                expression = Expression.MakeMemberAccess(_parameter, property);
+                if (property == null)
+                    expression = new TuplePropertyByEdmProperty(_source).GetTuplePropertyByEdmProperty(_parameter, segment.Property);
+                else
+                    expression = Expression.MakeMemberAccess(_parameter, property);
             }
             else
                 throw new InvalidOperationException(item.SelectedPath.LastSegment.GetType().Name + " not supported");

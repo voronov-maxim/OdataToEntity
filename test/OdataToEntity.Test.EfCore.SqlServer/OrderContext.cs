@@ -16,6 +16,7 @@ namespace OdataToEntity.Test.Model
 
         public DbSet<Category> Categories { get; set; }
         public DbSet<Customer> Customers { get; set; }
+        public DbSet<ManyColumns> ManyColumns { get; set; }
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
 
@@ -45,5 +46,6 @@ namespace OdataToEntity.Test.Model
             return Enumerable.Empty<Order>();
         }
         public void ResetDb() => throw new NotImplementedException();
+        public void ResetManyColumns() => throw new NotImplementedException();
     }
 }

@@ -14,11 +14,13 @@ namespace OdataToEntity.Test.Ef6.SqlServer
 
         public DbSet<Category> Categories { get; set; }
         public DbSet<Customer> Customers { get; set; }
+        public DbSet<ManyColumns> ManyColumns { get; set; }
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
 
         [Description("dbo.GetOrders")]
         public IEnumerable<Order> GetOrders(int? id, String name, OrderStatus? status) => throw new NotImplementedException();
         public void ResetDb() => throw new NotImplementedException();
+        public void ResetManyColumns() => throw new NotImplementedException();
     }
 }
