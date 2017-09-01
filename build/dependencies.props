@@ -1,0 +1,13 @@
+﻿<Project>
+  <PropertyGroup>
+    <AspNetCoreVersion>2.0.0</AspNetCoreVersion>
+    <CoreFxVersion>4.4.0</CoreFxVersion>
+    <EfCoreVersion>2.0.0</EfCoreVersion> 
+    <JsonNetVersion>10.0.3</JsonNetVersion>
+    <NetStandardVersion>2.0.0</NetStandardVersion>
+    <ODataLib>7.3.1</ODataLib>
+    <SystemInteractiveAsyncVersion>3.1.1</SystemInteractiveAsyncVersion>
+    <TestSdkVersion>15.3.0</TestSdkVersion>
+    <XunitVersion>2.2.0</XunitVersion>
+  </PropertyGroup>
+</Project>
