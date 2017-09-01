@@ -1,0 +1,40 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.26228.4
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OdataToEntity.Test.WcfService", "..\test\OdataToEntity.Test.Wcf\OdataToEntity.Test.WcfService\OdataToEntity.Test.WcfService.csproj", "{899BFDB6-3F83-438B-8B21-654FED0512A3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OdataToEntity.Test.WcfClient", "..\test\OdataToEntity.Test.Wcf\OdataToEntity.Test.WcfClient\OdataToEntity.Test.WcfClient.csproj", "{5F693FE2-B0E5-405B-B3E0-DE83D29D6B8C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OdataToEntity", "..\source\OdataToEntity\OdataToEntity.csproj", "{70ED8CE4-4FA6-418A-A5BC-8697F5CA0B03}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OdataToEntity.EfCore", "..\source\OdataToEntity.EfCore\OdataToEntity.EfCore.csproj", "{94E8BF46-2821-4890-9E07-D1FA5C797C92}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{899BFDB6-3F83-438B-8B21-654FED0512A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{899BFDB6-3F83-438B-8B21-654FED0512A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{899BFDB6-3F83-438B-8B21-654FED0512A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{899BFDB6-3F83-438B-8B21-654FED0512A3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5F693FE2-B0E5-405B-B3E0-DE83D29D6B8C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5F693FE2-B0E5-405B-B3E0-DE83D29D6B8C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5F693FE2-B0E5-405B-B3E0-DE83D29D6B8C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5F693FE2-B0E5-405B-B3E0-DE83D29D6B8C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{70ED8CE4-4FA6-418A-A5BC-8697F5CA0B03}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{70ED8CE4-4FA6-418A-A5BC-8697F5CA0B03}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{70ED8CE4-4FA6-418A-A5BC-8697F5CA0B03}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{70ED8CE4-4FA6-418A-A5BC-8697F5CA0B03}.Release|Any CPU.Build.0 = Release|Any CPU
+		{94E8BF46-2821-4890-9E07-D1FA5C797C92}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{94E8BF46-2821-4890-9E07-D1FA5C797C92}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{94E8BF46-2821-4890-9E07-D1FA5C797C92}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{94E8BF46-2821-4890-9E07-D1FA5C797C92}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

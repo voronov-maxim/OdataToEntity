@@ -1,0 +1,54 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\..\build\dependencies.props" />
+
+  <PropertyGroup>
+    <Description>Test Asp client for OdataToEntity</Description>
+    <AssemblyTitle>Test Asp client for OdataToEntity</AssemblyTitle>
+    <Authors>Maxim Voronov</Authors>
+    <TargetFrameworks>net461</TargetFrameworks>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>portable</DebugType>
+    <AssemblyName>OdataToEntity.Test.AspClient</AssemblyName>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>ODATA6</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.ServiceModel" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$(EfCoreVersion)" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="$(EfCoreVersion)" />
+    <PackageReference Include="Microsoft.OData.Client" version="6.17.0" />
+    <PackageReference Include="Microsoft.OData.Core" version="6.17.0" />
+    <PackageReference Include="Microsoft.OData.Edm" version="6.17.0" />
+    <PackageReference Include="Microsoft.Spatial" version="6.17.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="$(JsonNetVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\OdataToEntity.Test\Common\IncludeVisitor.cs" Link="Common\IncludeVisitor.cs" />
+    <Compile Include="..\..\OdataToEntity.Test\Common\QueryParameters.cs" Link="Common\QueryParameters.cs" />
+    <Compile Include="..\..\OdataToEntity.Test\Common\SelectTest.cs" Link="Common\SelectTest.cs" />
+    <Compile Include="..\..\OdataToEntity.Test\Common\TestHelper.cs" Link="Common\TestHelper.cs" />
+    <Compile Include="..\..\OdataToEntity.Test\Model\**\*.*" Link="Model\%(Filename)%(Extension)" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <None Include="ODataClient.ttinclude" />
+    <None Include="ODataClient.tt">
+      <!--<Generator>TextTemplatingFileGenerator</Generator>-->
+    </None>
+  </ItemGroup>
+</Project>

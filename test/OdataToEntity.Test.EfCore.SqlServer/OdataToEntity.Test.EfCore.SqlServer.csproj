@@ -1,37 +1,31 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\build\dependencies.props" />
 
   <PropertyGroup>
+    <Description>Test Ef core Sql Server for OdataToEntity</Description>
+    <AssemblyTitle>Test Ef core Sql Server for OdataToEntity</AssemblyTitle>
+    <Authors>Maxim Voronov</Authors>
     <TargetFramework>netcoreapp2.0</TargetFramework>
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity.Test.EfCore.SqlServer</AssemblyName>
-    <OutputType>Exe</OutputType>
-    <PackageId>OdataToEntity.Test.EfCore.SqlServer</PackageId>
-    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
-    <RuntimeFrameworkVersion>2.0</RuntimeFrameworkVersion>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 
   <PropertyGroup>
+    <RuntimeFrameworkVersion>2.0</RuntimeFrameworkVersion>
     <StartupObject>OdataToEntity.Test.EfCore.SqlServer.Program</StartupObject>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\OdataToEntity.Test\Common\*.cs">
-      <Link>Common/%(FileName)%(Extension)</Link>
-    </Compile>
-    <Compile Include="..\OdataToEntity.Test\QueryComparerTest.cs">
-      <Link>QueryComparerTest.cs</Link>
-    </Compile>
-    <Compile Include="..\OdataToEntity.Test\DbFixture.cs">
-      <Link>DbFixture.cs</Link>
-    </Compile>
-    <Compile Include="..\OdataToEntity.Test\Model\Order.cs">
-      <Link>Model\Order.cs</Link>
-    </Compile>
+    <Compile Include="..\OdataToEntity.Test\Common\*.cs" Link="Common/%(FileName)%(Extension)" />
+    <Compile Include="..\OdataToEntity.Test\QueryComparerTest.cs" Link="QueryComparerTest.cs" />
+    <Compile Include="..\OdataToEntity.Test\DbFixture.cs" Link="DbFixture.cs" />
+    <Compile Include="..\OdataToEntity.Test\Model\Order.cs" Link="Model\Order.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\OdataToEntity.Test\Batches\**\*">
-      <Link>Batches/%(FileName)%(Extension)</Link>
+    <None Include="..\OdataToEntity.Test\Batches\**\*" Link="Batches/%(FileName)%(Extension)">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
@@ -42,17 +36,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.3.0" />
-    <PackageReference Include="System.Runtime.Serialization.Primitives" Version="4.3.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="2.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="2.0.0" />
-    <PackageReference Include="xunit" Version="2.2.0" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.2.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$(EfCoreVersion)" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="$(EfCoreVersion)" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="$(EfCoreVersion)" />
+    <PackageReference Include="xunit" Version="$(XunitVersion)" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="$(XunitVersion)" />
   </ItemGroup>
 
 </Project>

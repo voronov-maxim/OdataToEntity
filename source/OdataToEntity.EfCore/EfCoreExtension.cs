@@ -7,7 +7,6 @@ using Remotion.Linq.Parsing.ExpressionVisitors.Transformation;
 using Remotion.Linq.Parsing.ExpressionVisitors.TreeEvaluation;
 using Remotion.Linq.Parsing.Structure;
 using Remotion.Linq.Parsing.Structure.ExpressionTreeProcessors;
-using Remotion.Linq.Parsing.Structure.NodeTypeProviders;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;

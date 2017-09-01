@@ -1,0 +1,49 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.26730.12
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OdataToEntity.Test", "..\test\OdataToEntity.Test\OdataToEntity.Test.csproj", "{5552DDD1-DAEC-4960-BC4B-01852C9F982A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OdataToEntity", "..\source\OdataToEntity\OdataToEntity.csproj", "{70ED8CE4-4FA6-418A-A5BC-8697F5CA0B03}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OdataToEntity.EfCore", "..\source\OdataToEntity.EfCore\OdataToEntity.EfCore.csproj", "{94E8BF46-2821-4890-9E07-D1FA5C797C92}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OdataToEntity.Test.AspServer", "..\test\OdataToEntity.Test.Asp\OdataToEntity.Test.AspServer\OdataToEntity.Test.AspServer.csproj", "{CF1403FA-F7CF-48E2-AC0B-2557FFC0CD13}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OdataToEntity.Test.AspClient", "..\test\OdataToEntity.Test.Asp\OdataToEntity.Test.AspClient\OdataToEntity.Test.AspClient.csproj", "{8FCD43CA-3B76-47B3-848E-791A1DD428DC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5552DDD1-DAEC-4960-BC4B-01852C9F982A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5552DDD1-DAEC-4960-BC4B-01852C9F982A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5552DDD1-DAEC-4960-BC4B-01852C9F982A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5552DDD1-DAEC-4960-BC4B-01852C9F982A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{70ED8CE4-4FA6-418A-A5BC-8697F5CA0B03}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{70ED8CE4-4FA6-418A-A5BC-8697F5CA0B03}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{70ED8CE4-4FA6-418A-A5BC-8697F5CA0B03}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{70ED8CE4-4FA6-418A-A5BC-8697F5CA0B03}.Release|Any CPU.Build.0 = Release|Any CPU
+		{94E8BF46-2821-4890-9E07-D1FA5C797C92}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{94E8BF46-2821-4890-9E07-D1FA5C797C92}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{94E8BF46-2821-4890-9E07-D1FA5C797C92}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{94E8BF46-2821-4890-9E07-D1FA5C797C92}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CF1403FA-F7CF-48E2-AC0B-2557FFC0CD13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CF1403FA-F7CF-48E2-AC0B-2557FFC0CD13}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CF1403FA-F7CF-48E2-AC0B-2557FFC0CD13}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CF1403FA-F7CF-48E2-AC0B-2557FFC0CD13}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8FCD43CA-3B76-47B3-848E-791A1DD428DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8FCD43CA-3B76-47B3-848E-791A1DD428DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8FCD43CA-3B76-47B3-848E-791A1DD428DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8FCD43CA-3B76-47B3-848E-791A1DD428DC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C570F248-A0DA-4932-B242-3ADF9F73D9B5}
+	EndGlobalSection
+EndGlobal

@@ -1,48 +1,35 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\build\dependencies.props" />
 
   <PropertyGroup>
     <Description>Classes to serialize, deserialize OData JSON payloads. Supports OData v4 only. Enables construction of OData services via Entity Framework DataContext (without controller). Targets .NET Core with support for .NET 4.6</Description>
     <AssemblyTitle>OData server via Entity Framework</AssemblyTitle>
-    <VersionPrefix>1.0.0.1</VersionPrefix>
     <Authors>Maxim Voronov</Authors>
     <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity</AssemblyName>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <PackageId>OdataToEntity</PackageId>
     <PackageTags>odata;data;services;odatalib;edmlib;ef;entity framework;linq2db;entity;core</PackageTags>
     <PackageProjectUrl>https://github.com/voronov-maxim/OdataToEntity</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/voronov-maxim/OdataToEntity/blob/master/LICENSE</PackageLicenseUrl>
-    <RuntimeIdentifiers>win</RuntimeIdentifiers>
-    <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
-    <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
-    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
-    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
-    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
-    <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
-    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
-    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="App.config" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.OData.Core" Version="7.3.1" />
-    <PackageReference Include="Microsoft.OData.Edm" Version="7.3.1" />
-    <PackageReference Include="Microsoft.Spatial" Version="7.3.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
-    <PackageReference Include="System.ComponentModel.Annotations" Version="4.4.0" />
-    <PackageReference Include="System.ComponentModel.TypeConverter" Version="4.3.0" />
-    <PackageReference Include="System.Interactive.Async" Version="3.1.1" />
+    <PackageReference Include="Microsoft.OData.Core" Version="$(ODataLib)" />
+    <PackageReference Include="Microsoft.OData.Edm" Version="$(ODataLib)" />
+    <PackageReference Include="Microsoft.Spatial" Version="$(ODataLib)" />
+    <PackageReference Include="Newtonsoft.Json" Version="$(JsonNetVersion)" />
+    <PackageReference Include="System.ComponentModel.Annotations" Version="$(CoreFxVersion)" />
+    <PackageReference Include="System.Interactive.Async" Version="$(SystemInteractiveAsyncVersion)" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
     <Reference Include="System" />
   </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Update="NETStandard.Library" Version="2.0.0" />
-  </ItemGroup>
-
+ 
 </Project>

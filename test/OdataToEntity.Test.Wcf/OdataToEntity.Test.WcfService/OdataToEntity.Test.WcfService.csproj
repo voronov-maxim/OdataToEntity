@@ -1,0 +1,45 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\..\build\dependencies.props" />
+
+  <PropertyGroup>
+    <Description>Test Wcf service for OdataToEntity</Description>
+    <AssemblyTitle>Test Wcf service for OdataToEntity</AssemblyTitle>
+    <Authors>Maxim Voronov</Authors>
+    <TargetFrameworks>net461</TargetFrameworks>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>portable</DebugType>
+    <AssemblyName>OdataToEntity.Test.WcfService</AssemblyName>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <OutputPath>bin\Debug\</OutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.ServiceModel" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$(EfCoreVersion)" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="$(EfCoreVersion)" />
+    <PackageReference Include="Microsoft.OData.Core" version="$(ODataLib)" />
+    <PackageReference Include="Microsoft.OData.Edm" version="$(ODataLib)" />
+    <PackageReference Include="Microsoft.Spatial" version="$(ODataLib)" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Compile Include="..\..\OdataToEntity.Test\Model\*.cs" Link="Model\%(FileName)" />
+    <Compile Include="..\..\OdataToEntity.Test\OrderDbDataAdapter.cs" Link="OrderDbDataAdapter.cs" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\source\OdataToEntity.EfCore\OdataToEntity.EfCore.csproj" />
+    <ProjectReference Include="..\..\..\source\OdataToEntity\OdataToEntity.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,45 +1,33 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\build\dependencies.props" />
+
   <PropertyGroup>
     <Description>Classes bridge from OdataToEntity to Linq2Db. Abstraction layer access to DataContext Entity Linq2Db. Targets .NET 4.6</Description>
     <AssemblyTitle>Linq2Db adapter for OdataEntity</AssemblyTitle>
-    <VersionPrefix>1.0.0.1</VersionPrefix>
     <Authors>Maxim Voronov</Authors>
     <TargetFrameworks>net461</TargetFrameworks>
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity.Linq2Db</AssemblyName>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <PackageId>OdataToEntity.Linq2Db</PackageId>
     <PackageTags>odata;data;services;odatatoentity;linq2db;entity</PackageTags>
     <PackageProjectUrl>https://github.com/voronov-maxim/OdataToEntity</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/voronov-maxim/OdataToEntity/blob/master/LICENSE</PackageLicenseUrl>
-    <RuntimeIdentifiers>win</RuntimeIdentifiers>
-    <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
-    <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
-    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
-    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
-    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
-    <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
-    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
-    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
   </PropertyGroup>
-  
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{DC34DE9E-68FB-429E-9C36-6D885204D52F}</ProjectGuid>
     <OutputType>Library</OutputType>
     <OutputPath>bin\Debug\</OutputPath>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>OdataToEntity.Linq2Db</RootNamespace>
-    <AssemblyName>OdataToEntity.Linq2Db</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
-    <SccProjectName>SAK</SccProjectName>
-    <SccLocalPath>SAK</SccLocalPath>
-    <SccAuxPath>SAK</SccAuxPath>
-    <SccProvider>SAK</SccProvider>
   </PropertyGroup>
+  
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
   
   <ItemGroup>
     <Reference Include="System" />
@@ -49,16 +37,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="app.config" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="linq2db" Version="1.8.3" />
   </ItemGroup>
   
   <ItemGroup>
     <ProjectReference Include="..\OdataToEntity\OdataToEntity.csproj" />
   </ItemGroup>
-
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
