@@ -34,7 +34,8 @@
   </ItemGroup>
   
   <ItemGroup>
-    <Compile Include="..\..\OdataToEntity.Test\Model\*.cs" Link="Model\%(FileName)" />
+    <Compile Include="..\..\OdataToEntity.Test\Model\*.cs" Link="Model\%(FileName).cs" />
+    <Compile Include="..\..\OdataToEntity.Test\InMemoryOrderContext.cs" Link="InMemoryOrderContext.cs" />
     <Compile Include="..\..\OdataToEntity.Test\OrderDbDataAdapter.cs" Link="OrderDbDataAdapter.cs" />
   </ItemGroup>
   

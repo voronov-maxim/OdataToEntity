@@ -18,14 +18,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\OdataToEntity.Test\Common\*.cs" Link="Common/%(FileName)%(Extension)" />
+    <Compile Include="..\OdataToEntity.Test\Common\*.cs" Link="Common\%(FileName).cs" />
     <Compile Include="..\OdataToEntity.Test\QueryComparerTest.cs" Link="QueryComparerTest.cs" />
     <Compile Include="..\OdataToEntity.Test\DbFixture.cs" Link="DbFixture.cs" />
-    <Compile Include="..\OdataToEntity.Test\Model\Order.cs" Link="Model\Order.cs" />
+    <Compile Include="..\OdataToEntity.Test\Model\*.cs" Link="Model\%(FileName).cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\OdataToEntity.Test\Batches\**\*" Link="Batches/%(FileName)%(Extension)">
+    <None Include="..\OdataToEntity.Test\Batches\**\*" Link="Batches\%(FileName)%(Extension)">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

@@ -30,10 +30,10 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$(EfCoreVersion)" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="$(EfCoreVersion)" />
-    <PackageReference Include="Microsoft.OData.Client" version="6.17.0" />
-    <PackageReference Include="Microsoft.OData.Core" version="6.17.0" />
-    <PackageReference Include="Microsoft.OData.Edm" version="6.17.0" />
-    <PackageReference Include="Microsoft.Spatial" version="6.17.0" />
+    <PackageReference Include="Microsoft.OData.Client" version="6.18.0" />
+    <PackageReference Include="Microsoft.OData.Core" version="6.18.0" />
+    <PackageReference Include="Microsoft.OData.Edm" version="6.18.0" />
+    <PackageReference Include="Microsoft.Spatial" version="6.18.0" />
     <PackageReference Include="Newtonsoft.Json" version="$(JsonNetVersion)" />
   </ItemGroup>
 
@@ -43,11 +43,12 @@
     <Compile Include="..\..\OdataToEntity.Test.Asp\OdataToEntity.Test.AspClient\FactAttribute.cs" Link="FactAttribute.cs" />
     <Compile Include="..\..\OdataToEntity.Test.Asp\OdataToEntity.Test.AspClient\ODataClient.cs" Link="ODataClient.cs" />
     <Compile Include="..\..\OdataToEntity.Test.Asp\OdataToEntity.Test.AspClient\TypeMapperVisitor.cs" Link="TypeMapperVisitor.cs" />
-    <Compile Include="..\..\OdataToEntity.Test\Model\*.cs" Link="Model\%(FileName)" />
+    <Compile Include="..\..\OdataToEntity.Test\InMemoryOrderContext.cs" Link="InMemoryOrderContext.cs" />
     <Compile Include="..\..\OdataToEntity.Test\Common\IncludeVisitor.cs" Link="Common\IncludeVisitor.cs" />
     <Compile Include="..\..\OdataToEntity.Test\Common\QueryParameters.cs" Link="Common\QueryParameters.cs" />
     <Compile Include="..\..\OdataToEntity.Test\Common\SelectTest.cs" Link="Common\SelectTest.cs" />
     <Compile Include="..\..\OdataToEntity.Test\Common\TestHelper.cs" Link="Common\TestHelper.cs" />
+    <Compile Include="..\..\OdataToEntity.Test\Model\*.cs" Link="Model\%(FileName)" />
     <Compile Include="..\OdataToEntity.Test.WcfService\IOdataWcf.cs" Link="IOdataWcf.cs" />
   </ItemGroup>
 </Project>

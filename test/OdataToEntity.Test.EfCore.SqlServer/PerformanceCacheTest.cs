@@ -1,4 +1,5 @@
-﻿using Microsoft.OData.Edm;
+﻿using Microsoft.EntityFrameworkCore.Internal;
+using Microsoft.OData.Edm;
 using OdataToEntity.Db;
 using OdataToEntity.EfCore;
 using OdataToEntity.Test.Model;
@@ -17,7 +18,7 @@ namespace OdataToEntity.Test.EfCore.SqlServer
 
             //warming-up
             foreach (SelectTestDefinition testDefinition in testDefinitions)
-                using (var dbContext = new OrderContext())
+                using (var dbContext = OrderContext.Create("dummy"))
                     testDefinition.ExecutorDb(dbContext);
 
             PerformanceCacheOeTest(testDefinitions, testCount, true);
@@ -26,6 +27,8 @@ namespace OdataToEntity.Test.EfCore.SqlServer
         }
         private static void PerformanceCacheDbTest(SelectTestDefinition[] testDefinitions, int testCount)
         {
+            var pool = new DbContextPool<OrderContext>(OrderOeDataAdapter.CreateOptions());
+
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
@@ -34,14 +37,17 @@ namespace OdataToEntity.Test.EfCore.SqlServer
             stopWatch.Start();
             for (int i = 0; i < testCount; i++)
                 foreach (SelectTestDefinition testDefinition in testDefinitions)
-                    using (var dbContext = new OrderContext())
-                        testDefinition.ExecutorDb(dbContext);
+                {
+                    OrderContext dbContext = pool.Rent();
+                    testDefinition.ExecutorDb(dbContext);
+                    pool.Return(dbContext);
+                }
             stopWatch.Stop();
             Console.WriteLine("Entity Framework " + stopWatch.Elapsed);
         }
         private static void PerformanceCacheOeTest(SelectTestDefinition[] testDefinitions, int testCount, bool cache)
         {
-            var dataAdapter = new OeEfCoreDataAdapter<OrderContext>(new Db.OeQueryCache() { AllowCache = cache });
+            var dataAdapter = new OeEfCoreDataAdapter<OrderContext>(OrderOeDataAdapter.CreateOptions(), new OeQueryCache() { AllowCache = cache });
             IEdmModel edmModel = dataAdapter.BuildEdmModel();
             var parser = new OeParser(new Uri("http://dummy"), dataAdapter, edmModel);
 

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using Microsoft.EntityFrameworkCore.Extensions.Internal;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.Query;
@@ -156,22 +157,33 @@ namespace OdataToEntity.EfCore
         }
 
         private readonly static Db.OeEntitySetMetaAdapterCollection _entitySetMetaAdapters = CreateEntitySetMetaAdapters();
+        private readonly DbContextPool<T> _dbContextPool;
 
-        public OeEfCoreDataAdapter() : this(null)
+        public OeEfCoreDataAdapter() : this(null, null)
         {
         }
-        public OeEfCoreDataAdapter(Db.OeQueryCache queryCache) : base(queryCache)
+        public OeEfCoreDataAdapter(DbContextOptions options, Db.OeQueryCache queryCache) : base(queryCache)
         {
+            if (options != null)
+                _dbContextPool = new DbContextPool<T>(options);
         }
 
         public override void CloseDataContext(Object dataContext)
         {
             var dbContext = (T)dataContext;
-            dbContext.Dispose();
+            if (_dbContextPool == null)
+                dbContext.Dispose();
+            else
+                _dbContextPool.Return(dbContext);
         }
         public override Object CreateDataContext()
         {
-            T dbContext = Db.FastActivator.CreateInstance<T>();
+            T dbContext;
+            if (_dbContextPool == null)
+                dbContext = Db.FastActivator.CreateInstance<T>();
+            else
+                dbContext = _dbContextPool.Rent();
+
             dbContext.ChangeTracker.AutoDetectChangesEnabled = false;
             dbContext.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
             return dbContext;

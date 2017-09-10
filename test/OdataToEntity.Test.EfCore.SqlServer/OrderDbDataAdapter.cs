@@ -1,4 +1,5 @@
-﻿using OdataToEntity.EfCore;
+﻿using Microsoft.EntityFrameworkCore;
+using OdataToEntity.EfCore;
 using System;
 
 namespace OdataToEntity.Test
@@ -26,14 +27,16 @@ namespace OdataToEntity.Test
     {
         private String _databaseName;
 
-        public OrderOeDataAdapter(String databaseName) : base(new Db.OeQueryCache())
+        public OrderOeDataAdapter(String databaseName) : base(CreateOptions(), new Db.OeQueryCache())
         {
             _databaseName = databaseName;
         }
 
-        public override Object CreateDataContext()
+        internal static DbContextOptions CreateOptions()
         {
-            return new Model.OrderContext();
+            var optionsBuilder = new DbContextOptionsBuilder<Model.OrderContext>();
+            optionsBuilder.UseSqlServer(@"Server=.\sqlexpress;Initial Catalog=OdataToEntity;Trusted_Connection=Yes;");
+            return optionsBuilder.Options;
         }
         public void ResetDatabase()
         {

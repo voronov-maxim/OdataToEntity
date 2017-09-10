@@ -107,3 +107,5 @@ var response = new MemoryStream();
 //Execute sored procedure
 await parser.ExecuteGetAsync(new Uri("http://dummy/GetOrders(name='Order 1',id=1,status=null)"), OeRequestHeaders.Default, response, CancellationToken.None);
 ```
+
+For use pooling (DbContextPool) in Entity Framework Core create instance OeEfCoreDataAdapter use constructor with DbContextOptions parameter.

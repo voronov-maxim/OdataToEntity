@@ -12,11 +12,11 @@ namespace OdataToEntity.Test
         [Fact]
         public void FluentApi()
         {
-            var ethalonDataAdapter = new OeEfCoreDataAdapter<OrderContext>();
+            var ethalonDataAdapter = new OrderDbDataAdapter(OrderContext.GenerateDatabaseName());
             EdmModel ethalonEdmModel = ethalonDataAdapter.BuildEdmModel();
             String ethalonSchema = TestHelper.GetCsdlSchema(ethalonEdmModel);
 
-            var testDataAdapter = new OeEfCoreDataAdapter<OrderContext>();
+            var testDataAdapter = new OrderDbDataAdapter(OrderContext.GenerateDatabaseName());
             EdmModel testEdmModel = testDataAdapter.BuildEdmModelFromEfCoreModel();
             String testSchema = TestHelper.GetCsdlSchema(testEdmModel);
 

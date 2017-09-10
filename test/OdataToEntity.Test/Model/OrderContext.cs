@@ -1,63 +1,17 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
-using Microsoft.EntityFrameworkCore.Diagnostics;
-using Microsoft.EntityFrameworkCore.Internal;
-using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Storage;
-using Microsoft.EntityFrameworkCore.Update;
 using System;
 using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
+using System.ComponentModel;
+using System.Linq;
 
 namespace OdataToEntity.Test.Model
 {
-    public sealed class OrderContext : DbContext
+    public sealed partial class OrderContext : DbContext
     {
-        private sealed class ZStateManager : StateManager
-        {
-            public ZStateManager(IInternalEntityEntryFactory factory, IInternalEntityEntrySubscriber subscriber, IInternalEntityEntryNotifier notifier, IValueGenerationManager valueGeneration, IModel model, IDatabase database, IConcurrencyDetector concurrencyDetector, ICurrentDbContext currentContext, ILoggingOptions loggingOptions, IDiagnosticsLogger<DbLoggerCategory.Update> updateLogger)
-                : base(factory, subscriber, notifier, valueGeneration, model, database, concurrencyDetector, currentContext, loggingOptions, updateLogger)
-            {
-            }
-            protected override async Task<int> SaveChangesAsync(IReadOnlyList<InternalEntityEntry> entriesToSave, CancellationToken cancellationToken = default(CancellationToken))
-            {
-                UpdateTemporaryKey(entriesToSave);
-                int count = await base.SaveChangesAsync(entriesToSave, cancellationToken);
-                return count;
-            }
-            internal static void UpdateTemporaryKey(IReadOnlyList<InternalEntityEntry> entries)
-            {
-                foreach (InternalEntityEntry entry in entries)
-                    foreach (IKey key in entry.EntityType.GetKeys())
-                        foreach (IProperty property in key.Properties)
-                            if (entry.HasTemporaryValue(property))
-                            {
-                                int id = (int)entry.GetCurrentValue(property);
-                                entry.SetProperty(property, -id, false);
-                            }
-            }
-
-        }
-
-        private OrderContext(DbContextOptions options) : base(options)
+        public OrderContext(DbContextOptions options) : base(options)
         {
         }
 
-        public static OrderContext Create(String databaseName)
-        {
-            var optionsBuilder = new DbContextOptionsBuilder<OrderContext>();
-            optionsBuilder.UseInMemoryDatabase(databaseName);
-            optionsBuilder.ReplaceService<IStateManager, ZStateManager>();
-
-            //optionsBuilder.UseSqlServer(@"Server=.\sqlexpress;Initial Catalog=OdataToEntity;User ID=sa;Password=123456");
-
-            return new OrderContext(optionsBuilder.Options);
-        }
-        public static String GenerateDatabaseName()
-        {
-            return Guid.NewGuid().ToString();
-        }
         public void InitDb()
         {
             var category1 = new Category()
@@ -267,8 +221,25 @@ namespace OdataToEntity.Test.Model
             base.OnModelCreating(modelBuilder);
         }
 
-        public IEnumerable<Order> GetOrders(int? id, String name, OrderStatus? status) => throw new NotImplementedException();
+        [Description("dbo.GetOrders")]
+        public IEnumerable<Order> GetOrders(int? id, String name, OrderStatus? status)
+        {
+            if (id == null && name == null && status == null)
+                return Orders;
+
+            if (id != null)
+                return Orders.Where(o => o.Id == id);
+
+            if (name != null)
+                return Orders.Where(o => o.Name.Contains(name));
+
+            if (status != null)
+                return Orders.Where(o => o.Status == status);
+
+            return Enumerable.Empty<Order>();
+        }
         public void ResetDb() => throw new NotImplementedException();
+        public void ResetManyColumns() => throw new NotImplementedException();
 
         public DbSet<Category> Categories { get; set; }
         public DbSet<Customer> Customers { get; set; }
