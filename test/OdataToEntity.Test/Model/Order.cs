@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace OdataToEntity.Test.Model
 {
+    [Table("Categories", Schema = "dbo")]
     public sealed class Category
     {
         public ICollection<Category> Children { get; set; }

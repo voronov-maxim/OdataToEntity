@@ -65,7 +65,7 @@ namespace OdataToEntity
                 }
                 else
                 {
-                    using (Db.OeEntityAsyncEnumerator asyncEnumerator = _dataAdapter.ExecuteEnumerator(dataContext, parseUriContext, cancellationToken))
+                    using (Db.OeAsyncEnumerator asyncEnumerator = _dataAdapter.ExecuteEnumerator(dataContext, parseUriContext, cancellationToken))
                         await Writers.OeGetWriter.SerializeAsync(BaseUri, parseUriContext, asyncEnumerator, stream).ConfigureAwait(false);
                 }
             }

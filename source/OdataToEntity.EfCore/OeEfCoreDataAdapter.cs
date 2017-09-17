@@ -15,19 +15,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace OdataToEntity.EfCore
 {
+    internal interface IFromSql
+    {
+        IQueryable FromSql(Object dataContext, String sql, Object[] parameters);
+    }
+
     public class OeEfCoreDataAdapter<T> : Db.OeDataAdapter where T : DbContext
     {
-        private interface IFromSql
-        {
-            IQueryable FromSql(Object dataContext, String sql, Object[] parameters);
-        }
-
         private sealed class DbSetAdapterImpl<TEntity> : Db.OeEntitySetMetaAdapter, IFromSql where TEntity : class
         {
             private readonly String _entitySetName;
@@ -158,14 +157,18 @@ namespace OdataToEntity.EfCore
 
         private readonly static Db.OeEntitySetMetaAdapterCollection _entitySetMetaAdapters = CreateEntitySetMetaAdapters();
         private readonly DbContextPool<T> _dbContextPool;
+        private readonly OeEfCoreOperationAdapter _operationAdapter;
 
         public OeEfCoreDataAdapter() : this(null, null)
         {
         }
-        public OeEfCoreDataAdapter(DbContextOptions options, Db.OeQueryCache queryCache) : base(queryCache)
+        public OeEfCoreDataAdapter(DbContextOptions options, Db.OeQueryCache queryCache)
+            : base(queryCache)
         {
             if (options != null)
                 _dbContextPool = new DbContextPool<T>(options);
+
+            _operationAdapter = new OeEfCoreOperationAdapter(typeof(T), _entitySetMetaAdapters);
         }
 
         public override void CloseDataContext(Object dataContext)
@@ -212,7 +215,7 @@ namespace OdataToEntity.EfCore
             var getDbSet = (Func<T, DbSet<TEntity>>)property.GetGetMethod().CreateDelegate(typeof(Func<T, DbSet<TEntity>>));
             return new DbSetAdapterImpl<TEntity>(getDbSet, property.Name);
         }
-        public override Db.OeEntityAsyncEnumerator ExecuteEnumerator(Object dataContext, OeParseUriContext parseUriContext, CancellationToken cancellationToken)
+        public override Db.OeAsyncEnumerator ExecuteEnumerator(Object dataContext, OeParseUriContext parseUriContext, CancellationToken cancellationToken)
         {
             IAsyncEnumerable<Object> asyncEnumerable;
             if (base.QueryCache.AllowCache)
@@ -220,7 +223,7 @@ namespace OdataToEntity.EfCore
             else
                 asyncEnumerable = ((IQueryable<Object>)base.CreateQuery(parseUriContext, dataContext, new OeConstantToVariableVisitor())).AsAsyncEnumerable();
 
-            Db.OeEntityAsyncEnumerator asyncEnumerator = new Db.OeEntityAsyncEnumerator(asyncEnumerable.GetEnumerator(), cancellationToken);
+            Db.OeAsyncEnumerator asyncEnumerator = new Db.OeAsyncEnumerator(asyncEnumerable.GetEnumerator(), cancellationToken);
             if (parseUriContext.CountExpression != null)
             {
                 IQueryable query = parseUriContext.EntitySetAdapter.GetEntitySet(dataContext);
@@ -228,46 +231,6 @@ namespace OdataToEntity.EfCore
             }
 
             return asyncEnumerator;
-        }
-        public override Db.OeEntityAsyncEnumerator ExecuteProcedure(Object dataContext, String procedureName, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
-        {
-            var dbContext = (T)dataContext;
-            var parameterNameGenerator = dbContext.GetService<IParameterNameGeneratorFactory>().Create();
-            var sqlHelper = dbContext.GetService<ISqlGenerationHelper>();
-
-            var sql = new StringBuilder(procedureName);
-            for (int i = 0; i < parameters.Count; i++)
-            {
-                if (i == 0)
-                    sql.Append(' ');
-
-                String name = parameterNameGenerator.GenerateNext();
-                sqlHelper.GenerateParameterName(sql, name);
-
-                if (i < parameters.Count - 1)
-                    sql.Append(',');
-            }
-
-            Object[] parameterValues = null;
-            if (parameters.Count > 0)
-            {
-                parameterValues = new Object[parameters.Count];
-                for (int i = 0; i < parameterValues.Length; i++)
-                    parameterValues[i] = parameters[i].Value;
-            }
-
-            if (returnType == null)
-            {
-                int count = dbContext.Database.ExecuteSqlCommand(sql.ToString());
-                return new Db.OeEntityAsyncEnumeratorAdapter(new[] { (Object)count }, CancellationToken.None);
-            }
-
-            var fromSql = (IFromSql)EntitySetMetaAdapters.FindByClrType(returnType);
-            if (fromSql == null)
-                throw new NotSupportedException("supported only Entity type");
-
-            var query = (IQueryable<Object>)fromSql.FromSql(dataContext, sql.ToString(), parameterValues);
-            return new Db.OeEntityAsyncEnumeratorAdapter(query, CancellationToken.None);
         }
         public override TResult ExecuteScalar<TResult>(Object dataContext, OeParseUriContext parseUriContext)
         {
@@ -278,7 +241,6 @@ namespace OdataToEntity.EfCore
             Expression expression = parseUriContext.CreateExpression(query, new OeConstantToVariableVisitor());
             return query.Provider.Execute<TResult>(expression);
         }
-        protected override Type GetDataContextType() => typeof(T);
         public override Db.OeEntitySetAdapter GetEntitySetAdapter(String entitySetName)
         {
             return new Db.OeEntitySetAdapter(_entitySetMetaAdapters.FindByEntitySetName(entitySetName), this);
@@ -346,5 +308,6 @@ namespace OdataToEntity.EfCore
         }
 
         public override Db.OeEntitySetMetaAdapterCollection EntitySetMetaAdapters => _entitySetMetaAdapters;
+        public override Db.OeOperationAdapter OperationAdapter => _operationAdapter;
     }
 }

@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace OdataToEntity.Ef6
 {
-    public sealed class OeEf6EntityAsyncEnumerator : OeEntityAsyncEnumerator
+    public sealed class OeEf6AsyncEnumerator : OeAsyncEnumerator
     {
         private readonly IDbAsyncEnumerator _asyncEnumerator;
 
-        public OeEf6EntityAsyncEnumerator(IDbAsyncEnumerator asyncEnumerator, CancellationToken cancellationToken)
+        public OeEf6AsyncEnumerator(IDbAsyncEnumerator asyncEnumerator, CancellationToken cancellationToken)
             : base(null, cancellationToken)
         {
             _asyncEnumerator = asyncEnumerator;

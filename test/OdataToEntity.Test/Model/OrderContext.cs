@@ -240,6 +240,14 @@ namespace OdataToEntity.Test.Model
         }
         public void ResetDb() => throw new NotImplementedException();
         public void ResetManyColumns() => throw new NotImplementedException();
+        [DbFunction("ScalarFunction", Schema = "dbo")]
+        public int ScalarFunction() => Orders.Count();
+        [DbFunction(Schema = "dbo")]
+        public int ScalarFunctionWithParameters(int? id, String name, OrderStatus? status) => Orders.Where(o => o.Id == id || o.Name.Contains(name) || o.Status == status).Count();
+        [DbFunction("TableFunction")]
+        public IEnumerable<Order> TableFunction() => Orders;
+        [DbFunction]
+        public IEnumerable<Order> TableFunctionWithParameters(int? id, String name, OrderStatus? status) => Orders.Where(o => o.Id == id || o.Name.Contains(name) || o.Status == status);
 
         public DbSet<Category> Categories { get; set; }
         public DbSet<Customer> Customers { get; set; }

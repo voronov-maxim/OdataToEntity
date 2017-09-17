@@ -6,18 +6,18 @@ using System.Threading.Tasks;
 
 namespace OdataToEntity.Db
 {
-    public class OeEntityAsyncEnumerator : IDisposable
+    public class OeAsyncEnumerator : IDisposable
     {
         private readonly IAsyncEnumerator<Object> _asyncEnumerator;
         private readonly CancellationToken _cancellationToken;
 
-        public OeEntityAsyncEnumerator(IAsyncEnumerator<Object> asyncEnumerator, CancellationToken cancellationToken)
+        public OeAsyncEnumerator(IAsyncEnumerator<Object> asyncEnumerator, CancellationToken cancellationToken)
         {
             _asyncEnumerator = asyncEnumerator;
             _cancellationToken = cancellationToken;
         }
 
-        protected CancellationToken CancellationToken => _cancellationToken; 
+        protected CancellationToken CancellationToken => _cancellationToken;
         public virtual void Dispose() => _asyncEnumerator.Dispose();
         public virtual Task<bool> MoveNextAsync() => _asyncEnumerator.MoveNext(_cancellationToken);
 
@@ -25,11 +25,11 @@ namespace OdataToEntity.Db
         public virtual Object Current => _asyncEnumerator.Current;
     }
 
-    public sealed class OeEntityAsyncEnumeratorAdapter : OeEntityAsyncEnumerator
+    public sealed class OeAsyncEnumeratorAdapter : OeAsyncEnumerator
     {
         private readonly IEnumerator _enumerator;
 
-        public OeEntityAsyncEnumeratorAdapter(IEnumerable enumerable, CancellationToken cancellationToken)
+        public OeAsyncEnumeratorAdapter(IEnumerable enumerable, CancellationToken cancellationToken)
             : base(null, cancellationToken)
         {
             _enumerator = enumerable.GetEnumerator();
@@ -50,4 +50,32 @@ namespace OdataToEntity.Db
         public override Object Current => _enumerator.Current;
     }
 
+    public sealed class OeScalarAsyncEnumeratorAdapter : OeAsyncEnumerator
+    {
+        private Object _scalarResult;
+        private readonly Task<Object> _scalarTask;
+        private int _state;
+        private readonly CancellationToken _cancellationToken;
+
+        public OeScalarAsyncEnumeratorAdapter(Task<Object> scalarTask, CancellationToken cancellationToken)
+            : base(null, cancellationToken)
+        {
+            _scalarTask = scalarTask;
+            _cancellationToken = cancellationToken;
+        }
+
+        public override void Dispose() { }
+        public override async Task<bool> MoveNextAsync()
+        {
+            base.CancellationToken.ThrowIfCancellationRequested();
+            if (_state != 0)
+                return false;
+
+            _scalarResult = await _scalarTask;
+            _state++;
+            return true;
+        }
+
+        public override Object Current => _scalarResult;
+    }
 }

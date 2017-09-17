@@ -361,7 +361,8 @@ namespace OdataToEntity.Test
             serializer.ContractResolver = new TestContractResolver(includes);
             serializer.Formatting = Newtonsoft.Json.Formatting.Indented;
             serializer.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
-            return JArray.FromObject(items, serializer);
+            JArray jarray = JArray.FromObject(items, serializer);
+            return SortProperty(jarray.Cast<JObject>());
         }
         private static JObject SortProperty(JObject jobject)
         {

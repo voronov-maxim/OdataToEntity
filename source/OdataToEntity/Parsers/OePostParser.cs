@@ -2,6 +2,7 @@
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using OdataToEntity.ModelBuilder;
+using OdataToEntity.Parsers;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -26,34 +27,14 @@ namespace OdataToEntity
 
         public async Task ExecuteAsync(ODataUri odataUri, Stream requestStream, OeRequestHeaders headers, Stream responseStream, CancellationToken cancellationToken)
         {
-            var importSegment = (OperationImportSegment)odataUri.Path.LastSegment;
-
-            List<KeyValuePair<String, Object>> parameters = GetParameters(importSegment, requestStream, headers.ContentType);
             Object dataContext = null;
             try
             {
+                Type returnClrType;
                 dataContext = _dataAdapter.CreateDataContext();
-
-                var operation = (EdmOperation)importSegment.OperationImports.Single().Operation;
-
-                String procedureName;
-                if (String.IsNullOrEmpty(operation.Namespace))
-                    procedureName = operation.Name;
-                else
-                    procedureName = operation.Namespace + "." + operation.Name;
-
-                Type returnClrType = null;
-                if (operation.ReturnType != null)
+                using (Db.OeAsyncEnumerator asyncEnumerator = GetAsyncEnumerator(odataUri, requestStream, headers, dataContext, out returnClrType))
                 {
-                    IEdmTypeReference returnEdmTypeReference = operation.ReturnType;
-                    if (returnEdmTypeReference is IEdmCollectionTypeReference)
-                        returnEdmTypeReference = (returnEdmTypeReference.Definition as IEdmCollectionType).ElementType;
-                    returnClrType = OeEdmClrHelper.GetClrType(_model, returnEdmTypeReference.Definition);
-                }
-
-                using (Db.OeEntityAsyncEnumerator asyncEnumerator = _dataAdapter.ExecuteProcedure(dataContext, procedureName, parameters, returnClrType))
-                {
-                    if (returnClrType == null)
+                    if (returnClrType == null || returnClrType.IsPrimitive)
                     {
                         if (await asyncEnumerator.MoveNextAsync() && asyncEnumerator.Current != null)
                         {
@@ -130,6 +111,28 @@ namespace OdataToEntity
                     parameters.Add(new KeyValuePair<String, Object>(parameterReader.Name, value));
                 }
             }
+        }
+        private Db.OeAsyncEnumerator GetAsyncEnumerator(ODataUri odataUri, Stream requestStream, OeRequestHeaders headers, Object dataContext, out Type returnClrType)
+        {
+            var importSegment = (OperationImportSegment)odataUri.Path.LastSegment;
+
+            List<KeyValuePair<String, Object>> parameters = GetParameters(importSegment, requestStream, headers.ContentType);
+            var operation = (EdmOperation)importSegment.OperationImports.Single().Operation;
+            String operationName = String.IsNullOrEmpty(operation.Namespace) ? operation.Name : operation.Namespace + "." + operation.Name;
+
+            returnClrType = null;
+            if (operation.ReturnType != null)
+            {
+                IEdmTypeReference returnEdmTypeReference = operation.ReturnType;
+                if (returnEdmTypeReference is IEdmCollectionTypeReference)
+                    returnEdmTypeReference = (returnEdmTypeReference.Definition as IEdmCollectionType).ElementType;
+                returnClrType = OeEdmClrHelper.GetClrType(_model, returnEdmTypeReference.Definition);
+            }
+
+            if (_model.IsDbFunction(operation))
+                return _dataAdapter.OperationAdapter.ExecuteFunction(dataContext, operationName, parameters, returnClrType);
+            else
+                return _dataAdapter.OperationAdapter.ExecuteProcedure(dataContext, operationName, parameters, returnClrType);
         }
         private List<KeyValuePair<String, Object>> GetParameters(OperationImportSegment importSegment, Stream requestStream, String contentType)
         {

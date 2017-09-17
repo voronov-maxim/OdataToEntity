@@ -135,5 +135,64 @@ namespace OdataToEntity.Test
                 Assert.Equal(0, count);
             }
         }
+        [Fact]
+        public async Task ScalarFunction_get()
+        {
+            String request = "dbo.ScalarFunction";
+            int[] result = await Execute<int>(request, null, null);
+
+            var fixture = new DbFixtureInitDb();
+            using (var orderContext = (OrderContext)fixture.DbDataAdapter.CreateDataContext())
+            {
+                int count = orderContext.ScalarFunction();
+                Assert.Equal(count, result[0]);
+            }
+        }
+        [Fact]
+        public async Task ScalarFunctionWithParameters_get()
+        {
+            String request = "dbo.ScalarFunctionWithParameters(name='Order 1',id=1,status=null)";
+            int[] result = await Execute<int>(request, null, null);
+
+            var fixture = new DbFixtureInitDb();
+            using (var orderContext = (OrderContext)fixture.DbDataAdapter.CreateDataContext())
+            {
+                int count = orderContext.ScalarFunctionWithParameters(1, "Order 1", null);
+                Assert.Equal(count, result[0]);
+            }
+        }
+        [Fact]
+        public async Task ScalarFunctionWithParameters_post()
+        {
+            String request = "dbo.ScalarFunctionWithParameters";
+            var requestData = new { id = (int?)1, name = "Order 1", status = (OrderStatus?)null };
+            int[] result = await Execute<int>(request, requestData, null);
+
+            var fixture = new DbFixtureInitDb();
+            using (var orderContext = (OrderContext)fixture.DbDataAdapter.CreateDataContext())
+            {
+                int count = orderContext.ScalarFunctionWithParameters(1, "Order 1", null);
+                Assert.Equal(count, result[0]);
+            }
+        }
+        [Fact]
+        public async Task TableFunction_get()
+        {
+            String request = "TableFunction";
+            await Execute(request, null, c => c.TableFunction());
+        }
+        [Fact]
+        public async Task TableFunctionWithParameters_get()
+        {
+            String request = "TableFunctionWithParameters(name='Order 1',id=1,status=null)";
+            await Execute(request, null, c => c.TableFunctionWithParameters(1, "Order1", null));
+        }
+        [Fact]
+        public async Task TableFunctionWithParameters_post()
+        {
+            String request = "TableFunctionWithParameters";
+            var requestData = new { id = (int?)1, name = "Order 1", status = (OrderStatus?)null };
+            await Execute(request, requestData, c => c.TableFunctionWithParameters(1, "Order 1", null));
+        }
     }
 }

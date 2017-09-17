@@ -30,7 +30,7 @@ namespace OdataToEntity.Writers
                     entry.Id = OeUriHelper.ComputeId(BaseUri, entryFactory.EntitySet, entry);
                 return entry;
             }
-            public async Task SerializeAsync(OeEntryFactory entryFactory, Db.OeEntityAsyncEnumerator asyncEnumerator, Stream stream)
+            public async Task SerializeAsync(OeEntryFactory entryFactory, Db.OeAsyncEnumerator asyncEnumerator, Stream stream)
             {
                 var resourceSet = new ODataResourceSet();
                 resourceSet.Count = asyncEnumerator.Count;
@@ -92,7 +92,7 @@ namespace OdataToEntity.Writers
             }
         }
 
-        public static async Task SerializeAsync(Uri baseUri, OeParseUriContext parseUriContext, Db.OeEntityAsyncEnumerator asyncEnumerator, Stream stream)
+        public static async Task SerializeAsync(Uri baseUri, OeParseUriContext parseUriContext, Db.OeAsyncEnumerator asyncEnumerator, Stream stream)
         {
             IEdmModel edmModel = parseUriContext.EdmModel;
             OeEntryFactory entryFactory = parseUriContext.EntryFactory;

@@ -10,7 +10,6 @@ using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -139,14 +138,15 @@ namespace OdataToEntity.Ef6
             }
         }
 
-        private static DummyCommandBuilder _dummyCommandBuilder;
         private readonly static Db.OeEntitySetMetaAdapterCollection _entitySetMetaAdapters = CreateEntitySetMetaAdapters();
+        private readonly OeEf6OperationAdapter _operationAdapter;
 
-        public OeEf6DataAdapter() : base(null)
+        public OeEf6DataAdapter() : this(null)
         {
         }
         public OeEf6DataAdapter(Db.OeQueryCache queryCache) : base(queryCache)
         {
+            _operationAdapter = new OeEf6OperationAdapter(typeof(T));
         }
 
         public override void CloseDataContext(Object dataContext)
@@ -185,52 +185,18 @@ namespace OdataToEntity.Ef6
             var getDbSet = (Func<T, IDbSet<TEntity>>)Delegate.CreateDelegate(typeof(Func<T, IDbSet<TEntity>>), property.GetGetMethod());
             return new DbSetAdapterImpl<TEntity>(getDbSet, property.Name);
         }
-        public override Db.OeEntityAsyncEnumerator ExecuteEnumerator(Object dataContext, OeParseUriContext parseUriContext, CancellationToken cancellationToken)
+        public override Db.OeAsyncEnumerator ExecuteEnumerator(Object dataContext, OeParseUriContext parseUriContext, CancellationToken cancellationToken)
         {
             IQueryable query = parseUriContext.EntitySetAdapter.GetEntitySet(dataContext);
             Expression expression = parseUriContext.CreateExpression(query, new OeConstantToVariableVisitor());
 
             expression = new EnumerableToQuerableVisitor().Visit(expression);
             var queryAsync = (IDbAsyncEnumerable)query.Provider.CreateQuery(expression);
-            Db.OeEntityAsyncEnumerator asyncEnumerator = new OeEf6EntityAsyncEnumerator(queryAsync.GetAsyncEnumerator(), cancellationToken);
+            Db.OeAsyncEnumerator asyncEnumerator = new OeEf6AsyncEnumerator(queryAsync.GetAsyncEnumerator(), cancellationToken);
             if (parseUriContext.CountExpression != null)
                 asyncEnumerator.Count = query.Provider.Execute<int>(parseUriContext.CountExpression);
 
             return asyncEnumerator;
-        }
-        public override Db.OeEntityAsyncEnumerator ExecuteProcedure(Object dataContext, String procedureName, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
-        {
-            var dbContext = (T)dataContext;
-
-            var sql = new StringBuilder(procedureName);
-            for (int i = 0; i < parameters.Count; i++)
-            {
-                if (i == 0)
-                    sql.Append(' ');
-
-                sql.Append(GetDbParameterName(dbContext, i));
-                if (i < parameters.Count - 1)
-                    sql.Append(',');
-            }
-
-            Object[] parameterValues = Array.Empty<Object>();
-            if (parameters.Count > 0)
-            {
-                parameterValues = new Object[parameters.Count];
-                for (int i = 0; i < parameterValues.Length; i++)
-                    parameterValues[i] = parameters[i].Value;
-            }
-
-            if (returnType == null)
-            {
-                int count = dbContext.Database.ExecuteSqlCommand(sql.ToString(), parameterValues);
-                return new Db.OeEntityAsyncEnumeratorAdapter(new Object[] { count }, CancellationToken.None);
-            }
-            else
-            {
-                DbRawSqlQuery query = dbContext.Database.SqlQuery(returnType, sql.ToString(), parameterValues);
-                return new Db.OeEntityAsyncEnumeratorAdapter(query, CancellationToken.None);
-            }
         }
         public override TResult ExecuteScalar<TResult>(Object dataContext, OeParseUriContext parseUriContext)
         {
@@ -238,13 +204,6 @@ namespace OdataToEntity.Ef6
             Expression expression = parseUriContext.CreateExpression(query, new OeConstantToVariableVisitor());
             return query.Provider.Execute<TResult>(expression);
         }
-        private static String GetDbParameterName(DbContext dbContext, int parameterOrder)
-        {
-            if (_dummyCommandBuilder == null)
-                Volatile.Write(ref _dummyCommandBuilder, new DummyCommandBuilder(dbContext.Database.Connection));
-            return _dummyCommandBuilder.GetDbParameterName(parameterOrder);
-        }
-        protected override Type GetDataContextType() => typeof(T);
         public override Db.OeEntitySetAdapter GetEntitySetAdapter(String entitySetName)
         {
             return new Db.OeEntitySetAdapter(_entitySetMetaAdapters.FindByEntitySetName(entitySetName), this);
@@ -255,12 +214,7 @@ namespace OdataToEntity.Ef6
             return dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        public override Db.OeEntitySetMetaAdapterCollection EntitySetMetaAdapters
-        {
-            get
-            {
-                return _entitySetMetaAdapters;
-            }
-        }
+        public override Db.OeEntitySetMetaAdapterCollection EntitySetMetaAdapters => _entitySetMetaAdapters;
+        public override Db.OeOperationAdapter OperationAdapter => _operationAdapter;
     }
 }

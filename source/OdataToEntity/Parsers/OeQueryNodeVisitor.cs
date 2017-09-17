@@ -1,5 +1,6 @@
 ﻿using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
+using OdataToEntity.ModelBuilder;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -185,7 +186,7 @@ namespace OdataToEntity.Parsers
                     if (primitiveTypeKind == EdmPrimitiveTypeKind.None)
                     {
                         if (nodeIn.TypeReference.IsEnum())
-                            clrType = ModelBuilder.OeEdmClrHelper.GetClrType(_edmModel, nodeIn.TypeReference.Definition);
+                            clrType = _edmModel.GetClrType(nodeIn.TypeReference.Definition);
                         else
                             throw new NotSupportedException(nodeIn.TypeReference.FullName());
                     }

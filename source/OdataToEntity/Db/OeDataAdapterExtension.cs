@@ -1,8 +1,5 @@
 ﻿using Microsoft.OData.Edm;
 using OdataToEntity.ModelBuilder;
-using System;
-using System.ComponentModel;
-using System.Reflection;
 
 namespace OdataToEntity.Db
 {
@@ -16,17 +13,10 @@ namespace OdataToEntity.Db
         }
         public static void BuildOperations(OeDataAdapter dataAdapter, OeEdmModelBuilder modelBuilder)
         {
-            MethodInfo[] operations = dataAdapter.GetOperations();
+            OeOperationConfiguration[] operations = dataAdapter.OperationAdapter.GetOperations();
             if (operations != null)
-                foreach (MethodInfo methodInfo in operations)
-                {
-                    var description = (DescriptionAttribute)methodInfo.GetCustomAttribute(typeof(DescriptionAttribute));
-                    String name = description == null ? methodInfo.Name : description.Description;
-                    OeOperationConfiguration functionConfiguration = modelBuilder.AddFunction(null, name);
-                    foreach (ParameterInfo parameterInfo in methodInfo.GetParameters())
-                        functionConfiguration.AddParameter(parameterInfo.Name, parameterInfo.ParameterType);
-                    functionConfiguration.ReturnType = methodInfo.ReturnType;
-                }
+                foreach (OeOperationConfiguration operation in operations)
+                    modelBuilder.AddOperation(operation);
         }
     }
 }

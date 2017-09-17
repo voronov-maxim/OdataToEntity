@@ -5,14 +5,17 @@ namespace OdataToEntity.ModelBuilder
 {
     public sealed class OeOperationConfiguration
     {
+        private readonly bool? _isDbFunction;
         private readonly String _name;
-        private readonly String _namespaceName;
         private readonly List<OeFunctionParameterConfiguration> _parameters;
 
-        public OeOperationConfiguration(String namespaceName, String name)
+        public OeOperationConfiguration(String name, bool? isDbFunction)
         {
-            _namespaceName = namespaceName;
+            if (name == null)
+                throw new ArgumentNullException(nameof(name));
+
             _name = name;
+            _isDbFunction = isDbFunction;
             _parameters = new List<OeFunctionParameterConfiguration>();
         }
 
@@ -25,9 +28,10 @@ namespace OdataToEntity.ModelBuilder
             _parameters.Add(new OeFunctionParameterConfiguration(name, clrType));
         }
 
-        public bool IsFunction => ReturnType != null && ReturnType != typeof(void);
+        public bool IsDbFunction => _isDbFunction ?? (ReturnType != null && ReturnType.IsPrimitive);
+        public bool IsEdmFunction => ReturnType != null && ReturnType != typeof(void);
         public String Name => _name;
-        public String NamespaceName => _namespaceName;
+        public String NamespaceName { get; set; }
         public IReadOnlyList<OeFunctionParameterConfiguration> Parameters => _parameters;
         public Type ReturnType { get; set; }
     }

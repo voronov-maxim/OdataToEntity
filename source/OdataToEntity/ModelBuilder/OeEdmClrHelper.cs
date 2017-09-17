@@ -9,24 +9,24 @@ namespace OdataToEntity.ModelBuilder
 {
     public static class OeEdmClrHelper
     {
-        public static Type GetClrType(IEdmModel edmModel, IEdmType edmType)
+        public static Type GetClrType(this IEdmModel edmModel, IEdmType edmType)
         {
             if (edmType.TypeKind == EdmTypeKind.Primitive)
                 return PrimitiveTypeHelper.GetClrType((edmType as IEdmPrimitiveType).PrimitiveKind);
 
-            OeClrTypeAnnotation clrTypeAnnotation = edmModel.GetAnnotationValue<OeClrTypeAnnotation>(edmType);
+            OeValueAnnotation<Type> clrTypeAnnotation = edmModel.GetAnnotationValue<OeValueAnnotation<Type>>(edmType);
             if (clrTypeAnnotation != null)
-                return clrTypeAnnotation.ClrType;
+                return clrTypeAnnotation.Value;
 
             if (edmType.TypeKind == EdmTypeKind.Collection)
-                return GetClrType(edmModel, (edmType as IEdmCollectionType).ElementType.Definition);
+                return edmModel.GetClrType((edmType as IEdmCollectionType).ElementType.Definition);
 
             throw new InvalidOperationException("Add OeClrTypeAnnotation for " + edmType.FullTypeName());
         }
         public static Object GetValue(IEdmModel edmModel, ODataEnumValue odataValue)
         {
             IEdmSchemaType schemaType = edmModel.FindType(odataValue.TypeName);
-            Type clrType = GetClrType(edmModel, (IEdmEnumType)schemaType.AsElementType());
+            Type clrType = edmModel.GetClrType((IEdmEnumType)schemaType.AsElementType());
             return Enum.Parse(clrType, odataValue.Value);
         }
         public static Object GetValue(IEdmModel edmModel, ODataCollectionValue odataValue)
@@ -48,7 +48,7 @@ namespace OdataToEntity.ModelBuilder
         public static Object GetValue(IEdmModel edmModel, ODataResource odataValue)
         {
             var resource = odataValue as ODataResource;
-            Type clrType = GetClrType(edmModel, edmModel.FindType(resource.TypeName));
+            Type clrType = edmModel.GetClrType(edmModel.FindType(resource.TypeName));
             Object instance = Activator.CreateInstance(clrType);
             foreach (ODataProperty edmProperty in resource.Properties)
             {
@@ -73,6 +73,18 @@ namespace OdataToEntity.ModelBuilder
 
             return odataValue;
         }
-
+        public static bool IsDbFunction(this IEdmModel edmModel, EdmOperation edmOperation)
+        {
+            OeValueAnnotation<bool> valueAnnotation = edmModel.GetAnnotationValue<OeValueAnnotation<bool>>(edmOperation);
+            return valueAnnotation.Value;
+        }
+        public static void SetClrType(this IEdmModel edmModel, IEdmType edmType, Type clrType)
+        {
+            edmModel.SetAnnotationValue(edmType, new OeValueAnnotation<Type>(clrType));
+        }
+        public static void SetIsDbFunction(this IEdmModel edmModel, EdmOperation edmOperation, bool isDbFunction)
+        {
+            edmModel.SetAnnotationValue(edmOperation, new OeValueAnnotation<bool>(isDbFunction));
+        }
     }
 }
