@@ -10,7 +10,7 @@ using System.Reflection;
 
 namespace OdataToEntity.Parsers
 {
-    public sealed class OeAggregationTranslator
+    public struct OeAggregationTranslator
     {
         private sealed class AggProperty : EdmStructuralProperty
         {

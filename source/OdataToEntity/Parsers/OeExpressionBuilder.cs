@@ -117,16 +117,8 @@ namespace OdataToEntity.Parsers
             if (orderByClause == null)
                 return source;
 
-            _visitor.TuplePropertyByEdmProperty = new TuplePropertyByEdmProperty(source).GetTuplePropertyByEdmProperty;
-            Expression e = _visitor.TranslateNode(orderByClause.Expression);
-
-            LambdaExpression lambda = Expression.Lambda(e, Parameter);
-            MethodInfo orderByMethodInfo = orderByClause.Direction == OrderByDirection.Ascending ?
-                OeMethodInfoHelper.GetOrderByMethodInfo(ParameterType, e.Type) :
-                OeMethodInfoHelper.GetOrderByDescendingMethodInfo(ParameterType, e.Type);
-            MethodCallExpression orderByCall = Expression.Call(orderByMethodInfo, source, lambda);
-
-            return ApplyThenBy(orderByCall, orderByClause.ThenBy);
+            var orderBytranslator = new OeOrderByTranslator(_visitor);
+            return orderBytranslator.Build(source, orderByClause);
         }
         public Expression ApplySelect(Expression source, SelectExpandClause selectClause, ODataPath path, OeMetadataLevel metadatLevel)
         {
@@ -164,20 +156,6 @@ namespace OdataToEntity.Parsers
 
             MethodInfo takeMethodInfo = OeMethodInfoHelper.GetTakeMethodInfo(ParameterType);
             return Expression.Call(takeMethodInfo, source, topConstant);
-        }
-        private Expression ApplyThenBy(Expression source, OrderByClause thenByClause)
-        {
-            if (thenByClause == null)
-                return source;
-
-            Expression e = _visitor.TranslateNode(thenByClause.Expression);
-            LambdaExpression lambda = Expression.Lambda(e, Parameter);
-
-            MethodInfo thenByMethodInfo = thenByClause.Direction == OrderByDirection.Ascending ?
-                OeMethodInfoHelper.GetThenByMethodInfo(ParameterType, e.Type) :
-                OeMethodInfoHelper.GetThenByDescendingMethodInfo(ParameterType, e.Type);
-            MethodCallExpression thenByCall = Expression.Call(thenByMethodInfo, source, lambda);
-            return ApplyThenBy(thenByCall, thenByClause.ThenBy);
         }
         public OeEntryFactory CreateEntryFactory(IEdmEntitySetBase entitySet)
         {

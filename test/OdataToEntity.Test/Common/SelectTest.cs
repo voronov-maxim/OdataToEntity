@@ -674,6 +674,28 @@ namespace OdataToEntity.Test
             await Fixture.Execute(parameters);
         }
         [Fact]
+        public async Task OrderByColumnsMissingInSelect()
+        {
+            var parameters = new QueryParameters<OrderItem, Object>()
+            {
+                RequestUri = "OrderItems?$select=Product,Id&$orderby=Count desc,Order/Customer/Name,Id desc",
+                Expression = t => t.OrderByDescending(i => i.Count).ThenBy(i => i.Order.Customer.Name).ThenByDescending(i => i.Id).Select(i => new { i.Product, i.Id })
+
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Fact]
+        public async Task OrderByColumnsMissingInSelectNavigationFirst()
+        {
+            var parameters = new QueryParameters<OrderItem, Object>()
+            {
+                RequestUri = "OrderItems?$select=Product,Id&$orderby=Order/Customer/Name desc,Count,Id desc",
+                Expression = t => t.OrderByDescending(i => i.Order.Customer.Name).ThenBy(i => i.Count).ThenByDescending(i => i.Id).Select(i => new { i.Product, i.Id })
+
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Fact]
         public async Task OrderByDesc()
         {
             var parameters = new QueryParameters<OrderItem>()
