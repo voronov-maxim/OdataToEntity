@@ -7,9 +7,9 @@ This library provides a simple approach to creating OData service from ORM data 
 This translates the OData query into an expression tree and passes it to the ORM framework.
 Supported ORM: Entity Framework 6, Entity Framework Core, Linq2Db
 
-Example Asp.Net Core OData service in \sln\OdataToEntityCore.Asp.sln
-client Microsoft.OData.Client - test\OdataToEntity.Test.Asp\OdataToEntity.Test.AspClient
-server Asp .net core - test\OdataToEntity.Test.Asp\OdataToEntity.Test.AspServer
+Example Asp.Net Core OData service in \sln\OdataToEntityCore.Asp.sln  
+client Microsoft.OData.Client - test\OdataToEntity.Test.Asp\OdataToEntity.Test.AspClient  
+server Asp .net core - test\OdataToEntity.Test.Asp\OdataToEntity.Test.AspServer  
 server Asp mvc .net core - test\OdataToEntity.Test.Asp\OdataToEntity.Test.AspServer
 
 Script create database \test\OdataToEntity.Test.EfCore.SqlServer\script.sql
