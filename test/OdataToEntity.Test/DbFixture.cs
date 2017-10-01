@@ -91,7 +91,7 @@ namespace OdataToEntity.Test
         {
             var parser = new OeParser(new Uri("http://dummy/"), OeDataAdapter, EdmModel);
             var stream = new MemoryStream();
-            await parser.ExecuteQueryAsync(ParseUri(requestUri), OeRequestHeaders.Default, stream, CancellationToken.None);
+            await parser.ExecuteQueryAsync(ParseUri(requestUri), OeRequestHeaders.JsonDefault, stream, CancellationToken.None);
             stream.Position = 0;
 
             var reader = new ResponseReader(EdmModel, DbDataAdapter.EntitySetMetaAdapters);

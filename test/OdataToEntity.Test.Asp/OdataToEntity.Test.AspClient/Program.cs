@@ -15,10 +15,11 @@ namespace OdataToEntity.Test.AspClient
         {
             DbFixtureInitDb.ContainerFactory = CreateContainer;
 
-            //new SelectTest().SelectName().Wait();
-
+            //new ProcedureTest().GetOrders_id_get();
             DbFixtureInitDb.RunTest(new BatchTest()).GetAwaiter().GetResult();
             DbFixtureInitDb.RunTest(new SelectTest(new DbFixtureInitDb())).GetAwaiter().GetResult();
+            DbFixtureInitDb.RunTest(new ManyColumnsTest(new ManyColumnsFixtureInitDb())).GetAwaiter().GetResult();
+            DbFixtureInitDb.RunTest(new ProcedureTest()).GetAwaiter().GetResult();
 
             Console.WriteLine();
             Console.WriteLine("Press any key to continue...");

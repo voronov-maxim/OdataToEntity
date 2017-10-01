@@ -42,7 +42,7 @@ namespace OdataToEntity.Test.WcfService
             try
             {
                 dbContext = (OrderContext)base.DataAdapter.CreateDataContext();
-                dbContext.InitDb();
+                //dbContext.InitDb();
             }
             finally
             {
@@ -64,7 +64,7 @@ namespace OdataToEntity.Test.WcfService
             {
                 var binding = new NetTcpBinding();
                 host.AddServiceEndpoint(typeof(IOdataWcf), binding, String.Empty);
-                host.AddServiceEndpoint(typeof(IOrderDb), binding, String.Empty);
+                //host.AddServiceEndpoint(typeof(IOrderDb), binding, String.Empty);
                 host.Open();
 
                 do

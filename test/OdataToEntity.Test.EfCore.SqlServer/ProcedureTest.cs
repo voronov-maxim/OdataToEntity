@@ -23,12 +23,12 @@ namespace OdataToEntity.Test
 
             var requestUri = new Uri(@"http://dummy/" + request);
             if (requestData == null)
-                await parser.ExecuteGetAsync(requestUri, OeRequestHeaders.Default, responseStream, CancellationToken.None);
+                await parser.ExecuteGetAsync(requestUri, OeRequestHeaders.JsonDefault, responseStream, CancellationToken.None);
             else
             {
                 String data = JsonConvert.SerializeObject(requestData);
                 var requestStream = new MemoryStream(Encoding.UTF8.GetBytes(data));
-                await parser.ExecutePostAsync(requestUri, OeRequestHeaders.Default, requestStream, responseStream, CancellationToken.None);
+                await parser.ExecutePostAsync(requestUri, OeRequestHeaders.JsonDefault, requestStream, responseStream, CancellationToken.None);
             }
 
             var reader = new ResponseReader(fixture.EdmModel, fixture.DbDataAdapter.EntitySetMetaAdapters);

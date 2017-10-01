@@ -9,7 +9,7 @@ namespace OdataToEntity.AspServer
 {
     public class Startup
     {
-        private OrderOeDataAdapter _dataAdapter;
+        private Db.OeDataAdapter _dataAdapter;
 
         public Startup(IHostingEnvironment env)
         {
@@ -27,8 +27,8 @@ namespace OdataToEntity.AspServer
         {
             services.AddMvcCore();
 
-            _dataAdapter = new OrderOeDataAdapter(OdataToEntity.Test.Model.OrderContext.GenerateDatabaseName());
-            services.AddSingleton(_dataAdapter);
+            _dataAdapter = new OrderOeDataAdapter(Test.Model.OrderContext.GenerateDatabaseName());
+            services.AddSingleton(typeof(Db.OeDataAdapter), _dataAdapter);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

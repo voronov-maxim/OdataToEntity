@@ -8,7 +8,7 @@ namespace OdataToEntity.Test
 {
     public sealed class ManyColumnsTest : IClassFixture<ManyColumnsFixtureInitDb>
     {
-        private readonly DbFixture _fixture;
+        private readonly ManyColumnsFixtureInitDb _fixture;
         private static readonly string _selectNames = String.Join(",", Enumerable.Range(1, 30).Select(i => "Column" + i.ToString("00")));
 
         public ManyColumnsTest(ManyColumnsFixtureInitDb fixture)
@@ -60,6 +60,6 @@ namespace OdataToEntity.Test
             await Fixture.Execute(parameters);
         }
 
-        private DbFixture Fixture => _fixture;
+        private ManyColumnsFixtureInitDb Fixture => _fixture;
     }
 }

@@ -44,10 +44,10 @@ namespace OdataToEntity.EfCore
 
             return ExecuteReader(dbContext, "select * from " + functionName + sql.ToString(), GetParameterValues(parameters), returnType);
         }
-        protected OeAsyncEnumeratorAdapter ExecuteNonQuery(DbContext dbContext, String sql, Object[] parameterValues)
+        protected OeAsyncEnumerator ExecuteNonQuery(DbContext dbContext, String sql, Object[] parameterValues)
         {
-            int count = dbContext.Database.ExecuteSqlCommand(sql, parameterValues);
-            return new OeAsyncEnumeratorAdapter(new[] { (Object)count }, CancellationToken.None);
+            dbContext.Database.ExecuteSqlCommand(sql, parameterValues);
+            return OeAsyncEnumerator.Empty;
         }
         public override OeAsyncEnumerator ExecuteProcedure(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
         {
@@ -130,7 +130,7 @@ namespace OdataToEntity.EfCore
             if (!String.IsNullOrEmpty(dbFunction.Schema))
                 functionName = dbFunction.Schema + "." + functionName;
 
-            var operation = new OeOperationConfiguration(functionName, true);
+            var operation = new OeOperationConfiguration(functionName, methodInfo, true);
             foreach (ParameterInfo parameterInfo in methodInfo.GetParameters())
                 operation.AddParameter(parameterInfo.Name, parameterInfo.ParameterType);
             operation.ReturnType = methodInfo.ReturnType;

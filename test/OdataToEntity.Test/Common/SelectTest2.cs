@@ -28,7 +28,7 @@ namespace OdataToEntity.Test
             {
                 ODataUri odataUri = Fixture.ParseUri(parameters.RequestUri);
                 var parser = new OeParser(new Uri("http://dummy/"), Fixture.OeDataAdapter, Fixture.EdmModel);
-                await parser.ExecuteQueryAsync(odataUri, OeRequestHeaders.Default, stream, CancellationToken.None);
+                await parser.ExecuteQueryAsync(odataUri, OeRequestHeaders.JsonDefault, stream, CancellationToken.None);
                 stream.Position = 0;
                 using (var reader = new System.IO.StreamReader(stream))
                 {
@@ -61,7 +61,7 @@ namespace OdataToEntity.Test
             {
                 ODataUri odataUri = Fixture.ParseUri(parameters.RequestUri);
                 var parser = new OeParser(new Uri("http://dummy/"), Fixture.OeDataAdapter, Fixture.EdmModel);
-                await parser.ExecuteQueryAsync(odataUri, OeRequestHeaders.Default, stream, CancellationToken.None);
+                await parser.ExecuteQueryAsync(odataUri, OeRequestHeaders.JsonDefault, stream, CancellationToken.None);
                 stream.Position = 0;
                 using (var reader = new System.IO.StreamReader(stream))
                 {
@@ -93,7 +93,7 @@ namespace OdataToEntity.Test
             {
                 ODataUri odataUri = Fixture.ParseUri(parameters.RequestUri);
                 var parser = new OeParser(new Uri("http://dummy/"), Fixture.OeDataAdapter, Fixture.EdmModel);
-                await parser.ExecuteQueryAsync(odataUri, OeRequestHeaders.Default, stream, CancellationToken.None);
+                await parser.ExecuteQueryAsync(odataUri, OeRequestHeaders.JsonDefault, stream, CancellationToken.None);
                 stream.Position = 0;
                 using (var reader = new System.IO.StreamReader(stream))
                 {

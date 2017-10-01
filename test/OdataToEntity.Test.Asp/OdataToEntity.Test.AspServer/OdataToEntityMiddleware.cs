@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http;
 using Microsoft.OData.Edm;
 using Microsoft.OData.Edm.Csdl;
 using Microsoft.OData.Edm.Validation;
-using OdataToEntity;
 using OdataToEntity.Db;
 using OdataToEntity.EfCore;
 using System;
@@ -52,13 +51,11 @@ namespace OdataToEntity.AspServer
         }
         private async Task Invoke(HttpContext httpContext, PathString remaining)
         {
-            var requestHeaders = (FrameRequestHeaders)httpContext.Request.Headers;
-            httpContext.Response.ContentType = requestHeaders.HeaderAccept;
-
             var uri = new Uri(_baseUri.OriginalString + remaining + httpContext.Request.QueryString);
+            var requestHeaders = (FrameRequestHeaders)httpContext.Request.Headers;
             OeRequestHeaders headers = OeRequestHeaders.Parse(requestHeaders.HeaderAccept);
             var parser = new OeParser(_baseUri, _dataAdapter, _edmModel);
-            await parser.ExecuteGetAsync(uri, headers, httpContext.Response.Body, CancellationToken.None);
+            await parser.ExecuteGetAsync(uri, new OeHttpRequestHeaders(headers, httpContext.Response), httpContext.Response.Body, CancellationToken.None);
         }
         private async Task InvokeBatch(HttpContext httpContext)
         {

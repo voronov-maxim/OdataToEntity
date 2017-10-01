@@ -38,8 +38,8 @@ namespace OdataToEntity.ModelBuilder
         }
         private EdmAction BuildAction(OeOperationConfiguration operationConfiguration)
         {
-            var edmAction = new EdmAction(operationConfiguration.NamespaceName ?? "", operationConfiguration.Name, null);
-            foreach (OeFunctionParameterConfiguration parameterConfiguration in operationConfiguration.Parameters)
+            var edmAction = new EdmAction(operationConfiguration.NamespaceName, operationConfiguration.MethodInfoName, null);
+            foreach (OeOperationParameterConfiguration parameterConfiguration in operationConfiguration.Parameters)
             {
                 IEdmTypeReference edmTypeReference = GetEdmTypeReference(parameterConfiguration.ClrType);
                 if (edmTypeReference == null)
@@ -97,7 +97,8 @@ namespace OdataToEntity.ModelBuilder
                     EdmFunction edmFunction = BuildFunction(operationConfiguration);
                     if (edmFunction != null)
                     {
-                        container.AddFunctionImport(edmFunction);
+                        edmModel.AddElement(edmFunction);
+                        container.AddFunctionImport(operationConfiguration.Name, edmFunction);
                         edmModel.SetIsDbFunction(edmFunction, operationConfiguration.IsDbFunction);
                     }
                 }
@@ -106,7 +107,8 @@ namespace OdataToEntity.ModelBuilder
                     EdmAction edmAction = BuildAction(operationConfiguration);
                     if (edmAction != null)
                     {
-                        container.AddActionImport(edmAction);
+                        edmModel.AddElement(edmAction);
+                        container.AddActionImport(operationConfiguration.Name, edmAction);
                         edmModel.SetIsDbFunction(edmAction, operationConfiguration.IsDbFunction);
                     }
                 }
@@ -115,13 +117,13 @@ namespace OdataToEntity.ModelBuilder
             edmModel.AddElement(container);
             return edmModel;
         }
-        private EdmFunction BuildFunction(OeOperationConfiguration functionConfiguration)
+        private EdmFunction BuildFunction(OeOperationConfiguration operationConfiguration)
         {
             IEdmTypeReference edmTypeReference;
-            Type itemType = Parsers.OeExpressionHelper.GetCollectionItemType(functionConfiguration.ReturnType);
+            Type itemType = Parsers.OeExpressionHelper.GetCollectionItemType(operationConfiguration.ReturnType);
             if (itemType == null)
             {
-                edmTypeReference = GetEdmTypeReference(functionConfiguration.ReturnType);
+                edmTypeReference = GetEdmTypeReference(operationConfiguration.ReturnType);
                 if (edmTypeReference == null)
                     return null;
             }
@@ -134,8 +136,8 @@ namespace OdataToEntity.ModelBuilder
                 edmTypeReference = new EdmCollectionTypeReference(new EdmCollectionType(edmTypeReference));
             }
 
-            var edmFunction = new EdmFunction(functionConfiguration.NamespaceName ?? "", functionConfiguration.Name, edmTypeReference);
-            foreach (OeFunctionParameterConfiguration parameterConfiguration in functionConfiguration.Parameters)
+            var edmFunction = new EdmFunction(operationConfiguration.NamespaceName, operationConfiguration.MethodInfoName, edmTypeReference);
+            foreach (OeOperationParameterConfiguration parameterConfiguration in operationConfiguration.Parameters)
             {
                 edmTypeReference = GetEdmTypeReference(parameterConfiguration.ClrType);
                 if (edmTypeReference == null)

@@ -43,55 +43,55 @@ namespace OdataToEntity.Test.AspClient
 
             return Task.CompletedTask;
         }
-        private static void Add(Container container)
+        internal static void Add(Container container)
         {
             var category1 = new Category()
             {
-                Id = 1,
+                Id = -1,
                 Name = "clothes",
                 ParentId = null
             };
             var category2 = new Category()
             {
-                Id = 2,
+                Id = -2,
                 Name = "unknown",
                 ParentId = null
             };
             var category3 = new Category()
             {
-                Id = 3,
+                Id = -3,
                 Name = "hats",
-                ParentId = 1
+                ParentId = -1
             };
             var category4 = new Category()
             {
-                Id = 4,
+                Id = -4,
                 Name = "jackets",
-                ParentId = 1
+                ParentId = -1
             };
             var category5 = new Category()
             {
-                Id = 5,
+                Id = -5,
                 Name = "baseball cap",
-                ParentId = 3
+                ParentId = -3
             };
             var category6 = new Category()
             {
-                Id = 6,
+                Id = -6,
                 Name = "sombrero",
-                ParentId = 3
+                ParentId = -3
             };
             var category7 = new Category()
             {
-                Id = 7,
+                Id = -7,
                 Name = "fur coat",
-                ParentId = 4
+                ParentId = -4
             };
             var category8 = new Category()
             {
-                Id = 8,
+                Id = -8,
                 Name = "cloak",
-                ParentId = 4
+                ParentId = -4
             };
 
             var customer1 = new Customer()
@@ -130,7 +130,7 @@ namespace OdataToEntity.Test.AspClient
             var order1 = new Order()
             {
                 Date = DateTimeOffset.Now,
-                Id = 1,
+                Id = -1,
                 Name = "Order 1",
                 CustomerCountry = "RU",
                 CustomerId = 1,
@@ -139,10 +139,10 @@ namespace OdataToEntity.Test.AspClient
             var order2 = new Order()
             {
                 Date = DateTimeOffset.Now,
-                Id = 2,
+                Id = -2,
                 Name = "Order 2",
                 CustomerCountry = "EN",
-                CustomerId = 2,
+                CustomerId = 1,
                 Status = OrderStatus.Processing
             };
             var order3 = new Order()
@@ -150,7 +150,7 @@ namespace OdataToEntity.Test.AspClient
                 AltCustomerCountry = "RU",
                 AltCustomerId = 2,
                 Date = null,
-                Id = 3,
+                Id = -3,
                 Name = "Order unknown",
                 CustomerCountry = "UN",
                 CustomerId = 1,
@@ -160,24 +160,24 @@ namespace OdataToEntity.Test.AspClient
             var orderItem11 = new OrderItem()
             {
                 Count = 1,
-                Id = 1,
-                OrderId = 1,
+                Id = -1,
+                OrderId = -1,
                 Price = 1.1m,
                 Product = "Product order 1 item 1"
             };
             var orderItem12 = new OrderItem()
             {
                 Count = 2,
-                Id = 2,
-                OrderId = 1,
+                Id = -2,
+                OrderId = -1,
                 Price = 1.2m,
                 Product = "Product order 1 item 2"
             };
             var orderItem13 = new OrderItem()
             {
                 Count = 3,
-                Id = 3,
-                OrderId = 1,
+                Id = -3,
+                OrderId = -1,
                 Price = 1.3m,
                 Product = "Product order 1 item 3"
             };
@@ -185,34 +185,101 @@ namespace OdataToEntity.Test.AspClient
             var orderItem21 = new OrderItem()
             {
                 Count = 1,
-                Id = 4,
-                OrderId = 2,
+                Id = -4,
+                OrderId = -2,
                 Price = 2.1m,
                 Product = "Product order 2 item 1"
             };
             var orderItem22 = new OrderItem()
             {
                 Count = 2,
-                Id = 5,
-                OrderId = 2,
+                Id = -5,
+                OrderId = -2,
                 Price = 2.2m,
                 Product = "Product order 2 item 2"
             };
             var orderItem31 = new OrderItem()
             {
                 Count = null,
-                Id = 6,
-                OrderId = 3,
+                Id = -6,
+                OrderId = -3,
                 Price = null,
                 Product = "Product order 3 item 1 (unknown)"
             };
             var orderItem32 = new OrderItem()
             {
                 Count = 0,
-                Id = 7,
-                OrderId = 3,
+                Id = -7,
+                OrderId = -3,
                 Price = 0,
                 Product = "{ null }.Sum() == 0"
+            };
+
+            var manyColumns1 = new ManyColumns()
+            {
+                Column01 = 1,
+                Column02 = 2,
+                Column03 = 3,
+                Column04 = 4,
+                Column05 = 5,
+                Column06 = 6,
+                Column07 = 7,
+                Column08 = 8,
+                Column09 = 9,
+                Column10 = 10,
+                Column11 = 11,
+                Column12 = 12,
+                Column13 = 13,
+                Column14 = 14,
+                Column15 = 15,
+                Column16 = 16,
+                Column17 = 17,
+                Column18 = 18,
+                Column19 = 19,
+                Column20 = 20,
+                Column21 = 21,
+                Column22 = 22,
+                Column23 = 23,
+                Column24 = 24,
+                Column25 = 25,
+                Column26 = 26,
+                Column27 = 27,
+                Column28 = 28,
+                Column29 = 29,
+                Column30 = 30
+            };
+            var manyColumns2 = new ManyColumns()
+            {
+                Column01 = 101,
+                Column02 = 102,
+                Column03 = 103,
+                Column04 = 104,
+                Column05 = 105,
+                Column06 = 106,
+                Column07 = 107,
+                Column08 = 108,
+                Column09 = 109,
+                Column10 = 110,
+                Column11 = 111,
+                Column12 = 112,
+                Column13 = 113,
+                Column14 = 114,
+                Column15 = 115,
+                Column16 = 116,
+                Column17 = 117,
+                Column18 = 118,
+                Column19 = 119,
+                Column20 = 120,
+                Column21 = 121,
+                Column22 = 122,
+                Column23 = 123,
+                Column24 = 124,
+                Column25 = 125,
+                Column26 = 126,
+                Column27 = 127,
+                Column28 = 128,
+                Column29 = 129,
+                Column30 = 130
             };
 
             container.AddToCategories(category1);
@@ -238,6 +305,9 @@ namespace OdataToEntity.Test.AspClient
             container.AddToOrderItems(orderItem22);
             container.AddToOrderItems(orderItem31);
             container.AddToOrderItems(orderItem32);
+
+            container.AddToManyColumns(manyColumns1);
+            container.AddToManyColumns(manyColumns2);
         }
         [Fact]
         public Task Delete()
@@ -254,7 +324,7 @@ namespace OdataToEntity.Test.AspClient
             Assert.Equal(5, container.Categories.Count());
             Assert.Equal(4, container.Customers.Count());
             Assert.Equal(2, container.Orders.Count());
-            Assert.Equal(5, container.OrderItems.Count());
+            Assert.Equal(3, container.OrderItems.Count());
 
             var order1 = container.Orders.Expand(t => t.Items).Where(t => t.Name == "Order 1").Single();
             Assert.Equal("Product order 1 item 3", order1.Items.Single().Product);
@@ -282,6 +352,14 @@ namespace OdataToEntity.Test.AspClient
             var orderItem2 = new OrderItem() { Id = 2 };
             container.AttachTo("OrderItems", orderItem2);
             container.DeleteObject(orderItem2);
+
+            var orderItem4 = new OrderItem() { Id = 4 };
+            container.AttachTo("OrderItems", orderItem4);
+            container.DeleteObject(orderItem4);
+
+            var orderItem5 = new OrderItem() { Id = 5 };
+            container.AttachTo("OrderItems", orderItem5);
+            container.DeleteObject(orderItem5);
 
             var order2 = new Order() { Id = 2 };
             container.AttachTo("Orders", order2);

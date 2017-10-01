@@ -21,7 +21,7 @@ namespace OdataToEntity.Test
 
             _initialized = true;
             var parser = new OeParser(new Uri("http://dummy/"), base.OeDataAdapter, base.EdmModel);
-            parser.ExecuteOperationAsync(base.ParseUri("ResetDb"), OeRequestHeaders.Default, null, new MemoryStream(), CancellationToken.None).GetAwaiter().GetResult();
+            parser.ExecuteOperationAsync(base.ParseUri("ResetDb"), OeRequestHeaders.JsonDefault, null, new MemoryStream(), CancellationToken.None).GetAwaiter().GetResult();
             base.ExecuteBatchAsync("Add").GetAwaiter().GetResult();
         }
 
@@ -63,7 +63,7 @@ namespace OdataToEntity.Test
 
             _initialized = true;
             var parser = new OeParser(new Uri("http://dummy/"), base.OeDataAdapter, base.EdmModel);
-            parser.ExecuteOperationAsync(base.ParseUri("ResetManyColumns"), OeRequestHeaders.Default, null, new MemoryStream(), CancellationToken.None).GetAwaiter().GetResult();
+            parser.ExecuteOperationAsync(base.ParseUri("ResetManyColumns"), OeRequestHeaders.JsonDefault, null, new MemoryStream(), CancellationToken.None).GetAwaiter().GetResult();
             base.ExecuteBatchAsync("ManyColumns").GetAwaiter().GetResult();
         }
 

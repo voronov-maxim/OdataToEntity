@@ -73,7 +73,7 @@ namespace OdataToEntity.ModelBuilder
 
             return odataValue;
         }
-        public static bool IsDbFunction(this IEdmModel edmModel, EdmOperation edmOperation)
+        public static bool IsDbFunction(this IEdmModel edmModel, IEdmOperation edmOperation)
         {
             OeValueAnnotation<bool> valueAnnotation = edmModel.GetAnnotationValue<OeValueAnnotation<bool>>(edmOperation);
             return valueAnnotation.Value;
@@ -82,7 +82,7 @@ namespace OdataToEntity.ModelBuilder
         {
             edmModel.SetAnnotationValue(edmType, new OeValueAnnotation<Type>(clrType));
         }
-        public static void SetIsDbFunction(this IEdmModel edmModel, EdmOperation edmOperation, bool isDbFunction)
+        public static void SetIsDbFunction(this IEdmModel edmModel, IEdmOperation edmOperation, bool isDbFunction)
         {
             edmModel.SetAnnotationValue(edmOperation, new OeValueAnnotation<bool>(isDbFunction));
         }

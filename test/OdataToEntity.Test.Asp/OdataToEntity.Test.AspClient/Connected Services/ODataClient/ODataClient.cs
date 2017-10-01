@@ -8,38 +8,36 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-// Generation date: 01.06.2017 14:00:25
+// Generation date: 29.09.2017 12:09:56
 namespace ODataClient.OdataToEntity.Test.Model
 {
     /// <summary>
     /// There are no comments for CategorySingle in the schema.
     /// </summary>
-    [global::Microsoft.OData.Client.OriginalNameAttribute("CategorySingle")]
     public partial class CategorySingle : global::Microsoft.OData.Client.DataServiceQuerySingle<Category>
     {
         /// <summary>
         /// Initialize a new CategorySingle object.
         /// </summary>
         public CategorySingle(global::Microsoft.OData.Client.DataServiceContext context, string path)
-            : base(context, path) { }
+            : base(context, path) {}
 
         /// <summary>
         /// Initialize a new CategorySingle object.
         /// </summary>
         public CategorySingle(global::Microsoft.OData.Client.DataServiceContext context, string path, bool isComposable)
-            : base(context, path, isComposable) { }
+            : base(context, path, isComposable) {}
 
         /// <summary>
         /// Initialize a new CategorySingle object.
         /// </summary>
         public CategorySingle(global::Microsoft.OData.Client.DataServiceQuerySingle<Category> query)
-            : base(query) { }
+            : base(query) {}
 
         /// <summary>
         /// There are no comments for Parent in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Parent")]
         public global::ODataClient.OdataToEntity.Test.Model.CategorySingle Parent
         {
             get
@@ -61,7 +59,6 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// There are no comments for Children in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Children")]
         public global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Category> Children
         {
             get
@@ -87,8 +84,7 @@ namespace ODataClient.OdataToEntity.Test.Model
     /// Id
     /// </KeyProperties>
     [global::Microsoft.OData.Client.Key("Id")]
-    [global::Microsoft.OData.Client.OriginalNameAttribute("Category")]
-    public partial class Category : global::Microsoft.OData.Client.BaseEntityType, global::System.ComponentModel.INotifyPropertyChanged
+    public partial class Category : global::Microsoft.OData.Client.BaseEntityType
     {
         /// <summary>
         /// Create a new Category object.
@@ -105,7 +101,6 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// There are no comments for Property Id in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Id")]
         public int Id
         {
             get
@@ -117,7 +112,6 @@ namespace ODataClient.OdataToEntity.Test.Model
                 this.OnIdChanging(value);
                 this._Id = value;
                 this.OnIdChanged();
-                this.OnPropertyChanged("Id");
             }
         }
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
@@ -128,7 +122,6 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// There are no comments for Property Name in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Name")]
         public string Name
         {
             get
@@ -140,7 +133,6 @@ namespace ODataClient.OdataToEntity.Test.Model
                 this.OnNameChanging(value);
                 this._Name = value;
                 this.OnNameChanged();
-                this.OnPropertyChanged("Name");
             }
         }
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
@@ -151,7 +143,6 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// There are no comments for Property ParentId in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("ParentId")]
         public global::System.Nullable<int> ParentId
         {
             get
@@ -163,21 +154,37 @@ namespace ODataClient.OdataToEntity.Test.Model
                 this.OnParentIdChanging(value);
                 this._ParentId = value;
                 this.OnParentIdChanged();
-                this.OnPropertyChanged("ParentId");
             }
         }
-
-        public global::System.DateTime? DateTime { get; set; }
-
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
         private global::System.Nullable<int> _ParentId;
         partial void OnParentIdChanging(global::System.Nullable<int> value);
         partial void OnParentIdChanged();
         /// <summary>
+        /// There are no comments for Property DateTime in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public global::System.Nullable<global::System.DateTime> DateTime
+        {
+            get
+            {
+                return this._DateTime;
+            }
+            set
+            {
+                this.OnDateTimeChanging(value);
+                this._DateTime = value;
+                this.OnDateTimeChanged();
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private global::System.Nullable<global::System.DateTime> _DateTime;
+        partial void OnDateTimeChanging(global::System.Nullable<global::System.DateTimeOffset> value);
+        partial void OnDateTimeChanged();
+        /// <summary>
         /// There are no comments for Property Parent in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Parent")]
         public global::ODataClient.OdataToEntity.Test.Model.Category Parent
         {
             get
@@ -189,7 +196,6 @@ namespace ODataClient.OdataToEntity.Test.Model
                 this.OnParentChanging(value);
                 this._Parent = value;
                 this.OnParentChanged();
-                this.OnPropertyChanged("Parent");
             }
         }
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
@@ -200,8 +206,7 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// There are no comments for Property Children in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Children")]
-        public global::Microsoft.OData.Client.DataServiceCollection<global::ODataClient.OdataToEntity.Test.Model.Category> Children
+        public global::System.Collections.ObjectModel.Collection<global::ODataClient.OdataToEntity.Test.Model.Category> Children
         {
             get
             {
@@ -212,60 +217,40 @@ namespace ODataClient.OdataToEntity.Test.Model
                 this.OnChildrenChanging(value);
                 this._Children = value;
                 this.OnChildrenChanged();
-                this.OnPropertyChanged("Children");
             }
         }
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        private global::Microsoft.OData.Client.DataServiceCollection<global::ODataClient.OdataToEntity.Test.Model.Category> _Children = new global::Microsoft.OData.Client.DataServiceCollection<global::ODataClient.OdataToEntity.Test.Model.Category>(null, global::Microsoft.OData.Client.TrackingMode.None);
-        partial void OnChildrenChanging(global::Microsoft.OData.Client.DataServiceCollection<global::ODataClient.OdataToEntity.Test.Model.Category> value);
+        private global::System.Collections.ObjectModel.Collection<global::ODataClient.OdataToEntity.Test.Model.Category> _Children = new global::System.Collections.ObjectModel.Collection<global::ODataClient.OdataToEntity.Test.Model.Category>();
+        partial void OnChildrenChanging(global::System.Collections.ObjectModel.Collection<global::ODataClient.OdataToEntity.Test.Model.Category> value);
         partial void OnChildrenChanged();
-        /// <summary>
-        /// This event is raised when the value of the property is changed
-        /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        public event global::System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
-        /// <summary>
-        /// The value of the property is changed
-        /// </summary>
-        /// <param name="property">property name</param>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        protected virtual void OnPropertyChanged(string property)
-        {
-            if ((this.PropertyChanged != null))
-            {
-                this.PropertyChanged(this, new global::System.ComponentModel.PropertyChangedEventArgs(property));
-            }
-        }
     }
     /// <summary>
     /// There are no comments for CustomerSingle in the schema.
     /// </summary>
-    [global::Microsoft.OData.Client.OriginalNameAttribute("CustomerSingle")]
     public partial class CustomerSingle : global::Microsoft.OData.Client.DataServiceQuerySingle<Customer>
     {
         /// <summary>
         /// Initialize a new CustomerSingle object.
         /// </summary>
         public CustomerSingle(global::Microsoft.OData.Client.DataServiceContext context, string path)
-            : base(context, path) { }
+            : base(context, path) {}
 
         /// <summary>
         /// Initialize a new CustomerSingle object.
         /// </summary>
         public CustomerSingle(global::Microsoft.OData.Client.DataServiceContext context, string path, bool isComposable)
-            : base(context, path, isComposable) { }
+            : base(context, path, isComposable) {}
 
         /// <summary>
         /// Initialize a new CustomerSingle object.
         /// </summary>
         public CustomerSingle(global::Microsoft.OData.Client.DataServiceQuerySingle<Customer> query)
-            : base(query) { }
+            : base(query) {}
 
         /// <summary>
         /// There are no comments for AltOrders in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("AltOrders")]
         public global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Order> AltOrders
         {
             get
@@ -287,7 +272,6 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// There are no comments for Orders in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Orders")]
         public global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Order> Orders
         {
             get
@@ -314,8 +298,7 @@ namespace ODataClient.OdataToEntity.Test.Model
     /// Id
     /// </KeyProperties>
     [global::Microsoft.OData.Client.Key("Country", "Id")]
-    [global::Microsoft.OData.Client.OriginalNameAttribute("Customer")]
-    public partial class Customer : global::Microsoft.OData.Client.BaseEntityType, global::System.ComponentModel.INotifyPropertyChanged
+    public partial class Customer : global::Microsoft.OData.Client.BaseEntityType
     {
         /// <summary>
         /// Create a new Customer object.
@@ -332,7 +315,6 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// There are no comments for Property Address in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Address")]
         public string Address
         {
             get
@@ -344,7 +326,6 @@ namespace ODataClient.OdataToEntity.Test.Model
                 this.OnAddressChanging(value);
                 this._Address = value;
                 this.OnAddressChanged();
-                this.OnPropertyChanged("Address");
             }
         }
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
@@ -355,7 +336,6 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// There are no comments for Property Country in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Country")]
         public string Country
         {
             get
@@ -367,7 +347,6 @@ namespace ODataClient.OdataToEntity.Test.Model
                 this.OnCountryChanging(value);
                 this._Country = value;
                 this.OnCountryChanged();
-                this.OnPropertyChanged("Country");
             }
         }
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
@@ -378,7 +357,6 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// There are no comments for Property Id in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Id")]
         public int Id
         {
             get
@@ -390,7 +368,6 @@ namespace ODataClient.OdataToEntity.Test.Model
                 this.OnIdChanging(value);
                 this._Id = value;
                 this.OnIdChanged();
-                this.OnPropertyChanged("Id");
             }
         }
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
@@ -401,7 +378,6 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// There are no comments for Property Name in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Name")]
         public string Name
         {
             get
@@ -413,7 +389,6 @@ namespace ODataClient.OdataToEntity.Test.Model
                 this.OnNameChanging(value);
                 this._Name = value;
                 this.OnNameChanged();
-                this.OnPropertyChanged("Name");
             }
         }
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
@@ -424,7 +399,6 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// There are no comments for Property Sex in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Sex")]
         public global::System.Nullable<global::ODataClient.OdataToEntity.Test.Model.Sex> Sex
         {
             get
@@ -436,7 +410,6 @@ namespace ODataClient.OdataToEntity.Test.Model
                 this.OnSexChanging(value);
                 this._Sex = value;
                 this.OnSexChanged();
-                this.OnPropertyChanged("Sex");
             }
         }
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
@@ -447,8 +420,7 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// There are no comments for Property AltOrders in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("AltOrders")]
-        public global::Microsoft.OData.Client.DataServiceCollection<global::ODataClient.OdataToEntity.Test.Model.Order> AltOrders
+        public global::System.Collections.ObjectModel.Collection<global::ODataClient.OdataToEntity.Test.Model.Order> AltOrders
         {
             get
             {
@@ -459,19 +431,17 @@ namespace ODataClient.OdataToEntity.Test.Model
                 this.OnAltOrdersChanging(value);
                 this._AltOrders = value;
                 this.OnAltOrdersChanged();
-                this.OnPropertyChanged("AltOrders");
             }
         }
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        private global::Microsoft.OData.Client.DataServiceCollection<global::ODataClient.OdataToEntity.Test.Model.Order> _AltOrders = new global::Microsoft.OData.Client.DataServiceCollection<global::ODataClient.OdataToEntity.Test.Model.Order>(null, global::Microsoft.OData.Client.TrackingMode.None);
-        partial void OnAltOrdersChanging(global::Microsoft.OData.Client.DataServiceCollection<global::ODataClient.OdataToEntity.Test.Model.Order> value);
+        private global::System.Collections.ObjectModel.Collection<global::ODataClient.OdataToEntity.Test.Model.Order> _AltOrders = new global::System.Collections.ObjectModel.Collection<global::ODataClient.OdataToEntity.Test.Model.Order>();
+        partial void OnAltOrdersChanging(global::System.Collections.ObjectModel.Collection<global::ODataClient.OdataToEntity.Test.Model.Order> value);
         partial void OnAltOrdersChanged();
         /// <summary>
         /// There are no comments for Property Orders in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Orders")]
-        public global::Microsoft.OData.Client.DataServiceCollection<global::ODataClient.OdataToEntity.Test.Model.Order> Orders
+        public global::System.Collections.ObjectModel.Collection<global::ODataClient.OdataToEntity.Test.Model.Order> Orders
         {
             get
             {
@@ -482,60 +452,802 @@ namespace ODataClient.OdataToEntity.Test.Model
                 this.OnOrdersChanging(value);
                 this._Orders = value;
                 this.OnOrdersChanged();
-                this.OnPropertyChanged("Orders");
             }
         }
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        private global::Microsoft.OData.Client.DataServiceCollection<global::ODataClient.OdataToEntity.Test.Model.Order> _Orders = new global::Microsoft.OData.Client.DataServiceCollection<global::ODataClient.OdataToEntity.Test.Model.Order>(null, global::Microsoft.OData.Client.TrackingMode.None);
-        partial void OnOrdersChanging(global::Microsoft.OData.Client.DataServiceCollection<global::ODataClient.OdataToEntity.Test.Model.Order> value);
+        private global::System.Collections.ObjectModel.Collection<global::ODataClient.OdataToEntity.Test.Model.Order> _Orders = new global::System.Collections.ObjectModel.Collection<global::ODataClient.OdataToEntity.Test.Model.Order>();
+        partial void OnOrdersChanging(global::System.Collections.ObjectModel.Collection<global::ODataClient.OdataToEntity.Test.Model.Order> value);
         partial void OnOrdersChanged();
+    }
+    /// <summary>
+    /// There are no comments for ManyColumnsSingle in the schema.
+    /// </summary>
+    public partial class ManyColumnsSingle : global::Microsoft.OData.Client.DataServiceQuerySingle<ManyColumns>
+    {
         /// <summary>
-        /// This event is raised when the value of the property is changed
+        /// Initialize a new ManyColumnsSingle object.
         /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        public event global::System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+        public ManyColumnsSingle(global::Microsoft.OData.Client.DataServiceContext context, string path)
+            : base(context, path) {}
+
         /// <summary>
-        /// The value of the property is changed
+        /// Initialize a new ManyColumnsSingle object.
         /// </summary>
-        /// <param name="property">property name</param>
+        public ManyColumnsSingle(global::Microsoft.OData.Client.DataServiceContext context, string path, bool isComposable)
+            : base(context, path, isComposable) {}
+
+        /// <summary>
+        /// Initialize a new ManyColumnsSingle object.
+        /// </summary>
+        public ManyColumnsSingle(global::Microsoft.OData.Client.DataServiceQuerySingle<ManyColumns> query)
+            : base(query) {}
+
+    }
+    /// <summary>
+    /// There are no comments for ManyColumns in the schema.
+    /// </summary>
+    /// <KeyProperties>
+    /// Column01
+    /// </KeyProperties>
+    [global::Microsoft.OData.Client.Key("Column01")]
+    public partial class ManyColumns : global::Microsoft.OData.Client.BaseEntityType
+    {
+        /// <summary>
+        /// Create a new ManyColumns object.
+        /// </summary>
+        /// <param name="column01">Initial value of Column01.</param>
+        /// <param name="column02">Initial value of Column02.</param>
+        /// <param name="column03">Initial value of Column03.</param>
+        /// <param name="column04">Initial value of Column04.</param>
+        /// <param name="column05">Initial value of Column05.</param>
+        /// <param name="column06">Initial value of Column06.</param>
+        /// <param name="column07">Initial value of Column07.</param>
+        /// <param name="column08">Initial value of Column08.</param>
+        /// <param name="column09">Initial value of Column09.</param>
+        /// <param name="column10">Initial value of Column10.</param>
+        /// <param name="column11">Initial value of Column11.</param>
+        /// <param name="column12">Initial value of Column12.</param>
+        /// <param name="column13">Initial value of Column13.</param>
+        /// <param name="column14">Initial value of Column14.</param>
+        /// <param name="column15">Initial value of Column15.</param>
+        /// <param name="column16">Initial value of Column16.</param>
+        /// <param name="column17">Initial value of Column17.</param>
+        /// <param name="column18">Initial value of Column18.</param>
+        /// <param name="column19">Initial value of Column19.</param>
+        /// <param name="column20">Initial value of Column20.</param>
+        /// <param name="column21">Initial value of Column21.</param>
+        /// <param name="column22">Initial value of Column22.</param>
+        /// <param name="column23">Initial value of Column23.</param>
+        /// <param name="column24">Initial value of Column24.</param>
+        /// <param name="column25">Initial value of Column25.</param>
+        /// <param name="column26">Initial value of Column26.</param>
+        /// <param name="column27">Initial value of Column27.</param>
+        /// <param name="column28">Initial value of Column28.</param>
+        /// <param name="column29">Initial value of Column29.</param>
+        /// <param name="column30">Initial value of Column30.</param>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        protected virtual void OnPropertyChanged(string property)
+        public static ManyColumns CreateManyColumns(int column01, 
+                    int column02, 
+                    int column03, 
+                    int column04, 
+                    int column05, 
+                    int column06, 
+                    int column07, 
+                    int column08, 
+                    int column09, 
+                    int column10, 
+                    int column11, 
+                    int column12, 
+                    int column13, 
+                    int column14, 
+                    int column15, 
+                    int column16, 
+                    int column17, 
+                    int column18, 
+                    int column19, 
+                    int column20, 
+                    int column21, 
+                    int column22, 
+                    int column23, 
+                    int column24, 
+                    int column25, 
+                    int column26, 
+                    int column27, 
+                    int column28, 
+                    int column29, 
+                    int column30)
         {
-            if ((this.PropertyChanged != null))
+            ManyColumns manyColumns = new ManyColumns();
+            manyColumns.Column01 = column01;
+            manyColumns.Column02 = column02;
+            manyColumns.Column03 = column03;
+            manyColumns.Column04 = column04;
+            manyColumns.Column05 = column05;
+            manyColumns.Column06 = column06;
+            manyColumns.Column07 = column07;
+            manyColumns.Column08 = column08;
+            manyColumns.Column09 = column09;
+            manyColumns.Column10 = column10;
+            manyColumns.Column11 = column11;
+            manyColumns.Column12 = column12;
+            manyColumns.Column13 = column13;
+            manyColumns.Column14 = column14;
+            manyColumns.Column15 = column15;
+            manyColumns.Column16 = column16;
+            manyColumns.Column17 = column17;
+            manyColumns.Column18 = column18;
+            manyColumns.Column19 = column19;
+            manyColumns.Column20 = column20;
+            manyColumns.Column21 = column21;
+            manyColumns.Column22 = column22;
+            manyColumns.Column23 = column23;
+            manyColumns.Column24 = column24;
+            manyColumns.Column25 = column25;
+            manyColumns.Column26 = column26;
+            manyColumns.Column27 = column27;
+            manyColumns.Column28 = column28;
+            manyColumns.Column29 = column29;
+            manyColumns.Column30 = column30;
+            return manyColumns;
+        }
+        /// <summary>
+        /// There are no comments for Property Column01 in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public int Column01
+        {
+            get
             {
-                this.PropertyChanged(this, new global::System.ComponentModel.PropertyChangedEventArgs(property));
+                return this._Column01;
+            }
+            set
+            {
+                this.OnColumn01Changing(value);
+                this._Column01 = value;
+                this.OnColumn01Changed();
             }
         }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private int _Column01;
+        partial void OnColumn01Changing(int value);
+        partial void OnColumn01Changed();
+        /// <summary>
+        /// There are no comments for Property Column02 in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public int Column02
+        {
+            get
+            {
+                return this._Column02;
+            }
+            set
+            {
+                this.OnColumn02Changing(value);
+                this._Column02 = value;
+                this.OnColumn02Changed();
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private int _Column02;
+        partial void OnColumn02Changing(int value);
+        partial void OnColumn02Changed();
+        /// <summary>
+        /// There are no comments for Property Column03 in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public int Column03
+        {
+            get
+            {
+                return this._Column03;
+            }
+            set
+            {
+                this.OnColumn03Changing(value);
+                this._Column03 = value;
+                this.OnColumn03Changed();
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private int _Column03;
+        partial void OnColumn03Changing(int value);
+        partial void OnColumn03Changed();
+        /// <summary>
+        /// There are no comments for Property Column04 in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public int Column04
+        {
+            get
+            {
+                return this._Column04;
+            }
+            set
+            {
+                this.OnColumn04Changing(value);
+                this._Column04 = value;
+                this.OnColumn04Changed();
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private int _Column04;
+        partial void OnColumn04Changing(int value);
+        partial void OnColumn04Changed();
+        /// <summary>
+        /// There are no comments for Property Column05 in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public int Column05
+        {
+            get
+            {
+                return this._Column05;
+            }
+            set
+            {
+                this.OnColumn05Changing(value);
+                this._Column05 = value;
+                this.OnColumn05Changed();
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private int _Column05;
+        partial void OnColumn05Changing(int value);
+        partial void OnColumn05Changed();
+        /// <summary>
+        /// There are no comments for Property Column06 in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public int Column06
+        {
+            get
+            {
+                return this._Column06;
+            }
+            set
+            {
+                this.OnColumn06Changing(value);
+                this._Column06 = value;
+                this.OnColumn06Changed();
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private int _Column06;
+        partial void OnColumn06Changing(int value);
+        partial void OnColumn06Changed();
+        /// <summary>
+        /// There are no comments for Property Column07 in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public int Column07
+        {
+            get
+            {
+                return this._Column07;
+            }
+            set
+            {
+                this.OnColumn07Changing(value);
+                this._Column07 = value;
+                this.OnColumn07Changed();
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private int _Column07;
+        partial void OnColumn07Changing(int value);
+        partial void OnColumn07Changed();
+        /// <summary>
+        /// There are no comments for Property Column08 in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public int Column08
+        {
+            get
+            {
+                return this._Column08;
+            }
+            set
+            {
+                this.OnColumn08Changing(value);
+                this._Column08 = value;
+                this.OnColumn08Changed();
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private int _Column08;
+        partial void OnColumn08Changing(int value);
+        partial void OnColumn08Changed();
+        /// <summary>
+        /// There are no comments for Property Column09 in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public int Column09
+        {
+            get
+            {
+                return this._Column09;
+            }
+            set
+            {
+                this.OnColumn09Changing(value);
+                this._Column09 = value;
+                this.OnColumn09Changed();
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private int _Column09;
+        partial void OnColumn09Changing(int value);
+        partial void OnColumn09Changed();
+        /// <summary>
+        /// There are no comments for Property Column10 in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public int Column10
+        {
+            get
+            {
+                return this._Column10;
+            }
+            set
+            {
+                this.OnColumn10Changing(value);
+                this._Column10 = value;
+                this.OnColumn10Changed();
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private int _Column10;
+        partial void OnColumn10Changing(int value);
+        partial void OnColumn10Changed();
+        /// <summary>
+        /// There are no comments for Property Column11 in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public int Column11
+        {
+            get
+            {
+                return this._Column11;
+            }
+            set
+            {
+                this.OnColumn11Changing(value);
+                this._Column11 = value;
+                this.OnColumn11Changed();
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private int _Column11;
+        partial void OnColumn11Changing(int value);
+        partial void OnColumn11Changed();
+        /// <summary>
+        /// There are no comments for Property Column12 in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public int Column12
+        {
+            get
+            {
+                return this._Column12;
+            }
+            set
+            {
+                this.OnColumn12Changing(value);
+                this._Column12 = value;
+                this.OnColumn12Changed();
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private int _Column12;
+        partial void OnColumn12Changing(int value);
+        partial void OnColumn12Changed();
+        /// <summary>
+        /// There are no comments for Property Column13 in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public int Column13
+        {
+            get
+            {
+                return this._Column13;
+            }
+            set
+            {
+                this.OnColumn13Changing(value);
+                this._Column13 = value;
+                this.OnColumn13Changed();
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private int _Column13;
+        partial void OnColumn13Changing(int value);
+        partial void OnColumn13Changed();
+        /// <summary>
+        /// There are no comments for Property Column14 in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public int Column14
+        {
+            get
+            {
+                return this._Column14;
+            }
+            set
+            {
+                this.OnColumn14Changing(value);
+                this._Column14 = value;
+                this.OnColumn14Changed();
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private int _Column14;
+        partial void OnColumn14Changing(int value);
+        partial void OnColumn14Changed();
+        /// <summary>
+        /// There are no comments for Property Column15 in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public int Column15
+        {
+            get
+            {
+                return this._Column15;
+            }
+            set
+            {
+                this.OnColumn15Changing(value);
+                this._Column15 = value;
+                this.OnColumn15Changed();
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private int _Column15;
+        partial void OnColumn15Changing(int value);
+        partial void OnColumn15Changed();
+        /// <summary>
+        /// There are no comments for Property Column16 in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public int Column16
+        {
+            get
+            {
+                return this._Column16;
+            }
+            set
+            {
+                this.OnColumn16Changing(value);
+                this._Column16 = value;
+                this.OnColumn16Changed();
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private int _Column16;
+        partial void OnColumn16Changing(int value);
+        partial void OnColumn16Changed();
+        /// <summary>
+        /// There are no comments for Property Column17 in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public int Column17
+        {
+            get
+            {
+                return this._Column17;
+            }
+            set
+            {
+                this.OnColumn17Changing(value);
+                this._Column17 = value;
+                this.OnColumn17Changed();
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private int _Column17;
+        partial void OnColumn17Changing(int value);
+        partial void OnColumn17Changed();
+        /// <summary>
+        /// There are no comments for Property Column18 in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public int Column18
+        {
+            get
+            {
+                return this._Column18;
+            }
+            set
+            {
+                this.OnColumn18Changing(value);
+                this._Column18 = value;
+                this.OnColumn18Changed();
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private int _Column18;
+        partial void OnColumn18Changing(int value);
+        partial void OnColumn18Changed();
+        /// <summary>
+        /// There are no comments for Property Column19 in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public int Column19
+        {
+            get
+            {
+                return this._Column19;
+            }
+            set
+            {
+                this.OnColumn19Changing(value);
+                this._Column19 = value;
+                this.OnColumn19Changed();
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private int _Column19;
+        partial void OnColumn19Changing(int value);
+        partial void OnColumn19Changed();
+        /// <summary>
+        /// There are no comments for Property Column20 in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public int Column20
+        {
+            get
+            {
+                return this._Column20;
+            }
+            set
+            {
+                this.OnColumn20Changing(value);
+                this._Column20 = value;
+                this.OnColumn20Changed();
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private int _Column20;
+        partial void OnColumn20Changing(int value);
+        partial void OnColumn20Changed();
+        /// <summary>
+        /// There are no comments for Property Column21 in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public int Column21
+        {
+            get
+            {
+                return this._Column21;
+            }
+            set
+            {
+                this.OnColumn21Changing(value);
+                this._Column21 = value;
+                this.OnColumn21Changed();
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private int _Column21;
+        partial void OnColumn21Changing(int value);
+        partial void OnColumn21Changed();
+        /// <summary>
+        /// There are no comments for Property Column22 in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public int Column22
+        {
+            get
+            {
+                return this._Column22;
+            }
+            set
+            {
+                this.OnColumn22Changing(value);
+                this._Column22 = value;
+                this.OnColumn22Changed();
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private int _Column22;
+        partial void OnColumn22Changing(int value);
+        partial void OnColumn22Changed();
+        /// <summary>
+        /// There are no comments for Property Column23 in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public int Column23
+        {
+            get
+            {
+                return this._Column23;
+            }
+            set
+            {
+                this.OnColumn23Changing(value);
+                this._Column23 = value;
+                this.OnColumn23Changed();
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private int _Column23;
+        partial void OnColumn23Changing(int value);
+        partial void OnColumn23Changed();
+        /// <summary>
+        /// There are no comments for Property Column24 in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public int Column24
+        {
+            get
+            {
+                return this._Column24;
+            }
+            set
+            {
+                this.OnColumn24Changing(value);
+                this._Column24 = value;
+                this.OnColumn24Changed();
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private int _Column24;
+        partial void OnColumn24Changing(int value);
+        partial void OnColumn24Changed();
+        /// <summary>
+        /// There are no comments for Property Column25 in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public int Column25
+        {
+            get
+            {
+                return this._Column25;
+            }
+            set
+            {
+                this.OnColumn25Changing(value);
+                this._Column25 = value;
+                this.OnColumn25Changed();
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private int _Column25;
+        partial void OnColumn25Changing(int value);
+        partial void OnColumn25Changed();
+        /// <summary>
+        /// There are no comments for Property Column26 in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public int Column26
+        {
+            get
+            {
+                return this._Column26;
+            }
+            set
+            {
+                this.OnColumn26Changing(value);
+                this._Column26 = value;
+                this.OnColumn26Changed();
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private int _Column26;
+        partial void OnColumn26Changing(int value);
+        partial void OnColumn26Changed();
+        /// <summary>
+        /// There are no comments for Property Column27 in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public int Column27
+        {
+            get
+            {
+                return this._Column27;
+            }
+            set
+            {
+                this.OnColumn27Changing(value);
+                this._Column27 = value;
+                this.OnColumn27Changed();
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private int _Column27;
+        partial void OnColumn27Changing(int value);
+        partial void OnColumn27Changed();
+        /// <summary>
+        /// There are no comments for Property Column28 in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public int Column28
+        {
+            get
+            {
+                return this._Column28;
+            }
+            set
+            {
+                this.OnColumn28Changing(value);
+                this._Column28 = value;
+                this.OnColumn28Changed();
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private int _Column28;
+        partial void OnColumn28Changing(int value);
+        partial void OnColumn28Changed();
+        /// <summary>
+        /// There are no comments for Property Column29 in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public int Column29
+        {
+            get
+            {
+                return this._Column29;
+            }
+            set
+            {
+                this.OnColumn29Changing(value);
+                this._Column29 = value;
+                this.OnColumn29Changed();
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private int _Column29;
+        partial void OnColumn29Changing(int value);
+        partial void OnColumn29Changed();
+        /// <summary>
+        /// There are no comments for Property Column30 in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public int Column30
+        {
+            get
+            {
+                return this._Column30;
+            }
+            set
+            {
+                this.OnColumn30Changing(value);
+                this._Column30 = value;
+                this.OnColumn30Changed();
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private int _Column30;
+        partial void OnColumn30Changing(int value);
+        partial void OnColumn30Changed();
     }
     /// <summary>
     /// There are no comments for OrderSingle in the schema.
     /// </summary>
-    [global::Microsoft.OData.Client.OriginalNameAttribute("OrderSingle")]
     public partial class OrderSingle : global::Microsoft.OData.Client.DataServiceQuerySingle<Order>
     {
         /// <summary>
         /// Initialize a new OrderSingle object.
         /// </summary>
         public OrderSingle(global::Microsoft.OData.Client.DataServiceContext context, string path)
-            : base(context, path) { }
+            : base(context, path) {}
 
         /// <summary>
         /// Initialize a new OrderSingle object.
         /// </summary>
         public OrderSingle(global::Microsoft.OData.Client.DataServiceContext context, string path, bool isComposable)
-            : base(context, path, isComposable) { }
+            : base(context, path, isComposable) {}
 
         /// <summary>
         /// Initialize a new OrderSingle object.
         /// </summary>
         public OrderSingle(global::Microsoft.OData.Client.DataServiceQuerySingle<Order> query)
-            : base(query) { }
+            : base(query) {}
 
         /// <summary>
         /// There are no comments for AltCustomer in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("AltCustomer")]
         public global::ODataClient.OdataToEntity.Test.Model.CustomerSingle AltCustomer
         {
             get
@@ -557,7 +1269,6 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// There are no comments for Customer in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Customer")]
         public global::ODataClient.OdataToEntity.Test.Model.CustomerSingle Customer
         {
             get
@@ -579,7 +1290,6 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// There are no comments for Items in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Items")]
         public global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.OrderItem> Items
         {
             get
@@ -605,8 +1315,7 @@ namespace ODataClient.OdataToEntity.Test.Model
     /// Id
     /// </KeyProperties>
     [global::Microsoft.OData.Client.Key("Id")]
-    [global::Microsoft.OData.Client.OriginalNameAttribute("Order")]
-    public partial class Order : global::Microsoft.OData.Client.BaseEntityType, global::System.ComponentModel.INotifyPropertyChanged
+    public partial class Order : global::Microsoft.OData.Client.BaseEntityType
     {
         /// <summary>
         /// Create a new Order object.
@@ -627,7 +1336,6 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// There are no comments for Property AltCustomerCountry in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("AltCustomerCountry")]
         public string AltCustomerCountry
         {
             get
@@ -639,7 +1347,6 @@ namespace ODataClient.OdataToEntity.Test.Model
                 this.OnAltCustomerCountryChanging(value);
                 this._AltCustomerCountry = value;
                 this.OnAltCustomerCountryChanged();
-                this.OnPropertyChanged("AltCustomerCountry");
             }
         }
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
@@ -650,7 +1357,6 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// There are no comments for Property AltCustomerId in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("AltCustomerId")]
         public global::System.Nullable<int> AltCustomerId
         {
             get
@@ -662,7 +1368,6 @@ namespace ODataClient.OdataToEntity.Test.Model
                 this.OnAltCustomerIdChanging(value);
                 this._AltCustomerId = value;
                 this.OnAltCustomerIdChanged();
-                this.OnPropertyChanged("AltCustomerId");
             }
         }
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
@@ -673,7 +1378,6 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// There are no comments for Property CustomerCountry in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("CustomerCountry")]
         public string CustomerCountry
         {
             get
@@ -685,7 +1389,6 @@ namespace ODataClient.OdataToEntity.Test.Model
                 this.OnCustomerCountryChanging(value);
                 this._CustomerCountry = value;
                 this.OnCustomerCountryChanged();
-                this.OnPropertyChanged("CustomerCountry");
             }
         }
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
@@ -696,7 +1399,6 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// There are no comments for Property CustomerId in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("CustomerId")]
         public int CustomerId
         {
             get
@@ -708,7 +1410,6 @@ namespace ODataClient.OdataToEntity.Test.Model
                 this.OnCustomerIdChanging(value);
                 this._CustomerId = value;
                 this.OnCustomerIdChanged();
-                this.OnPropertyChanged("CustomerId");
             }
         }
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
@@ -719,7 +1420,6 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// There are no comments for Property Date in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Date")]
         public global::System.Nullable<global::System.DateTimeOffset> Date
         {
             get
@@ -731,7 +1431,6 @@ namespace ODataClient.OdataToEntity.Test.Model
                 this.OnDateChanging(value);
                 this._Date = value;
                 this.OnDateChanged();
-                this.OnPropertyChanged("Date");
             }
         }
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
@@ -742,7 +1441,6 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// There are no comments for Property Id in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Id")]
         public int Id
         {
             get
@@ -754,7 +1452,6 @@ namespace ODataClient.OdataToEntity.Test.Model
                 this.OnIdChanging(value);
                 this._Id = value;
                 this.OnIdChanged();
-                this.OnPropertyChanged("Id");
             }
         }
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
@@ -765,7 +1462,6 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// There are no comments for Property Name in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Name")]
         public string Name
         {
             get
@@ -777,7 +1473,6 @@ namespace ODataClient.OdataToEntity.Test.Model
                 this.OnNameChanging(value);
                 this._Name = value;
                 this.OnNameChanged();
-                this.OnPropertyChanged("Name");
             }
         }
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
@@ -788,7 +1483,6 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// There are no comments for Property Status in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Status")]
         public global::ODataClient.OdataToEntity.Test.Model.OrderStatus Status
         {
             get
@@ -800,7 +1494,6 @@ namespace ODataClient.OdataToEntity.Test.Model
                 this.OnStatusChanging(value);
                 this._Status = value;
                 this.OnStatusChanged();
-                this.OnPropertyChanged("Status");
             }
         }
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
@@ -811,7 +1504,6 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// There are no comments for Property AltCustomer in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("AltCustomer")]
         public global::ODataClient.OdataToEntity.Test.Model.Customer AltCustomer
         {
             get
@@ -823,7 +1515,6 @@ namespace ODataClient.OdataToEntity.Test.Model
                 this.OnAltCustomerChanging(value);
                 this._AltCustomer = value;
                 this.OnAltCustomerChanged();
-                this.OnPropertyChanged("AltCustomer");
             }
         }
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
@@ -834,7 +1525,6 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// There are no comments for Property Customer in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Customer")]
         public global::ODataClient.OdataToEntity.Test.Model.Customer Customer
         {
             get
@@ -846,7 +1536,6 @@ namespace ODataClient.OdataToEntity.Test.Model
                 this.OnCustomerChanging(value);
                 this._Customer = value;
                 this.OnCustomerChanged();
-                this.OnPropertyChanged("Customer");
             }
         }
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
@@ -857,8 +1546,7 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// There are no comments for Property Items in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Items")]
-        public global::Microsoft.OData.Client.DataServiceCollection<global::ODataClient.OdataToEntity.Test.Model.OrderItem> Items
+        public global::System.Collections.ObjectModel.Collection<global::ODataClient.OdataToEntity.Test.Model.OrderItem> Items
         {
             get
             {
@@ -869,60 +1557,40 @@ namespace ODataClient.OdataToEntity.Test.Model
                 this.OnItemsChanging(value);
                 this._Items = value;
                 this.OnItemsChanged();
-                this.OnPropertyChanged("Items");
             }
         }
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        private global::Microsoft.OData.Client.DataServiceCollection<global::ODataClient.OdataToEntity.Test.Model.OrderItem> _Items = new global::Microsoft.OData.Client.DataServiceCollection<global::ODataClient.OdataToEntity.Test.Model.OrderItem>(null, global::Microsoft.OData.Client.TrackingMode.None);
-        partial void OnItemsChanging(global::Microsoft.OData.Client.DataServiceCollection<global::ODataClient.OdataToEntity.Test.Model.OrderItem> value);
+        private global::System.Collections.ObjectModel.Collection<global::ODataClient.OdataToEntity.Test.Model.OrderItem> _Items = new global::System.Collections.ObjectModel.Collection<global::ODataClient.OdataToEntity.Test.Model.OrderItem>();
+        partial void OnItemsChanging(global::System.Collections.ObjectModel.Collection<global::ODataClient.OdataToEntity.Test.Model.OrderItem> value);
         partial void OnItemsChanged();
-        /// <summary>
-        /// This event is raised when the value of the property is changed
-        /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        public event global::System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
-        /// <summary>
-        /// The value of the property is changed
-        /// </summary>
-        /// <param name="property">property name</param>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        protected virtual void OnPropertyChanged(string property)
-        {
-            if ((this.PropertyChanged != null))
-            {
-                this.PropertyChanged(this, new global::System.ComponentModel.PropertyChangedEventArgs(property));
-            }
-        }
     }
     /// <summary>
     /// There are no comments for OrderItemSingle in the schema.
     /// </summary>
-    [global::Microsoft.OData.Client.OriginalNameAttribute("OrderItemSingle")]
     public partial class OrderItemSingle : global::Microsoft.OData.Client.DataServiceQuerySingle<OrderItem>
     {
         /// <summary>
         /// Initialize a new OrderItemSingle object.
         /// </summary>
         public OrderItemSingle(global::Microsoft.OData.Client.DataServiceContext context, string path)
-            : base(context, path) { }
+            : base(context, path) {}
 
         /// <summary>
         /// Initialize a new OrderItemSingle object.
         /// </summary>
         public OrderItemSingle(global::Microsoft.OData.Client.DataServiceContext context, string path, bool isComposable)
-            : base(context, path, isComposable) { }
+            : base(context, path, isComposable) {}
 
         /// <summary>
         /// Initialize a new OrderItemSingle object.
         /// </summary>
         public OrderItemSingle(global::Microsoft.OData.Client.DataServiceQuerySingle<OrderItem> query)
-            : base(query) { }
+            : base(query) {}
 
         /// <summary>
         /// There are no comments for Order in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Order")]
         public global::ODataClient.OdataToEntity.Test.Model.OrderSingle Order
         {
             get
@@ -948,8 +1616,7 @@ namespace ODataClient.OdataToEntity.Test.Model
     /// Id
     /// </KeyProperties>
     [global::Microsoft.OData.Client.Key("Id")]
-    [global::Microsoft.OData.Client.OriginalNameAttribute("OrderItem")]
-    public partial class OrderItem : global::Microsoft.OData.Client.BaseEntityType, global::System.ComponentModel.INotifyPropertyChanged
+    public partial class OrderItem : global::Microsoft.OData.Client.BaseEntityType
     {
         /// <summary>
         /// Create a new OrderItem object.
@@ -974,7 +1641,6 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// There are no comments for Property Count in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Count")]
         public global::System.Nullable<int> Count
         {
             get
@@ -986,7 +1652,6 @@ namespace ODataClient.OdataToEntity.Test.Model
                 this.OnCountChanging(value);
                 this._Count = value;
                 this.OnCountChanged();
-                this.OnPropertyChanged("Count");
             }
         }
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
@@ -997,7 +1662,6 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// There are no comments for Property Id in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Id")]
         public int Id
         {
             get
@@ -1009,7 +1673,6 @@ namespace ODataClient.OdataToEntity.Test.Model
                 this.OnIdChanging(value);
                 this._Id = value;
                 this.OnIdChanged();
-                this.OnPropertyChanged("Id");
             }
         }
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
@@ -1020,7 +1683,6 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// There are no comments for Property OrderId in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("OrderId")]
         public int OrderId
         {
             get
@@ -1032,7 +1694,6 @@ namespace ODataClient.OdataToEntity.Test.Model
                 this.OnOrderIdChanging(value);
                 this._OrderId = value;
                 this.OnOrderIdChanged();
-                this.OnPropertyChanged("OrderId");
             }
         }
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
@@ -1043,7 +1704,6 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// There are no comments for Property Price in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Price")]
         public global::System.Nullable<decimal> Price
         {
             get
@@ -1055,7 +1715,6 @@ namespace ODataClient.OdataToEntity.Test.Model
                 this.OnPriceChanging(value);
                 this._Price = value;
                 this.OnPriceChanged();
-                this.OnPropertyChanged("Price");
             }
         }
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
@@ -1066,7 +1725,6 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// There are no comments for Property Product in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Product")]
         public string Product
         {
             get
@@ -1078,7 +1736,6 @@ namespace ODataClient.OdataToEntity.Test.Model
                 this.OnProductChanging(value);
                 this._Product = value;
                 this.OnProductChanged();
-                this.OnPropertyChanged("Product");
             }
         }
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
@@ -1089,7 +1746,6 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// There are no comments for Property Order in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Order")]
         public global::ODataClient.OdataToEntity.Test.Model.Order Order
         {
             get
@@ -1101,57 +1757,30 @@ namespace ODataClient.OdataToEntity.Test.Model
                 this.OnOrderChanging(value);
                 this._Order = value;
                 this.OnOrderChanged();
-                this.OnPropertyChanged("Order");
             }
         }
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
         private global::ODataClient.OdataToEntity.Test.Model.Order _Order;
         partial void OnOrderChanging(global::ODataClient.OdataToEntity.Test.Model.Order value);
         partial void OnOrderChanged();
-        /// <summary>
-        /// This event is raised when the value of the property is changed
-        /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        public event global::System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
-        /// <summary>
-        /// The value of the property is changed
-        /// </summary>
-        /// <param name="property">property name</param>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        protected virtual void OnPropertyChanged(string property)
-        {
-            if ((this.PropertyChanged != null))
-            {
-                this.PropertyChanged(this, new global::System.ComponentModel.PropertyChangedEventArgs(property));
-            }
-        }
     }
     /// <summary>
     /// There are no comments for Sex in the schema.
     /// </summary>
-    [global::Microsoft.OData.Client.OriginalNameAttribute("Sex")]
     public enum Sex
     {
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Male")]
         Male = 0,
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Female")]
         Female = 1
     }
     /// <summary>
     /// There are no comments for OrderStatus in the schema.
     /// </summary>
-    [global::Microsoft.OData.Client.OriginalNameAttribute("OrderStatus")]
     public enum OrderStatus
     {
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Unknown")]
         Unknown = 0,
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Processing")]
         Processing = 1,
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Shipped")]
         Shipped = 2,
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Delivering")]
         Delivering = 3,
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Cancelled")]
         Cancelled = 4
     }
     /// <summary>
@@ -1198,15 +1827,38 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// <param name="country">The value of country</param>
         /// <param name="id">The value of id</param>
         public static global::ODataClient.OdataToEntity.Test.Model.CustomerSingle ByKey(this global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Customer> source,
-            string country,
+            string country, 
             int id)
         {
             global::System.Collections.Generic.Dictionary<string, object> keys = new global::System.Collections.Generic.Dictionary<string, object>
             {
-                { "Country", country },
+                { "Country", country }, 
                 { "Id", id }
             };
             return new global::ODataClient.OdataToEntity.Test.Model.CustomerSingle(source.Context, source.GetKeyPath(global::Microsoft.OData.Client.Serializer.GetKeyString(source.Context, keys)));
+        }
+        /// <summary>
+        /// Get an entity of type global::ODataClient.OdataToEntity.Test.Model.ManyColumns as global::ODataClient.OdataToEntity.Test.Model.ManyColumnsSingle specified by key from an entity set
+        /// </summary>
+        /// <param name="source">source entity set</param>
+        /// <param name="keys">dictionary with the names and values of keys</param>
+        public static global::ODataClient.OdataToEntity.Test.Model.ManyColumnsSingle ByKey(this global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.ManyColumns> source, global::System.Collections.Generic.Dictionary<string, object> keys)
+        {
+            return new global::ODataClient.OdataToEntity.Test.Model.ManyColumnsSingle(source.Context, source.GetKeyPath(global::Microsoft.OData.Client.Serializer.GetKeyString(source.Context, keys)));
+        }
+        /// <summary>
+        /// Get an entity of type global::ODataClient.OdataToEntity.Test.Model.ManyColumns as global::ODataClient.OdataToEntity.Test.Model.ManyColumnsSingle specified by key from an entity set
+        /// </summary>
+        /// <param name="source">source entity set</param>
+        /// <param name="column01">The value of column01</param>
+        public static global::ODataClient.OdataToEntity.Test.Model.ManyColumnsSingle ByKey(this global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.ManyColumns> source,
+            int column01)
+        {
+            global::System.Collections.Generic.Dictionary<string, object> keys = new global::System.Collections.Generic.Dictionary<string, object>
+            {
+                { "Column01", column01 }
+            };
+            return new global::ODataClient.OdataToEntity.Test.Model.ManyColumnsSingle(source.Context, source.GetKeyPath(global::Microsoft.OData.Client.Serializer.GetKeyString(source.Context, keys)));
         }
         /// <summary>
         /// Get an entity of type global::ODataClient.OdataToEntity.Test.Model.Order as global::ODataClient.OdataToEntity.Test.Model.OrderSingle specified by key from an entity set
@@ -1261,14 +1913,13 @@ namespace ODataClient.Default
     /// <summary>
     /// There are no comments for Container in the schema.
     /// </summary>
-    [global::Microsoft.OData.Client.OriginalNameAttribute("Container")]
     public partial class Container : global::Microsoft.OData.Client.DataServiceContext
     {
         /// <summary>
         /// Initialize a new Container object.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        public Container(global::System.Uri serviceRoot) :
+        public Container(global::System.Uri serviceRoot) : 
                 base(serviceRoot, global::Microsoft.OData.Client.ODataProtocolVersion.V4)
         {
             this.ResolveName = new global::System.Func<global::System.Type, string>(this.ResolveNameFromType);
@@ -1306,21 +1957,12 @@ namespace ODataClient.Default
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
         protected string ResolveNameFromType(global::System.Type clientType)
         {
-            global::Microsoft.OData.Client.OriginalNameAttribute originalNameAttribute = (global::Microsoft.OData.Client.OriginalNameAttribute)global::System.Linq.Enumerable.SingleOrDefault(global::Microsoft.OData.Client.Utility.GetCustomAttributes(clientType, typeof(global::Microsoft.OData.Client.OriginalNameAttribute), true));
             if (clientType.Namespace.Equals("ODataClient.OdataToEntity.Test.Model", global::System.StringComparison.Ordinal))
             {
-                if (originalNameAttribute != null)
-                {
-                    return string.Concat("OdataToEntity.Test.Model.", originalNameAttribute.OriginalName);
-                }
                 return string.Concat("OdataToEntity.Test.Model.", clientType.Name);
             }
             if (clientType.Namespace.Equals("ODataClient.Default", global::System.StringComparison.Ordinal))
             {
-                if (originalNameAttribute != null)
-                {
-                    return string.Concat("Default.", originalNameAttribute.OriginalName);
-                }
                 return string.Concat("Default.", clientType.Name);
             }
             return null;
@@ -1329,7 +1971,6 @@ namespace ODataClient.Default
         /// There are no comments for Categories in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Categories")]
         public global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Category> Categories
         {
             get
@@ -1347,7 +1988,6 @@ namespace ODataClient.Default
         /// There are no comments for Customers in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Customers")]
         public global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Customer> Customers
         {
             get
@@ -1362,10 +2002,26 @@ namespace ODataClient.Default
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
         private global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Customer> _Customers;
         /// <summary>
+        /// There are no comments for ManyColumns in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.ManyColumns> ManyColumns
+        {
+            get
+            {
+                if ((this._ManyColumns == null))
+                {
+                    this._ManyColumns = base.CreateQuery<global::ODataClient.OdataToEntity.Test.Model.ManyColumns>("ManyColumns");
+                }
+                return this._ManyColumns;
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.ManyColumns> _ManyColumns;
+        /// <summary>
         /// There are no comments for Orders in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("Orders")]
         public global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Order> Orders
         {
             get
@@ -1383,7 +2039,6 @@ namespace ODataClient.Default
         /// There are no comments for OrderItems in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        [global::Microsoft.OData.Client.OriginalNameAttribute("OrderItems")]
         public global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.OrderItem> OrderItems
         {
             get
@@ -1412,6 +2067,14 @@ namespace ODataClient.Default
         public void AddToCustomers(global::ODataClient.OdataToEntity.Test.Model.Customer customer)
         {
             base.AddObject("Customers", customer);
+        }
+        /// <summary>
+        /// There are no comments for ManyColumns in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public void AddToManyColumns(global::ODataClient.OdataToEntity.Test.Model.ManyColumns manyColumns)
+        {
+            base.AddObject("ManyColumns", manyColumns);
         }
         /// <summary>
         /// There are no comments for Orders in the schema.
@@ -1456,6 +2119,7 @@ namespace ODataClient.Default
         <Property Name=""Id"" Type=""Edm.Int32"" Nullable=""false"" />
         <Property Name=""Name"" Type=""Edm.String"" />
         <Property Name=""ParentId"" Type=""Edm.Int32"" />
+        <Property Name=""DateTime"" Type=""Edm.DateTimeOffset"" />
         <NavigationProperty Name=""Parent"" Type=""OdataToEntity.Test.Model.Category"" Partner=""Children"">
           <ReferentialConstraint Property=""ParentId"" ReferencedProperty=""Id"" />
         </NavigationProperty>
@@ -1473,6 +2137,41 @@ namespace ODataClient.Default
         <Property Name=""Sex"" Type=""OdataToEntity.Test.Model.Sex"" />
         <NavigationProperty Name=""AltOrders"" Type=""Collection(OdataToEntity.Test.Model.Order)"" Partner=""AltCustomer"" />
         <NavigationProperty Name=""Orders"" Type=""Collection(OdataToEntity.Test.Model.Order)"" Partner=""Customer"" />
+      </EntityType>
+      <EntityType Name=""ManyColumns"">
+        <Key>
+          <PropertyRef Name=""Column01"" />
+        </Key>
+        <Property Name=""Column01"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column02"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column03"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column04"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column05"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column06"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column07"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column08"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column09"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column10"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column11"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column12"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column13"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column14"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column15"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column16"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column17"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column18"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column19"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column20"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column21"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column22"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column23"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column24"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column25"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column26"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column27"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column28"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column29"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column30"" Type=""Edm.Int32"" Nullable=""false"" />
       </EntityType>
       <EntityType Name=""Order"">
         <Key>
@@ -1509,6 +2208,37 @@ namespace ODataClient.Default
           <ReferentialConstraint Property=""OrderId"" ReferencedProperty=""Id"" />
         </NavigationProperty>
       </EntityType>
+      <Function Name=""OrderContext.GenerateDatabaseName"">
+        <ReturnType Type=""Collection(Edm.String)"" Nullable=""false"" />
+      </Function>
+      <Action Name=""OrderContext.InitDb"" />
+      <Action Name=""OrderContext.InitManyColumns"" />
+      <Function Name=""OrderContext.GetOrders"">
+        <Parameter Name=""id"" Type=""Edm.Int32"" />
+        <Parameter Name=""name"" Type=""Edm.String"" />
+        <Parameter Name=""status"" Type=""OdataToEntity.Test.Model.OrderStatus"" />
+        <ReturnType Type=""Collection(OdataToEntity.Test.Model.Order)"" />
+      </Function>
+      <Action Name=""OrderContext.ResetDb"" />
+      <Action Name=""OrderContext.ResetManyColumns"" />
+      <Function Name=""OrderContext.ScalarFunction"">
+        <ReturnType Type=""Edm.Int32"" Nullable=""false"" />
+      </Function>
+      <Function Name=""OrderContext.ScalarFunctionWithParameters"">
+        <Parameter Name=""id"" Type=""Edm.Int32"" />
+        <Parameter Name=""name"" Type=""Edm.String"" />
+        <Parameter Name=""status"" Type=""OdataToEntity.Test.Model.OrderStatus"" />
+        <ReturnType Type=""Edm.Int32"" Nullable=""false"" />
+      </Function>
+      <Function Name=""OrderContext.TableFunction"">
+        <ReturnType Type=""Collection(OdataToEntity.Test.Model.Order)"" />
+      </Function>
+      <Function Name=""OrderContext.TableFunctionWithParameters"">
+        <Parameter Name=""id"" Type=""Edm.Int32"" />
+        <Parameter Name=""name"" Type=""Edm.String"" />
+        <Parameter Name=""status"" Type=""OdataToEntity.Test.Model.OrderStatus"" />
+        <ReturnType Type=""Collection(OdataToEntity.Test.Model.Order)"" />
+      </Function>
     </Schema>
     <Schema Namespace=""Default"" xmlns=""http://docs.oasis-open.org/odata/ns/edm"">
       <EntityContainer Name=""Container"">
@@ -1520,6 +2250,7 @@ namespace ODataClient.Default
           <NavigationPropertyBinding Path=""AltOrders"" Target=""Orders"" />
           <NavigationPropertyBinding Path=""Orders"" Target=""Orders"" />
         </EntitySet>
+        <EntitySet Name=""ManyColumns"" EntityType=""OdataToEntity.Test.Model.ManyColumns"" />
         <EntitySet Name=""Orders"" EntityType=""OdataToEntity.Test.Model.Order"">
           <NavigationPropertyBinding Path=""AltCustomer"" Target=""Customers"" />
           <NavigationPropertyBinding Path=""Customer"" Target=""Customers"" />
@@ -1528,6 +2259,16 @@ namespace ODataClient.Default
         <EntitySet Name=""OrderItems"" EntityType=""OdataToEntity.Test.Model.OrderItem"">
           <NavigationPropertyBinding Path=""Order"" Target=""Orders"" />
         </EntitySet>
+        <FunctionImport Name=""GenerateDatabaseName"" Function=""OdataToEntity.Test.Model.OrderContext.GenerateDatabaseName"" />
+        <ActionImport Name=""InitDb"" Action=""OdataToEntity.Test.Model.OrderContext.InitDb"" />
+        <ActionImport Name=""InitManyColumns"" Action=""OdataToEntity.Test.Model.OrderContext.InitManyColumns"" />
+        <FunctionImport Name=""dbo.GetOrders"" Function=""OdataToEntity.Test.Model.OrderContext.GetOrders"" />
+        <ActionImport Name=""ResetDb"" Action=""OdataToEntity.Test.Model.OrderContext.ResetDb"" />
+        <ActionImport Name=""ResetManyColumns"" Action=""OdataToEntity.Test.Model.OrderContext.ResetManyColumns"" />
+        <FunctionImport Name=""dbo.ScalarFunction"" Function=""OdataToEntity.Test.Model.OrderContext.ScalarFunction"" />
+        <FunctionImport Name=""dbo.ScalarFunctionWithParameters"" Function=""OdataToEntity.Test.Model.OrderContext.ScalarFunctionWithParameters"" />
+        <FunctionImport Name=""TableFunction"" Function=""OdataToEntity.Test.Model.OrderContext.TableFunction"" />
+        <FunctionImport Name=""TableFunctionWithParameters"" Function=""OdataToEntity.Test.Model.OrderContext.TableFunctionWithParameters"" />
       </EntityContainer>
     </Schema>
   </edmx:DataServices>
@@ -1555,6 +2296,82 @@ namespace ODataClient.Default
             {
                 return global::System.Xml.XmlReader.Create(new global::System.IO.StringReader(edmxToParse));
             }
+        }
+        /// <summary>
+        /// There are no comments for GenerateDatabaseName in the schema.
+        /// </summary>
+        public global::Microsoft.OData.Client.DataServiceQuery<string> GenerateDatabaseName()
+        {
+            return this.CreateFunctionQuery<string>("", "GenerateDatabaseName", false);
+        }
+        /// <summary>
+        /// There are no comments for dbo.GetOrders in the schema.
+        /// </summary>
+        public global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Order> GetOrders(global::System.Nullable<int> id, string name, global::System.Nullable<global::ODataClient.OdataToEntity.Test.Model.OrderStatus> status)
+        {
+            return this.CreateFunctionQuery<global::ODataClient.OdataToEntity.Test.Model.Order>("", "dbo.GetOrders", false, new global::Microsoft.OData.Client.UriOperationParameter("id", id),
+                    new global::Microsoft.OData.Client.UriOperationParameter("name", name),
+                    new global::Microsoft.OData.Client.UriOperationParameter("status", status));
+        }
+        /// <summary>
+        /// There are no comments for dbo.ScalarFunction in the schema.
+        /// </summary>
+        public global::Microsoft.OData.Client.DataServiceQuerySingle<int> ScalarFunction()
+        {
+            return this.CreateFunctionQuerySingle<int>("", "dbo.ScalarFunction", false);
+        }
+        /// <summary>
+        /// There are no comments for dbo.ScalarFunctionWithParameters in the schema.
+        /// </summary>
+        public global::Microsoft.OData.Client.DataServiceQuerySingle<int> ScalarFunctionWithParameters(global::System.Nullable<int> id, string name, global::System.Nullable<global::ODataClient.OdataToEntity.Test.Model.OrderStatus> status)
+        {
+            return this.CreateFunctionQuerySingle<int>("", "dbo.ScalarFunctionWithParameters", false, new global::Microsoft.OData.Client.UriOperationParameter("id", id),
+                    new global::Microsoft.OData.Client.UriOperationParameter("name", name),
+                    new global::Microsoft.OData.Client.UriOperationParameter("status", status));
+        }
+        /// <summary>
+        /// There are no comments for TableFunction in the schema.
+        /// </summary>
+        public global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Order> TableFunction()
+        {
+            return this.CreateFunctionQuery<global::ODataClient.OdataToEntity.Test.Model.Order>("", "TableFunction", false);
+        }
+        /// <summary>
+        /// There are no comments for TableFunctionWithParameters in the schema.
+        /// </summary>
+        public global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Order> TableFunctionWithParameters(global::System.Nullable<int> id, string name, global::System.Nullable<global::ODataClient.OdataToEntity.Test.Model.OrderStatus> status)
+        {
+            return this.CreateFunctionQuery<global::ODataClient.OdataToEntity.Test.Model.Order>("", "TableFunctionWithParameters", false, new global::Microsoft.OData.Client.UriOperationParameter("id", id),
+                    new global::Microsoft.OData.Client.UriOperationParameter("name", name),
+                    new global::Microsoft.OData.Client.UriOperationParameter("status", status));
+        }
+        /// <summary>
+        /// There are no comments for InitDb in the schema.
+        /// </summary>
+        public global::Microsoft.OData.Client.DataServiceActionQuery InitDb()
+        {
+            return new global::Microsoft.OData.Client.DataServiceActionQuery(this, this.BaseUri.OriginalString.Trim('/') + "/InitDb");
+        }
+        /// <summary>
+        /// There are no comments for InitManyColumns in the schema.
+        /// </summary>
+        public global::Microsoft.OData.Client.DataServiceActionQuery InitManyColumns()
+        {
+            return new global::Microsoft.OData.Client.DataServiceActionQuery(this, this.BaseUri.OriginalString.Trim('/') + "/InitManyColumns");
+        }
+        /// <summary>
+        /// There are no comments for ResetDb in the schema.
+        /// </summary>
+        public global::Microsoft.OData.Client.DataServiceActionQuery ResetDb()
+        {
+            return new global::Microsoft.OData.Client.DataServiceActionQuery(this, this.BaseUri.OriginalString.Trim('/') + "/ResetDb");
+        }
+        /// <summary>
+        /// There are no comments for ResetManyColumns in the schema.
+        /// </summary>
+        public global::Microsoft.OData.Client.DataServiceActionQuery ResetManyColumns()
+        {
+            return new global::Microsoft.OData.Client.DataServiceActionQuery(this, this.BaseUri.OriginalString.Trim('/') + "/ResetManyColumns");
         }
     }
 }

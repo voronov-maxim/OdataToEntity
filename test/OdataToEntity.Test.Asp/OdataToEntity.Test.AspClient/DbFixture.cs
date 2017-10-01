@@ -60,7 +60,7 @@ namespace OdataToEntity.Test
             };
             String jsonOe = JsonConvert.SerializeObject(fromOe, settings);
             String jsonDb = JsonConvert.SerializeObject(fromDb, settings);
-            Xunit.Assert.Equal(jsonDb, jsonOe);
+            Assert.Equal(jsonDb, jsonOe);
 
             return Task.CompletedTask;
         }
@@ -139,6 +139,8 @@ namespace OdataToEntity.Test
                 return container.OrderItems;
             if (typeof(T) == typeof(Order))
                 return container.Orders;
+            if (typeof(T) == typeof(ManyColumns))
+                return container.ManyColumns;
 
             throw new InvalidOperationException("unknown type " + typeof(T).Name);
         }

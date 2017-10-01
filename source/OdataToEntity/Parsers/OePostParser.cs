@@ -38,18 +38,21 @@ namespace OdataToEntity
                     {
                         if (await asyncEnumerator.MoveNextAsync() && asyncEnumerator.Current != null)
                         {
+                            headers.ResponseContentType = OeRequestHeaders.TextDefault.ContentType;
                             byte[] buffer = System.Text.Encoding.UTF8.GetBytes(asyncEnumerator.Current.ToString());
                             responseStream.Write(buffer, 0, buffer.Length);
                         }
+                        else
+                            headers.ResponseContentType = null;
                     }
                     else
                     {
                         String entitySetName = _dataAdapter.EntitySetMetaAdapters.FindByClrType(returnClrType).EntitySetName;
                         IEdmEntitySet entitySet = _model.FindDeclaredEntitySet(entitySetName);
-                        Parsers.OePropertyAccessor[] accessors = Parsers.OePropertyAccessor.CreateFromType(returnClrType, entitySet);
-                        Parsers.OeEntryFactory entryFactory = Parsers.OeEntryFactory.CreateEntryFactory(entitySet, accessors);
+                        OePropertyAccessor[] accessors = OePropertyAccessor.CreateFromType(returnClrType, entitySet);
+                        OeEntryFactory entryFactory = OeEntryFactory.CreateEntryFactory(entitySet, accessors);
 
-                        var parseUriContext = new Parsers.OeParseUriContext(_model, odataUri, entitySet, null, false)
+                        var parseUriContext = new OeParseUriContext(_model, odataUri, entitySet, null, false)
                         {
                             EntryFactory = entryFactory,
                             Headers = headers
@@ -117,22 +120,21 @@ namespace OdataToEntity
             var importSegment = (OperationImportSegment)odataUri.Path.LastSegment;
 
             List<KeyValuePair<String, Object>> parameters = GetParameters(importSegment, requestStream, headers.ContentType);
-            var operation = (EdmOperation)importSegment.OperationImports.Single().Operation;
-            String operationName = String.IsNullOrEmpty(operation.Namespace) ? operation.Name : operation.Namespace + "." + operation.Name;
+            IEdmOperationImport operationImport = importSegment.OperationImports.Single();
 
             returnClrType = null;
-            if (operation.ReturnType != null)
+            if (operationImport.Operation.ReturnType != null)
             {
-                IEdmTypeReference returnEdmTypeReference = operation.ReturnType;
+                IEdmTypeReference returnEdmTypeReference = operationImport.Operation.ReturnType;
                 if (returnEdmTypeReference is IEdmCollectionTypeReference)
                     returnEdmTypeReference = (returnEdmTypeReference.Definition as IEdmCollectionType).ElementType;
                 returnClrType = OeEdmClrHelper.GetClrType(_model, returnEdmTypeReference.Definition);
             }
 
-            if (_model.IsDbFunction(operation))
-                return _dataAdapter.OperationAdapter.ExecuteFunction(dataContext, operationName, parameters, returnClrType);
+            if (_model.IsDbFunction(operationImport.Operation))
+                return _dataAdapter.OperationAdapter.ExecuteFunction(dataContext, operationImport.Name, parameters, returnClrType);
             else
-                return _dataAdapter.OperationAdapter.ExecuteProcedure(dataContext, operationName, parameters, returnClrType);
+                return _dataAdapter.OperationAdapter.ExecuteProcedure(dataContext, operationImport.Name, parameters, returnClrType);
         }
         private List<KeyValuePair<String, Object>> GetParameters(OperationImportSegment importSegment, Stream requestStream, String contentType)
         {

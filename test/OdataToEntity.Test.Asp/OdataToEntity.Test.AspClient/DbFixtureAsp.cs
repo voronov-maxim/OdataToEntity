@@ -1,7 +1,6 @@
-﻿using ODataClient.Default;
-using OdataToEntity.Test.Model;
+﻿using Microsoft.OData.Client;
+using ODataClient.Default;
 using System;
-using System.Net.Http;
 
 namespace OdataToEntity.Test
 {
@@ -9,15 +8,19 @@ namespace OdataToEntity.Test
     {
         partial void DbInit(String databaseName, bool clear)
         {
-            var client = new HttpClient() { BaseAddress = CreateContainer().BaseUri };
-            client.SendAsync(new HttpRequestMessage(HttpMethod.Get, "db/reset")).GetAwaiter().GetResult();
+            Container container = CreateContainer();
+            container.ResetDb().Execute();
+            container.ResetManyColumns().Execute();
+
             if (!clear)
             {
-                using (var context = OrderContext.Create(databaseName))
-                    context.InitDb();
-
-                client.SendAsync(new HttpRequestMessage(HttpMethod.Get, "db/init")).GetAwaiter().GetResult();
+                AspClient.BatchTest.Add(container);
+                container.SaveChanges(SaveChangesOptions.BatchWithSingleChangeset);
             }
         }
+    }
+
+    public sealed class ManyColumnsFixtureInitDb : DbFixtureInitDb
+    {
     }
 }

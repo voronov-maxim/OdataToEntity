@@ -26,8 +26,8 @@ namespace OdataToEntity.Test
                     client.Reset();
                     if (!clear)
                     {
-                        using (var context = OrderContext.Create(databaseName))
-                            context.InitDb();
+                        //using (var context = OrderContext.Create(databaseName))
+                        //    context.InitDb();
 
                         client.Init();
                     }

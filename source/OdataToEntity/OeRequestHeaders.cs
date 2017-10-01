@@ -9,24 +9,28 @@ namespace OdataToEntity
         Full
     };
 
-    public sealed class OeRequestHeaders
+    public class OeRequestHeaders
     {
         private readonly String _charset;
         private readonly String _contentType;
-        public static readonly OeRequestHeaders Default = new OeRequestHeaders(OeMetadataLevel.Minimal, true, "utf-8");
         private readonly OeMetadataLevel _metadataLevel;
+        private readonly String _mimeType;
         private readonly bool _streaming;
 
-        private OeRequestHeaders(OeMetadataLevel metadataLevel, bool streaming, String charset)
+        public static readonly OeRequestHeaders JsonDefault = new OeRequestHeaders("application/json", OeMetadataLevel.Minimal, true, "utf-8");
+        public static readonly OeRequestHeaders TextDefault = new OeRequestHeaders("text/plain", OeMetadataLevel.Minimal, true, "utf-8");
+
+        protected OeRequestHeaders(String mimeType, OeMetadataLevel metadataLevel, bool streaming, String charset)
         {
+            _mimeType = mimeType;
             _metadataLevel = metadataLevel;
             _streaming = streaming;
             _charset = charset;
 
-            _contentType = GetContentType(metadataLevel, streaming, charset);
+            _contentType = GetContentType(mimeType, metadataLevel, streaming, charset);
         }
 
-        private static String GetContentType(OeMetadataLevel metadataLevel, bool streaming, String charset)
+        private static String GetContentType(String mimeType, OeMetadataLevel metadataLevel, bool streaming, String charset)
         {
             String metadataArg;
             switch (metadataLevel)
@@ -43,7 +47,7 @@ namespace OdataToEntity
             }
 
             String streamingArg = streaming ? "true" : "false";
-            return $"application/json;odata.metadata={metadataArg};odata.streaming={streamingArg};charset={charset}";
+            return $"{mimeType};odata.metadata={metadataArg};odata.streaming={streamingArg};charset={charset}";
         }
         private static int GetParameterValue(String acceptHeader, String parameterName, out int valueLength)
         {
@@ -106,15 +110,17 @@ namespace OdataToEntity
             if (start != -1)
                 streaming = String.Compare(acceptHeader, start, "true", 0, "true".Length, StringComparison.OrdinalIgnoreCase) == 0;
 
-            if (metadataLevel == Default.MetadataLevel && streaming == Default.Streaming)
-                return Default;
+            if (metadataLevel == JsonDefault.MetadataLevel && streaming == JsonDefault.Streaming)
+                return JsonDefault;
             else
-                return new OeRequestHeaders(metadataLevel, streaming, "utf-8");
+                return new OeRequestHeaders("application/json", metadataLevel, streaming, "utf-8");
         }
 
         public String Charset => _charset;
         public String ContentType => _contentType;
         public OeMetadataLevel MetadataLevel => _metadataLevel;
+        public string MimeType => _mimeType;
+        public virtual string ResponseContentType { get; set; }
         public bool Streaming => _streaming;
     }
 }

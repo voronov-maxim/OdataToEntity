@@ -45,7 +45,7 @@ namespace OdataToEntity.Db
         {
             var description = (DescriptionAttribute)methodInfo.GetCustomAttribute(typeof(DescriptionAttribute));
             String name = description == null ? methodInfo.Name : description.Description;
-            var operation = new OeOperationConfiguration(name, null);
+            var operation = new OeOperationConfiguration(name, methodInfo, null);
             foreach (ParameterInfo parameterInfo in methodInfo.GetParameters())
                 operation.AddParameter(parameterInfo.Name, parameterInfo.ParameterType);
             operation.ReturnType = methodInfo.ReturnType;

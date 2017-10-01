@@ -8,8 +8,21 @@ namespace OdataToEntity.Db
 {
     public class OeAsyncEnumerator : IDisposable
     {
+        private sealed class EmptyAsyncEnumerator : OeAsyncEnumerator
+        {
+            public EmptyAsyncEnumerator() : base(null, CancellationToken.None)
+            {
+            }
+
+            public override void Dispose() { }
+            public override Task<bool> MoveNextAsync() => Task.FromResult(false);
+
+            public override object Current => null;
+        }
+
         private readonly IAsyncEnumerator<Object> _asyncEnumerator;
         private readonly CancellationToken _cancellationToken;
+        private static readonly OeAsyncEnumerator _empty = new EmptyAsyncEnumerator();
 
         public OeAsyncEnumerator(IAsyncEnumerator<Object> asyncEnumerator, CancellationToken cancellationToken)
         {
@@ -23,6 +36,7 @@ namespace OdataToEntity.Db
 
         public int? Count { get; set; }
         public virtual Object Current => _asyncEnumerator.Current;
+        public static OeAsyncEnumerator Empty => _empty;
     }
 
     public sealed class OeAsyncEnumeratorAdapter : OeAsyncEnumerator

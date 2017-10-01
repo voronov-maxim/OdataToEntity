@@ -59,6 +59,7 @@ namespace OdataToEntity
 
                 if (parseUriContext.IsCountSegment)
                 {
+                    headers.ResponseContentType = OeRequestHeaders.TextDefault.ContentType;
                     int count = _dataAdapter.ExecuteScalar<int>(dataContext, parseUriContext);
                     byte[] buffer = System.Text.Encoding.UTF8.GetBytes(count.ToString());
                     stream.Write(buffer, 0, buffer.Length);
