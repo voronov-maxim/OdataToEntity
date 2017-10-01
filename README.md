@@ -10,7 +10,7 @@ Supported ORM: Entity Framework 6, Entity Framework Core, Linq2Db
 Example Asp.Net Core OData service in \sln\OdataToEntityCore.Asp.sln  
 client Microsoft.OData.Client - test\OdataToEntity.Test.Asp\OdataToEntity.Test.AspClient  
 server Asp .net core - test\OdataToEntity.Test.Asp\OdataToEntity.Test.AspServer  
-server Asp mvc .net core - test\OdataToEntity.Test.Asp\OdataToEntity.Test.AspServer
+server Asp mvc .net core - test\OdataToEntity.Test.Asp\OdataToEntity.Test.AspMvcServer
 
 Script create database \test\OdataToEntity.Test.EfCore.SqlServer\script.sql
 ```c#
