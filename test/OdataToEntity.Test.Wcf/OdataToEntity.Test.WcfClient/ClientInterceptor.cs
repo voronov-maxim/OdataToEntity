@@ -1,5 +1,6 @@
 ﻿using Microsoft.OData.Client;
 using Microsoft.OData.Core;
+using OdataToEntity.Test.WcfService;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -17,7 +18,7 @@ namespace OdataToEntity.Test.WcfClient
         {
             return new ClientRequestMessage(this, e);
         }
-        protected internal abstract Task<Stream> OnGetResponse(HttpWebRequestMessage requestMessage, Stream requestStream);
+        protected internal abstract Task<OdataWcfQuery> OnGetResponse(HttpWebRequestMessage requestMessage, Stream requestStream);
     }
 
     internal sealed class ClientRequestMessage : HttpWebRequestMessage
@@ -58,9 +59,9 @@ namespace OdataToEntity.Test.WcfClient
             if (_requestStream != null)
                 _requestStream.Dispose();
 
-            var responseStream = ((Task<Stream>)asyncResult).Result;
-            var headers = new Dictionary<String, String>(1) { { ODataConstants.ContentTypeHeader, contentType } };
-            return new HttpWebResponseMessage(headers, 200, () => responseStream);
+            var response = ((Task<OdataWcfQuery>)asyncResult).Result;
+            var headers = new Dictionary<String, String>(1) { { ODataConstants.ContentTypeHeader, response.ContentType } };
+            return new HttpWebResponseMessage(headers, 200, () => response.Content);
         }
         private IAsyncResult GetAsyncResult<T>(AsyncCallback callback, T result, Object asyncState)
         {
@@ -76,8 +77,8 @@ namespace OdataToEntity.Test.WcfClient
         }
         private IAsyncResult GetResponse(AsyncCallback callback, Object asyncState)
         {
-            Task<Stream> responseTask = _interceptor.OnGetResponse(this, _requestStream);
-            var tcs = new TaskCompletionSource<Stream>(asyncState);
+            Task<OdataWcfQuery> responseTask = _interceptor.OnGetResponse(this, _requestStream);
+            var tcs = new TaskCompletionSource<OdataWcfQuery>(asyncState);
             responseTask.ContinueWith(t =>
             {
                 tcs.TrySetResult(t.Result);
@@ -96,10 +97,10 @@ namespace OdataToEntity.Test.WcfClient
             if (contentType == null)
                 contentType = base.GetHeader("Accept");
 
-            Stream responseStream = _interceptor.OnGetResponse(this, _requestStream).GetAwaiter().GetResult();
+            OdataWcfQuery response = _interceptor.OnGetResponse(this, _requestStream).GetAwaiter().GetResult();
 
-            var headers = new Dictionary<String, String>(1) { { ODataConstants.ContentTypeHeader, contentType } };
-            return new HttpWebResponseMessage(headers, 200, () => responseStream);
+            var headers = new Dictionary<String, String>(1) { { ODataConstants.ContentTypeHeader, response.ContentType } };
+            return new HttpWebResponseMessage(headers, 200, () => response.Content);
         }
     }
 }

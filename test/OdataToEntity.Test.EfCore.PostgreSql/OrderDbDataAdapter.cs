@@ -23,7 +23,7 @@ namespace OdataToEntity.Test
         }
     }
 
-    public sealed partial class OrderOeDataAdapter : OeEfCoreDataAdapter<Model.OrderContext>
+    public sealed partial class OrderOeDataAdapter : OeEfCorePostgreSqlDataAdapter<Model.OrderContext>
     {
         private String _databaseName;
 

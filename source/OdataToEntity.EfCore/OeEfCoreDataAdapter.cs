@@ -155,20 +155,21 @@ namespace OdataToEntity.EfCore
             }
         }
 
-        private readonly static Db.OeEntitySetMetaAdapterCollection _entitySetMetaAdapters = CreateEntitySetMetaAdapters();
         private readonly DbContextPool<T> _dbContextPool;
-        private readonly OeEfCoreOperationAdapter _operationAdapter;
+        protected readonly static Db.OeEntitySetMetaAdapterCollection _entitySetMetaAdapters = CreateEntitySetMetaAdapters();
 
         public OeEfCoreDataAdapter() : this(null, null)
         {
         }
         public OeEfCoreDataAdapter(DbContextOptions options, Db.OeQueryCache queryCache)
-            : base(queryCache)
+            : this(options, queryCache, new OeEfCoreOperationAdapter(typeof(T), _entitySetMetaAdapters))
+        {
+        }
+        public OeEfCoreDataAdapter(DbContextOptions options, Db.OeQueryCache queryCache, OeEfCoreOperationAdapter operationAdapter)
+            : base(queryCache, operationAdapter)
         {
             if (options != null)
                 _dbContextPool = new DbContextPool<T>(options);
-
-            _operationAdapter = new OeEfCoreOperationAdapter(typeof(T), _entitySetMetaAdapters);
         }
 
         public override void CloseDataContext(Object dataContext)
@@ -307,7 +308,6 @@ namespace OdataToEntity.EfCore
             return dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        public override Db.OeEntitySetMetaAdapterCollection EntitySetMetaAdapters => _entitySetMetaAdapters;
-        public override Db.OeOperationAdapter OperationAdapter => _operationAdapter;
+        public sealed override Db.OeEntitySetMetaAdapterCollection EntitySetMetaAdapters => _entitySetMetaAdapters;
     }
 }

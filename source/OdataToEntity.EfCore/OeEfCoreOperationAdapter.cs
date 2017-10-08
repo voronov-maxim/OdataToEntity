@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -24,59 +23,23 @@ namespace OdataToEntity.EfCore
             _entitySetMetaAdapters = entitySetMetaAdapters;
         }
 
-        public override OeAsyncEnumerator ExecuteFunction(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
+        protected override OeAsyncEnumerator ExecuteNonQuery(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters)
         {
-            var dbContext = (DbContext)dataContext;
-
-            var sql = new StringBuilder();
-            sql.Append('(');
-            String[] parameterNames = GetParameterNames(dbContext, parameters.Count);
-            sql.Append(String.Join(",", parameterNames));
-            sql.Append(')');
-
-            String functionName = GetOperationCaseSensitivityName(operationName, GetDefaultSchema(dbContext));
-
-            if (returnType == null)
-                return ExecuteNonQuery(dbContext, "select " + functionName + sql.ToString(), GetParameterValues(parameters));
-
-            if (returnType.IsPrimitive)
-                return ExecuteScalar(dbContext, "select " + functionName + sql.ToString(), parameters);
-
-            return ExecuteReader(dbContext, "select * from " + functionName + sql.ToString(), GetParameterValues(parameters), returnType);
-        }
-        protected OeAsyncEnumerator ExecuteNonQuery(DbContext dbContext, String sql, Object[] parameterValues)
-        {
-            dbContext.Database.ExecuteSqlCommand(sql, parameterValues);
+            ((DbContext)dataContext).Database.ExecuteSqlCommand(sql, GetParameterValues(parameters));
             return OeAsyncEnumerator.Empty;
         }
-        public override OeAsyncEnumerator ExecuteProcedure(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
-        {
-            var dbContext = (DbContext)dataContext;
-
-            var sql = new StringBuilder(GetOperationCaseSensitivityName(operationName, GetDefaultSchema(dbContext)));
-            sql.Append(' ');
-            String[] parameterNames = GetParameterNames(dbContext, parameters.Count);
-            sql.Append(String.Join(",", parameterNames));
-
-            if (returnType == null)
-                return ExecuteNonQuery(dbContext, sql.ToString(), GetParameterValues(parameters));
-
-            if (returnType.IsPrimitive)
-                return ExecuteScalar(dbContext, sql.ToString(), parameters);
-
-            return ExecuteReader(dbContext, sql.ToString(), GetParameterValues(parameters), returnType);
-        }
-        protected OeAsyncEnumerator ExecuteReader(DbContext dbContext, String sql, Object[] parameterValues, Type returnType)
+        protected override OeAsyncEnumerator ExecuteReader(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
         {
             var fromSql = (IFromSql)_entitySetMetaAdapters.FindByClrType(returnType);
             if (fromSql == null)
                 throw new NotSupportedException("supported only Entity type");
 
-            var query = (IQueryable<Object>)fromSql.FromSql(dbContext, sql.ToString(), parameterValues);
+            var query = (IQueryable<Object>)fromSql.FromSql((DbContext)dataContext, sql, GetParameterValues(parameters));
             return new OeAsyncEnumeratorAdapter(query, CancellationToken.None);
         }
-        protected OeAsyncEnumerator ExecuteScalar(DbContext dbContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters)
+        protected override OeAsyncEnumerator ExecuteScalar(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
         {
+            var dbContext = (DbContext)dataContext;
             var connection = dbContext.GetService<IRelationalConnection>();
             var commandBuilderFactory = dbContext.GetService<IRelationalCommandBuilderFactory>();
             IRelationalCommandBuilder commandBuilder = commandBuilderFactory.Create();
@@ -99,27 +62,7 @@ namespace OdataToEntity.EfCore
             Task<Object> scalarTask = command.ExecuteScalarAsync(connection, parameterValues);
             return new OeScalarAsyncEnumeratorAdapter(scalarTask, CancellationToken.None);
         }
-        private static String GetCaseSensitivityName(String name) => name[0] == '"' ? name : "\"" + name + "\"";
-        protected static String GetOperationCaseSensitivityName(String operationName, String defaultSchema)
-        {
-            int i = operationName.IndexOf('.');
-            if (i == -1)
-            {
-                if (String.IsNullOrEmpty(defaultSchema))
-                    return GetCaseSensitivityName(operationName);
-
-                return GetCaseSensitivityName(defaultSchema) + "." + GetCaseSensitivityName(operationName);
-            }
-
-            if (operationName[0] == '"' && operationName[i + 1] == '"')
-                return operationName;
-
-            return GetCaseSensitivityName(operationName.Substring(0, i)) + "." + GetCaseSensitivityName(operationName.Substring(i + 1));
-        }
-        private static String GetDefaultSchema(DbContext context)
-        {
-            return ((Model)context.Model).Relational().DefaultSchema;
-        }
+        protected override String GetDefaultSchema(Object dataContext) => ((Model)((DbContext)dataContext).Model).Relational().DefaultSchema;
         protected override OeOperationConfiguration GetOperationConfiguration(MethodInfo methodInfo)
         {
             var dbFunction = (DbFunctionAttribute)methodInfo.GetCustomAttribute(typeof(DbFunctionAttribute));
@@ -130,34 +73,21 @@ namespace OdataToEntity.EfCore
             if (!String.IsNullOrEmpty(dbFunction.Schema))
                 functionName = dbFunction.Schema + "." + functionName;
 
-            var operation = new OeOperationConfiguration(functionName, methodInfo, true);
-            foreach (ParameterInfo parameterInfo in methodInfo.GetParameters())
-                operation.AddParameter(parameterInfo.Name, parameterInfo.ParameterType);
-            operation.ReturnType = methodInfo.ReturnType;
-            return operation;
+            return new OeOperationConfiguration(functionName, methodInfo, true);
         }
-        private static String[] GetParameterNames(DbContext dbContext, int count)
+        protected override String[] GetParameterNames(Object dataContext, IReadOnlyList<KeyValuePair<String, Object>> parameters)
         {
+            var dbContext = (DbContext)dataContext;
             var parameterNameGenerator = dbContext.GetService<IParameterNameGeneratorFactory>().Create();
             var sqlHelper = dbContext.GetService<ISqlGenerationHelper>();
 
-            var parameterNames = new String[count];
-            for (int i = 0; i < count; i++)
+            var parameterNames = new String[parameters.Count];
+            for (int i = 0; i < parameterNames.Length; i++)
             {
                 String name = parameterNameGenerator.GenerateNext();
                 parameterNames[i] = sqlHelper.GenerateParameterName(name);
             }
             return parameterNames;
-        }
-        private static Object[] GetParameterValues(IReadOnlyList<KeyValuePair<String, Object>> parameters)
-        {
-            if (parameters.Count == 0)
-                return Array.Empty<Object>();
-
-            var parameterValues = new Object[parameters.Count];
-            for (int i = 0; i < parameterValues.Length; i++)
-                parameterValues[i] = parameters[i].Value;
-            return parameterValues;
         }
     }
 }

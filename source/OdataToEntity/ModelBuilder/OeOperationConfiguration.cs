@@ -11,19 +11,26 @@ namespace OdataToEntity.ModelBuilder
         private readonly String _name;
         private readonly String _namespaceName;
         private readonly List<OeOperationParameterConfiguration> _parameters;
+        private readonly Type _returnType;
 
         public OeOperationConfiguration(String name, MethodInfo methodInfo, bool? isDbFunction)
+            : this(name, methodInfo.DeclaringType.Namespace, methodInfo.DeclaringType.Name + "." + methodInfo.Name, methodInfo.ReturnType, isDbFunction)
+        {
+            foreach (ParameterInfo parameterInfo in methodInfo.GetParameters())
+                AddParameter(parameterInfo.Name, parameterInfo.ParameterType);
+        }
+        public OeOperationConfiguration(String name, String namespaceName, String methodInfoName, Type returnType, bool? isDbFunction)
         {
             if (name == null)
                 throw new ArgumentNullException(nameof(name));
 
             _name = name;
+            _namespaceName = namespaceName;
+            _methodInfoName = methodInfoName;
+            _returnType = returnType;
             _isDbFunction = isDbFunction;
 
             _parameters = new List<OeOperationParameterConfiguration>();
-
-            _namespaceName = methodInfo.DeclaringType.Namespace;
-            _methodInfoName = methodInfo.DeclaringType.Name + "." + methodInfo.Name;
         }
 
         public void AddParameter<T>(String name)
@@ -41,7 +48,7 @@ namespace OdataToEntity.ModelBuilder
         public String Name => _name;
         public String NamespaceName => _namespaceName;
         public IReadOnlyList<OeOperationParameterConfiguration> Parameters => _parameters;
-        public Type ReturnType { get; set; }
+        public Type ReturnType => _returnType;
     }
 
     public struct OeOperationParameterConfiguration

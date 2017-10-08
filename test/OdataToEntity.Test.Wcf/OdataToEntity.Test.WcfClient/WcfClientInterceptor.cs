@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace OdataToEntity.Test.WcfClient
@@ -23,9 +24,9 @@ namespace OdataToEntity.Test.WcfClient
             if (_channelFactory != null)
                 _channelFactory.Close();
         }
-        protected internal async override Task<Stream> OnGetResponse(HttpWebRequestMessage requestMessage, Stream requestStream)
+        protected internal async override Task<OdataWcfQuery> OnGetResponse(HttpWebRequestMessage requestMessage, Stream requestStream)
         {
-            Stream response;
+            OdataWcfQuery response;
             IOdataWcf client = null;
             try
             {
@@ -33,14 +34,14 @@ namespace OdataToEntity.Test.WcfClient
                 if (requestStream == null)
                 {
                     String accept = requestMessage.GetHeader("Accept");
-                    response = await client.Get(requestMessage.Url.PathAndQuery, accept);
+                    var query = new MemoryStream(Encoding.UTF8.GetBytes(requestMessage.Url.PathAndQuery));
+                    response = await client.Get(new OdataWcfQuery() { Content = query, ContentType = accept });
                 }
                 else
                 {
                     String contentType = requestMessage.GetHeader(ODataConstants.ContentTypeHeader);
                     requestStream.Position = 0;
-                    OdataWcfPostResponse postResponse = await client.Post(new OdataWcfPostRequest() { ContentType = contentType, RequestStream = requestStream });
-                    response = postResponse.ResponseStream;
+                    response = await client.Post(new OdataWcfQuery() { Content = requestStream, ContentType = contentType });
                 }
             }
             finally

@@ -139,14 +139,13 @@ namespace OdataToEntity.Ef6
         }
 
         private readonly static Db.OeEntitySetMetaAdapterCollection _entitySetMetaAdapters = CreateEntitySetMetaAdapters();
-        private readonly OeEf6OperationAdapter _operationAdapter;
 
-        public OeEf6DataAdapter() : this(null)
+        public OeEf6DataAdapter() : this(null, new OeEf6OperationAdapter(typeof(T)))
         {
         }
-        public OeEf6DataAdapter(Db.OeQueryCache queryCache) : base(queryCache)
+        public OeEf6DataAdapter(Db.OeQueryCache queryCache, OeEf6OperationAdapter operationAdapter)
+            : base(queryCache, operationAdapter)
         {
-            _operationAdapter = new OeEf6OperationAdapter(typeof(T));
         }
 
         public override void CloseDataContext(Object dataContext)
@@ -215,6 +214,5 @@ namespace OdataToEntity.Ef6
         }
 
         public override Db.OeEntitySetMetaAdapterCollection EntitySetMetaAdapters => _entitySetMetaAdapters;
-        public override Db.OeOperationAdapter OperationAdapter => _operationAdapter;
     }
 }

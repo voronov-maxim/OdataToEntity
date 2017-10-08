@@ -37,7 +37,7 @@ namespace OdataToEntity.Test
             if (typeof(T) == typeof(int))
             {
                 String count = new StreamReader(responseStream).ReadToEnd();
-                fromOe = new T[] { (T)(Object)int.Parse(count) };
+                fromOe = count == "" ? null : new T[] { (T)(Object)int.Parse(count) };
             }
             else
                 fromOe = reader.ReadFeed<T>(responseStream).ToArray();
@@ -185,7 +185,7 @@ namespace OdataToEntity.Test
         public async Task TableFunctionWithParameters_get()
         {
             String request = "TableFunctionWithParameters(name='Order 1',id=1,status=null)";
-            await Execute(request, null, c => c.TableFunctionWithParameters(1, "Order1", null));
+            await Execute(request, null, c => c.TableFunctionWithParameters(1, "Order 1", null));
         }
         [Fact]
         public async Task TableFunctionWithParameters_post()

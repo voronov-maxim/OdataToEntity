@@ -11,10 +11,12 @@ namespace OdataToEntity.Db
     public abstract class OeDataAdapter
     {
         private readonly OeQueryCache _queryCache;
+        private readonly OeOperationAdapter _operationAdapter;
 
-        public OeDataAdapter(OeQueryCache queryCache)
+        public OeDataAdapter(OeQueryCache queryCache, OeOperationAdapter operationAdapter)
         {
             _queryCache = queryCache ?? new OeQueryCache { AllowCache = false };
+            _operationAdapter = operationAdapter;
         }
 
         public abstract void CloseDataContext(Object dataContext);
@@ -32,6 +34,6 @@ namespace OdataToEntity.Db
 
         protected internal OeQueryCache QueryCache => _queryCache;
         public abstract OeEntitySetMetaAdapterCollection EntitySetMetaAdapters { get; }
-        public abstract OeOperationAdapter OperationAdapter { get; }
+        public OeOperationAdapter OperationAdapter => _operationAdapter;
     }
 }

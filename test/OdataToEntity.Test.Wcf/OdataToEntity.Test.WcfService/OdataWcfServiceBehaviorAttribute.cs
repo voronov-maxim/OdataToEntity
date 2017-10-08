@@ -1,6 +1,5 @@
 ﻿using Microsoft.OData.Edm;
 using OdataToEntity.Db;
-using OdataToEntity.ModelBuilder;
 using System;
 using System.Collections.ObjectModel;
 using System.ServiceModel;
@@ -23,8 +22,7 @@ namespace OdataToEntity.Test.WcfService
                 _odataWcfServiceBehavior = odataWcfServiceBehavior;
                 var args = new Object[] { Model.OrderContext.GenerateDatabaseName() };
                 _dataAdapter = (OeDataAdapter)Activator.CreateInstance(odataWcfServiceBehavior._dataAdapterType, args);
-                _edmModel = new OeEdmModelBuilder(_dataAdapter.EntitySetMetaAdapters.EdmModelMetadataProvider,
-                    _dataAdapter.EntitySetMetaAdapters.ToDictionary()).BuildEdmModel();
+                _edmModel = _dataAdapter.BuildEdmModel();
             }
 
             public object GetInstance(InstanceContext instanceContext)

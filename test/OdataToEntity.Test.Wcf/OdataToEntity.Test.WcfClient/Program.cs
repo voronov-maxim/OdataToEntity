@@ -1,5 +1,4 @@
 ﻿using ODataClient.Default;
-using OdataToEntity.Test;
 using System;
 using System.ServiceModel;
 
@@ -23,6 +22,8 @@ namespace OdataToEntity.Test.WcfClient
 
             DbFixtureInitDb.RunTest(new AspClient.BatchTest()).GetAwaiter().GetResult();
             DbFixtureInitDb.RunTest(new SelectTest(new DbFixtureInitDb())).GetAwaiter().GetResult();
+            DbFixtureInitDb.RunTest(new ManyColumnsTest(new ManyColumnsFixtureInitDb())).GetAwaiter().GetResult();
+            DbFixtureInitDb.RunTest(new AspClient.ProcedureTest()).GetAwaiter().GetResult();
 
             Console.WriteLine();
             Console.WriteLine("Press any key to continue...");

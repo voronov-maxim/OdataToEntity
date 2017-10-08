@@ -9,24 +9,17 @@ namespace OdataToEntity.Test.WcfService
     public interface IOdataWcf
     {
         [OperationContract]
-        Task<Stream> Get(String query, String acceptHeader);
+        Task<OdataWcfQuery> Get(OdataWcfQuery request);
         [OperationContract]
-        Task<OdataWcfPostResponse> Post(OdataWcfPostRequest request);
+        Task<OdataWcfQuery> Post(OdataWcfQuery request);
     }
 
     [MessageContract]
-    public sealed class OdataWcfPostRequest
+    public sealed class OdataWcfQuery
     {
         [MessageHeader]
         public String ContentType { get; set; }
         [MessageBodyMember]
-        public Stream RequestStream { get; set; }
-    }
-
-    [MessageContract]
-    public sealed class OdataWcfPostResponse
-    {
-        [MessageBodyMember]
-        public Stream ResponseStream { get; set; }
+        public Stream Content { get; set; }
     }
 }

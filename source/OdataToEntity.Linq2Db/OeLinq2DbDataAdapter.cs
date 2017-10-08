@@ -104,14 +104,13 @@ namespace OdataToEntity.Linq2Db
         }
 
         private readonly static OeEntitySetMetaAdapterCollection _entitySetMetaAdapters = CreateEntitySetMetaAdapters();
-        private readonly OeLinq2DbOperationAdapter _operationAdapter;
 
         public OeLinq2DbDataAdapter() : this(null)
         {
         }
-        public OeLinq2DbDataAdapter(Db.OeQueryCache queryCache) : base(queryCache)
+        public OeLinq2DbDataAdapter(OeQueryCache queryCache)
+            : base(queryCache, new OeLinq2DbOperationAdapter(typeof(T)))
         {
-            _operationAdapter = new OeLinq2DbOperationAdapter(typeof(T));
         }
 
         public override void CloseDataContext(Object dataContext)
@@ -121,7 +120,7 @@ namespace OdataToEntity.Linq2Db
         }
         public override Object CreateDataContext()
         {
-            return Db.FastActivator.CreateInstance<T>();
+            return FastActivator.CreateInstance<T>();
         }
         private static OeEntitySetMetaAdapterCollection CreateEntitySetMetaAdapters()
         {
@@ -197,6 +196,5 @@ namespace OdataToEntity.Linq2Db
         }
 
         public override OeEntitySetMetaAdapterCollection EntitySetMetaAdapters => _entitySetMetaAdapters;
-        public override Db.OeOperationAdapter OperationAdapter => _operationAdapter;
     }
 }

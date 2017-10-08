@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Reflection;
+using System.Text;
 using System.Threading;
 
 namespace OdataToEntity.Db
@@ -17,8 +18,41 @@ namespace OdataToEntity.Db
             _dataContextType = dataContextType;
         }
 
-        public abstract OeAsyncEnumerator ExecuteFunction(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType);
-        public abstract OeAsyncEnumerator ExecuteProcedure(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType);
+        public virtual OeAsyncEnumerator ExecuteFunction(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
+        {
+            var sql = new StringBuilder();
+            sql.Append('(');
+            String[] parameterNames = GetParameterNames(dataContext, parameters);
+            sql.Append(String.Join(",", parameterNames));
+            sql.Append(')');
+
+            String functionName = GetOperationCaseSensitivityName(operationName, GetDefaultSchema(dataContext));
+
+            if (returnType == null)
+                return ExecuteNonQuery(dataContext, "select " + functionName + sql.ToString(), parameters);
+
+            if (returnType.IsPrimitive)
+                return ExecuteScalar(dataContext, "select " + functionName + sql.ToString(), parameters, returnType);
+
+            return ExecuteReader(dataContext, "select * from " + functionName + sql.ToString(), parameters, returnType);
+        }
+        protected abstract OeAsyncEnumerator ExecuteNonQuery(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters);
+        public virtual OeAsyncEnumerator ExecuteProcedure(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
+        {
+            String procedureName = GetProcedureName(dataContext, operationName, parameters);
+
+            if (returnType == null)
+                return ExecuteNonQuery(dataContext, procedureName, parameters);
+
+            if (returnType.IsPrimitive)
+                return ExecuteScalar(dataContext, procedureName, parameters, returnType);
+
+            return ExecuteReader(dataContext, procedureName, parameters, returnType);
+        }
+        protected abstract OeAsyncEnumerator ExecuteReader(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType);
+        protected abstract OeAsyncEnumerator ExecuteScalar(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType);
+        private static String GetCaseSensitivityName(String name) => name[0] == '"' ? name : "\"" + name + "\"";
+        protected virtual String GetDefaultSchema(Object dataContext) => null;
         protected MethodInfo[] GetMethodInfos()
         {
             var methodInfos = new List<MethodInfo>();
@@ -30,6 +64,22 @@ namespace OdataToEntity.Db
                     methodInfos.Add(methodInfo);
                 }
             return methodInfos.ToArray();
+        }
+        protected static String GetOperationCaseSensitivityName(String operationName, String defaultSchema)
+        {
+            int i = operationName.IndexOf('.');
+            if (i == -1)
+            {
+                if (String.IsNullOrEmpty(defaultSchema))
+                    return GetCaseSensitivityName(operationName);
+
+                return GetCaseSensitivityName(defaultSchema) + "." + GetCaseSensitivityName(operationName);
+            }
+
+            if (operationName[0] == '"' && operationName[i + 1] == '"')
+                return operationName;
+
+            return GetCaseSensitivityName(operationName.Substring(0, i)) + "." + GetCaseSensitivityName(operationName.Substring(i + 1));
         }
         public OeOperationConfiguration[] GetOperations()
         {
@@ -45,11 +95,7 @@ namespace OdataToEntity.Db
         {
             var description = (DescriptionAttribute)methodInfo.GetCustomAttribute(typeof(DescriptionAttribute));
             String name = description == null ? methodInfo.Name : description.Description;
-            var operation = new OeOperationConfiguration(name, methodInfo, null);
-            foreach (ParameterInfo parameterInfo in methodInfo.GetParameters())
-                operation.AddParameter(parameterInfo.Name, parameterInfo.ParameterType);
-            operation.ReturnType = methodInfo.ReturnType;
-            return operation;
+            return new OeOperationConfiguration(name, methodInfo, null);
         }
         protected virtual OeOperationConfiguration[] GetOperationsCore(Type dataContextType)
         {
@@ -61,6 +107,25 @@ namespace OdataToEntity.Db
             for (int i = 0; i < methodInfos.Length; i++)
                 operations[i] = GetOperationConfiguration(methodInfos[i]);
             return operations;
+        }
+        protected abstract String[] GetParameterNames(Object dataContext, IReadOnlyList<KeyValuePair<String, Object>> parameters);
+        protected static Object[] GetParameterValues(IReadOnlyList<KeyValuePair<String, Object>> parameters)
+        {
+            if (parameters.Count == 0)
+                return Array.Empty<Object>();
+
+            var parameterValues = new Object[parameters.Count];
+            for (int i = 0; i < parameterValues.Length; i++)
+                parameterValues[i] = parameters[i].Value;
+            return parameterValues;
+        }
+        protected virtual String GetProcedureName(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters)
+        {
+            var sql = new StringBuilder(GetOperationCaseSensitivityName(operationName, GetDefaultSchema(dataContext)));
+            sql.Append(' ');
+            String[] parameterNames = GetParameterNames(dataContext, parameters);
+            sql.Append(String.Join(",", parameterNames));
+            return sql.ToString();
         }
     }
 }

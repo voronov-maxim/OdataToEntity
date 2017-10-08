@@ -12,7 +12,9 @@ client Microsoft.OData.Client - test\OdataToEntity.Test.Asp\OdataToEntity.Test.A
 server Asp .net core - test\OdataToEntity.Test.Asp\OdataToEntity.Test.AspServer  
 server Asp mvc .net core - test\OdataToEntity.Test.Asp\OdataToEntity.Test.AspMvcServer
 
-Script create database \test\OdataToEntity.Test.EfCore.SqlServer\script.sql
+Script create database \test\OdataToEntity.Test.EfCore.SqlServer\script.sql  
+Script create PostgreSql database \test\OdataToEntity.Test.EfCore.PostgreSql\script.sql
+
 ```c#
 public sealed class OrderContext : DbContext
 {

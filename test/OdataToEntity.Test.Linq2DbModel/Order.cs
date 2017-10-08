@@ -84,6 +84,14 @@ namespace OdataToEntity.Test.Model
         public IEnumerable<Order> GetOrders(int? id, String name, OrderStatus? status) => throw new NotImplementedException();
         public void ResetDb() => throw new NotImplementedException();
         public void ResetManyColumns() => throw new NotImplementedException();
+        [Sql.Function("dbo", "ScalarFunction")]
+        public int ScalarFunction() => Orders.Count();
+        [Sql.Function("dbo", "ScalarFunctionWithParameters")]
+        public int ScalarFunctionWithParameters(int? id, String name, OrderStatus? status) => Orders.Where(o => o.Id == id || o.Name.Contains(name) || o.Status == status).Count();
+        [Sql.Function("TableFunction")]
+        public IEnumerable<Order> TableFunction() => Orders;
+        [Sql.Function("TableFunctionWithParameters")]
+        public IEnumerable<Order> TableFunctionWithParameters(int? id, String name, OrderStatus? status) => Orders.Where(o => (o.Id == id) || o.Name.Contains(name) || (o.Status == status));
     }
 
     [Table(Schema = "dbo", Name = "Categories")]

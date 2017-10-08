@@ -44,7 +44,7 @@ namespace OdataToEntity.Test.Model
         [DbFunction("TableFunction")]
         public IEnumerable<Order> TableFunction() => Orders;
         [DbFunction]
-        public IEnumerable<Order> TableFunctionWithParameters(int? id, String name, OrderStatus? status) => Orders.Where(o => o.Id == id || o.Name.Contains(name) || o.Status == status);
+        public IEnumerable<Order> TableFunctionWithParameters(int? id, String name, OrderStatus? status) => Orders.Where(o => (o.Id == id) || EF.Functions.Like(o.Name, "%" + name + "%") || (o.Status == status));
 
         public DbSet<Category> Categories { get; set; }
         public DbSet<Customer> Customers { get; set; }

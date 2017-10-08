@@ -19,24 +19,35 @@ namespace OdataToEntity.Test.WcfService
             _edmModel = edmModel;
         }
 
-        public async Task<Stream> Get(string query, String acceptHeader)
+        public async Task<OdataWcfQuery> Get(OdataWcfQuery request)
         {
-            OeRequestHeaders headers = OeRequestHeaders.Parse(acceptHeader);
+            OeRequestHeaders headers = OeRequestHeaders.Parse(request.ContentType);
+            headers.ResponseContentType = headers.ContentType;
             var parser = new OeParser(_baseUri, DataAdapter, _edmModel);
 
+            String query = new StreamReader(request.Content).ReadToEnd();
             var uri = new Uri(_baseUri, new Uri(query, UriKind.Relative));
             var responseStream = new MemoryStream();
+
             await parser.ExecuteGetAsync(uri, headers, responseStream, CancellationToken.None);
             responseStream.Position = 0;
-            return responseStream;
+            return new OdataWcfQuery()
+            {
+                Content = responseStream,
+                ContentType = headers.ResponseContentType
+            };
         }
-        public async Task<OdataWcfPostResponse> Post(OdataWcfPostRequest request)
+        public async Task<OdataWcfQuery> Post(OdataWcfQuery request)
         {
             var parser = new OeParser(_baseUri, _dataAdapter, _edmModel);
             var responseStream = new MemoryStream();
-            await parser.ExecuteBatchAsync(request.RequestStream, responseStream, CancellationToken.None, request.ContentType);
+            await parser.ExecuteBatchAsync(request.Content, responseStream, CancellationToken.None, request.ContentType);
             responseStream.Position = 0;
-            return new OdataWcfPostResponse() { ResponseStream = responseStream };
+            return new OdataWcfQuery()
+            {
+                Content = responseStream,
+                ContentType = request.ContentType
+            };
         }
 
         public OeDataAdapter DataAdapter => _dataAdapter;
