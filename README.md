@@ -1,4 +1,4 @@
-Sql server # OdataToEntity
+# OdataToEntity
 [![Travis](https://img.shields.io/travis/voronov-maxim/OdataToEntity.svg)](https://travis-ci.org/voronov-maxim/OdataToEntity)
 
 OData .net core
