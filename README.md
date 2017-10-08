@@ -1,4 +1,4 @@
-# OdataToEntity
+Sql server # OdataToEntity
 [![Travis](https://img.shields.io/travis/voronov-maxim/OdataToEntity.svg)](https://travis-ci.org/voronov-maxim/OdataToEntity)
 
 OData .net core
@@ -12,7 +12,7 @@ client Microsoft.OData.Client - test\OdataToEntity.Test.Asp\OdataToEntity.Test.A
 server Asp .net core - test\OdataToEntity.Test.Asp\OdataToEntity.Test.AspServer  
 server Asp mvc .net core - test\OdataToEntity.Test.Asp\OdataToEntity.Test.AspMvcServer
 
-Script create database \test\OdataToEntity.Test.EfCore.SqlServer\script.sql  
+Script create Sql Server database \test\OdataToEntity.Test.EfCore.SqlServer\script.sql  
 Script create PostgreSql database \test\OdataToEntity.Test.EfCore.PostgreSql\script.sql
 
 ```c#
