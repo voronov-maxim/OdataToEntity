@@ -7,7 +7,8 @@ namespace OdataToEntity.Db
     {
         public static EdmModel BuildEdmModel(this OeDataAdapter dataAdapter)
         {
-            var modelBuilder = new OeEdmModelBuilder(dataAdapter.EntitySetMetaAdapters.EdmModelMetadataProvider, dataAdapter.EntitySetMetaAdapters.ToDictionary());
+            var modelBuilder = new OeEdmModelBuilder(dataAdapter.EntitySetMetaAdapters.EdmModelMetadataProvider);
+            modelBuilder.AddEntitySetRange(dataAdapter.EntitySetMetaAdapters.GetEntitySetNamesEntityTypes());
             BuildOperations(dataAdapter, modelBuilder);
             return modelBuilder.BuildEdmModel();
         }

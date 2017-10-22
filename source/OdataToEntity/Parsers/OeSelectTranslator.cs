@@ -79,7 +79,7 @@ namespace OdataToEntity.Parsers
                     continue;
 
                 _selectItemInfos.Add(new SelectItemInfo(null, keyProperty, null, null));
-                PropertyInfo property = itemType.GetTypeInfo().GetProperty(keyProperty.Name);
+                PropertyInfo property = itemType.GetProperty(keyProperty.Name);
                 expressions.Add(Expression.MakeMemberAccess(_parameter, property));
             }
         }
@@ -283,7 +283,7 @@ namespace OdataToEntity.Parsers
             }
             _selectItemInfo = new SelectItemInfo(entitySet, navigationEdmProperty, resourceInfo, countOption);
 
-            PropertyInfo navigationClrProperty = _parameter.Type.GetTypeInfo().GetProperty(navigationEdmProperty.Name);
+            PropertyInfo navigationClrProperty = _parameter.Type.GetProperty(navigationEdmProperty.Name);
             return Expression.MakeMemberAccess(_parameter, navigationClrProperty);
         }
         public override Expression Translate(PathSelectItem item)
@@ -300,7 +300,7 @@ namespace OdataToEntity.Parsers
                 var segment = (PropertySegment)item.SelectedPath.LastSegment;
                 _selectItemInfo = new SelectItemInfo(null, segment.Property, null, null);
 
-                PropertyInfo property = _parameter.Type.GetTypeInfo().GetProperty(segment.Property.Name);
+                PropertyInfo property = _parameter.Type.GetProperty(segment.Property.Name);
                 if (property == null)
                     expression = new TuplePropertyByEdmProperty(_source).GetTuplePropertyByEdmProperty(_parameter, segment.Property);
                 else

@@ -8,6 +8,6 @@
     <ODataLib>7.3.1</ODataLib>
     <SystemInteractiveAsyncVersion>3.1.1</SystemInteractiveAsyncVersion>
     <TestSdkVersion>15.3.0</TestSdkVersion>
-    <XunitVersion>2.2.0</XunitVersion>
+    <XunitVersion>2.3.0</XunitVersion>
   </PropertyGroup>
 </Project>

@@ -14,7 +14,7 @@ namespace OdataToEntity.Db
 
             private static Func<T> GetFactory()
             {
-                ConstructorInfo ctor = typeof(T).GetTypeInfo().GetConstructor(Type.EmptyTypes);
+                ConstructorInfo ctor = typeof(T).GetConstructor(Type.EmptyTypes);
                 return (Func<T>)Expression.Lambda(Expression.New(ctor)).Compile();
             }
         }

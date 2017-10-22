@@ -101,7 +101,7 @@ namespace OdataToEntity.Test
                 IEnumerable<JObject> jobjects = reader.ReadOpenType(stream, baseEntityType).Select(t => JRawToEnum(t)).ToList();
                 fromOe = TestHelper.SortProperty(jobjects);
             }
-            else if (typeof(TResult).GetTypeInfo().IsPrimitive)
+            else if (typeof(TResult).IsPrimitive)
                 fromOe = new String[] { new StreamReader(stream).ReadToEnd() };
             else
                 fromOe = reader.ReadFeed<TResult>(stream).ToList();

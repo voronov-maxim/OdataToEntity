@@ -66,7 +66,7 @@ namespace OdataToEntity.Test.Model
         public String Product { get; set; }
     }
 
-    public sealed class ManyColumns
+    public class ManyColumnsBase
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.None)]
@@ -100,6 +100,14 @@ namespace OdataToEntity.Test.Model
         public int Column28 { get; set; }
         public int Column29 { get; set; }
         public int Column30 { get; set; }
+    }
+
+    public sealed class ManyColumns : ManyColumnsBase
+    {
+    }
+
+    public sealed class ManyColumnsView : ManyColumnsBase
+    {
     }
 
     public enum OrderStatus

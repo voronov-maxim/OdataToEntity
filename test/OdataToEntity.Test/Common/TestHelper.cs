@@ -211,15 +211,15 @@ namespace OdataToEntity.Test
         }
         private static Type GetCollectionItemType(Type collectionType)
         {
-            if (collectionType.GetTypeInfo().IsPrimitive)
+            if (collectionType.IsPrimitive)
                 return null;
 
-            if (collectionType.GetTypeInfo().IsGenericType && collectionType.GetGenericTypeDefinition() == typeof(IEnumerable<>))
-                return collectionType.GetTypeInfo().GetGenericArguments()[0];
+            if (collectionType.IsGenericType && collectionType.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+                return collectionType.GetGenericArguments()[0];
 
-            foreach (Type iface in collectionType.GetTypeInfo().GetInterfaces())
-                if (iface.GetTypeInfo().IsGenericType && iface.GetGenericTypeDefinition() == typeof(IEnumerable<>))
-                    return iface.GetTypeInfo().GetGenericArguments()[0];
+            foreach (Type iface in collectionType.GetInterfaces())
+                if (iface.IsGenericType && iface.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+                    return iface.GetGenericArguments()[0];
             return null;
         }
         private static IQueryable<T> GetQuerableDb<T>(DbContext dataContext)
@@ -244,7 +244,7 @@ namespace OdataToEntity.Test
             var selectTest = new SelectTest(fixture);
 
             var methodNames = new List<String>();
-            foreach (MethodInfo methodInfo in selectTest.GetType().GetTypeInfo().GetMethods().Where(m => m.GetCustomAttributes(typeof(FactAttribute), false).Count() == 1))
+            foreach (MethodInfo methodInfo in selectTest.GetType().GetMethods().Where(m => m.GetCustomAttributes(typeof(FactAttribute), false).Count() == 1))
             {
                 methodNames.Add(methodInfo.Name);
                 var testMethod = (Func<SelectTest, Task>)methodInfo.CreateDelegate(typeof(Func<SelectTest, Task>));
@@ -291,7 +291,7 @@ namespace OdataToEntity.Test
                 return;
 
             visited.Add(entity);
-            foreach (PropertyInfo property in entity.GetType().GetTypeInfo().GetProperties())
+            foreach (PropertyInfo property in entity.GetType().GetProperties())
                 if (IsEntity(property.PropertyType))
                 {
                     Object value = property.GetValue(entity);

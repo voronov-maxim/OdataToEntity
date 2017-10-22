@@ -62,7 +62,7 @@ namespace OdataToEntity.Parsers
             var propertyAccessors = new List<OePropertyAccessor>();
             foreach (IEdmStructuralProperty edmProperty in entitySet.EntityType().StructuralProperties())
             {
-                MemberExpression expression = Expression.Property(instance, clrType.GetTypeInfo().GetProperty(edmProperty.Name));
+                MemberExpression expression = Expression.Property(instance, clrType.GetProperty(edmProperty.Name));
                 propertyAccessors.Add(CreatePropertyAccessor(edmProperty, expression, parameter));
             }
             return propertyAccessors.ToArray();
@@ -72,7 +72,7 @@ namespace OdataToEntity.Parsers
             var propertyAccessors = new List<OePropertyAccessor>();
             foreach (IEdmStructuralProperty edmProperty in entitySet.EntityType().StructuralProperties())
             {
-                MemberExpression expression = Expression.Property(source, source.Type.GetTypeInfo().GetProperty(edmProperty.Name));
+                MemberExpression expression = Expression.Property(source, source.Type.GetProperty(edmProperty.Name));
                 propertyAccessors.Add(CreatePropertyAccessor(edmProperty, expression, parameter));
             }
             return propertyAccessors.ToArray();

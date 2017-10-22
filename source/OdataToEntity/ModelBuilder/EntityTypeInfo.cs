@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
-using System.Reflection;
 
 namespace OdataToEntity.ModelBuilder
 {
@@ -12,18 +11,16 @@ namespace OdataToEntity.ModelBuilder
     {
         private readonly Type _clrType;
         private readonly EdmEntityType _edmType;
-        private readonly String _entitySetName;
         private readonly List<KeyValuePair<PropertyDescriptor, EdmStructuralProperty>> _keyProperties;
         private readonly OeEdmModelMetadataProvider _metadataProvider;
         private readonly List<FKeyInfo> _navigationClrProperties;
 
-        public EntityTypeInfo(OeEdmModelMetadataProvider metadataProvider, Type clrType, String entitySetName)
+        public EntityTypeInfo(OeEdmModelMetadataProvider metadataProvider, Type clrType, EdmEntityType edmType)
         {
             _metadataProvider = metadataProvider;
             _clrType = clrType;
-            _entitySetName = entitySetName;
+            _edmType = edmType;
 
-            _edmType = new EdmEntityType(clrType.Namespace, clrType.Name);
             _keyProperties = new List<KeyValuePair<PropertyDescriptor, EdmStructuralProperty>>(1);
             _navigationClrProperties = new List<FKeyInfo>();
         }
@@ -43,7 +40,12 @@ namespace OdataToEntity.ModelBuilder
                 {
                     key = clrPoperties.Find(_clrType.Name + "id", true);
                     if (key == null)
+                    {
+                        if (EdmType.Key().Any())
+                            return;
+
                         throw new InvalidOperationException("Key property not matching");
+                    }
 
                     var edmProperty = (EdmStructuralProperty)_edmType.Properties().Single(p => p.Name == key.Name);
                     _keyProperties.Add(new KeyValuePair<PropertyDescriptor, EdmStructuralProperty>(key, edmProperty));
@@ -78,8 +80,8 @@ namespace OdataToEntity.ModelBuilder
             {
                 EdmEnumType edmEnumType;
                 Type underlyingType = null;
-                if (clrProperty.PropertyType.GetTypeInfo().IsEnum ||
-                    (underlyingType = Nullable.GetUnderlyingType(clrProperty.PropertyType)) != null && underlyingType.GetTypeInfo().IsEnum)
+                if (clrProperty.PropertyType.IsEnum ||
+                    (underlyingType = Nullable.GetUnderlyingType(clrProperty.PropertyType)) != null && underlyingType.IsEnum)
                 {
                     Type clrPropertyType = underlyingType ?? clrProperty.PropertyType;
                     if (!enumTypes.TryGetValue(clrPropertyType, out edmEnumType))
@@ -93,7 +95,7 @@ namespace OdataToEntity.ModelBuilder
                 {
                     EdmComplexType edmComplexType;
                     if (complexTypes.TryGetValue(clrProperty.PropertyType, out edmComplexType))
-                        typeRef = new EdmComplexTypeReference(edmComplexType, clrProperty.PropertyType.GetTypeInfo().IsClass);
+                        typeRef = new EdmComplexTypeReference(edmComplexType, clrProperty.PropertyType.IsClass);
                     else
                     {
                         FKeyInfo fkeyInfo = FKeyInfo.Create(_metadataProvider, entityTypes, this, clrProperty);
@@ -121,7 +123,7 @@ namespace OdataToEntity.ModelBuilder
             Dictionary<Type, EdmEnumType> enumTypes, Dictionary<Type, EdmComplexType> complexTypes)
         {
             foreach (PropertyDescriptor clrProperty in TypeDescriptor.GetProperties(_clrType))
-                if (!_metadataProvider.IsNotMapped(clrProperty))
+                if (clrProperty.ComponentType == _clrType && !_metadataProvider.IsNotMapped(clrProperty))
                     BuildProperty(entityTypes, enumTypes, complexTypes, clrProperty);
             AddKeys();
         }
@@ -143,7 +145,6 @@ namespace OdataToEntity.ModelBuilder
 
         public Type ClrType => _clrType;
         public EdmEntityType EdmType => _edmType;
-        public String EntitySetName => _entitySetName;
         public IReadOnlyList<FKeyInfo> NavigationClrProperties => _navigationClrProperties;
     }
 }

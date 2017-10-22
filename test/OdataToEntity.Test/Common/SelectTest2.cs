@@ -10,11 +10,11 @@ using Xunit;
 
 namespace OdataToEntity.Test
 {
-    partial class SelectTest
+    public partial class SelectTest
     {
         //https://msdn.microsoft.com/en-us/library/dn725245.aspx
         //[Fact]
-        public async Task CountExpandNested()
+        internal async Task CountExpandNested()
         {
             var parameters = new QueryParameters<Order>()
             {

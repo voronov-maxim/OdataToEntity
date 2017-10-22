@@ -37,7 +37,7 @@ namespace OdataToEntity
                     if (property.Value is ODataEnumValue)
                     {
                         Type enumType;
-                        if (clrProperty.PropertyType.GetTypeInfo().IsEnum)
+                        if (clrProperty.PropertyType.IsEnum)
                             enumType = clrProperty.PropertyType;
                         else
                             enumType = Nullable.GetUnderlyingType(clrProperty.PropertyType);

@@ -56,7 +56,7 @@ namespace OdataToEntity.Db
         protected MethodInfo[] GetMethodInfos()
         {
             var methodInfos = new List<MethodInfo>();
-            foreach (MethodInfo methodInfo in _dataContextType.GetTypeInfo().GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly))
+            foreach (MethodInfo methodInfo in _dataContextType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly))
                 if (!methodInfo.IsSpecialName)
                 {
                     if (methodInfo.IsVirtual || methodInfo.IsGenericMethod || methodInfo.GetBaseDefinition().DeclaringType != _dataContextType)

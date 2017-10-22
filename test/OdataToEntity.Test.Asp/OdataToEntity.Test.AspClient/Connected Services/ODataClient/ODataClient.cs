@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-// Generation date: 29.09.2017 12:09:56
+// Generation date: 22.10.2017 17:42:46
 namespace ODataClient.OdataToEntity.Test.Model
 {
     /// <summary>
@@ -460,40 +460,40 @@ namespace ODataClient.OdataToEntity.Test.Model
         partial void OnOrdersChanged();
     }
     /// <summary>
-    /// There are no comments for ManyColumnsSingle in the schema.
+    /// There are no comments for ManyColumnsBaseSingle in the schema.
     /// </summary>
-    public partial class ManyColumnsSingle : global::Microsoft.OData.Client.DataServiceQuerySingle<ManyColumns>
+    public partial class ManyColumnsBaseSingle : global::Microsoft.OData.Client.DataServiceQuerySingle<ManyColumnsBase>
     {
         /// <summary>
-        /// Initialize a new ManyColumnsSingle object.
+        /// Initialize a new ManyColumnsBaseSingle object.
         /// </summary>
-        public ManyColumnsSingle(global::Microsoft.OData.Client.DataServiceContext context, string path)
+        public ManyColumnsBaseSingle(global::Microsoft.OData.Client.DataServiceContext context, string path)
             : base(context, path) {}
 
         /// <summary>
-        /// Initialize a new ManyColumnsSingle object.
+        /// Initialize a new ManyColumnsBaseSingle object.
         /// </summary>
-        public ManyColumnsSingle(global::Microsoft.OData.Client.DataServiceContext context, string path, bool isComposable)
+        public ManyColumnsBaseSingle(global::Microsoft.OData.Client.DataServiceContext context, string path, bool isComposable)
             : base(context, path, isComposable) {}
 
         /// <summary>
-        /// Initialize a new ManyColumnsSingle object.
+        /// Initialize a new ManyColumnsBaseSingle object.
         /// </summary>
-        public ManyColumnsSingle(global::Microsoft.OData.Client.DataServiceQuerySingle<ManyColumns> query)
+        public ManyColumnsBaseSingle(global::Microsoft.OData.Client.DataServiceQuerySingle<ManyColumnsBase> query)
             : base(query) {}
 
     }
     /// <summary>
-    /// There are no comments for ManyColumns in the schema.
+    /// There are no comments for ManyColumnsBase in the schema.
     /// </summary>
     /// <KeyProperties>
     /// Column01
     /// </KeyProperties>
     [global::Microsoft.OData.Client.Key("Column01")]
-    public partial class ManyColumns : global::Microsoft.OData.Client.BaseEntityType
+    public partial class ManyColumnsBase : global::Microsoft.OData.Client.BaseEntityType
     {
         /// <summary>
-        /// Create a new ManyColumns object.
+        /// Create a new ManyColumnsBase object.
         /// </summary>
         /// <param name="column01">Initial value of Column01.</param>
         /// <param name="column02">Initial value of Column02.</param>
@@ -526,7 +526,7 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// <param name="column29">Initial value of Column29.</param>
         /// <param name="column30">Initial value of Column30.</param>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        public static ManyColumns CreateManyColumns(int column01, 
+        public static ManyColumnsBase CreateManyColumnsBase(int column01, 
                     int column02, 
                     int column03, 
                     int column04, 
@@ -557,38 +557,38 @@ namespace ODataClient.OdataToEntity.Test.Model
                     int column29, 
                     int column30)
         {
-            ManyColumns manyColumns = new ManyColumns();
-            manyColumns.Column01 = column01;
-            manyColumns.Column02 = column02;
-            manyColumns.Column03 = column03;
-            manyColumns.Column04 = column04;
-            manyColumns.Column05 = column05;
-            manyColumns.Column06 = column06;
-            manyColumns.Column07 = column07;
-            manyColumns.Column08 = column08;
-            manyColumns.Column09 = column09;
-            manyColumns.Column10 = column10;
-            manyColumns.Column11 = column11;
-            manyColumns.Column12 = column12;
-            manyColumns.Column13 = column13;
-            manyColumns.Column14 = column14;
-            manyColumns.Column15 = column15;
-            manyColumns.Column16 = column16;
-            manyColumns.Column17 = column17;
-            manyColumns.Column18 = column18;
-            manyColumns.Column19 = column19;
-            manyColumns.Column20 = column20;
-            manyColumns.Column21 = column21;
-            manyColumns.Column22 = column22;
-            manyColumns.Column23 = column23;
-            manyColumns.Column24 = column24;
-            manyColumns.Column25 = column25;
-            manyColumns.Column26 = column26;
-            manyColumns.Column27 = column27;
-            manyColumns.Column28 = column28;
-            manyColumns.Column29 = column29;
-            manyColumns.Column30 = column30;
-            return manyColumns;
+            ManyColumnsBase manyColumnsBase = new ManyColumnsBase();
+            manyColumnsBase.Column01 = column01;
+            manyColumnsBase.Column02 = column02;
+            manyColumnsBase.Column03 = column03;
+            manyColumnsBase.Column04 = column04;
+            manyColumnsBase.Column05 = column05;
+            manyColumnsBase.Column06 = column06;
+            manyColumnsBase.Column07 = column07;
+            manyColumnsBase.Column08 = column08;
+            manyColumnsBase.Column09 = column09;
+            manyColumnsBase.Column10 = column10;
+            manyColumnsBase.Column11 = column11;
+            manyColumnsBase.Column12 = column12;
+            manyColumnsBase.Column13 = column13;
+            manyColumnsBase.Column14 = column14;
+            manyColumnsBase.Column15 = column15;
+            manyColumnsBase.Column16 = column16;
+            manyColumnsBase.Column17 = column17;
+            manyColumnsBase.Column18 = column18;
+            manyColumnsBase.Column19 = column19;
+            manyColumnsBase.Column20 = column20;
+            manyColumnsBase.Column21 = column21;
+            manyColumnsBase.Column22 = column22;
+            manyColumnsBase.Column23 = column23;
+            manyColumnsBase.Column24 = column24;
+            manyColumnsBase.Column25 = column25;
+            manyColumnsBase.Column26 = column26;
+            manyColumnsBase.Column27 = column27;
+            manyColumnsBase.Column28 = column28;
+            manyColumnsBase.Column29 = column29;
+            manyColumnsBase.Column30 = column30;
+            return manyColumnsBase;
         }
         /// <summary>
         /// There are no comments for Property Column01 in the schema.
@@ -1222,6 +1222,270 @@ namespace ODataClient.OdataToEntity.Test.Model
         partial void OnColumn30Changed();
     }
     /// <summary>
+    /// There are no comments for ManyColumnsSingle in the schema.
+    /// </summary>
+    public partial class ManyColumnsSingle : global::Microsoft.OData.Client.DataServiceQuerySingle<ManyColumns>
+    {
+        /// <summary>
+        /// Initialize a new ManyColumnsSingle object.
+        /// </summary>
+        public ManyColumnsSingle(global::Microsoft.OData.Client.DataServiceContext context, string path)
+            : base(context, path) {}
+
+        /// <summary>
+        /// Initialize a new ManyColumnsSingle object.
+        /// </summary>
+        public ManyColumnsSingle(global::Microsoft.OData.Client.DataServiceContext context, string path, bool isComposable)
+            : base(context, path, isComposable) {}
+
+        /// <summary>
+        /// Initialize a new ManyColumnsSingle object.
+        /// </summary>
+        public ManyColumnsSingle(global::Microsoft.OData.Client.DataServiceQuerySingle<ManyColumns> query)
+            : base(query) {}
+
+    }
+    /// <summary>
+    /// There are no comments for ManyColumns in the schema.
+    /// </summary>
+    /// <KeyProperties>
+    /// Column01
+    /// </KeyProperties>
+    [global::Microsoft.OData.Client.Key("Column01")]
+    public partial class ManyColumns : ManyColumnsBase
+    {
+        /// <summary>
+        /// Create a new ManyColumns object.
+        /// </summary>
+        /// <param name="column01">Initial value of Column01.</param>
+        /// <param name="column02">Initial value of Column02.</param>
+        /// <param name="column03">Initial value of Column03.</param>
+        /// <param name="column04">Initial value of Column04.</param>
+        /// <param name="column05">Initial value of Column05.</param>
+        /// <param name="column06">Initial value of Column06.</param>
+        /// <param name="column07">Initial value of Column07.</param>
+        /// <param name="column08">Initial value of Column08.</param>
+        /// <param name="column09">Initial value of Column09.</param>
+        /// <param name="column10">Initial value of Column10.</param>
+        /// <param name="column11">Initial value of Column11.</param>
+        /// <param name="column12">Initial value of Column12.</param>
+        /// <param name="column13">Initial value of Column13.</param>
+        /// <param name="column14">Initial value of Column14.</param>
+        /// <param name="column15">Initial value of Column15.</param>
+        /// <param name="column16">Initial value of Column16.</param>
+        /// <param name="column17">Initial value of Column17.</param>
+        /// <param name="column18">Initial value of Column18.</param>
+        /// <param name="column19">Initial value of Column19.</param>
+        /// <param name="column20">Initial value of Column20.</param>
+        /// <param name="column21">Initial value of Column21.</param>
+        /// <param name="column22">Initial value of Column22.</param>
+        /// <param name="column23">Initial value of Column23.</param>
+        /// <param name="column24">Initial value of Column24.</param>
+        /// <param name="column25">Initial value of Column25.</param>
+        /// <param name="column26">Initial value of Column26.</param>
+        /// <param name="column27">Initial value of Column27.</param>
+        /// <param name="column28">Initial value of Column28.</param>
+        /// <param name="column29">Initial value of Column29.</param>
+        /// <param name="column30">Initial value of Column30.</param>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public static ManyColumns CreateManyColumns(int column01, 
+                    int column02, 
+                    int column03, 
+                    int column04, 
+                    int column05, 
+                    int column06, 
+                    int column07, 
+                    int column08, 
+                    int column09, 
+                    int column10, 
+                    int column11, 
+                    int column12, 
+                    int column13, 
+                    int column14, 
+                    int column15, 
+                    int column16, 
+                    int column17, 
+                    int column18, 
+                    int column19, 
+                    int column20, 
+                    int column21, 
+                    int column22, 
+                    int column23, 
+                    int column24, 
+                    int column25, 
+                    int column26, 
+                    int column27, 
+                    int column28, 
+                    int column29, 
+                    int column30)
+        {
+            ManyColumns manyColumns = new ManyColumns();
+            manyColumns.Column01 = column01;
+            manyColumns.Column02 = column02;
+            manyColumns.Column03 = column03;
+            manyColumns.Column04 = column04;
+            manyColumns.Column05 = column05;
+            manyColumns.Column06 = column06;
+            manyColumns.Column07 = column07;
+            manyColumns.Column08 = column08;
+            manyColumns.Column09 = column09;
+            manyColumns.Column10 = column10;
+            manyColumns.Column11 = column11;
+            manyColumns.Column12 = column12;
+            manyColumns.Column13 = column13;
+            manyColumns.Column14 = column14;
+            manyColumns.Column15 = column15;
+            manyColumns.Column16 = column16;
+            manyColumns.Column17 = column17;
+            manyColumns.Column18 = column18;
+            manyColumns.Column19 = column19;
+            manyColumns.Column20 = column20;
+            manyColumns.Column21 = column21;
+            manyColumns.Column22 = column22;
+            manyColumns.Column23 = column23;
+            manyColumns.Column24 = column24;
+            manyColumns.Column25 = column25;
+            manyColumns.Column26 = column26;
+            manyColumns.Column27 = column27;
+            manyColumns.Column28 = column28;
+            manyColumns.Column29 = column29;
+            manyColumns.Column30 = column30;
+            return manyColumns;
+        }
+    }
+    /// <summary>
+    /// There are no comments for ManyColumnsViewSingle in the schema.
+    /// </summary>
+    public partial class ManyColumnsViewSingle : global::Microsoft.OData.Client.DataServiceQuerySingle<ManyColumnsView>
+    {
+        /// <summary>
+        /// Initialize a new ManyColumnsViewSingle object.
+        /// </summary>
+        public ManyColumnsViewSingle(global::Microsoft.OData.Client.DataServiceContext context, string path)
+            : base(context, path) {}
+
+        /// <summary>
+        /// Initialize a new ManyColumnsViewSingle object.
+        /// </summary>
+        public ManyColumnsViewSingle(global::Microsoft.OData.Client.DataServiceContext context, string path, bool isComposable)
+            : base(context, path, isComposable) {}
+
+        /// <summary>
+        /// Initialize a new ManyColumnsViewSingle object.
+        /// </summary>
+        public ManyColumnsViewSingle(global::Microsoft.OData.Client.DataServiceQuerySingle<ManyColumnsView> query)
+            : base(query) {}
+
+    }
+    /// <summary>
+    /// There are no comments for ManyColumnsView in the schema.
+    /// </summary>
+    /// <KeyProperties>
+    /// Column01
+    /// </KeyProperties>
+    [global::Microsoft.OData.Client.Key("Column01")]
+    public partial class ManyColumnsView : ManyColumnsBase
+    {
+        /// <summary>
+        /// Create a new ManyColumnsView object.
+        /// </summary>
+        /// <param name="column01">Initial value of Column01.</param>
+        /// <param name="column02">Initial value of Column02.</param>
+        /// <param name="column03">Initial value of Column03.</param>
+        /// <param name="column04">Initial value of Column04.</param>
+        /// <param name="column05">Initial value of Column05.</param>
+        /// <param name="column06">Initial value of Column06.</param>
+        /// <param name="column07">Initial value of Column07.</param>
+        /// <param name="column08">Initial value of Column08.</param>
+        /// <param name="column09">Initial value of Column09.</param>
+        /// <param name="column10">Initial value of Column10.</param>
+        /// <param name="column11">Initial value of Column11.</param>
+        /// <param name="column12">Initial value of Column12.</param>
+        /// <param name="column13">Initial value of Column13.</param>
+        /// <param name="column14">Initial value of Column14.</param>
+        /// <param name="column15">Initial value of Column15.</param>
+        /// <param name="column16">Initial value of Column16.</param>
+        /// <param name="column17">Initial value of Column17.</param>
+        /// <param name="column18">Initial value of Column18.</param>
+        /// <param name="column19">Initial value of Column19.</param>
+        /// <param name="column20">Initial value of Column20.</param>
+        /// <param name="column21">Initial value of Column21.</param>
+        /// <param name="column22">Initial value of Column22.</param>
+        /// <param name="column23">Initial value of Column23.</param>
+        /// <param name="column24">Initial value of Column24.</param>
+        /// <param name="column25">Initial value of Column25.</param>
+        /// <param name="column26">Initial value of Column26.</param>
+        /// <param name="column27">Initial value of Column27.</param>
+        /// <param name="column28">Initial value of Column28.</param>
+        /// <param name="column29">Initial value of Column29.</param>
+        /// <param name="column30">Initial value of Column30.</param>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public static ManyColumnsView CreateManyColumnsView(int column01, 
+                    int column02, 
+                    int column03, 
+                    int column04, 
+                    int column05, 
+                    int column06, 
+                    int column07, 
+                    int column08, 
+                    int column09, 
+                    int column10, 
+                    int column11, 
+                    int column12, 
+                    int column13, 
+                    int column14, 
+                    int column15, 
+                    int column16, 
+                    int column17, 
+                    int column18, 
+                    int column19, 
+                    int column20, 
+                    int column21, 
+                    int column22, 
+                    int column23, 
+                    int column24, 
+                    int column25, 
+                    int column26, 
+                    int column27, 
+                    int column28, 
+                    int column29, 
+                    int column30)
+        {
+            ManyColumnsView manyColumnsView = new ManyColumnsView();
+            manyColumnsView.Column01 = column01;
+            manyColumnsView.Column02 = column02;
+            manyColumnsView.Column03 = column03;
+            manyColumnsView.Column04 = column04;
+            manyColumnsView.Column05 = column05;
+            manyColumnsView.Column06 = column06;
+            manyColumnsView.Column07 = column07;
+            manyColumnsView.Column08 = column08;
+            manyColumnsView.Column09 = column09;
+            manyColumnsView.Column10 = column10;
+            manyColumnsView.Column11 = column11;
+            manyColumnsView.Column12 = column12;
+            manyColumnsView.Column13 = column13;
+            manyColumnsView.Column14 = column14;
+            manyColumnsView.Column15 = column15;
+            manyColumnsView.Column16 = column16;
+            manyColumnsView.Column17 = column17;
+            manyColumnsView.Column18 = column18;
+            manyColumnsView.Column19 = column19;
+            manyColumnsView.Column20 = column20;
+            manyColumnsView.Column21 = column21;
+            manyColumnsView.Column22 = column22;
+            manyColumnsView.Column23 = column23;
+            manyColumnsView.Column24 = column24;
+            manyColumnsView.Column25 = column25;
+            manyColumnsView.Column26 = column26;
+            manyColumnsView.Column27 = column27;
+            manyColumnsView.Column28 = column28;
+            manyColumnsView.Column29 = column29;
+            manyColumnsView.Column30 = column30;
+            return manyColumnsView;
+        }
+    }
+    /// <summary>
     /// There are no comments for OrderSingle in the schema.
     /// </summary>
     public partial class OrderSingle : global::Microsoft.OData.Client.DataServiceQuerySingle<Order>
@@ -1838,6 +2102,29 @@ namespace ODataClient.OdataToEntity.Test.Model
             return new global::ODataClient.OdataToEntity.Test.Model.CustomerSingle(source.Context, source.GetKeyPath(global::Microsoft.OData.Client.Serializer.GetKeyString(source.Context, keys)));
         }
         /// <summary>
+        /// Get an entity of type global::ODataClient.OdataToEntity.Test.Model.ManyColumnsBase as global::ODataClient.OdataToEntity.Test.Model.ManyColumnsBaseSingle specified by key from an entity set
+        /// </summary>
+        /// <param name="source">source entity set</param>
+        /// <param name="keys">dictionary with the names and values of keys</param>
+        public static global::ODataClient.OdataToEntity.Test.Model.ManyColumnsBaseSingle ByKey(this global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.ManyColumnsBase> source, global::System.Collections.Generic.Dictionary<string, object> keys)
+        {
+            return new global::ODataClient.OdataToEntity.Test.Model.ManyColumnsBaseSingle(source.Context, source.GetKeyPath(global::Microsoft.OData.Client.Serializer.GetKeyString(source.Context, keys)));
+        }
+        /// <summary>
+        /// Get an entity of type global::ODataClient.OdataToEntity.Test.Model.ManyColumnsBase as global::ODataClient.OdataToEntity.Test.Model.ManyColumnsBaseSingle specified by key from an entity set
+        /// </summary>
+        /// <param name="source">source entity set</param>
+        /// <param name="column01">The value of column01</param>
+        public static global::ODataClient.OdataToEntity.Test.Model.ManyColumnsBaseSingle ByKey(this global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.ManyColumnsBase> source,
+            int column01)
+        {
+            global::System.Collections.Generic.Dictionary<string, object> keys = new global::System.Collections.Generic.Dictionary<string, object>
+            {
+                { "Column01", column01 }
+            };
+            return new global::ODataClient.OdataToEntity.Test.Model.ManyColumnsBaseSingle(source.Context, source.GetKeyPath(global::Microsoft.OData.Client.Serializer.GetKeyString(source.Context, keys)));
+        }
+        /// <summary>
         /// Get an entity of type global::ODataClient.OdataToEntity.Test.Model.ManyColumns as global::ODataClient.OdataToEntity.Test.Model.ManyColumnsSingle specified by key from an entity set
         /// </summary>
         /// <param name="source">source entity set</param>
@@ -1859,6 +2146,47 @@ namespace ODataClient.OdataToEntity.Test.Model
                 { "Column01", column01 }
             };
             return new global::ODataClient.OdataToEntity.Test.Model.ManyColumnsSingle(source.Context, source.GetKeyPath(global::Microsoft.OData.Client.Serializer.GetKeyString(source.Context, keys)));
+        }
+        /// <summary>
+        /// Cast an entity of type global::ODataClient.OdataToEntity.Test.Model.ManyColumnsBase to its derived type global::ODataClient.OdataToEntity.Test.Model.ManyColumns
+        /// </summary>
+        /// <param name="source">source entity</param>
+        public static global::ODataClient.OdataToEntity.Test.Model.ManyColumnsSingle CastToManyColumns(this global::Microsoft.OData.Client.DataServiceQuerySingle<global::ODataClient.OdataToEntity.Test.Model.ManyColumnsBase> source)
+        {
+            global::Microsoft.OData.Client.DataServiceQuerySingle<global::ODataClient.OdataToEntity.Test.Model.ManyColumns> query = source.CastTo<global::ODataClient.OdataToEntity.Test.Model.ManyColumns>();
+            return new global::ODataClient.OdataToEntity.Test.Model.ManyColumnsSingle(source.Context, query.GetPath(null));
+        }
+        /// <summary>
+        /// Get an entity of type global::ODataClient.OdataToEntity.Test.Model.ManyColumnsView as global::ODataClient.OdataToEntity.Test.Model.ManyColumnsViewSingle specified by key from an entity set
+        /// </summary>
+        /// <param name="source">source entity set</param>
+        /// <param name="keys">dictionary with the names and values of keys</param>
+        public static global::ODataClient.OdataToEntity.Test.Model.ManyColumnsViewSingle ByKey(this global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.ManyColumnsView> source, global::System.Collections.Generic.Dictionary<string, object> keys)
+        {
+            return new global::ODataClient.OdataToEntity.Test.Model.ManyColumnsViewSingle(source.Context, source.GetKeyPath(global::Microsoft.OData.Client.Serializer.GetKeyString(source.Context, keys)));
+        }
+        /// <summary>
+        /// Get an entity of type global::ODataClient.OdataToEntity.Test.Model.ManyColumnsView as global::ODataClient.OdataToEntity.Test.Model.ManyColumnsViewSingle specified by key from an entity set
+        /// </summary>
+        /// <param name="source">source entity set</param>
+        /// <param name="column01">The value of column01</param>
+        public static global::ODataClient.OdataToEntity.Test.Model.ManyColumnsViewSingle ByKey(this global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.ManyColumnsView> source,
+            int column01)
+        {
+            global::System.Collections.Generic.Dictionary<string, object> keys = new global::System.Collections.Generic.Dictionary<string, object>
+            {
+                { "Column01", column01 }
+            };
+            return new global::ODataClient.OdataToEntity.Test.Model.ManyColumnsViewSingle(source.Context, source.GetKeyPath(global::Microsoft.OData.Client.Serializer.GetKeyString(source.Context, keys)));
+        }
+        /// <summary>
+        /// Cast an entity of type global::ODataClient.OdataToEntity.Test.Model.ManyColumnsBase to its derived type global::ODataClient.OdataToEntity.Test.Model.ManyColumnsView
+        /// </summary>
+        /// <param name="source">source entity</param>
+        public static global::ODataClient.OdataToEntity.Test.Model.ManyColumnsViewSingle CastToManyColumnsView(this global::Microsoft.OData.Client.DataServiceQuerySingle<global::ODataClient.OdataToEntity.Test.Model.ManyColumnsBase> source)
+        {
+            global::Microsoft.OData.Client.DataServiceQuerySingle<global::ODataClient.OdataToEntity.Test.Model.ManyColumnsView> query = source.CastTo<global::ODataClient.OdataToEntity.Test.Model.ManyColumnsView>();
+            return new global::ODataClient.OdataToEntity.Test.Model.ManyColumnsViewSingle(source.Context, query.GetPath(null));
         }
         /// <summary>
         /// Get an entity of type global::ODataClient.OdataToEntity.Test.Model.Order as global::ODataClient.OdataToEntity.Test.Model.OrderSingle specified by key from an entity set
@@ -1965,7 +2293,7 @@ namespace ODataClient.Default
             {
                 return string.Concat("Default.", clientType.Name);
             }
-            return null;
+            return clientType.FullName;
         }
         /// <summary>
         /// There are no comments for Categories in the schema.
@@ -2018,6 +2346,23 @@ namespace ODataClient.Default
         }
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
         private global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.ManyColumns> _ManyColumns;
+        /// <summary>
+        /// There are no comments for ManyColumnsView in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.ManyColumnsView> ManyColumnsView
+        {
+            get
+            {
+                if ((this._ManyColumnsView == null))
+                {
+                    this._ManyColumnsView = base.CreateQuery<global::ODataClient.OdataToEntity.Test.Model.ManyColumnsView>("ManyColumnsView");
+                }
+                return this._ManyColumnsView;
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.ManyColumnsView> _ManyColumnsView;
         /// <summary>
         /// There are no comments for Orders in the schema.
         /// </summary>
@@ -2075,6 +2420,14 @@ namespace ODataClient.Default
         public void AddToManyColumns(global::ODataClient.OdataToEntity.Test.Model.ManyColumns manyColumns)
         {
             base.AddObject("ManyColumns", manyColumns);
+        }
+        /// <summary>
+        /// There are no comments for ManyColumnsView in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public void AddToManyColumnsView(global::ODataClient.OdataToEntity.Test.Model.ManyColumnsView manyColumnsView)
+        {
+            base.AddObject("ManyColumnsView", manyColumnsView);
         }
         /// <summary>
         /// There are no comments for Orders in the schema.
@@ -2138,7 +2491,7 @@ namespace ODataClient.Default
         <NavigationProperty Name=""AltOrders"" Type=""Collection(OdataToEntity.Test.Model.Order)"" Partner=""AltCustomer"" />
         <NavigationProperty Name=""Orders"" Type=""Collection(OdataToEntity.Test.Model.Order)"" Partner=""Customer"" />
       </EntityType>
-      <EntityType Name=""ManyColumns"">
+      <EntityType Name=""ManyColumnsBase"">
         <Key>
           <PropertyRef Name=""Column01"" />
         </Key>
@@ -2173,6 +2526,8 @@ namespace ODataClient.Default
         <Property Name=""Column29"" Type=""Edm.Int32"" Nullable=""false"" />
         <Property Name=""Column30"" Type=""Edm.Int32"" Nullable=""false"" />
       </EntityType>
+      <EntityType Name=""ManyColumns"" BaseType=""OdataToEntity.Test.Model.ManyColumnsBase"" />
+      <EntityType Name=""ManyColumnsView"" BaseType=""OdataToEntity.Test.Model.ManyColumnsBase"" />
       <EntityType Name=""Order"">
         <Key>
           <PropertyRef Name=""Id"" />
@@ -2211,8 +2566,6 @@ namespace ODataClient.Default
       <Function Name=""OrderContext.GenerateDatabaseName"">
         <ReturnType Type=""Collection(Edm.String)"" Nullable=""false"" />
       </Function>
-      <Action Name=""OrderContext.InitDb"" />
-      <Action Name=""OrderContext.InitManyColumns"" />
       <Function Name=""OrderContext.GetOrders"">
         <Parameter Name=""id"" Type=""Edm.Int32"" />
         <Parameter Name=""name"" Type=""Edm.String"" />
@@ -2251,6 +2604,7 @@ namespace ODataClient.Default
           <NavigationPropertyBinding Path=""Orders"" Target=""Orders"" />
         </EntitySet>
         <EntitySet Name=""ManyColumns"" EntityType=""OdataToEntity.Test.Model.ManyColumns"" />
+        <EntitySet Name=""ManyColumnsView"" EntityType=""OdataToEntity.Test.Model.ManyColumnsView"" />
         <EntitySet Name=""Orders"" EntityType=""OdataToEntity.Test.Model.Order"">
           <NavigationPropertyBinding Path=""AltCustomer"" Target=""Customers"" />
           <NavigationPropertyBinding Path=""Customer"" Target=""Customers"" />
@@ -2260,8 +2614,6 @@ namespace ODataClient.Default
           <NavigationPropertyBinding Path=""Order"" Target=""Orders"" />
         </EntitySet>
         <FunctionImport Name=""GenerateDatabaseName"" Function=""OdataToEntity.Test.Model.OrderContext.GenerateDatabaseName"" />
-        <ActionImport Name=""InitDb"" Action=""OdataToEntity.Test.Model.OrderContext.InitDb"" />
-        <ActionImport Name=""InitManyColumns"" Action=""OdataToEntity.Test.Model.OrderContext.InitManyColumns"" />
         <FunctionImport Name=""dbo.GetOrders"" Function=""OdataToEntity.Test.Model.OrderContext.GetOrders"" />
         <ActionImport Name=""ResetDb"" Action=""OdataToEntity.Test.Model.OrderContext.ResetDb"" />
         <ActionImport Name=""ResetManyColumns"" Action=""OdataToEntity.Test.Model.OrderContext.ResetManyColumns"" />
@@ -2344,20 +2696,6 @@ namespace ODataClient.Default
             return this.CreateFunctionQuery<global::ODataClient.OdataToEntity.Test.Model.Order>("", "TableFunctionWithParameters", false, new global::Microsoft.OData.Client.UriOperationParameter("id", id),
                     new global::Microsoft.OData.Client.UriOperationParameter("name", name),
                     new global::Microsoft.OData.Client.UriOperationParameter("status", status));
-        }
-        /// <summary>
-        /// There are no comments for InitDb in the schema.
-        /// </summary>
-        public global::Microsoft.OData.Client.DataServiceActionQuery InitDb()
-        {
-            return new global::Microsoft.OData.Client.DataServiceActionQuery(this, this.BaseUri.OriginalString.Trim('/') + "/InitDb");
-        }
-        /// <summary>
-        /// There are no comments for InitManyColumns in the schema.
-        /// </summary>
-        public global::Microsoft.OData.Client.DataServiceActionQuery InitManyColumns()
-        {
-            return new global::Microsoft.OData.Client.DataServiceActionQuery(this, this.BaseUri.OriginalString.Trim('/') + "/InitManyColumns");
         }
         /// <summary>
         /// There are no comments for ResetDb in the schema.

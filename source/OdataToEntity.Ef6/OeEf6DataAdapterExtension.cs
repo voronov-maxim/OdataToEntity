@@ -11,7 +11,8 @@ namespace OdataToEntity.Ef6
             using (var context = (DbContext)dataAdapter.CreateDataContext())
             {
                 var metadataProvider = new OeEf6EdmModelMetadataProvider(context);
-                var modelBuilder = new OeEdmModelBuilder(metadataProvider, dataAdapter.EntitySetMetaAdapters.ToDictionary());
+                var modelBuilder = new OeEdmModelBuilder(metadataProvider);
+                modelBuilder.AddEntitySetRange(dataAdapter.EntitySetMetaAdapters.GetEntitySetNamesEntityTypes());
                 Db.OeDataAdapterExtension.BuildOperations(dataAdapter, modelBuilder);
                 return modelBuilder.BuildEdmModel();
             }

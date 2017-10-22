@@ -56,13 +56,11 @@ namespace OdataToEntity.Db
                     return entitySetMetaAdapter;
             return null;
         }
-        public IDictionary<String, Type> ToDictionary()
+        public IEnumerable<KeyValuePair<String, Type>> GetEntitySetNamesEntityTypes()
         {
-            var entitySets = new Dictionary<String, Type>(base.Count);
             var entitySetMetaAdapters = (OeEntitySetMetaAdapter[])base.Items;
             foreach (OeEntitySetMetaAdapter entitySetMetaAdapter in entitySetMetaAdapters)
-                entitySets.Add(entitySetMetaAdapter.EntitySetName, entitySetMetaAdapter.EntityType);
-            return entitySets;
+                yield return new KeyValuePair<string, Type>(entitySetMetaAdapter.EntitySetName, entitySetMetaAdapter.EntityType);
         }
 
         public ModelBuilder.OeEdmModelMetadataProvider EdmModelMetadataProvider => _metadataProvider;

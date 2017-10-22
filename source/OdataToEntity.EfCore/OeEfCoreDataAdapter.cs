@@ -195,9 +195,9 @@ namespace OdataToEntity.EfCore
         private static Db.OeEntitySetMetaAdapterCollection CreateEntitySetMetaAdapters()
         {
             var entitySetMetaAdapters = new List<Db.OeEntitySetMetaAdapter>();
-            foreach (PropertyInfo property in typeof(T).GetTypeInfo().GetProperties())
+            foreach (PropertyInfo property in typeof(T).GetProperties())
             {
-                Type dbSetType = property.PropertyType.GetTypeInfo().GetInterface(typeof(IQueryable<>).FullName);
+                Type dbSetType = property.PropertyType.GetInterface(typeof(IQueryable<>).FullName);
                 if (dbSetType != null)
                     entitySetMetaAdapters.Add(CreateDbSetInvoker(property, dbSetType));
             }
@@ -207,7 +207,7 @@ namespace OdataToEntity.EfCore
         private static Db.OeEntitySetMetaAdapter CreateDbSetInvoker(PropertyInfo property, Type dbSetType)
         {
             MethodInfo mi = ((Func<PropertyInfo, Db.OeEntitySetMetaAdapter>)CreateDbSetInvoker<Object>).GetMethodInfo().GetGenericMethodDefinition();
-            Type entityType = dbSetType.GetTypeInfo().GetGenericArguments()[0];
+            Type entityType = dbSetType.GetGenericArguments()[0];
             MethodInfo func = mi.GetGenericMethodDefinition().MakeGenericMethod(entityType);
             return (Db.OeEntitySetMetaAdapter)func.Invoke(null, new Object[] { property });
         }

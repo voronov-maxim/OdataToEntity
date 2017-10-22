@@ -52,7 +52,7 @@ namespace OdataToEntity.ModelBuilder
             Object instance = Activator.CreateInstance(clrType);
             foreach (ODataProperty edmProperty in resource.Properties)
             {
-                PropertyInfo clrProperty = clrType.GetTypeInfo().GetProperty(edmProperty.Name);
+                PropertyInfo clrProperty = clrType.GetProperty(edmProperty.Name);
                 clrProperty.SetValue(instance, GetValue(edmModel, edmProperty.Value));
             }
             return instance;

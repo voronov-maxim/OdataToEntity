@@ -83,7 +83,7 @@ namespace OdataToEntity.ModelBuilder
         {
             var edmTypeMappings = new Dictionary<EdmPrimitiveTypeKind, Type>();
             foreach (KeyValuePair<Type, IEdmPrimitiveType> pair in clrTypeMappings)
-                if (!(pair.Key.GetTypeInfo().IsGenericType && pair.Key.GetGenericTypeDefinition() == typeof(Nullable<>)))
+                if (!(pair.Key.IsGenericType && pair.Key.GetGenericTypeDefinition() == typeof(Nullable<>)))
                 {
                     if (!edmTypeMappings.ContainsKey(pair.Value.PrimitiveKind))
                         edmTypeMappings.Add(pair.Value.PrimitiveKind, pair.Key);
@@ -116,7 +116,7 @@ namespace OdataToEntity.ModelBuilder
         }
         public static bool IsNullable(Type clrType)
         {
-            return clrType.GetTypeInfo().IsClass || (clrType.GetTypeInfo().IsGenericType && clrType.GetGenericTypeDefinition() == typeof(Nullable<>));
+            return clrType.IsClass || (clrType.IsGenericType && clrType.GetGenericTypeDefinition() == typeof(Nullable<>));
         }
 
     }

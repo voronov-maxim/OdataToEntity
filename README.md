@@ -61,7 +61,7 @@ var uri = new Uri("http://dummy/Orders?$select=Name");
 //The result of the query
 var response = new MemoryStream();
 //Execute query
-await parser.ExecuteGetAsync(uri, OeRequestHeaders.Default, response, CancellationToken.None);
+await parser.ExecuteGetAsync(uri, OeRequestHeaders.JsonDefault, response, CancellationToken.None);
 ```
 
 ### Sample OData batch request
@@ -110,7 +110,7 @@ var parser = new OeParser(new Uri("http://dummy"), dataAdapter, dataAdapter.Buil
 //The result of the stored procedure
 var response = new MemoryStream();
 //Execute sored procedure
-await parser.ExecuteGetAsync(new Uri("http://dummy/GetOrders(name='Order 1',id=1,status=null)"), OeRequestHeaders.Default, response, CancellationToken.None);
+await parser.ExecuteGetAsync(new Uri("http://dummy/GetOrders(name='Order 1',id=1,status=null)"), OeRequestHeaders.JsonDefault, response, CancellationToken.None);
 ```
 
 For use pooling (DbContextPool) in Entity Framework Core create instance OeEfCoreDataAdapter use constructor with DbContextOptions parameter.

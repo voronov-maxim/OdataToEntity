@@ -51,14 +51,14 @@ namespace OdataToEntity.Parsers
                 for (int i = 0; i < typeArguments.Length; i++)
                 {
                     Type type = expressions[i].Type;
-                    if (type.GetTypeInfo().IsGenericType && type.GetGenericTypeDefinition() == typeof(IOrderedEnumerable<>))
-                        typeArguments[i] = typeof(IEnumerable<>).MakeGenericType(type.GetTypeInfo().GetGenericArguments());
+                    if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IOrderedEnumerable<>))
+                        typeArguments[i] = typeof(IEnumerable<>).MakeGenericType(type.GetGenericArguments());
                     else
                         typeArguments[i] = type;
                 }
                 Type tupleType = GetTupleType(typeArguments);
-                ConstructorInfo ctorInfo = tupleType.GetTypeInfo().GetConstructor(typeArguments);
-                return Expression.New(ctorInfo, expressions, tupleType.GetTypeInfo().GetProperties());
+                ConstructorInfo ctorInfo = tupleType.GetConstructor(typeArguments);
+                return Expression.New(ctorInfo, expressions, tupleType.GetProperties());
             }
 
             NewExpression restNew = null;
@@ -85,15 +85,15 @@ namespace OdataToEntity.Parsers
         }
         public static Type GetCollectionItemType(Type collectionType)
         {
-            if (collectionType.GetTypeInfo().IsPrimitive)
+            if (collectionType.IsPrimitive)
                 return null;
 
-            if (collectionType.GetTypeInfo().IsGenericType && collectionType.GetGenericTypeDefinition() == typeof(IEnumerable<>))
-                return collectionType.GetTypeInfo().GetGenericArguments()[0];
+            if (collectionType.IsGenericType && collectionType.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+                return collectionType.GetGenericArguments()[0];
 
-            foreach (Type iface in collectionType.GetTypeInfo().GetInterfaces())
-                if (iface.GetTypeInfo().IsGenericType && iface.GetGenericTypeDefinition() == typeof(IEnumerable<>))
-                    return iface.GetTypeInfo().GetGenericArguments()[0];
+            foreach (Type iface in collectionType.GetInterfaces())
+                if (iface.IsGenericType && iface.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+                    return iface.GetGenericArguments()[0];
             return null;
         }
         private static Type GetTupleType(Type[] typeArguments)
@@ -133,7 +133,7 @@ namespace OdataToEntity.Parsers
         }
         public static IReadOnlyList<MemberExpression> GetPropertyExpression(Expression expression)
         {
-            PropertyInfo[] properties = expression.Type.GetTypeInfo().GetProperties();
+            PropertyInfo[] properties = expression.Type.GetProperties();
             var expressions = new List<MemberExpression>(properties.Length);
             for (int i = 0; i < properties.Length; i++)
             {
@@ -153,11 +153,11 @@ namespace OdataToEntity.Parsers
         public static bool IsNullable(Expression expression)
         {
             Type type = expression.Type;
-            return type.GetTypeInfo().IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>);
+            return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>);
         }
         public static bool IsTupleType(Type type)
         {
-            if (!type.GetTypeInfo().IsGenericType)
+            if (!type.IsGenericType)
                 return false;
 
             Type tupleType = type.GetGenericTypeDefinition();

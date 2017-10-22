@@ -22,7 +22,7 @@ namespace OdataToEntity.Parsers
 
         public static MethodInfo GetAggMethodInfo(String methodName, Type returnType)
         {
-            foreach (MethodInfo methodInfo in typeof(Enumerable).GetTypeInfo().GetMethods())
+            foreach (MethodInfo methodInfo in typeof(Enumerable).GetMethods())
             {
                 if (methodInfo.Name != methodName)
                     continue;
@@ -31,7 +31,7 @@ namespace OdataToEntity.Parsers
                 if (parameters.Length != 2)
                     continue;
 
-                Type[] arguments = parameters[1].ParameterType.GetTypeInfo().GetGenericArguments();
+                Type[] arguments = parameters[1].ParameterType.GetGenericArguments();
                 if (arguments.Length != 2)
                     continue;
 

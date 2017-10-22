@@ -69,7 +69,7 @@ namespace OdataToEntity.Parsers
     private static PropertyInfo GetTuplePropertyByEntityType(Type tupleType, IEdmEntityType edmEntityType)
     {
         String fullName = edmEntityType.FullName();
-        foreach (PropertyInfo propertyInfo in tupleType.GetTypeInfo().GetProperties())
+        foreach (PropertyInfo propertyInfo in tupleType.GetProperties())
             if (propertyInfo.PropertyType.FullName == fullName)
                 return propertyInfo;
 
@@ -78,7 +78,7 @@ namespace OdataToEntity.Parsers
     private Expression Lambda(CollectionNavigationNode sourceNode, SingleValueNode body, String methodName)
     {
         Expression source = TranslateNode(sourceNode);
-        PropertyInfo sourceNavigationProperty = Parameter.Type.GetTypeInfo().GetProperty(sourceNode.NavigationProperty.Name);
+        PropertyInfo sourceNavigationProperty = Parameter.Type.GetProperty(sourceNode.NavigationProperty.Name);
         Type targetType = OeExpressionHelper.GetCollectionItemType(sourceNavigationProperty.PropertyType);
 
         ParameterExpression it = Expression.Parameter(targetType);
@@ -177,7 +177,7 @@ namespace OdataToEntity.Parsers
     public override Expression Visit(CollectionNavigationNode nodeIn)
     {
         Expression source = TranslateNode(nodeIn.Source);
-        PropertyInfo propertyInfo = source.Type.GetTypeInfo().GetProperty(nodeIn.NavigationProperty.Name);
+        PropertyInfo propertyInfo = source.Type.GetProperty(nodeIn.NavigationProperty.Name);
         return Expression.Property(source, propertyInfo);
     }
     public override Expression Visit(ConstantNode nodeIn)
@@ -205,7 +205,7 @@ namespace OdataToEntity.Parsers
                 }
                 else
                     clrType = ModelBuilder.PrimitiveTypeHelper.GetClrType(primitiveTypeKind);
-                if (nodeIn.TypeReference.IsNullable && clrType.GetTypeInfo().IsValueType)
+                if (nodeIn.TypeReference.IsNullable && clrType.IsValueType)
                     clrType = typeof(Nullable<>).MakeGenericType(clrType);
 
                 ConstantExpression newConstantExpression = Expression.Constant(null, clrType);
@@ -234,7 +234,7 @@ namespace OdataToEntity.Parsers
         else
             source = Parameter;
 
-        PropertyInfo propertyInfo = source.Type.GetTypeInfo().GetProperty(nodeIn.NavigationProperty.Name);
+        PropertyInfo propertyInfo = source.Type.GetProperty(nodeIn.NavigationProperty.Name);
         if (propertyInfo == null)
         {
             if (TuplePropertyByAliasName == null)
@@ -250,7 +250,7 @@ namespace OdataToEntity.Parsers
         if (TuplePropertyByAliasName == null)
         {
             Expression e = TranslateNode(nodeIn.Source);
-            PropertyInfo property = e.Type.GetTypeInfo().GetProperty(nodeIn.Property.Name);
+            PropertyInfo property = e.Type.GetProperty(nodeIn.Property.Name);
             if (property == null)
             {
                 if (!OeExpressionHelper.IsTupleType(e.Type))
@@ -268,7 +268,7 @@ namespace OdataToEntity.Parsers
                 else
                 {
                     e = Expression.Property(e, property);
-                    property = e.Type.GetTypeInfo().GetProperty(nodeIn.Property.Name);
+                    property = e.Type.GetProperty(nodeIn.Property.Name);
                 }
             }
             return Expression.Property(e, property);

@@ -91,11 +91,11 @@ namespace OdataToEntity.Parsers
             var expressions = new List<Expression>();
             if (sourceType.GetGenericTypeDefinition() == typeof(IGrouping<,>))
             {
-                PropertyInfo keyProperty = sourceType.GetTypeInfo().GetProperty(nameof(IGrouping<Object, Object>.Key));
+                PropertyInfo keyProperty = sourceType.GetProperty(nameof(IGrouping<Object, Object>.Key));
                 MemberExpression key = Expression.Property(sourceParameter, keyProperty);
                 expressions.Add(key);
 
-                lambdaParameter = Expression.Parameter(sourceType.GetTypeInfo().GetGenericArguments()[1]);
+                lambdaParameter = Expression.Parameter(sourceType.GetGenericArguments()[1]);
             }
 
             var visitor = CreateVisitor(lambdaParameter);
@@ -239,7 +239,7 @@ namespace OdataToEntity.Parsers
 
             bool nullable = PrimitiveTypeHelper.IsNullable(clrType);
             IEdmTypeReference edmTypeRef;
-            if (clrType.GetTypeInfo().IsEnum)
+            if (clrType.IsEnum)
             {
                 var edmEnumType = (IEdmEnumType)model.FindType(clrType.FullName);
                 edmTypeRef = new EdmEnumTypeReference(edmEnumType, nullable);
@@ -274,7 +274,7 @@ namespace OdataToEntity.Parsers
                     int itemIndex;
                     if (_aggProperties[i].IsGroup)
                     {
-                        propertyInfo = source.Type.GetTypeInfo().GetProperty("Item1");
+                        propertyInfo = source.Type.GetProperty("Item1");
                         source = Expression.Property(source, propertyInfo);
                         itemIndex = groupCount;
                     }
@@ -282,7 +282,7 @@ namespace OdataToEntity.Parsers
                         itemIndex = i - groupCount + 2;
 
                     String propertyName = "Item" + itemIndex.ToString();
-                    propertyInfo = source.Type.GetTypeInfo().GetProperty(propertyName);
+                    propertyInfo = source.Type.GetProperty(propertyName);
                     return Expression.Property(source, propertyInfo);
                 }
             }

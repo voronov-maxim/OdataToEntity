@@ -44,9 +44,9 @@ namespace OdataToEntity.Parsers
             }
             protected override Expression VisitConstant(ConstantExpression node)
             {
-                if (node.Type.GetTypeInfo().IsGenericType)
+                if (node.Type.IsGenericType)
                 {
-                    Type[] args = node.Type.GetTypeInfo().GetGenericArguments();
+                    Type[] args = node.Type.GetGenericArguments();
                     if (args.Length == 1 && args[0] == _query.ElementType)
                         return _query.Expression;
                 }
@@ -77,9 +77,9 @@ namespace OdataToEntity.Parsers
             }
             protected override Expression VisitConstant(ConstantExpression node)
             {
-                if (node.Type.GetTypeInfo().IsGenericType)
+                if (node.Type.IsGenericType)
                 {
-                    Type[] args = node.Type.GetTypeInfo().GetGenericArguments();
+                    Type[] args = node.Type.GetGenericArguments();
                     if (args.Length == 1 && args[0] == _query.ElementType)
                         return _query.Expression;
                 }

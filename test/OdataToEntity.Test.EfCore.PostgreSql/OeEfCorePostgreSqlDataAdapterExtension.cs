@@ -17,7 +17,8 @@ namespace OdataToEntity.EfCore
                 model.Relational().DefaultSchema = schema;
 
                 var metadataProvider = new OeEfCoreEdmModelMetadataProvider(context.Model);
-                var modelBuilder = new OeEdmModelBuilder(metadataProvider, dataAdapter.EntitySetMetaAdapters.ToDictionary());
+                var modelBuilder = new OeEdmModelBuilder(metadataProvider);
+                modelBuilder.AddEntitySetRange(dataAdapter.EntitySetMetaAdapters.GetEntitySetNamesEntityTypes());
                 Db.OeDataAdapterExtension.BuildOperations(dataAdapter, modelBuilder);
                 return modelBuilder.BuildEdmModel();
             }

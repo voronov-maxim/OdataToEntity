@@ -49,6 +49,7 @@ namespace OdataToEntity.Test.Model
         public DbSet<Category> Categories { get; set; }
         public DbSet<Customer> Customers { get; set; }
         public DbSet<ManyColumns> ManyColumns { get; set; }
+        public DbSet<ManyColumnsView> ManyColumnsView { get; set; }
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
     }

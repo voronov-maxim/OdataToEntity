@@ -75,7 +75,7 @@ namespace OdataToEntity.Parsers
                     odataValue = new ODataNullValue() { TypeAnnotation = accessor.TypeAnnotation };
                 else
                 {
-                    if (value.GetType().GetTypeInfo().IsEnum)
+                    if (value.GetType().IsEnum)
                         odataValue = new ODataEnumValue(value.ToString());
                     else
                         odataValue = new ODataPrimitiveValue(value);

@@ -84,7 +84,7 @@ namespace OdataToEntity.Parsers
                 PropertyInfo propertyInfo;
                 if (i < _expressions.Count - 1)
                 {
-                    PropertyInfo[] properties = _expressions[i].Type.GetTypeInfo().GetProperties();
+                    PropertyInfo[] properties = _expressions[i].Type.GetProperties();
                     propertyInfo = properties[properties.Length - 1];
                 }
                 else

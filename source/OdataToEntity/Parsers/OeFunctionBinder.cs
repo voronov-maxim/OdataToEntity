@@ -17,7 +17,7 @@ namespace OdataToEntity.Parsers
 
             if (OeExpressionHelper.IsNullable(expressions[0]))
             {
-                MethodInfo getValueOrDefault = expressions[0].Type.GetTypeInfo().GetMethod("GetValueOrDefault", Type.EmptyTypes);
+                MethodInfo getValueOrDefault = expressions[0].Type.GetMethod("GetValueOrDefault", Type.EmptyTypes);
                 MethodCallExpression callExpression = Expression.Call(expressions[0], getValueOrDefault);
                 expressions[0] = callExpression;
             }
@@ -101,19 +101,19 @@ namespace OdataToEntity.Parsers
                 case 1:
                     if (isProperty)
                     {
-                        propertyInfo = expressions[0].Type.GetTypeInfo().GetProperty(name);
+                        propertyInfo = expressions[0].Type.GetProperty(name);
                         return Expression.Property(expressions[0], propertyInfo);
                     }
                     else
                     {
-                        methodInfo = expressions[0].Type.GetTypeInfo().GetMethod(name, Type.EmptyTypes);
+                        methodInfo = expressions[0].Type.GetMethod(name, Type.EmptyTypes);
                         return Expression.Call(expressions[0], methodInfo);
                     }
                 case 2:
-                    methodInfo = expressions[0].Type.GetTypeInfo().GetMethod(name, new Type[] { expressions[1].Type });
+                    methodInfo = expressions[0].Type.GetMethod(name, new Type[] { expressions[1].Type });
                     return Expression.Call(expressions[0], methodInfo, expressions[1]);
                 case 3:
-                    methodInfo = expressions[0].Type.GetTypeInfo().GetMethod(name, new Type[] { expressions[1].Type, expressions[2].Type });
+                    methodInfo = expressions[0].Type.GetMethod(name, new Type[] { expressions[1].Type, expressions[2].Type });
                     return Expression.Call(expressions[0], methodInfo, expressions[1], expressions[2]);
                 default:
                     throw new NotImplementedException(name);
@@ -131,7 +131,7 @@ namespace OdataToEntity.Parsers
         private static Expression CeilingFunction(List<Expression> expressions)
         {
             Type type = expressions[0].Type == typeof(double) ? typeof(double) : typeof(Decimal);
-            MethodInfo methodInfo = typeof(Math).GetTypeInfo().GetMethod("Ceiling", new[] { type });
+            MethodInfo methodInfo = typeof(Math).GetMethod("Ceiling", new[] { type });
             return Expression.Call(null, methodInfo, expressions[0]);
         }
         private static Expression ConcatFunction(List<Expression> expressions)
@@ -142,12 +142,12 @@ namespace OdataToEntity.Parsers
         private static Expression FloorFunction(List<Expression> expressions)
         {
             Type type = expressions[0].Type == typeof(double) ? typeof(double) : typeof(Decimal);
-            MethodInfo methodInfo = typeof(Math).GetTypeInfo().GetMethod("Floor", new[] { type });
+            MethodInfo methodInfo = typeof(Math).GetMethod("Floor", new[] { type });
             return Expression.Call(null, methodInfo, expressions[0]);
         }
         private static Expression FractionalSecondsFunction(List<Expression> expressions)
         {
-            PropertyInfo propertyInfo = expressions[0].Type.GetTypeInfo().GetProperty("Millisecond");
+            PropertyInfo propertyInfo = expressions[0].Type.GetProperty("Millisecond");
             Expression expression = Expression.Property(expressions[0], propertyInfo);
             expression = Expression.Convert(expression, typeof(Decimal));
             return Expression.Divide(expression, Expression.Constant((Decimal)1000));
@@ -155,7 +155,7 @@ namespace OdataToEntity.Parsers
         private static Expression RoundFunction(List<Expression> expressions)
         {
             Type type = expressions[0].Type == typeof(double) ? typeof(double) : typeof(Decimal);
-            MethodInfo methodInfo = typeof(Math).GetTypeInfo().GetMethod("Round", new[] { type });
+            MethodInfo methodInfo = typeof(Math).GetMethod("Round", new[] { type });
             return Expression.Call(null, methodInfo, expressions[0]);
         }
     }

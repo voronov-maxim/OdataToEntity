@@ -149,8 +149,7 @@ namespace OdataToEntity.Test.Model
 		#endregion
 	}
 
-    [Table(Schema = "dbo", Name = "ManyColumns")]
-    public partial class ManyColumns
+    public class ManyColumnsBase
     {
         [Column, PrimaryKey] public int Column01 { get; set; } // int
         [Column, NotNull]    public int Column02 { get; set; } // int
@@ -182,6 +181,11 @@ namespace OdataToEntity.Test.Model
         [Column, NotNull]    public int Column28 { get; set; } // int
         [Column, NotNull]    public int Column29 { get; set; } // int
         [Column, NotNull]    public int Column30 { get; set; } // int
+    }
+
+    [Table(Schema = "dbo", Name = "ManyColumns")]
+    public sealed class ManyColumns : ManyColumnsBase
+    {
     }
 
     [Table(Schema="dbo", Name="Orders")]
