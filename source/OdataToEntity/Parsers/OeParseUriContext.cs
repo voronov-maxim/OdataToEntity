@@ -91,15 +91,17 @@ namespace OdataToEntity.Parsers
         private readonly IEdmEntitySetBase _entitySet;
         private readonly bool _isCountSegment;
         private readonly ODataUri _odataUri;
+        private readonly int _pageSize;
         private readonly IReadOnlyList<OeParseNavigationSegment> _parseNavigationSegments;
 
-        public OeParseUriContext(IEdmModel edmModel, ODataUri odataUri, IEdmEntitySetBase entitySet, IReadOnlyList<OeParseNavigationSegment> parseNavigationSegments, bool isCountSegment)
+        public OeParseUriContext(IEdmModel edmModel, ODataUri odataUri, IEdmEntitySetBase entitySet, IReadOnlyList<OeParseNavigationSegment> parseNavigationSegments, bool isCountSegment, int pageSize)
         {
             _edmModel = edmModel;
             _odataUri = odataUri;
             _entitySet = entitySet;
             _parseNavigationSegments = parseNavigationSegments;
             _isCountSegment = isCountSegment;
+            _pageSize = pageSize;
         }
 
         public Expression CreateCountExpression(IQueryable query, Expression expression)
@@ -156,6 +158,7 @@ namespace OdataToEntity.Parsers
         public OeRequestHeaders Headers { get; set; }
         public bool IsCountSegment => _isCountSegment;
         public ODataUri ODataUri => _odataUri;
+        public int PageSize => _pageSize;
         public IReadOnlyList<Db.OeQueryCacheDbParameterValue> ParameterValues { get; set; }
         public IReadOnlyList<OeParseNavigationSegment> ParseNavigationSegments => _parseNavigationSegments;
     }

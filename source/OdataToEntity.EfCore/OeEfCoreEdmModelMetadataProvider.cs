@@ -3,8 +3,8 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using OdataToEntity.ModelBuilder;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
+using System.Reflection;
 
 namespace OdataToEntity.EfCore
 {
@@ -19,101 +19,100 @@ namespace OdataToEntity.EfCore
             _entityTypes = _efModel.GetEntityTypes().ToDictionary(e => e.ClrType);
         }
 
-        private IEnumerable<IEntityType> GetEntityTypes(PropertyDescriptor propertyDescriptor)
+        private IEnumerable<IEntityType> GetEntityTypes(PropertyInfo propertyInfo)
         {
             IEntityType efEntityType;
-            if (_entityTypes.TryGetValue(propertyDescriptor.ComponentType, out efEntityType))
+            if (_entityTypes.TryGetValue(propertyInfo.DeclaringType, out efEntityType))
                 yield return efEntityType;
             else
                 foreach (KeyValuePair<Type, IEntityType> pair in _entityTypes)
-                    if (propertyDescriptor.ComponentType.IsAssignableFrom(pair.Key))
+                    if (propertyInfo.DeclaringType.IsAssignableFrom(pair.Key))
                         yield return pair.Value;
         }
-        public override PropertyDescriptor[] GetForeignKey(PropertyDescriptor propertyDescriptor)
+        public override PropertyInfo[] GetForeignKey(PropertyInfo propertyInfo)
         {
-            foreach (IEntityType efEntityType in GetEntityTypes(propertyDescriptor))
+            foreach (IEntityType efEntityType in GetEntityTypes(propertyInfo))
                 foreach (IForeignKey fkey in efEntityType.GetForeignKeys())
                 {
                     if (fkey.PrincipalEntityType == efEntityType && fkey.PrincipalEntityType != fkey.DeclaringEntityType)
                         continue;
 
-                    if (fkey.DependentToPrincipal.Name == propertyDescriptor.Name)
+                    if (fkey.DependentToPrincipal.Name == propertyInfo.Name)
                     {
-                        PropertyDescriptorCollection clrProperties = TypeDescriptor.GetProperties(propertyDescriptor.ComponentType);
-                        var propertyDescriptors = new PropertyDescriptor[fkey.Properties.Count];
+                        var propertyInfos = new PropertyInfo[fkey.Properties.Count];
                         for (int i = 0; i < fkey.Properties.Count; i++)
-                            propertyDescriptors[i] = clrProperties[fkey.Properties[i].Name];
-                        return propertyDescriptors;
+                            propertyInfos[i] = propertyInfo.DeclaringType.GetPropertyIgnoreCase(fkey.Properties[i].Name);
+                        return propertyInfos;
                     }
 
                     for (int i = 0; i < fkey.Properties.Count; i++)
-                        if (fkey.Properties[i].Name == propertyDescriptor.Name)
-                            return new PropertyDescriptor[] { TypeDescriptor.GetProperties(propertyDescriptor.ComponentType)[fkey.DependentToPrincipal.Name] };
+                        if (fkey.Properties[i].Name == propertyInfo.Name)
+                            return new PropertyInfo[] { propertyInfo.DeclaringType.GetPropertyIgnoreCase(fkey.DependentToPrincipal.Name) };
                 }
 
             return null;
         }
-        public override PropertyDescriptor GetInverseProperty(PropertyDescriptor propertyDescriptor)
+        public override PropertyInfo GetInverseProperty(PropertyInfo propertyInfo)
         {
-            foreach (IEntityType efEntityType in GetEntityTypes(propertyDescriptor))
+            foreach (IEntityType efEntityType in GetEntityTypes(propertyInfo))
             {
                 foreach (IForeignKey fkey in efEntityType.GetForeignKeys())
-                    if (fkey.DependentToPrincipal.Name == propertyDescriptor.Name)
+                    if (fkey.DependentToPrincipal.Name == propertyInfo.Name)
                     {
                         INavigation inverseProperty = fkey.DependentToPrincipal.FindInverse();
-                        return inverseProperty == null ? null : TypeDescriptor.GetProperties(inverseProperty.DeclaringEntityType.ClrType)[inverseProperty.Name];
+                        return inverseProperty == null ? null : inverseProperty.DeclaringEntityType.ClrType.GetPropertyIgnoreCase(inverseProperty.Name);
                     }
 
                 foreach (IForeignKey fkey in efEntityType.GetReferencingForeignKeys())
-                    if (fkey.PrincipalToDependent != null && fkey.PrincipalToDependent.Name == propertyDescriptor.Name)
+                    if (fkey.PrincipalToDependent != null && fkey.PrincipalToDependent.Name == propertyInfo.Name)
                     {
                         INavigation inverseProperty = fkey.PrincipalToDependent.FindInverse();
-                        return inverseProperty == null ? null : TypeDescriptor.GetProperties(inverseProperty.DeclaringEntityType.ClrType)[inverseProperty.Name];
+                        return inverseProperty == null ? null : inverseProperty.DeclaringEntityType.ClrType.GetPropertyIgnoreCase(inverseProperty.Name);
                     }
             }
 
             return null;
         }
-        public override int GetOrder(PropertyDescriptor propertyDescriptor)
+        public override int GetOrder(PropertyInfo propertyInfo)
         {
-            foreach (IEntityType efEntityType in GetEntityTypes(propertyDescriptor))
+            foreach (IEntityType efEntityType in GetEntityTypes(propertyInfo))
             {
                 foreach (IKey key in efEntityType.GetKeys())
                     for (int i = 0; i < key.Properties.Count; i++)
-                        if (key.Properties[i].Name == propertyDescriptor.Name)
+                        if (key.Properties[i].Name == propertyInfo.Name)
                             return i;
 
                 foreach (IForeignKey fkey in efEntityType.GetForeignKeys())
                     for (int i = 0; i < fkey.Properties.Count; i++)
-                        if (fkey.Properties[i].Name == propertyDescriptor.Name)
+                        if (fkey.Properties[i].Name == propertyInfo.Name)
                             return i;
             }
 
             return -1;
         }
-        public override bool IsKey(PropertyDescriptor propertyDescriptor)
+        public override bool IsKey(PropertyInfo propertyInfo)
         {
-            foreach (IEntityType efEntityType in GetEntityTypes(propertyDescriptor))
+            foreach (IEntityType efEntityType in GetEntityTypes(propertyInfo))
                 foreach (IKey key in efEntityType.GetKeys())
                     for (int i = 0; i < key.Properties.Count; i++)
-                        if (key.Properties[i].Name == propertyDescriptor.Name)
+                        if (key.Properties[i].Name == propertyInfo.Name)
                             return true;
             return false;
         }
-        public override bool IsNotMapped(PropertyDescriptor propertyDescriptor)
+        public override bool IsNotMapped(PropertyInfo propertyInfo)
         {
-            foreach (IEntityType efEntityType in GetEntityTypes(propertyDescriptor))
+            foreach (IEntityType efEntityType in GetEntityTypes(propertyInfo))
             {
                 foreach (IProperty efProperty in efEntityType.GetProperties())
-                    if (efProperty.Name == propertyDescriptor.Name)
+                    if (efProperty.Name == propertyInfo.Name)
                         return false;
 
                 foreach (IForeignKey fkey in efEntityType.GetForeignKeys())
-                    if (fkey.DependentToPrincipal.Name == propertyDescriptor.Name)
+                    if (fkey.DependentToPrincipal.Name == propertyInfo.Name)
                         return false;
 
                 foreach (IForeignKey fkey in efEntityType.GetReferencingForeignKeys())
-                    if (fkey.PrincipalToDependent.Name == propertyDescriptor.Name)
+                    if (fkey.PrincipalToDependent.Name == propertyInfo.Name)
                         return false;
             }
 

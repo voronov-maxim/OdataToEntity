@@ -1,7 +1,7 @@
 ﻿using Microsoft.OData.Edm;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
+using System.Reflection;
 
 namespace OdataToEntity.ModelBuilder
 {
@@ -219,7 +219,7 @@ namespace OdataToEntity.ModelBuilder
 
             return PrimitiveTypeHelper.GetPrimitiveTypeRef(clrType, nullable);
         }
-        private static EdmStructuralProperty[] CreateDependentEdmProperties(EdmEntityType edmDependent, IReadOnlyList<PropertyDescriptor> dependentStructuralProperties)
+        private static EdmStructuralProperty[] CreateDependentEdmProperties(EdmEntityType edmDependent, IReadOnlyList<PropertyInfo> dependentStructuralProperties)
         {
             if (dependentStructuralProperties.Count == 0)
                 return null;

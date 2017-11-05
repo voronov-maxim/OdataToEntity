@@ -28,9 +28,9 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$(EfCoreVersion)" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="$(EfCoreVersion)" />
-    <PackageReference Include="Microsoft.OData.Core" version="$(ODataLib)" />
-    <PackageReference Include="Microsoft.OData.Edm" version="$(ODataLib)" />
-    <PackageReference Include="Microsoft.Spatial" version="$(ODataLib)" />
+    <PackageReference Include="Microsoft.OData.Core" version="$(ODataLibVersion)" />
+    <PackageReference Include="Microsoft.OData.Edm" version="$(ODataLibVersion)" />
+    <PackageReference Include="Microsoft.Spatial" version="$(ODataLibVersion)" />
   </ItemGroup>
 
   <ItemGroup>

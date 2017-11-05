@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http;
 using Microsoft.OData.Edm;
@@ -16,7 +17,7 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
     {
         private readonly Db.OeDataAdapter _dataAdapter;
         private readonly IEdmModel _edmModel;
-        private static readonly Uri _rootUri = new Uri("http://dummy");
+        private static Uri _rootUri = new Uri("http://dummy");
 
         protected OeBaseController(Db.OeDataAdapter dataAdapter, IEdmModel edmModel)
         {
@@ -24,13 +25,15 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
             _edmModel = edmModel;
         }
 
-        protected async Task Get(HttpContext httpContext, Stream responseStream)
+        protected async Task Get(HttpContext httpContext, Stream responseStream, int pageSize = 0)
         {
+            var url = new Uri(httpContext.Request.GetDisplayUrl());
+            _rootUri = new Uri( url.GetLeftPart(UriPartial.Authority));
             var requestHeaders = (FrameRequestHeaders)httpContext.Request.Headers;
             httpContext.Response.ContentType = requestHeaders.HeaderAccept;
 
             var apiSegment = httpContext.Request.Path.Value.Split('/', 2, StringSplitOptions.RemoveEmptyEntries);
-            var parser = new OeParser(apiSegment.Length == 1 ? _rootUri : new Uri(_rootUri, apiSegment[0]), _dataAdapter, _edmModel);
+            var parser = new OeParser(apiSegment.Length == 1 ? _rootUri : new Uri(_rootUri, apiSegment[0]), _dataAdapter, _edmModel) { PageSize = pageSize };
 
             var uri = new Uri(_rootUri.OriginalString + httpContext.Request.Path + httpContext.Request.QueryString);
             OeRequestHeaders headers = OeRequestHeaders.Parse(requestHeaders.HeaderAccept);

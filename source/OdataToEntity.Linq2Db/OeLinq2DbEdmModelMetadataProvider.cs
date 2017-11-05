@@ -1,76 +1,76 @@
 ﻿using OdataToEntity.ModelBuilder;
-using System.ComponentModel;
 using System;
 using OdataToEntity.Parsers;
 using LinqToDB.Mapping;
+using System.Reflection;
 
 namespace OdataToEntity.Linq2Db
 {
     public sealed class OeLinq2DbEdmModelMetadataProvider : OeEdmModelMetadataProvider
     {
-        public override PropertyDescriptor[] GetForeignKey(PropertyDescriptor propertyDescriptor)
+        public override PropertyInfo[] GetForeignKey(PropertyInfo propertyInfo)
         {
-            var association = (AssociationAttribute)propertyDescriptor.Attributes[typeof(AssociationAttribute)];
+            var association = (AssociationAttribute)propertyInfo.GetCustomAttribute(typeof(AssociationAttribute));
             if (association == null || association.IsBackReference)
                 return null;
 
-            PropertyDescriptor property = TypeDescriptor.GetProperties(propertyDescriptor.ComponentType).Find(association.ThisKey, true);
+            PropertyInfo property = propertyInfo.DeclaringType.GetPropertyIgnoreCase(association.ThisKey);
             if (property == null)
             {
                 String[] propertyNames = association.GetThisKeys();
                 if (propertyNames.Length == 1)
-                    throw new InvalidOperationException("property " + association.KeyName + " foreign key " + propertyDescriptor.Name + " not found");
+                    throw new InvalidOperationException("property " + association.KeyName + " foreign key " + propertyInfo.Name + " not found");
 
-                var properties = new PropertyDescriptor[propertyNames.Length];
+                var properties = new PropertyInfo[propertyNames.Length];
                 for (int i = 0; i < properties.Length; i++)
                 {
                     String propertyName = propertyNames[i].Trim();
-                    property = TypeDescriptor.GetProperties(propertyDescriptor.ComponentType).Find(propertyName, true);
+                    property = propertyInfo.DeclaringType.GetPropertyIgnoreCase(propertyName);
                     if (property == null)
-                        throw new InvalidOperationException("property " + propertyName + " foreign key " + propertyDescriptor.Name + " not found");
+                        throw new InvalidOperationException("property " + propertyName + " foreign key " + propertyInfo.Name + " not found");
 
                     properties[i] = property;
                 }
                 return properties;
             }
 
-            return new PropertyDescriptor[] { property };
+            return new PropertyInfo[] { property };
         }
-        public override PropertyDescriptor GetInverseProperty(PropertyDescriptor propertyDescriptor)
+        public override PropertyInfo GetInverseProperty(PropertyInfo propertyInfo)
         {
-            var association = (AssociationAttribute)propertyDescriptor.Attributes[typeof(AssociationAttribute)];
+            var association = (AssociationAttribute)propertyInfo.GetCustomAttribute(typeof(AssociationAttribute));
             if (association == null || !association.IsBackReference)
                 return null;
 
-            Type type = OeExpressionHelper.GetCollectionItemType(propertyDescriptor.PropertyType);
-            if (type == null)
-                type = propertyDescriptor.PropertyType;
+            Type clrType = OeExpressionHelper.GetCollectionItemType(propertyInfo.PropertyType);
+            if (clrType == null)
+                clrType = propertyInfo.PropertyType;
 
-            foreach (PropertyDescriptor clrProperty in TypeDescriptor.GetProperties(type))
+            foreach (PropertyInfo clrProperty in clrType.GetProperties())
             {
-                var association2 = (AssociationAttribute)clrProperty.Attributes[typeof(AssociationAttribute)];
+                var association2 = (AssociationAttribute)clrProperty.GetCustomAttribute(typeof(AssociationAttribute));
                 if (association2 != null && association2.ThisKey == association.OtherKey)
                     return clrProperty;
             }
 
             return null;
         }
-        public override int GetOrder(PropertyDescriptor propertyDescriptor)
+        public override int GetOrder(PropertyInfo propertyInfo)
         {
-            var key = (PrimaryKeyAttribute)propertyDescriptor.Attributes[typeof(PrimaryKeyAttribute)];
+            var key = (PrimaryKeyAttribute)propertyInfo.GetCustomAttribute(typeof(PrimaryKeyAttribute));
             return key == null ? -1 : key.Order;
         }
-        public override bool IsKey(PropertyDescriptor propertyDescriptor)
+        public override bool IsKey(PropertyInfo propertyInfo)
         {
-            return propertyDescriptor.Attributes[typeof(PrimaryKeyAttribute)] != null;
+            return propertyInfo.GetCustomAttribute(typeof(PrimaryKeyAttribute)) != null;
         }
-        public override bool IsNotMapped(PropertyDescriptor propertyDescriptor)
+        public override bool IsNotMapped(PropertyInfo propertyInfo)
         {
-            if (propertyDescriptor.Attributes[typeof(ColumnAttribute)] != null)
+            if (propertyInfo.GetCustomAttribute(typeof(ColumnAttribute)) != null)
                 return false;
-            if (propertyDescriptor.Attributes[typeof(PrimaryKeyAttribute)] != null)
+            if (propertyInfo.GetCustomAttribute(typeof(PrimaryKeyAttribute)) != null)
                 return false;
-            if (propertyDescriptor.Attributes[typeof(AssociationAttribute)] != null)
+            if (propertyInfo.GetCustomAttribute(typeof(AssociationAttribute)) != null)
                 return false;
 
             return true;

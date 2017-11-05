@@ -2,21 +2,27 @@
   <Import Project="..\..\build\dependencies.props" />
 
   <PropertyGroup>
-    <Description>Classes bridge from OdataToEntity to Linq2Db. Abstraction layer access to DataContext Entity Linq2Db. Targets .NET 4.6</Description>
-    <AssemblyTitle>Linq2Db adapter for OdataEntity</AssemblyTitle>
+    <Description>Linq2Db adapter for OdataEntity</Description>
     <Authors>Maxim Voronov</Authors>
     <TargetFrameworks>net461</TargetFrameworks>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity.Linq2Db</AssemblyName>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <AssemblyCopyright>LGPL-3.0</AssemblyCopyright>
+    <AssemblyDescription>Classes bridge from OdataToEntity to Linq2Db. Abstraction layer access to DataContext Entity Linq2Db. Targets .NET 4.6</AssemblyDescription>
+    <AssemblyTitle>Linq2Db adapter for OdataEntity</AssemblyTitle>
+    <AssemblyVersion>$(OdataToEntityVersion)</AssemblyVersion>
+  </PropertyGroup>
+  
   <PropertyGroup>
     <PackageId>OdataToEntity.Linq2Db</PackageId>
     <PackageTags>odata;data;services;odatatoentity;linq2db;entity</PackageTags>
     <PackageProjectUrl>https://github.com/voronov-maxim/OdataToEntity</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/voronov-maxim/OdataToEntity/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageVersion>$(OdataToEntityVersion)</PackageVersion>
   </PropertyGroup>
 
   <PropertyGroup>

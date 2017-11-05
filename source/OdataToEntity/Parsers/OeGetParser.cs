@@ -49,6 +49,9 @@ namespace OdataToEntity
         public async Task ExecuteAsync(ODataUri odataUri, OeRequestHeaders headers, Stream stream, CancellationToken cancellationToken)
         {
             OeParseUriContext parseUriContext = ParseUri(odataUri);
+            if (PageSize > parseUriContext.ODataUri.Top.GetValueOrDefault())
+                parseUriContext.ODataUri.Top = PageSize;
+
             parseUriContext.Headers = headers;
             parseUriContext.EntitySetAdapter = _dataAdapter.GetEntitySetAdapter(parseUriContext.EntitySet.Name);
 
@@ -126,9 +129,10 @@ namespace OdataToEntity
             var entitySetSegment = (EntitySetSegment)odataUri.Path.FirstSegment;
             IEdmEntitySet entitySet = entitySetSegment.EntitySet;
             bool isCountSegment = odataUri.Path.LastSegment is CountSegment;
-            return new OeParseUriContext(_model, odataUri, entitySet, navigationSegments, isCountSegment);
+            return new OeParseUriContext(_model, odataUri, entitySet, navigationSegments, isCountSegment, PageSize);
         }
 
         public Uri BaseUri => _baseUri;
+        public int PageSize { get; set; }
     }
 }

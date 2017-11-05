@@ -1,9 +1,9 @@
 ﻿using Microsoft.OData.Edm;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
+using System.Reflection;
 
 namespace OdataToEntity.ModelBuilder
 {
@@ -11,7 +11,7 @@ namespace OdataToEntity.ModelBuilder
     {
         private readonly Type _clrType;
         private readonly EdmEntityType _edmType;
-        private readonly List<KeyValuePair<PropertyDescriptor, EdmStructuralProperty>> _keyProperties;
+        private readonly List<KeyValuePair<PropertyInfo, EdmStructuralProperty>> _keyProperties;
         private readonly OeEdmModelMetadataProvider _metadataProvider;
         private readonly List<FKeyInfo> _navigationClrProperties;
 
@@ -21,7 +21,7 @@ namespace OdataToEntity.ModelBuilder
             _clrType = clrType;
             _edmType = edmType;
 
-            _keyProperties = new List<KeyValuePair<PropertyDescriptor, EdmStructuralProperty>>(1);
+            _keyProperties = new List<KeyValuePair<PropertyInfo, EdmStructuralProperty>>(1);
             _navigationClrProperties = new List<FKeyInfo>();
         }
 
@@ -29,16 +29,15 @@ namespace OdataToEntity.ModelBuilder
         {
             if (_keyProperties.Count == 0)
             {
-                PropertyDescriptorCollection clrPoperties = TypeDescriptor.GetProperties(_clrType);
-                PropertyDescriptor key = clrPoperties.Find("id", true);
+                PropertyInfo key = _clrType.GetPropertyIgnoreCase("id");
                 if (key != null)
                 {
                     var edmProperty = (EdmStructuralProperty)_edmType.Properties().Single(p => p.Name == key.Name);
-                    _keyProperties.Add(new KeyValuePair<PropertyDescriptor, EdmStructuralProperty>(key, edmProperty));
+                    _keyProperties.Add(new KeyValuePair<PropertyInfo, EdmStructuralProperty>(key, edmProperty));
                 }
                 else
                 {
-                    key = clrPoperties.Find(_clrType.Name + "id", true);
+                    key = _clrType.GetPropertyIgnoreCase(_clrType.Name + "id");
                     if (key == null)
                     {
                         if (EdmType.Key().Any())
@@ -48,7 +47,7 @@ namespace OdataToEntity.ModelBuilder
                     }
 
                     var edmProperty = (EdmStructuralProperty)_edmType.Properties().Single(p => p.Name == key.Name);
-                    _keyProperties.Add(new KeyValuePair<PropertyDescriptor, EdmStructuralProperty>(key, edmProperty));
+                    _keyProperties.Add(new KeyValuePair<PropertyInfo, EdmStructuralProperty>(key, edmProperty));
                 }
             }
 
@@ -73,7 +72,7 @@ namespace OdataToEntity.ModelBuilder
             _edmType.AddKeys(keys.OrderBy(p => p.Item2).Select(p => p.Item1));
         }
         private void BuildProperty(Dictionary<Type, EntityTypeInfo> entityTypes,
-            Dictionary<Type, EdmEnumType> enumTypes, Dictionary<Type, EdmComplexType> complexTypes, PropertyDescriptor clrProperty)
+            Dictionary<Type, EdmEnumType> enumTypes, Dictionary<Type, EdmComplexType> complexTypes, PropertyInfo clrProperty)
         {
             IEdmTypeReference typeRef = PrimitiveTypeHelper.GetPrimitiveTypeRef(clrProperty);
             if (typeRef == null)
@@ -117,13 +116,13 @@ namespace OdataToEntity.ModelBuilder
             var edmProperty = new EdmStructuralProperty(_edmType, clrProperty.Name, typeRef);
             _edmType.AddProperty(edmProperty);
             if (_metadataProvider.IsKey(clrProperty))
-                _keyProperties.Add(new KeyValuePair<PropertyDescriptor, EdmStructuralProperty>(clrProperty, edmProperty));
+                _keyProperties.Add(new KeyValuePair<PropertyInfo, EdmStructuralProperty>(clrProperty, edmProperty));
         }
         public void BuildProperties(Dictionary<Type, EntityTypeInfo> entityTypes,
             Dictionary<Type, EdmEnumType> enumTypes, Dictionary<Type, EdmComplexType> complexTypes)
         {
-            foreach (PropertyDescriptor clrProperty in TypeDescriptor.GetProperties(_clrType))
-                if (clrProperty.ComponentType == _clrType && !_metadataProvider.IsNotMapped(clrProperty))
+            foreach (PropertyInfo clrProperty in _clrType.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly))
+                if (!_metadataProvider.IsNotMapped(clrProperty))
                     BuildProperty(entityTypes, enumTypes, complexTypes, clrProperty);
             AddKeys();
         }

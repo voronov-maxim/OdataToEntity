@@ -3,8 +3,8 @@ using Microsoft.OData.Edm;
 using OdataToEntity.Db;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
+using System.Reflection;
 
 namespace OdataToEntity.Linq2Db
 {
@@ -52,11 +52,11 @@ namespace OdataToEntity.Linq2Db
             while (clrTypeEdmSetList.Count > 0)
                 for (int i = 0; i < clrTypeEdmSetList.Count; i++)
                 {
-                    PropertyDescriptor selfRefProperty;
+                    PropertyInfo selfRefProperty;
                     if (IsDependent(clrTypeEdmSetList[i], clrTypeEdmSetList, out selfRefProperty))
                     {
                         if (selfRefProperty != null)
-                            _tables[selfRefProperty.ComponentType].SelfRefProperty = selfRefProperty;
+                            _tables[selfRefProperty.DeclaringType].SelfRefProperty = selfRefProperty;
 
                         orderedTypes.Add(clrTypeEdmSetList[i]);
                         clrTypeEdmSetList.RemoveAt(i);
@@ -65,12 +65,11 @@ namespace OdataToEntity.Linq2Db
                 }
             return orderedTypes;
         }
-        private static List<PropertyDescriptor> GetDependentProperties(Type clrType, IEdmNavigationProperty navigationPropery)
+        private static List<PropertyInfo> GetDependentProperties(Type clrType, IEdmNavigationProperty navigationPropery)
         {
-            PropertyDescriptorCollection properties = TypeDescriptor.GetProperties(clrType);
-            var clrProperties = new List<PropertyDescriptor>(1);
+            var clrProperties = new List<PropertyInfo>(1);
             foreach (IEdmStructuralProperty edmProperty in navigationPropery.Partner.DependentProperties())
-                clrProperties.Add(properties[edmProperty.Name]);
+                clrProperties.Add(clrType.GetProperty(edmProperty.Name));
             return clrProperties;
         }
         public OeLinq2DbTable<T> GetTable<T>()
@@ -91,7 +90,7 @@ namespace OdataToEntity.Linq2Db
 
             throw new InvalidOperationException("Table entity type " + entityType.FullName + " not found");
         }
-        private static bool IsDependent(ClrTypeEdmSet clrTypeEdmSet, List<ClrTypeEdmSet> clrTypeEdmSetList, out PropertyDescriptor selfRefProperty)
+        private static bool IsDependent(ClrTypeEdmSet clrTypeEdmSet, List<ClrTypeEdmSet> clrTypeEdmSetList, out PropertyInfo selfRefProperty)
         {
             selfRefProperty = null;
 
@@ -102,7 +101,7 @@ namespace OdataToEntity.Linq2Db
                     if (clrTypeEdmSet.EdmSet == navigationBinding.Target)
                     {
                         IEdmStructuralProperty edmSelfRefProperty = navigationBinding.NavigationProperty.DependentProperties().Single();
-                        selfRefProperty = TypeDescriptor.GetProperties(clrTypeEdmSet.ClrType)[edmSelfRefProperty.Name];
+                        selfRefProperty = clrTypeEdmSet.ClrType.GetProperty(edmSelfRefProperty.Name);
                     }
                     continue;
                 }

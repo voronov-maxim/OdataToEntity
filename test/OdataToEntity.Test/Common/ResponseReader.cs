@@ -5,7 +5,6 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -90,14 +89,11 @@ namespace OdataToEntity.Test
             var entity = OeEntityItem.CreateEntity(entitySetMetaAdapter.EntityType, entry);
 
             if (stackItem.NavigationProperties.Count > 0)
-            {
-                PropertyDescriptorCollection clrProperties = TypeDescriptor.GetProperties(entitySetMetaAdapter.EntityType);
                 foreach (var navigationProperty in stackItem.NavigationProperties)
                 {
-                    PropertyDescriptor clrProperty = clrProperties[navigationProperty.Key];
+                    PropertyInfo clrProperty = entitySetMetaAdapter.EntityType.GetProperty(navigationProperty.Key);
                     clrProperty.SetValue(entity, navigationProperty.Value);
                 }
-            }
 
             return entity;
         }
@@ -242,6 +238,8 @@ namespace OdataToEntity.Test
         }
         private IEnumerable<T> ReadFeedImpl<T>(Stream response, Db.OeEntitySetMetaAdapter entitySetMetaAdatpter)
         {
+            ResourceSet = null;
+
             IODataRequestMessage responseMessage = new OeInMemoryMessage(response, null);
             var settings = new ODataMessageReaderSettings() { EnableMessageStreamDisposal = false };
             var messageReader = new ODataMessageReader(responseMessage, settings, _edmModel);
@@ -254,6 +252,9 @@ namespace OdataToEntity.Test
             {
                 switch (reader.State)
                 {
+                    case ODataReaderState.ResourceSetStart:
+                        ResourceSet = (ODataResourceSetBase)reader.Item;
+                        break;
                     case ODataReaderState.ResourceStart:
                         stack.Push(new StackItem((ODataResource)reader.Item));
                         break;
@@ -276,5 +277,7 @@ namespace OdataToEntity.Test
                 }
             }
         }
+
+        public ODataResourceSetBase ResourceSet { get; private set; }
     }
 }

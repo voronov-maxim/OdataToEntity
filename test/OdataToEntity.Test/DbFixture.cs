@@ -33,6 +33,21 @@ namespace OdataToEntity.Test
             _edmModel = OeDataAdapter.BuildEdmModel();
         }
 
+        public static void Compare(IList fromDb, IList fromOe)
+        {
+            var settings = new JsonSerializerSettings()
+            {
+                DateFormatString = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'ffffff",
+                DateTimeZoneHandling = DateTimeZoneHandling.Utc,
+                Formatting = Formatting.Indented,
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                NullValueHandling = NullValueHandling.Ignore
+            };
+            String jsonOe = JsonConvert.SerializeObject(fromOe, settings);
+            String jsonDb = JsonConvert.SerializeObject(fromDb, settings);
+
+            Xunit.Assert.Equal(jsonDb, jsonOe);
+        }
         public OrderContext CreateContext()
         {
             return OrderContext.Create(_databaseName);
@@ -64,19 +79,8 @@ namespace OdataToEntity.Test
             using (var dataContext = (DbContext)DbDataAdapter.CreateDataContext())
                 fromDb = TestHelper.ExecuteDb(dataContext, parameters.Expression);
 
-            var settings = new JsonSerializerSettings()
-            {
-                DateFormatString = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'ffffff",
-                DateTimeZoneHandling = DateTimeZoneHandling.Utc,
-                Formatting = Formatting.Indented,
-                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-                NullValueHandling = NullValueHandling.Ignore
-            };
-            String jsonOe = JsonConvert.SerializeObject(fromOe, settings);
-            String jsonDb = JsonConvert.SerializeObject(fromDb, settings);
-
             Console.WriteLine(parameters.RequestUri);
-            Xunit.Assert.Equal(jsonDb, jsonOe);
+            Compare(fromDb, fromOe);
         }
         internal async Task ExecuteBatchAsync(String batchName)
         {

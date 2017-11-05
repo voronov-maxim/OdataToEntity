@@ -11,12 +11,19 @@ namespace OdataToEntity.Writers
     internal sealed class OeBatchWriter
     {
         private readonly IEdmModel _model;
-        private readonly Uri _baseUri;
+        private readonly ODataMessageWriterSettings _settings;
 
         public OeBatchWriter(Uri baseUri, IEdmModel model)
         {
-            _baseUri = baseUri;
             _model = model;
+
+            _settings = new ODataMessageWriterSettings()
+            {
+                BaseUri = baseUri,
+                Version = ODataVersion.V4,
+                ODataUri = new ODataUri() { ServiceRoot = baseUri },
+                EnableMessageStreamDisposal = false
+            };
         }
 
         public void Write(Stream stream, OeBatchMessage batchMessage)
@@ -51,21 +58,12 @@ namespace OdataToEntity.Writers
         }
         private void WriteEntity(Stream stream, OeEntityItem entityItem)
         {
-            var settings = new ODataMessageWriterSettings()
-            {
-                BaseUri = _baseUri,
-                Version = ODataVersion.V4,
-                ODataUri = new ODataUri() { ServiceRoot = _baseUri },
-                EnableMessageStreamDisposal = false
-            };
-
             IODataResponseMessage responseMessage = new OeInMemoryMessage(stream, null);
-            using (ODataMessageWriter messageWriter = new ODataMessageWriter(responseMessage, settings, _model))
+            using (ODataMessageWriter messageWriter = new ODataMessageWriter(responseMessage, _settings, _model))
             {
                 ODataUtils.SetHeadersForPayload(messageWriter, ODataPayloadKind.Resource);
                 ODataWriter writer = messageWriter.CreateODataResourceWriter(entityItem.EntitySet, entityItem.EntityType);
 
-                entityItem.RefreshEntry();
                 writer.WriteStart(entityItem.Entry);
                 writer.WriteEnd();
             }

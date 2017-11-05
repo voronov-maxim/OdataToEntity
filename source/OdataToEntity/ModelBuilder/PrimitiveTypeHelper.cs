@@ -73,7 +73,7 @@ namespace OdataToEntity.ModelBuilder
             {typeof(DateTime?), GetPrimitiveType(EdmPrimitiveTypeKind.DateTimeOffset)}
         };
         private readonly static Dictionary<EdmPrimitiveTypeKind, Type> _edmTypeMappings = CreateEdmTypeMappings(_clrTypeMappings);
-        public static readonly EdmComplexType TupleEdmType = new EdmComplexType("Default", "Tupe");
+        public static readonly EdmComplexType TupleEdmType = new EdmComplexType("Default", "Tuple");
 
         public static Type GetClrType(EdmPrimitiveTypeKind primitiveKind)
         {
@@ -105,13 +105,13 @@ namespace OdataToEntity.ModelBuilder
             IEdmPrimitiveType primitiveEdmType = PrimitiveTypeHelper.GetPrimitiveType(clrType);
             return primitiveEdmType == null ? null : EdmCoreModel.Instance.GetPrimitive(primitiveEdmType.PrimitiveKind, nullable);
         }
-        public static IEdmPrimitiveTypeReference GetPrimitiveTypeRef(PropertyDescriptor clrProperty)
+        public static IEdmPrimitiveTypeReference GetPrimitiveTypeRef(PropertyInfo clrProperty)
         {
             IEdmPrimitiveType edmPrimitiveType = GetPrimitiveType(clrProperty.PropertyType);
             if (edmPrimitiveType == null)
                 return null;
 
-            bool nullable = IsNullable(clrProperty.PropertyType) && clrProperty.Attributes[typeof(RequiredAttribute)] == null;
+            bool nullable = IsNullable(clrProperty.PropertyType) && clrProperty.GetCustomAttribute(typeof(RequiredAttribute)) == null;
             return EdmCoreModel.Instance.GetPrimitive(edmPrimitiveType.PrimitiveKind, nullable);
         }
         public static bool IsNullable(Type clrType)

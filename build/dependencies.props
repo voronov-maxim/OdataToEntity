@@ -5,9 +5,10 @@
     <EfCoreVersion>2.0.0</EfCoreVersion> 
     <JsonNetVersion>10.0.3</JsonNetVersion>
     <NetStandardVersion>2.0.0</NetStandardVersion>
-    <ODataLib>7.3.1</ODataLib>
+    <ODataLibVersion>7.3.1</ODataLibVersion>
+    <OdataToEntityVersion>1.3.0</OdataToEntityVersion>
     <SystemInteractiveAsyncVersion>3.1.1</SystemInteractiveAsyncVersion>
     <TestSdkVersion>15.3.0</TestSdkVersion>
-    <XunitVersion>2.3.0</XunitVersion>
+    <XunitVersion>2.3.1</XunitVersion>
   </PropertyGroup>
 </Project>

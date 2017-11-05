@@ -1,7 +1,6 @@
 ﻿using OdataToEntity.ModelBuilder;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data.Entity;
 using System.Data.Entity.Core.Metadata.Edm;
 using System.Data.Entity.Infrastructure;
@@ -21,63 +20,62 @@ namespace OdataToEntity.Ef6
             _entityTypes = workspace.GetItems<EntityType>(DataSpace.CSpace).ToDictionary(e => itemCollection.GetClrType(workspace.GetObjectSpaceType(e)));
         }
 
-        private IEnumerable<EntityType> GetEntityTypes(PropertyDescriptor propertyDescriptor)
+        private IEnumerable<EntityType> GetEntityTypes(PropertyInfo propertyInfo)
         {
             EntityType efEntityType;
-            if (_entityTypes.TryGetValue(propertyDescriptor.ComponentType, out efEntityType))
+            if (_entityTypes.TryGetValue(propertyInfo.DeclaringType, out efEntityType))
                 yield return efEntityType;
             else
                 foreach (KeyValuePair<Type, EntityType> pair in _entityTypes)
-                    if (propertyDescriptor.ComponentType.IsAssignableFrom(pair.Key))
+                    if (propertyInfo.DeclaringType.IsAssignableFrom(pair.Key))
                         yield return pair.Value;
         }
-        public override PropertyDescriptor[] GetForeignKey(PropertyDescriptor propertyDescriptor)
+        public override PropertyInfo[] GetForeignKey(PropertyInfo propertyInfo)
         {
-            foreach (EntityType efEntityType in GetEntityTypes(propertyDescriptor))
+            foreach (EntityType efEntityType in GetEntityTypes(propertyInfo))
                 foreach (NavigationProperty navigationProperty in efEntityType.NavigationProperties)
                 {
                     if (!navigationProperty.GetDependentProperties().Any())
                         continue;
 
                     ReferentialConstraint refConstraint = ((AssociationType)navigationProperty.RelationshipType).Constraint;
-                    if (navigationProperty.Name == propertyDescriptor.Name)
+                    if (navigationProperty.Name == propertyInfo.Name)
                     {
-                        PropertyDescriptorCollection clrProperties = TypeDescriptor.GetProperties(propertyDescriptor.ComponentType);
-                        var propertyDescriptors = new PropertyDescriptor[refConstraint.ToProperties.Count];
+                        var properties = new PropertyInfo[refConstraint.ToProperties.Count];
                         for (int i = 0; i < refConstraint.ToProperties.Count; i++)
-                            propertyDescriptors[i] = clrProperties[refConstraint.ToProperties[i].Name];
-                        return propertyDescriptors;
+                            properties[i] = propertyInfo.DeclaringType.GetPropertyIgnoreCase(refConstraint.ToProperties[i].Name);
+                        return properties;
                     }
 
                     for (int i = 0; i < refConstraint.ToProperties.Count; i++)
-                        if (refConstraint.ToProperties[i].Name == propertyDescriptor.Name)
-                            return new PropertyDescriptor[] { TypeDescriptor.GetProperties(propertyDescriptor.ComponentType)[navigationProperty.Name] };
+                        if (refConstraint.ToProperties[i].Name == propertyInfo.Name)
+                            return new PropertyInfo[] { propertyInfo.DeclaringType.GetPropertyIgnoreCase(navigationProperty.Name) };
                 }
 
             return null;
         }
-        public override PropertyDescriptor GetInverseProperty(PropertyDescriptor propertyDescriptor)
+        public override PropertyInfo GetInverseProperty(PropertyInfo propertyInfo)
         {
-            foreach (EntityType efEntityType in GetEntityTypes(propertyDescriptor))
+            foreach (EntityType efEntityType in GetEntityTypes(propertyInfo))
                 foreach (NavigationProperty navigationProperty in efEntityType.NavigationProperties)
-                    if (navigationProperty.Name == propertyDescriptor.Name)
+                    if (navigationProperty.Name == propertyInfo.Name)
                     {
                         MetadataProperty metadataProperty;
                         if (!navigationProperty.ToEndMember.MetadataProperties.TryGetValue("ClrPropertyInfo", false, out metadataProperty))
                             return null;
 
                         var inverseProperty = (PropertyInfo)metadataProperty.Value;
-                        return TypeDescriptor.GetProperties(inverseProperty.DeclaringType)[inverseProperty.Name];
+                        return inverseProperty.DeclaringType.GetPropertyIgnoreCase(inverseProperty.Name);
                     }
 
             return null;
         }
-        public override int GetOrder(PropertyDescriptor propertyDescriptor)
+        public override int GetOrder(PropertyInfo propertyInfo)
         {
-            foreach (EntityType efEntityType in GetEntityTypes(propertyDescriptor))
+            foreach (EntityType efEntityType in GetEntityTypes(propertyInfo))
             {
                 for (int i = 0; i < efEntityType.KeyProperties.Count; i++)
-                    if (efEntityType.KeyProperties[i].Name == propertyDescriptor.Name)
+                    if (efEntityType.KeyProperties[i].Name == propertyInfo.Name)
                         return i;
 
                 for (int i = 0; i < efEntityType.NavigationProperties.Count; i++)
@@ -85,7 +83,7 @@ namespace OdataToEntity.Ef6
                     int index = 0;
                     foreach (EdmProperty edmProperty in efEntityType.NavigationProperties[i].GetDependentProperties())
                     {
-                        if (edmProperty.Name == propertyDescriptor.Name)
+                        if (edmProperty.Name == propertyInfo.Name)
                             return index;
                         index++;
                     }
@@ -94,24 +92,24 @@ namespace OdataToEntity.Ef6
 
             return -1;
         }
-        public override bool IsKey(PropertyDescriptor propertyDescriptor)
+        public override bool IsKey(PropertyInfo propertyInfo)
         {
-            foreach (EntityType efEntityType in GetEntityTypes(propertyDescriptor))
+            foreach (EntityType efEntityType in GetEntityTypes(propertyInfo))
                 for (int i = 0; i < efEntityType.KeyProperties.Count; i++)
-                    if (efEntityType.KeyProperties[i].Name == propertyDescriptor.Name)
+                    if (efEntityType.KeyProperties[i].Name == propertyInfo.Name)
                         return true;
             return false;
         }
-        public override bool IsNotMapped(PropertyDescriptor propertyDescriptor)
+        public override bool IsNotMapped(PropertyInfo propertyInfo)
         {
-            foreach (EntityType efEntityType in GetEntityTypes(propertyDescriptor))
+            foreach (EntityType efEntityType in GetEntityTypes(propertyInfo))
             {
                 for (int i = 0; i < efEntityType.Properties.Count; i++)
-                    if (efEntityType.Properties[i].Name == propertyDescriptor.Name)
+                    if (efEntityType.Properties[i].Name == propertyInfo.Name)
                         return false;
 
                 for (int i = 0; i < efEntityType.NavigationProperties.Count; i++)
-                    if (efEntityType.NavigationProperties[i].Name == propertyDescriptor.Name)
+                    if (efEntityType.NavigationProperties[i].Name == propertyInfo.Name)
                         return false;
             }
 

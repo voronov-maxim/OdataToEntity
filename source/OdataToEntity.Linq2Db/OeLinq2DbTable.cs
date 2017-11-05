@@ -3,7 +3,7 @@ using LinqToDB.Data;
 using LinqToDB.Mapping;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
+using System.Reflection;
 
 namespace OdataToEntity.Linq2Db
 {
@@ -12,10 +12,10 @@ namespace OdataToEntity.Linq2Db
         public abstract int SaveDeleted(DataConnection dc);
         public abstract int SaveInserted(DataConnection dc);
         public abstract int SaveUpdated(DataConnection dc);
-        public abstract void UpdateIdentities(PropertyDescriptor fkeyProperty, IDictionary<Object, Object> identities);
+        public abstract void UpdateIdentities(PropertyInfo fkeyProperty, IDictionary<Object, Object> identities);
 
         public abstract IDictionary<Object, Object> Identities { get; }
-        public PropertyDescriptor SelfRefProperty { get; set; }
+        public PropertyInfo SelfRefProperty { get; set; }
     }
 
     public sealed class OeLinq2DbTable<T> : OeLinq2DbTable
@@ -36,11 +36,11 @@ namespace OdataToEntity.Linq2Db
         {
             _deleted.Add(entity);
         }
-        private static List<PropertyDescriptor> GetDatabaseGenerated()
+        private static List<PropertyInfo> GetDatabaseGenerated()
         {
-            var identityProperties = new List<PropertyDescriptor>();
-            foreach (PropertyDescriptor property in TypeDescriptor.GetProperties(typeof(T)))
-                if (property.Attributes[typeof(IdentityAttribute)] != null)
+            var identityProperties = new List<PropertyInfo>();
+            foreach (PropertyInfo property in typeof(T).GetProperties())
+                if (property.GetCustomAttribute(typeof(IdentityAttribute)) != null)
                     identityProperties.Add(property);
             return identityProperties;
         }
@@ -48,7 +48,7 @@ namespace OdataToEntity.Linq2Db
         {
             _inserted.Add(entity);
         }
-        private static void OrderBy(PropertyDescriptor selfRefProperty, PropertyDescriptor keyProperty, List<T> items)
+        private static void OrderBy(PropertyInfo selfRefProperty, PropertyInfo keyProperty, List<T> items)
         {
             if (selfRefProperty == null || items.Count == 0)
                 return;
@@ -91,7 +91,7 @@ namespace OdataToEntity.Linq2Db
                 return Deleted.Count;
             }
 
-            List<PropertyDescriptor> identityProperties = GetDatabaseGenerated();
+            List<PropertyInfo> identityProperties = GetDatabaseGenerated();
             OrderBy(base.SelfRefProperty, identityProperties[0], _deleted);
             for (int i = _deleted.Count - 1; i >= 0; i--)
                 dc.Delete(_deleted[i]);
@@ -99,7 +99,7 @@ namespace OdataToEntity.Linq2Db
         }
         public override int SaveInserted(DataConnection dc)
         {
-            List<PropertyDescriptor> identityProperties = GetDatabaseGenerated();
+            List<PropertyInfo> identityProperties = GetDatabaseGenerated();
             if (identityProperties.Count == 0)
             {
                 foreach (T entity in Inserted)
@@ -144,7 +144,7 @@ namespace OdataToEntity.Linq2Db
                     base.SelfRefProperty.SetValue(_inserted[i], newIdentity);
             }
         }
-        public override void UpdateIdentities(PropertyDescriptor fkeyProperty, IDictionary<Object, Object> identities)
+        public override void UpdateIdentities(PropertyInfo fkeyProperty, IDictionary<Object, Object> identities)
         {
             foreach (T entity in Inserted)
             {

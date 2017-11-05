@@ -161,6 +161,9 @@ namespace OdataToEntity.EfCore
         public OeEfCoreDataAdapter() : this(null, null)
         {
         }
+        public OeEfCoreDataAdapter(DbContextOptions options) : this(options, null)
+        {
+        }
         public OeEfCoreDataAdapter(DbContextOptions options, Db.OeQueryCache queryCache)
             : this(options, queryCache, new OeEfCoreOperationAdapter(typeof(T), _entitySetMetaAdapters))
         {

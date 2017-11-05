@@ -5,6 +5,10 @@ namespace OdataToEntity.Test.Model
 {
     public sealed partial class OrderContext : DbContext
     {
+        internal OrderContext() : this(CreateOptions())
+        {
+        }
+
         public static OrderContext Create(String dummy)
         {
             return new OrderContext(CreateOptions());

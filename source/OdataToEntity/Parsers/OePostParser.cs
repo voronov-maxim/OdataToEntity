@@ -52,7 +52,7 @@ namespace OdataToEntity
                         OePropertyAccessor[] accessors = OePropertyAccessor.CreateFromType(returnClrType, entitySet);
                         OeEntryFactory entryFactory = OeEntryFactory.CreateEntryFactory(entitySet, accessors);
 
-                        var parseUriContext = new OeParseUriContext(_model, odataUri, entitySet, null, false)
+                        var parseUriContext = new OeParseUriContext(_model, odataUri, entitySet, null, false, 0)
                         {
                             EntryFactory = entryFactory,
                             Headers = headers

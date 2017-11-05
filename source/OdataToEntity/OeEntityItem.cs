@@ -1,7 +1,6 @@
 ﻿using Microsoft.OData;
 using Microsoft.OData.Edm;
 using System;
-using System.ComponentModel;
 using System.Reflection;
 
 namespace OdataToEntity
@@ -12,13 +11,11 @@ namespace OdataToEntity
         private readonly ODataResource _entry;
         private readonly IEdmEntitySet _entitySet;
         private readonly IEdmEntityType _entityType;
-        private readonly Type _clrType;
 
         public OeEntityItem(IEdmEntitySet entitySet, IEdmEntityType entityType, Type clrType, ODataResource entry)
         {
             _entitySet = entitySet;
             _entityType = entityType;
-            _clrType = clrType;
             _entry = entry;
 
             _entity = CreateEntity(clrType, entry);
@@ -28,10 +25,9 @@ namespace OdataToEntity
         {
             Object entity = Activator.CreateInstance(clrType);
 
-            PropertyDescriptorCollection clrProperties = TypeDescriptor.GetProperties(clrType);
             foreach (ODataProperty property in entry.Properties)
             {
-                PropertyDescriptor clrProperty = clrProperties[property.Name];
+                PropertyInfo clrProperty = clrType.GetProperty(property.Name);
                 if (clrProperty != null)
                 {
                     if (property.Value is ODataEnumValue)
@@ -59,49 +55,10 @@ namespace OdataToEntity
             }
             return entity;
         }
-        public void RefreshEntry()
-        {
-            PropertyDescriptorCollection clrProperties = TypeDescriptor.GetProperties(_clrType);
-            foreach (ODataProperty property in _entry.Properties)
-            {
-                PropertyDescriptor clrProperty = clrProperties[property.Name];
-                if (clrProperty != null)
-                {
-                    Object value = clrProperty.GetValue(_entity);
-                    if (value != null && (clrProperty.PropertyType == typeof(DateTime) || clrProperty.PropertyType == typeof(DateTime?)))
-                        value = new DateTimeOffset(((DateTime)value));
-                    property.Value = value;
-                }
-            }
-        }
 
-        public Object Entity
-        {
-            get
-            {
-                return _entity;
-            }
-        }
-        public ODataResource Entry
-        {
-            get
-            {
-                return _entry;
-            }
-        }
-        public IEdmEntitySet EntitySet
-        {
-            get
-            {
-                return _entitySet;
-            }
-        }
-        public IEdmEntityType EntityType
-        {
-            get
-            {
-                return _entityType;
-            }
-        }
+        public Object Entity => _entity;
+        public ODataResource Entry => _entry;
+        public IEdmEntitySet EntitySet => _entitySet;
+        public IEdmEntityType EntityType => _entityType;
     }
 }

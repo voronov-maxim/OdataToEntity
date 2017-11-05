@@ -2,21 +2,27 @@
   <Import Project="..\..\build\dependencies.props" />
 
   <PropertyGroup>
-    <Description>Classes bridge from OdataToEntity to Entity Framework 6.1.3. Abstraction layer access to DataContext Entity Framework 6.1.3. Targets .NET 4.6</Description>
-    <AssemblyTitle>Entity Framework 6 adapter for OdataEntity</AssemblyTitle>
+    <Description>Entity Framework 6 adapter for OdataEntity</Description>
     <Authors>Maxim Voronov</Authors>
     <TargetFrameworks>net461</TargetFrameworks>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity.Ef6</AssemblyName>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
-  
+
+  <PropertyGroup>
+    <AssemblyCopyright>LGPL-3.0</AssemblyCopyright>
+    <AssemblyDescription>Classes bridge from OdataToEntity to Entity Framework 6.2.0. Abstraction layer access to DataContext Entity Framework 6.2.0. Targets .NET 4.6</AssemblyDescription>
+    <AssemblyTitle>Entity Framework 6 adapter for OdataEntity</AssemblyTitle>
+    <AssemblyVersion>$(OdataToEntityVersion)</AssemblyVersion>
+  </PropertyGroup>
+
   <PropertyGroup>
     <PackageId>OdataToEntity.Ef6</PackageId>
     <PackageTags>odata;data;services;odatatoentity;ef;entity framework;entity</PackageTags>
     <PackageProjectUrl>https://github.com/voronov-maxim/OdataToEntity</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/voronov-maxim/OdataToEntity/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageVersion>$(OdataToEntityVersion)</PackageVersion>
   </PropertyGroup>
   
   <PropertyGroup>
@@ -36,7 +42,7 @@
   </ItemGroup>
   
   <ItemGroup>
-    <PackageReference Include="EntityFramework" Version="6.1.3" />
+    <PackageReference Include="EntityFramework" Version="6.2.0" />
   </ItemGroup>
 
   <ItemGroup>

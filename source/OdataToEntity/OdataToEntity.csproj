@@ -2,14 +2,19 @@
   <Import Project="..\..\build\dependencies.props" />
 
   <PropertyGroup>
-    <Description>Classes to serialize, deserialize OData JSON payloads. Supports OData v4 only. Enables construction of OData services via Entity Framework DataContext (without controller). Targets .NET Core with support for .NET 4.6</Description>
-    <AssemblyTitle>OData server via Entity Framework</AssemblyTitle>
+    <Description>OData via Entity Framework (Linq2Db)</Description>
     <Authors>Maxim Voronov</Authors>
     <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity</AssemblyName>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <AssemblyCopyright>LGPL-3.0</AssemblyCopyright>
+    <AssemblyDescription>Classes to serialize, deserialize OData JSON payloads. Supports OData v4 only. Enables construction of OData services via Entity Framework (Linq2Db) DataContext (without controller). Targets .NET Core with support for .NET 4.6</AssemblyDescription>
+    <AssemblyTitle>OData via Entity Framework (Linq2Db)</AssemblyTitle>
+    <AssemblyVersion>$(OdataToEntityVersion)</AssemblyVersion>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -17,12 +22,13 @@
     <PackageTags>odata;data;services;odatalib;edmlib;ef;entity framework;linq2db;entity;core</PackageTags>
     <PackageProjectUrl>https://github.com/voronov-maxim/OdataToEntity</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/voronov-maxim/OdataToEntity/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageVersion>$(OdataToEntityVersion)</PackageVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.OData.Core" Version="$(ODataLib)" />
-    <PackageReference Include="Microsoft.OData.Edm" Version="$(ODataLib)" />
-    <PackageReference Include="Microsoft.Spatial" Version="$(ODataLib)" />
+    <PackageReference Include="Microsoft.OData.Core" Version="$(ODataLibVersion)" />
+    <PackageReference Include="Microsoft.OData.Edm" Version="$(ODataLibVersion)" />
+    <PackageReference Include="Microsoft.Spatial" Version="$(ODataLibVersion)" />
     <PackageReference Include="Newtonsoft.Json" Version="$(JsonNetVersion)" />
     <PackageReference Include="System.ComponentModel.Annotations" Version="$(CoreFxVersion)" />
     <PackageReference Include="System.Interactive.Async" Version="$(SystemInteractiveAsyncVersion)" />

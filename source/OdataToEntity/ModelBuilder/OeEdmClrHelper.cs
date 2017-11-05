@@ -23,6 +23,10 @@ namespace OdataToEntity.ModelBuilder
 
             throw new InvalidOperationException("Add OeClrTypeAnnotation for " + edmType.FullTypeName());
         }
+        public static PropertyInfo GetPropertyIgnoreCase(this Type declaringType, String propertyName)
+        {
+            return declaringType.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase);
+        }
         public static Object GetValue(IEdmModel edmModel, ODataEnumValue odataValue)
         {
             IEdmSchemaType schemaType = edmModel.FindType(odataValue.TypeName);
