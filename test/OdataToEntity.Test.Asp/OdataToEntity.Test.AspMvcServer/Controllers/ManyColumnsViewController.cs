@@ -14,7 +14,7 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
 
         public async Task Get()
         {
-            await base.Get(base.HttpContext, base.HttpContext.Response.Body, 10);
+            await base.Get(base.HttpContext, base.HttpContext.Response.Body, false, 10);
         }
     }
 }

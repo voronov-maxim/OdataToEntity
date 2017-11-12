@@ -54,7 +54,7 @@ namespace OdataToEntity.Test
         }
         public virtual async Task Execute<T, TResult>(QueryParametersScalar<T, TResult> parameters)
         {
-            IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri, typeof(T));
+            IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri);
             IList fromDb;
             using (var dataContext = (DbContext)DbDataAdapter.CreateDataContext())
                 fromDb = TestHelper.ExecuteDb(dataContext, parameters.Expression);
@@ -74,7 +74,7 @@ namespace OdataToEntity.Test
         }
         public virtual async Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
         {
-            IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri, typeof(T));
+            IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri);
             IList fromDb;
             using (var dataContext = (DbContext)DbDataAdapter.CreateDataContext())
                 fromDb = TestHelper.ExecuteDb(dataContext, parameters.Expression);
@@ -91,7 +91,7 @@ namespace OdataToEntity.Test
 
             await parser.ExecuteBatchAsync(new MemoryStream(bytes), responseStream, CancellationToken.None);
         }
-        public async Task<IList> ExecuteOe<TResult>(String requestUri, Type baseEntityType)
+        public async Task<IList> ExecuteOe<TResult>(String requestUri)
         {
             var parser = new OeParser(new Uri("http://dummy/"), OeDataAdapter, EdmModel);
             var stream = new MemoryStream();
@@ -102,7 +102,7 @@ namespace OdataToEntity.Test
             IList fromOe;
             if (typeof(TResult) == typeof(Object))
             {
-                IEnumerable<JObject> jobjects = reader.ReadOpenType(stream, baseEntityType).Select(t => JRawToEnum(t)).ToList();
+                IEnumerable<JObject> jobjects = reader.ReadOpenType(stream).Select(t => JRawToEnum(t)).ToList();
                 fromOe = TestHelper.SortProperty(jobjects);
             }
             else if (typeof(TResult).IsPrimitive)

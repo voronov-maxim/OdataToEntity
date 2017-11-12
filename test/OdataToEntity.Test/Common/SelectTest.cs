@@ -213,7 +213,7 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<Customer, Customer>()
             {
-                RequestUri = "Customers?$orderby=Country,Id&$expand=AltOrders($expand=Items($filter=contains(Product,'unknown'))),Orders($expand=Items($filter=contains(Product,'unknown')))",
+                RequestUri = "Customers?$orderby=Country,Id&$expand=AltOrders($expand=Items($filter=contains(Product,'unknown');$orderby=Id)),Orders($expand=Items($filter=contains(Product,'unknown');$orderby=Id))",
                 Expression = t => t.Include(c => c.AltOrders).Include(c => c.Orders).ThenInclude(o => o.Items.Where(i => i.Product.Contains("unknown"))).OrderBy(c => c.Country).ThenBy(c => c.Id)
             };
             await Fixture.Execute(parameters);
@@ -655,7 +655,7 @@ namespace OdataToEntity.Test
             var parameters = new QueryParameters<OrderItem, Object>()
             {
                 RequestUri = "OrderItems(1)/Order?$apply=groupby((CustomerId), aggregate(Status with min as min))",
-                Expression = t => t.Where(i => i.Id == 1).Select(i => i.Order).GroupBy(o => o.Id).Select(g => new
+                Expression = t => t.Where(i => i.Id == 1).Select(i => i.Order).GroupBy(o => o.CustomerId).Select(g => new
                 {
                     CustomerId = g.Key,
                     min = g.Min(a => a.Status)

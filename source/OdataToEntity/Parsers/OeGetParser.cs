@@ -5,7 +5,6 @@ using OdataToEntity.Parsers;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -49,8 +48,13 @@ namespace OdataToEntity
         public async Task ExecuteAsync(ODataUri odataUri, OeRequestHeaders headers, Stream stream, CancellationToken cancellationToken)
         {
             OeParseUriContext parseUriContext = ParseUri(odataUri);
-            if (PageSize > parseUriContext.ODataUri.Top.GetValueOrDefault())
-                parseUriContext.ODataUri.Top = PageSize;
+
+            if (PageSize > 0)
+            {
+                int checkNextPageRecord = parseUriContext.ODataUri.QueryCount.GetValueOrDefault() ? 0 : 1;
+                if (PageSize + checkNextPageRecord > parseUriContext.ODataUri.Top.GetValueOrDefault())
+                    parseUriContext.ODataUri.Top = PageSize + checkNextPageRecord;
+            }
 
             parseUriContext.Headers = headers;
             parseUriContext.EntitySetAdapter = _dataAdapter.GetEntitySetAdapter(parseUriContext.EntitySet.Name);
@@ -129,10 +133,11 @@ namespace OdataToEntity
             var entitySetSegment = (EntitySetSegment)odataUri.Path.FirstSegment;
             IEdmEntitySet entitySet = entitySetSegment.EntitySet;
             bool isCountSegment = odataUri.Path.LastSegment is CountSegment;
-            return new OeParseUriContext(_model, odataUri, entitySet, navigationSegments, isCountSegment, PageSize);
+            return new OeParseUriContext(_model, odataUri, entitySet, navigationSegments, isCountSegment, PageSize, NavigationNextLink);
         }
 
         public Uri BaseUri => _baseUri;
+        public bool NavigationNextLink { get; set; }
         public int PageSize { get; set; }
     }
 }

@@ -2,6 +2,7 @@
 using Microsoft.OData.Edm;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using OdataToEntity.Parsers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -14,16 +15,30 @@ namespace OdataToEntity.Test
 {
     internal sealed class ResponseReader
     {
+        private struct NavigationPorperty
+        {
+            public readonly String Name;
+            public readonly ODataResourceSetBase ResourceSet;
+            public readonly Object Value;
+
+            public NavigationPorperty(String name, Object value, ODataResourceSetBase resourceSet)
+            {
+                Name = name;
+                Value = value;
+                ResourceSet = resourceSet;
+            }
+        }
+
         private sealed class StackItem
         {
             private readonly ODataItem _item;
-            private readonly List<KeyValuePair<String, Object>> _navigationProperties;
+            private readonly List<NavigationPorperty> _navigationProperties;
             private Object _value;
 
             public StackItem(ODataItem item)
             {
                 _item = item;
-                _navigationProperties = new List<KeyValuePair<String, Object>>();
+                _navigationProperties = new List<NavigationPorperty>();
             }
 
             public void AddEntry(Object value)
@@ -54,9 +69,9 @@ namespace OdataToEntity.Test
 
                 throw new NotSupportedException(Item.GetType().ToString());
             }
-            public void AddLink(ODataNestedResourceInfo link, Object value)
+            public void AddLink(ODataNestedResourceInfo link, Object value, ODataResourceSetBase resourceSet)
             {
-                _navigationProperties.Add(new KeyValuePair<String, Object>(link.Name, value));
+                _navigationProperties.Add(new NavigationPorperty(link.Name, value, resourceSet));
             }
             private void AddToList<T>(T value)
             {
@@ -67,16 +82,19 @@ namespace OdataToEntity.Test
 
             public ODataItem Item => _item;
             public Object Value => _value;
-            public IReadOnlyList<KeyValuePair<String, Object>> NavigationProperties => _navigationProperties;
+            public IReadOnlyList<NavigationPorperty> NavigationProperties => _navigationProperties;
+            public ODataResourceSetBase ResourceSet { get; set; }
         }
 
         private readonly IEdmModel _edmModel;
         private readonly Db.OeEntitySetMetaAdapterCollection _entitySetMetaAdapters;
+        private readonly Dictionary<IEnumerable, ODataResourceSetBase> _navigationProperties;
 
         public ResponseReader(IEdmModel edmModel, Db.OeEntitySetMetaAdapterCollection entitySetMetaAdapters)
         {
             _edmModel = edmModel;
             _entitySetMetaAdapters = entitySetMetaAdapters;
+            _navigationProperties = new Dictionary<IEnumerable, ODataResourceSetBase>();
         }
 
         private Object CreateEntity(StackItem stackItem)
@@ -88,12 +106,23 @@ namespace OdataToEntity.Test
             var entitySetMetaAdapter = _entitySetMetaAdapters.FindByTypeName(entry.TypeName);
             var entity = OeEntityItem.CreateEntity(entitySetMetaAdapter.EntityType, entry);
 
-            if (stackItem.NavigationProperties.Count > 0)
-                foreach (var navigationProperty in stackItem.NavigationProperties)
-                {
-                    PropertyInfo clrProperty = entitySetMetaAdapter.EntityType.GetProperty(navigationProperty.Key);
-                    clrProperty.SetValue(entity, navigationProperty.Value);
-                }
+            foreach (NavigationPorperty navigationProperty in stackItem.NavigationProperties)
+            {
+                PropertyInfo clrProperty = entitySetMetaAdapter.EntityType.GetProperty(navigationProperty.Name);
+                Object value = navigationProperty.Value;
+                if (navigationProperty.Value == null)
+                    if (navigationProperty.ResourceSet != null && navigationProperty.ResourceSet.NextPageLink != null)
+                    {
+                        Type itemType = OeExpressionHelper.GetCollectionItemType(clrProperty.PropertyType);
+                        if (itemType != null)
+                            value = Activator.CreateInstance(typeof(List<>).MakeGenericType(itemType));
+                    }
+
+                clrProperty.SetValue(entity, value);
+                var collection = value as IEnumerable;
+                if (collection != null)
+                    _navigationProperties.Add(collection, navigationProperty.ResourceSet);
+            }
 
             return entity;
         }
@@ -113,7 +142,7 @@ namespace OdataToEntity.Test
 
             throw new NotSupportedException(stackItem.Item.GetType().FullName);
         }
-        private JObject CreateOpenTypeEntity(ODataResource resource, IReadOnlyList<KeyValuePair<String, Object>> navigationProperties)
+        private JObject CreateOpenTypeEntity(ODataResource resource, IReadOnlyList<NavigationPorperty> navigationProperties)
         {
             var openType = new JObject();
             foreach (ODataProperty property in resource.Properties.OrderBy(p => p.Name))
@@ -124,19 +153,19 @@ namespace OdataToEntity.Test
                 else
                     openType.Add(property.Name, new JValue(property.Value));
 
-            foreach (KeyValuePair<String, Object> pair in navigationProperties)
+            foreach (NavigationPorperty navigationProperty in navigationProperties)
             {
-                Object value = pair.Value;
+                Object value = navigationProperty.Value;
                 if (value is StackItem)
                 {
                     value = CreateEntity((StackItem)value);
                     if (value == null)
-                        openType.Add(pair.Key, JValue.CreateNull());
+                        openType.Add(navigationProperty.Name, JValue.CreateNull());
                     else
-                        openType.Add(pair.Key, JObject.FromObject(value));
+                        openType.Add(navigationProperty.Name, JObject.FromObject(value));
                 }
                 else
-                    openType.Add(pair.Key, JArray.FromObject(value));
+                    openType.Add(navigationProperty.Name, JArray.FromObject(value));
             }
             return openType;
         }
@@ -152,13 +181,23 @@ namespace OdataToEntity.Test
                         {
                             var contextUri = new Uri((String)jsonReader.Value, UriKind.Absolute);
                             if (contextUri.Fragment[0] == '#')
-                                return contextUri.Fragment.Substring(1);
+                            {
+                                int i = contextUri.Fragment.IndexOf('(');
+                                if (i == -1)
+                                    return contextUri.Fragment.Substring(1);
+                                else
+                                    return contextUri.Fragment.Substring(1, i - 1);
+                            }
                         }
                         return null;
                     }
             }
 
             return null;
+        }
+        public ODataResourceSetBase GetResourceSet(IEnumerable navigationProperty)
+        {
+            return _navigationProperties[navigationProperty];
         }
         private bool IsOpenType(StackItem stackItem)
         {
@@ -184,13 +223,15 @@ namespace OdataToEntity.Test
             Db.OeEntitySetMetaAdapter entitySetMetaAdatpter = _entitySetMetaAdapters.FindByClrType(typeof(T));
             return ReadFeedImpl<T>(response, entitySetMetaAdatpter);
         }
-        public IEnumerable<JObject> ReadOpenType(Stream response, Type baseEntityType)
+        public IEnumerable<JObject> ReadOpenType(Stream response)
         {
-            IODataRequestMessage responseMessage = new OeInMemoryMessage(response, null);
+            IODataResponseMessage responseMessage = new OeInMemoryMessage(response, null);
             var settings = new ODataMessageReaderSettings() { Validations = ValidationKinds.None, EnableMessageStreamDisposal = false };
             var messageReader = new ODataMessageReader(responseMessage, settings, _edmModel);
 
-            IEdmEntitySet entitySet = _edmModel.EntityContainer.EntitySets().Single(e => e.Type.AsElementType().FullTypeName() == baseEntityType.FullName);
+            String entitySetName = GetEntitSetName(response);
+            response.Position = 0;
+            IEdmEntitySet entitySet = _edmModel.EntityContainer.FindEntitySet(entitySetName);
             ODataReader reader = messageReader.CreateODataResourceSetReader(entitySet, entitySet.EntityType());
 
             StackItem stackItem;
@@ -231,7 +272,7 @@ namespace OdataToEntity.Test
                         break;
                     case ODataReaderState.NestedResourceInfoEnd:
                         StackItem item = stack.Pop();
-                        stack.Peek().AddLink((ODataNestedResourceInfo)item.Item, item.Value);
+                        stack.Peek().AddLink((ODataNestedResourceInfo)item.Item, item.Value, item.ResourceSet);
                         break;
                 }
             }
@@ -240,7 +281,7 @@ namespace OdataToEntity.Test
         {
             ResourceSet = null;
 
-            IODataRequestMessage responseMessage = new OeInMemoryMessage(response, null);
+            IODataResponseMessage responseMessage = new OeInMemoryMessage(response, null);
             var settings = new ODataMessageReaderSettings() { EnableMessageStreamDisposal = false };
             var messageReader = new ODataMessageReader(responseMessage, settings, _edmModel);
 
@@ -253,7 +294,10 @@ namespace OdataToEntity.Test
                 switch (reader.State)
                 {
                     case ODataReaderState.ResourceSetStart:
-                        ResourceSet = (ODataResourceSetBase)reader.Item;
+                        if (stack.Count == 0)
+                            ResourceSet = (ODataResourceSetBase)reader.Item;
+                        else
+                            stack.Peek().ResourceSet = (ODataResourceSetBase)reader.Item;
                         break;
                     case ODataReaderState.ResourceStart:
                         stack.Push(new StackItem((ODataResource)reader.Item));
@@ -272,7 +316,7 @@ namespace OdataToEntity.Test
                         break;
                     case ODataReaderState.NestedResourceInfoEnd:
                         StackItem item = stack.Pop();
-                        stack.Peek().AddLink((ODataNestedResourceInfo)item.Item, item.Value);
+                        stack.Peek().AddLink((ODataNestedResourceInfo)item.Item, item.Value, item.ResourceSet);
                         break;
                 }
             }

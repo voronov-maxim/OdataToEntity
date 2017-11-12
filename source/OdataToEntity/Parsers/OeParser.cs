@@ -48,7 +48,7 @@ namespace OdataToEntity
         }
         public async Task ExecuteQueryAsync(ODataUri odataUri, OeRequestHeaders headers, Stream responseStream, CancellationToken cancellationToken)
         {
-            var parser = new OeGetParser(_baseUri, _dataAdapter, _model) { PageSize = PageSize };
+            var parser = new OeGetParser(_baseUri, _dataAdapter, _model) { NavigationNextLink = NavigationNextLink, PageSize = PageSize };
             await parser.ExecuteAsync(odataUri, headers, responseStream, cancellationToken).ConfigureAwait(false);
         }
         public async Task ExecuteOperationAsync(ODataUri odataUri, OeRequestHeaders headers, Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
@@ -103,6 +103,7 @@ namespace OdataToEntity
             throw new InvalidDataException("is not batch stream");
         }
 
+        public bool NavigationNextLink { get; set; }
         public int PageSize { get; set; }
     }
 }

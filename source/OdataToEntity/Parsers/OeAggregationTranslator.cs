@@ -248,7 +248,7 @@ namespace OdataToEntity.Parsers
                 edmTypeRef = PrimitiveTypeHelper.GetPrimitiveTypeRef(clrType, nullable);
             return new AggProperty(name, edmTypeRef, isGroup);
         }
-        public OeEntryFactory CreateEntryFactory(Type entityType, IEdmEntitySetBase entitySet, Type sourceType)
+        public OeEntryFactory CreateEntryFactory(Type entityType, IEdmEntitySet entitySet, Type sourceType)
         {
             OePropertyAccessor[] accessors;
             if (_aggProperties.Count == 0)

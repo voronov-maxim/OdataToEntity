@@ -87,6 +87,13 @@ namespace OdataToEntity.Parsers.UriCompare
                     stringBuilder.Append((pathSegment as EntitySetSegment).EntitySet.Name);
                 else if (pathSegment is NavigationPropertySegment)
                     stringBuilder.Append((pathSegment as NavigationPropertySegment).NavigationProperty.Name);
+                else if (pathSegment is KeySegment)
+                {
+                    stringBuilder.Append(pathSegment.Identifier);
+                    stringBuilder.Append("()");
+                }
+                else if (pathSegment is CountSegment)
+                    stringBuilder.Append(pathSegment.Identifier);
                 else
                     throw new InvalidOperationException("unknown ODataPathSegment " + pathSegment.GetType().ToString());
             }

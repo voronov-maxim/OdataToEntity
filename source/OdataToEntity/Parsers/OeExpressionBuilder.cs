@@ -12,7 +12,7 @@ namespace OdataToEntity.Parsers
     {
         private Type _entityType;
         private readonly IEdmModel _model;
-        private Func<Type, IEdmEntitySetBase, Type, OeEntryFactory> _entryFactory;
+        private Func<Type, IEdmEntitySet, Type, OeEntryFactory> _entryFactory;
         private OeQueryNodeVisitor _visitor;
 
         public OeExpressionBuilder(IEdmModel model, Type entityType)
@@ -120,12 +120,12 @@ namespace OdataToEntity.Parsers
             var orderBytranslator = new OeOrderByTranslator(_visitor);
             return orderBytranslator.Build(source, orderByClause);
         }
-        public Expression ApplySelect(Expression source, SelectExpandClause selectClause, ODataPath path, OeMetadataLevel metadatLevel)
+        public Expression ApplySelect(Expression source, SelectExpandClause selectClause, ODataPath path, OeMetadataLevel metadatLevel, bool navigationNextLink)
         {
             if (selectClause == null)
                 return source;
 
-            var selectTranslator = new OeSelectTranslator(_visitor, path);
+            var selectTranslator = new OeSelectTranslator(_visitor, path, navigationNextLink);
             Expression selectExpression = selectTranslator.Build(source, selectClause, metadatLevel);
 
             _entryFactory = selectTranslator.CreateEntryFactory;
@@ -157,7 +157,7 @@ namespace OdataToEntity.Parsers
             MethodInfo takeMethodInfo = OeMethodInfoHelper.GetTakeMethodInfo(ParameterType);
             return Expression.Call(takeMethodInfo, source, topConstant);
         }
-        public OeEntryFactory CreateEntryFactory(IEdmEntitySetBase entitySet)
+        public OeEntryFactory CreateEntryFactory(IEdmEntitySet entitySet)
         {
             if (_entryFactory != null)
                 return _entryFactory(EntityType, entitySet, ParameterType);

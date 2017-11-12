@@ -27,7 +27,7 @@ namespace OdataToEntity.Test
             await Fixture.Execute(parameters);
 
             JObject responseJObject;
-            using (var stream = new System.IO.MemoryStream())
+            using (var stream = new MemoryStream())
             {
                 ODataUri odataUri = Fixture.ParseUri(parameters.RequestUri);
                 var parser = new OeParser(new Uri("http://dummy/"), Fixture.OeDataAdapter, Fixture.EdmModel);
@@ -40,7 +40,7 @@ namespace OdataToEntity.Test
                 }
             }
 
-            var jArray = (Newtonsoft.Json.Linq.JArray)responseJObject["value"];
+            var jArray = (JArray)responseJObject["value"];
             var actualCounts = jArray.Select(o => (int?)o["Items@odata.count"]);
 
             int?[] expectedCounts = null;
@@ -59,17 +59,17 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters);
 
-            Newtonsoft.Json.Linq.JObject responseJObject;
-            using (var stream = new System.IO.MemoryStream())
+            JObject responseJObject;
+            using (var stream = new MemoryStream())
             {
                 ODataUri odataUri = Fixture.ParseUri(parameters.RequestUri);
                 var parser = new OeParser(new Uri("http://dummy/"), Fixture.OeDataAdapter, Fixture.EdmModel);
                 await parser.ExecuteQueryAsync(odataUri, OeRequestHeaders.JsonDefault, stream, CancellationToken.None);
                 stream.Position = 0;
-                using (var reader = new System.IO.StreamReader(stream))
+                using (var reader = new StreamReader(stream))
                 {
                     String responseStr = await reader.ReadToEndAsync();
-                    responseJObject = Newtonsoft.Json.Linq.JObject.Parse(responseStr);
+                    responseJObject = JObject.Parse(responseStr);
                 }
             }
 
@@ -91,17 +91,17 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters);
 
-            Newtonsoft.Json.Linq.JObject responseJObject;
-            using (var stream = new System.IO.MemoryStream())
+            JObject responseJObject;
+            using (var stream = new MemoryStream())
             {
                 ODataUri odataUri = Fixture.ParseUri(parameters.RequestUri);
                 var parser = new OeParser(new Uri("http://dummy/"), Fixture.OeDataAdapter, Fixture.EdmModel);
                 await parser.ExecuteQueryAsync(odataUri, OeRequestHeaders.JsonDefault, stream, CancellationToken.None);
                 stream.Position = 0;
-                using (var reader = new System.IO.StreamReader(stream))
+                using (var reader = new StreamReader(stream))
                 {
                     String responseStr = await reader.ReadToEndAsync();
-                    responseJObject = Newtonsoft.Json.Linq.JObject.Parse(responseStr);
+                    responseJObject = JObject.Parse(responseStr);
                 }
             }
 
@@ -144,6 +144,59 @@ namespace OdataToEntity.Test
                 fromDb = context.OrderItems.OrderBy(i => i.Id).ToList();
 
             DbFixture.Compare(fromDb, fromOe);
+        }
+        [Fact]
+        public async Task NavigationNextPageLink()
+        {
+            var parser = new OeParser(new Uri("http://dummy"), Fixture.OeDataAdapter, Fixture.EdmModel) { NavigationNextLink = true, PageSize = 2 };
+            var requestUri = new Uri("http://dummy/Orders?$expand=Items($filter=Count gt 0 or Count eq null;$orderby=Id;$count=true)&$orderby=Id&$count=true");
+            var uri = requestUri;
+
+            long count = -1;
+            var fromOe = new List<Object>();
+            do
+            {
+                var response = new MemoryStream();
+                await parser.ExecuteGetAsync(uri, OeRequestHeaders.JsonDefault, response, CancellationToken.None);
+                response.Position = 0;
+
+                var reader = new ResponseReader(Fixture.EdmModel, Fixture.OeDataAdapter.EntitySetMetaAdapters);
+                List<Object> result = reader.ReadFeed(response).Cast<Object>().ToList();
+                Assert.InRange(result.Count, 0, parser.PageSize);
+                fromOe.AddRange(result);
+
+                foreach (Order order in result)
+                {
+                    ODataResourceSetBase resourceSet = reader.GetResourceSet(order.Items);
+                    var navigationPropertyResponse = new MemoryStream();
+                    var navigationPropertyParser = new OeParser(new Uri("http://dummy"), Fixture.OeDataAdapter, Fixture.EdmModel);
+                    await navigationPropertyParser.ExecuteGetAsync(resourceSet.NextPageLink, OeRequestHeaders.JsonDefault, navigationPropertyResponse, CancellationToken.None);
+                    navigationPropertyResponse.Position = 0;
+
+                    var navigationPropertyReader = new ResponseReader(Fixture.EdmModel, Fixture.OeDataAdapter.EntitySetMetaAdapters);
+                    foreach (OrderItem orderItem in navigationPropertyReader.ReadFeed(navigationPropertyResponse))
+                        order.Items.Add(orderItem);
+                }
+
+                if (count < 0)
+                    count = reader.ResourceSet.Count.GetValueOrDefault();
+                uri = reader.ResourceSet.NextPageLink;
+            }
+            while (uri != null);
+            Assert.Equal(count, fromOe.Count);
+
+            parser.NavigationNextLink = false;
+            parser.PageSize = 0;
+
+            var response2 = new MemoryStream();
+            var parser2 = new OeParser(new Uri("http://dummy"), Fixture.OeDataAdapter, Fixture.EdmModel);
+            await parser2.ExecuteGetAsync(requestUri, OeRequestHeaders.JsonDefault, response2, CancellationToken.None);
+            response2.Position = 0;
+
+            var reader2 = new ResponseReader(Fixture.EdmModel, Fixture.OeDataAdapter.EntitySetMetaAdapters);
+            List<Object> result2 = reader2.ReadFeed(response2).Cast<Object>().ToList();
+
+            DbFixture.Compare(result2, fromOe);
         }
     }
 }

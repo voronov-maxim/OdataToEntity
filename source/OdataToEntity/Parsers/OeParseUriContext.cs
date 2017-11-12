@@ -88,13 +88,15 @@ namespace OdataToEntity.Parsers
         }
 
         private readonly IEdmModel _edmModel;
-        private readonly IEdmEntitySetBase _entitySet;
+        private readonly IEdmEntitySet _entitySet;
         private readonly bool _isCountSegment;
+        private readonly bool _navigationNextLink;
         private readonly ODataUri _odataUri;
         private readonly int _pageSize;
         private readonly IReadOnlyList<OeParseNavigationSegment> _parseNavigationSegments;
 
-        public OeParseUriContext(IEdmModel edmModel, ODataUri odataUri, IEdmEntitySetBase entitySet, IReadOnlyList<OeParseNavigationSegment> parseNavigationSegments, bool isCountSegment, int pageSize)
+        public OeParseUriContext(IEdmModel edmModel, ODataUri odataUri, IEdmEntitySet entitySet, IReadOnlyList<OeParseNavigationSegment> parseNavigationSegments, bool isCountSegment,
+            int pageSize, bool navigationNextLink)
         {
             _edmModel = edmModel;
             _odataUri = odataUri;
@@ -102,6 +104,7 @@ namespace OdataToEntity.Parsers
             _parseNavigationSegments = parseNavigationSegments;
             _isCountSegment = isCountSegment;
             _pageSize = pageSize;
+            _navigationNextLink = navigationNextLink;
         }
 
         public Expression CreateCountExpression(IQueryable query, Expression expression)
@@ -112,7 +115,7 @@ namespace OdataToEntity.Parsers
         }
         private OeEntryFactory CreateEntryFactory(OeExpressionBuilder expressionBuilder)
         {
-            IEdmEntitySetBase entitySet = EntitySet;
+            IEdmEntitySet entitySet = EntitySet;
             if (expressionBuilder.EntityType != EntitySetAdapter.EntityType)
             {
                 String typeName = expressionBuilder.EntityType.FullName;
@@ -133,7 +136,7 @@ namespace OdataToEntity.Parsers
             expression = expressionBuilder.ApplyNavigation(expression, ParseNavigationSegments);
             expression = expressionBuilder.ApplyFilter(expression, ODataUri.Filter);
             expression = expressionBuilder.ApplyAggregation(expression, ODataUri.Apply);
-            expression = expressionBuilder.ApplySelect(expression, ODataUri.SelectAndExpand, ODataUri.Path, Headers.MetadataLevel);
+            expression = expressionBuilder.ApplySelect(expression, ODataUri.SelectAndExpand, ODataUri.Path, Headers.MetadataLevel, _navigationNextLink);
             expression = expressionBuilder.ApplyOrderBy(expression, ODataUri.OrderBy);
             expression = expressionBuilder.ApplySkip(expression, ODataUri.Skip, ODataUri.Path);
             expression = expressionBuilder.ApplyTake(expression, ODataUri.Top, ODataUri.Path);
@@ -152,7 +155,7 @@ namespace OdataToEntity.Parsers
         public IReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition> ConstantToParameterMapper { get; set; }
         public Expression CountExpression { get; set; }
         public IEdmModel EdmModel => _edmModel;
-        public IEdmEntitySetBase EntitySet => _entitySet;
+        public IEdmEntitySet EntitySet => _entitySet;
         public Db.OeEntitySetAdapter EntitySetAdapter { get; set; }
         public OeEntryFactory EntryFactory { get; set; }
         public OeRequestHeaders Headers { get; set; }
