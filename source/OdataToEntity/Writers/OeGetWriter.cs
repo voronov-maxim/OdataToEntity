@@ -47,6 +47,7 @@ namespace OdataToEntity.Writers
                 odataUri.Path = new ODataPath(segments);
                 odataUri.Filter = expandedNavigationSelectItem.FilterOption;
                 odataUri.OrderBy = expandedNavigationSelectItem.OrderByOption;
+                odataUri.SelectAndExpand = expandedNavigationSelectItem.SelectAndExpand;
                 odataUri.Top = expandedNavigationSelectItem.TopOption;
                 odataUri.Skip = expandedNavigationSelectItem.SkipOption;
                 odataUri.QueryCount = expandedNavigationSelectItem.CountOption;

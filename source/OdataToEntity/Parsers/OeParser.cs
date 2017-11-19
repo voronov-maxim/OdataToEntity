@@ -103,6 +103,8 @@ namespace OdataToEntity
             throw new InvalidDataException("is not batch stream");
         }
 
+        public Db.OeDataAdapter DataAdapter => _dataAdapter;
+        public IEdmModel Model => _model;
         public bool NavigationNextLink { get; set; }
         public int PageSize { get; set; }
     }

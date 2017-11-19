@@ -8,6 +8,7 @@ namespace OdataToEntity.Test
     {
         public String RequestUri { get; set; }
         public Expression<Func<IQueryable<T>, IQueryable<TResult>>> Expression { get; set; }
+        public bool NavigationNextLink { get; set; }
     }
 
     public sealed class QueryParameters<T> : QueryParameters<T, T>

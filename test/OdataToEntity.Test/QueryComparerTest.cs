@@ -79,7 +79,7 @@ namespace OdataToEntity.Test
                     constantToParameterMapper.Add(constantNode, new Db.OeQueryCacheDbParameterDefinition($"p_{constantToParameterMapper.Count}", typeof(int)));
                 }
 
-                bool result = new OeODataUriComparer(constantToParameterMapper).Compare(parseUriContext1, parseUriContext2);
+                bool result = new OeODataUriComparer(constantToParameterMapper, false).Compare(parseUriContext1, parseUriContext2);
                 Assert.True(result);
 
                 for (int j = i + 1; j < requestMethodNames.Length; j++)
@@ -87,7 +87,7 @@ namespace OdataToEntity.Test
                     parseUriContext2 = parser.ParseUri(fixture.ParseUri(requestMethodNames[j].Request));
 
                     constantToParameterMapper = new FakeReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition>();
-                    result = new OeODataUriComparer(constantToParameterMapper).Compare(parseUriContext1, parseUriContext2);
+                    result = new OeODataUriComparer(constantToParameterMapper, false).Compare(parseUriContext1, parseUriContext2);
                     Assert.False(result);
                 }
             }

@@ -9,13 +9,15 @@ namespace OdataToEntity.Parsers.UriCompare
 {
     public struct OeODataUriComparer
     {
+        private bool _navigationNextLink;
         private readonly OeODataUriComparerParameterValues _parameterValues;
         private readonly OeQueryNodeComparer _queryNodeComparer;
 
-        public OeODataUriComparer(IReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition> constantToParameterMapper)
+        public OeODataUriComparer(IReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition> constantToParameterMapper, bool navigationNextLink)
         {
             _parameterValues = new OeODataUriComparerParameterValues(constantToParameterMapper);
             _queryNodeComparer = new OeQueryNodeComparer(_parameterValues);
+            _navigationNextLink = navigationNextLink;
         }
 
         private static int CombineHashCodes(int h1, int h2)
@@ -25,6 +27,9 @@ namespace OdataToEntity.Parsers.UriCompare
         public bool Compare(OeParseUriContext parseUriContext1, OeParseUriContext parseUriContext2)
         {
             if (parseUriContext1.EntitySet != parseUriContext2.EntitySet)
+                return false;
+
+            if (parseUriContext1.NavigationNextLink != parseUriContext2.NavigationNextLink)
                 return false;
 
             ODataUri uri1 = parseUriContext1.ODataUri;
@@ -39,13 +44,13 @@ namespace OdataToEntity.Parsers.UriCompare
             if (!CompareApply(uri1.Apply, uri2.Apply))
                 return false;
 
-            if (!CompareFilter(uri1.Filter, uri2.Filter))
+            if (!CompareFilter(uri1.Filter, uri2.Filter, false))
                 return false;
 
             if (!CompareSelectAndExpand(uri1.SelectAndExpand, uri2.SelectAndExpand, uri1.Path))
                 return false;
 
-            if (!CompareOrderBy(uri1.OrderBy, uri2.OrderBy))
+            if (!CompareOrderBy(uri1.OrderBy, uri2.OrderBy, false))
                 return false;
 
             if (!CompareSkip(uri1.Skip, uri2.Skip, uri1.Path))
@@ -84,7 +89,7 @@ namespace OdataToEntity.Parsers.UriCompare
 
             return EnumerableComparer.Compare(clause1.Transformations, clause2.Transformations, CompareTransformation);
         }
-        private bool CompareFilter(FilterClause clause1, FilterClause clause2)
+        private bool CompareFilter(FilterClause clause1, FilterClause clause2, bool navigationNextLink)
         {
             if (clause1 == clause2)
                 return true;
@@ -93,9 +98,11 @@ namespace OdataToEntity.Parsers.UriCompare
 
             if (!clause1.ItemType.IsEqual(clause1.ItemType))
                 return false;
-            if (!_queryNodeComparer.Compare(clause1.RangeVariable, clause2.RangeVariable))
+
+            OeQueryNodeComparer queryNodeComparer = navigationNextLink ? new OeQueryNodeComparer(default(OeODataUriComparerParameterValues)) : _queryNodeComparer;
+            if (!queryNodeComparer.Compare(clause1.RangeVariable, clause2.RangeVariable))
                 return false;
-            return _queryNodeComparer.Compare(clause1.Expression, clause2.Expression);
+            return queryNodeComparer.Compare(clause1.Expression, clause2.Expression);
         }
         private bool CompareGroupBy(GroupByTransformationNode transformation1, GroupByTransformationNode transformation2)
         {
@@ -146,18 +153,19 @@ namespace OdataToEntity.Parsers.UriCompare
 
             return level1.IsMaxLevel == level2.IsMaxLevel && level1.Level == level2.Level;
         }
-        private bool CompareOrderBy(OrderByClause clause1, OrderByClause clause2)
+        private bool CompareOrderBy(OrderByClause clause1, OrderByClause clause2, bool navigationNextLink)
         {
             if (clause1 == clause2)
                 return true;
             if (clause1 == null || clause2 == null)
                 return false;
 
+            OeQueryNodeComparer queryNodeComparer = navigationNextLink ? new OeQueryNodeComparer(default(OeODataUriComparerParameterValues)) : _queryNodeComparer;
             return clause1.Direction == clause2.Direction &&
                 clause1.ItemType.IsEqual(clause2.ItemType) &&
-                _queryNodeComparer.Compare(clause1.RangeVariable, clause2.RangeVariable) &&
-                _queryNodeComparer.Compare(clause1.Expression, clause2.Expression) &&
-                CompareOrderBy(clause1.ThenBy, clause2.ThenBy);
+                queryNodeComparer.Compare(clause1.RangeVariable, clause2.RangeVariable) &&
+                queryNodeComparer.Compare(clause1.Expression, clause2.Expression) &&
+                CompareOrderBy(clause1.ThenBy, clause2.ThenBy, navigationNextLink);
         }
         private bool CompareParseNavigationSegments(IReadOnlyList<OeParseNavigationSegment> parseNavigationSegments1,
             IReadOnlyList<OeParseNavigationSegment> parseNavigationSegments2)
@@ -180,7 +188,7 @@ namespace OdataToEntity.Parsers.UriCompare
                         return false;
                 }
 
-                if (!CompareFilter(parseNavigationSegments1[i].Filter, parseNavigationSegments2[i].Filter))
+                if (!CompareFilter(parseNavigationSegments1[i].Filter, parseNavigationSegments2[i].Filter, false))
                     return false;
             }
 
@@ -215,16 +223,29 @@ namespace OdataToEntity.Parsers.UriCompare
                 if (expand1.NavigationSource != expand2.NavigationSource)
                     return false;
 
-                if (!CompareFilter(expand1.FilterOption, expand2.FilterOption))
+                if (!CompareFilter(expand1.FilterOption, expand2.FilterOption, _navigationNextLink))
                     return false;
 
-                if (!CompareOrderBy(expand1.OrderByOption, expand2.OrderByOption))
+                if (!CompareOrderBy(expand1.OrderByOption, expand2.OrderByOption, _navigationNextLink))
                     return false;
 
                 if (!ODataPathComparer.Compare(expand1.PathToNavigationProperty, expand2.PathToNavigationProperty))
                     return false;
 
                 path = new ODataPath(path.Union(expand2.PathToNavigationProperty));
+                if (_navigationNextLink)
+                {
+                    if (expand1.SkipOption == null || expand2.SkipOption == null)
+                        if (expand1.SkipOption != expand2.SkipOption)
+                            return false;
+
+                    if (expand1.TopOption == null || expand2.TopOption == null)
+                        if (expand1.TopOption != expand2.TopOption)
+                            return false;
+
+                    return CompareSelectAndExpand(expand1.SelectAndExpand, expand2.SelectAndExpand, path);
+                }
+
                 return CompareSkip(expand1.SkipOption, expand2.SkipOption, path) &&
                     CompareTop(expand1.TopOption, expand2.TopOption, path) &&
                     CompareSelectAndExpand(expand1.SelectAndExpand, expand2.SelectAndExpand, path);
@@ -273,7 +294,7 @@ namespace OdataToEntity.Parsers.UriCompare
             {
                 FilterClause filter1 = (node1 as FilterTransformationNode).FilterClause;
                 FilterClause filter2 = (node2 as FilterTransformationNode).FilterClause;
-                if (!CompareFilter(filter1, filter2))
+                if (!CompareFilter(filter1, filter2, false))
                     return false;
             }
             else

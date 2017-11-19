@@ -1,8 +1,9 @@
 ﻿<Project>
   <PropertyGroup>
-    <AspNetCoreVersion>2.0.0</AspNetCoreVersion>
+    <AspNetCoreVersion>2.0.1</AspNetCoreVersion>
     <CoreFxVersion>4.4.0</CoreFxVersion>
-    <EfCoreVersion>2.0.0</EfCoreVersion> 
+    <EfCoreVersion>2.0.1</EfCoreVersion> 
+    <MicrosoftExtensionsVersion>2.0.0</MicrosoftExtensionsVersion>
     <JsonNetVersion>10.0.3</JsonNetVersion>
     <NetStandardVersion>2.0.0</NetStandardVersion>
     <ODataLibVersion>7.3.1</ODataLibVersion>

@@ -10,6 +10,18 @@ namespace Xunit
     {
     }
 
+    internal sealed class TheoryAttribute : Attribute
+    {
+    }
+
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
+    internal sealed class InlineDataAttribute : Attribute
+    {
+        public InlineDataAttribute(bool data)
+        {
+        }
+    }
+
     internal static class Assert
     {
         public static void Equal(int expected, int actual)

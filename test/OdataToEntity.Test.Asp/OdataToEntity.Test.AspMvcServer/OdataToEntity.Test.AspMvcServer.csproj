@@ -16,9 +16,7 @@
     <PackageReference Include="Microsoft.AspNetCore" Version="$(AspNetCoreVersion)" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="$(AspNetCoreVersion)" />
     <PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="$(AspNetCoreVersion)" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="$(AspNetCoreVersion)" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="2.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="$(AspNetCoreVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="$(MicrosoftExtensionsVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.Web.BrowserLink" Version="$(AspNetCoreVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="$(AspNetCoreVersion)" />
   </ItemGroup>

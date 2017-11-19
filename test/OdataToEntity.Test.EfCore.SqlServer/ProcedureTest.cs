@@ -40,7 +40,7 @@ namespace OdataToEntity.Test
                 fromOe = count == "" ? null : new T[] { (T)(Object)int.Parse(count) };
             }
             else
-                fromOe = reader.ReadFeed<T>(responseStream).ToArray();
+                fromOe = reader.Read<T>(responseStream).ToArray();
 
             if (fromDbFunc == null)
                 return fromOe;

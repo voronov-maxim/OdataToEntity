@@ -50,12 +50,17 @@ EdmModel edmModel = dataAdapter.BuildEdmModelFromEf6Model();
 ```
 
 ### Sample OData query
-For use odata.nextLink, the next link of a collection with partial results set property PageSize class OeParser
+For use odata.nextLink, the next link of a collection with partial results set property PageSize class OeParser  
+For use to-many navigation property odata.nextLink, the next link of a collection with results set property NavigationNextLink class OeParser
 ```c#
 //Create adapter data access, where OrderContext your DbContext
 var dataAdapter = new OeEfCoreDataAdapter<Model.OrderContext>();
 //Create query parser
-var parser = new OeParser(new Uri("http://dummy"), dataAdapter, dataAdapter.BuildEdmModel()) { PageSize = 2 };
+var parser = new OeParser(new Uri("http://dummy"), dataAdapter, dataAdapter.BuildEdmModel())
+{
+  NavigationNextLink = true,
+  PageSize = 2
+};
 //Query
 var uri = new Uri("http://dummy/Orders?$select=Name");
 //The result of the query

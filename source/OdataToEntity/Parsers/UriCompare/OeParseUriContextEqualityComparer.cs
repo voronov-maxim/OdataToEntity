@@ -6,7 +6,7 @@ namespace OdataToEntity.Parsers.UriCompare
     {
         public bool Equals(OeParseUriContext x, OeParseUriContext y)
         {
-            var comparer = new OeODataUriComparer(x.ConstantToParameterMapper);
+            var comparer = new OeODataUriComparer(x.ConstantToParameterMapper, x.NavigationNextLink);
             if (comparer.Compare(x, y))
             {
                 y.ParameterValues = comparer.ParameterValues;

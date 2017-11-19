@@ -211,7 +211,10 @@ namespace OdataToEntity.Parsers
                 if (SelectItemInfoExists(keyProperty))
                     continue;
 
-                _selectItemInfos.Add(new SelectItemInfo(null, keyProperty, null, true, null));
+                var selectItemInfo = new SelectItemInfo(null, keyProperty, null, true, null);
+                selectItemInfo.ExpressionIndex = expressions.Count;
+                _selectItemInfos.Add(selectItemInfo);
+
                 PropertyInfo property = itemType.GetProperty(keyProperty.Name);
                 expressions.Add(Expression.MakeMemberAccess(_parameter, property));
             }
@@ -233,12 +236,9 @@ namespace OdataToEntity.Parsers
             if (_selectItemInfos.Any(i => i.PathSelect))
             {
                 var accessors = new List<OePropertyAccessor>(_selectItemInfos.Count);
-                for (int i = 0; i < _selectItemInfos.Count; i++)
-                {
-                    SelectItemInfo info = _selectItemInfos[i];
-                    if (info.EdmProperty is IEdmStructuralProperty)
-                        accessors.Add(OePropertyAccessor.CreatePropertyAccessor(info.EdmProperty, itemExpressions[i], parameter));
-                }
+                foreach (SelectItemInfo selectItemInfo in _selectItemInfos)
+                    if (selectItemInfo.EdmProperty is IEdmStructuralProperty)
+                        accessors.Add(OePropertyAccessor.CreatePropertyAccessor(selectItemInfo.EdmProperty, itemExpressions[selectItemInfo.ExpressionIndex], parameter));
                 entryFactory = OeEntryFactory.CreateEntryFactoryParent(entitySet, accessors.ToArray(), navigationLinks);
             }
             else

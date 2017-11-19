@@ -160,7 +160,7 @@ namespace OdataToEntity.Test
                             jproperty.ValueProvider = new NullValueProvider();
                 }
 
-                return jproperties.OrderBy(p => p.PropertyName).ToList();
+                return jproperties.OrderBy(p => p.PropertyName, StringComparer.Ordinal).ToList();
             }
             private static bool IsTestModelType(Type type)
             {
@@ -332,39 +332,15 @@ namespace OdataToEntity.Test
                     }
                 }
         }
-        public static JObject[] SortProperty(IEnumerable<JObject> items)
-        {
-            var jobjects = new List<JObject>();
-            foreach (Object item in items)
-            {
-                var jobject = new JObject();
-                foreach (JProperty jpropety in (item as JObject).Properties().OrderBy(p => p.Name))
-                    if (jpropety.Value is JObject)
-                        jobject.Add(jpropety.Name, SortProperty(jpropety.Value as JObject));
-                    else
-                    {
-                        var jvalue = jpropety.Value as JValue;
-                        if (jvalue != null && jvalue.Value is Decimal) //fix precision sql.avg decimal(38,6)
-                        {
-                            var value = (Decimal)jvalue.Value;
-                            jvalue.Value = Math.Round(value, 2);
-                        }
-                        jobject.Add(jpropety.Name, jpropety.Value);
-                    }
-                jobjects.Add(jobject);
-            }
-            return jobjects.ToArray();
-        }
         public static IList SortProperty(IEnumerable items, IReadOnlyList<IncludeVisitor.Include> includes)
         {
             var serializer = new JsonSerializer();
             serializer.ContractResolver = new TestContractResolver(includes);
             serializer.Formatting = Newtonsoft.Json.Formatting.Indented;
             serializer.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
-            JArray jarray = JArray.FromObject(items, serializer);
-            return SortProperty(jarray.Cast<JObject>());
+            return JArray.FromObject(items, serializer);
         }
-        private static JObject SortProperty(JObject jobject)
+        public static JObject SortProperty(JObject jobject)
         {
             var innerObject = new JObject();
             foreach (var pair in ((IEnumerable<KeyValuePair<String, JToken>>)jobject).OrderBy(p => p.Key))

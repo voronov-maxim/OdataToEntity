@@ -1,6 +1,7 @@
 ﻿using Microsoft.OData;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
+using OdataToEntity.ModelBuilder;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,17 +29,19 @@ namespace OdataToEntity.Parsers
     {
         private sealed class FilterVisitor : ExpressionVisitor
         {
+            private readonly Type _filterType;
             private readonly IQueryable _query;
             private MethodCallExpression _whereExpression;
 
-            private FilterVisitor(IQueryable query)
+            private FilterVisitor(IQueryable query, Type filterType)
             {
                 _query = query;
+                _filterType = filterType;
             }
 
-            public static Expression Translate(IQueryable query, Expression expression)
+            public static Expression Translate(IQueryable query, Expression expression, Type filterType)
             {
-                var visitor = new FilterVisitor(query);
+                var visitor = new FilterVisitor(query, filterType);
                 visitor.Visit(expression);
                 return visitor._whereExpression;
             }
@@ -55,7 +58,7 @@ namespace OdataToEntity.Parsers
             protected override Expression VisitMethodCall(MethodCallExpression node)
             {
                 var e = (MethodCallExpression)base.VisitMethodCall(node);
-                if (e.Method.Name == nameof(Enumerable.Where) && e.Method.GetGenericArguments()[0] == _query.ElementType)
+                if (e.Method.Name == nameof(Enumerable.Where) && e.Method.GetGenericArguments()[0] == _filterType)
                     _whereExpression = e;
                 return e;
             }
@@ -109,8 +112,12 @@ namespace OdataToEntity.Parsers
 
         public Expression CreateCountExpression(IQueryable query, Expression expression)
         {
-            Expression filterExpression = ODataUri.Filter == null ? query.Expression : FilterVisitor.Translate(query, expression);
-            MethodInfo countMethodInfo = OeMethodInfoHelper.GetCountMethodInfo(query.ElementType);
+            Type filterType = EntryFactory == null ? query.ElementType : EdmModel.GetClrType(EntryFactory.EntityType);
+            Expression filterExpression = ODataUri.Filter == null ? query.Expression : FilterVisitor.Translate(query, expression, filterType);
+
+            Type sourceType = OeExpressionHelper.GetCollectionItemType(filterExpression.Type);
+            MethodInfo countMethodInfo = OeMethodInfoHelper.GetCountMethodInfo(sourceType);
+
             return Expression.Call(countMethodInfo, filterExpression);
         }
         private OeEntryFactory CreateEntryFactory(OeExpressionBuilder expressionBuilder)
@@ -136,7 +143,7 @@ namespace OdataToEntity.Parsers
             expression = expressionBuilder.ApplyNavigation(expression, ParseNavigationSegments);
             expression = expressionBuilder.ApplyFilter(expression, ODataUri.Filter);
             expression = expressionBuilder.ApplyAggregation(expression, ODataUri.Apply);
-            expression = expressionBuilder.ApplySelect(expression, ODataUri.SelectAndExpand, ODataUri.Path, Headers.MetadataLevel, _navigationNextLink);
+            expression = expressionBuilder.ApplySelect(expression, ODataUri.SelectAndExpand, ODataUri.Path, Headers.MetadataLevel, NavigationNextLink);
             expression = expressionBuilder.ApplyOrderBy(expression, ODataUri.OrderBy);
             expression = expressionBuilder.ApplySkip(expression, ODataUri.Skip, ODataUri.Path);
             expression = expressionBuilder.ApplyTake(expression, ODataUri.Top, ODataUri.Path);
@@ -160,6 +167,7 @@ namespace OdataToEntity.Parsers
         public OeEntryFactory EntryFactory { get; set; }
         public OeRequestHeaders Headers { get; set; }
         public bool IsCountSegment => _isCountSegment;
+        public bool NavigationNextLink => _navigationNextLink;
         public ODataUri ODataUri => _odataUri;
         public int PageSize => _pageSize;
         public IReadOnlyList<Db.OeQueryCacheDbParameterValue> ParameterValues { get; set; }

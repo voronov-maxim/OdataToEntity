@@ -88,7 +88,12 @@ namespace OdataToEntity.Test
             TestHelper.SetNullCollection(fromOe, GetIncludes(lambda));
 
             if (typeof(TResult) == typeof(Object))
-                fromOe = TestHelper.SortProperty(fromOe.Cast<Object>().Select(o => JObject.FromObject(o)));
+            {
+                var jobjects = new List<JObject>();
+                foreach (Object entity in fromOe)
+                    jobjects.Add(TestHelper.SortProperty(JObject.FromObject(entity)));
+                fromOe = jobjects;
+            }
             return fromOe;
         }
         private static IList ExecuteQuery<T>(IQueryable query, Expression expression)
@@ -151,9 +156,19 @@ namespace OdataToEntity.Test
         }
         internal async static Task RunTest<T>(T testClass)
         {
-            foreach (MethodInfo methodInfo in testClass.GetType().GetMethods().Where(m => m.GetCustomAttributes(typeof(FactAttribute), false).Length == 1))
+            foreach (MethodInfo methodInfo in testClass.GetType().GetMethods())
             {
-                var testMethod = (Func<T, Task>)methodInfo.CreateDelegate(typeof(Func<T, Task>));
+                Func<T, Task> testMethod;
+                if (methodInfo.GetCustomAttribute(typeof(FactAttribute), false) != null)
+                    testMethod = (Func<T, Task>)methodInfo.CreateDelegate(typeof(Func<T, Task>));
+                else if (methodInfo.GetCustomAttribute(typeof(TheoryAttribute), false) != null)
+                {
+                    var methodCall = (Func<T, bool, Task>)methodInfo.CreateDelegate(typeof(Func<T, bool, Task>));
+                    testMethod = i => methodCall(i, false);
+                }
+                else
+                    continue;
+
                 Console.WriteLine(methodInfo.Name);
                 try
                 {

@@ -21,11 +21,11 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Routing" Version="$(AspNetCoreVersion)" />
     <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="$(AspNetCoreVersion)" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="$(AspNetCoreVersion)" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="$(AspNetCoreVersion)" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="$(AspNetCoreVersion)" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="$(AspNetCoreVersion)" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="$(AspNetCoreVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="$(MicrosoftExtensionsVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="$(MicrosoftExtensionsVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="$(MicrosoftExtensionsVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="$(MicrosoftExtensionsVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="$(MicrosoftExtensionsVersion)" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="$(AspNetCoreVersion)" />
   </ItemGroup>
 

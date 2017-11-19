@@ -188,113 +188,146 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters);
         }
-        [Fact]
-        public async Task Expand()
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task Expand(bool navigationNextLink)
         {
             var parameters = new QueryParameters<Order>()
             {
                 RequestUri = "Orders?$expand=Customer,Items&$orderby=Id",
                 Expression = t => t.Include(o => o.Customer).Include(o => o.Items).OrderBy(o => o.Id),
+                NavigationNextLink = navigationNextLink
             };
             await Fixture.Execute(parameters);
         }
-        [Fact]
-        public async Task ExpandAndSelect()
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task ExpandAndSelect(bool navigationNextLink)
         {
             var parameters = new QueryParameters<Order, Object>()
             {
                 RequestUri = "Orders?$expand=AltCustomer,Customer,Items&$select=AltCustomerCountry,AltCustomerId,CustomerCountry,CustomerId,Date,Id,Name,Status&$orderby=Id",
                 Expression = t => t.Select(o => new { o.AltCustomer, o.Customer, o.Items, o.AltCustomerCountry, o.AltCustomerId, o.CustomerCountry, o.CustomerId, o.Date, o.Id, o.Name, o.Status }).OrderBy(o => o.Id),
+                NavigationNextLink = navigationNextLink
             };
             await Fixture.Execute(parameters);
         }
-        [Fact]
-        public async Task ExpandExpandFilter()
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task ExpandExpandFilter(bool navigationNextLink)
         {
             var parameters = new QueryParameters<Customer, Customer>()
             {
                 RequestUri = "Customers?$orderby=Country,Id&$expand=AltOrders($expand=Items($filter=contains(Product,'unknown');$orderby=Id)),Orders($expand=Items($filter=contains(Product,'unknown');$orderby=Id))",
-                Expression = t => t.Include(c => c.AltOrders).Include(c => c.Orders).ThenInclude(o => o.Items.Where(i => i.Product.Contains("unknown"))).OrderBy(c => c.Country).ThenBy(c => c.Id)
+                Expression = t => t.Include(c => c.AltOrders).Include(c => c.Orders).ThenInclude(o => o.Items.Where(i => i.Product.Contains("unknown"))).OrderBy(c => c.Country).ThenBy(c => c.Id),
+                NavigationNextLink = navigationNextLink
             };
             await Fixture.Execute(parameters);
         }
-        [Fact]
-        public async Task ExpandExpandMany()
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task ExpandExpandMany(bool navigationNextLink)
         {
             var parameters = new QueryParameters<Customer, Customer>()
             {
                 RequestUri = "Customers?$expand=AltOrders($expand=Items),Orders($expand=Items)&$orderby=Country,Id",
-                Expression = t => t.Include(c => c.AltOrders).Include(c => c.Orders).ThenInclude(o => o.Items.OrderBy(i => i.Id)).OrderBy(c => c.Country).ThenBy(c => c.Id)
+                Expression = t => t.Include(c => c.AltOrders).Include(c => c.Orders).ThenInclude(o => o.Items.OrderBy(i => i.Id)).OrderBy(c => c.Country).ThenBy(c => c.Id),
+                NavigationNextLink = navigationNextLink
             };
             await Fixture.Execute(parameters);
         }
-        [Fact]
-        public async Task ExpandExpandOne()
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task ExpandExpandOne(bool navigationNextLink)
         {
             var parameters = new QueryParameters<OrderItem, OrderItem>()
             {
                 RequestUri = "OrderItems?$expand=Order($expand=AltCustomer,Customer)&$orderby=Id",
-                Expression = t => t.Include(i => i.Order).ThenInclude(o => o.AltCustomer).Include(i => i.Order).ThenInclude(o => o.Customer).OrderBy(i => i.Id)
+                Expression = t => t.Include(i => i.Order).ThenInclude(o => o.AltCustomer).Include(i => i.Order).ThenInclude(o => o.Customer).OrderBy(i => i.Id),
+                NavigationNextLink = navigationNextLink
             };
             await Fixture.Execute(parameters);
         }
-        [Fact]
-        public async Task ExpandExpandOrderBy()
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task ExpandExpandOrderBy(bool navigationNextLink)
         {
             var parameters = new QueryParameters<Customer, Customer>()
             {
                 RequestUri = "Customers?$expand=Orders($expand=Items($orderby=Id desc))&$orderby=Country,Id",
-                Expression = t => t.Include(c => c.Orders).ThenInclude(o => o.Items.OrderByDescending(i => i.Id)).OrderBy(c => c.Country).ThenBy(c => c.Id)
+                Expression = t => t.Include(c => c.Orders).ThenInclude(o => o.Items.OrderByDescending(i => i.Id)).OrderBy(c => c.Country).ThenBy(c => c.Id),
+                NavigationNextLink = navigationNextLink
             };
             await Fixture.Execute(parameters);
         }
-        [Fact]
-        public async Task ExpandExpandSkipTop()
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task ExpandExpandSkipTop(bool navigationNextLink)
         {
             var parameters = new QueryParameters<Customer, Customer>()
             {
                 RequestUri = "Customers?$orderby=Country,Id&$skip=1&$top=3&$expand=AltOrders($expand=Items($top=1)),Orders($expand=Items($top=1))",
-                Expression = t => t.OrderBy(c => c.Country).ThenBy(c => c.Id).Skip(1).Take(3).Include(c => c.AltOrders).Include(c => c.Orders).ThenInclude(o => o.Items.Take(1))
+                Expression = t => t.OrderBy(c => c.Country).ThenBy(c => c.Id).Skip(1).Take(3).Include(c => c.AltOrders).Include(c => c.Orders).ThenInclude(o => o.Items.Take(1)),
+                NavigationNextLink = navigationNextLink
             };
             await Fixture.Execute(parameters);
         }
-        [Fact]
-        public async Task ExpandFilter()
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task ExpandFilter(bool navigationNextLink)
         {
             var parameters = new QueryParameters<Customer, Customer>()
             {
                 RequestUri = "Customers?$expand=Orders($filter=Status eq OdataToEntity.Test.Model.OrderStatus'Processing')&$orderby=Country,Id",
-                Expression = t => t.Include(c => c.Orders.Where(o => o.Status == OrderStatus.Processing)).OrderBy(c => c.Country).ThenBy(c => c.Id)
+                Expression = t => t.Include(c => c.Orders.Where(o => o.Status == OrderStatus.Processing)).OrderBy(c => c.Country).ThenBy(c => c.Id),
+                NavigationNextLink = navigationNextLink
             };
             await Fixture.Execute(parameters);
         }
-        [Fact]
-        public async Task ExpandInverseProperty()
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task ExpandInverseProperty(bool navigationNextLink)
         {
             var parameters = new QueryParameters<Customer, Customer>()
             {
-                RequestUri = "Customers?$expand=AltOrders,Orders",
-                Expression = t => t.Include(c => c.AltOrders).Include(c => c.Orders)
+                RequestUri = "Customers?$expand=AltOrders,Orders&$orderby=Country,Id",
+                Expression = t => t.Include(c => c.AltOrders).Include(c => c.Orders).OrderBy(c => c.Country).ThenBy(c => c.Id),
+                NavigationNextLink = navigationNextLink
             };
             await Fixture.Execute(parameters);
         }
-        [Fact]
-        public async Task ExpandNestedSelect()
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task ExpandNestedSelect(bool navigationNextLink)
         {
             var parameters = new QueryParameters<Customer, Customer>()
             {
                 RequestUri = "Customers?$expand=Orders($select=AltCustomerCountry,AltCustomerId,CustomerCountry,CustomerId,Date,Id,Name,Status)&$orderby=Country,Id",
-                Expression = t => t.Include(c => c.Orders).OrderBy(c => c.Country).ThenBy(c => c.Id)
+                Expression = t => t.Include(c => c.Orders).OrderBy(c => c.Country).ThenBy(c => c.Id),
+                NavigationNextLink = navigationNextLink
             };
             await Fixture.Execute(parameters);
         }
-        [Fact]
-        public async Task ExpandStar()
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task ExpandStar(bool navigationNextLink)
         {
             var parameters = new QueryParameters<Order>()
             {
                 RequestUri = "Orders?$expand=*&$orderby=Id",
-                Expression = t => t.Include(o => o.AltCustomer).Include(o => o.Customer).Include(o => o.Items).OrderBy(o => o.Id)
+                Expression = t => t.Include(o => o.AltCustomer).Include(o => o.Customer).Include(o => o.Items).OrderBy(o => o.Id),
+                NavigationNextLink = navigationNextLink
             };
             await Fixture.Execute(parameters);
         }
@@ -619,13 +652,16 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters);
         }
-        [Fact]
-        public async Task KeyExpand()
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task KeyExpand(bool navigationNextLink)
         {
             var parameters = new QueryParameters<Order>()
             {
                 RequestUri = "Orders(1)?$expand=Customer,Items",
-                Expression = t => t.Include(o => o.Customer).Include(o => o.Items).Where(o => o.Id == 1)
+                Expression = t => t.Include(o => o.Customer).Include(o => o.Items).Where(o => o.Id == 1),
+                NavigationNextLink = navigationNextLink
             };
             await Fixture.Execute(parameters);
         }
@@ -715,15 +751,18 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters);
         }
-        [Fact]
-        public async Task Parameterization()
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task Parameterization(bool navigationNextLink)
         {
             var parameters = new QueryParameters<Order>()
             {
                 RequestUri = @"Orders?$filter=AltCustomerId eq 3 and CustomerId eq 4 and ((year(Date) eq 2016 and month(Date) gt 11 and day(Date) lt 20) or Date eq null) and contains(Name,'unknown') and Status eq OdataToEntity.Test.Model.OrderStatus'Unknown'
 &$expand=Items($filter=(Count eq 0 or Count eq null) and (Price eq 0 or Price eq null) and (contains(Product,'unknown') or contains(Product,'null')) and OrderId gt -1 and Id ne 1)",
                 Expression = t => t.Where(o => o.AltCustomerId == 3 && o.CustomerId == 4 && ((o.Date.GetValueOrDefault().Year == 2016 && o.Date.GetValueOrDefault().Month > 11 && o.Date.GetValueOrDefault().Day < 20) || o.Date == null) && o.Name.Contains("unknown") && o.Status == OrderStatus.Unknown)
-                .Include(o => o.Items.Where(i => (i.Count == 0 || i.Count == null) && (i.Price == 0 || i.Price == null) && (i.Product.Contains("unknown") || i.Product.Contains("null")) && i.OrderId > -1 && i.Id != 1))
+                .Include(o => o.Items.Where(i => (i.Count == 0 || i.Count == null) && (i.Price == 0 || i.Price == null) && (i.Product.Contains("unknown") || i.Product.Contains("null")) && i.OrderId > -1 && i.Id != 1)),
+                NavigationNextLink = navigationNextLink
             };
             await Fixture.Execute(parameters);
         }
