@@ -23,34 +23,47 @@ namespace OdataToEntity.Writers
             Uri uri = AppendSegment(baseUri, entitySet.Name, true);
             var builder = new StringBuilder(uri.IsAbsoluteUri ? uri.AbsoluteUri : uri.OriginalString);
             builder.Append('(');
-            bool flag = true;
 
             IEnumerable<IEdmStructuralProperty> keyProperties = entitySet.EntityType().Key();
-            foreach (IEdmStructuralProperty keyProperty in keyProperties)
+            using (IEnumerator<IEdmStructuralProperty> enumerator = keyProperties.GetEnumerator())
             {
-                ODataProperty property = null;
-                foreach (ODataProperty entryProperty in entry.Properties)
-                    if (entryProperty.Name == keyProperty.Name)
-                    {
-                        property = entryProperty;
-                        break;
-                    }
+                if (!enumerator.MoveNext())
+                    return null;
 
-                if (flag)
-                    flag = false;
-                else
-                    builder.Append(',');
-                if (keyProperties.Count() > 1)
+                IEdmStructuralProperty keyProperty = enumerator.Current;
+                if (enumerator.MoveNext())
                 {
-                    builder.Append(property.Name);
-                    builder.Append('=');
+                    int counter = 0;
+                    while (keyProperty != null)
+                    {
+                        ODataProperty property = GetProperty(entry, keyProperty.Name);
+                        builder.Append(property.Name);
+                        builder.Append('=');
+                        builder.Append(ODataUriUtils.ConvertToUriLiteral(property.Value, ODataVersion.V4));
+
+                        keyProperty = counter == 0 || enumerator.MoveNext() ? enumerator.Current : null;
+                        if (keyProperty != null)
+                            builder.Append(',');
+
+                        counter++;
+                    }
                 }
-
-                builder.Append(ODataUriUtils.ConvertToUriLiteral(property.Value, ODataVersion.V4));
+                else
+                {
+                    ODataProperty property = GetProperty(entry, keyProperty.Name);
+                    builder.Append(ODataUriUtils.ConvertToUriLiteral(property.Value, ODataVersion.V4));
+                }
             }
-            builder.Append(')');
 
+            builder.Append(')');
             return new Uri(builder.ToString(), UriKind.Absolute);
+        }
+        private static ODataProperty GetProperty(ODataResource entry, String propertyName)
+        {
+            foreach (ODataProperty entryProperty in entry.Properties)
+                if (String.CompareOrdinal(entryProperty.Name, propertyName) == 0)
+                    return entryProperty;
+            return null;
         }
     }
 }

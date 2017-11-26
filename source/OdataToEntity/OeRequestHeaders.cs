@@ -90,9 +90,7 @@ namespace OdataToEntity
             bool streaming = true;
 
             int start;
-            int valueLength = 0;
-
-            start = GetParameterValue(acceptHeader, "odata.metadata", out valueLength);
+            start = GetParameterValue(acceptHeader, "odata.metadata", out int valueLength);
             if (start != -1)
             {
                 if (String.Compare(acceptHeader, start, "none", 0, "none".Length, StringComparison.OrdinalIgnoreCase) == 0)

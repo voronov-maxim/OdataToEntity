@@ -7,12 +7,12 @@ using System.Text;
 
 namespace OdataToEntity.Parsers.UriCompare
 {
-    public struct OeODataUriComparerParameterValues
+    public struct OeCacheComparerParameterValues
     {
         private readonly IReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition> _constantToParameterMapper;
         private readonly List<Db.OeQueryCacheDbParameterValue> _parameterValues;
 
-        public OeODataUriComparerParameterValues(IReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition> constantToParameterMapper)
+        public OeCacheComparerParameterValues(IReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition> constantToParameterMapper)
         {
             _constantToParameterMapper = constantToParameterMapper;
             _parameterValues = new List<Db.OeQueryCacheDbParameterValue>(_constantToParameterMapper.Count);

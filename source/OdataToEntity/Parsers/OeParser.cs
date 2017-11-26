@@ -24,8 +24,7 @@ namespace OdataToEntity
 
         public async Task<String> ExecuteBatchAsync(Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
         {
-            ArraySegment<byte> readedBytes;
-            String contentType = GetConentType(requestStream, out readedBytes);
+            String contentType = GetConentType(requestStream, out ArraySegment<byte> readedBytes);
             var compositeStream = new CompositeReadStream(readedBytes, requestStream);
             await ExecuteBatchAsync(compositeStream, responseStream, cancellationToken, contentType);
             return contentType;
@@ -48,12 +47,12 @@ namespace OdataToEntity
         }
         public async Task ExecuteQueryAsync(ODataUri odataUri, OeRequestHeaders headers, Stream responseStream, CancellationToken cancellationToken)
         {
-            var parser = new OeGetParser(_baseUri, _dataAdapter, _model) { NavigationNextLink = NavigationNextLink, PageSize = PageSize };
+            var parser = new OeGetParser(_dataAdapter, _model) { NavigationNextLink = NavigationNextLink, PageSize = PageSize };
             await parser.ExecuteAsync(odataUri, headers, responseStream, cancellationToken).ConfigureAwait(false);
         }
         public async Task ExecuteOperationAsync(ODataUri odataUri, OeRequestHeaders headers, Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
         {
-            var parser = new OePostParser(_baseUri, _dataAdapter, _model);
+            var parser = new OePostParser(_dataAdapter, _model);
             await parser.ExecuteAsync(odataUri, requestStream, headers, responseStream, cancellationToken);
         }
         public async Task ExecutePostAsync(Uri requestUri, OeRequestHeaders headers, Stream requestStream, Stream responseStream, CancellationToken cancellationToken)

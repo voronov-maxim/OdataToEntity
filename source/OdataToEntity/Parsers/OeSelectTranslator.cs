@@ -11,6 +11,25 @@ namespace OdataToEntity.Parsers
 {
     public sealed class OeSelectTranslator
     {
+        private sealed class ParameterVisitor : ExpressionVisitor
+        {
+            private readonly Expression _newExpression;
+            private readonly Expression _oldExpression;
+
+            public ParameterVisitor(Expression oldExpression, Expression newExpression)
+            {
+                _oldExpression = oldExpression;
+                _newExpression = newExpression;
+            }
+
+            protected override Expression VisitParameter(ParameterExpression node)
+            {
+                if (node == _oldExpression)
+                    return _newExpression;
+                return base.VisitParameter(node);
+            }
+        }
+
         private sealed class SelectItemInfo
         {
             private readonly bool? _countOption;
@@ -32,6 +51,7 @@ namespace OdataToEntity.Parsers
             public IEdmProperty EdmProperty => _edmProperty;
             public IEdmEntitySet EntitySet => _entitySet;
             public OeEntryFactory EntryFactory { get; set; }
+            public ExpandedNavigationSelectItem ExpandedNavigationSelectItem { get; set; }
             public int ExpressionIndex { get; set; }
             public bool PathSelect => _pathSelect;
             public ODataNestedResourceInfo ResourceInfo => _resource;
@@ -40,18 +60,18 @@ namespace OdataToEntity.Parsers
         private sealed class SelectItemTranslator : SelectItemTranslator<Expression>
         {
             private readonly IEdmModel _model;
-            private readonly bool _navigationNextLink;
             private readonly ODataPath _path;
             private readonly ParameterExpression _parameter;
+            private readonly OeQueryContext _queryContex;
             private SelectItemInfo _selectItemInfo;
             private readonly Expression _source;
             private readonly OeQueryNodeVisitor _visitor;
 
-            public SelectItemTranslator(OeQueryNodeVisitor visitor, ODataPath path, ParameterExpression parameter, Expression source, bool navigationNextLink)
+            public SelectItemTranslator(OeQueryContext queryContex, OeQueryNodeVisitor visitor, ODataPath path, ParameterExpression parameter, Expression source)
             {
+                _queryContex = queryContex;
                 _visitor = visitor;
                 _path = path;
-                _navigationNextLink = navigationNextLink;
                 _parameter = parameter;
                 _source = source;
                 _model = visitor.EdmModel;
@@ -88,6 +108,9 @@ namespace OdataToEntity.Parsers
             public override Expression Translate(ExpandedNavigationSelectItem item)
             {
                 var segment = (NavigationPropertySegment)item.PathToNavigationProperty.LastSegment;
+                if (_queryContex.NavigationNextLink && segment.NavigationProperty.Type.Definition is IEdmCollectionType)
+                    return null;
+
                 _selectItemInfo = CreateNavigationSelectItemInfo(_model, segment, false, item.CountOption);
 
                 PropertyInfo navigationClrProperty = _parameter.Type.GetProperty(_selectItemInfo.EdmProperty.Name);
@@ -97,13 +120,6 @@ namespace OdataToEntity.Parsers
                 Type itemType = OeExpressionHelper.GetCollectionItemType(navigationItemType);
                 if (itemType != null)
                 {
-                    if (_navigationNextLink)
-                    {
-                        _selectItemInfo.EntryFactory = OeEntryFactory.CreateNextLink(_selectItemInfo.EntitySet, _selectItemInfo.ResourceInfo, item);
-                        return null;
-                    }
-
-
                     var expressionBuilder = new OeExpressionBuilder(_model, itemType);
                     expression = expressionBuilder.ApplyFilter(expression, item.FilterOption);
                     expression = expressionBuilder.ApplyOrderBy(expression, item.OrderByOption);
@@ -119,8 +135,8 @@ namespace OdataToEntity.Parsers
                 if (item.SelectAndExpand.SelectedItems.Any())
                 {
                     var path = new ODataPath(_path.Union(item.PathToNavigationProperty));
-                    var selectTranslator = new OeSelectTranslator(_visitor, path, _navigationNextLink);
-                    Expression nestedExpression = selectTranslator.CreateExpression(expression, item.SelectAndExpand, OeMetadataLevel.Minimal);
+                    var selectTranslator = new OeSelectTranslator(_queryContex, _visitor, path);
+                    Expression nestedExpression = selectTranslator.CreateExpression(expression, item.SelectAndExpand);
 
                     Type nestedType = OeExpressionHelper.GetCollectionItemType(nestedExpression.Type);
                     if (nestedType == null)
@@ -139,22 +155,23 @@ namespace OdataToEntity.Parsers
             public override Expression Translate(PathSelectItem item)
             {
                 Expression expression;
-                if (item.SelectedPath.LastSegment is NavigationPropertySegment)
+                if (item.SelectedPath.LastSegment is NavigationPropertySegment navigationSegment)
                 {
-                    var segment = (NavigationPropertySegment)item.SelectedPath.LastSegment;
-                    _selectItemInfo = CreateNavigationSelectItemInfo(_model, segment, true, null);
+                    if (_queryContex.NavigationNextLink && navigationSegment.NavigationProperty.Type.Definition is IEdmCollectionType)
+                        return null;
+
+                    _selectItemInfo = CreateNavigationSelectItemInfo(_model, navigationSegment, true, null);
 
                     PropertyInfo navigationClrProperty = _parameter.Type.GetProperty(_selectItemInfo.EdmProperty.Name);
                     expression = Expression.MakeMemberAccess(_parameter, navigationClrProperty);
                 }
-                else if (item.SelectedPath.LastSegment is PropertySegment)
+                else if (item.SelectedPath.LastSegment is PropertySegment propertySegment)
                 {
-                    var segment = (PropertySegment)item.SelectedPath.LastSegment;
-                    _selectItemInfo = new SelectItemInfo(null, segment.Property, null, true, null);
+                    _selectItemInfo = new SelectItemInfo(null, propertySegment.Property, null, true, null);
 
-                    PropertyInfo property = _parameter.Type.GetProperty(segment.Property.Name);
+                    PropertyInfo property = _parameter.Type.GetProperty(propertySegment.Property.Name);
                     if (property == null)
-                        expression = new TuplePropertyByEdmProperty(_source).GetTuplePropertyByEdmProperty(_parameter, segment.Property);
+                        expression = new TuplePropertyByEdmProperty(_source).GetTuplePropertyByEdmProperty(_parameter, propertySegment.Property);
                     else
                         expression = Expression.MakeMemberAccess(_parameter, property);
                 }
@@ -167,38 +184,19 @@ namespace OdataToEntity.Parsers
             public SelectItemInfo SelectItemInfo => _selectItemInfo;
         }
 
-        private sealed class ParameterVisitor : ExpressionVisitor
-        {
-            private readonly Expression _newExpression;
-            private readonly Expression _oldExpression;
-
-            public ParameterVisitor(Expression oldExpression, Expression newExpression)
-            {
-                _oldExpression = oldExpression;
-                _newExpression = newExpression;
-            }
-
-            protected override Expression VisitParameter(ParameterExpression node)
-            {
-                if (node == _oldExpression)
-                    return _newExpression;
-                return base.VisitParameter(node);
-            }
-        }
-
         private readonly IEdmModel _model;
-        private readonly bool _navigationNextLink;
         private ParameterExpression _parameter;
         private readonly ODataPath _path;
+        private readonly OeQueryContext _queryContext;
         private readonly List<SelectItemInfo> _selectItemInfos;
         private Expression _source;
         private readonly OeQueryNodeVisitor _visitor;
 
-        public OeSelectTranslator(OeQueryNodeVisitor visitor, ODataPath path, bool navigationNextLink)
+        public OeSelectTranslator(OeQueryContext queryContext, OeQueryNodeVisitor visitor, ODataPath path)
         {
+            _queryContext = queryContext;
             _visitor = visitor;
             _path = path;
-            _navigationNextLink = navigationNextLink;
             _model = visitor.EdmModel;
             _selectItemInfos = new List<SelectItemInfo>();
         }
@@ -211,20 +209,19 @@ namespace OdataToEntity.Parsers
                 if (SelectItemInfoExists(keyProperty))
                     continue;
 
-                var selectItemInfo = new SelectItemInfo(null, keyProperty, null, true, null);
-                selectItemInfo.ExpressionIndex = expressions.Count;
+                var selectItemInfo = new SelectItemInfo(null, keyProperty, null, true, null) { ExpressionIndex = expressions.Count };
                 _selectItemInfos.Add(selectItemInfo);
 
                 PropertyInfo property = itemType.GetProperty(keyProperty.Name);
                 expressions.Add(Expression.MakeMemberAccess(_parameter, property));
             }
         }
-        public Expression Build(Expression source, SelectExpandClause selectClause, OeMetadataLevel metadatLevel)
+        public Expression Build(Expression source, SelectExpandClause selectClause)
         {
             if (selectClause == null)
                 return source;
 
-            return (MethodCallExpression)CreateExpression(source, selectClause, metadatLevel);
+            return (MethodCallExpression)CreateExpression(source, selectClause);
         }
         public OeEntryFactory CreateEntryFactory(Type entityType, IEdmEntitySet entitySet, Type sourceType)
         {
@@ -249,7 +246,7 @@ namespace OdataToEntity.Parsers
             }
             return entryFactory;
         }
-        private Expression CreateExpression(Expression source, SelectExpandClause selectClause, OeMetadataLevel metadatLevel)
+        private Expression CreateExpression(Expression source, SelectExpandClause selectClause)
         {
             _source = source;
             Type itemType = OeExpressionHelper.GetCollectionItemType(source.Type);
@@ -258,34 +255,26 @@ namespace OdataToEntity.Parsers
             var expressions = new List<Expression>();
             foreach (SelectItem selectItem in selectClause.SelectedItems)
             {
-                var selectItemTranslator = new SelectItemTranslator(_visitor, _path, _parameter, _source, _navigationNextLink);
+                var selectItemTranslator = new SelectItemTranslator(_queryContext, _visitor, _path, _parameter, _source);
                 Expression expression = selectItem.TranslateWith(selectItemTranslator);
-
-                if (SelectItemInfoExists(selectItemTranslator.SelectItemInfo.EdmProperty))
+                if (expression == null || SelectItemInfoExists(selectItemTranslator.SelectItemInfo.EdmProperty))
                     continue;
 
-                if (expression == null)
-                    selectItemTranslator.SelectItemInfo.ExpressionIndex = -1;
-                else
-                {
-                    selectItemTranslator.SelectItemInfo.ExpressionIndex = expressions.Count;
-                    expressions.Add(expression);
-                }
-
+                selectItemTranslator.SelectItemInfo.ExpressionIndex = expressions.Count;
+                expressions.Add(expression);
                 _selectItemInfos.Add(selectItemTranslator.SelectItemInfo);
             }
 
             if (_selectItemInfos.Any(i => i.PathSelect))
             {
-                if (metadatLevel == OeMetadataLevel.Full)
+                if (_queryContext.MetadataLevel == OeMetadataLevel.Full)
                     AddKey(itemType, expressions);
             }
             else
             {
                 expressions.Insert(0, _parameter);
                 foreach (SelectItemInfo selectItemInfo in _selectItemInfos)
-                    if (selectItemInfo.ExpressionIndex != -1)
-                        selectItemInfo.ExpressionIndex++;
+                    selectItemInfo.ExpressionIndex++;
             }
 
             NewExpression newExpression = OeExpressionHelper.CreateTupleExpression(expressions);
@@ -321,31 +310,23 @@ namespace OdataToEntity.Parsers
             var navigationLinks = new List<OeEntryFactory>(_selectItemInfos.Count);
             foreach (SelectItemInfo itemInfo in _selectItemInfos)
                 if (itemInfo.EdmProperty is IEdmNavigationProperty)
-                    if (itemInfo.ExpressionIndex == -1)
+                {
+                    OeEntryFactory entryFactory;
+                    if (itemInfo.EntryFactory == null)
                     {
-                        if (itemInfo.EntryFactory == null)
-                            throw new InvalidOperationException("for nextLink entry factory maust exist");
+                        Type type = itemExpressions[itemInfo.ExpressionIndex].Type;
+                        if (itemInfo.ResourceInfo.IsCollection.GetValueOrDefault())
+                            type = OeExpressionHelper.GetCollectionItemType(type);
 
-                        navigationLinks.Add(itemInfo.EntryFactory);
+                        OePropertyAccessor[] accessors = OePropertyAccessor.CreateFromType(type, itemInfo.EntitySet);
+                        entryFactory = OeEntryFactory.CreateEntryFactoryChild(itemInfo.EntitySet, accessors, itemInfo.ResourceInfo);
+                        entryFactory.CountOption = itemInfo.CountOption;
                     }
                     else
-                    {
-                        OeEntryFactory entryFactory;
-                        if (itemInfo.EntryFactory == null)
-                        {
-                            Type type = itemExpressions[itemInfo.ExpressionIndex].Type;
-                            if (itemInfo.ResourceInfo.IsCollection.GetValueOrDefault())
-                                type = OeExpressionHelper.GetCollectionItemType(type);
-
-                            OePropertyAccessor[] accessors = OePropertyAccessor.CreateFromType(type, itemInfo.EntitySet);
-                            entryFactory = OeEntryFactory.CreateEntryFactoryChild(itemInfo.EntitySet, accessors, itemInfo.ResourceInfo);
-                            entryFactory.CountOption = itemInfo.CountOption;
-                        }
-                        else
-                            entryFactory = itemInfo.EntryFactory;
-                        entryFactory.LinkAccessor = (Func<Object, Object>)Expression.Lambda(itemExpressions[itemInfo.ExpressionIndex], parameter).Compile();
-                        navigationLinks.Add(entryFactory);
-                    }
+                        entryFactory = itemInfo.EntryFactory;
+                    entryFactory.LinkAccessor = (Func<Object, Object>)Expression.Lambda(itemExpressions[itemInfo.ExpressionIndex], parameter).Compile();
+                    navigationLinks.Add(entryFactory);
+                }
 
             return navigationLinks;
         }

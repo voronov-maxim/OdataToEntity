@@ -7,15 +7,15 @@ using System.Linq;
 
 namespace OdataToEntity.Parsers.UriCompare
 {
-    public struct OeODataUriComparer
+    public struct OeCacheComparer
     {
         private bool _navigationNextLink;
-        private readonly OeODataUriComparerParameterValues _parameterValues;
+        private readonly OeCacheComparerParameterValues _parameterValues;
         private readonly OeQueryNodeComparer _queryNodeComparer;
 
-        public OeODataUriComparer(IReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition> constantToParameterMapper, bool navigationNextLink)
+        public OeCacheComparer(IReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition> constantToParameterMapper, bool navigationNextLink)
         {
-            _parameterValues = new OeODataUriComparerParameterValues(constantToParameterMapper);
+            _parameterValues = new OeCacheComparerParameterValues(constantToParameterMapper);
             _queryNodeComparer = new OeQueryNodeComparer(_parameterValues);
             _navigationNextLink = navigationNextLink;
         }
@@ -24,21 +24,24 @@ namespace OdataToEntity.Parsers.UriCompare
         {
             return (h1 << 5) + h1 ^ h2;
         }
-        public bool Compare(OeParseUriContext parseUriContext1, OeParseUriContext parseUriContext2)
+        public bool Compare(OeCacheContext cacheContext1, OeCacheContext cacheContext2)
         {
-            if (parseUriContext1.EntitySet != parseUriContext2.EntitySet)
+            if (cacheContext1.EntitySet != cacheContext2.EntitySet)
                 return false;
 
-            if (parseUriContext1.NavigationNextLink != parseUriContext2.NavigationNextLink)
+            if (cacheContext1.NavigationNextLink != cacheContext2.NavigationNextLink)
                 return false;
 
-            ODataUri uri1 = parseUriContext1.ODataUri;
-            ODataUri uri2 = parseUriContext2.ODataUri;
+            if (cacheContext1.MetadataLevel != cacheContext2.MetadataLevel)
+                return false;
+
+            ODataUri uri1 = cacheContext1.ODataUri;
+            ODataUri uri2 = cacheContext2.ODataUri;
 
             if (!ODataPathComparer.Compare(uri1.Path, uri2.Path))
                 return false;
 
-            if (!CompareParseNavigationSegments(parseUriContext1.ParseNavigationSegments, parseUriContext2.ParseNavigationSegments))
+            if (!CompareParseNavigationSegments(cacheContext1.ParseNavigationSegments, cacheContext2.ParseNavigationSegments))
                 return false;
 
             if (!CompareApply(uri1.Apply, uri2.Apply))
@@ -57,9 +60,6 @@ namespace OdataToEntity.Parsers.UriCompare
                 return false;
 
             if (!CompareTop(uri1.Top, uri2.Top, uri1.Path))
-                return false;
-
-            if (!CompareHeaders(parseUriContext1.Headers, parseUriContext2.Headers))
                 return false;
 
             return true;
@@ -99,7 +99,7 @@ namespace OdataToEntity.Parsers.UriCompare
             if (!clause1.ItemType.IsEqual(clause1.ItemType))
                 return false;
 
-            OeQueryNodeComparer queryNodeComparer = navigationNextLink ? new OeQueryNodeComparer(default(OeODataUriComparerParameterValues)) : _queryNodeComparer;
+            OeQueryNodeComparer queryNodeComparer = navigationNextLink ? new OeQueryNodeComparer(default(OeCacheComparerParameterValues)) : _queryNodeComparer;
             if (!queryNodeComparer.Compare(clause1.RangeVariable, clause2.RangeVariable))
                 return false;
             return queryNodeComparer.Compare(clause1.Expression, clause2.Expression);
@@ -132,18 +132,6 @@ namespace OdataToEntity.Parsers.UriCompare
             return _queryNodeComparer.Compare(node1.Expression, node2.Expression) &&
                 EnumerableComparer.Compare(node1.ChildTransformations, node2.ChildTransformations, CompareGroupByPropertyNode);
         }
-        private bool CompareHeaders(OeRequestHeaders headers1, OeRequestHeaders headers2)
-        {
-            if (headers1 == headers2)
-                return true;
-            if (headers1 == null || headers2 == null)
-                return false;
-
-            return headers1.Charset == headers2.Charset &&
-                headers1.ContentType == headers2.ContentType &&
-                headers1.MetadataLevel == headers2.MetadataLevel &&
-                headers1.Streaming == headers2.Streaming;
-        }
         private bool CompareLevelsClause(LevelsClause level1, LevelsClause level2)
         {
             if (level1 == level2)
@@ -160,7 +148,7 @@ namespace OdataToEntity.Parsers.UriCompare
             if (clause1 == null || clause2 == null)
                 return false;
 
-            OeQueryNodeComparer queryNodeComparer = navigationNextLink ? new OeQueryNodeComparer(default(OeODataUriComparerParameterValues)) : _queryNodeComparer;
+            OeQueryNodeComparer queryNodeComparer = navigationNextLink ? new OeQueryNodeComparer(default(OeCacheComparerParameterValues)) : _queryNodeComparer;
             return clause1.Direction == clause2.Direction &&
                 clause1.ItemType.IsEqual(clause2.ItemType) &&
                 queryNodeComparer.Compare(clause1.RangeVariable, clause2.RangeVariable) &&
@@ -304,21 +292,21 @@ namespace OdataToEntity.Parsers.UriCompare
 
             return true;
         }
-        public static int GetCacheCode(OeParseUriContext parseUriContext)
+        public static int GetCacheCode(OeCacheContext cacheContext)
         {
             var hashVistitor = new OeQueryNodeHashVisitor();
 
-            ODataUri uri = parseUriContext.ODataUri;
+            ODataUri uri = cacheContext.ODataUri;
             int hash = uri.Path.FirstSegment.Identifier.GetHashCode();
             hash = CombineHashCodes(hash, uri.Path.LastSegment.Identifier.GetHashCode());
 
-            if (parseUriContext.ParseNavigationSegments != null)
-                for (int i = 0; i < parseUriContext.ParseNavigationSegments.Count; i++)
+            if (cacheContext.ParseNavigationSegments != null)
+                for (int i = 0; i < cacheContext.ParseNavigationSegments.Count; i++)
                 {
-                    OeParseNavigationSegment parseNavigationSegment = parseUriContext.ParseNavigationSegments[i];
+                    OeParseNavigationSegment parseNavigationSegment = cacheContext.ParseNavigationSegments[i];
                     if (parseNavigationSegment.Filter != null)
                     {
-                        int h = hashVistitor.TranslateNode(parseUriContext.ParseNavigationSegments[i].Filter.Expression);
+                        int h = hashVistitor.TranslateNode(cacheContext.ParseNavigationSegments[i].Filter.Expression);
                         hash = CombineHashCodes(hash, h);
                     }
                 }

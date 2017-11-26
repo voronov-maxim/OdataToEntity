@@ -58,12 +58,12 @@ namespace OdataToEntity.Parsers
     }
     public void AddSkipConstant(ConstantExpression skipConstant, ODataPath path)
     {
-        ConstantNode skipNode = UriCompare.OeODataUriComparerParameterValues.CreateSkipConstantNode((int)skipConstant.Value, path);
+        ConstantNode skipNode = UriCompare.OeCacheComparerParameterValues.CreateSkipConstantNode((int)skipConstant.Value, path);
         AddConstant(skipConstant, skipNode);
     }
     public void AddTopConstant(ConstantExpression topConstant, ODataPath path)
     {
-        ConstantNode topNode = UriCompare.OeODataUriComparerParameterValues.CreateTopConstantNode((int)topConstant.Value, path);
+        ConstantNode topNode = UriCompare.OeCacheComparerParameterValues.CreateTopConstantNode((int)topConstant.Value, path);
         AddConstant(topConstant, topNode);
     }
     private static PropertyInfo GetTuplePropertyByEntityType(Type tupleType, IEdmEntityType edmEntityType)

@@ -40,28 +40,28 @@ namespace OdataToEntity.Test
         public virtual Task Execute<T, TResult>(QueryParametersScalar<T, TResult> parameters)
         {
             IList fromOe = ExecuteOe<T, TResult>(parameters.Expression);
+            IList fromDb;
+            using (var dataContext = OrderContext.Create(_databaseName))
+                fromDb = TestHelper.ExecuteDb<T, TResult>(dataContext, parameters.Expression);
+
+            TestHelper.Compare(fromDb, fromOe, null);
             return Task.CompletedTask;
         }
         public virtual Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
         {
             IList fromOe = ExecuteOe<T, TResult>(parameters.Expression);
+            List<IncludeVisitor.Include> includes = GetIncludes(parameters.Expression);
+            if (typeof(TResult) == typeof(Object))
+                fromOe = TestHelper.ToOpenType(fromOe);
+
             IList fromDb;
             using (var dataContext = OrderContext.Create(_databaseName))
-                fromDb = TestHelper.ExecuteDb<T, TResult>(dataContext, parameters.Expression);
-
-            var settings = new JsonSerializerSettings()
             {
-                ContractResolver = new TestHelper.TestContractResolver(null),
-                DateFormatString = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'ffffff",
-                DateTimeZoneHandling = DateTimeZoneHandling.Utc,
-                Formatting = Formatting.Indented,
-                NullValueHandling = NullValueHandling.Ignore,
-                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-            };
-            String jsonOe = JsonConvert.SerializeObject(fromOe, settings);
-            String jsonDb = JsonConvert.SerializeObject(fromDb, settings);
-            Assert.Equal(jsonDb, jsonOe);
+                fromDb = TestHelper.ExecuteDb<T, TResult>(dataContext, parameters.Expression, out IReadOnlyList<IncludeVisitor.Include> includesDb);
+                includes.AddRange(includesDb);
+            }
 
+            TestHelper.Compare(fromDb, fromOe, includes);
             return Task.CompletedTask;
         }
         private IList ExecuteOe<T, TResult>(LambdaExpression lambda)
@@ -84,17 +84,7 @@ namespace OdataToEntity.Test
                 func = ExecuteQueryScalar<Object>;
             }
 
-            IList fromOe = CreateDelegate(elementType, func)(query, call);
-            TestHelper.SetNullCollection(fromOe, GetIncludes(lambda));
-
-            if (typeof(TResult) == typeof(Object))
-            {
-                var jobjects = new List<JObject>();
-                foreach (Object entity in fromOe)
-                    jobjects.Add(TestHelper.SortProperty(JObject.FromObject(entity)));
-                fromOe = jobjects;
-            }
-            return fromOe;
+            return CreateDelegate(elementType, func)(query, call);
         }
         private static IList ExecuteQuery<T>(IQueryable query, Expression expression)
         {
@@ -106,7 +96,7 @@ namespace OdataToEntity.Test
             T value = query.Provider.Execute<T>(expression);
             return new T[] { value };
         }
-        private static IReadOnlyList<IncludeVisitor.Include> GetIncludes(Expression expression)
+        private static List<IncludeVisitor.Include> GetIncludes(Expression expression)
         {
             var includes = new List<IncludeVisitor.Include>();
             var includeVisitor = new IncludeVisitor();
@@ -130,7 +120,7 @@ namespace OdataToEntity.Test
                 if (mapProperty == null)
                     throw new InvalidOperationException("unknown property " + property.ToString());
 
-                includes.Add(new IncludeVisitor.Include(mapProperty, null));
+                includes.Add(new IncludeVisitor.Include(mapProperty, null, false));
             }
             return includes;
         }

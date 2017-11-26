@@ -6,9 +6,9 @@ namespace OdataToEntity.Parsers.UriCompare
 {
     public struct OeQueryNodeComparer
     {
-        private readonly OeODataUriComparerParameterValues _parameterValues;
+        private readonly OeCacheComparerParameterValues _parameterValues;
 
-        public OeQueryNodeComparer(OeODataUriComparerParameterValues parameterValues)
+        public OeQueryNodeComparer(OeCacheComparerParameterValues parameterValues)
         {
             _parameterValues = parameterValues;
         }

@@ -14,17 +14,13 @@ namespace OdataToEntity.Writers
     {
         private struct GetWriter
         {
-            private readonly Uri BaseUri;
-            private readonly OeMetadataLevel MetadataLevel;
-            private readonly bool NavigationNextLink;
+            private readonly OeQueryContext QueryContext;
             private readonly ODataWriter Writer;
 
-            public GetWriter(Uri baseUri, OeMetadataLevel metadataLevel, ODataWriter writer, bool navigationNextLink)
+            public GetWriter(OeQueryContext queryContex, ODataWriter writer)
             {
-                BaseUri = baseUri;
-                MetadataLevel = metadataLevel;
+                QueryContext = queryContex;
                 Writer = writer;
-                NavigationNextLink = navigationNextLink;
             }
 
             private static Uri BuildNavigationMextPageLink(ODataResource entry, IEdmEntitySet entitySet, ExpandedNavigationSelectItem expandedNavigationSelectItem)
@@ -38,65 +34,73 @@ namespace OdataToEntity.Writers
                             break;
                         }
 
-                var segments = new List<ODataPathSegment>();
-                segments.Add(new EntitySetSegment(entitySet));
-                segments.Add(new KeySegment(keys, entitySet.EntityType(), entitySet));
+                var segments = new List<ODataPathSegment>()
+                {
+                    new EntitySetSegment(entitySet),
+                    new KeySegment(keys, entitySet.EntityType(), entitySet)
+                };
                 segments.AddRange(expandedNavigationSelectItem.PathToNavigationProperty);
 
-                var odataUri = new ODataUri();
-                odataUri.Path = new ODataPath(segments);
-                odataUri.Filter = expandedNavigationSelectItem.FilterOption;
-                odataUri.OrderBy = expandedNavigationSelectItem.OrderByOption;
-                odataUri.SelectAndExpand = expandedNavigationSelectItem.SelectAndExpand;
-                odataUri.Top = expandedNavigationSelectItem.TopOption;
-                odataUri.Skip = expandedNavigationSelectItem.SkipOption;
-                odataUri.QueryCount = expandedNavigationSelectItem.CountOption;
+                var odataUri = new ODataUri()
+                {
+                    Path = new ODataPath(segments),
+                    Filter = expandedNavigationSelectItem.FilterOption,
+                    OrderBy = expandedNavigationSelectItem.OrderByOption,
+                    SelectAndExpand = expandedNavigationSelectItem.SelectAndExpand,
+                    Top = expandedNavigationSelectItem.TopOption,
+                    Skip = expandedNavigationSelectItem.SkipOption,
+                    QueryCount = expandedNavigationSelectItem.CountOption
+                };
 
                 return odataUri.BuildUri(ODataUrlKeyDelimiter.Parentheses);
             }
-            private static Uri BuildNextPageLink(OeParseUriContext parseUriContext, int count)
+            private static Uri BuildNextPageLink(OeQueryContext queryContext, int count)
             {
-                ODataUri odataUri = parseUriContext.ODataUri.Clone();
-                odataUri.ServiceRoot = null;
-                odataUri.QueryCount = null;
-                odataUri.Top = parseUriContext.PageSize;
-                odataUri.Skip = odataUri.Skip.GetValueOrDefault() + count;
-                return odataUri.BuildUri(ODataUrlKeyDelimiter.Parentheses);
+                ODataUri nextOdataUri = queryContext.ODataUri.Clone();
+                nextOdataUri.ServiceRoot = null;
+                nextOdataUri.QueryCount = null;
+                nextOdataUri.Top = queryContext.PageSize;
+                nextOdataUri.Skip = nextOdataUri.Skip.GetValueOrDefault() + count;
+                return nextOdataUri.BuildUri(ODataUrlKeyDelimiter.Parentheses);
             }
             private ODataResource CreateEntry(OeEntryFactory entryFactory, Object entity)
             {
                 ODataResource entry = entryFactory.CreateEntry(entity);
-                if (MetadataLevel == OeMetadataLevel.Full)
-                    entry.Id = OeUriHelper.ComputeId(BaseUri, entryFactory.EntitySet, entry);
+                if (QueryContext.MetadataLevel == OeMetadataLevel.Full)
+                    entry.Id = OeUriHelper.ComputeId(QueryContext.ODataUri.ServiceRoot, entryFactory.EntitySet, entry);
                 return entry;
             }
-            public async Task SerializeAsync(OeEntryFactory entryFactory, Db.OeAsyncEnumerator asyncEnumerator, Stream stream, OeParseUriContext parseUriContext)
+            public async Task SerializeAsync(OeEntryFactory entryFactory, Db.OeAsyncEnumerator asyncEnumerator, Stream stream, OeQueryContext queryContext)
             {
-                var resourceSet = new ODataResourceSet();
-                resourceSet.Count = asyncEnumerator.Count;
+                var resourceSet = new ODataResourceSet() { Count = asyncEnumerator.Count };
                 Writer.WriteStart(resourceSet);
 
                 int count = 0;
                 while (await asyncEnumerator.MoveNextAsync().ConfigureAwait(false))
                 {
                     Object value = asyncEnumerator.Current;
-                    int? dummy;
-                    ODataResource entry = CreateEntry(entryFactory, entryFactory.GetValue(value, out dummy));
+                    ODataResource entry = CreateEntry(entryFactory, entryFactory.GetValue(value, out int? dummy));
                     Writer.WriteStart(entry);
+
                     foreach (OeEntryFactory navigationLink in entryFactory.NavigationLinks)
                         WriteNavigationLink(value, navigationLink, entry, entryFactory.EntitySet);
+
+                    if (QueryContext.NavigationNextLink)
+                        foreach (ExpandedNavigationSelectItem item in QueryContext.GetExpandedNavigationSelectItems())
+                            WriteNavigationNextLink(entry, entryFactory.EntitySet, item);
+
                     Writer.WriteEnd();
 
                     count++;
-                    if (count == parseUriContext.PageSize)
+                    if (count == queryContext.PageSize)
                     {
-                        resourceSet.NextPageLink = BuildNextPageLink(parseUriContext, count);
+                        resourceSet.NextPageLink = BuildNextPageLink(queryContext, count);
                         break;
                     }
                 }
 
-                if (count < parseUriContext.PageSize && asyncEnumerator.Count.GetValueOrDefault() > count)
-                    resourceSet.NextPageLink = BuildNextPageLink(parseUriContext, count);
+                if (count < queryContext.PageSize && asyncEnumerator.Count.GetValueOrDefault() > count)
+                    resourceSet.NextPageLink = BuildNextPageLink(queryContext, count);
 
                 Writer.WriteEnd();
             }
@@ -104,8 +108,7 @@ namespace OdataToEntity.Writers
             {
                 Writer.WriteStart(entryFactory.ResourceInfo);
 
-                int? count;
-                Object navigationValue = entryFactory.GetValue(value, out count);
+                Object navigationValue = entryFactory.GetValue(value, out int? count);
                 if (navigationValue == null)
                 {
                     Writer.WriteStart((ODataResource)null);
@@ -115,11 +118,11 @@ namespace OdataToEntity.Writers
                 {
                     if (entryFactory.ResourceInfo.IsCollection.GetValueOrDefault())
                     {
-                        var resourceSet = new ODataResourceSet();
-                        resourceSet.Count = count;
+                        var resourceSet = new ODataResourceSet() { Count = count };
 
                         Writer.WriteStart(resourceSet);
-                        if (entryFactory.ExpandedNavigationSelectItem == null)
+                        ExpandedNavigationSelectItem expandedNavigationSelectItem = null;
+                        if (expandedNavigationSelectItem == null)
                             foreach (Object entity in (IEnumerable)navigationValue)
                             {
                                 ODataResource navigationEntry = CreateEntry(entryFactory, entity);
@@ -129,7 +132,7 @@ namespace OdataToEntity.Writers
                                 Writer.WriteEnd();
                             }
                         else
-                            resourceSet.NextPageLink = BuildNavigationMextPageLink(parentEntry, parentEntitySet, entryFactory.ExpandedNavigationSelectItem);
+                            resourceSet.NextPageLink = BuildNavigationMextPageLink(parentEntry, parentEntitySet, expandedNavigationSelectItem);
                         Writer.WriteEnd();
                     }
                     else
@@ -144,30 +147,44 @@ namespace OdataToEntity.Writers
 
                 Writer.WriteEnd();
             }
+            private void WriteNavigationNextLink(ODataResource parentEntry, IEdmEntitySet parentEntitySet, ExpandedNavigationSelectItem item)
+            {
+                var segment = (NavigationPropertySegment)item.PathToNavigationProperty.LastSegment;
+                var resourceInfo = new ODataNestedResourceInfo()
+                {
+                    IsCollection = true,
+                    Name = segment.NavigationProperty.Name
+                };
+
+                Writer.WriteStart(resourceInfo);
+
+                var resourceSet = new ODataResourceSet() { NextPageLink = BuildNavigationMextPageLink(parentEntry, parentEntitySet, item) };
+                Writer.WriteStart(resourceSet);
+                Writer.WriteEnd();
+
+                Writer.WriteEnd();
+            }
         }
 
-        public static async Task SerializeAsync(Uri baseUri, OeParseUriContext parseUriContext, Db.OeAsyncEnumerator asyncEnumerator, Stream stream)
+        public static async Task SerializeAsync(OeQueryContext queryContext, Db.OeAsyncEnumerator asyncEnumerator, String contentType, Stream stream)
         {
-            IEdmModel edmModel = parseUriContext.EdmModel;
-            OeEntryFactory entryFactory = parseUriContext.EntryFactory;
-            String contentType = parseUriContext.Headers.ContentType;
-
+            OeEntryFactory entryFactory = queryContext.EntryFactory;
             var settings = new ODataMessageWriterSettings()
             {
-                BaseUri = baseUri,
+                BaseUri = queryContext.ODataUri.ServiceRoot,
                 EnableMessageStreamDisposal = false,
-                ODataUri = parseUriContext.ODataUri,
+                ODataUri = queryContext.ODataUri,
                 Validations = ValidationKinds.ThrowIfTypeConflictsWithMetadata | ValidationKinds.ThrowOnDuplicatePropertyNames,
                 Version = ODataVersion.V4
             };
 
             IODataResponseMessage responseMessage = new OeInMemoryMessage(stream, contentType);
-            using (ODataMessageWriter messageWriter = new ODataMessageWriter(responseMessage, settings, edmModel))
+            using (ODataMessageWriter messageWriter = new ODataMessageWriter(responseMessage, settings, queryContext.EdmModel))
             {
                 ODataUtils.SetHeadersForPayload(messageWriter, ODataPayloadKind.ResourceSet);
                 ODataWriter writer = messageWriter.CreateODataResourceSetWriter(entryFactory.EntitySet, entryFactory.EntityType);
-                var getWriter = new GetWriter(baseUri, parseUriContext.Headers.MetadataLevel, writer, false);
-                await getWriter.SerializeAsync(entryFactory, asyncEnumerator, stream, parseUriContext);
+                var getWriter = new GetWriter(queryContext, writer);
+                await getWriter.SerializeAsync(entryFactory, asyncEnumerator, stream, queryContext);
             }
         }
     }

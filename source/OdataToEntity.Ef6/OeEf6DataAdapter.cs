@@ -45,8 +45,7 @@ namespace OdataToEntity.Ef6
                 ObjectContext objectContext = ((IObjectContextAdapter)dataContext).ObjectContext;
                 EntityKey entityKey = objectContext.CreateEntityKey(EntitySetName, entity);
 
-                ObjectStateEntry objectStateEntry;
-                if (objectContext.ObjectStateManager.TryGetObjectStateEntry(entityKey, out objectStateEntry))
+                if (objectContext.ObjectStateManager.TryGetObjectStateEntry(entityKey, out ObjectStateEntry objectStateEntry))
                 {
                     if (entityState == EntityState.Modified)
                         objectStateEntry.ApplyCurrentValues(entity);
@@ -78,10 +77,10 @@ namespace OdataToEntity.Ef6
                 foreach (AssociationType associationType in objectContext.MetadataWorkspace.GetItems<AssociationType>(DataSpace.CSpace))
                     if (associationType.Constraint.ToRole.GetEntityType().Name == typeof(TEntity).Name &&
                         associationType.Constraint.ToRole.DeleteBehavior == OperationAction.None)
-                        {
-                            isCascade = false;
-                            break;
-                        }
+                    {
+                        isCascade = false;
+                        break;
+                    }
 
                 bool isSelfReference = false;
                 foreach (NavigationProperty navigationProperty in entityType.NavigationProperties)
@@ -103,8 +102,7 @@ namespace OdataToEntity.Ef6
                 ObjectContext objectContext = ((IObjectContextAdapter)context).ObjectContext;
                 EntityKey entityKey = objectContext.CreateEntityKey(EntitySetName, entity);
 
-                ObjectStateEntry objectStateEntry;
-                if (objectContext.ObjectStateManager.TryGetObjectStateEntry(entityKey, out objectStateEntry))
+                if (objectContext.ObjectStateManager.TryGetObjectStateEntry(entityKey, out ObjectStateEntry objectStateEntry))
                     objectStateEntry.ChangeState(EntityState.Deleted);
                 else
                 {
@@ -184,23 +182,23 @@ namespace OdataToEntity.Ef6
             var getDbSet = (Func<T, IDbSet<TEntity>>)Delegate.CreateDelegate(typeof(Func<T, IDbSet<TEntity>>), property.GetGetMethod());
             return new DbSetAdapterImpl<TEntity>(getDbSet, property.Name);
         }
-        public override Db.OeAsyncEnumerator ExecuteEnumerator(Object dataContext, OeParseUriContext parseUriContext, CancellationToken cancellationToken)
+        public override Db.OeAsyncEnumerator ExecuteEnumerator(Object dataContext, OeQueryContext queryContext, CancellationToken cancellationToken)
         {
-            IQueryable query = parseUriContext.EntitySetAdapter.GetEntitySet(dataContext);
-            Expression expression = parseUriContext.CreateExpression(query, new OeConstantToVariableVisitor());
+            IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dataContext);
+            Expression expression = queryContext.CreateExpression(query, new OeConstantToVariableVisitor());
 
             expression = new EnumerableToQuerableVisitor().Visit(expression);
             var queryAsync = (IDbAsyncEnumerable)query.Provider.CreateQuery(expression);
             Db.OeAsyncEnumerator asyncEnumerator = new OeEf6AsyncEnumerator(queryAsync.GetAsyncEnumerator(), cancellationToken);
-            if (parseUriContext.CountExpression != null)
-                asyncEnumerator.Count = query.Provider.Execute<int>(parseUriContext.CountExpression);
+            if (queryContext.CountExpression != null)
+                asyncEnumerator.Count = query.Provider.Execute<int>(queryContext.CountExpression);
 
             return asyncEnumerator;
         }
-        public override TResult ExecuteScalar<TResult>(Object dataContext, OeParseUriContext parseUriContext)
+        public override TResult ExecuteScalar<TResult>(Object dataContext, OeQueryContext queryContext)
         {
-            IQueryable query = parseUriContext.EntitySetAdapter.GetEntitySet(dataContext);
-            Expression expression = parseUriContext.CreateExpression(query, new OeConstantToVariableVisitor());
+            IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dataContext);
+            Expression expression = queryContext.CreateExpression(query, new OeConstantToVariableVisitor());
             return query.Provider.Execute<TResult>(expression);
         }
         public override Db.OeEntitySetAdapter GetEntitySetAdapter(String entitySetName)

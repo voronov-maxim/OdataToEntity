@@ -12,31 +12,29 @@ namespace OdataToEntity
 {
     public sealed class OeGetParser
     {
-        private readonly Uri _baseUri;
         private readonly IEdmModel _model;
         private readonly Db.OeDataAdapter _dataAdapter;
 
-        public OeGetParser(Uri baseUri, Db.OeDataAdapter dataAdapter, IEdmModel model)
+        public OeGetParser(Db.OeDataAdapter dataAdapter, IEdmModel model)
         {
-            _baseUri = baseUri;
             _dataAdapter = dataAdapter;
             _model = model;
         }
 
-        private static FilterClause CreateFilterClause(IEdmEntitySet entitySet, IEdmEntityTypeReference entityTypeRef, KeySegment keySegment)
+        private static FilterClause CreateFilterClause(IEdmEntitySet entitySet, IEnumerable<KeyValuePair<String, Object>> keys, BinaryOperatorKind binaryOperatorKind)
         {
+            var entityTypeRef = (IEdmEntityTypeReference)((IEdmCollectionType)entitySet.Type).ElementType;
             var range = new ResourceRangeVariable("", entityTypeRef, entitySet);
             var refNode = new ResourceRangeVariableReferenceNode("$it", range);
 
             BinaryOperatorNode compositeNode = null;
-            foreach (KeyValuePair<String, Object> pair in keySegment.Keys)
+            var entityType = (IEdmEntityType)entityTypeRef.Definition;
+            foreach (KeyValuePair<String, Object> keyValue in keys)
             {
-                var entityType = (IEdmEntityType)keySegment.EdmType;
-                IEdmProperty property = entityType.FindProperty(pair.Key);
-
+                IEdmProperty property = entityType.FindProperty(keyValue.Key);
                 var left = new SingleValuePropertyAccessNode(refNode, property);
-                var right = new ConstantNode(pair.Value, ODataUriUtils.ConvertToUriLiteral(pair.Value, ODataVersion.V4));
-                var node = new BinaryOperatorNode(BinaryOperatorKind.Equal, left, right);
+                var right = new ConstantNode(keyValue.Value, ODataUriUtils.ConvertToUriLiteral(keyValue.Value, ODataVersion.V4));
+                var node = new BinaryOperatorNode(binaryOperatorKind, left, right);
 
                 if (compositeNode == null)
                     compositeNode = node;
@@ -47,34 +45,32 @@ namespace OdataToEntity
         }
         public async Task ExecuteAsync(ODataUri odataUri, OeRequestHeaders headers, Stream stream, CancellationToken cancellationToken)
         {
-            OeParseUriContext parseUriContext = ParseUri(odataUri);
+            OeQueryContext queryContext = ParseUri(odataUri);
+            queryContext.MetadataLevel = headers.MetadataLevel;
+            queryContext.EntitySetAdapter = _dataAdapter.GetEntitySetAdapter(queryContext.EntitySet.Name);
 
             if (PageSize > 0)
             {
-                int checkNextPageRecord = parseUriContext.ODataUri.QueryCount.GetValueOrDefault() ? 0 : 1;
-                if (PageSize + checkNextPageRecord > parseUriContext.ODataUri.Top.GetValueOrDefault())
-                    parseUriContext.ODataUri.Top = PageSize + checkNextPageRecord;
+                int checkNextPageRecord = queryContext.ODataUri.QueryCount.GetValueOrDefault() ? 0 : 1;
+                if (PageSize + checkNextPageRecord > queryContext.ODataUri.Top.GetValueOrDefault())
+                    queryContext.ODataUri.Top = PageSize + checkNextPageRecord;
             }
-
-            parseUriContext.Headers = headers;
-            parseUriContext.EntitySetAdapter = _dataAdapter.GetEntitySetAdapter(parseUriContext.EntitySet.Name);
 
             Object dataContext = null;
             try
             {
                 dataContext = _dataAdapter.CreateDataContext();
-
-                if (parseUriContext.IsCountSegment)
+                if (queryContext.IsCountSegment)
                 {
                     headers.ResponseContentType = OeRequestHeaders.TextDefault.ContentType;
-                    int count = _dataAdapter.ExecuteScalar<int>(dataContext, parseUriContext);
+                    int count = _dataAdapter.ExecuteScalar<int>(dataContext, queryContext);
                     byte[] buffer = System.Text.Encoding.UTF8.GetBytes(count.ToString());
                     stream.Write(buffer, 0, buffer.Length);
                 }
                 else
                 {
-                    using (Db.OeAsyncEnumerator asyncEnumerator = _dataAdapter.ExecuteEnumerator(dataContext, parseUriContext, cancellationToken))
-                        await Writers.OeGetWriter.SerializeAsync(BaseUri, parseUriContext, asyncEnumerator, stream).ConfigureAwait(false);
+                    using (Db.OeAsyncEnumerator asyncEnumerator = _dataAdapter.ExecuteEnumerator(dataContext, queryContext, cancellationToken))
+                        await Writers.OeGetWriter.SerializeAsync(queryContext, asyncEnumerator, headers.ContentType, stream).ConfigureAwait(false);
                 }
             }
             finally
@@ -83,7 +79,7 @@ namespace OdataToEntity
                     _dataAdapter.CloseDataContext(dataContext);
             }
         }
-        public OeParseUriContext ParseUri(ODataUri odataUri)
+        public OeQueryContext ParseUri(ODataUri odataUri)
         {
             List<OeParseNavigationSegment> navigationSegments = null;
             if (odataUri.Path.LastSegment is KeySegment ||
@@ -104,26 +100,22 @@ namespace OdataToEntity
                     else if (segment is KeySegment)
                     {
                         IEdmEntitySet previousEntitySet;
-                        IEdmEntityTypeReference entityTypeRef;
-
                         var keySegment = segment as KeySegment;
                         NavigationPropertySegment navigationSegment = null;
                         if (previousSegment is EntitySetSegment)
                         {
                             var previousEntitySetSegment = previousSegment as EntitySetSegment;
                             previousEntitySet = previousEntitySetSegment.EntitySet;
-                            entityTypeRef = (IEdmEntityTypeReference)((IEdmCollectionType)previousEntitySetSegment.EdmType).ElementType;
                         }
                         else if (previousSegment is NavigationPropertySegment)
                         {
                             navigationSegment = previousSegment as NavigationPropertySegment;
                             previousEntitySet = (IEdmEntitySet)navigationSegment.NavigationSource;
-                            entityTypeRef = (IEdmEntityTypeReference)((IEdmCollectionType)navigationSegment.EdmType).ElementType;
                         }
                         else
                             throw new InvalidOperationException("invalid segment");
 
-                        FilterClause keyFilter = CreateFilterClause(previousEntitySet, entityTypeRef, keySegment);
+                        FilterClause keyFilter = CreateFilterClause(previousEntitySet, keySegment.Keys, BinaryOperatorKind.Equal);
                         navigationSegments.Add(new OeParseNavigationSegment(navigationSegment, keyFilter));
                     }
                     previousSegment = segment;
@@ -133,10 +125,9 @@ namespace OdataToEntity
             var entitySetSegment = (EntitySetSegment)odataUri.Path.FirstSegment;
             IEdmEntitySet entitySet = entitySetSegment.EntitySet;
             bool isCountSegment = odataUri.Path.LastSegment is CountSegment;
-            return new OeParseUriContext(_model, odataUri, entitySet, navigationSegments, isCountSegment, PageSize, NavigationNextLink);
+            return new OeQueryContext(_model, odataUri, entitySet, navigationSegments, isCountSegment, PageSize, NavigationNextLink);
         }
 
-        public Uri BaseUri => _baseUri;
         public bool NavigationNextLink { get; set; }
         public int PageSize { get; set; }
     }

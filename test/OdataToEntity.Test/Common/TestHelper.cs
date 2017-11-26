@@ -3,8 +3,6 @@ using Microsoft.OData.Edm;
 using Microsoft.OData.Edm.Csdl;
 using Microsoft.OData.Edm.Validation;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json.Serialization;
 using OdataToEntity.Test.Model;
 using System;
 using System.Collections;
@@ -14,91 +12,13 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
 using Xunit;
 
 namespace OdataToEntity.Test
 {
-    internal sealed class SelectTestDefinition
-    {
-        private readonly Func<DbContext, IList> _executorDb;
-        private readonly String _request;
-
-        public SelectTestDefinition(String request, Func<DbContext, IList> executorDb)
-        {
-            _request = request;
-            _executorDb = executorDb;
-        }
-
-        public Func<DbContext, IList> ExecutorDb => _executorDb;
-        public String MethodName { get; set; }
-        public String Request => _request;
-
-        public override String ToString() => _request;
-    }
-
     internal partial class TestHelper
     {
-        private sealed class ExpressionClosure<T, TResult>
-        {
-            private readonly Expression<Func<IQueryable<T>, IQueryable<TResult>>> _expression;
-
-            public ExpressionClosure(Expression<Func<IQueryable<T>, IQueryable<TResult>>> expression)
-            {
-                _expression = expression;
-            }
-
-            public IList Execute(DbContext dbContext)
-            {
-                return TestHelper.ExecuteDb(dbContext, _expression);
-            }
-        }
-
-        private sealed class ExpressionScalarClosure<T, TResult>
-        {
-            private readonly Expression<Func<IQueryable<T>, TResult>> _expression;
-
-            public ExpressionScalarClosure(Expression<Func<IQueryable<T>, TResult>> expression)
-            {
-                _expression = expression;
-            }
-
-            public IList Execute(DbContext dbContext)
-            {
-                return TestHelper.ExecuteDb(dbContext, _expression);
-            }
-        }
-
-        private sealed class SelectTestDefinitionFixture : DbFixtureInitDb
-        {
-            private readonly List<SelectTestDefinition> _selectTestDefinitions;
-
-            public SelectTestDefinitionFixture()
-            {
-                _selectTestDefinitions = new List<SelectTestDefinition>();
-            }
-
-            public override Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
-            {
-                var executorDb = (Func<DbContext, IList>)new ExpressionClosure<T, TResult>(parameters.Expression).Execute;
-                _selectTestDefinitions.Add(new SelectTestDefinition(parameters.RequestUri, executorDb));
-                return Task.CompletedTask;
-            }
-            public override Task Execute<T, TResult>(QueryParametersScalar<T, TResult> parameters)
-            {
-                var executorDb = (Func<DbContext, IList>)new ExpressionScalarClosure<T, TResult>(parameters.Expression).Execute;
-                _selectTestDefinitions.Add(new SelectTestDefinition(parameters.RequestUri, executorDb));
-                return Task.CompletedTask;
-
-            }
-            public override void Initalize()
-            {
-            }
-
-            public IReadOnlyList<SelectTestDefinition> SelectTestDefinitions => _selectTestDefinitions;
-        }
-
         private sealed class QueryVisitor<T> : ExpressionVisitor
         {
             private readonly IQueryable _query;
@@ -120,62 +40,30 @@ namespace OdataToEntity.Test
             }
         }
 
-        public sealed class TestContractResolver : DefaultContractResolver
+        public static void Compare(IList fromDb, IList fromOe, IReadOnlyList<IncludeVisitor.Include> includes)
         {
-            private sealed class NullValueProvider : IValueProvider
+            var settings = new JsonSerializerSettings()
             {
-                public object GetValue(object target) => null;
-                public void SetValue(object target, object value) { }
-            }
+                ContractResolver = new TestContractResolver(includes),
+                DateFormatString = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'ffffff",
+                DateTimeZoneHandling = DateTimeZoneHandling.Utc,
+                Formatting = Newtonsoft.Json.Formatting.Indented,
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                NullValueHandling = NullValueHandling.Ignore
+            };
+            String jsonDb = JsonConvert.SerializeObject(fromDb, settings);
+            String jsonOe = JsonConvert.SerializeObject(fromOe, settings);
 
-            private readonly IReadOnlyList<IncludeVisitor.Include> _includes;
-
-            public TestContractResolver(IReadOnlyList<IncludeVisitor.Include> includes)
-            {
-                _includes = includes;
-            }
-
-            protected override IList<JsonProperty> CreateProperties(Type type, MemberSerialization memberSerialization)
-            {
-                IList<JsonProperty> jproperties = base.CreateProperties(type, memberSerialization);
-                if (IsTestModelType(type))
-                {
-                    var propertyNames = new HashSet<String>();
-                    foreach (PropertyInfo property in type.GetProperties())
-                    {
-                        Type propertyType = GetCollectionItemType(property.PropertyType);
-                        if (propertyType == null)
-                            propertyType = property.PropertyType;
-
-
-                        if (!propertyType.IsValueType && propertyType.Namespace == typeof(Order).Namespace)
-                            if (_includes != null && !_includes.Any(i => i.Property == property))
-                                continue;
-
-                        propertyNames.Add(property.Name);
-                    }
-
-                    foreach (JsonProperty jproperty in jproperties)
-                        if (!propertyNames.Contains(jproperty.PropertyName))
-                            jproperty.ValueProvider = new NullValueProvider();
-                }
-
-                return jproperties.OrderBy(p => p.PropertyName, StringComparer.Ordinal).ToList();
-            }
-            private static bool IsTestModelType(Type type)
-            {
-                return type.IsClass && type.Namespace == typeof(Order).Namespace;
-            }
+            Assert.Equal(jsonDb, jsonOe);
         }
-
         public static IList ExecuteDb<T, TResult>(DbContext dataContext, Expression<Func<IQueryable<T>, TResult>> expression)
         {
             IQueryable<T> query = GetQuerableDb<T>(dataContext);
             var visitor = new QueryVisitor<T>(query);
             Expression call = visitor.Visit(expression.Body);
-            return new[] { query.Provider.Execute<TResult>(call).ToString() };
+            return new[] { query.Provider.Execute<TResult>(call) };
         }
-        public static IList ExecuteDb<T, TResult>(DbContext dataContext, Expression<Func<IQueryable<T>, IQueryable<TResult>>> expression)
+        public static IList ExecuteDb<T, TResult>(DbContext dataContext, Expression<Func<IQueryable<T>, IQueryable<TResult>>> expression, out IReadOnlyList<IncludeVisitor.Include> includes)
         {
             IQueryable<T> query = GetQuerableDb<T>(dataContext);
             var visitor = new QueryVisitor<T>(query);
@@ -183,12 +71,12 @@ namespace OdataToEntity.Test
 
             var includeVisitor = new IncludeVisitor();
             call = includeVisitor.Visit(call);
+            includes = includeVisitor.Includes;
 
             IList fromDb = query.Provider.CreateQuery<TResult>(call).ToList();
             if (typeof(TResult) == typeof(Object))
-                fromDb = SortProperty(fromDb, includeVisitor.Includes);
-            else
-                SetNullCollection(fromDb, includeVisitor.Includes);
+                fromDb = ToOpenType(fromDb);
+
             return fromDb;
         }
         public static String GetCsdlSchema(IEdmModel edmModel)
@@ -238,117 +126,17 @@ namespace OdataToEntity.Test
 
             throw new InvalidOperationException("unknown type " + typeof(T).Name);
         }
-        public static SelectTestDefinition[] GetSelectTestDefinitions()
+        public static IList ToOpenType(IEnumerable entities)
         {
-            var fixture = new SelectTestDefinitionFixture();
-            var selectTest = new SelectTest(fixture);
-
-            var methodNames = new List<String>();
-            foreach (MethodInfo methodInfo in selectTest.GetType().GetMethods().Where(m => m.GetCustomAttributes(typeof(FactAttribute), false).Count() == 1))
+            var openTypes = new List<SortedDictionary<String, Object>>();
+            foreach (Object entity in entities)
             {
-                methodNames.Add(methodInfo.Name);
-                var testMethod = (Func<SelectTest, Task>)methodInfo.CreateDelegate(typeof(Func<SelectTest, Task>));
-                testMethod(selectTest).GetAwaiter().GetResult();
+                var openType = new SortedDictionary<String, Object>(StringComparer.Ordinal);
+                foreach (PropertyInfo property in entity.GetType().GetProperties())
+                    openType.Add(property.Name, property.GetValue(entity));
+                openTypes.Add(openType);
             }
-
-            for (int i = 0; i < methodNames.Count; i++)
-                fixture.SelectTestDefinitions[i].MethodName = methodNames[i];
-            return fixture.SelectTestDefinitions.ToArray();
-        }
-        public static bool IsEntity(Type type)
-        {
-            TypeInfo typeInfo = type.GetTypeInfo();
-            if (typeInfo.IsPrimitive)
-                return false;
-            if (typeInfo.IsValueType)
-                return false;
-            if (type == typeof(String))
-                return false;
-            return true;
-        }
-        private static IList Lambda(IEnumerable source, Delegate lambda)
-        {
-            return LambdaT((dynamic)source, (dynamic)lambda);
-        }
-        private static IList LambdaT<T>(IEnumerable<T> source, Delegate lambda)
-        {
-            var result = (IEnumerable)lambda.DynamicInvoke(source);
-            return result.Cast<T>().ToArray();
-        }
-        public static void SetNullCollection(IList rootItems, IEnumerable<IncludeVisitor.Include> includes)
-        {
-            var visited = new HashSet<Object>();
-            var includesDistinct = new Dictionary<PropertyInfo, Delegate>();
-            foreach (IncludeVisitor.Include include in includes)
-                includesDistinct[include.Property] = include.Lambda;
-
-            foreach (Object root in rootItems)
-                SetNullCollection(root, visited, includesDistinct);
-        }
-        private static void SetNullCollection(Object entity, HashSet<Object> visited, Dictionary<PropertyInfo, Delegate> includes)
-        {
-            if (entity == null || visited.Contains(entity))
-                return;
-
-            visited.Add(entity);
-            foreach (PropertyInfo property in entity.GetType().GetProperties())
-                if (IsEntity(property.PropertyType))
-                {
-                    Object value = property.GetValue(entity);
-                    if (value == null)
-                        continue;
-
-                    if (!includes.ContainsKey(property))
-                        if (property.CanWrite)
-                        {
-                            property.SetValue(entity, null);
-                            continue;
-                        }
-
-                    if (GetCollectionItemType(property.PropertyType) == null)
-                        SetNullCollection(value, visited, includes);
-                    else
-                    {
-                        bool isEmpty = true;
-                        foreach (Object item in (IEnumerable)value)
-                        {
-                            isEmpty = false;
-                            SetNullCollection(item, visited, includes);
-                        }
-                        if (isEmpty)
-                            property.SetValue(entity, null);
-                        else
-                        {
-                            Delegate lambda;
-                            if (includes.TryGetValue(property, out lambda) && lambda != null)
-                            {
-                                IList list = Lambda((IEnumerable)value, lambda);
-                                if (list.Count == 0)
-                                    property.SetValue(entity, null);
-                                else
-                                    property.SetValue(entity, list);
-                            }
-                        }
-                    }
-                }
-        }
-        public static IList SortProperty(IEnumerable items, IReadOnlyList<IncludeVisitor.Include> includes)
-        {
-            var serializer = new JsonSerializer();
-            serializer.ContractResolver = new TestContractResolver(includes);
-            serializer.Formatting = Newtonsoft.Json.Formatting.Indented;
-            serializer.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
-            return JArray.FromObject(items, serializer);
-        }
-        public static JObject SortProperty(JObject jobject)
-        {
-            var innerObject = new JObject();
-            foreach (var pair in ((IEnumerable<KeyValuePair<String, JToken>>)jobject).OrderBy(p => p.Key))
-                if (pair.Value is JObject)
-                    innerObject.Add(pair.Key, SortProperty(pair.Value as JObject));
-                else
-                    innerObject.Add(pair.Key, pair.Value);
-            return innerObject;
+            return openTypes;
         }
     }
 }

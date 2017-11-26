@@ -219,91 +219,93 @@ namespace OdataToEntity.EfCore
             var getDbSet = (Func<T, DbSet<TEntity>>)property.GetGetMethod().CreateDelegate(typeof(Func<T, DbSet<TEntity>>));
             return new DbSetAdapterImpl<TEntity>(getDbSet, property.Name);
         }
-        public override Db.OeAsyncEnumerator ExecuteEnumerator(Object dataContext, OeParseUriContext parseUriContext, CancellationToken cancellationToken)
+        public override Db.OeAsyncEnumerator ExecuteEnumerator(Object dataContext, OeQueryContext queryContext, CancellationToken cancellationToken)
         {
             IAsyncEnumerable<Object> asyncEnumerable;
             if (base.QueryCache.AllowCache)
-                asyncEnumerable = GetFromCache<Object>(parseUriContext, (T)dataContext, base.QueryCache);
+                asyncEnumerable = GetFromCache<Object>(queryContext, (T)dataContext, base.QueryCache);
             else
-                asyncEnumerable = ((IQueryable<Object>)base.CreateQuery(parseUriContext, dataContext, new OeConstantToVariableVisitor())).AsAsyncEnumerable();
+                asyncEnumerable = ((IQueryable<Object>)base.CreateQuery(queryContext, dataContext, new OeConstantToVariableVisitor())).AsAsyncEnumerable();
 
             Db.OeAsyncEnumerator asyncEnumerator = new Db.OeAsyncEnumerator(asyncEnumerable.GetEnumerator(), cancellationToken);
-            if (parseUriContext.CountExpression != null)
+            if (queryContext.CountExpression != null)
             {
-                IQueryable query = parseUriContext.EntitySetAdapter.GetEntitySet(dataContext);
-                asyncEnumerator.Count = query.Provider.Execute<int>(parseUriContext.CountExpression);
+                IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dataContext);
+                asyncEnumerator.Count = query.Provider.Execute<int>(queryContext.CountExpression);
             }
 
             return asyncEnumerator;
         }
-        public override TResult ExecuteScalar<TResult>(Object dataContext, OeParseUriContext parseUriContext)
+        public override TResult ExecuteScalar<TResult>(Object dataContext, OeQueryContext queryContext)
         {
             if (base.QueryCache.AllowCache)
-                return GetFromCache<TResult>(parseUriContext, (T)dataContext, base.QueryCache).Single().GetAwaiter().GetResult();
+                return GetFromCache<TResult>(queryContext, (T)dataContext, base.QueryCache).Single().GetAwaiter().GetResult();
 
-            IQueryable query = parseUriContext.EntitySetAdapter.GetEntitySet(dataContext);
-            Expression expression = parseUriContext.CreateExpression(query, new OeConstantToVariableVisitor());
+            IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dataContext);
+            Expression expression = queryContext.CreateExpression(query, new OeConstantToVariableVisitor());
             return query.Provider.Execute<TResult>(expression);
         }
         public override Db.OeEntitySetAdapter GetEntitySetAdapter(String entitySetName)
         {
             return new Db.OeEntitySetAdapter(_entitySetMetaAdapters.FindByEntitySetName(entitySetName), this);
         }
-        private static IAsyncEnumerable<TResult> GetFromCache<TResult>(OeParseUriContext parseUriContext, T dbContext, Db.OeQueryCache queryCache)
+        private static IAsyncEnumerable<TResult> GetFromCache<TResult>(OeQueryContext queryContext, T dbContext, Db.OeQueryCache queryCache)
         {
-            Db.QueryCacheItem queryCacheItem = queryCache.GetQuery(parseUriContext);
+            OeCacheContext cacheContext = queryContext.CreateCacheContext();
+            Db.QueryCacheItem queryCacheItem = queryCache.GetQuery(cacheContext);
 
             Func<QueryContext, IAsyncEnumerable<TResult>> queryExecutor;
             Expression countExpression;
+            IReadOnlyList<Db.OeQueryCacheDbParameterValue> parameterValues;
             if (queryCacheItem == null)
             {
-                IQueryable query = parseUriContext.EntitySetAdapter.GetEntitySet(dbContext);
+                IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dbContext);
                 var parameterVisitor = new OeConstantToParameterVisitor();
 
-                Expression expression = parseUriContext.CreateExpression(query, parameterVisitor);
+                Expression expression = queryContext.CreateExpression(query, parameterVisitor);
                 queryExecutor = dbContext.CreateAsyncQueryExecutor<TResult>(expression);
-                countExpression = parseUriContext.CreateCountExpression(query, expression);
-                queryCache.AddQuery(parseUriContext, queryExecutor, countExpression, parameterVisitor.ConstantToParameterMapper);
-                parseUriContext.ParameterValues = parameterVisitor.ParameterValues;
+                countExpression = queryContext.CreateCountExpression(query, expression);
+                queryCache.AddQuery(queryContext.CreateCacheContext(parameterVisitor.ConstantToParameterMapper), queryExecutor, countExpression, queryContext.EntryFactory);
+                parameterValues = parameterVisitor.ParameterValues;
             }
             else
             {
                 queryExecutor = (Func<QueryContext, IAsyncEnumerable<TResult>>)queryCacheItem.Query;
-                parseUriContext.EntryFactory = queryCacheItem.EntryFactory;
+                queryContext.EntryFactory = queryCacheItem.EntryFactory;
                 countExpression = queryCacheItem.CountExpression;
+                parameterValues = cacheContext.ParameterValues;
             }
 
             var queryContextFactory = dbContext.GetService<IQueryContextFactory>();
-            QueryContext queryContext = queryContextFactory.Create();
-            foreach (Db.OeQueryCacheDbParameterValue parameterValue in parseUriContext.ParameterValues)
-                queryContext.AddParameter(parameterValue.ParameterName, parameterValue.ParameterValue);
+            QueryContext efQueryContext = queryContextFactory.Create();
+            foreach (Db.OeQueryCacheDbParameterValue parameterValue in parameterValues)
+                efQueryContext.AddParameter(parameterValue.ParameterName, parameterValue.ParameterValue);
 
-            if (parseUriContext.ODataUri.QueryCount.GetValueOrDefault())
-                parseUriContext.CountExpression = new OeParameterToVariableVisitor().Translate(countExpression, parseUriContext.ParameterValues);
+            if (queryContext.ODataUri.QueryCount.GetValueOrDefault())
+                queryContext.CountExpression = new OeParameterToVariableVisitor().Translate(countExpression, parameterValues);
 
-            return queryExecutor(queryContext);
+            return queryExecutor(efQueryContext);
         }
-        private static IAsyncEnumerable<TResult> GetQueryExecutor<TResult>(OeParseUriContext parseUriContext, T dbContext)
+        private static IAsyncEnumerable<TResult> GetQueryExecutor<TResult>(OeQueryContext queryContext, T dbContext)
         {
-            IQueryable query = parseUriContext.EntitySetAdapter.GetEntitySet(dbContext);
+            IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dbContext);
 
             var parameterVisitor = new OeConstantToParameterVisitor();
-            Expression expression = parseUriContext.CreateExpression(query, parameterVisitor);
+            Expression expression = queryContext.CreateExpression(query, parameterVisitor);
             Func<QueryContext, IAsyncEnumerable<TResult>> queryExecutor = dbContext.CreateAsyncQueryExecutor<TResult>(expression);
-            parseUriContext.ParameterValues = parameterVisitor.ParameterValues;
 
             var queryContextFactory = dbContext.GetService<IQueryContextFactory>();
-            QueryContext queryContext = queryContextFactory.Create();
-            foreach (Db.OeQueryCacheDbParameterValue parameterValue in parseUriContext.ParameterValues)
-                queryContext.AddParameter(parameterValue.ParameterName, parameterValue.ParameterValue);
+            QueryContext efQueryContext = queryContextFactory.Create();
+            foreach (Db.OeQueryCacheDbParameterValue parameterValue in parameterVisitor.ParameterValues)
+                efQueryContext.AddParameter(parameterValue.ParameterName, parameterValue.ParameterValue);
 
-            if (parseUriContext.ODataUri.QueryCount.GetValueOrDefault())
+            if (queryContext.ODataUri.QueryCount.GetValueOrDefault())
             {
-                Expression countExpression = parseUriContext.CreateCountExpression(query, expression);
-                parseUriContext.CountExpression = new OeParameterToVariableVisitor().Translate(countExpression, parseUriContext.ParameterValues);
+                Expression countExpression = queryContext.CreateCountExpression(query, expression);
+                queryContext.CountExpression = new OeParameterToVariableVisitor().Translate(countExpression, parameterVisitor.ParameterValues);
             }
 
-            return queryExecutor(queryContext);
+            return queryExecutor(efQueryContext);
         }
         public override Task<int> SaveChangesAsync(IEdmModel edmModel, Object dataContext, CancellationToken cancellationToken)
         {

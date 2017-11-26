@@ -9,6 +9,7 @@ using OdataToEntity.Test.Model;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -33,26 +34,6 @@ namespace OdataToEntity.Test
             _edmModel = OeDataAdapter.BuildEdmModel();
         }
 
-        public static void Compare(IList fromDb, IList fromOe)
-        {
-            foreach (Object entity in fromDb)
-                SetFixDecimal(entity);
-            foreach (Object entity in fromOe)
-                SetFixDecimal(entity);
-
-            var settings = new JsonSerializerSettings()
-            {
-                DateFormatString = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'ffffff",
-                DateTimeZoneHandling = DateTimeZoneHandling.Utc,
-                Formatting = Formatting.Indented,
-                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-                NullValueHandling = NullValueHandling.Ignore
-            };
-            String jsonOe = JsonConvert.SerializeObject(fromOe, settings);
-            String jsonDb = JsonConvert.SerializeObject(fromDb, settings);
-
-            Xunit.Assert.Equal(jsonDb, jsonOe);
-        }
         public OrderContext CreateContext()
         {
             return OrderContext.Create(_databaseName);
@@ -64,28 +45,19 @@ namespace OdataToEntity.Test
             using (var dataContext = (DbContext)DbDataAdapter.CreateDataContext())
                 fromDb = TestHelper.ExecuteDb(dataContext, parameters.Expression);
 
-            var settings = new JsonSerializerSettings()
-            {
-                DateFormatString = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'ffffff",
-                DateTimeZoneHandling = DateTimeZoneHandling.Utc,
-                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-                NullValueHandling = NullValueHandling.Ignore
-            };
-            String jsonOe = JsonConvert.SerializeObject(fromOe, settings);
-            String jsonDb = JsonConvert.SerializeObject(fromDb, settings);
-
             Console.WriteLine(parameters.RequestUri);
-            Xunit.Assert.Equal(jsonDb, jsonOe);
+            TestHelper.Compare(fromDb, fromOe, null);
         }
         public virtual async Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
         {
             IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri, parameters.NavigationNextLink);
             IList fromDb;
+            IReadOnlyList<IncludeVisitor.Include> includes;
             using (var dataContext = (DbContext)DbDataAdapter.CreateDataContext())
-                fromDb = TestHelper.ExecuteDb(dataContext, parameters.Expression);
+                fromDb = TestHelper.ExecuteDb(dataContext, parameters.Expression, out includes);
 
             Console.WriteLine(parameters.RequestUri);
-            Compare(fromDb, fromOe);
+            TestHelper.Compare(fromDb, fromOe, includes);
         }
         internal async Task ExecuteBatchAsync(String batchName)
         {
@@ -104,7 +76,10 @@ namespace OdataToEntity.Test
             stream.Position = 0;
 
             if (typeof(TResult).IsPrimitive)
-                return new String[] { new StreamReader(stream).ReadToEnd() };
+            {
+                TypeConverter converter = TypeDescriptor.GetConverter(typeof(TResult));
+                return new Object[] { converter.ConvertFromString(new StreamReader(stream).ReadToEnd()) };
+            }
 
             IList fromOe;
             ResponseReader responseReader;
@@ -119,13 +94,13 @@ namespace OdataToEntity.Test
                 fromOe = responseReader.Read<TResult>(stream).ToList();
             }
 
-            var navigationParser = new OeParser(new Uri("http://dummy/"), OeDataAdapter, EdmModel);
+            var navigationParser = new OeParser(new Uri("http://dummy/"), DbDataAdapter, EdmModel);
             foreach (Object entity in fromOe)
             {
                 await responseReader.FillNextLinkProperties(navigationParser, entity, CancellationToken.None);
-                Dictionary<PropertyInfo, ODataResourceSetBase> navigationProperties;
-                if (responseReader.NavigationPropertyEntities.TryGetValue(entity, out navigationProperties))
-                    SetNullEmptyCollection(entity, navigationProperties.Keys);
+                //Dictionary<PropertyInfo, ODataResourceSetBase> navigationProperties;
+                //if (responseReader.NavigationPropertyEntities.TryGetValue(entity, out navigationProperties))
+                //    SetNullEmptyCollection(entity, navigationProperties.Keys);
             }
 
             return fromOe;
@@ -138,30 +113,20 @@ namespace OdataToEntity.Test
             odataParser.Resolver.EnableCaseInsensitive = true;
             return odataParser.ParseUri();
         }
-        private static void SetFixDecimal(Object entity) //fix precision sql.avg decimal(38,6)
-        {
-            if (entity is JObject jobject)
-                foreach (JProperty jproperty in jobject.Properties())
-                    if (jproperty.Value is JValue jvalue && jvalue.Value is Decimal value)
-                        jvalue.Value = Math.Round(value, 2);
-        }
-        private static void SetNullEmptyCollection(Object entity, IEnumerable<PropertyInfo> navigationProperties)
-        {
-            if (entity is JObject jobject)
-                foreach (PropertyInfo navigationProperty in navigationProperties)
-                {
-                    JProperty jproperty = jobject.Property(navigationProperty.Name);
-                    if (jproperty.Value is JArray jarray && jarray.Count == 0)
-                        jproperty.Value = JValue.CreateNull();
-                }
-            else
-                foreach (PropertyInfo navigationProperty in navigationProperties)
-                {
-                    var collection = (IEnumerable)navigationProperty.GetValue(entity);
-                    if (!collection.GetEnumerator().MoveNext())
-                        navigationProperty.SetValue(entity, null);
-                }
-        }
+        //private static void SetNullEmptyCollection(Object entity, IEnumerable<PropertyInfo> navigationProperties)
+        //{
+        //    return;
+        //    if (entity is SortedDictionary<String, Object> openType)
+        //    {
+        //        foreach (PropertyInfo navigationProperty in navigationProperties)
+        //            if (openType[navigationProperty.Name] is IEnumerable collection && !collection.GetEnumerator().MoveNext())
+        //                openType[navigationProperty.Name] = null;
+        //    }
+        //    else
+        //        foreach (PropertyInfo navigationProperty in navigationProperties)
+        //            if (navigationProperty.GetValue(entity) is IEnumerable collection && !collection.GetEnumerator().MoveNext())
+        //                navigationProperty.SetValue(entity, null);
+        //}
 
         internal OrderDbDataAdapter DbDataAdapter => _dbDataAdapter;
         internal EdmModel EdmModel => _edmModel;

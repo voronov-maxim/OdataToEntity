@@ -14,13 +14,11 @@ namespace OdataToEntity
 {
     public sealed class OePostParser
     {
-        private readonly Uri _baseUri;
         private readonly IEdmModel _model;
         private readonly Db.OeDataAdapter _dataAdapter;
 
-        public OePostParser(Uri baseUri, Db.OeDataAdapter dataAdapter, IEdmModel model)
+        public OePostParser(Db.OeDataAdapter dataAdapter, IEdmModel model)
         {
-            _baseUri = baseUri;
             _dataAdapter = dataAdapter;
             _model = model;
         }
@@ -30,9 +28,8 @@ namespace OdataToEntity
             Object dataContext = null;
             try
             {
-                Type returnClrType;
                 dataContext = _dataAdapter.CreateDataContext();
-                using (Db.OeAsyncEnumerator asyncEnumerator = GetAsyncEnumerator(odataUri, requestStream, headers, dataContext, out returnClrType))
+                using (Db.OeAsyncEnumerator asyncEnumerator = GetAsyncEnumerator(odataUri, requestStream, headers, dataContext, out Type returnClrType))
                 {
                     if (returnClrType == null || returnClrType.IsPrimitive)
                     {
@@ -50,14 +47,13 @@ namespace OdataToEntity
                         String entitySetName = _dataAdapter.EntitySetMetaAdapters.FindByClrType(returnClrType).EntitySetName;
                         IEdmEntitySet entitySet = _model.FindDeclaredEntitySet(entitySetName);
                         OePropertyAccessor[] accessors = OePropertyAccessor.CreateFromType(returnClrType, entitySet);
-                        OeEntryFactory entryFactory = OeEntryFactory.CreateEntryFactory(entitySet, accessors);
 
-                        var parseUriContext = new OeParseUriContext(_model, odataUri, entitySet, null, false, 0, false)
+                        var queryContext = new OeQueryContext(_model, odataUri, entitySet, null, false, 0, false)
                         {
-                            EntryFactory = entryFactory,
-                            Headers = headers
+                            EntryFactory = OeEntryFactory.CreateEntryFactory(entitySet, accessors),
+                            MetadataLevel = headers.MetadataLevel
                         };
-                        await Writers.OeGetWriter.SerializeAsync(_baseUri, parseUriContext, asyncEnumerator, responseStream).ConfigureAwait(false);
+                        await Writers.OeGetWriter.SerializeAsync(queryContext, asyncEnumerator, headers.ContentType, responseStream).ConfigureAwait(false);
                     }
                 }
             }
@@ -66,8 +62,6 @@ namespace OdataToEntity
                 if (dataContext != null)
                     _dataAdapter.CloseDataContext(dataContext);
             }
-
-            await Task.CompletedTask;
         }
         private void FillParameters(List<KeyValuePair<String, Object>> parameters, Stream requestStream, IEdmOperation operation, String contentType)
         {

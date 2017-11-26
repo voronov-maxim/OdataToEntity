@@ -14,7 +14,7 @@ namespace OdataToEntity.Test.EfCore.SqlServer
     {
         public static void RunTest(int testCount)
         {
-            SelectTestDefinition[] testDefinitions = TestHelper.GetSelectTestDefinitions();
+            SelectTestDefinition[] testDefinitions = SelectTestDefinition.GetSelectTestDefinitions();
 
             //warming-up
             foreach (SelectTestDefinition testDefinition in testDefinitions)

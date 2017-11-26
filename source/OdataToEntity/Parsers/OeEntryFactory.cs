@@ -13,7 +13,6 @@ namespace OdataToEntity.Parsers
         private readonly OePropertyAccessor[] _accessors;
         private readonly IEdmEntitySet _entitySet;
         private readonly IEdmEntityType _entityType;
-        private readonly ExpandedNavigationSelectItem _expandedNavigationSelectItem;
         private readonly IReadOnlyList<OeEntryFactory> _navigationLinks;
         private readonly ODataNestedResourceInfo _resourceInfo;
         private readonly String _typeName;
@@ -42,11 +41,6 @@ namespace OdataToEntity.Parsers
         {
             _resourceInfo = resourceInfo;
             _navigationLinks = navigationLinks;
-        }
-        private OeEntryFactory(IEdmEntitySet entitySet, ODataNestedResourceInfo resourceInfo, ExpandedNavigationSelectItem expandedNavigationSelectItem)
-            : this(entitySet, Array.Empty<OePropertyAccessor>(), resourceInfo)
-        {
-            _expandedNavigationSelectItem = expandedNavigationSelectItem;
         }
 
         public ODataResource CreateEntry(Object entity)
@@ -113,9 +107,9 @@ namespace OdataToEntity.Parsers
         {
             return new OeEntryFactory(entitySet, accessors, resourceInfo, navigationLinks);
         }
-        public static OeEntryFactory CreateNextLink(IEdmEntitySet entitySet, ODataNestedResourceInfo resourceInfo, ExpandedNavigationSelectItem expandedNavigationSelectItem)
+        public static OeEntryFactory CreateNextLink(IEdmEntitySet entitySet, ODataNestedResourceInfo resourceInfo)
         {
-            return new OeEntryFactory(entitySet, resourceInfo, expandedNavigationSelectItem);
+            return new OeEntryFactory(entitySet, Array.Empty<OePropertyAccessor>(), resourceInfo);
         }
         public Object GetValue(Object value, out int? count)
         {
@@ -150,7 +144,6 @@ namespace OdataToEntity.Parsers
         public bool? CountOption { get; set; }
         public IEdmEntitySet EntitySet => _entitySet;
         public IEdmEntityType EntityType => _entityType;
-        public ExpandedNavigationSelectItem ExpandedNavigationSelectItem => _expandedNavigationSelectItem;
         public Func<Object, Object> LinkAccessor { get; set; }
         public IReadOnlyList<OeEntryFactory> NavigationLinks => _navigationLinks;
         public ODataNestedResourceInfo ResourceInfo => _resourceInfo;

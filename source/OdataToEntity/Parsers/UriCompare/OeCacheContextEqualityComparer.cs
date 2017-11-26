@@ -1,0 +1,24 @@
+﻿using System.Collections.Generic;
+
+namespace OdataToEntity.Parsers.UriCompare
+{
+    public sealed class OeCacheContextEqualityComparer : IEqualityComparer<OeCacheContext>
+    {
+        public bool Equals(OeCacheContext x, OeCacheContext y)
+        {
+            var comparer = new OeCacheComparer(x.ConstantToParameterMapper, x.NavigationNextLink);
+            if (comparer.Compare(x, y))
+            {
+                y.ParameterValues = comparer.ParameterValues;
+                return true;
+            }
+
+            y.ParameterValues = null;
+            return false;
+        }
+        public int GetHashCode(OeCacheContext obj)
+        {
+            return OeCacheComparer.GetCacheCode(obj);
+        }
+    }
+}

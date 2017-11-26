@@ -1,14 +1,128 @@
-﻿using Microsoft.OData;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.OData.UriParser;
 using OdataToEntity.Parsers;
 using OdataToEntity.Parsers.UriCompare;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace OdataToEntity.Test
 {
+    internal sealed class SelectTestDefinition
+    {
+        private sealed class ExpressionClosure<T, TResult>
+        {
+            private readonly Expression<Func<IQueryable<T>, IQueryable<TResult>>> _expression;
+
+            public ExpressionClosure(Expression<Func<IQueryable<T>, IQueryable<TResult>>> expression)
+            {
+                _expression = expression;
+            }
+
+            public IList Execute(DbContext dbContext)
+            {
+                return TestHelper.ExecuteDb(dbContext, _expression, out IReadOnlyList<IncludeVisitor.Include> includes);
+            }
+        }
+
+        private sealed class ExpressionScalarClosure<T, TResult>
+        {
+            private readonly Expression<Func<IQueryable<T>, TResult>> _expression;
+
+            public ExpressionScalarClosure(Expression<Func<IQueryable<T>, TResult>> expression)
+            {
+                _expression = expression;
+            }
+
+            public IList Execute(DbContext dbContext)
+            {
+                return TestHelper.ExecuteDb(dbContext, _expression);
+            }
+        }
+
+        private sealed class SelectTestDefinitionFixture : DbFixtureInitDb
+        {
+            private readonly List<SelectTestDefinition> _selectTestDefinitions;
+
+            public SelectTestDefinitionFixture()
+            {
+                _selectTestDefinitions = new List<SelectTestDefinition>();
+            }
+
+            public override Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
+            {
+                var executorDb = (Func<DbContext, IList>)new ExpressionClosure<T, TResult>(parameters.Expression).Execute;
+                _selectTestDefinitions.Add(new SelectTestDefinition(parameters.RequestUri, executorDb));
+                return Task.CompletedTask;
+            }
+            public override Task Execute<T, TResult>(QueryParametersScalar<T, TResult> parameters)
+            {
+                var executorDb = (Func<DbContext, IList>)new ExpressionScalarClosure<T, TResult>(parameters.Expression).Execute;
+                _selectTestDefinitions.Add(new SelectTestDefinition(parameters.RequestUri, executorDb));
+                return Task.CompletedTask;
+
+            }
+            public override void Initalize()
+            {
+            }
+
+            public IReadOnlyList<SelectTestDefinition> SelectTestDefinitions => _selectTestDefinitions;
+        }
+
+        private readonly Func<DbContext, IList> _executorDb;
+        private readonly String _request;
+
+        public SelectTestDefinition(String request, Func<DbContext, IList> executorDb)
+        {
+            _request = request;
+            _executorDb = executorDb;
+        }
+
+        public Func<DbContext, IList> ExecutorDb => _executorDb;
+        public static SelectTestDefinition[] GetSelectTestDefinitions()
+        {
+            var fixture = new SelectTestDefinitionFixture();
+            var selectTest = new SelectTest(fixture);
+
+            var methodNames = new List<String>();
+            foreach (MethodInfo methodInfo in selectTest.GetType().GetMethods().Where(m => m.GetCustomAttributes(typeof(FactAttribute), false).Count() == 1))
+            {
+                Func<SelectTest, Task> testMethod;
+                var factAttribute = (FactAttribute)methodInfo.GetCustomAttribute(typeof(FactAttribute), false);
+                if (factAttribute is TheoryAttribute)
+                {
+                    var methodCall = (Func<SelectTest, bool, Task>)methodInfo.CreateDelegate(typeof(Func<SelectTest, bool, Task>));
+                    testMethod = i => methodCall(i, false);
+                }
+                else if (factAttribute is FactAttribute)
+                    testMethod = (Func<SelectTest, Task>)methodInfo.CreateDelegate(typeof(Func<SelectTest, Task>));
+                else
+                    continue;
+
+                int count = fixture.SelectTestDefinitions.Count;
+                testMethod(selectTest).GetAwaiter().GetResult();
+                if (fixture.SelectTestDefinitions.Count == count)
+                    continue;
+
+                methodNames.Add(methodInfo.Name);
+            }
+
+            for (int i = 0; i < methodNames.Count; i++)
+                fixture.SelectTestDefinitions[i].MethodName = methodNames[i];
+            return fixture.SelectTestDefinitions.ToArray();
+        }
+
+        public String MethodName { get; set; }
+        public String Request => _request;
+
+        public override String ToString() => _request;
+    }
+
     public sealed class QueryComparerTest
     {
         private sealed class FakeReadOnlyDictionary<TKey, TValue> : Dictionary<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>
@@ -17,8 +131,7 @@ namespace OdataToEntity.Test
             {
                 get
                 {
-                    TValue value;
-                    if (base.TryGetValue(key, out value))
+                    if (base.TryGetValue(key, out TValue value))
                         return value;
 
                     var constantNode = (ConstantNode)(Object)key;
@@ -35,16 +148,15 @@ namespace OdataToEntity.Test
         {
             var hashes = new Dictionary<int, List<String>>();
 
-            SelectTestDefinition[] requestMethodNames = TestHelper.GetSelectTestDefinitions();
+            SelectTestDefinition[] requestMethodNames = SelectTestDefinition.GetSelectTestDefinitions();
 
             var fixture = new DbFixtureInitDb();
-            var parser = new OeGetParser(new Uri("http://dummy/"), fixture.OeDataAdapter, fixture.EdmModel);
+            var parser = new OeGetParser(fixture.OeDataAdapter, fixture.EdmModel);
             for (int i = 0; i < requestMethodNames.Length; i++)
             {
-                OeParseUriContext parseUriContext = parser.ParseUri(fixture.ParseUri(requestMethodNames[i].Request));
-                int hash = OeODataUriComparer.GetCacheCode(parseUriContext);
-                List<String> value;
-                if (!hashes.TryGetValue(hash, out value))
+                OeQueryContext queryContext = parser.ParseUri(fixture.ParseUri(requestMethodNames[i].Request));
+                int hash = OeCacheComparer.GetCacheCode(queryContext.CreateCacheContext());
+                if (!hashes.TryGetValue(hash, out List<String> value))
                 {
                     value = new List<String>();
                     hashes.Add(hash, value);
@@ -56,38 +168,39 @@ namespace OdataToEntity.Test
         }
         public void Test()
         {
-            SelectTestDefinition[] requestMethodNames = TestHelper.GetSelectTestDefinitions();
+            SelectTestDefinition[] requestMethodNames = SelectTestDefinition.GetSelectTestDefinitions();
             requestMethodNames = requestMethodNames.Where(t => t.MethodName == "FilterEnum" || t.MethodName == "FilterEnumNull").ToArray();
 
             var fixture = new DbFixtureInitDb();
-            var baseUri = new Uri("http://dummy/");
-            var parser = new OeGetParser(baseUri, fixture.OeDataAdapter, fixture.EdmModel);
+            var parser = new OeGetParser(fixture.OeDataAdapter, fixture.EdmModel);
             for (int i = 0; i < requestMethodNames.Length; i++)
             {
-                OeParseUriContext parseUriContext1 = parser.ParseUri(fixture.ParseUri(requestMethodNames[i].Request));
-                OeParseUriContext parseUriContext2 = parser.ParseUri(fixture.ParseUri(requestMethodNames[i].Request));
+                OeQueryContext queryContext1 = parser.ParseUri(fixture.ParseUri(requestMethodNames[i].Request));
+                OeQueryContext queryContext2 = parser.ParseUri(fixture.ParseUri(requestMethodNames[i].Request));
 
                 var constantToParameterMapper = new FakeReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition>();
-                if (parseUriContext1.ODataUri.Skip != null)
+                if (queryContext1.ODataUri.Skip != null)
                 {
-                    var constantNode = OeODataUriComparerParameterValues.CreateSkipConstantNode((int)parseUriContext1.ODataUri.Skip.Value, parseUriContext1.ODataUri.Path);
+                    var constantNode = OeCacheComparerParameterValues.CreateSkipConstantNode((int)queryContext1.ODataUri.Skip.Value, queryContext1.ODataUri.Path);
                     constantToParameterMapper.Add(constantNode, new Db.OeQueryCacheDbParameterDefinition("p_0", typeof(int)));
                 }
-                if (parseUriContext1.ODataUri.Top != null)
+                if (queryContext1.ODataUri.Top != null)
                 {
-                    var constantNode = OeODataUriComparerParameterValues.CreateTopConstantNode((int)parseUriContext1.ODataUri.Top.Value, parseUriContext1.ODataUri.Path);
+                    var constantNode = OeCacheComparerParameterValues.CreateTopConstantNode((int)queryContext1.ODataUri.Top.Value, queryContext1.ODataUri.Path);
                     constantToParameterMapper.Add(constantNode, new Db.OeQueryCacheDbParameterDefinition($"p_{constantToParameterMapper.Count}", typeof(int)));
                 }
 
-                bool result = new OeODataUriComparer(constantToParameterMapper, false).Compare(parseUriContext1, parseUriContext2);
+                OeCacheContext cacheContext1 = queryContext1.CreateCacheContext();
+                OeCacheContext cacheContext2 = queryContext2.CreateCacheContext();
+                bool result = new OeCacheComparer(constantToParameterMapper, false).Compare(cacheContext1, cacheContext2);
                 Assert.True(result);
 
                 for (int j = i + 1; j < requestMethodNames.Length; j++)
                 {
-                    parseUriContext2 = parser.ParseUri(fixture.ParseUri(requestMethodNames[j].Request));
+                    queryContext2 = parser.ParseUri(fixture.ParseUri(requestMethodNames[j].Request));
 
                     constantToParameterMapper = new FakeReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition>();
-                    result = new OeODataUriComparer(constantToParameterMapper, false).Compare(parseUriContext1, parseUriContext2);
+                    result = new OeCacheComparer(constantToParameterMapper, false).Compare(cacheContext1, cacheContext2);
                     Assert.False(result);
                 }
             }

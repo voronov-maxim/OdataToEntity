@@ -28,25 +28,23 @@ namespace OdataToEntity.Db
 
     public sealed class OeQueryCache
     {
-        private readonly ConcurrentDictionary<OeParseUriContext, QueryCacheItem> _cache;
+        private readonly ConcurrentDictionary<OeCacheContext, QueryCacheItem> _cache;
 
         public OeQueryCache()
         {
-            _cache = new ConcurrentDictionary<OeParseUriContext, QueryCacheItem>(new OeParseUriContextEqualityComparer());
+            _cache = new ConcurrentDictionary<OeCacheContext, QueryCacheItem>(new OeCacheContextEqualityComparer());
             AllowCache = true;
         }
 
-        public void AddQuery(OeParseUriContext parseUriContext, Object query, Expression countExpression,
-            IReadOnlyDictionary<ConstantNode, OeQueryCacheDbParameterDefinition> constantNodeNames)
+        public void AddQuery(OeCacheContext cacheContext, Object query, Expression countExpression, OeEntryFactory entryFactory)
         {
-            parseUriContext.ConstantToParameterMapper = constantNodeNames;
-            var queryCacheItem = new QueryCacheItem(query, countExpression, parseUriContext.EntryFactory);
-            _cache.TryAdd(parseUriContext, queryCacheItem);
+            var queryCacheItem = new QueryCacheItem(query, countExpression, entryFactory);
+            _cache.TryAdd(cacheContext, queryCacheItem);
         }
-        public QueryCacheItem GetQuery(OeParseUriContext parseUriContext)
+        public QueryCacheItem GetQuery(OeCacheContext cacheContext)
         {
             QueryCacheItem cacheItem;
-            _cache.TryGetValue(parseUriContext, out cacheItem);
+            _cache.TryGetValue(cacheContext, out cacheItem);
             return cacheItem;
         }
 

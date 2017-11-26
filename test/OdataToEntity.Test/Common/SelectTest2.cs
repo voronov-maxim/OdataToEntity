@@ -143,7 +143,7 @@ namespace OdataToEntity.Test
             var exprectedReader = new ResponseReader(Fixture.EdmModel, Fixture.OeDataAdapter.EntitySetMetaAdapters);
             List<Object> expectedResult = exprectedReader.Read(exprectedResponse).Cast<Object>().ToList();
 
-            DbFixture.Compare(expectedResult, fromOe);
+            TestHelper.Compare(expectedResult, fromOe, null);
         }
         [Fact]
         public async Task NextPageLink()
@@ -178,7 +178,7 @@ namespace OdataToEntity.Test
             using (var context = Fixture.CreateContext())
                 fromDb = context.OrderItems.OrderBy(i => i.Id).ToList();
 
-            DbFixture.Compare(fromDb, fromOe);
+            TestHelper.Compare(fromDb, fromOe, null);
         }
     }
 }

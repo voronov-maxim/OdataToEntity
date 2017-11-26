@@ -147,23 +147,23 @@ namespace OdataToEntity.Linq2Db
             var getEntitySet = (Func<T, ITable<TEntity>>)property.GetGetMethod().CreateDelegate(typeof(Func<T, ITable<TEntity>>));
             return new TableAdapterImpl<TEntity>(getEntitySet, property.Name);
         }
-        public override OeAsyncEnumerator ExecuteEnumerator(Object dataContext, OeParseUriContext parseUriContext, CancellationToken cancellationToken)
+        public override OeAsyncEnumerator ExecuteEnumerator(Object dataContext, OeQueryContext queryContext, CancellationToken cancellationToken)
         {
-            IQueryable entitySet = parseUriContext.EntitySetAdapter.GetEntitySet(dataContext);
-            Expression expression = parseUriContext.CreateExpression(entitySet, new OeConstantToVariableVisitor());
+            IQueryable entitySet = queryContext.EntitySetAdapter.GetEntitySet(dataContext);
+            Expression expression = queryContext.CreateExpression(entitySet, new OeConstantToVariableVisitor());
             expression = new ParameterVisitor().Visit(expression);
 
             var query = (IQueryable<Object>)entitySet.Provider.CreateQuery(expression);
             OeAsyncEnumerator asyncEnumerator = new OeAsyncEnumeratorAdapter(query, cancellationToken);
-            if (parseUriContext.CountExpression != null)
-                asyncEnumerator.Count = query.Provider.Execute<int>(parseUriContext.CountExpression);
+            if (queryContext.CountExpression != null)
+                asyncEnumerator.Count = query.Provider.Execute<int>(queryContext.CountExpression);
 
             return asyncEnumerator;
         }
-        public override TResult ExecuteScalar<TResult>(Object dataContext, OeParseUriContext parseUriContext)
+        public override TResult ExecuteScalar<TResult>(Object dataContext, OeQueryContext queryContext)
         {
-            IQueryable query = parseUriContext.EntitySetAdapter.GetEntitySet(dataContext);
-            Expression expression = parseUriContext.CreateExpression(query, new OeConstantToVariableVisitor());
+            IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dataContext);
+            Expression expression = queryContext.CreateExpression(query, new OeConstantToVariableVisitor());
             expression = new ParameterVisitor().Visit(expression);
             return query.Provider.Execute<TResult>(expression);
         }

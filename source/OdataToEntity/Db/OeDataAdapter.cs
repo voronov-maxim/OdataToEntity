@@ -20,15 +20,15 @@ namespace OdataToEntity.Db
         }
 
         public abstract void CloseDataContext(Object dataContext);
-        protected IQueryable CreateQuery(OeParseUriContext parseUriContext, Object dataContext, OeConstantToVariableVisitor constantToVariableVisitor)
+        protected IQueryable CreateQuery(OeQueryContext queryContext, Object dataContext, OeConstantToVariableVisitor constantToVariableVisitor)
         {
-            IQueryable query = parseUriContext.EntitySetAdapter.GetEntitySet(dataContext);
-            Expression expression = parseUriContext.CreateExpression(query, constantToVariableVisitor);
+            IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dataContext);
+            Expression expression = queryContext.CreateExpression(query, constantToVariableVisitor);
             return query.Provider.CreateQuery(expression);
         }
         public abstract Object CreateDataContext();
-        public abstract OeAsyncEnumerator ExecuteEnumerator(Object dataContext, OeParseUriContext parseUriContext, CancellationToken cancellationToken);
-        public abstract TResult ExecuteScalar<TResult>(Object dataContext, OeParseUriContext parseUriContext);
+        public abstract OeAsyncEnumerator ExecuteEnumerator(Object dataContext, OeQueryContext queryContext, CancellationToken cancellationToken);
+        public abstract TResult ExecuteScalar<TResult>(Object dataContext, OeQueryContext queryContext);
         public abstract OeEntitySetAdapter GetEntitySetAdapter(String entitySetName);
         public abstract Task<int> SaveChangesAsync(IEdmModel edmModel, Object dataContext, CancellationToken cancellationToken);
 

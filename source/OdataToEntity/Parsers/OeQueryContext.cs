@@ -10,22 +10,7 @@ using System.Reflection;
 
 namespace OdataToEntity.Parsers
 {
-    public struct OeParseNavigationSegment
-    {
-        private readonly FilterClause _filter;
-        private readonly NavigationPropertySegment _navigationSegment;
-
-        public OeParseNavigationSegment(NavigationPropertySegment navigationSegment, FilterClause filter)
-        {
-            _navigationSegment = navigationSegment;
-            _filter = filter;
-        }
-
-        public FilterClause Filter => _filter;
-        public NavigationPropertySegment NavigationSegment => _navigationSegment;
-    }
-
-    public sealed class OeParseUriContext
+    public sealed class OeQueryContext
     {
         private sealed class FilterVisitor : ExpressionVisitor
         {
@@ -92,14 +77,15 @@ namespace OdataToEntity.Parsers
 
         private readonly IEdmModel _edmModel;
         private readonly IEdmEntitySet _entitySet;
+        private Dictionary<OeEntryFactory, ExpandedNavigationSelectItem> _expandedNavigationSelectItem;
         private readonly bool _isCountSegment;
         private readonly bool _navigationNextLink;
         private readonly ODataUri _odataUri;
         private readonly int _pageSize;
         private readonly IReadOnlyList<OeParseNavigationSegment> _parseNavigationSegments;
 
-        public OeParseUriContext(IEdmModel edmModel, ODataUri odataUri, IEdmEntitySet entitySet, IReadOnlyList<OeParseNavigationSegment> parseNavigationSegments, bool isCountSegment,
-            int pageSize, bool navigationNextLink)
+        public OeQueryContext(IEdmModel edmModel, ODataUri odataUri,
+            IEdmEntitySet entitySet, IReadOnlyList<OeParseNavigationSegment> parseNavigationSegments, bool isCountSegment, int pageSize, bool navigationNextLink)
         {
             _edmModel = edmModel;
             _odataUri = odataUri;
@@ -110,6 +96,14 @@ namespace OdataToEntity.Parsers
             _navigationNextLink = navigationNextLink;
         }
 
+        public void AddExpandedNavigationSelectItem(OeEntryFactory entryFactory, ExpandedNavigationSelectItem item)
+        {
+            if (_expandedNavigationSelectItem == null)
+                _expandedNavigationSelectItem = new Dictionary<OeEntryFactory, ExpandedNavigationSelectItem>();
+            _expandedNavigationSelectItem.Add(entryFactory, item);
+        }
+        public OeCacheContext CreateCacheContext() => new OeCacheContext(this);
+        public OeCacheContext CreateCacheContext(IReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition> constantToParameterMapper) => new OeCacheContext(this, constantToParameterMapper);
         public Expression CreateCountExpression(IQueryable query, Expression expression)
         {
             Type filterType = EntryFactory == null ? query.ElementType : EdmModel.GetClrType(EntryFactory.EntityType);
@@ -143,7 +137,7 @@ namespace OdataToEntity.Parsers
             expression = expressionBuilder.ApplyNavigation(expression, ParseNavigationSegments);
             expression = expressionBuilder.ApplyFilter(expression, ODataUri.Filter);
             expression = expressionBuilder.ApplyAggregation(expression, ODataUri.Apply);
-            expression = expressionBuilder.ApplySelect(expression, ODataUri.SelectAndExpand, ODataUri.Path, Headers.MetadataLevel, NavigationNextLink);
+            expression = expressionBuilder.ApplySelect(expression, ODataUri.SelectAndExpand, ODataUri.Path, this);
             expression = expressionBuilder.ApplyOrderBy(expression, ODataUri.OrderBy);
             expression = expressionBuilder.ApplySkip(expression, ODataUri.Skip, ODataUri.Path);
             expression = expressionBuilder.ApplyTake(expression, ODataUri.Top, ODataUri.Path);
@@ -158,19 +152,29 @@ namespace OdataToEntity.Parsers
 
             return SourceVisitor.Translate(query, expression);
         }
+        public IEnumerable<ExpandedNavigationSelectItem> GetExpandedNavigationSelectItems()
+        {
+            foreach (SelectItem selectItem in ODataUri.SelectAndExpand.SelectedItems)
+                if (selectItem is ExpandedNavigationSelectItem item)
+                {
+                    var segment = (NavigationPropertySegment)item.PathToNavigationProperty.LastSegment;
+                    IEdmNavigationProperty navigationEdmProperty = segment.NavigationProperty;
+                    if (navigationEdmProperty.Type.Definition is IEdmCollectionType)
+                        yield return item;
+                }
+        }
 
-        public IReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition> ConstantToParameterMapper { get; set; }
         public Expression CountExpression { get; set; }
         public IEdmModel EdmModel => _edmModel;
         public IEdmEntitySet EntitySet => _entitySet;
         public Db.OeEntitySetAdapter EntitySetAdapter { get; set; }
         public OeEntryFactory EntryFactory { get; set; }
-        public OeRequestHeaders Headers { get; set; }
         public bool IsCountSegment => _isCountSegment;
+        public OeMetadataLevel MetadataLevel { get; set; }
         public bool NavigationNextLink => _navigationNextLink;
         public ODataUri ODataUri => _odataUri;
         public int PageSize => _pageSize;
-        public IReadOnlyList<Db.OeQueryCacheDbParameterValue> ParameterValues { get; set; }
         public IReadOnlyList<OeParseNavigationSegment> ParseNavigationSegments => _parseNavigationSegments;
+        public String SkipToken { get; set; }
     }
 }

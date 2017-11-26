@@ -34,8 +34,10 @@ namespace OdataToEntity.Parsers
             _entryFactory = aggTranslator.CreateEntryFactory;
 
             Type aggItemType = OeExpressionHelper.GetCollectionItemType(aggExpression.Type);
-            _visitor = new OeQueryNodeVisitor(_model, Expression.Parameter(aggItemType), _visitor.Constans);
-            _visitor.TuplePropertyByAliasName = aggTranslator.GetTuplePropertyByAliasName;
+            _visitor = new OeQueryNodeVisitor(_model, Expression.Parameter(aggItemType), _visitor.Constans)
+            {
+                TuplePropertyByAliasName = aggTranslator.GetTuplePropertyByAliasName
+            };
 
             return aggExpression;
         }
@@ -120,13 +122,13 @@ namespace OdataToEntity.Parsers
             var orderBytranslator = new OeOrderByTranslator(_visitor);
             return orderBytranslator.Build(source, orderByClause);
         }
-        public Expression ApplySelect(Expression source, SelectExpandClause selectClause, ODataPath path, OeMetadataLevel metadatLevel, bool navigationNextLink)
+        public Expression ApplySelect(Expression source, SelectExpandClause selectClause, ODataPath path, OeQueryContext queryContex)
         {
             if (selectClause == null)
                 return source;
 
-            var selectTranslator = new OeSelectTranslator(_visitor, path, navigationNextLink);
-            Expression selectExpression = selectTranslator.Build(source, selectClause, metadatLevel);
+            var selectTranslator = new OeSelectTranslator(queryContex, _visitor, path);
+            Expression selectExpression = selectTranslator.Build(source, selectClause);
 
             _entryFactory = selectTranslator.CreateEntryFactory;
 
