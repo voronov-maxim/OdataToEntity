@@ -551,8 +551,8 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<Customer>()
             {
-                RequestUri = "Customers?$filter=Sex ne null and Address ne null",
-                Expression = t => t.Where(c => c.Sex != null && c.Address != null),
+                RequestUri = "Customers?$filter=Sex ne null and Address ne null&$orderby=Country,Id",
+                Expression = t => t.Where(c => c.Sex != null && c.Address != null).OrderBy(c => c.Country).ThenBy(c => c.Id),
                 PageSize = pageSize
             };
             await Fixture.Execute(parameters);
@@ -681,8 +681,8 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<Customer>()
             {
-                RequestUri = "Customers?$filter=Address gt 'Tula'",
-                Expression = t => t.Where(c => String.Compare(c.Address, "Tula") > 0),
+                RequestUri = "Customers?$filter=Address gt 'Tula'&$orderby=Country,Id",
+                Expression = t => t.Where(c => String.Compare(c.Address, "Tula") > 0).OrderBy(c => c.Country).ThenBy(c => c.Id),
                 PageSize = pageSize
             };
             await Fixture.Execute(parameters);
@@ -694,8 +694,8 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<Customer>()
             {
-                RequestUri = "Customers?$filter=Address le 'Tula'",
-                Expression = t => t.Where(c => String.Compare(c.Address, "Tula") <= 0),
+                RequestUri = "Customers?$filter=Address le 'Tula'&$orderby=Country,Id",
+                Expression = t => t.Where(c => String.Compare(c.Address, "Tula") <= 0).OrderBy(c => c.Country).ThenBy(c => c.Id),
                 PageSize = pageSize
             };
             await Fixture.Execute(parameters);
@@ -707,8 +707,8 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<Customer>()
             {
-                RequestUri = "Customers?$filter=Address lt 'Tula'",
-                Expression = t => t.Where(c => String.Compare(c.Address, "Tula") < 0),
+                RequestUri = "Customers?$filter=Address lt 'Tula'&$orderby=Country,Id",
+                Expression = t => t.Where(c => String.Compare(c.Address, "Tula") < 0).OrderBy(c => c.Country).ThenBy(c => c.Id),
                 PageSize = pageSize
             };
             await Fixture.Execute(parameters);
@@ -720,8 +720,8 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<Customer>()
             {
-                RequestUri = "Customers?$filter=Address ne 'Tula'",
-                Expression = t => t.Where(c => c.Address != "Tula"),
+                RequestUri = "Customers?$filter=Address ne 'Tula'&$orderby=Country,Id",
+                Expression = t => t.Where(c => c.Address != "Tula").OrderBy(c => c.Country).ThenBy(c => c.Id),
                 PageSize = pageSize
             };
             await Fixture.Execute(parameters);
@@ -824,8 +824,8 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<Customer>()
             {
-                RequestUri = "Customers?$filter=trim(concat(Name, ' ')) eq trim(Name)",
-                Expression = t => t.Where(c => (c.Name + " ").Trim() == c.Name.Trim()),
+                RequestUri = "Customers?$filter=trim(concat(Name, ' ')) eq trim(Name)&$orderby=Country,Id",
+                Expression = t => t.Where(c => (c.Name + " ").Trim() == c.Name.Trim()).OrderBy(c => c.Country).ThenBy(c => c.Id),
                 PageSize = pageSize
             };
             await Fixture.Execute(parameters);

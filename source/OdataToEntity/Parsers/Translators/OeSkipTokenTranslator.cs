@@ -47,8 +47,8 @@ namespace OdataToEntity.Parsers
             BinaryExpression compare;
             if (propertyExpression.Type == typeof(String) && binaryType != ExpressionType.NotEqual)
             {
-                Func<String, int> compareToFunc = "".CompareTo;
-                MethodCallExpression compareToCall = Expression.Call(propertyExpression, compareToFunc.GetMethodInfo(), constantExpression);
+                Func<String, String, int> compareToFunc = String.Compare;
+                MethodCallExpression compareToCall = Expression.Call(null, compareToFunc.GetMethodInfo(), propertyExpression, constantExpression);
                 compare = Expression.MakeBinary(binaryType, compareToCall, OeConstantToVariableVisitor.ZeroStringCompareConstantExpression);
             }
             else
