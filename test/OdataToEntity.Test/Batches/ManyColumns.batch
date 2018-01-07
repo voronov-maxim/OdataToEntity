@@ -91,6 +91,52 @@ User-Agent: Microsoft ADO.NET Data Services
 "Column28":"128",
 "Column29":"129",
 "Column30":"130"}
+
+--changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
+Content-Type: application/http
+Content-Transfer-Encoding: binary
+Content-ID: 3
+
+POST http://dummy/ManyColumns HTTP/1.1
+OData-Version: 4.0
+OData-MaxVersion: 4.0
+Content-Type: application/json;odata.metadata=minimal
+Accept: application/json;odata.metadata=minimal
+Accept-Charset: UTF-8
+User-Agent: Microsoft ADO.NET Data Services
+
+{"@odata.type":"#OdataToEntity.Test.Model.ManyColumns",
+"Column01":"201",
+"Column02":"202",
+"Column03":"203",
+"Column04":"204",
+"Column05":"205",
+"Column06":"206",
+"Column07":"207",
+"Column08":"208",
+"Column09":"209",
+"Column10":"210",
+"Column11":"211",
+"Column12":"212",
+"Column13":"213",
+"Column14":"214",
+"Column15":"215",
+"Column16":"216",
+"Column17":"217",
+"Column18":"218",
+"Column19":"219",
+"Column20":"220",
+"Column21":"221",
+"Column22":"222",
+"Column23":"223",
+"Column24":"224",
+"Column25":"225",
+"Column26":"226",
+"Column27":"227",
+"Column28":"228",
+"Column29":"229",
+"Column30":"230"}
+
 --changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6--
 
 --batch_6263d2a1-1ddc-4b02-a1c1-7031cfa93691--

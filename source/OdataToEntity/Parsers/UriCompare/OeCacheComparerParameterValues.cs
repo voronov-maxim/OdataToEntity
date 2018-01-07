@@ -47,6 +47,13 @@ namespace OdataToEntity.Parsers.UriCompare
 
             throw new InvalidOperationException("skip not found");
         }
+        public void AddSkipTokenParameter(Object value, String propertyName)
+        {
+            propertyName = "<>" + propertyName;
+            foreach (KeyValuePair<ConstantNode, Db.OeQueryCacheDbParameterDefinition> pair in _constantToParameterMapper)
+                if (String.CompareOrdinal(pair.Key.LiteralText, propertyName) == 0)
+                    _parameterValues.Add(new Db.OeQueryCacheDbParameterValue(pair.Value.ParameterName, value));
+        }
         public void AddTopParameter(long value, ODataPath path)
         {
             String resourcePath = GetSegmentResourcePathTop(path);
@@ -62,6 +69,10 @@ namespace OdataToEntity.Parsers.UriCompare
         public static ConstantNode CreateSkipConstantNode(int skip, ODataPath path)
         {
             return new ConstantNode(skip, GetSegmentResourcePathSkip(path));
+        }
+        public static ConstantNode CreateSkipTokenConstantNode(Object value, String propertyName)
+        {
+            return new ConstantNode(value, "<>" + propertyName);
         }
         public static ConstantNode CreateTopConstantNode(int top, ODataPath path)
         {

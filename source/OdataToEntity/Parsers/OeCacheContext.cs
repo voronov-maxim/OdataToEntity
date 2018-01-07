@@ -28,6 +28,7 @@ namespace OdataToEntity.Parsers
         private readonly bool _navigationNextLink;
         private readonly ODataUri _odataUri;
         private readonly IReadOnlyList<OeParseNavigationSegment> _parseNavigationSegments;
+        private readonly OeSkipTokenParser _skipTokenParser;
 
         public OeCacheContext(OeQueryContext queryContext)
         {
@@ -36,6 +37,7 @@ namespace OdataToEntity.Parsers
             _parseNavigationSegments = queryContext.ParseNavigationSegments;
             _metadataLevel = queryContext.MetadataLevel;
             _navigationNextLink = queryContext.NavigationNextLink;
+            _skipTokenParser = queryContext.SkipTokenParser;
         }
         public OeCacheContext(OeQueryContext queryContext, IReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition> constantToParameterMapper)
             : this(queryContext)
@@ -51,5 +53,6 @@ namespace OdataToEntity.Parsers
         public ODataUri ODataUri => _odataUri;
         public IReadOnlyList<Db.OeQueryCacheDbParameterValue> ParameterValues { get; set; }
         public IReadOnlyList<OeParseNavigationSegment> ParseNavigationSegments => _parseNavigationSegments;
+        public OeSkipTokenParser SkipTokenParser => _skipTokenParser;
     }
 }

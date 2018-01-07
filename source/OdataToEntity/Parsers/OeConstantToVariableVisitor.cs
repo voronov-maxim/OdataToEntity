@@ -2,12 +2,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
-using System.Reflection;
 
 namespace OdataToEntity.Parsers
 {
     public class OeConstantToVariableVisitor : ExpressionVisitor
     {
+        public static readonly ConstantExpression ZeroStringCompareConstantExpression = Expression.Constant(0);
+
         private readonly List<ConstantExpression> _constantExpressions;
         private IReadOnlyList<Expression> _parameterExpressions;
 
@@ -37,6 +38,9 @@ namespace OdataToEntity.Parsers
         }
         protected override Expression VisitConstant(ConstantExpression node)
         {
+            if (node == ZeroStringCompareConstantExpression)
+                return node;
+
             if (_parameterExpressions == null)
             {
                 Type underlyingType = null;

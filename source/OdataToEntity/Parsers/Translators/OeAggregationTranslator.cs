@@ -286,7 +286,7 @@ namespace OdataToEntity.Parsers
                     return Expression.Property(source, propertyInfo);
                 }
             }
-            throw new InvalidOperationException("property name " + aliasName + " not found");
+            return null;
         }
     }
 }

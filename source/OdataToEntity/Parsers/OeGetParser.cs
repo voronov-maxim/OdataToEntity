@@ -21,7 +21,7 @@ namespace OdataToEntity
             _model = model;
         }
 
-        private static FilterClause CreateFilterClause(IEdmEntitySet entitySet, IEnumerable<KeyValuePair<String, Object>> keys, BinaryOperatorKind binaryOperatorKind)
+        private static FilterClause CreateFilterClause(IEdmEntitySet entitySet, IEnumerable<KeyValuePair<String, Object>> keys)
         {
             var entityTypeRef = (IEdmEntityTypeReference)((IEdmCollectionType)entitySet.Type).ElementType;
             var range = new ResourceRangeVariable("", entityTypeRef, entitySet);
@@ -34,7 +34,7 @@ namespace OdataToEntity
                 IEdmProperty property = entityType.FindProperty(keyValue.Key);
                 var left = new SingleValuePropertyAccessNode(refNode, property);
                 var right = new ConstantNode(keyValue.Value, ODataUriUtils.ConvertToUriLiteral(keyValue.Value, ODataVersion.V4));
-                var node = new BinaryOperatorNode(binaryOperatorKind, left, right);
+                var node = new BinaryOperatorNode(BinaryOperatorKind.Equal, left, right);
 
                 if (compositeNode == null)
                     compositeNode = node;
@@ -54,6 +54,8 @@ namespace OdataToEntity
                 int checkNextPageRecord = queryContext.ODataUri.QueryCount.GetValueOrDefault() ? 0 : 1;
                 if (PageSize + checkNextPageRecord > queryContext.ODataUri.Top.GetValueOrDefault())
                     queryContext.ODataUri.Top = PageSize + checkNextPageRecord;
+
+                odataUri.OrderBy = queryContext.SkipTokenParser.UniqueOrderBy;
             }
 
             Object dataContext = null;
@@ -115,7 +117,7 @@ namespace OdataToEntity
                         else
                             throw new InvalidOperationException("invalid segment");
 
-                        FilterClause keyFilter = CreateFilterClause(previousEntitySet, keySegment.Keys, BinaryOperatorKind.Equal);
+                        FilterClause keyFilter = CreateFilterClause(previousEntitySet, keySegment.Keys);
                         navigationSegments.Add(new OeParseNavigationSegment(navigationSegment, keyFilter));
                     }
                     previousSegment = segment;

@@ -122,12 +122,12 @@ namespace OdataToEntity.Parsers
             var orderBytranslator = new OeOrderByTranslator(_visitor);
             return orderBytranslator.Build(source, orderByClause);
         }
-        public Expression ApplySelect(Expression source, SelectExpandClause selectClause, ODataPath path, OeQueryContext queryContex)
+        public Expression ApplySelect(Expression source, SelectExpandClause selectClause, ODataPath path, OeMetadataLevel metadataLevel, bool navigationNextLink)
         {
             if (selectClause == null)
                 return source;
 
-            var selectTranslator = new OeSelectTranslator(queryContex, _visitor, path);
+            var selectTranslator = new OeSelectTranslator(_visitor, path, metadataLevel, navigationNextLink);
             Expression selectExpression = selectTranslator.Build(source, selectClause);
 
             _entryFactory = selectTranslator.CreateEntryFactory;
@@ -147,6 +147,14 @@ namespace OdataToEntity.Parsers
 
             MethodInfo skipMethodInfo = OeMethodInfoHelper.GetSkipMethodInfo(ParameterType);
             return Expression.Call(skipMethodInfo, source, skipConstant);
+        }
+        public Expression ApplySkipToken(Expression source, OeSkipTokenParser skipTokenParser, String skipToken)
+        {
+            if (skipToken == null)
+                return source;
+
+            var skipTokenTranslator = new OeSkipTokenTranslator(_visitor, skipTokenParser);
+            return skipTokenTranslator.Build(source, skipToken);
         }
         public Expression ApplyTake(Expression source, long? top, ODataPath path)
         {

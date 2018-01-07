@@ -2,8 +2,6 @@
 using Microsoft.OData;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using OdataToEntity.Db;
 using OdataToEntity.Test.Model;
 using System;
@@ -12,7 +10,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -40,7 +37,7 @@ namespace OdataToEntity.Test
         }
         public virtual async Task Execute<T, TResult>(QueryParametersScalar<T, TResult> parameters)
         {
-            IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri, false);
+            IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri, false, 0);
             IList fromDb;
             using (var dataContext = (DbContext)DbDataAdapter.CreateDataContext())
                 fromDb = TestHelper.ExecuteDb(dataContext, parameters.Expression);
@@ -50,7 +47,7 @@ namespace OdataToEntity.Test
         }
         public virtual async Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
         {
-            IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri, parameters.NavigationNextLink);
+            IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri, parameters.NavigationNextLink, parameters.PageSize);
             IList fromDb;
             IReadOnlyList<IncludeVisitor.Include> includes;
             using (var dataContext = (DbContext)DbDataAdapter.CreateDataContext())
@@ -68,39 +65,56 @@ namespace OdataToEntity.Test
 
             await parser.ExecuteBatchAsync(new MemoryStream(bytes), responseStream, CancellationToken.None);
         }
-        public async Task<IList> ExecuteOe<TResult>(String requestUri, bool navigationNextLink)
+        public async Task<IList> ExecuteOe<TResult>(String requestUri, bool navigationNextLink, int pageSize)
         {
-            var parser = new OeParser(new Uri("http://dummy/"), OeDataAdapter, EdmModel) { NavigationNextLink = navigationNextLink };
-            var stream = new MemoryStream();
-            await parser.ExecuteQueryAsync(ParseUri(requestUri), OeRequestHeaders.JsonDefault, stream, CancellationToken.None);
-            stream.Position = 0;
+            ODataUri odataUri = ParseUri(requestUri);
+            var parser = new OeParser(odataUri.ServiceRoot, OeDataAdapter, EdmModel) { NavigationNextLink = navigationNextLink, PageSize = pageSize };
+            var uri = new Uri(odataUri.ServiceRoot, requestUri);
 
-            if (typeof(TResult).IsPrimitive)
+            long count = -1;
+            var fromOe = new List<Object>();
+            do
             {
-                TypeConverter converter = TypeDescriptor.GetConverter(typeof(TResult));
-                return new Object[] { converter.ConvertFromString(new StreamReader(stream).ReadToEnd()) };
-            }
+                var response = new MemoryStream();
+                await parser.ExecuteGetAsync(uri, OeRequestHeaders.JsonDefault, response, CancellationToken.None);
+                response.Position = 0;
 
-            IList fromOe;
-            ResponseReader responseReader;
-            if (typeof(TResult) == typeof(Object))
-            {
-                responseReader = new OpenTypeResponseReader(EdmModel, DbDataAdapter.EntitySetMetaAdapters);
-                fromOe = responseReader.Read(stream).Cast<Object>().ToList();
-            }
-            else
-            {
-                responseReader = new ResponseReader(EdmModel, DbDataAdapter.EntitySetMetaAdapters);
-                fromOe = responseReader.Read<TResult>(stream).ToList();
-            }
+                List<Object> result;
+                ResponseReader responseReader;
+                if (typeof(TResult).IsPrimitive)
+                {
+                    TypeConverter converter = TypeDescriptor.GetConverter(typeof(TResult));
+                    return new Object[] { converter.ConvertFromString(new StreamReader(response).ReadToEnd()) };
+                }
+                else if (typeof(TResult) == typeof(Object))
+                {
+                    responseReader = new OpenTypeResponseReader(EdmModel, DbDataAdapter.EntitySetMetaAdapters);
+                    result = responseReader.Read(response).Cast<Object>().ToList();
+                }
+                else
+                {
+                    responseReader = new ResponseReader(EdmModel, DbDataAdapter.EntitySetMetaAdapters);
+                    result = responseReader.Read<TResult>(response).Cast<Object>().ToList();
+                }
 
-            var navigationParser = new OeParser(new Uri("http://dummy/"), DbDataAdapter, EdmModel);
-            foreach (Object entity in fromOe)
+                if (pageSize > 0)
+                    Xunit.Assert.InRange(result.Count, 0, parser.PageSize);
+                fromOe.AddRange(result);
+
+                var navigationParser = new OeParser(odataUri.ServiceRoot, DbDataAdapter, EdmModel);
+                foreach (Object entity in fromOe)
+                    await responseReader.FillNextLinkProperties(navigationParser, entity, CancellationToken.None);
+
+                if (count < 0)
+                    count = responseReader.ResourceSet.Count.GetValueOrDefault();
+
+                uri = responseReader.ResourceSet.NextPageLink;
+            }
+            while (uri != null);
+
+            if (odataUri.QueryCount != null)
             {
-                await responseReader.FillNextLinkProperties(navigationParser, entity, CancellationToken.None);
-                //Dictionary<PropertyInfo, ODataResourceSetBase> navigationProperties;
-                //if (responseReader.NavigationPropertyEntities.TryGetValue(entity, out navigationProperties))
-                //    SetNullEmptyCollection(entity, navigationProperties.Keys);
+                Xunit.Assert.Equal(count, fromOe.Count);
             }
 
             return fromOe;
@@ -113,20 +127,6 @@ namespace OdataToEntity.Test
             odataParser.Resolver.EnableCaseInsensitive = true;
             return odataParser.ParseUri();
         }
-        //private static void SetNullEmptyCollection(Object entity, IEnumerable<PropertyInfo> navigationProperties)
-        //{
-        //    return;
-        //    if (entity is SortedDictionary<String, Object> openType)
-        //    {
-        //        foreach (PropertyInfo navigationProperty in navigationProperties)
-        //            if (openType[navigationProperty.Name] is IEnumerable collection && !collection.GetEnumerator().MoveNext())
-        //                openType[navigationProperty.Name] = null;
-        //    }
-        //    else
-        //        foreach (PropertyInfo navigationProperty in navigationProperties)
-        //            if (navigationProperty.GetValue(entity) is IEnumerable collection && !collection.GetEnumerator().MoveNext())
-        //                navigationProperty.SetValue(entity, null);
-        //}
 
         internal OrderDbDataAdapter DbDataAdapter => _dbDataAdapter;
         internal EdmModel EdmModel => _edmModel;

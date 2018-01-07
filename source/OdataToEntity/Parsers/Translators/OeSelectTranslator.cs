@@ -59,19 +59,22 @@ namespace OdataToEntity.Parsers
 
         private sealed class SelectItemTranslator : SelectItemTranslator<Expression>
         {
+            private readonly OeMetadataLevel _metadataLevel;
             private readonly IEdmModel _model;
+            private readonly bool _navigationNextLink;
             private readonly ODataPath _path;
             private readonly ParameterExpression _parameter;
-            private readonly OeQueryContext _queryContex;
             private SelectItemInfo _selectItemInfo;
             private readonly Expression _source;
             private readonly OeQueryNodeVisitor _visitor;
 
-            public SelectItemTranslator(OeQueryContext queryContex, OeQueryNodeVisitor visitor, ODataPath path, ParameterExpression parameter, Expression source)
+            public SelectItemTranslator(OeQueryNodeVisitor visitor, ODataPath path, OeMetadataLevel metadataLevel, bool navigationNextLink,
+                ParameterExpression parameter, Expression source)
             {
-                _queryContex = queryContex;
                 _visitor = visitor;
                 _path = path;
+                _metadataLevel = metadataLevel;
+                _navigationNextLink = navigationNextLink;
                 _parameter = parameter;
                 _source = source;
                 _model = visitor.EdmModel;
@@ -96,7 +99,7 @@ namespace OdataToEntity.Parsers
                         entityType = navigationEdmProperty.Type.Definition;
                     else
                         entityType = collectionType.ElementType.Definition;
-                    foreach (IEdmEntitySet element in model.EntityContainer.Elements)
+                    foreach (IEdmEntitySet element in model.EntityContainer.EntitySets())
                         if (element.EntityType() == entityType)
                         {
                             entitySet = element;
@@ -108,7 +111,7 @@ namespace OdataToEntity.Parsers
             public override Expression Translate(ExpandedNavigationSelectItem item)
             {
                 var segment = (NavigationPropertySegment)item.PathToNavigationProperty.LastSegment;
-                if (_queryContex.NavigationNextLink && segment.NavigationProperty.Type.Definition is IEdmCollectionType)
+                if (_navigationNextLink && segment.NavigationProperty.Type.Definition is IEdmCollectionType)
                     return null;
 
                 _selectItemInfo = CreateNavigationSelectItemInfo(_model, segment, false, item.CountOption);
@@ -135,7 +138,7 @@ namespace OdataToEntity.Parsers
                 if (item.SelectAndExpand.SelectedItems.Any())
                 {
                     var path = new ODataPath(_path.Union(item.PathToNavigationProperty));
-                    var selectTranslator = new OeSelectTranslator(_queryContex, _visitor, path);
+                    var selectTranslator = new OeSelectTranslator(_visitor, path, _metadataLevel, _navigationNextLink);
                     Expression nestedExpression = selectTranslator.CreateExpression(expression, item.SelectAndExpand);
 
                     Type nestedType = OeExpressionHelper.GetCollectionItemType(nestedExpression.Type);
@@ -157,7 +160,7 @@ namespace OdataToEntity.Parsers
                 Expression expression;
                 if (item.SelectedPath.LastSegment is NavigationPropertySegment navigationSegment)
                 {
-                    if (_queryContex.NavigationNextLink && navigationSegment.NavigationProperty.Type.Definition is IEdmCollectionType)
+                    if (_navigationNextLink && navigationSegment.NavigationProperty.Type.Definition is IEdmCollectionType)
                         return null;
 
                     _selectItemInfo = CreateNavigationSelectItemInfo(_model, navigationSegment, true, null);
@@ -187,16 +190,18 @@ namespace OdataToEntity.Parsers
         private readonly IEdmModel _model;
         private ParameterExpression _parameter;
         private readonly ODataPath _path;
-        private readonly OeQueryContext _queryContext;
+        private readonly OeMetadataLevel _metadataLevel;
+        private readonly bool _navigationNextLink;
         private readonly List<SelectItemInfo> _selectItemInfos;
         private Expression _source;
         private readonly OeQueryNodeVisitor _visitor;
 
-        public OeSelectTranslator(OeQueryContext queryContext, OeQueryNodeVisitor visitor, ODataPath path)
+        public OeSelectTranslator(OeQueryNodeVisitor visitor, ODataPath path, OeMetadataLevel metadataLevel, bool navigationNextLink)
         {
-            _queryContext = queryContext;
             _visitor = visitor;
             _path = path;
+            _metadataLevel = metadataLevel;
+            _navigationNextLink = navigationNextLink;
             _model = visitor.EdmModel;
             _selectItemInfos = new List<SelectItemInfo>();
         }
@@ -255,7 +260,7 @@ namespace OdataToEntity.Parsers
             var expressions = new List<Expression>();
             foreach (SelectItem selectItem in selectClause.SelectedItems)
             {
-                var selectItemTranslator = new SelectItemTranslator(_queryContext, _visitor, _path, _parameter, _source);
+                var selectItemTranslator = new SelectItemTranslator(_visitor, _path, _metadataLevel, _navigationNextLink, _parameter, _source);
                 Expression expression = selectItem.TranslateWith(selectItemTranslator);
                 if (expression == null || SelectItemInfoExists(selectItemTranslator.SelectItemInfo.EdmProperty))
                     continue;
@@ -267,7 +272,7 @@ namespace OdataToEntity.Parsers
 
             if (_selectItemInfos.Any(i => i.PathSelect))
             {
-                if (_queryContext.MetadataLevel == OeMetadataLevel.Full)
+                if (_metadataLevel == OeMetadataLevel.Full)
                     AddKey(itemType, expressions);
             }
             else

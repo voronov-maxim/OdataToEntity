@@ -189,165 +189,204 @@ namespace OdataToEntity.Test
             await Fixture.Execute(parameters);
         }
         [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        public async Task Expand(bool navigationNextLink)
+        [InlineData(0, false)]
+        [InlineData(1, false)]
+        [InlineData(0, true)]
+        [InlineData(1, true)]
+        public async Task Expand(int pageSize, bool navigationNextLink)
         {
             var parameters = new QueryParameters<Order>()
             {
                 RequestUri = "Orders?$expand=Customer,Items&$orderby=Id",
                 Expression = t => t.Include(o => o.Customer).Include(o => o.Items).OrderBy(o => o.Id),
-                NavigationNextLink = navigationNextLink
+                NavigationNextLink = navigationNextLink,
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters);
         }
         [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        public async Task ExpandAndSelect(bool navigationNextLink)
+        [InlineData(0, false)]
+        [InlineData(1, false)]
+        [InlineData(0, true)]
+        [InlineData(1, true)]
+        public async Task ExpandAndSelect(int pageSize, bool navigationNextLink)
         {
             var parameters = new QueryParameters<Order, Object>()
             {
                 RequestUri = "Orders?$expand=AltCustomer,Customer,Items&$select=AltCustomerCountry,AltCustomerId,CustomerCountry,CustomerId,Date,Id,Name,Status&$orderby=Id",
                 Expression = t => t.Select(o => new { o.AltCustomer, o.Customer, o.Items, o.AltCustomerCountry, o.AltCustomerId, o.CustomerCountry, o.CustomerId, o.Date, o.Id, o.Name, o.Status }).OrderBy(o => o.Id),
-                NavigationNextLink = navigationNextLink
+                NavigationNextLink = navigationNextLink,
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters);
         }
         [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        public async Task ExpandExpandFilter(bool navigationNextLink)
+        [InlineData(0, false)]
+        [InlineData(1, false)]
+        [InlineData(0, true)]
+        [InlineData(1, true)]
+        public async Task ExpandExpandFilter(int pageSize, bool navigationNextLink)
         {
             var parameters = new QueryParameters<Customer, Customer>()
             {
                 RequestUri = "Customers?$orderby=Country,Id&$expand=AltOrders($expand=Items($filter=contains(Product,'unknown');$orderby=Id)),Orders($expand=Items($filter=contains(Product,'unknown');$orderby=Id))",
                 Expression = t => t.Include(c => c.AltOrders).Include(c => c.Orders).ThenInclude(o => o.Items.Where(i => i.Product.Contains("unknown"))).OrderBy(c => c.Country).ThenBy(c => c.Id),
-                NavigationNextLink = navigationNextLink
+                NavigationNextLink = navigationNextLink,
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters);
         }
         [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        public async Task ExpandExpandMany(bool navigationNextLink)
+        [InlineData(0, false)]
+        [InlineData(1, false)]
+        [InlineData(0, true)]
+        [InlineData(1, true)]
+        public async Task ExpandExpandMany(int pageSize, bool navigationNextLink)
         {
             var parameters = new QueryParameters<Customer, Customer>()
             {
                 RequestUri = "Customers?$expand=AltOrders($expand=Items),Orders($expand=Items)&$orderby=Country,Id",
                 Expression = t => t.Include(c => c.AltOrders).Include(c => c.Orders).ThenInclude(o => o.Items.OrderBy(i => i.Id)).OrderBy(c => c.Country).ThenBy(c => c.Id),
-                NavigationNextLink = navigationNextLink
+                NavigationNextLink = navigationNextLink,
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters);
         }
         [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        public async Task ExpandExpandOne(bool navigationNextLink)
+        [InlineData(0, false)]
+        [InlineData(1, false)]
+        [InlineData(0, true)]
+        [InlineData(1, true)]
+        public async Task ExpandExpandOne(int pageSize, bool navigationNextLink)
         {
             var parameters = new QueryParameters<OrderItem, OrderItem>()
             {
                 RequestUri = "OrderItems?$expand=Order($expand=AltCustomer,Customer)&$orderby=Id",
                 Expression = t => t.Include(i => i.Order).ThenInclude(o => o.AltCustomer).Include(i => i.Order).ThenInclude(o => o.Customer).OrderBy(i => i.Id),
-                NavigationNextLink = navigationNextLink
+                NavigationNextLink = navigationNextLink,
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters);
         }
         [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        public async Task ExpandExpandOrderBy(bool navigationNextLink)
+        [InlineData(0, false)]
+        [InlineData(1, false)]
+        [InlineData(0, true)]
+        [InlineData(1, true)]
+        public async Task ExpandExpandOrderBy(int pageSize, bool navigationNextLink)
         {
             var parameters = new QueryParameters<Customer, Customer>()
             {
                 RequestUri = "Customers?$expand=Orders($expand=Items($orderby=Id desc))&$orderby=Country,Id",
                 Expression = t => t.Include(c => c.Orders).ThenInclude(o => o.Items.OrderByDescending(i => i.Id)).OrderBy(c => c.Country).ThenBy(c => c.Id),
-                NavigationNextLink = navigationNextLink
+                NavigationNextLink = navigationNextLink,
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters);
         }
         [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        public async Task ExpandExpandSkipTop(bool navigationNextLink)
+        [InlineData(0, false)]
+        [InlineData(1, false)]
+        [InlineData(0, true)]
+        [InlineData(1, true)]
+        public async Task ExpandExpandSkipTop(int pageSize, bool navigationNextLink)
         {
             var parameters = new QueryParameters<Customer, Customer>()
             {
                 RequestUri = "Customers?$orderby=Country,Id&$skip=1&$top=3&$expand=AltOrders($expand=Items($top=1)),Orders($expand=Items($top=1))",
                 Expression = t => t.OrderBy(c => c.Country).ThenBy(c => c.Id).Skip(1).Take(3).Include(c => c.AltOrders).Include(c => c.Orders).ThenInclude(o => o.Items.Take(1)),
-                NavigationNextLink = navigationNextLink
+                NavigationNextLink = navigationNextLink,
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters);
         }
         [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        public async Task ExpandFilter(bool navigationNextLink)
+        [InlineData(0, false)]
+        [InlineData(1, false)]
+        [InlineData(0, true)]
+        [InlineData(1, true)]
+        public async Task ExpandFilter(int pageSize, bool navigationNextLink)
         {
             var parameters = new QueryParameters<Customer, Customer>()
             {
                 RequestUri = "Customers?$expand=Orders($filter=Status eq OdataToEntity.Test.Model.OrderStatus'Processing')&$orderby=Country,Id",
                 Expression = t => t.Include(c => c.Orders.Where(o => o.Status == OrderStatus.Processing)).OrderBy(c => c.Country).ThenBy(c => c.Id),
-                NavigationNextLink = navigationNextLink
+                NavigationNextLink = navigationNextLink,
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters);
         }
         [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        public async Task ExpandInverseProperty(bool navigationNextLink)
+        [InlineData(0, false)]
+        [InlineData(1, false)]
+        [InlineData(0, true)]
+        [InlineData(1, true)]
+        public async Task ExpandInverseProperty(int pageSize, bool navigationNextLink)
         {
             var parameters = new QueryParameters<Customer, Customer>()
             {
                 RequestUri = "Customers?$expand=AltOrders,Orders&$orderby=Country,Id",
                 Expression = t => t.Include(c => c.AltOrders).Include(c => c.Orders).OrderBy(c => c.Country).ThenBy(c => c.Id),
-                NavigationNextLink = navigationNextLink
+                NavigationNextLink = navigationNextLink,
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters);
         }
         [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        public async Task ExpandNestedSelect(bool navigationNextLink)
+        [InlineData(0, false)]
+        [InlineData(1, false)]
+        [InlineData(0, true)]
+        [InlineData(1, true)]
+        public async Task ExpandNestedSelect(int pageSize, bool navigationNextLink)
         {
             var parameters = new QueryParameters<Customer, Customer>()
             {
                 RequestUri = "Customers?$expand=Orders($select=AltCustomerCountry,AltCustomerId,CustomerCountry,CustomerId,Date,Id,Name,Status)&$orderby=Country,Id",
                 Expression = t => t.Include(c => c.Orders).OrderBy(c => c.Country).ThenBy(c => c.Id),
-                NavigationNextLink = navigationNextLink
+                NavigationNextLink = navigationNextLink,
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters);
         }
         [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        public async Task ExpandStar(bool navigationNextLink)
+        [InlineData(0, false)]
+        [InlineData(1, false)]
+        [InlineData(0, true)]
+        [InlineData(1, true)]
+        public async Task ExpandStar(int pageSize, bool navigationNextLink)
         {
             var parameters = new QueryParameters<Order>()
             {
                 RequestUri = "Orders?$expand=*&$orderby=Id",
                 Expression = t => t.Include(o => o.AltCustomer).Include(o => o.Customer).Include(o => o.Items).OrderBy(o => o.Id),
-                NavigationNextLink = navigationNextLink
+                NavigationNextLink = navigationNextLink,
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters);
         }
-        [Fact]
-        public async Task FilterAll()
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterAll(int pageSize)
         {
             var parameters = new QueryParameters<Order>()
             {
                 RequestUri = "Orders?$filter=Items/all(d:d/Price ge 2.1)",
-                Expression = t => t.Where(o => o.Items.All(i => i.Price >= 2.1m))
+                Expression = t => t.Where(o => o.Items.All(i => i.Price >= 2.1m)),
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters);
         }
-        [Fact]
-        public async Task FilterAny()
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterAny(int pageSize)
         {
             var parameters = new QueryParameters<Order>()
             {
                 RequestUri = "Orders?$filter=Items/any(d:d/Count gt 2)",
-                Expression = t => t.Where(o => o.Items.Any(i => i.Count > 2))
+                Expression = t => t.Where(o => o.Items.Any(i => i.Count > 2)),
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters);
         }
@@ -361,327 +400,488 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters);
         }
-        [Fact]
-        public async Task FilterCount()
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterCount(int pageSize)
         {
             var parameters = new QueryParameters<Order>()
             {
                 RequestUri = "Orders?$filter=Items/$count gt 2",
-                Expression = t => t.Where(o => o.Items.Count() > 2)
+                Expression = t => t.Where(o => o.Items.Count() > 2),
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters);
         }
-        [Fact]
-        public async Task FilterDateTime()
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterDateTime(int pageSize)
         {
             var dt = DateTime.Parse("2016-07-04T19:10:10.8237573+03:00", null, System.Globalization.DateTimeStyles.AdjustToUniversal);
             var parameters = new QueryParameters<Category>()
             {
                 RequestUri = "Categories?$filter=DateTime ge 2016-07-04T19:10:10.8237573%2B03:00",
-                Expression = t => t.Where(o => o.DateTime >= dt)
-            };
-            await Fixture.Execute(parameters);
-        }
-        [Fact]
-        public async Task FilterDateTimeNull()
-        {
-            var parameters = new QueryParameters<Category>()
-            {
-                RequestUri = "Categories?$filter=DateTime eq null",
-                Expression = t => t.Where(o => o.DateTime == null)
-            };
-            await Fixture.Execute(parameters);
-        }
-        [Fact]
-        public async Task FilterDateTimeOffset()
-        {
-            var parameters = new QueryParameters<Order>()
-            {
-                RequestUri = "Orders?$filter=Date ge 2016-07-04T19:10:10.8237573%2B03:00",
-                Expression = t => t.Where(o => o.Date >= DateTimeOffset.Parse("2016-07-04T19:10:10.8237573+03:00"))
-            };
-            await Fixture.Execute(parameters);
-        }
-        [Fact]
-        public async Task FilterDateTimeOffsetNull()
-        {
-            var parameters = new QueryParameters<Order>()
-            {
-                RequestUri = "Orders?$filter=Date eq null",
-                Expression = t => t.Where(o => o.Date == null)
-            };
-            await Fixture.Execute(parameters);
-        }
-        [Fact]
-        public async Task FilterDateTimeOffsetYearMonthDay()
-        {
-            var parameters = new QueryParameters<Order>()
-            {
-                RequestUri = "Orders?$filter=year(Date) eq 2016 and month(Date) gt 3 and day(Date) lt 20",
-                Expression = t => t.Where(o => o.Date.GetValueOrDefault().Year == 2016 && o.Date.GetValueOrDefault().Month > 3 && o.Date.GetValueOrDefault().Day < 20)
-            };
-            await Fixture.Execute(parameters);
-        }
-        [Fact]
-        public async Task FilterDateTimeYearMonthDay()
-        {
-            var parameters = new QueryParameters<Category>()
-            {
-                RequestUri = "Categories?$filter=year(DateTime) eq 2016 and month(DateTime) gt 3 and day(DateTime) lt 20",
-                Expression = t => t.Where(c => c.DateTime.GetValueOrDefault().Year == 2016 && c.DateTime.GetValueOrDefault().Month > 3 && c.DateTime.GetValueOrDefault().Day < 20)
-            };
-            await Fixture.Execute(parameters);
-        }
-        [Fact]
-        public async Task FilterDecimal()
-        {
-            var parameters = new QueryParameters<OrderItem>()
-            {
-                RequestUri = "OrderItems?$filter=Price gt 2",
-                Expression = t => t.Where(i => i.Price > 2)
-            };
-            await Fixture.Execute(parameters);
-        }
-        [Fact]
-        public async Task FilterDecimalNull()
-        {
-            var parameters = new QueryParameters<OrderItem>()
-            {
-                RequestUri = "OrderItems?$filter=Price eq null",
-                Expression = t => t.Where(i => i.Price == null)
-            };
-            await Fixture.Execute(parameters);
-        }
-        [Fact]
-        public async Task FilterEnum()
-        {
-            var parameters = new QueryParameters<Customer>()
-            {
-                RequestUri = "Customers?$filter=Sex eq OdataToEntity.Test.Model.Sex'Female'",
-                Expression = t => t.Where(c => c.Sex == Sex.Female)
-            };
-            await Fixture.Execute(parameters);
-        }
-        [Fact]
-        public async Task FilterEnumNull()
-        {
-            var parameters = new QueryParameters<Customer>()
-            {
-                RequestUri = "Customers?$filter=Sex eq null",
-                Expression = t => t.Where(c => c.Sex == null)
-            };
-            await Fixture.Execute(parameters);
-        }
-        [Fact]
-        public async Task FilterEnumNotNullAndStringNotNull()
-        {
-            var parameters = new QueryParameters<Customer>()
-            {
-                RequestUri = "Customers?$filter=Sex ne null and Address ne null",
-                Expression = t => t.Where(c => c.Sex != null && c.Address != null)
-            };
-            await Fixture.Execute(parameters);
-        }
-        [Fact]
-        public async Task FilterEnumNullAndStringNotNull()
-        {
-            var parameters = new QueryParameters<Customer>()
-            {
-                RequestUri = "Customers?$filter=Sex eq null and Address ne null",
-                Expression = t => t.Where(c => c.Sex == null && c.Address != null)
-            };
-            await Fixture.Execute(parameters);
-        }
-        [Fact]
-        public async Task FilterEnumNullAndStringNull()
-        {
-            var parameters = new QueryParameters<Customer>()
-            {
-                RequestUri = "Customers?$filter=Sex eq null and Address eq null",
-                Expression = t => t.Where(c => c.Sex == null && c.Address == null)
-            };
-            await Fixture.Execute(parameters);
-        }
-        [Fact]
-        public async Task FilterInt()
-        {
-            var parameters = new QueryParameters<OrderItem>()
-            {
-                RequestUri = "OrderItems?$filter=Count ge 2",
-                Expression = t => t.Where(i => i.Count >= 2)
-            };
-            await Fixture.Execute(parameters);
-        }
-        [Fact]
-        public async Task FilterIntNull()
-        {
-            var parameters = new QueryParameters<OrderItem>()
-            {
-                RequestUri = "OrderItems?$filter=Count eq null",
-                Expression = t => t.Where(i => i.Count == null)
-            };
-            await Fixture.Execute(parameters);
-        }
-        [Fact]
-        public async Task FilterNavigation()
-        {
-            var parameters = new QueryParameters<OrderItem>()
-            {
-                RequestUri = "OrderItems?$filter=Order/Customer/Name eq 'Ivan'",
-                Expression = t => t.Where(i => i.Order.Customer.Name == "Ivan")
-            };
-            await Fixture.Execute(parameters);
-        }
-        [Fact]
-        public async Task FilterString()
-        {
-            var parameters = new QueryParameters<Customer>()
-            {
-                RequestUri = "Customers?$filter=Address eq 'Tula'",
-                Expression = t => t.Where(c => c.Address == "Tula")
-            };
-            await Fixture.Execute(parameters);
-        }
-        [Fact]
-        public async Task FilterStringConcat()
-        {
-            var parameters = new QueryParameters<Customer>()
-            {
-                RequestUri = "Customers?$filter=concat(concat(Name,' hello'),' world') eq 'Ivan hello world'",
-                Expression = t => t.Where(c => (c.Name + " hello world") == "Ivan hello world")
-            };
-            await Fixture.Execute(parameters);
-        }
-        [Fact]
-        public async Task FilterStringContains()
-        {
-            var parameters = new QueryParameters<Customer>()
-            {
-                RequestUri = "Customers?$filter=contains(Name, 'sh')",
-                Expression = t => t.Where(c => c.Name.Contains("sh"))
-            };
-            await Fixture.Execute(parameters);
-        }
-        [Fact]
-        public async Task FilterStringEndsWith()
-        {
-            var parameters = new QueryParameters<Customer>()
-            {
-                RequestUri = "Customers?$filter=endswith(Name, 'asha')",
-                Expression = t => t.Where(c => c.Name.EndsWith("asha"))
-            };
-            await Fixture.Execute(parameters);
-        }
-        [Fact]
-        public async Task FilterStringLength()
-        {
-            var parameters = new QueryParameters<Customer>()
-            {
-                RequestUri = "Customers?$filter=length(Name) eq 5",
-                Expression = t => t.Where(c => c.Name.Length == 5)
-            };
-            await Fixture.Execute(parameters);
-        }
-        [Fact]
-        public async Task FilterStringIndexOf()
-        {
-            var parameters = new QueryParameters<Customer>()
-            {
-                RequestUri = "Customers?$filter=indexof(Name, 'asha') eq 1",
-                Expression = t => t.Where(c => c.Name.IndexOf("asha") == 1)
-            };
-            await Fixture.Execute(parameters);
-        }
-        [Fact]
-        public async Task FilterStringStartsWith()
-        {
-            var parameters = new QueryParameters<Customer>()
-            {
-                RequestUri = "Customers?$filter=startswith(Name, 'S')",
-                Expression = t => t.Where(c => c.Name.StartsWith("S"))
-            };
-            await Fixture.Execute(parameters);
-        }
-        [Fact]
-        public async Task FilterStringSubstring()
-        {
-            var parameters = new QueryParameters<Customer>()
-            {
-                RequestUri = "Customers?$filter=substring(Name, 1, 1) eq substring(Name, 4)",
-                Expression = t => t.Where(c => c.Name.Substring(1, 1) == c.Name.Substring(4))
-            };
-            await Fixture.Execute(parameters);
-        }
-        [Fact]
-        public async Task FilterStringToLower()
-        {
-            var parameters = new QueryParameters<Customer>()
-            {
-                RequestUri = "Customers?$filter=tolower(Name) eq 'sasha'",
-                Expression = t => t.Where(c => c.Name.ToLower() == "sasha")
-            };
-            await Fixture.Execute(parameters);
-        }
-        [Fact]
-        public async Task FilterStringToUpper()
-        {
-            var parameters = new QueryParameters<Customer>()
-            {
-                RequestUri = "Customers?$filter=toupper(Name) eq 'SASHA'",
-                Expression = t => t.Where(c => c.Name.ToUpper() == "SASHA")
-            };
-            await Fixture.Execute(parameters);
-        }
-        [Fact]
-        public async Task FilterStringTrim()
-        {
-            var parameters = new QueryParameters<Customer>()
-            {
-                RequestUri = "Customers?$filter=trim(concat(Name, ' ')) eq trim(Name)",
-                Expression = t => t.Where(c => (c.Name + " ").Trim() == c.Name.Trim())
-            };
-            await Fixture.Execute(parameters);
-        }
-        [Fact]
-        public async Task KeyComposition()
-        {
-            var parameters = new QueryParameters<Customer>()
-            {
-                RequestUri = "Customers(Country='RU',Id=1)",
-                Expression = t => t.Where(c => c.Country == "RU" && c.Id == 1)
+                Expression = t => t.Where(o => o.DateTime >= dt),
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters);
         }
         [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        public async Task KeyExpand(bool navigationNextLink)
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterDateTimeNull(int pageSize)
+        {
+            var parameters = new QueryParameters<Category>()
+            {
+                RequestUri = "Categories?$filter=DateTime eq null",
+                Expression = t => t.Where(o => o.DateTime == null),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterDateTimeOffset(int pageSize)
+        {
+            var parameters = new QueryParameters<Order>()
+            {
+                RequestUri = "Orders?$filter=Date ge 2016-07-04T19:10:10.8237573%2B03:00",
+                Expression = t => t.Where(o => o.Date >= DateTimeOffset.Parse("2016-07-04T19:10:10.8237573+03:00")),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterDateTimeOffsetNull(int pageSize)
+        {
+            var parameters = new QueryParameters<Order>()
+            {
+                RequestUri = "Orders?$filter=Date eq null",
+                Expression = t => t.Where(o => o.Date == null),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterDateTimeOffsetYearMonthDay(int pageSize)
+        {
+            var parameters = new QueryParameters<Order>()
+            {
+                RequestUri = "Orders?$filter=year(Date) eq 2016 and month(Date) gt 3 and day(Date) lt 20",
+                Expression = t => t.Where(o => o.Date.GetValueOrDefault().Year == 2016 && o.Date.GetValueOrDefault().Month > 3 && o.Date.GetValueOrDefault().Day < 20),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterDateTimeYearMonthDay(int pageSize)
+        {
+            var parameters = new QueryParameters<Category>()
+            {
+                RequestUri = "Categories?$filter=year(DateTime) eq 2016 and month(DateTime) gt 3 and day(DateTime) lt 20",
+                Expression = t => t.Where(c => c.DateTime.GetValueOrDefault().Year == 2016 && c.DateTime.GetValueOrDefault().Month > 3 && c.DateTime.GetValueOrDefault().Day < 20),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterDecimal(int pageSize)
+        {
+            var parameters = new QueryParameters<OrderItem>()
+            {
+                RequestUri = "OrderItems?$filter=Price gt 2",
+                Expression = t => t.Where(i => i.Price > 2),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterDecimalNull(int pageSize)
+        {
+            var parameters = new QueryParameters<OrderItem>()
+            {
+                RequestUri = "OrderItems?$filter=Price eq null",
+                Expression = t => t.Where(i => i.Price == null),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterEnum(int pageSize)
+        {
+            var parameters = new QueryParameters<Customer>()
+            {
+                RequestUri = "Customers?$filter=Sex eq OdataToEntity.Test.Model.Sex'Female'",
+                Expression = t => t.Where(c => c.Sex == Sex.Female),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterEnumNull(int pageSize)
+        {
+            var parameters = new QueryParameters<Customer>()
+            {
+                RequestUri = "Customers?$filter=Sex eq null",
+                Expression = t => t.Where(c => c.Sex == null),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterEnumNotNullAndStringNotNull(int pageSize)
+        {
+            var parameters = new QueryParameters<Customer>()
+            {
+                RequestUri = "Customers?$filter=Sex ne null and Address ne null",
+                Expression = t => t.Where(c => c.Sex != null && c.Address != null),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterEnumNullAndStringNotNull(int pageSize)
+        {
+            var parameters = new QueryParameters<Customer>()
+            {
+                RequestUri = "Customers?$filter=Sex eq null and Address ne null",
+                Expression = t => t.Where(c => c.Sex == null && c.Address != null),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterEnumNullAndStringNull(int pageSize)
+        {
+            var parameters = new QueryParameters<Customer>()
+            {
+                RequestUri = "Customers?$filter=Sex eq null and Address eq null",
+                Expression = t => t.Where(c => c.Sex == null && c.Address == null),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterInt(int pageSize)
+        {
+            var parameters = new QueryParameters<OrderItem>()
+            {
+                RequestUri = "OrderItems?$filter=Count ge 2",
+                Expression = t => t.Where(i => i.Count >= 2),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterIntNull(int pageSize)
+        {
+            var parameters = new QueryParameters<OrderItem>()
+            {
+                RequestUri = "OrderItems?$filter=Count eq null",
+                Expression = t => t.Where(i => i.Count == null),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterNavigation(int pageSize)
+        {
+            var parameters = new QueryParameters<OrderItem>()
+            {
+                RequestUri = "OrderItems?$filter=Order/Customer/Name eq 'Ivan'",
+                Expression = t => t.Where(i => i.Order.Customer.Name == "Ivan"),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterStringConcat(int pageSize)
+        {
+            var parameters = new QueryParameters<Customer>()
+            {
+                RequestUri = "Customers?$filter=concat(concat(Name,' hello'),' world') eq 'Ivan hello world'",
+                Expression = t => t.Where(c => (c.Name + " hello world") == "Ivan hello world"),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterStringContains(int pageSize)
+        {
+            var parameters = new QueryParameters<Customer>()
+            {
+                RequestUri = "Customers?$filter=contains(Name, 'sh')",
+                Expression = t => t.Where(c => c.Name.Contains("sh")),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterStringEq(int pageSize)
+        {
+            var parameters = new QueryParameters<Customer>()
+            {
+                RequestUri = "Customers?$filter=Address eq 'Tula'",
+                Expression = t => t.Where(c => c.Address == "Tula"),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterStringGe(int pageSize)
+        {
+            var parameters = new QueryParameters<Customer>()
+            {
+                RequestUri = "Customers?$filter=Address ge 'Tula'",
+                Expression = t => t.Where(c => String.Compare(c.Address, "Tula") >= 0),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterStringGt(int pageSize)
+        {
+            var parameters = new QueryParameters<Customer>()
+            {
+                RequestUri = "Customers?$filter=Address gt 'Tula'",
+                Expression = t => t.Where(c => String.Compare(c.Address, "Tula") > 0),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterStringLe(int pageSize)
+        {
+            var parameters = new QueryParameters<Customer>()
+            {
+                RequestUri = "Customers?$filter=Address le 'Tula'",
+                Expression = t => t.Where(c => String.Compare(c.Address, "Tula") <= 0),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterStringLt(int pageSize)
+        {
+            var parameters = new QueryParameters<Customer>()
+            {
+                RequestUri = "Customers?$filter=Address lt 'Tula'",
+                Expression = t => t.Where(c => String.Compare(c.Address, "Tula") < 0),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterStringNe(int pageSize)
+        {
+            var parameters = new QueryParameters<Customer>()
+            {
+                RequestUri = "Customers?$filter=Address ne 'Tula'",
+                Expression = t => t.Where(c => c.Address != "Tula"),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterStringEndsWith(int pageSize)
+        {
+            var parameters = new QueryParameters<Customer>()
+            {
+                RequestUri = "Customers?$filter=endswith(Name, 'asha')",
+                Expression = t => t.Where(c => c.Name.EndsWith("asha")),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterStringLength(int pageSize)
+        {
+            var parameters = new QueryParameters<Customer>()
+            {
+                RequestUri = "Customers?$filter=length(Name) eq 5",
+                Expression = t => t.Where(c => c.Name.Length == 5),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterStringIndexOf(int pageSize)
+        {
+            var parameters = new QueryParameters<Customer>()
+            {
+                RequestUri = "Customers?$filter=indexof(Name, 'asha') eq 1",
+                Expression = t => t.Where(c => c.Name.IndexOf("asha") == 1),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterStringStartsWith(int pageSize)
+        {
+            var parameters = new QueryParameters<Customer>()
+            {
+                RequestUri = "Customers?$filter=startswith(Name, 'S')",
+                Expression = t => t.Where(c => c.Name.StartsWith("S")),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterStringSubstring(int pageSize)
+        {
+            var parameters = new QueryParameters<Customer>()
+            {
+                RequestUri = "Customers?$filter=substring(Name, 1, 1) eq substring(Name, 4)",
+                Expression = t => t.Where(c => c.Name.Substring(1, 1) == c.Name.Substring(4)),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterStringToLower(int pageSize)
+        {
+            var parameters = new QueryParameters<Customer>()
+            {
+                RequestUri = "Customers?$filter=tolower(Name) eq 'sasha'",
+                Expression = t => t.Where(c => c.Name.ToLower() == "sasha"),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterStringToUpper(int pageSize)
+        {
+            var parameters = new QueryParameters<Customer>()
+            {
+                RequestUri = "Customers?$filter=toupper(Name) eq 'SASHA'",
+                Expression = t => t.Where(c => c.Name.ToUpper() == "SASHA"),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterStringTrim(int pageSize)
+        {
+            var parameters = new QueryParameters<Customer>()
+            {
+                RequestUri = "Customers?$filter=trim(concat(Name, ' ')) eq trim(Name)",
+                Expression = t => t.Where(c => (c.Name + " ").Trim() == c.Name.Trim()),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task KeyComposition(int pageSize)
+        {
+            var parameters = new QueryParameters<Customer>()
+            {
+                RequestUri = "Customers(Country='RU',Id=1)",
+                Expression = t => t.Where(c => c.Country == "RU" && c.Id == 1),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters);
+        }
+        [Theory]
+        [InlineData(0, false)]
+        [InlineData(1, false)]
+        [InlineData(0, true)]
+        [InlineData(1, true)]
+        public async Task KeyExpand(int pageSize, bool navigationNextLink)
         {
             var parameters = new QueryParameters<Order>()
             {
                 RequestUri = "Orders(1)?$expand=Customer,Items",
                 Expression = t => t.Include(o => o.Customer).Include(o => o.Items).Where(o => o.Id == 1),
-                NavigationNextLink = navigationNextLink
+                NavigationNextLink = navigationNextLink,
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters);
         }
-        [Fact]
-        public async Task KeyFilter()
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task KeyFilter(int pageSize)
         {
             var parameters = new QueryParameters<Order, OrderItem>()
             {
                 RequestUri = "Orders(1)/Items?$filter=Count ge 2",
-                Expression = t => t.Where(o => o.Id == 1).SelectMany(o => o.Items).Where(i => i.Count >= 2)
+                Expression = t => t.Where(o => o.Id == 1).SelectMany(o => o.Items).Where(i => i.Count >= 2),
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters);
         }
-        [Fact]
-        public async Task KeyMultipleNavigationOne()
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task KeyMultipleNavigationOne(int pageSize)
         {
             var parameters = new QueryParameters<OrderItem, Customer>()
             {
                 RequestUri = "OrderItems(1)/Order/Customer",
-                Expression = t => t.Where(i => i.Id == 1).Select(i => i.Order.Customer)
+                Expression = t => t.Where(i => i.Id == 1).Select(i => i.Order.Customer),
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters);
         }
@@ -699,13 +899,16 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters);
         }
-        [Fact]
-        public async Task KeyOrderBy()
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task KeyOrderBy(int pageSize)
         {
             var parameters = new QueryParameters<Order, OrderItem>()
             {
                 RequestUri = "Orders(1)/Items?$orderby=Count,Price",
-                Expression = t => t.Where(o => o.Id == 1).SelectMany(o => o.Items).OrderBy(i => i.Count).ThenBy(i => i.Price)
+                Expression = t => t.Where(o => o.Id == 1).SelectMany(o => o.Items).OrderBy(i => i.Count).ThenBy(i => i.Price),
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters);
         }
@@ -716,7 +919,6 @@ namespace OdataToEntity.Test
             {
                 RequestUri = "OrderItems?$select=Product,Id&$orderby=Count desc,Order/Customer/Name,Id desc",
                 Expression = t => t.OrderByDescending(i => i.Count).ThenBy(i => i.Order.Customer.Name).ThenByDescending(i => i.Id).Select(i => new { i.Product, i.Id })
-
             };
             await Fixture.Execute(parameters);
         }
@@ -731,13 +933,16 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters);
         }
-        [Fact]
-        public async Task OrderByDesc()
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task OrderByDesc(int pageSize)
         {
             var parameters = new QueryParameters<OrderItem>()
             {
                 RequestUri = "OrderItems?$orderby=Id desc,Count desc,Price desc",
-                Expression = t => t.OrderByDescending(i => i.Id).ThenByDescending(i => i.Count).ThenByDescending(i => i.Price)
+                Expression = t => t.OrderByDescending(i => i.Id).ThenByDescending(i => i.Count).ThenByDescending(i => i.Price),
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters);
         }
@@ -752,9 +957,11 @@ namespace OdataToEntity.Test
             await Fixture.Execute(parameters);
         }
         [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        public async Task Parameterization(bool navigationNextLink)
+        [InlineData(0, false)]
+        [InlineData(1, false)]
+        [InlineData(0, true)]
+        [InlineData(1, true)]
+        public async Task Parameterization(int pageSize, bool navigationNextLink)
         {
             var parameters = new QueryParameters<Order>()
             {
@@ -762,17 +969,21 @@ namespace OdataToEntity.Test
 &$expand=Items($filter=(Count eq 0 or Count eq null) and (Price eq 0 or Price eq null) and (contains(Product,'unknown') or contains(Product,'null')) and OrderId gt -1 and Id ne 1)",
                 Expression = t => t.Where(o => o.AltCustomerId == 3 && o.CustomerId == 4 && ((o.Date.GetValueOrDefault().Year == 2016 && o.Date.GetValueOrDefault().Month > 11 && o.Date.GetValueOrDefault().Day < 20) || o.Date == null) && o.Name.Contains("unknown") && o.Status == OrderStatus.Unknown)
                 .Include(o => o.Items.Where(i => (i.Count == 0 || i.Count == null) && (i.Price == 0 || i.Price == null) && (i.Product.Contains("unknown") || i.Product.Contains("null")) && i.OrderId > -1 && i.Id != 1)),
-                NavigationNextLink = navigationNextLink
+                NavigationNextLink = navigationNextLink,
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters);
         }
-        [Fact]
-        public async Task Select()
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task Select(int pageSize)
         {
             var parameters = new QueryParameters<Order, Object>()
             {
                 RequestUri = "Orders?$select=AltCustomer,AltCustomerId,Customer,CustomerId,Date,Id,Items,Name,Status&$orderby=Id",
-                Expression = t => t.Select(o => new { o.AltCustomer, o.AltCustomerId, o.Customer, o.CustomerId, o.Date, o.Id, o.Items, o.Name, o.Status }).OrderBy(o => o.Id)
+                Expression = t => t.Select(o => new { o.AltCustomer, o.AltCustomerId, o.Customer, o.CustomerId, o.Date, o.Id, o.Items, o.Name, o.Status }).OrderBy(o => o.Id),
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters);
         }
@@ -786,13 +997,16 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters);
         }
-        [Fact]
-        public async Task Table()
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task Table(int pageSize)
         {
             var parameters = new QueryParameters<Order>()
             {
                 RequestUri = "Orders",
-                Expression = t => t
+                Expression = t => t,
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters);
         }

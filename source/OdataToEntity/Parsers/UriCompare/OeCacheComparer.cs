@@ -4,6 +4,7 @@ using Microsoft.OData.UriParser.Aggregation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace OdataToEntity.Parsers.UriCompare
 {
@@ -60,6 +61,9 @@ namespace OdataToEntity.Parsers.UriCompare
                 return false;
 
             if (!CompareTop(uri1.Top, uri2.Top, uri1.Path))
+                return false;
+
+            if (!CompareSkipToken(uri1.SkipToken, uri2.SkipToken, cacheContext1.SkipTokenParser))
                 return false;
 
             return true;
@@ -253,6 +257,15 @@ namespace OdataToEntity.Parsers.UriCompare
                 return skip1 == skip2;
 
             _parameterValues.AddSkipParameter(skip2.Value, path);
+            return true;
+        }
+        private bool CompareSkipToken(String skipToken1, String skipToken2, OeSkipTokenParser skipTokenParser)
+        {
+            if (skipToken1 == null || skipToken2 == null)
+                return skipToken1 == skipToken2;
+
+            foreach (KeyValuePair<PropertyInfo, Object> skipToken in skipTokenParser.ParseSkipToken(skipToken2))
+                _parameterValues.AddSkipTokenParameter(skipToken.Value, skipToken.Key.Name);
             return true;
         }
         private bool CompareTop(long? top1, long? top2, ODataPath path)
