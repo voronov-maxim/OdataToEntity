@@ -29,20 +29,18 @@ namespace OdataToEntity.Parsers
         {
             UnaryExpression instance = Expression.Convert(expression, typeof(Object));
             var func = (Func<Object, Object>)Expression.Lambda(instance, parameter).Compile();
-            IEdmPrimitiveType primitiveType = PrimitiveTypeHelper.GetPrimitiveType(expression.Type);
             return new OePropertyAccessor(edmProperty, func);
         }
         public static OePropertyAccessor[] CreateFromTuple(Type tupleType, IReadOnlyList<IEdmProperty> edmProperties, int groupItemIndex)
         {
-            ParameterExpression tupleParameter = Expression.Parameter(tupleType);
             ParameterExpression parameter = Expression.Parameter(typeof(Object));
-            IReadOnlyList<MemberExpression> itemExpressions = OeExpressionHelper.GetPropertyExpression(Expression.Convert(parameter, tupleType));
+            IReadOnlyList<MemberExpression> itemExpressions = OeExpressionHelper.GetPropertyExpressions(Expression.Convert(parameter, tupleType));
 
             int aliasIndex = 0;
             var accessors = new OePropertyAccessor[edmProperties.Count];
             if (groupItemIndex >= 0)
             {
-                IReadOnlyList<MemberExpression> groupExpressions = OeExpressionHelper.GetPropertyExpression(itemExpressions[groupItemIndex]);
+                IReadOnlyList<MemberExpression> groupExpressions = OeExpressionHelper.GetPropertyExpressions(itemExpressions[groupItemIndex]);
                 for (; aliasIndex < groupExpressions.Count; aliasIndex++)
                     accessors[aliasIndex] = CreatePropertyAccessor(edmProperties[aliasIndex], groupExpressions[aliasIndex], parameter);
             }
@@ -58,7 +56,7 @@ namespace OdataToEntity.Parsers
         public static OePropertyAccessor[] CreateFromType(Type clrType, IEdmEntitySetBase entitySet)
         {
             ParameterExpression parameter = Expression.Parameter(typeof(Object));
-            Expression instance = Expression.Convert(parameter, clrType);
+            UnaryExpression instance = Expression.Convert(parameter, clrType);
             var propertyAccessors = new List<OePropertyAccessor>();
             foreach (IEdmStructuralProperty edmProperty in entitySet.EntityType().StructuralProperties())
             {

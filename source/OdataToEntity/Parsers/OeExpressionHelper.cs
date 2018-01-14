@@ -131,15 +131,15 @@ namespace OdataToEntity.Parsers
 
             return tupleType.MakeGenericType(typeArguments);
         }
-        public static IReadOnlyList<MemberExpression> GetPropertyExpression(Expression expression)
+        public static IReadOnlyList<MemberExpression> GetPropertyExpressions(Expression instance)
         {
-            PropertyInfo[] properties = expression.Type.GetProperties();
+            PropertyInfo[] properties = instance.Type.GetProperties();
             var expressions = new List<MemberExpression>(properties.Length);
             for (int i = 0; i < properties.Length; i++)
             {
-                MemberExpression propertyExpression = Expression.Property(expression, properties[i]);
+                MemberExpression propertyExpression = Expression.Property(instance, properties[i]);
                 if (i == 7 && IsTupleType(properties[7].PropertyType))
-                    expressions.AddRange(GetPropertyExpression(propertyExpression));
+                    expressions.AddRange(GetPropertyExpressions(propertyExpression));
                 else
                     expressions.Add(propertyExpression);
             }

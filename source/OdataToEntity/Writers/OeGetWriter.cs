@@ -1,7 +1,6 @@
 ﻿using Microsoft.OData;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
-using OdataToEntity.ModelBuilder;
 using OdataToEntity.Parsers;
 using System;
 using System.Collections;
@@ -64,8 +63,7 @@ namespace OdataToEntity.Writers
                 nextOdataUri.Skip = null;
 
                 Uri uri = nextOdataUri.BuildUri(ODataUrlKeyDelimiter.Parentheses);
-                byte[] skipTokenBuffer = System.Text.Encoding.UTF8.GetBytes(skipToken);
-                return new Uri(uri.OriginalString + "&$skiptoken=" + Convert.ToBase64String(skipTokenBuffer), UriKind.Relative);
+                return new Uri(uri.OriginalString + "&$skiptoken=" + skipToken, UriKind.Relative);
             }
             private ODataResource CreateEntry(OeEntryFactory entryFactory, Object entity)
             {
@@ -79,12 +77,12 @@ namespace OdataToEntity.Writers
                 var resourceSet = new ODataResourceSet() { Count = asyncEnumerator.Count };
                 Writer.WriteStart(resourceSet);
 
-                ODataResource entry = null;
+                Object value = null;
                 int count = 0;
                 while (await asyncEnumerator.MoveNextAsync().ConfigureAwait(false))
                 {
-                    Object value = asyncEnumerator.Current;
-                    entry = CreateEntry(entryFactory, entryFactory.GetValue(value, out int? dummy));
+                    value = asyncEnumerator.Current;
+                    ODataResource entry = CreateEntry(entryFactory, entryFactory.GetValue(value, out int? dummy));
                     Writer.WriteStart(entry);
 
                     foreach (OeEntryFactory navigationLink in entryFactory.NavigationLinks)
@@ -100,14 +98,14 @@ namespace OdataToEntity.Writers
                     if (count == queryContext.PageSize)
                     {
                         if (await asyncEnumerator.MoveNextAsync())
-                            resourceSet.NextPageLink = BuildNextPageLink(queryContext, queryContext.SkipTokenParser.GetSkipToken(entry));
+                            resourceSet.NextPageLink = BuildNextPageLink(queryContext, queryContext.SkipTokenParser.GetSkipToken(value));
                         break;
                     }
                 }
 
                 if (queryContext.PageSize > 0 && asyncEnumerator.Count.GetValueOrDefault() > count)
                 {
-                    resourceSet.NextPageLink = BuildNextPageLink(queryContext, queryContext.SkipTokenParser.GetSkipToken(entry));
+                    resourceSet.NextPageLink = BuildNextPageLink(queryContext, queryContext.SkipTokenParser.GetSkipToken(value));
                 }
 
                 Writer.WriteEnd();

@@ -11,19 +11,6 @@ namespace OdataToEntity.Parsers
 {
     public sealed class OeQueryNodeVisitor : QueryNodeVisitor<Expression>
     {
-        public sealed class NavigationPropertyNotFoundException : Exception
-        {
-            private readonly IEdmNavigationProperty _navigationProperty;
-
-            public NavigationPropertyNotFoundException(IEdmNavigationProperty navigationProperty) :
-                base("Navigation property " + navigationProperty.Name + " not found")
-            {
-                _navigationProperty = navigationProperty;
-            }
-
-            public IEdmNavigationProperty NavigationProperty => _navigationProperty;
-        }
-
         private readonly Dictionary<ConstantExpression, ConstantNode> _constants;
         private readonly IEdmModel _edmModel;
         private readonly Stack<ParameterExpression> _parameters;
@@ -274,12 +261,7 @@ namespace OdataToEntity.Parsers
 
             PropertyInfo propertyInfo = source.Type.GetProperty(nodeIn.NavigationProperty.Name);
             if (propertyInfo == null)
-            {
-                if (TuplePropertyByAliasName == null)
-                    throw new NavigationPropertyNotFoundException(nodeIn.NavigationProperty);
-
                 return null;
-            }
 
             return Expression.Property(source, propertyInfo);
         }

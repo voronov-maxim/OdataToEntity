@@ -264,8 +264,8 @@ namespace OdataToEntity.Parsers.UriCompare
             if (skipToken1 == null || skipToken2 == null)
                 return skipToken1 == skipToken2;
 
-            foreach (KeyValuePair<PropertyInfo, Object> skipToken in skipTokenParser.ParseSkipToken(skipToken2))
-                _parameterValues.AddSkipTokenParameter(skipToken.Value, skipToken.Key.Name);
+            foreach (KeyValuePair<String, Object> skipToken in skipTokenParser.ParseSkipToken(skipToken2))
+                _parameterValues.AddSkipTokenParameter(skipToken.Value, skipToken.Key);
             return true;
         }
         private bool CompareTop(long? top1, long? top2, ODataPath path)

@@ -32,15 +32,17 @@ namespace OdataToEntity.Parsers
                 Expression keySelector = null;
                 if (!IsInsertedOrderByMethod)
                 {
-                    _visitor.TuplePropertyByEdmProperty = new TuplePropertyByEdmProperty(source).GetTuplePropertyByEdmProperty;
-                    try
+                    var tupleProperty = new OePropertyTranslator(source);
+                    _visitor.TuplePropertyByEdmProperty = tupleProperty.Build;
+
+                    if (OeExpressionHelper.IsTupleType(_visitor.Parameter.Type))
                     {
+                        var propertyNode = (SingleValuePropertyAccessNode)orderByClause.Expression;
+                        keySelector = tupleProperty.Build(_visitor.Parameter, propertyNode.Property);
+                    }
+
+                    if (keySelector == null)
                         keySelector = _visitor.TranslateNode(orderByClause.Expression);
-                    }
-                    catch (OeQueryNodeVisitor.NavigationPropertyNotFoundException e)
-                    {
-                        return InsertOrderByMethod(source, orderByClause, e.NavigationProperty.DeclaringType);
-                    }
                 }
 
                 if (keySelector == null)

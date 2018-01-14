@@ -96,7 +96,7 @@ namespace OdataToEntity.Parsers
             _pageSize = pageSize;
             _navigationNextLink = navigationNextLink;
 
-            if (pageSize > 0)
+            if (pageSize > 0) //zzz
                 _skipTokenParser = CreateSkipTokenParser(EdmModel, ODataUri, ParseNavigationSegments);
         }
 
@@ -142,7 +142,7 @@ namespace OdataToEntity.Parsers
             expression = expressionBuilder.ApplyFilter(expression, ODataUri.Filter);
             expression = expressionBuilder.ApplySkipToken(expression, SkipTokenParser, ODataUri.SkipToken);
             expression = expressionBuilder.ApplyAggregation(expression, ODataUri.Apply);
-            expression = expressionBuilder.ApplySelect(expression, ODataUri.SelectAndExpand, ODataUri.Path, MetadataLevel, NavigationNextLink);
+            expression = expressionBuilder.ApplySelect(expression, this);
             expression = expressionBuilder.ApplyOrderBy(expression, ODataUri.OrderBy);
             expression = expressionBuilder.ApplySkip(expression, ODataUri.Skip, ODataUri.Path);
             expression = expressionBuilder.ApplyTake(expression, ODataUri.Top, ODataUri.Path);

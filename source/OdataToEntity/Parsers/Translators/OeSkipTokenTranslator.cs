@@ -12,14 +12,17 @@ namespace OdataToEntity.Parsers
         private struct OrderProperty
         {
             public readonly OrderByDirection Direction;
-            public readonly PropertyInfo PropertyInfo;
+            public MemberExpression PropertyExpression;
+            public readonly SingleValuePropertyAccessNode PropertyNode;
             public readonly Object Value;
 
-            public OrderProperty(PropertyInfo propertyInfo, OrderByDirection direction, Object value)
+            public OrderProperty(SingleValuePropertyAccessNode propertyNode, OrderByDirection direction, Object value)
             {
-                PropertyInfo = propertyInfo;
+                PropertyNode = propertyNode;
                 Direction = direction;
                 Value = value;
+
+                PropertyExpression = null;
             }
         }
 
@@ -32,11 +35,20 @@ namespace OdataToEntity.Parsers
             _visitor = visitor;
         }
 
-        private static BinaryExpression CreateBinaryExpression(OeQueryNodeVisitor visitor, OrderProperty orderProperty)
+        public Expression Build(Expression source, String skipToken)
         {
-            MemberExpression propertyExpression = Expression.Property(visitor.Parameter, orderProperty.PropertyInfo);
-            ConstantExpression constantExpression = Expression.Constant(orderProperty.Value, orderProperty.PropertyInfo.PropertyType);
-            visitor.AddSkipTokenConstant(constantExpression, orderProperty.PropertyInfo.Name);
+            OrderProperty[] orderProperties = CreateOrderProperies(_visitor.EdmModel, _skipTokenParser, skipToken);
+            Expression filter = CreateFilterExpression(source, _visitor, orderProperties);
+
+            LambdaExpression lambda = Expression.Lambda(filter, _visitor.Parameter);
+            MethodInfo whereMethodInfo = OeMethodInfoHelper.GetWhereMethodInfo(_visitor.Parameter.Type);
+            return Expression.Call(whereMethodInfo, source, lambda);
+        }
+        private static BinaryExpression CreateBinaryExpression(OeQueryNodeVisitor visitor, ref OrderProperty orderProperty)
+        {
+            MemberExpression propertyExpression = orderProperty.PropertyExpression;
+            ConstantExpression constantExpression = Expression.Constant(orderProperty.Value, propertyExpression.Type);
+            visitor.AddSkipTokenConstant(constantExpression, propertyExpression.Member.Name);
 
             ExpressionType binaryType;
             if (orderProperty.Value == null)
@@ -55,15 +67,17 @@ namespace OdataToEntity.Parsers
                 compare = Expression.MakeBinary(binaryType, propertyExpression, constantExpression);
             return compare;
         }
-        private static Expression CreateFilterExpression(OeQueryNodeVisitor visitor, OrderProperty[] orderProperties)
+        private static Expression CreateFilterExpression(Expression source, OeQueryNodeVisitor visitor, OrderProperty[] orderProperties)
         {
+            var tupleProperty = new OePropertyTranslator(source);
+
             Expression filter = null;
             for (int i = 0; i < orderProperties.Length; i++)
             {
                 BinaryExpression eqFilter = null;
                 for (int j = 0; j < i; j++)
                 {
-                    MemberExpression propertyExpression = Expression.Property(visitor.Parameter, orderProperties[j].PropertyInfo);
+                    MemberExpression propertyExpression = orderProperties[j].PropertyExpression;
                     ConstantExpression constantExpression = Expression.Constant(orderProperties[j].Value, propertyExpression.Type);
                     visitor.AddSkipTokenConstant(constantExpression, propertyExpression.Member.Name);
 
@@ -71,40 +85,38 @@ namespace OdataToEntity.Parsers
                     eqFilter = eqFilter == null ? eq : Expression.AndAlso(eqFilter, eq);
                 }
 
-                BinaryExpression ge = CreateBinaryExpression(visitor, orderProperties[i]);
-                eqFilter = eqFilter == null ? ge : Expression.AndAlso(eqFilter, ge);
+                orderProperties[i].PropertyExpression = (MemberExpression)visitor.TranslateNode(orderProperties[i].PropertyNode);
+                if (orderProperties[i].PropertyExpression == null)
+                    orderProperties[i].PropertyExpression = tupleProperty.Build(visitor.Parameter, orderProperties[i].PropertyNode.Property);
+                BinaryExpression ge = CreateBinaryExpression(visitor, ref orderProperties[i]);
+                if (i == 0 && orderProperties[i].PropertyNode.Property.Type.IsNullable && orderProperties[i].Value != null)
+                {
+                    BinaryExpression isNull = Expression.Equal(orderProperties[i].PropertyExpression, Expression.Constant(null));
+                    ge = Expression.MakeBinary(ExpressionType.OrElse, ge, isNull);
+                }
 
+                eqFilter = eqFilter == null ? ge : Expression.AndAlso(eqFilter, ge);
                 filter = filter == null ? eqFilter : Expression.OrElse(filter, eqFilter);
             }
             return filter;
         }
         private static OrderProperty[] CreateOrderProperies(IEdmModel edmModel, OeSkipTokenParser skipTokenParser, String skipToken)
         {
-            KeyValuePair<PropertyInfo, Object>[] keyValues = skipTokenParser.ParseSkipToken(skipToken);
-
-            var orderProperties = new OrderProperty[keyValues.Length];
-            for (int i = 0; i < orderProperties.Length; i++)
+            var orderProperties = new List<OrderProperty>();
+            foreach (KeyValuePair<String, Object> keyValue in skipTokenParser.ParseSkipToken(skipToken))
             {
-                OrderByDirection direction = GetDirection(skipTokenParser.UniqueOrderBy, keyValues[i].Key.Name);
-                orderProperties[i] = (new OrderProperty(keyValues[i].Key, direction, keyValues[i].Value));
+                OrderByClause orderBy = GetOrderBy(skipTokenParser.UniqueOrderBy, keyValue.Key);
+                var propertyNode = (SingleValuePropertyAccessNode)orderBy.Expression;
+                orderProperties.Add(new OrderProperty(propertyNode, orderBy.Direction, keyValue.Value));
             }
-            return orderProperties;
+            return orderProperties.ToArray();
         }
-        public Expression Build(Expression source, String skipToken)
-        {
-            OrderProperty[] orderProperties = CreateOrderProperies(_visitor.EdmModel, _skipTokenParser, skipToken);
-            Expression filter = CreateFilterExpression(_visitor, orderProperties);
-
-            LambdaExpression lambda = Expression.Lambda(filter, _visitor.Parameter);
-            MethodInfo whereMethodInfo = OeMethodInfoHelper.GetWhereMethodInfo(_visitor.Parameter.Type);
-            return Expression.Call(whereMethodInfo, source, lambda);
-        }
-        private static OrderByDirection GetDirection(OrderByClause orderByClause, String propertyName)
+        private static OrderByClause GetOrderBy(OrderByClause orderByClause, String propertyName)
         {
             for (; String.Compare((orderByClause.Expression as SingleValuePropertyAccessNode).Property.Name, propertyName) != 0; orderByClause = orderByClause.ThenBy)
             {
             }
-            return orderByClause.Direction;
+            return orderByClause;
         }
     }
 }

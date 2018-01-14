@@ -153,8 +153,21 @@ namespace OdataToEntity.Test
                     testMethod = (Func<T, Task>)methodInfo.CreateDelegate(typeof(Func<T, Task>));
                 else if (methodInfo.GetCustomAttribute(typeof(TheoryAttribute), false) != null)
                 {
-                    var methodCall = (Func<T, bool, Task>)methodInfo.CreateDelegate(typeof(Func<T, bool, Task>));
-                    testMethod = i => methodCall(i, false);
+                    if (methodInfo.GetParameters().Length == 1 && methodInfo.GetParameters()[0].ParameterType == typeof(bool))
+                    {
+                        var methodCall = (Func<T, bool, Task>)methodInfo.CreateDelegate(typeof(Func<T, bool, Task>));
+                        testMethod = i => methodCall(i, false);
+                    }
+                    if (methodInfo.GetParameters().Length == 1 && methodInfo.GetParameters()[0].ParameterType == typeof(int))
+                    {
+                        var methodCall = (Func<T, int, Task>)methodInfo.CreateDelegate(typeof(Func<T, int, Task>));
+                        testMethod = i => methodCall(i, 0);
+                    }
+                    else
+                    {
+                        var methodCall = (Func<T, int, bool, Task>)methodInfo.CreateDelegate(typeof(Func<T, int, bool, Task>));
+                        testMethod = i => methodCall(i, 0, false);
+                    }
                 }
                 else
                     continue;

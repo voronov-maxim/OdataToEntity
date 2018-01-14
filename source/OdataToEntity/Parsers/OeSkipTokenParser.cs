@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 
 namespace OdataToEntity.Parsers
@@ -16,30 +15,20 @@ namespace OdataToEntity.Parsers
         private static readonly ODataMessageReaderSettings ReaderSettings = new ODataMessageReaderSettings() { EnableMessageStreamDisposal = false };
         private static readonly ODataMessageWriterSettings WriterSettings = new ODataMessageWriterSettings() { EnableMessageStreamDisposal = false };
 
-        private readonly PropertyInfo[] _clrProperties;
         private readonly IEdmModel _edmModel;
-        private readonly IEdmStructuralProperty[] _edmProperties;
         private readonly OrderByClause _orderByClause;
 
         public OeSkipTokenParser(IEdmModel edmModel, IEdmEntityType edmType)
         {
             _orderByClause = GetUniqueOrderBy(edmModel, edmType, null);
-            _edmProperties = GetEdmProperies(_orderByClause);
-            _clrProperties = GetClrProperies(edmModel.GetClrType(edmType), _edmProperties);
         }
         public OeSkipTokenParser(IEdmModel edmModel, IEdmEntityType edmType, OrderByClause orderByClause)
         {
             _edmModel = edmModel;
             _orderByClause = orderByClause;
 
-            _edmProperties = GetEdmProperies(orderByClause);
-            if (!GetIsKey(edmType, _edmProperties))
-            {
+            if (!GetIsKey(edmType, GetEdmProperies(orderByClause)))
                 _orderByClause = GetUniqueOrderBy(edmModel, edmType, orderByClause);
-                _edmProperties = GetEdmProperies(_orderByClause);
-            }
-
-            _clrProperties = GetClrProperies(edmModel.GetClrType(edmType), _edmProperties);
         }
 
         public OrderByClause GetUniqueOrderBy(IEdmModel edmModel, IEdmEntityType edmType, OrderByClause orderByClause)
@@ -76,28 +65,11 @@ namespace OdataToEntity.Parsers
 
             return uniqueOrderByClause;
         }
-        private static PropertyInfo[] GetClrProperies(Type ItemType, IEdmStructuralProperty[] edmProperties)
+        private KeyValuePair<String, Object>[] GetKeys(Object value)
         {
-            var clrProperties = new PropertyInfo[edmProperties.Length];
-            for (int i = 0; i < clrProperties.Length; i++)
-                clrProperties[i] = ItemType.GetPropertyIgnoreCase(edmProperties[i].Name);
-            return clrProperties;
-        }
-        private PropertyInfo GetClrProperty(String propertyName)
-        {
-            foreach (PropertyInfo clrPropery in _clrProperties)
-                if (String.Compare(clrPropery.Name, propertyName, StringComparison.OrdinalIgnoreCase) == 0)
-                    return clrPropery;
-
-            throw new InvalidOperationException("property name " + propertyName + " not found in OrderByClause");
-        }
-        private KeyValuePair<String, Object>[] GetKeys(ODataResource entry)
-        {
-            var keys = new KeyValuePair<String, Object>[_edmProperties.Length];
-            for (int i = 0; i < _edmProperties.Length; i++)
-                foreach (ODataProperty odataProperty in entry.Properties)
-                    if (String.CompareOrdinal(odataProperty.Name, _edmProperties[i].Name) == 0)
-                        keys[i] = new KeyValuePair<String, Object>(_edmProperties[i].Name, odataProperty.Value);
+            var keys = new KeyValuePair<String, Object>[Accessors.Length];
+            for (int i = 0; i < keys.Length; i++)
+                keys[i] = new KeyValuePair<String, Object>(Accessors[i].Name, Accessors[i].Accessor(value));
             return keys;
         }
         private static IEdmStructuralProperty[] GetEdmProperies(OrderByClause orderByClause)
@@ -124,7 +96,12 @@ namespace OdataToEntity.Parsers
                     ODataParameterWriter writer = messageWriter.CreateODataParameterWriter(null);
                     writer.WriteStart();
                     foreach (KeyValuePair<String, Object> key in keys)
-                        writer.WriteValue(key.Key, key.Value);
+                    {
+                        Object value = key.Value;
+                        if (value != null && value.GetType().IsEnum)
+                            value = value.ToString();
+                        writer.WriteValue(key.Key, value);
+                    }
                     writer.WriteEnd();
                 }
 
@@ -143,9 +120,10 @@ namespace OdataToEntity.Parsers
             }
             return true;
         }
-        public String GetSkipToken(ODataResource entry)
+        public String GetSkipToken(Object value)
         {
-            return GetJson(_edmModel, GetKeys(entry));
+            String json = GetJson(_edmModel, GetKeys(value));
+            return Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
         }
         public static IEnumerable<KeyValuePair<String, Object>> ParseJson(IEdmModel model, String skipToken, IEnumerable<IEdmStructuralProperty> keys)
         {
@@ -160,20 +138,22 @@ namespace OdataToEntity.Parsers
 
                     ODataParameterReader reader = messageReader.CreateODataParameterReader(operation);
                     while (reader.Read())
-                        yield return new KeyValuePair<String, Object>(reader.Name, reader.Value);
+                    {
+                        Object value = reader.Value;
+                        if (value is ODataEnumValue enumValue)
+                            value = OeEdmClrHelper.GetValue(model, enumValue);
+                        yield return new KeyValuePair<String, Object>(reader.Name, value);
+                    }
                 }
             }
         }
-        public KeyValuePair<PropertyInfo, Object>[] ParseSkipToken(String skipToken)
+        public IEnumerable<KeyValuePair<String, Object>> ParseSkipToken(String skipToken)
         {
-            var keys = new KeyValuePair<PropertyInfo, Object>[_clrProperties.Length];
             String json = Encoding.UTF8.GetString(Convert.FromBase64String(skipToken));
-            int i = 0;
-            foreach (KeyValuePair<String, Object> key in ParseJson(_edmModel, json, _edmProperties))
-                keys[i++] = new KeyValuePair<PropertyInfo, Object>(GetClrProperty(key.Key), key.Value);
-            return keys;
+            return ParseJson(_edmModel, json, GetEdmProperies(_orderByClause));
         }
 
+        public OePropertyAccessor[] Accessors { get; set; }
         public OrderByClause UniqueOrderBy => _orderByClause;
     }
 }

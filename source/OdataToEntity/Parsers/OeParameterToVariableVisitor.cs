@@ -27,7 +27,7 @@ namespace OdataToEntity.Parsers
             var tupleCtor = (Func<Object>)LambdaExpression.Lambda(tupleNew).Compile();
             Object tuple = tupleCtor();
 
-            _parameterExpressions = OeExpressionHelper.GetPropertyExpression(Expression.Constant(tuple));
+            _parameterExpressions = OeExpressionHelper.GetPropertyExpressions(Expression.Constant(tuple));
             return base.Visit(expression);
         }
         protected override Expression VisitParameter(ParameterExpression node)

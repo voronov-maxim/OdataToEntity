@@ -17,7 +17,13 @@ namespace Xunit
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
     internal sealed class InlineDataAttribute : Attribute
     {
+        public InlineDataAttribute(int data)
+        {
+        }
         public InlineDataAttribute(bool data)
+        {
+        }
+        public InlineDataAttribute(int intData, bool boolData)
         {
         }
     }

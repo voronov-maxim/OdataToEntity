@@ -122,13 +122,15 @@ namespace OdataToEntity.Parsers
             var orderBytranslator = new OeOrderByTranslator(_visitor);
             return orderBytranslator.Build(source, orderByClause);
         }
-        public Expression ApplySelect(Expression source, SelectExpandClause selectClause, ODataPath path, OeMetadataLevel metadataLevel, bool navigationNextLink)
+        public Expression ApplySelect(Expression source, OeQueryContext queryContext)
         {
-            if (selectClause == null)
+            if (queryContext.ODataUri.SelectAndExpand == null && (queryContext.ODataUri.OrderBy == null || queryContext.PageSize == 0))
                 return source;
 
-            var selectTranslator = new OeSelectTranslator(_visitor, path, metadataLevel, navigationNextLink);
-            Expression selectExpression = selectTranslator.Build(source, selectClause);
+            var selectTranslator = new OeSelectTranslator(_visitor, queryContext.ODataUri.Path);
+            Expression selectExpression = selectTranslator.Build(source, queryContext);
+            if (selectExpression == null)
+                return source;
 
             _entryFactory = selectTranslator.CreateEntryFactory;
 

@@ -912,24 +912,29 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters);
         }
-        [Fact]
-        public async Task OrderByColumnsMissingInSelect()
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task OrderByColumnsMissingInSelect(int pageSize)
         {
             var parameters = new QueryParameters<OrderItem, Object>()
             {
                 RequestUri = "OrderItems?$select=Product,Id&$orderby=Count desc,Order/Customer/Name,Id desc",
-                Expression = t => t.OrderByDescending(i => i.Count).ThenBy(i => i.Order.Customer.Name).ThenByDescending(i => i.Id).Select(i => new { i.Product, i.Id })
+                Expression = t => t.OrderByDescending(i => i.Count).ThenBy(i => i.Order.Customer.Name).ThenByDescending(i => i.Id).Select(i => new { i.Product, i.Id }),
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters);
         }
-        [Fact]
-        public async Task OrderByColumnsMissingInSelectNavigationFirst()
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task OrderByColumnsMissingInSelectNavigationFirst(int pageSize)
         {
             var parameters = new QueryParameters<OrderItem, Object>()
             {
                 RequestUri = "OrderItems?$select=Product,Id&$orderby=Order/Customer/Name desc,Count,Id desc",
-                Expression = t => t.OrderByDescending(i => i.Order.Customer.Name).ThenBy(i => i.Count).ThenByDescending(i => i.Id).Select(i => new { i.Product, i.Id })
-
+                Expression = t => t.OrderByDescending(i => i.Order.Customer.Name).ThenBy(i => i.Count).ThenByDescending(i => i.Id).Select(i => new { i.Product, i.Id }),
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters);
         }
@@ -987,13 +992,16 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters);
         }
-        [Fact]
-        public async Task SelectName()
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task SelectName(int pageSize)
         {
             var parameters = new QueryParameters<Order, Object>()
             {
                 RequestUri = "Orders?$select=Name",
-                Expression = t => t.Select(o => new { o.Name })
+                Expression = t => t.Select(o => new { o.Name }),
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters);
         }
