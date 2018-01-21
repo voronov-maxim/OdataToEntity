@@ -96,7 +96,7 @@ namespace OdataToEntity.Parsers
             _pageSize = pageSize;
             _navigationNextLink = navigationNextLink;
 
-            if (pageSize > 0) //zzz
+            if (pageSize > 0 || (odataUri.OrderBy != null && odataUri.Skip != null && odataUri.Top != null))
                 _skipTokenParser = CreateSkipTokenParser(EdmModel, ODataUri, ParseNavigationSegments);
         }
 

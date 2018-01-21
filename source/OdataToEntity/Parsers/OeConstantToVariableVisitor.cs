@@ -7,6 +7,7 @@ namespace OdataToEntity.Parsers
 {
     public class OeConstantToVariableVisitor : ExpressionVisitor
     {
+        public static readonly ConstantExpression NullConstantExpression = Expression.Constant(null);
         public static readonly ConstantExpression ZeroStringCompareConstantExpression = Expression.Constant(0);
 
         private readonly List<ConstantExpression> _constantExpressions;
@@ -38,7 +39,7 @@ namespace OdataToEntity.Parsers
         }
         protected override Expression VisitConstant(ConstantExpression node)
         {
-            if (node == ZeroStringCompareConstantExpression)
+            if (node == ZeroStringCompareConstantExpression || node == NullConstantExpression)
                 return node;
 
             if (_parameterExpressions == null)

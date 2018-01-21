@@ -12,6 +12,7 @@ namespace OdataToEntity.Parsers
         private struct OrderProperty
         {
             public readonly OrderByDirection Direction;
+            public ConstantExpression ParmeterExpression;
             public MemberExpression PropertyExpression;
             public readonly SingleValuePropertyAccessNode PropertyNode;
             public readonly Object Value;
@@ -22,6 +23,7 @@ namespace OdataToEntity.Parsers
                 Direction = direction;
                 Value = value;
 
+                ParmeterExpression = null;
                 PropertyExpression = null;
             }
         }
@@ -47,24 +49,45 @@ namespace OdataToEntity.Parsers
         private static BinaryExpression CreateBinaryExpression(OeQueryNodeVisitor visitor, ref OrderProperty orderProperty)
         {
             MemberExpression propertyExpression = orderProperty.PropertyExpression;
-            ConstantExpression constantExpression = Expression.Constant(orderProperty.Value, propertyExpression.Type);
-            visitor.AddSkipTokenConstant(constantExpression, propertyExpression.Member.Name);
 
-            ExpressionType binaryType;
-            if (orderProperty.Value == null)
-                binaryType = ExpressionType.NotEqual;
-            else
-                binaryType = orderProperty.Direction == OrderByDirection.Ascending ? ExpressionType.GreaterThan : ExpressionType.LessThan;
+            ConstantExpression parameterExpression = orderProperty.ParmeterExpression;
+            if (parameterExpression == null)
+            {
+                parameterExpression = Expression.Constant(orderProperty.Value, propertyExpression.Type);
+                orderProperty.ParmeterExpression = parameterExpression;
+                visitor.AddSkipTokenConstant(parameterExpression, propertyExpression.Member.Name);
+            }
 
+            ExpressionType binaryType = orderProperty.Direction == OrderByDirection.Ascending ? ExpressionType.GreaterThan : ExpressionType.LessThan;
             BinaryExpression compare;
-            if (propertyExpression.Type == typeof(String) && binaryType != ExpressionType.NotEqual)
+            if (propertyExpression.Type == typeof(String))
             {
                 Func<String, String, int> compareToFunc = String.Compare;
-                MethodCallExpression compareToCall = Expression.Call(null, compareToFunc.GetMethodInfo(), propertyExpression, constantExpression);
+                MethodCallExpression compareToCall = Expression.Call(null, compareToFunc.GetMethodInfo(), propertyExpression, parameterExpression);
                 compare = Expression.MakeBinary(binaryType, compareToCall, OeConstantToVariableVisitor.ZeroStringCompareConstantExpression);
             }
             else
-                compare = Expression.MakeBinary(binaryType, propertyExpression, constantExpression);
+                compare = Expression.MakeBinary(binaryType, propertyExpression, parameterExpression);
+
+            if (orderProperty.PropertyNode.TypeReference.IsNullable)
+            {
+                BinaryExpression isNull;
+                UnaryExpression typedNull = Expression.Convert(OeConstantToVariableVisitor.NullConstantExpression, parameterExpression.Type);
+                if (orderProperty.Direction == OrderByDirection.Ascending)
+                {
+                    BinaryExpression isNullParameter = Expression.Equal(parameterExpression, typedNull);
+                    BinaryExpression isNotNullProperty = Expression.NotEqual(propertyExpression, OeConstantToVariableVisitor.NullConstantExpression);
+                    isNull = Expression.AndAlso(isNullParameter, isNotNullProperty);
+                }
+                else
+                {
+                    BinaryExpression isNotNullParameter = Expression.NotEqual(parameterExpression, typedNull);
+                    BinaryExpression isNullProperty = Expression.Equal(propertyExpression, OeConstantToVariableVisitor.NullConstantExpression);
+                    isNull = Expression.AndAlso(isNotNullParameter, isNullProperty);
+                }
+                compare = Expression.OrElse(compare, isNull);
+            }
+
             return compare;
         }
         private static Expression CreateFilterExpression(Expression source, OeQueryNodeVisitor visitor, OrderProperty[] orderProperties)
@@ -78,10 +101,16 @@ namespace OdataToEntity.Parsers
                 for (int j = 0; j < i; j++)
                 {
                     MemberExpression propertyExpression = orderProperties[j].PropertyExpression;
-                    ConstantExpression constantExpression = Expression.Constant(orderProperties[j].Value, propertyExpression.Type);
-                    visitor.AddSkipTokenConstant(constantExpression, propertyExpression.Member.Name);
+                    ConstantExpression parameterExpression = orderProperties[j].ParmeterExpression;
+                    BinaryExpression eq = Expression.Equal(propertyExpression, parameterExpression);
 
-                    BinaryExpression eq = Expression.Equal(propertyExpression, constantExpression);
+                    if (OeExpressionHelper.IsNullable(propertyExpression))
+                    {
+                        UnaryExpression typedNull = Expression.Convert(OeConstantToVariableVisitor.NullConstantExpression, parameterExpression.Type);
+                        BinaryExpression isNull = Expression.Equal(parameterExpression, typedNull);
+                        eq = Expression.OrElse(eq, isNull);
+                    }
+
                     eqFilter = eqFilter == null ? eq : Expression.AndAlso(eqFilter, eq);
                 }
 
@@ -89,11 +118,6 @@ namespace OdataToEntity.Parsers
                 if (orderProperties[i].PropertyExpression == null)
                     orderProperties[i].PropertyExpression = tupleProperty.Build(visitor.Parameter, orderProperties[i].PropertyNode.Property);
                 BinaryExpression ge = CreateBinaryExpression(visitor, ref orderProperties[i]);
-                if (i == 0 && orderProperties[i].PropertyNode.Property.Type.IsNullable && orderProperties[i].Value != null)
-                {
-                    BinaryExpression isNull = Expression.Equal(orderProperties[i].PropertyExpression, Expression.Constant(null));
-                    ge = Expression.MakeBinary(ExpressionType.OrElse, ge, isNull);
-                }
 
                 eqFilter = eqFilter == null ? ge : Expression.AndAlso(eqFilter, ge);
                 filter = filter == null ? eqFilter : Expression.OrElse(filter, eqFilter);

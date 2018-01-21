@@ -61,5 +61,9 @@ namespace OdataToEntity.ModelBuilder
         {
             return propertyInfo.GetCustomAttribute(typeof(NotMappedAttribute)) != null;
         }
+        public virtual bool IsRequired(PropertyInfo propertyInfo)
+        {
+            return !PrimitiveTypeHelper.IsNullable(propertyInfo.PropertyType) || propertyInfo.GetCustomAttribute(typeof(RequiredAttribute)) != null;
+        }
     }
 }

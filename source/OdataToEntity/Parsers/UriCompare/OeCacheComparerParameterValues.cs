@@ -9,6 +9,18 @@ namespace OdataToEntity.Parsers.UriCompare
 {
     public struct OeCacheComparerParameterValues
     {
+        private sealed class SkipTokenMarker : IEdmTypeReference
+        {
+            public static readonly SkipTokenMarker Instance = new SkipTokenMarker();
+
+            private SkipTokenMarker()
+            {
+            }
+
+            public bool IsNullable => throw new NotImplementedException();
+            public IEdmType Definition => throw new NotImplementedException();
+        }
+
         private readonly IReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition> _constantToParameterMapper;
         private readonly List<Db.OeQueryCacheDbParameterValue> _parameterValues;
 
@@ -49,9 +61,8 @@ namespace OdataToEntity.Parsers.UriCompare
         }
         public void AddSkipTokenParameter(Object value, String propertyName)
         {
-            propertyName = "<>" + propertyName;
             foreach (KeyValuePair<ConstantNode, Db.OeQueryCacheDbParameterDefinition> pair in _constantToParameterMapper)
-                if (String.CompareOrdinal(pair.Key.LiteralText, propertyName) == 0)
+                if (pair.Key.TypeReference == SkipTokenMarker.Instance && String.CompareOrdinal(pair.Key.LiteralText, propertyName) == 0)
                     _parameterValues.Add(new Db.OeQueryCacheDbParameterValue(pair.Value.ParameterName, value));
         }
         public void AddTopParameter(long value, ODataPath path)
@@ -72,7 +83,7 @@ namespace OdataToEntity.Parsers.UriCompare
         }
         public static ConstantNode CreateSkipTokenConstantNode(Object value, String propertyName)
         {
-            return new ConstantNode(value, "<>" + propertyName);
+            return new ConstantNode(value, propertyName, SkipTokenMarker.Instance);
         }
         public static ConstantNode CreateTopConstantNode(int top, ODataPath path)
         {

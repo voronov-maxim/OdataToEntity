@@ -10,6 +10,7 @@ namespace OdataToEntity.Test.Model
     {
         public ICollection<Category> Children { get; set; }
         public int Id { get; set; }
+        [Required]
         public String Name { get; set; }
         public Category Parent { get; set; }
         public int? ParentId { get; set; }
@@ -21,10 +22,11 @@ namespace OdataToEntity.Test.Model
         public String Address { get; set; }
         [InverseProperty(nameof(Order.AltCustomer))]
         public ICollection<Order> AltOrders { get; set; }
-        [Key, Column(Order = 0)]
+        [Key, Column(Order = 0), Required]
         public String Country { get; set; }
         [Key, Column(Order = 1)]
         public int Id { get; set; }
+        [Required]
         public String Name { get; set; }
         [InverseProperty(nameof(Order.Customer))]
         public ICollection<Order> Orders { get; set; }
@@ -43,6 +45,7 @@ namespace OdataToEntity.Test.Model
         [ForeignKey("CustomerCountry,CustomerId")]
         public Customer Customer { get; set; }
         //[ForeignKey(nameof(Customer)), Column(Order = 0)]
+        [Required]
         public String CustomerCountry { get; set; }
         //[ForeignKey(nameof(Customer)), Column(Order = 1)]
         public int CustomerId { get; set; }
@@ -51,6 +54,7 @@ namespace OdataToEntity.Test.Model
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
         public ICollection<OrderItem> Items { get; set; }
+        [Required]
         public String Name { get; set; }
         public OrderStatus Status { get; set; }
     }
@@ -63,6 +67,7 @@ namespace OdataToEntity.Test.Model
         public Order Order { get; set; }
         public int OrderId { get; set; }
         public Decimal? Price { get; set; }
+        [Required]
         public String Product { get; set; }
     }
 

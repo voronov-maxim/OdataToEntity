@@ -115,5 +115,24 @@ namespace OdataToEntity.Ef6
 
             return true;
         }
+        public override bool IsRequired(PropertyInfo propertyInfo)
+        {
+            foreach (EntityType efEntityType in GetEntityTypes(propertyInfo))
+            {
+                for (int i = 0; i < efEntityType.Properties.Count; i++)
+                    if (efEntityType.Properties[i].Name == propertyInfo.Name)
+                        return !efEntityType.Properties[i].Nullable;
+
+                for (int i = 0; i < efEntityType.NavigationProperties.Count; i++)
+                {
+                    NavigationProperty efProperty = efEntityType.NavigationProperties[i];
+                    if (efProperty.Name == propertyInfo.Name)
+                        return efProperty.FromEndMember.RelationshipMultiplicity == RelationshipMultiplicity.One ||
+                            efProperty.ToEndMember.RelationshipMultiplicity == RelationshipMultiplicity.One;
+                }
+            }
+
+            throw new InvalidOperationException("property " + propertyInfo.Name + " not found");
+        }
     }
 }

@@ -118,5 +118,24 @@ namespace OdataToEntity.EfCore
 
             return true;
         }
+        public override bool IsRequired(PropertyInfo propertyInfo)
+        {
+            foreach (IEntityType efEntityType in GetEntityTypes(propertyInfo))
+            {
+                foreach (IProperty efProperty in efEntityType.GetProperties())
+                    if (efProperty.Name == propertyInfo.Name)
+                        return !efProperty.IsNullable;
+
+                foreach (IForeignKey fkey in efEntityType.GetForeignKeys())
+                    if (fkey.DependentToPrincipal.Name == propertyInfo.Name)
+                        return fkey.IsRequired;
+
+                foreach (IForeignKey fkey in efEntityType.GetReferencingForeignKeys())
+                    if (fkey.PrincipalToDependent.Name == propertyInfo.Name)
+                        return fkey.IsRequired;
+            }
+
+            throw new InvalidOperationException("property " + propertyInfo.Name + " not found");
+        }
     }
 }

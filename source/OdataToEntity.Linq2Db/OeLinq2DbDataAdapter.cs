@@ -30,16 +30,52 @@ namespace OdataToEntity.Linq2Db
                 _parameters = new Dictionary<ParameterExpression, ParameterExpression>();
             }
 
-            protected override Expression VisitParameter(ParameterExpression node)
+            private static bool TryGetConstant(Expression e, out Object value)
             {
-                ParameterExpression parameter;
-                if (_parameters.TryGetValue(node, out parameter))
-                    return parameter;
-                 
+                value = null;
 
-                parameter = Expression.Parameter(node.Type, node.Name ?? node.ToString());
-                _parameters.Add(node, parameter);
-                return parameter;
+                MemberExpression propertyExpression = e as MemberExpression;
+                if (propertyExpression == null && e is UnaryExpression convertExpression)
+                    propertyExpression = convertExpression.Operand as MemberExpression;
+
+                if (propertyExpression == null)
+                    return false;
+
+                if (propertyExpression.Expression is ConstantExpression constantExpression)
+                {
+                    value = (propertyExpression.Member as PropertyInfo).GetValue(constantExpression.Value);
+                    return true;
+                }
+
+                return false;
+            }
+            private bool IsNullable(MemberExpression propertyExpression)
+            {
+                return !OeLinq2DbEdmModelMetadataProvider.IsRequiredLinq2Db((PropertyInfo)propertyExpression.Member);
+            }
+            protected override Expression VisitBinary(BinaryExpression node)
+            {
+                var e = (BinaryExpression)base.VisitBinary(node);
+                if (e.NodeType == ExpressionType.NotEqual)
+                {
+                    MemberExpression propertyExpression;
+                    Object value;
+                    if (TryGetConstant(e.Right, out value))
+                        propertyExpression = e.Left as MemberExpression;
+                    else
+                    {
+                        if (!TryGetConstant(e.Left, out value))
+                            return e;
+
+                        propertyExpression = e.Right as MemberExpression;
+                    }
+
+                    if (propertyExpression == null || value == null || !IsNullable(propertyExpression))
+                        return e;
+
+                    e = Expression.OrElse(e, Expression.Equal(propertyExpression, Expression.Constant(null, propertyExpression.Type)));
+                }
+                return e;
             }
             protected override Expression VisitNew(NewExpression node)
             {
@@ -58,6 +94,16 @@ namespace OdataToEntity.Linq2Db
                     arguments[i] = argument;
                 }
                 return OeExpressionHelper.CreateTupleExpression(arguments);
+            }
+            protected override Expression VisitParameter(ParameterExpression node)
+            {
+                ParameterExpression parameter;
+                if (_parameters.TryGetValue(node, out parameter))
+                    return parameter;
+
+                parameter = Expression.Parameter(node.Type, node.Name ?? node.ToString());
+                _parameters.Add(node, parameter);
+                return parameter;
             }
         }
 

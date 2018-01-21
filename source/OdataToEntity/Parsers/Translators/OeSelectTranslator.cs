@@ -237,14 +237,14 @@ namespace OdataToEntity.Parsers
             if (orderBy != null)
                 expressions.AddRange(CreateOrderByExpressions(source, orderBy));
 
-            if (expressions.Count == 0 && orderBy != null)
+            if (expressions.Count == 0 && queryContext.SkipTokenParser != null)
             {
                 queryContext.SkipTokenParser.Accessors = GetAccessors(source, orderBy);
                 return null;
             }
 
             var selectExpression = CreateSelectExpression(source, expressions, _visitor.Parameter);
-            if (orderBy != null && queryContext.PageSize > 0)
+            if (queryContext.SkipTokenParser != null)
                  queryContext.SkipTokenParser.Accessors = GetAccessors(selectExpression, orderBy);
 
             return selectExpression;

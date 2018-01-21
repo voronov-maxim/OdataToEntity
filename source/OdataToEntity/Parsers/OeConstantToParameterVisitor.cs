@@ -27,7 +27,8 @@ namespace OdataToEntity.Parsers
                 String parameterName = "__p_" + i.ToString();
 
                 ConstantNode constantNode = constantMappings[constantExpression];
-                _constantToParameterMapper.Add(constantNode, new Db.OeQueryCacheDbParameterDefinition(parameterName, constantExpression.Type));
+                if (!_constantToParameterMapper.ContainsKey(constantNode))
+                    _constantToParameterMapper.Add(constantNode, new Db.OeQueryCacheDbParameterDefinition(parameterName, constantExpression.Type));
 
                 _parameterValues[i] = new Db.OeQueryCacheDbParameterValue(parameterName, constantExpression.Value);
                 parameters[i] = Expression.Parameter(constantExpression.Type, parameterName);

@@ -13,17 +13,20 @@ namespace OdataToEntity.Db
         private readonly Expression _countExpression;
         private readonly OeEntryFactory _entryFactory;
         private readonly Object _query;
+        private readonly OePropertyAccessor[] _skipTokenAccessors;
 
-        public QueryCacheItem(Object query, Expression countExpression, OeEntryFactory entryFactory)
+        public QueryCacheItem(Object query, Expression countExpression, OeEntryFactory entryFactory, OePropertyAccessor[] skipTokenAccessors)
         {
             _query = query;
             _countExpression = countExpression;
             _entryFactory = entryFactory;
+            _skipTokenAccessors = skipTokenAccessors;
         }
 
         public Expression CountExpression => _countExpression;
         public OeEntryFactory EntryFactory => _entryFactory;
         public Object Query => _query;
+        public OePropertyAccessor[] SkipTokenAccessors => _skipTokenAccessors;
     }
 
     public sealed class OeQueryCache
@@ -36,9 +39,10 @@ namespace OdataToEntity.Db
             AllowCache = true;
         }
 
-        public void AddQuery(OeCacheContext cacheContext, Object query, Expression countExpression, OeEntryFactory entryFactory)
+        public void AddQuery(OeCacheContext cacheContext, Object query, Expression countExpression, OeEntryFactory entryFactory,
+            OePropertyAccessor[] skipTokenAccessors)
         {
-            var queryCacheItem = new QueryCacheItem(query, countExpression, entryFactory);
+            var queryCacheItem = new QueryCacheItem(query, countExpression, entryFactory, skipTokenAccessors);
             _cache.TryAdd(cacheContext, queryCacheItem);
         }
         public QueryCacheItem GetQuery(OeCacheContext cacheContext)

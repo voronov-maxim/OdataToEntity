@@ -74,7 +74,8 @@ namespace OdataToEntity.ModelBuilder
         private void BuildProperty(Dictionary<Type, EntityTypeInfo> entityTypes,
             Dictionary<Type, EdmEnumType> enumTypes, Dictionary<Type, EdmComplexType> complexTypes, PropertyInfo clrProperty)
         {
-            IEdmTypeReference typeRef = PrimitiveTypeHelper.GetPrimitiveTypeRef(clrProperty);
+            bool isNullable = !_metadataProvider.IsRequired(clrProperty);
+            IEdmTypeReference typeRef = PrimitiveTypeHelper.GetPrimitiveTypeRef(clrProperty, isNullable);
             if (typeRef == null)
             {
                 EdmEnumType edmEnumType;

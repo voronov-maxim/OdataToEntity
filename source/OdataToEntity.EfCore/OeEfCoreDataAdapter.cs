@@ -265,13 +265,16 @@ namespace OdataToEntity.EfCore
                 Expression expression = queryContext.CreateExpression(query, parameterVisitor);
                 queryExecutor = dbContext.CreateAsyncQueryExecutor<TResult>(expression);
                 countExpression = queryContext.CreateCountExpression(query, expression);
-                queryCache.AddQuery(queryContext.CreateCacheContext(parameterVisitor.ConstantToParameterMapper), queryExecutor, countExpression, queryContext.EntryFactory);
+                queryCache.AddQuery(queryContext.CreateCacheContext(parameterVisitor.ConstantToParameterMapper), queryExecutor, countExpression,
+                    queryContext.EntryFactory, queryContext.SkipTokenParser?.Accessors);
                 parameterValues = parameterVisitor.ParameterValues;
             }
             else
             {
                 queryExecutor = (Func<QueryContext, IAsyncEnumerable<TResult>>)queryCacheItem.Query;
                 queryContext.EntryFactory = queryCacheItem.EntryFactory;
+                if (queryContext.SkipTokenParser != null)
+                    queryContext.SkipTokenParser.Accessors = queryCacheItem.SkipTokenAccessors;
                 countExpression = queryCacheItem.CountExpression;
                 parameterValues = cacheContext.ParameterValues;
             }

@@ -75,5 +75,15 @@ namespace OdataToEntity.Linq2Db
 
             return true;
         }
+        public override bool IsRequired(PropertyInfo propertyInfo)
+        {
+            return IsRequiredLinq2Db(propertyInfo);
+        }
+        internal static bool IsRequiredLinq2Db(PropertyInfo propertyInfo)
+        {
+            Type clrType = propertyInfo.PropertyType;
+            bool isNullable = clrType.IsClass || (clrType.IsGenericType && clrType.GetGenericTypeDefinition() == typeof(Nullable<>));
+            return !isNullable || propertyInfo.GetCustomAttribute(typeof(NotNullAttribute)) != null;
+        }
     }
 }
