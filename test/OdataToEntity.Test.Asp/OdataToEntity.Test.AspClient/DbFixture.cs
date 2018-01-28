@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using ODataClient.Default;
+﻿using ODataClient.Default;
 using OdataToEntity.Test.Model;
 using System;
 using System.Collections;
@@ -8,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.ServiceModel;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -88,8 +85,8 @@ namespace OdataToEntity.Test
         }
         private static IList ExecuteQuery<T>(IQueryable query, Expression expression)
         {
-            IQueryable<T> newQuery = query.Provider.CreateQuery<T>(expression);
-            return newQuery.ToList();
+            var newQuery = (Microsoft.OData.Client.DataServiceQuery<T>)query.Provider.CreateQuery<T>(expression);
+            return newQuery.ExecuteAsync().GetAwaiter().GetResult().ToList();
         }
         private static IList ExecuteQueryScalar<T>(IQueryable query, Expression expression)
         {
@@ -182,10 +179,6 @@ namespace OdataToEntity.Test
                     TestWriteException(e, ConsoleColor.Yellow);
                 }
                 catch (InvalidOperationException e)
-                {
-                    TestWriteException(e, ConsoleColor.Red);
-                }
-                catch (CommunicationObjectFaultedException e)
                 {
                     TestWriteException(e, ConsoleColor.Red);
                 }

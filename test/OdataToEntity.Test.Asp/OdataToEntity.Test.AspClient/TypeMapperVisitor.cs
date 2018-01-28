@@ -23,6 +23,9 @@ namespace OdataToEntity.Test.Model
 
         private MemberInfo Map(MemberInfo source)
         {
+            if (source.DeclaringType == typeof(DateTime))
+                return typeof(DateTimeOffset).GetMember(source.Name)[0];
+
             Type clientType = Map(source.DeclaringType);
             return clientType == null ? source : clientType.GetMember(source.Name)[0];
         }
@@ -30,6 +33,10 @@ namespace OdataToEntity.Test.Model
         {
             if (source == null)
                 return null;
+
+            if (source.DeclaringType == typeof(DateTime))
+                return typeof(DateTimeOffset).GetMethod(source.Name);
+
             if (!source.IsGenericMethod)
                 return source;
 
@@ -38,11 +45,17 @@ namespace OdataToEntity.Test.Model
         }
         private Type Map(Type source)
         {
-            if (source.IsPrimitive || source == typeof(String))
+            if (source == typeof(String))
                 return source;
+
+            if (source.IsPrimitive)
+                return source == typeof(DateTime) ? typeof(DateTimeOffset) : source;
 
             if (source.IsGenericType)
             {
+                if (source == typeof(DateTime?))
+                    return typeof(DateTimeOffset?);
+
                 Type[] clientTypes = Map(source.GetGenericArguments());
                 return source.GetGenericTypeDefinition().MakeGenericType(clientTypes);
             }
@@ -57,12 +70,23 @@ namespace OdataToEntity.Test.Model
             return target;
         }
 
+        protected override Expression VisitConstant(ConstantExpression node)
+        {
+            Type mapType = Map(node.Type);
+            if (node.Value != null && mapType.IsEnum)
+            {
+                Object value = Enum.Parse(mapType, node.Value.ToString());
+                return Expression.Constant(value, mapType);
+            }
+
+            return mapType == node.Type ? node : Expression.Constant(node.Value, mapType);
+        }
         protected override Expression VisitBinary(BinaryExpression node)
         {
             Expression left = base.Visit(node.Left);
             Expression right = base.Visit(node.Right);
             LambdaExpression lambda = base.VisitAndConvert<LambdaExpression>(node.Conversion, "VisitBinary");
-            return Expression.MakeBinary(node.NodeType, left, right, node.IsLiftedToNull, node.Method, lambda);
+            return Expression.MakeBinary(node.NodeType, left, right, node.IsLiftedToNull, Map(node.Method), lambda);
         }
         protected override Expression VisitLambda<T>(Expression<T> node)
         {
@@ -104,14 +128,12 @@ namespace OdataToEntity.Test.Model
                     throw new NotSupportedException("The method '" + node.Method.Name + "' is not supported");
             }
 
-            node = (MethodCallExpression)base.VisitMethodCall(node);
             if (node.Method.Name == "GetValueOrDefault")
             {
-                Type underlyingType = Nullable.GetUnderlyingType(node.Object.Type);
-                if (underlyingType != null)
-                    return Expression.Property(node.Object, "Value");
+                Expression e = base.Visit(node.Object);
+                return Expression.Property(e, "Value");
             }
-            return node;
+            return base.VisitMethodCall(node);
         }
         private static MethodInfo GetExpandMethodInfo<TElement, TTarget>(DataServiceQuery<TElement> dsq, Expression<Func<TElement, TTarget>> navigationPropertyAccessor)
         {

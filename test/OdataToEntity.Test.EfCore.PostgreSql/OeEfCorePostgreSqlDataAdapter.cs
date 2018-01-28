@@ -26,6 +26,7 @@ namespace OdataToEntity.EfCore
         public OeEfCorePostgreSqlDataAdapter(DbContextOptions options, OeQueryCache queryCache)
             : base(options, queryCache, new OeEfCorePostgreSqlOperationAdapter(typeof(T), _entitySetMetaAdapters))
         {
+            base.IsDatabaseNullHighestValue = true;
         }
     }
 }

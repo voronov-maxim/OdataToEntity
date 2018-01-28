@@ -1,6 +1,7 @@
 ﻿using Microsoft.OData.Client;
 using ODataClient.Default;
 using System;
+using System.Threading.Tasks;
 
 namespace OdataToEntity.Test
 {
@@ -8,14 +9,19 @@ namespace OdataToEntity.Test
     {
         partial void DbInit(String databaseName, bool clear)
         {
+            DbInitAsync(clear).GetAwaiter().GetResult();
+        }
+
+        private async static Task DbInitAsync(bool clear)
+        {
             Container container = CreateContainer();
-            container.ResetDb().Execute();
-            container.ResetManyColumns().Execute();
+            await container.ResetDb().ExecuteAsync();
+            await container.ResetManyColumns().ExecuteAsync();
 
             if (!clear)
             {
                 AspClient.BatchTest.Add(container);
-                container.SaveChanges(SaveChangesOptions.BatchWithSingleChangeset);
+                await container.SaveChangesAsync(SaveChangesOptions.BatchWithSingleChangeset);
             }
         }
     }

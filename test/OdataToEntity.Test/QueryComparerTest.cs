@@ -5,6 +5,7 @@ using OdataToEntity.Parsers.UriCompare;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -136,7 +137,7 @@ namespace OdataToEntity.Test
 
                     var constantNode = (ConstantNode)(Object)key;
                     Type type = constantNode.Value == null ? typeof(Object) : constantNode.Value.GetType();
-                    value = (TValue)(Object)new Db.OeQueryCacheDbParameterDefinition("p_" + base.Count.ToString(), type);
+                    value = (TValue)(Object)new Db.OeQueryCacheDbParameterDefinition("p_" + base.Count.ToString(CultureInfo.InvariantCulture), type);
                     base[key] = value;
                     return value;
                 }

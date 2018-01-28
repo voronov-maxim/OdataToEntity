@@ -22,7 +22,7 @@ namespace OdataToEntity.Test.Model
             protected override async Task<int> SaveChangesAsync(IReadOnlyList<InternalEntityEntry> entriesToSave, CancellationToken cancellationToken = default(CancellationToken))
             {
                 UpdateTemporaryKey(entriesToSave);
-                int count = await base.SaveChangesAsync(entriesToSave, cancellationToken);
+                int count = await base.SaveChangesAsync(entriesToSave, cancellationToken).ConfigureAwait(false);
                 return count;
             }
             internal static void UpdateTemporaryKey(IReadOnlyList<InternalEntityEntry> entries)

@@ -31,7 +31,7 @@ namespace OdataToEntity.Db
         }
 
         protected CancellationToken CancellationToken => _cancellationToken;
-        public virtual void Dispose() => _asyncEnumerator.Dispose();
+        public virtual void  Dispose() => _asyncEnumerator.Dispose();
         public virtual Task<bool> MoveNextAsync() => _asyncEnumerator.MoveNext(_cancellationToken);
 
         public int? Count { get; set; }
@@ -51,8 +51,7 @@ namespace OdataToEntity.Db
 
         public override void Dispose()
         {
-            var dispose = _enumerator as IDisposable;
-            if (dispose != null)
+            if (_enumerator is IDisposable dispose)
                 dispose.Dispose();
         }
         public override Task<bool> MoveNextAsync()
@@ -85,7 +84,7 @@ namespace OdataToEntity.Db
             if (_state != 0)
                 return false;
 
-            _scalarResult = await _scalarTask;
+            _scalarResult = await _scalarTask.ConfigureAwait(false);
             _state++;
             return true;
         }

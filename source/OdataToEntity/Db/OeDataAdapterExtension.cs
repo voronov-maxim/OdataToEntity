@@ -1,18 +1,18 @@
 ﻿using Microsoft.OData.Edm;
 using OdataToEntity.ModelBuilder;
 
-namespace OdataToEntity.Db
+namespace OdataToEntity
 {
     public static class OeDataAdapterExtension
     {
-        public static EdmModel BuildEdmModel(this OeDataAdapter dataAdapter)
+        public static EdmModel BuildEdmModel(this Db.OeDataAdapter dataAdapter)
         {
             var modelBuilder = new OeEdmModelBuilder(dataAdapter.EntitySetMetaAdapters.EdmModelMetadataProvider);
             modelBuilder.AddEntitySetRange(dataAdapter.EntitySetMetaAdapters.GetEntitySetNamesEntityTypes());
             BuildOperations(dataAdapter, modelBuilder);
             return modelBuilder.BuildEdmModel();
         }
-        public static void BuildOperations(OeDataAdapter dataAdapter, OeEdmModelBuilder modelBuilder)
+        public static void BuildOperations(Db.OeDataAdapter dataAdapter, OeEdmModelBuilder modelBuilder)
         {
             OeOperationConfiguration[] operations = dataAdapter.OperationAdapter.GetOperations();
             if (operations != null)

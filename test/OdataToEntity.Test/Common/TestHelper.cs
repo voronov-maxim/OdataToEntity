@@ -86,11 +86,7 @@ namespace OdataToEntity.Test
                 using (XmlWriter xmlWriter = XmlWriter.Create(stream, new XmlWriterSettings() { Indent = true }))
                 {
                     IEnumerable<EdmError> errors;
-#if ODATA6
-                    if (!CsdlWriter.TryWriteCsdl(edmModel, xmlWriter, out errors))
-#else
                     if (!CsdlWriter.TryWriteCsdl(edmModel, xmlWriter, CsdlTarget.OData, out errors))
-#endif
                         return null;
                 }
 

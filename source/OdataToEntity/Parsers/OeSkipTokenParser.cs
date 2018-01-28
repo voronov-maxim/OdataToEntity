@@ -16,22 +16,26 @@ namespace OdataToEntity.Parsers
         private static readonly ODataMessageWriterSettings WriterSettings = new ODataMessageWriterSettings() { EnableMessageStreamDisposal = false };
 
         private readonly IEdmModel _edmModel;
+        private readonly bool _isDatabaseNullHighestValue;
         private readonly OrderByClause _orderByClause;
 
-        public OeSkipTokenParser(IEdmModel edmModel, IEdmEntityType edmType)
-        {
-            _orderByClause = GetUniqueOrderBy(edmModel, edmType, null);
-        }
-        public OeSkipTokenParser(IEdmModel edmModel, IEdmEntityType edmType, OrderByClause orderByClause)
+        public OeSkipTokenParser(IEdmModel edmModel, IEdmEntityType edmType, bool isDatabaseNullHighestValue)
         {
             _edmModel = edmModel;
+            _isDatabaseNullHighestValue = isDatabaseNullHighestValue;
+            _orderByClause = GetUniqueOrderBy(edmModel, edmType, null);
+        }
+        public OeSkipTokenParser(IEdmModel edmModel, IEdmEntityType edmType, bool isDatabaseNullHighestValue, OrderByClause orderByClause)
+        {
+            _edmModel = edmModel;
+            _isDatabaseNullHighestValue = isDatabaseNullHighestValue;
             _orderByClause = orderByClause;
 
             if (!GetIsKey(edmType, GetEdmProperies(orderByClause)))
                 _orderByClause = GetUniqueOrderBy(edmModel, edmType, orderByClause);
         }
 
-        public OrderByClause GetUniqueOrderBy(IEdmModel edmModel, IEdmEntityType edmType, OrderByClause orderByClause)
+        private static OrderByClause GetUniqueOrderBy(IEdmModel edmModel, IEdmEntityType edmType, OrderByClause orderByClause)
         {
             IEdmEntitySet entitySet = null;
             foreach (IEdmEntitySet element in edmModel.EntityContainer.EntitySets())
@@ -154,6 +158,7 @@ namespace OdataToEntity.Parsers
         }
 
         public OePropertyAccessor[] Accessors { get; set; }
+        public bool IsDatabaseNullHighestValue => _isDatabaseNullHighestValue;
         public OrderByClause UniqueOrderBy => _orderByClause;
     }
 }

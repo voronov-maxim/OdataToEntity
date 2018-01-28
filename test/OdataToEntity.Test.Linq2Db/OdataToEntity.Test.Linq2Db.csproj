@@ -25,8 +25,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="linq2db" Version="1.9.0" />
-    <PackageReference Include="linq2db.SqlServer" Version="1.9.0" />
+    <PackageReference Include="linq2db" Version="1.10.1" />
+    <PackageReference Include="linq2db.SqlServer" Version="1.10.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$(EfCoreVersion)" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="$(EfCoreVersion)" />
     <PackageReference Include="Newtonsoft.Json" Version="$(JsonNetVersion)" />

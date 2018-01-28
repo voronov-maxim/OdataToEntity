@@ -1,4 +1,5 @@
-﻿using ODataClient.Default;
+﻿using Microsoft.OData.Client;
+using ODataClient.Default;
 using System;
 using System.ServiceModel;
 
@@ -11,7 +12,7 @@ namespace OdataToEntity.Test.WcfClient
 
         private static Container ContainerFactory()
         {
-            var container = new Container(new Uri("http://dummy"));
+            var container = new Container(new Uri("http://dummy")) { MergeOption = MergeOption.OverwriteChanges };
             _interceptor.AttachToContext(container);
             return container;
         }

@@ -77,7 +77,6 @@ namespace OdataToEntity.Parsers
 
         private readonly IEdmModel _edmModel;
         private readonly IEdmEntitySet _entitySet;
-        private Dictionary<OeEntryFactory, ExpandedNavigationSelectItem> _expandedNavigationSelectItem;
         private readonly bool _isCountSegment;
         private readonly bool _navigationNextLink;
         private readonly ODataUri _odataUri;
@@ -86,7 +85,8 @@ namespace OdataToEntity.Parsers
         private readonly OeSkipTokenParser _skipTokenParser;
 
         public OeQueryContext(IEdmModel edmModel, ODataUri odataUri,
-            IEdmEntitySet entitySet, IReadOnlyList<OeParseNavigationSegment> parseNavigationSegments, bool isCountSegment, int pageSize, bool navigationNextLink)
+            IEdmEntitySet entitySet, IReadOnlyList<OeParseNavigationSegment> parseNavigationSegments,
+            bool isCountSegment, int pageSize, bool navigationNextLink, bool isDatabaseNullHighestValue)
         {
             _edmModel = edmModel;
             _odataUri = odataUri;
@@ -97,15 +97,9 @@ namespace OdataToEntity.Parsers
             _navigationNextLink = navigationNextLink;
 
             if (pageSize > 0 || (odataUri.OrderBy != null && odataUri.Skip != null && odataUri.Top != null))
-                _skipTokenParser = CreateSkipTokenParser(EdmModel, ODataUri, ParseNavigationSegments);
+                _skipTokenParser = CreateSkipTokenParser(EdmModel, ODataUri, ParseNavigationSegments, isDatabaseNullHighestValue);
         }
 
-        public void AddExpandedNavigationSelectItem(OeEntryFactory entryFactory, ExpandedNavigationSelectItem item)
-        {
-            if (_expandedNavigationSelectItem == null)
-                _expandedNavigationSelectItem = new Dictionary<OeEntryFactory, ExpandedNavigationSelectItem>();
-            _expandedNavigationSelectItem.Add(entryFactory, item);
-        }
         public OeCacheContext CreateCacheContext() => new OeCacheContext(this);
         public OeCacheContext CreateCacheContext(IReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition> constantToParameterMapper) => new OeCacheContext(this, constantToParameterMapper);
         public Expression CreateCountExpression(IQueryable query, Expression expression)
@@ -157,7 +151,8 @@ namespace OdataToEntity.Parsers
 
             return SourceVisitor.Translate(query, expression);
         }
-        private static OeSkipTokenParser CreateSkipTokenParser(IEdmModel edmModel, ODataUri odataUri, IReadOnlyList<OeParseNavigationSegment> navigationSegments)
+        private static OeSkipTokenParser CreateSkipTokenParser(IEdmModel edmModel, ODataUri odataUri,
+            IReadOnlyList<OeParseNavigationSegment> navigationSegments, bool isDatabaseNullHighestValue)
         {
             var entitySetSegment = (EntitySetSegment)odataUri.Path.FirstSegment;
             IEdmEntityType edmEntityType = entitySetSegment.EntitySet.EntityType();
@@ -169,7 +164,8 @@ namespace OdataToEntity.Parsers
                         break;
                     }
 
-            return odataUri.OrderBy == null ? new OeSkipTokenParser(edmModel, edmEntityType) : new OeSkipTokenParser(edmModel, edmEntityType, odataUri.OrderBy);
+            return odataUri.OrderBy == null ? new OeSkipTokenParser(edmModel, edmEntityType, isDatabaseNullHighestValue)
+                : new OeSkipTokenParser(edmModel, edmEntityType, isDatabaseNullHighestValue, odataUri.OrderBy);
         }
         public IEnumerable<ExpandedNavigationSelectItem> GetExpandedNavigationSelectItems()
         {

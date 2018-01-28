@@ -1,7 +1,0 @@
-{
-  "profiles": {
-    "OdataToEntity.Test.AspClient": {
-      "commandName": "Project"
-    }
-  }
-}

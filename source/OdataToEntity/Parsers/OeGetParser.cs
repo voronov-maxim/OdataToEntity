@@ -4,6 +4,7 @@ using Microsoft.OData.UriParser;
 using OdataToEntity.Parsers;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -51,10 +52,7 @@ namespace OdataToEntity
 
             if (PageSize > 0)
             {
-                int checkNextPageRecord = queryContext.ODataUri.QueryCount.GetValueOrDefault() ? 0 : 1;
-                if (PageSize + checkNextPageRecord > queryContext.ODataUri.Top.GetValueOrDefault())
-                    queryContext.ODataUri.Top = PageSize + checkNextPageRecord;
-
+                queryContext.ODataUri.Top = PageSize;
                 odataUri.OrderBy = queryContext.SkipTokenParser.UniqueOrderBy;
             }
 
@@ -66,7 +64,7 @@ namespace OdataToEntity
                 {
                     headers.ResponseContentType = OeRequestHeaders.TextDefault.ContentType;
                     int count = _dataAdapter.ExecuteScalar<int>(dataContext, queryContext);
-                    byte[] buffer = System.Text.Encoding.UTF8.GetBytes(count.ToString());
+                    byte[] buffer = System.Text.Encoding.UTF8.GetBytes(count.ToString(CultureInfo.InvariantCulture));
                     stream.Write(buffer, 0, buffer.Length);
                 }
                 else
@@ -127,7 +125,8 @@ namespace OdataToEntity
             var entitySetSegment = (EntitySetSegment)odataUri.Path.FirstSegment;
             IEdmEntitySet entitySet = entitySetSegment.EntitySet;
             bool isCountSegment = odataUri.Path.LastSegment is CountSegment;
-            return new OeQueryContext(_model, odataUri, entitySet, navigationSegments, isCountSegment, PageSize, NavigationNextLink);
+            return new OeQueryContext(_model, odataUri, entitySet, navigationSegments,
+                isCountSegment, PageSize, NavigationNextLink, _dataAdapter.IsDatabaseNullHighestValue);
         }
 
         public bool NavigationNextLink { get; set; }

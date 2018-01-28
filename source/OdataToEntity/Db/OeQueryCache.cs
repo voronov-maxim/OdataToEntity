@@ -47,8 +47,7 @@ namespace OdataToEntity.Db
         }
         public QueryCacheItem GetQuery(OeCacheContext cacheContext)
         {
-            QueryCacheItem cacheItem;
-            _cache.TryGetValue(cacheContext, out cacheItem);
+            _cache.TryGetValue(cacheContext, out QueryCacheItem cacheItem);
             return cacheItem;
         }
 

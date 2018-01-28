@@ -1,6 +1,7 @@
 ﻿using Microsoft.OData.UriParser;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq.Expressions;
 
 namespace OdataToEntity.Parsers
@@ -24,7 +25,7 @@ namespace OdataToEntity.Parsers
             for (int i = 0; i < constantExpressions.Count; i++)
             {
                 ConstantExpression constantExpression = constantExpressions[i];
-                String parameterName = "__p_" + i.ToString();
+                String parameterName = "__p_" + i.ToString(CultureInfo.InvariantCulture);
 
                 ConstantNode constantNode = constantMappings[constantExpression];
                 if (!_constantToParameterMapper.ContainsKey(constantNode))

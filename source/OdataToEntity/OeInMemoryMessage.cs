@@ -20,8 +20,7 @@ namespace OdataToEntity
 
         public String GetHeader(String headerName)
         {
-            String result;
-            _headers.TryGetValue(headerName, out result);
+            _headers.TryGetValue(headerName, out String result);
             return result;
         }
         public Stream GetStream()

@@ -26,10 +26,10 @@ namespace OdataToEntity
         {
             String contentType = GetConentType(requestStream, out ArraySegment<byte> readedBytes);
             var compositeStream = new CompositeReadStream(readedBytes, requestStream);
-            await ExecuteBatchAsync(compositeStream, responseStream, cancellationToken, contentType);
+            await ExecuteBatchAsync(compositeStream, responseStream, contentType, cancellationToken).ConfigureAwait(false);
             return contentType;
         }
-        public async Task ExecuteBatchAsync(Stream requestStream, Stream responseStream, CancellationToken cancellationToken, String contentType)
+        public async Task ExecuteBatchAsync(Stream requestStream, Stream responseStream, String contentType, CancellationToken cancellationToken)
         {
             var paser = new Parsers.OeBatchParser(_baseUri, _dataAdapter, _model);
             await paser.ExecuteAsync(requestStream, responseStream, contentType, cancellationToken).ConfigureAwait(false);
@@ -41,9 +41,9 @@ namespace OdataToEntity
             ODataUri odataUri = odataParser.ParseUri();
 
             if (odataUri.Path.LastSegment is OperationImportSegment)
-                await ExecuteOperationAsync(odataUri, headers, null, responseStream, cancellationToken);
+                await ExecuteOperationAsync(odataUri, headers, null, responseStream, cancellationToken).ConfigureAwait(false);
             else
-                await ExecuteQueryAsync(odataUri, headers, responseStream, cancellationToken);
+                await ExecuteQueryAsync(odataUri, headers, responseStream, cancellationToken).ConfigureAwait(false);
         }
         public async Task ExecuteQueryAsync(ODataUri odataUri, OeRequestHeaders headers, Stream responseStream, CancellationToken cancellationToken)
         {
@@ -53,7 +53,7 @@ namespace OdataToEntity
         public async Task ExecuteOperationAsync(ODataUri odataUri, OeRequestHeaders headers, Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
         {
             var parser = new OePostParser(_dataAdapter, _model);
-            await parser.ExecuteAsync(odataUri, requestStream, headers, responseStream, cancellationToken);
+            await parser.ExecuteAsync(odataUri, requestStream, headers, responseStream, cancellationToken).ConfigureAwait(false);
         }
         public async Task ExecutePostAsync(Uri requestUri, OeRequestHeaders headers, Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
         {
@@ -62,12 +62,12 @@ namespace OdataToEntity
             ODataUri odataUri = odataParser.ParseUri();
 
             if (odataUri.Path.LastSegment.Identifier == "$batch")
-                await ExecuteBatchAsync(responseStream, responseStream, cancellationToken, headers.ContentType);
+                await ExecuteBatchAsync(responseStream, responseStream, headers.ContentType, cancellationToken).ConfigureAwait(false);
             else
                 if (odataUri.Path.LastSegment is OperationImportSegment)
-                    await ExecuteOperationAsync(odataUri, headers, requestStream, responseStream, cancellationToken);
+                    await ExecuteOperationAsync(odataUri, headers, requestStream, responseStream, cancellationToken).ConfigureAwait(false);
                 else
-                    await ExecuteQueryAsync(odataUri, headers, responseStream, cancellationToken);
+                    await ExecuteQueryAsync(odataUri, headers, responseStream, cancellationToken).ConfigureAwait(false);
         }
         private static String GetConentType(Stream stream, out ArraySegment<byte> readedBytes)
         {

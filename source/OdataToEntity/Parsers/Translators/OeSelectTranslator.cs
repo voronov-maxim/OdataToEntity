@@ -235,7 +235,7 @@ namespace OdataToEntity.Parsers
                     selectAndExpand, queryContext.MetadataLevel, queryContext.NavigationNextLink));
 
             if (orderBy != null)
-                expressions.AddRange(CreateOrderByExpressions(source, orderBy));
+                expressions.AddRange(CreateOrderByExpressions(orderBy));
 
             if (expressions.Count == 0 && queryContext.SkipTokenParser != null)
             {
@@ -292,7 +292,7 @@ namespace OdataToEntity.Parsers
             List<OeEntryFactory> navigationLinks = GetNavigationLinks(itemExpressions, parameter);
             return OeEntryFactory.CreateEntryFactoryNested(entitySet, accessors, resourceInfo, navigationLinks);
         }
-        private List<Expression> CreateOrderByExpressions(Expression source, OrderByClause orderByClause)
+        private List<Expression> CreateOrderByExpressions(OrderByClause orderByClause)
         {
             var expressions = new List<Expression>();
 

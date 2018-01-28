@@ -1,10 +1,8 @@
-﻿using Microsoft.OData.Client;
-using ODataClient.Default;
+﻿using ODataClient.Default;
 using ODataClient.OdataToEntity.Test.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -23,34 +21,31 @@ namespace OdataToEntity.Test.AspClient
                 return lamda(orderContext);
         }
         [Fact]
-        public Task GetOrders_id_get()
+        public async Task GetOrders_id_get()
         {
             Container container = DbFixtureInitDb.CreateContainer();
-            Order[] orders = container.GetOrders(1, null, null).ToArray();
+            Order[] orders = await container.GetOrders(1, null, null).ToArrayAsync();
             var expected = Execute(c => c.GetOrders(1, null, null));
 
             Assert.Equal(expected.Length, orders.Length);
-            return Task.CompletedTask;
         }
         [Fact]
-        public Task GetOrders_name_get()
+        public async Task GetOrders_name_get()
         {
             Container container = DbFixtureInitDb.CreateContainer();
-            Order[] orders = container.GetOrders(null, "Order 1", null).ToArray();
+            Order[] orders = await container.GetOrders(null, "Order 1", null).ToArrayAsync();
             var expected = Execute(c => c.GetOrders(null, "Order 1", null));
 
             Assert.Equal(expected.Length, orders.Length);
-            return Task.CompletedTask;
         }
         [Fact]
-        public Task GetOrders_status_get()
+        public async Task GetOrders_status_get()
         {
             Container container = DbFixtureInitDb.CreateContainer();
-            Order[] orders = container.GetOrders(null, null, OrderStatus.Processing).ToArray();
+            Order[] orders = await container.GetOrders(null, null, OrderStatus.Processing).ToArrayAsync();
             var expected = Execute(c => c.GetOrders(null, null, Model.OrderStatus.Processing));
 
             Assert.Equal(expected.Length, orders.Length);
-            return Task.CompletedTask;
         }
         [Fact]
         public async Task ScalarFunction_get()
@@ -71,24 +66,22 @@ namespace OdataToEntity.Test.AspClient
             Assert.Equal(expected, value);
         }
         [Fact]
-        public Task TableFunction_get()
+        public async Task TableFunction_get()
         {
             Container container = DbFixtureInitDb.CreateContainer();
-            Order[] orders = container.TableFunction().ToArray();
+            Order[] orders = await container.TableFunction().ToArrayAsync();
             var expected = Execute(c => c.TableFunction());
 
             Assert.Equal(expected.Length, orders.Length);
-            return Task.CompletedTask;
         }
         [Fact]
-        public Task TableFunctionWithParameters_get()
+        public async Task TableFunctionWithParameters_get()
         {
             Container container = DbFixtureInitDb.CreateContainer();
-            Order[] orders = container.TableFunctionWithParameters(1, "Order1", null).ToArray();
+            Order[] orders = await container.TableFunctionWithParameters(1, "Order1", null).ToArrayAsync();
             var expected = Execute(c => c.TableFunctionWithParameters(1, "Order1", null));
 
             Assert.Equal(expected.Length, orders.Length);
-            return Task.CompletedTask;
         }
     }
 }

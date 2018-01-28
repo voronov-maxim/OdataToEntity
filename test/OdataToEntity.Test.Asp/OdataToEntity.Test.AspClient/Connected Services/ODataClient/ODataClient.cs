@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-// Generation date: 22.10.2017 17:42:46
+// Generation date: 24.01.2018 13:07:11
 namespace ODataClient.OdataToEntity.Test.Model
 {
     /// <summary>
@@ -90,11 +90,13 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// Create a new Category object.
         /// </summary>
         /// <param name="ID">Initial value of Id.</param>
+        /// <param name="name">Initial value of Name.</param>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        public static Category CreateCategory(int ID)
+        public static Category CreateCategory(int ID, string name)
         {
             Category category = new Category();
             category.Id = ID;
+            category.Name = name;
             return category;
         }
         /// <summary>
@@ -164,7 +166,7 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// There are no comments for Property DateTime in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        public global::System.Nullable<global::System.DateTime> DateTime
+        public global::System.Nullable<global::System.DateTimeOffset> DateTime
         {
             get
             {
@@ -178,7 +180,7 @@ namespace ODataClient.OdataToEntity.Test.Model
             }
         }
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        private global::System.Nullable<global::System.DateTime> _DateTime;
+        private global::System.Nullable<global::System.DateTimeOffset> _DateTime;
         partial void OnDateTimeChanging(global::System.Nullable<global::System.DateTimeOffset> value);
         partial void OnDateTimeChanged();
         /// <summary>
@@ -303,12 +305,16 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// <summary>
         /// Create a new Customer object.
         /// </summary>
+        /// <param name="country">Initial value of Country.</param>
         /// <param name="ID">Initial value of Id.</param>
+        /// <param name="name">Initial value of Name.</param>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        public static Customer CreateCustomer(int ID)
+        public static Customer CreateCustomer(string country, int ID, string name)
         {
             Customer customer = new Customer();
+            customer.Country = country;
             customer.Id = ID;
+            customer.Name = name;
             return customer;
         }
         /// <summary>
@@ -1584,15 +1590,19 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// <summary>
         /// Create a new Order object.
         /// </summary>
+        /// <param name="customerCountry">Initial value of CustomerCountry.</param>
         /// <param name="customerId">Initial value of CustomerId.</param>
         /// <param name="ID">Initial value of Id.</param>
+        /// <param name="name">Initial value of Name.</param>
         /// <param name="status">Initial value of Status.</param>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        public static Order CreateOrder(int customerId, int ID, global::ODataClient.OdataToEntity.Test.Model.OrderStatus status)
+        public static Order CreateOrder(string customerCountry, int customerId, int ID, string name, global::ODataClient.OdataToEntity.Test.Model.OrderStatus status)
         {
             Order order = new Order();
+            order.CustomerCountry = customerCountry;
             order.CustomerId = customerId;
             order.Id = ID;
+            order.Name = name;
             order.Status = status;
             return order;
         }
@@ -1887,13 +1897,15 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// </summary>
         /// <param name="ID">Initial value of Id.</param>
         /// <param name="orderId">Initial value of OrderId.</param>
+        /// <param name="product">Initial value of Product.</param>
         /// <param name="order">Initial value of Order.</param>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        public static OrderItem CreateOrderItem(int ID, int orderId, global::ODataClient.OdataToEntity.Test.Model.Order order)
+        public static OrderItem CreateOrderItem(int ID, int orderId, string product, global::ODataClient.OdataToEntity.Test.Model.Order order)
         {
             OrderItem orderItem = new OrderItem();
             orderItem.Id = ID;
             orderItem.OrderId = orderId;
+            orderItem.Product = product;
             if ((order == null))
             {
                 throw new global::System.ArgumentNullException("order");
@@ -2470,7 +2482,7 @@ namespace ODataClient.Default
           <PropertyRef Name=""Id"" />
         </Key>
         <Property Name=""Id"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Name"" Type=""Edm.String"" />
+        <Property Name=""Name"" Type=""Edm.String"" Nullable=""false"" />
         <Property Name=""ParentId"" Type=""Edm.Int32"" />
         <Property Name=""DateTime"" Type=""Edm.DateTimeOffset"" />
         <NavigationProperty Name=""Parent"" Type=""OdataToEntity.Test.Model.Category"" Partner=""Children"">
@@ -2484,9 +2496,9 @@ namespace ODataClient.Default
           <PropertyRef Name=""Id"" />
         </Key>
         <Property Name=""Address"" Type=""Edm.String"" />
-        <Property Name=""Country"" Type=""Edm.String"" />
+        <Property Name=""Country"" Type=""Edm.String"" Nullable=""false"" />
         <Property Name=""Id"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Name"" Type=""Edm.String"" />
+        <Property Name=""Name"" Type=""Edm.String"" Nullable=""false"" />
         <Property Name=""Sex"" Type=""OdataToEntity.Test.Model.Sex"" />
         <NavigationProperty Name=""AltOrders"" Type=""Collection(OdataToEntity.Test.Model.Order)"" Partner=""AltCustomer"" />
         <NavigationProperty Name=""Orders"" Type=""Collection(OdataToEntity.Test.Model.Order)"" Partner=""Customer"" />
@@ -2534,11 +2546,11 @@ namespace ODataClient.Default
         </Key>
         <Property Name=""AltCustomerCountry"" Type=""Edm.String"" />
         <Property Name=""AltCustomerId"" Type=""Edm.Int32"" />
-        <Property Name=""CustomerCountry"" Type=""Edm.String"" />
+        <Property Name=""CustomerCountry"" Type=""Edm.String"" Nullable=""false"" />
         <Property Name=""CustomerId"" Type=""Edm.Int32"" Nullable=""false"" />
         <Property Name=""Date"" Type=""Edm.DateTimeOffset"" />
         <Property Name=""Id"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Name"" Type=""Edm.String"" />
+        <Property Name=""Name"" Type=""Edm.String"" Nullable=""false"" />
         <Property Name=""Status"" Type=""OdataToEntity.Test.Model.OrderStatus"" Nullable=""false"" />
         <NavigationProperty Name=""AltCustomer"" Type=""OdataToEntity.Test.Model.Customer"" Partner=""AltOrders"">
           <ReferentialConstraint Property=""AltCustomerCountry"" ReferencedProperty=""Country"" />
@@ -2558,7 +2570,7 @@ namespace ODataClient.Default
         <Property Name=""Id"" Type=""Edm.Int32"" Nullable=""false"" />
         <Property Name=""OrderId"" Type=""Edm.Int32"" Nullable=""false"" />
         <Property Name=""Price"" Type=""Edm.Decimal"" />
-        <Property Name=""Product"" Type=""Edm.String"" />
+        <Property Name=""Product"" Type=""Edm.String"" Nullable=""false"" />
         <NavigationProperty Name=""Order"" Type=""OdataToEntity.Test.Model.Order"" Nullable=""false"" Partner=""Items"">
           <ReferentialConstraint Property=""OrderId"" ReferencedProperty=""Id"" />
         </NavigationProperty>
@@ -2636,7 +2648,7 @@ namespace ODataClient.Default
                 global::System.Xml.XmlReader reader = CreateXmlReader(Edmx);
                 try
                 {
-                    return global::Microsoft.OData.Edm.Csdl.EdmxReader.Parse(reader);
+                    return global::Microsoft.OData.Edm.Csdl.CsdlReader.Parse(reader);
                 }
                 finally
                 {

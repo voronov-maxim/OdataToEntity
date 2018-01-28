@@ -23,6 +23,30 @@ namespace OdataToEntity.ModelBuilder
 
             throw new InvalidOperationException("Add OeClrTypeAnnotation for " + edmType.FullTypeName());
         }
+        public static IEdmTypeReference GetEdmTypeReference(this IEdmModel edmModel, Type clrType)
+        {
+            IEdmTypeReference edmTypeRef;
+            bool nullable;
+            Type underlyingType = Nullable.GetUnderlyingType(clrType);
+            if (underlyingType == null)
+                nullable = clrType.IsClass;
+            else
+            {
+                clrType = underlyingType;
+                nullable = true;
+            }
+
+            IEdmPrimitiveType primitiveEdmType = PrimitiveTypeHelper.GetPrimitiveType(clrType);
+            if (primitiveEdmType == null)
+            {
+                var edmEnumType = (IEdmEnumType)edmModel.FindType(clrType.FullName);
+                edmTypeRef = new EdmEnumTypeReference(edmEnumType, nullable);
+            }
+            else
+                edmTypeRef = EdmCoreModel.Instance.GetPrimitive(primitiveEdmType.PrimitiveKind, nullable);
+
+            return edmTypeRef;
+        }
         public static PropertyInfo GetPropertyIgnoreCase(this Type declaringType, String propertyName)
         {
             return declaringType.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase);

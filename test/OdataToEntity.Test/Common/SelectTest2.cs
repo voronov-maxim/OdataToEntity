@@ -24,7 +24,7 @@ namespace OdataToEntity.Test
             var uri = new Uri(odataUri.ServiceRoot, request);
 
             var response = new MemoryStream();
-            await parser.ExecuteQueryAsync(odataUri, OeRequestHeaders.JsonDefault, response, CancellationToken.None);
+            await parser.ExecuteQueryAsync(odataUri, OeRequestHeaders.JsonDefault, response, CancellationToken.None).ConfigureAwait(false);
             response.Position = 0;
 
             var actualCounts = new List<long>();
@@ -50,7 +50,7 @@ namespace OdataToEntity.Test
             var parser = new OeParser(odataUri.ServiceRoot, Fixture.OeDataAdapter, Fixture.EdmModel);
 
             var response = new MemoryStream();
-            await parser.ExecuteQueryAsync(odataUri, OeRequestHeaders.JsonDefault, response, CancellationToken.None);
+            await parser.ExecuteQueryAsync(odataUri, OeRequestHeaders.JsonDefault, response, CancellationToken.None).ConfigureAwait(false);
             response.Position = 0;
 
             var reader = new ResponseReader(Fixture.EdmModel, Fixture.OeDataAdapter.EntitySetMetaAdapters);
@@ -71,7 +71,7 @@ namespace OdataToEntity.Test
             var parser = new OeParser(odataUri.ServiceRoot, Fixture.OeDataAdapter, Fixture.EdmModel);
 
             var response = new MemoryStream();
-            await parser.ExecuteQueryAsync(odataUri, OeRequestHeaders.JsonDefault, response, CancellationToken.None);
+            await parser.ExecuteQueryAsync(odataUri, OeRequestHeaders.JsonDefault, response, CancellationToken.None).ConfigureAwait(false);
             response.Position = 0;
 
             var reader = new ResponseReader(Fixture.EdmModel, Fixture.OeDataAdapter.EntitySetMetaAdapters);
@@ -98,7 +98,7 @@ namespace OdataToEntity.Test
             do
             {
                 var response = new MemoryStream();
-                await parser.ExecuteGetAsync(uri, OeRequestHeaders.JsonDefault, response, CancellationToken.None);
+                await parser.ExecuteGetAsync(uri, OeRequestHeaders.JsonDefault, response, CancellationToken.None).ConfigureAwait(false);
                 response.Position = 0;
 
                 var reader = new ResponseReader(Fixture.EdmModel, Fixture.OeDataAdapter.EntitySetMetaAdapters);
@@ -113,7 +113,7 @@ namespace OdataToEntity.Test
                     ODataResourceSetBase resourceSet = reader.GetResourceSet(navigationProperty);
 
                     var navigationPropertyResponse = new MemoryStream();
-                    await navigationPropertyParser.ExecuteGetAsync(resourceSet.NextPageLink, OeRequestHeaders.JsonDefault, navigationPropertyResponse, CancellationToken.None);
+                    await navigationPropertyParser.ExecuteGetAsync(resourceSet.NextPageLink, OeRequestHeaders.JsonDefault, navigationPropertyResponse, CancellationToken.None).ConfigureAwait(false);
                     navigationPropertyResponse.Position = 0;
 
                     var navigationPropertyReader = new ResponseReader(Fixture.EdmModel, Fixture.OeDataAdapter.EntitySetMetaAdapters);
@@ -137,7 +137,7 @@ namespace OdataToEntity.Test
 
             var exprectedResponse = new MemoryStream();
             var expectedParser = new OeParser(odataUri.ServiceRoot, Fixture.OeDataAdapter, Fixture.EdmModel);
-            await expectedParser.ExecuteGetAsync(requestUri, OeRequestHeaders.JsonDefault, exprectedResponse, CancellationToken.None);
+            await expectedParser.ExecuteGetAsync(requestUri, OeRequestHeaders.JsonDefault, exprectedResponse, CancellationToken.None).ConfigureAwait(false);
             exprectedResponse.Position = 0;
 
             var exprectedReader = new ResponseReader(Fixture.EdmModel, Fixture.OeDataAdapter.EntitySetMetaAdapters);
@@ -159,7 +159,7 @@ namespace OdataToEntity.Test
             do
             {
                 var response = new MemoryStream();
-                await parser.ExecuteGetAsync(uri, OeRequestHeaders.JsonDefault, response, CancellationToken.None);
+                await parser.ExecuteGetAsync(uri, OeRequestHeaders.JsonDefault, response, CancellationToken.None).ConfigureAwait(false);
                 var reader = new ResponseReader(Fixture.EdmModel, Fixture.OeDataAdapter.EntitySetMetaAdapters);
                 response.Position = 0;
 

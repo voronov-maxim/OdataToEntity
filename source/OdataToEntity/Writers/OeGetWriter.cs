@@ -61,9 +61,9 @@ namespace OdataToEntity.Writers
                 nextOdataUri.QueryCount = null;
                 nextOdataUri.Top = queryContext.PageSize;
                 nextOdataUri.Skip = null;
+                nextOdataUri.SkipToken = skipToken;
 
-                Uri uri = nextOdataUri.BuildUri(ODataUrlKeyDelimiter.Parentheses);
-                return new Uri(uri.OriginalString + "&$skiptoken=" + skipToken, UriKind.Relative);
+                return nextOdataUri.BuildUri(ODataUrlKeyDelimiter.Parentheses);
             }
             private ODataResource CreateEntry(OeEntryFactory entryFactory, Object entity)
             {
@@ -72,7 +72,7 @@ namespace OdataToEntity.Writers
                     entry.Id = OeUriHelper.ComputeId(QueryContext.ODataUri.ServiceRoot, entryFactory.EntitySet, entry);
                 return entry;
             }
-            public async Task SerializeAsync(OeEntryFactory entryFactory, Db.OeAsyncEnumerator asyncEnumerator, Stream stream, OeQueryContext queryContext)
+            public async Task SerializeAsync(OeEntryFactory entryFactory, Db.OeAsyncEnumerator asyncEnumerator, OeQueryContext queryContext)
             {
                 var resourceSet = new ODataResourceSet() { Count = asyncEnumerator.Count };
                 Writer.WriteStart(resourceSet);
@@ -93,20 +93,11 @@ namespace OdataToEntity.Writers
                             WriteNavigationNextLink(entry, entryFactory.EntitySet, item);
 
                     Writer.WriteEnd();
-
                     count++;
-                    if (count == queryContext.PageSize)
-                    {
-                        if (await asyncEnumerator.MoveNextAsync())
-                            resourceSet.NextPageLink = BuildNextPageLink(queryContext, queryContext.SkipTokenParser.GetSkipToken(value));
-                        break;
-                    }
                 }
 
-                if (queryContext.PageSize > 0 && asyncEnumerator.Count.GetValueOrDefault() > count)
-                {
+                if (queryContext.PageSize > 0 && count > 0 && (asyncEnumerator.Count ?? Int32.MaxValue) > count)
                     resourceSet.NextPageLink = BuildNextPageLink(queryContext, queryContext.SkipTokenParser.GetSkipToken(value));
-                }
 
                 Writer.WriteEnd();
             }
@@ -190,7 +181,7 @@ namespace OdataToEntity.Writers
                 ODataUtils.SetHeadersForPayload(messageWriter, ODataPayloadKind.ResourceSet);
                 ODataWriter writer = messageWriter.CreateODataResourceSetWriter(entryFactory.EntitySet, entryFactory.EntityType);
                 var getWriter = new GetWriter(queryContext, writer);
-                await getWriter.SerializeAsync(entryFactory, asyncEnumerator, stream, queryContext);
+                await getWriter.SerializeAsync(entryFactory, asyncEnumerator, queryContext).ConfigureAwait(false);
             }
         }
     }

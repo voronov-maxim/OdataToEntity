@@ -118,4 +118,43 @@ var response = new MemoryStream();
 await parser.ExecuteGetAsync(new Uri("http://dummy/GetOrders(name='Order 1',id=1,status=null)"), OeRequestHeaders.JsonDefault, response, CancellationToken.None);
 ```
 
+### Server-Driven Paging
+
+To use responses that include only a partial set of the items identified by the request indicate maximum page size through the set property *OeParser.PageSize*. The service serializes the returned continuation token into the $skiptoken query option and returns it as part of the next link to the client. If request returns result set sorted by nullable property, should set *OeDataAdapter.IsDatabaseNullHighestValue* (SQLite, MySql, Sql Server set *false*, for PostgreSql, Oracle set *true*).
+```c#
+//Create adapter data access, where OrderContext your DbContext
+var dataAdapter = new OeEfCoreDataAdapter<Model.OrderContext>(Model.OrderContext.CreateOptions())
+{
+  IsDatabaseNullHighestValue = true //PostgreSql
+};
+//Create query parser
+var parser = new OeParser(new Uri("http://dummy"), dataAdapter, dataAdapter.BuildEdmModel())
+{
+  PageSize = 10
+};
+//Query
+var uri = new Uri("http://dummy/Orders?$select=Name&$orderby=Date");
+//The result of the query
+var response = new MemoryStream();
+//Execute query
+await parser.ExecuteGetAsync(uri, OeRequestHeaders.JsonDefault, response, CancellationToken.None);
+```
+
+To use server side paging in expanded to-many navigation properties, should set *OeParser.NavigationNextLink = true*
+```c#
+var parser = new OeParser(new Uri("http://dummy"), dataAdapter, dataAdapter.BuildEdmModel())
+{
+  PageSize = 1,
+  NavigationNextLink = true
+};
+//Query
+var uri = new Uri("http://dummy/Orders?$expand=Items");
+```
+
+### Data context pooling
+
 For use pooling (DbContextPool) in Entity Framework Core create instance OeEfCoreDataAdapter use constructor with DbContextOptions parameter.
+```c#
+//Create adapter data access, where OrderContext your DbContext
+var dataAdapter = new OeEfCoreDataAdapter<Model.OrderContext>(Model.OrderContext.CreateOptions());
+```

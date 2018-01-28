@@ -162,7 +162,7 @@ namespace OdataToEntity.Test
                 foreach (KeyValuePair<PropertyInfo, ODataResourceSetBase> propertyResourceSet in GetResourceSets(entity))
                 {
                     response.SetLength(0);
-                    await parser.ExecuteGetAsync(propertyResourceSet.Value.NextPageLink, OeRequestHeaders.JsonDefault, response, token);
+                    await parser.ExecuteGetAsync(propertyResourceSet.Value.NextPageLink, OeRequestHeaders.JsonDefault, response, token).ConfigureAwait(false);
                     response.Position = 0;
 
                     var navigationPropertyReader = new ResponseReader(parser.Model, parser.DataAdapter.EntitySetMetaAdapters);

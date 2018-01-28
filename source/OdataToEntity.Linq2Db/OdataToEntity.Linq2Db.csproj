@@ -43,7 +43,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="linq2db" Version="1.9.0" />
+    <PackageReference Include="linq2db" Version="1.10.1" />
   </ItemGroup>
   
   <ItemGroup>

@@ -3,6 +3,7 @@ using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -40,7 +41,7 @@ namespace OdataToEntity.Parsers
                 return Expression.Constant(value);
             }
 
-            value = Convert.ChangeType(constantExpression.Value, targetType);
+            value = Convert.ChangeType(constantExpression.Value, targetType, CultureInfo.InvariantCulture);
             return Expression.Constant(value);
         }
         public static NewExpression CreateTupleExpression(IReadOnlyList<Expression> expressions)
@@ -126,7 +127,7 @@ namespace OdataToEntity.Parsers
                     tupleType = typeof(Tuple<,,,,,,,>);
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException("Tuple out of range");
+                    throw new ArgumentOutOfRangeException(nameof(typeArguments), "Tuple out of range");
             }
 
             return tupleType.MakeGenericType(typeArguments);

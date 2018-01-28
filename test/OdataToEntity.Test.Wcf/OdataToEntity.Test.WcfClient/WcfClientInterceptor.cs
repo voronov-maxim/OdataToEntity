@@ -1,5 +1,5 @@
-﻿using Microsoft.OData.Client;
-using Microsoft.OData.Core;
+﻿using Microsoft.OData;
+using Microsoft.OData.Client;
 using OdataToEntity.Test.WcfService;
 using System;
 using System.IO;

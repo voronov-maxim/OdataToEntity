@@ -136,7 +136,7 @@ namespace OdataToEntity.Parsers.UriCompare
             return _queryNodeComparer.Compare(node1.Expression, node2.Expression) &&
                 EnumerableComparer.Compare(node1.ChildTransformations, node2.ChildTransformations, CompareGroupByPropertyNode);
         }
-        private bool CompareLevelsClause(LevelsClause level1, LevelsClause level2)
+        private static bool CompareLevelsClause(LevelsClause level1, LevelsClause level2)
         {
             if (level1 == level2)
                 return true;

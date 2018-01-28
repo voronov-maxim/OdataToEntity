@@ -17,20 +17,24 @@ namespace OdataToEntity.AspServer
     public sealed class OdataToEntityMiddleware
     {
         private readonly PathString _apiPath;
-        private readonly Uri _baseUri;
-
         private OeDataAdapter _dataAdapter;
         private readonly IEdmModel _edmModel;
+        private readonly RequestDelegate _next;
 
         public OdataToEntityMiddleware(RequestDelegate next, PathString apiPath, OeDataAdapter dataAdapter)
         {
+            _next = next;
             _apiPath = apiPath;
-            _baseUri = new Uri("http://dummy" + apiPath);
 
             _dataAdapter = dataAdapter;
             _edmModel = _dataAdapter.BuildEdmModelFromEfCoreModel();
         }
 
+        private static Uri GetBaseUri(HttpContext httpContext)
+        {
+            var rootUri = new Uri(httpContext.Request.Scheme + "://" + httpContext.Request.Host);
+            return new Uri(rootUri, httpContext.Request.PathBase);
+        }
         private static bool GetCsdlSchema(IEdmModel edmModel, Stream stream)
         {
             IEnumerable<EdmError> errors;
@@ -46,21 +50,25 @@ namespace OdataToEntity.AspServer
                 InvokeMetadata(httpContext);
             else if (httpContext.Request.Path == "/$batch")
                 await InvokeBatch(httpContext);
-            else
+            else if (httpContext.Request.PathBase == _apiPath)
                 await Invoke(httpContext, httpContext.Request.Path);
+            else
+                await _next(httpContext);
         }
         private async Task Invoke(HttpContext httpContext, PathString remaining)
         {
-            var uri = new Uri(_baseUri.OriginalString + remaining + httpContext.Request.QueryString);
+            var baseUri = GetBaseUri(httpContext);
+            var uri = new Uri(baseUri.OriginalString + remaining + httpContext.Request.QueryString);
+
             var requestHeaders = (FrameRequestHeaders)httpContext.Request.Headers;
             OeRequestHeaders headers = OeRequestHeaders.Parse(requestHeaders.HeaderAccept);
-            var parser = new OeParser(_baseUri, _dataAdapter, _edmModel);
+            var parser = new OeParser(baseUri, _dataAdapter, _edmModel);
             await parser.ExecuteGetAsync(uri, new OeHttpRequestHeaders(headers, httpContext.Response), httpContext.Response.Body, CancellationToken.None);
         }
         private async Task InvokeBatch(HttpContext httpContext)
         {
             httpContext.Response.ContentType = httpContext.Request.ContentType;
-            var parser = new OeParser(_baseUri, _dataAdapter, _edmModel);
+            var parser = new OeParser(GetBaseUri(httpContext), _dataAdapter, _edmModel);
             await parser.ExecuteBatchAsync(httpContext.Request.Body, httpContext.Response.Body,
                 CancellationToken.None, httpContext.Request.ContentType);
         }

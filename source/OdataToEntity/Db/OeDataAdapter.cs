@@ -20,7 +20,7 @@ namespace OdataToEntity.Db
         }
 
         public abstract void CloseDataContext(Object dataContext);
-        protected IQueryable CreateQuery(OeQueryContext queryContext, Object dataContext, OeConstantToVariableVisitor constantToVariableVisitor)
+        protected static IQueryable CreateQuery(OeQueryContext queryContext, Object dataContext, OeConstantToVariableVisitor constantToVariableVisitor)
         {
             IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dataContext);
             Expression expression = queryContext.CreateExpression(query, constantToVariableVisitor);
@@ -34,6 +34,7 @@ namespace OdataToEntity.Db
 
         protected internal OeQueryCache QueryCache => _queryCache;
         public abstract OeEntitySetMetaAdapterCollection EntitySetMetaAdapters { get; }
+        public bool IsDatabaseNullHighestValue { get; set; }
         public OeOperationAdapter OperationAdapter => _operationAdapter;
     }
 }

@@ -25,7 +25,7 @@ namespace OdataToEntity.Test
                 RequestUri = "OrderItems?$apply=filter(Order/Status eq OdataToEntity.Test.Model.OrderStatus'Processing')",
                 Expression = t => t.Where(i => i.Order.Status == OrderStatus.Processing)
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Fact]
         public async Task ApplyFilterGroupBy()
@@ -35,7 +35,7 @@ namespace OdataToEntity.Test
                 RequestUri = "Orders?$apply=filter(Status eq OdataToEntity.Test.Model.OrderStatus'Unknown')/groupby((Name), aggregate(Id with countdistinct as cnt))",
                 Expression = t => t.Where(o => o.Status == OrderStatus.Unknown).GroupBy(o => o.Name).Select(g => new { Name = g.Key, cnt = g.Count() })
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Fact]
         public async Task ApplyGroupBy()
@@ -45,7 +45,7 @@ namespace OdataToEntity.Test
                 RequestUri = "OrderItems?$apply=groupby((Product))",
                 Expression = t => t.GroupBy(i => i.Product).Select(g => new { Product = g.Key })
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Fact]
         public async Task ApplyGroupByAggregate()
@@ -66,7 +66,7 @@ namespace OdataToEntity.Test
                     cnt = g.Count()
                 })
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Fact]
         public async Task ApplyGroupByAggregateFilter()
@@ -80,7 +80,7 @@ namespace OdataToEntity.Test
                     sum = g.Sum(i => i.Price)
                 }).Where(a => a.OrderId == 2 && a.sum >= 4)
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Fact]
         public async Task ApplyGroupByAggregateFilterOrdinal()
@@ -94,7 +94,7 @@ namespace OdataToEntity.Test
                     sum = g.Sum(i => i.Price)
                 }).Where(a => a.OrderId == 2)
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Fact]
         public async Task ApplyGroupByFilter()
@@ -106,7 +106,7 @@ namespace OdataToEntity.Test
                     .Where(g => g.Key.OrderId == 1 && g.Key.Name == "Order 1")
                     .Select(g => new { OrderId = g.Key.OrderId, Order_Name = g.Key.Name })
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Fact]
         public async Task ApplyGroupByMul()
@@ -116,7 +116,7 @@ namespace OdataToEntity.Test
                 RequestUri = "OrderItems?$apply=groupby((OrderId), aggregate(Price mul Count with sum as sum))",
                 Expression = t => t.GroupBy(i => i.OrderId).Select(g => new { OrderId = g.Key, sum = g.Sum(i => i.Price * i.Count) })
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Fact]
         public async Task ApplyGroupByOrderBy()
@@ -128,7 +128,7 @@ namespace OdataToEntity.Test
                     .Select(g => new { OrderId = g.Key.OrderId, Order_Name = g.Key.Name })
                     .OrderByDescending(a => a.OrderId).ThenBy(a => a.Order_Name)
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Fact]
         public async Task ApplyGroupByOrderBySkipTop()
@@ -140,7 +140,7 @@ namespace OdataToEntity.Test
                     .Select(g => new { OrderId = g.Key.OrderId, Order_Name = g.Key.Name })
                     .OrderByDescending(a => a.OrderId).ThenBy(a => a.Order_Name).Skip(1).Take(1)
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Fact]
         public async Task ApplyGroupBySkip()
@@ -150,7 +150,7 @@ namespace OdataToEntity.Test
                 RequestUri = "OrderItems?$apply=groupby((OrderId))&$orderby=OrderId&$skip=1",
                 Expression = t => t.GroupBy(i => i.OrderId).OrderBy(g => g.Key).Skip(1).Select(g => new { OrderId = g.Key })
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Fact]
         public async Task ApplyGroupByTop()
@@ -160,7 +160,7 @@ namespace OdataToEntity.Test
                 RequestUri = "OrderItems?$apply=groupby((OrderId))&$top=1",
                 Expression = t => t.GroupBy(i => i.OrderId).Take(1).Select(g => new { OrderId = g.Key })
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Fact]
         public async Task ApplyGroupByVirtualCount()
@@ -176,7 +176,7 @@ namespace OdataToEntity.Test
                     }).Where(a => a.dcnt != a.cnt)
 
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Fact]
         public async Task Count()
@@ -186,7 +186,7 @@ namespace OdataToEntity.Test
                 RequestUri = "Orders/$count",
                 Expression = t => t.Count(),
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0, false)]
@@ -202,7 +202,7 @@ namespace OdataToEntity.Test
                 NavigationNextLink = navigationNextLink,
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0, false)]
@@ -218,7 +218,7 @@ namespace OdataToEntity.Test
                 NavigationNextLink = navigationNextLink,
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0, false)]
@@ -234,7 +234,7 @@ namespace OdataToEntity.Test
                 NavigationNextLink = navigationNextLink,
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0, false)]
@@ -250,7 +250,7 @@ namespace OdataToEntity.Test
                 NavigationNextLink = navigationNextLink,
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0, false)]
@@ -266,7 +266,7 @@ namespace OdataToEntity.Test
                 NavigationNextLink = navigationNextLink,
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0, false)]
@@ -282,7 +282,7 @@ namespace OdataToEntity.Test
                 NavigationNextLink = navigationNextLink,
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0, false)]
@@ -298,7 +298,7 @@ namespace OdataToEntity.Test
                 NavigationNextLink = navigationNextLink,
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0, false)]
@@ -314,7 +314,7 @@ namespace OdataToEntity.Test
                 NavigationNextLink = navigationNextLink,
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0, false)]
@@ -330,7 +330,7 @@ namespace OdataToEntity.Test
                 NavigationNextLink = navigationNextLink,
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0, false)]
@@ -346,7 +346,7 @@ namespace OdataToEntity.Test
                 NavigationNextLink = navigationNextLink,
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0, false)]
@@ -362,7 +362,7 @@ namespace OdataToEntity.Test
                 NavigationNextLink = navigationNextLink,
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -375,7 +375,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(o => o.Items.All(i => i.Price >= 2.1m)),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -388,7 +388,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(o => o.Items.Any(i => i.Count > 2)),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Fact]
         public async Task FilterApplyGroupBy()
@@ -398,7 +398,7 @@ namespace OdataToEntity.Test
                 RequestUri = "Orders?$filter=Status eq OdataToEntity.Test.Model.OrderStatus'Unknown'&$apply=groupby((Name), aggregate(Id with countdistinct as cnt))",
                 Expression = t => t.Where(o => o.Status == OrderStatus.Unknown).GroupBy(o => o.Name).Select(g => new { Name = g.Key, cnt = g.Count() })
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -411,7 +411,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(o => o.Items.Count() > 2),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -425,7 +425,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(o => o.DateTime >= dt),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -438,7 +438,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(o => o.DateTime == null),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -451,7 +451,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(o => o.Date >= DateTimeOffset.Parse("2016-07-04T19:10:10.8237573+03:00")),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -464,7 +464,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(o => o.Date == null),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -477,7 +477,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(o => o.Date.GetValueOrDefault().Year == 2016 && o.Date.GetValueOrDefault().Month > 3 && o.Date.GetValueOrDefault().Day < 20),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -490,7 +490,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(c => c.DateTime.GetValueOrDefault().Year == 2016 && c.DateTime.GetValueOrDefault().Month > 3 && c.DateTime.GetValueOrDefault().Day < 20),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -503,7 +503,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(i => i.Price > 2),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -516,7 +516,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(i => i.Price == null),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -529,7 +529,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(c => c.Sex == Sex.Female),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -542,7 +542,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(c => c.Sex == null),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -555,7 +555,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(c => c.Sex != null && c.Address != null).OrderBy(c => c.Country).ThenBy(c => c.Id),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -568,7 +568,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(c => c.Sex == null && c.Address != null),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -581,7 +581,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(c => c.Sex == null && c.Address == null),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -594,7 +594,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(i => i.Count >= 2),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -607,7 +607,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(i => i.Count == null),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -620,7 +620,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(i => i.Order.Customer.Name == "Ivan"),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -633,7 +633,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(c => (c.Name + " hello world") == "Ivan hello world"),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -646,7 +646,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(c => c.Name.Contains("sh")),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -659,7 +659,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(c => c.Address == "Tula"),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -672,7 +672,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(c => String.Compare(c.Address, "Tula") >= 0),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -685,7 +685,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(c => String.Compare(c.Address, "Tula") > 0).OrderBy(c => c.Country).ThenBy(c => c.Id),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -698,7 +698,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(c => String.Compare(c.Address, "Tula") <= 0).OrderBy(c => c.Country).ThenBy(c => c.Id),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -711,7 +711,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(c => String.Compare(c.Address, "Tula") < 0).OrderBy(c => c.Country).ThenBy(c => c.Id),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -724,7 +724,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(c => c.Address != "Tula").OrderBy(c => c.Country).ThenBy(c => c.Id),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -737,7 +737,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(c => c.Name.EndsWith("asha")),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -750,7 +750,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(c => c.Name.Length == 5),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -763,7 +763,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(c => c.Name.IndexOf("asha") == 1),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -776,7 +776,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(c => c.Name.StartsWith("S")),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -789,7 +789,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(c => c.Name.Substring(1, 1) == c.Name.Substring(4)),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -802,7 +802,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(c => c.Name.ToLower() == "sasha"),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -815,7 +815,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(c => c.Name.ToUpper() == "SASHA"),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -828,7 +828,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(c => (c.Name + " ").Trim() == c.Name.Trim()).OrderBy(c => c.Country).ThenBy(c => c.Id),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -841,7 +841,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(c => c.Country == "RU" && c.Id == 1),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0, false)]
@@ -857,7 +857,7 @@ namespace OdataToEntity.Test
                 NavigationNextLink = navigationNextLink,
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -870,7 +870,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(o => o.Id == 1).SelectMany(o => o.Items).Where(i => i.Count >= 2),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -883,7 +883,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(i => i.Id == 1).Select(i => i.Order.Customer),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Fact]
         public async Task KeyNavigationGroupBy()
@@ -897,7 +897,7 @@ namespace OdataToEntity.Test
                     min = g.Min(a => a.Status)
                 })
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -910,7 +910,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(o => o.Id == 1).SelectMany(o => o.Items).OrderBy(i => i.Count).ThenBy(i => i.Price),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -923,7 +923,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.OrderByDescending(i => i.Count).ThenBy(i => i.Order.Customer.Name).ThenByDescending(i => i.Id).Select(i => new { i.Product, i.Id }),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -936,7 +936,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.OrderByDescending(i => i.Order.Customer.Name).ThenBy(i => i.Count).ThenByDescending(i => i.Id).Select(i => new { i.Product, i.Id }),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -949,7 +949,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.OrderByDescending(i => i.Id).ThenByDescending(i => i.Count).ThenByDescending(i => i.Price),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Fact]
         public async Task OrderByNavigation()
@@ -959,7 +959,7 @@ namespace OdataToEntity.Test
                 RequestUri = "OrderItems?$orderby=Order/Customer/Sex desc,Order/Customer/Name,Id desc",
                 Expression = t => t.OrderByDescending(i => i.Order.Customer.Sex).ThenBy(i => i.Order.Customer.Name).ThenByDescending(i => i.Id)
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0, false)]
@@ -977,7 +977,7 @@ namespace OdataToEntity.Test
                 NavigationNextLink = navigationNextLink,
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -990,7 +990,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Select(o => new { o.AltCustomer, o.AltCustomerId, o.Customer, o.CustomerId, o.Date, o.Id, o.Items, o.Name, o.Status }).OrderBy(o => o.Id),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -1003,7 +1003,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Select(o => new { o.Name }),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -1016,7 +1016,7 @@ namespace OdataToEntity.Test
                 Expression = t => t,
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Fact]
         public async Task TopSkip()
@@ -1026,7 +1026,7 @@ namespace OdataToEntity.Test
                 RequestUri = "Customers?$orderby=Id&$top=3&$skip=2",
                 Expression = t => t.OrderBy(c => c.Id).Skip(2).Take(3)
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
 
         private DbFixtureInitDb Fixture => _fixture;

@@ -4,6 +4,7 @@ using Microsoft.OData.UriParser.Aggregation;
 using OdataToEntity.ModelBuilder;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -66,10 +67,10 @@ namespace OdataToEntity.Parsers
                 switch (aggMethod)
                 {
                     case AggregationMethod.Max:
-                        aggFunc = Enumerable.Max<Object, Object>;
+                        aggFunc = Enumerable.Max;
                         break;
                     case AggregationMethod.Min:
-                        aggFunc = Enumerable.Min<Object, Object>;
+                        aggFunc = Enumerable.Min;
                         break;
                     default:
                         throw new InvalidOperationException($"Enumerable.{methodName} not found"); ;
@@ -233,20 +234,7 @@ namespace OdataToEntity.Parsers
         }
         private static AggProperty CreateEdmProperty(IEdmModel model, Type clrType, String name, bool isGroup)
         {
-            Type underlyingType = Nullable.GetUnderlyingType(clrType);
-            if (underlyingType != null)
-                clrType = underlyingType;
-
-            bool nullable = PrimitiveTypeHelper.IsNullable(clrType);
-            IEdmTypeReference edmTypeRef;
-            if (clrType.IsEnum)
-            {
-                var edmEnumType = (IEdmEnumType)model.FindType(clrType.FullName);
-                edmTypeRef = new EdmEnumTypeReference(edmEnumType, nullable);
-            }
-            else
-                edmTypeRef = PrimitiveTypeHelper.GetPrimitiveTypeRef(clrType, nullable);
-            return new AggProperty(name, edmTypeRef, isGroup);
+            return new AggProperty(name, model.GetEdmTypeReference(clrType), isGroup);
         }
         public OeEntryFactory CreateEntryFactory(Type entityType, IEdmEntitySet entitySet, Type sourceType)
         {
@@ -281,7 +269,7 @@ namespace OdataToEntity.Parsers
                     else
                         itemIndex = i - groupCount + 2;
 
-                    String propertyName = "Item" + itemIndex.ToString();
+                    String propertyName = "Item" + itemIndex.ToString(CultureInfo.InvariantCulture);
                     propertyInfo = source.Type.GetProperty(propertyName);
                     return Expression.Property(source, propertyInfo);
                 }

@@ -29,7 +29,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.Where(c => c.Column01 == 1).OrderBy(c => c.Column27).ThenBy(c => c.Column28).ThenBy(c => c.Column29).ThenBy(c => c.Column30),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -43,7 +43,7 @@ namespace OdataToEntity.Test
                 Expression = t => t,
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -56,7 +56,7 @@ namespace OdataToEntity.Test
                 Expression = t => t.OrderBy(c => c.Column27).ThenBy(c => c.Column28).ThenBy(c => c.Column29).ThenBy(c => c.Column30),
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
         [InlineData(0)]
@@ -69,7 +69,7 @@ namespace OdataToEntity.Test
                 Expression = t => t,
                 PageSize = pageSize
             };
-            await Fixture.Execute(parameters);
+            await Fixture.Execute(parameters).ConfigureAwait(false);
         }
 
         private ManyColumnsFixtureInitDb Fixture => _fixture;

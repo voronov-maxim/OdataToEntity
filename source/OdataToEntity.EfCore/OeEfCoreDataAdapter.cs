@@ -225,7 +225,7 @@ namespace OdataToEntity.EfCore
             if (base.QueryCache.AllowCache)
                 asyncEnumerable = GetFromCache<Object>(queryContext, (T)dataContext, base.QueryCache);
             else
-                asyncEnumerable = ((IQueryable<Object>)base.CreateQuery(queryContext, dataContext, new OeConstantToVariableVisitor())).AsAsyncEnumerable();
+                asyncEnumerable = ((IQueryable<Object>)CreateQuery(queryContext, dataContext, new OeConstantToVariableVisitor())).AsAsyncEnumerable();
 
             Db.OeAsyncEnumerator asyncEnumerator = new Db.OeAsyncEnumerator(asyncEnumerable.GetEnumerator(), cancellationToken);
             if (queryContext.CountExpression != null)

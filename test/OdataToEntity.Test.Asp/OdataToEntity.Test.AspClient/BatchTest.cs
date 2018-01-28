@@ -1,47 +1,61 @@
 ﻿using Microsoft.OData.Client;
 using ODataClient.Default;
 using ODataClient.OdataToEntity.Test.Model;
-using OdataToEntity.Test;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
 namespace OdataToEntity.Test.AspClient
 {
+    internal static class DataServiceQueryExtension
+    {
+        public async static Task<T[]> ToArrayAsync<T>(this IEnumerable<T> source)
+        {
+            return (await ((DataServiceQuery<T>)source).ExecuteAsync()).ToArray();
+        }
+        public async static Task<T> SingleAsync<T>(this IEnumerable<T> source)
+        {
+            return (await ((DataServiceQuery<T>)source).ExecuteAsync()).Single();
+        }
+        public async static Task<List<T>> ToListAsync<T>(this IEnumerable<T> source)
+        {
+            return (await ((DataServiceQuery<T>)source).ExecuteAsync()).ToList();
+        }
+    }
+
     internal sealed class BatchTest
     {
         [Fact]
-        public Task Add()
+        public async Task Add()
         {
             var fixture = new DbFixtureInitDb(true);
             fixture.Initalize();
 
             Container container = DbFixtureInitDb.CreateContainer();
             Add(container);
-            container.SaveChanges(SaveChangesOptions.BatchWithSingleChangeset);
+            await container.SaveChangesAsync(SaveChangesOptions.BatchWithSingleChangeset);
 
             container = DbFixtureInitDb.CreateContainer();
 
-            Assert.Equal(8, container.Categories.Count());
-            Assert.Equal(4, container.Customers.Count());
-            Assert.Equal(3, container.Orders.Count());
-            Assert.Equal(7, container.OrderItems.Count());
+            Assert.Equal(8, (await container.Categories.ToListAsync()).Count);
+            Assert.Equal(4, (await container.Customers.ToListAsync()).Count);
+            Assert.Equal(3, (await container.Orders.ToListAsync()).Count);
+            Assert.Equal(7, (await container.OrderItems.ToListAsync()).Count);
 
-            var category = container.Categories.Where(t => t.Name == "jackets").Single();
-            Assert.Equal("clothes", container.Categories.Where(t => t.Id == category.ParentId).Single().Name);
-            Assert.Equal(2, container.Categories.Where(t => t.ParentId == category.Id).Count());
+            var category = await container.Categories.Where(t => t.Name == "jackets").SingleAsync();
+            Assert.Equal("clothes", (await container.Categories.Where(t => t.Id == category.ParentId).SingleAsync()).Name);
+            Assert.Equal(2, (await container.Categories.Where(t => t.ParentId == category.Id).ToListAsync()).Count);
 
-            var order1 = container.Orders.Expand(t => t.Items).Where(t => t.Name == "Order 1").Single();
+            var order1 = await container.Orders.Expand(t => t.Items).Where(t => t.Name == "Order 1").SingleAsync();
             Assert.Equal(3, order1.Items.Count());
 
-            var order2 = container.Orders.Expand(t => t.Items).Where(t => t.Name == "Order 2").Single();
+            var order2 = await container.Orders.Expand(t => t.Items).Where(t => t.Name == "Order 2").SingleAsync();
             Assert.Equal(2, order2.Items.Count());
 
-            var order3 = container.Orders.Expand(t => t.Items).Where(t => t.Name == "Order unknown").Single();
+            var order3 = await container.Orders.Expand(t => t.Items).Where(t => t.Name == "Order unknown").SingleAsync();
             Assert.Equal(2, order3.Items.Count());
-
-            return Task.CompletedTask;
         }
         internal static void Add(Container container)
         {
@@ -310,26 +324,24 @@ namespace OdataToEntity.Test.AspClient
             container.AddToManyColumns(manyColumns2);
         }
         [Fact]
-        public Task Delete()
+        public async Task Delete()
         {
             var fixture = new DbFixtureInitDb();
             fixture.Initalize();
 
             Container container = DbFixtureInitDb.CreateContainer();
             Delete(container);
-            container.SaveChanges(SaveChangesOptions.BatchWithSingleChangeset);
+            await container.SaveChangesAsync(SaveChangesOptions.BatchWithSingleChangeset);
 
             container = DbFixtureInitDb.CreateContainer();
 
-            Assert.Equal(5, container.Categories.Count());
-            Assert.Equal(4, container.Customers.Count());
-            Assert.Equal(2, container.Orders.Count());
-            Assert.Equal(3, container.OrderItems.Count());
+            Assert.Equal(5, (await container.Categories.ToListAsync()).Count);
+            Assert.Equal(4, (await container.Customers.ToListAsync()).Count);
+            Assert.Equal(2, (await container.Orders.ToListAsync()).Count);
+            Assert.Equal(3, (await container.OrderItems.ToListAsync()).Count);
 
-            var order1 = container.Orders.Expand(t => t.Items).Where(t => t.Name == "Order 1").Single();
+            var order1 = await container.Orders.Expand(t => t.Items).Where(t => t.Name == "Order 1").SingleAsync();
             Assert.Equal("Product order 1 item 3", order1.Items.Single().Product);
-
-            return Task.CompletedTask;
         }
         private static void Delete(Container container)
         {
@@ -366,53 +378,51 @@ namespace OdataToEntity.Test.AspClient
             container.DeleteObject(order2);
         }
         [Fact]
-        public Task Update()
+        public async Task Update()
         {
             var fixture = new DbFixtureInitDb();
             fixture.Initalize();
 
             Container container = DbFixtureInitDb.CreateContainer();
-            Update(container);
-            container.SaveChanges(SaveChangesOptions.BatchWithSingleChangeset);
+            await Update(container);
+            await container.SaveChangesAsync(SaveChangesOptions.BatchWithSingleChangeset);
 
             container = DbFixtureInitDb.CreateContainer();
 
-            var category = container.Categories.Where(t => t.Name == "sombrero jacket").Single();
-            Assert.Equal("jackets", container.Categories.Where(t => t.Id == category.ParentId).Single().Name);
+            var category = await container.Categories.Where(t => t.Name == "sombrero jacket").SingleAsync();
+            Assert.Equal("jackets", (await container.Categories.Where(t => t.Id == category.ParentId).SingleAsync()).Name);
 
-            Assert.Equal(4, container.Customers.Count());
-            Assert.Equal(3, container.Orders.Count());
-            Assert.Equal(7, container.OrderItems.Count());
+            Assert.Equal(4, (await container.Customers.ToListAsync()).Count);
+            Assert.Equal(3, (await container.Orders.ToListAsync()).Count);
+            Assert.Equal(7, (await container.OrderItems.ToListAsync()).Count);
 
-            var order1 = container.Orders.ByKey(1).Expand(t => t.Items).GetValue();
+            var order1 = await container.Orders.ByKey(1).Expand(t => t.Items).GetValueAsync();
             Assert.Equal("New Order 1", order1.Name);
             Assert.Equal("New Product order 1 item 3", order1.Items.Single(t => t.Id == 3).Product);
 
-            Assert.Equal(Sex.Female, container.Customers.ByKey("RU", 1).GetValue().Sex);
-            Assert.Equal(null, container.Customers.ByKey("EN", 1).GetValue().Sex);
-
-            return Task.CompletedTask;
+            Assert.Equal(Sex.Female, (await container.Customers.ByKey("RU", 1).GetValueAsync()).Sex);
+            Assert.Equal(null, (await container.Customers.ByKey("EN", 1).GetValueAsync()).Sex);
         }
-        private static void Update(Container container)
+        private async static Task Update(Container container)
         {
-            var category6 = container.Categories.ByKey(6).GetValue();
+            var category6 = await container.Categories.ByKey(6).GetValueAsync();
             category6.ParentId = 4;
             category6.Name = "sombrero jacket";
             container.ChangeState(category6, EntityStates.Modified);
 
-            var order1 = container.Orders.ByKey(1).GetValue();
+            var order1 = await container.Orders.ByKey(1).GetValueAsync();
             order1.Name = "New " + order1.Name;
             container.ChangeState(order1, EntityStates.Modified);
 
-            var orderItem13 = container.OrderItems.ByKey(3).GetValue();
+            var orderItem13 = await container.OrderItems.ByKey(3).GetValueAsync();
             orderItem13.Product = "New " + orderItem13.Product;
             container.ChangeState(orderItem13, EntityStates.Modified);
 
-            var customer1 = container.Customers.ByKey("RU", 1).GetValue();
+            var customer1 = await container.Customers.ByKey("RU", 1).GetValueAsync();
             customer1.Sex = Sex.Female;
             container.ChangeState(customer1, EntityStates.Modified);
 
-            var customer2 = container.Customers.ByKey("EN", 1).GetValue();
+            var customer2 = await container.Customers.ByKey("EN", 1).GetValueAsync();
             customer2.Sex = null;
             container.ChangeState(customer2, EntityStates.Modified);
         }

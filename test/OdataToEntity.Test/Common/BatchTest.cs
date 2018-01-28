@@ -42,7 +42,7 @@ namespace OdataToEntity.Test
             var fixture = new DbFixtureInitDb();
             fixture.Initalize();
 
-            await fixture.ExecuteBatchAsync("Delete");
+            await fixture.ExecuteBatchAsync("Delete").ConfigureAwait(false);
             using (var orderContext = fixture.CreateContext())
             {
                 Assert.Equal(5, orderContext.Categories.Count());
@@ -60,7 +60,7 @@ namespace OdataToEntity.Test
             var fixture = new DbFixtureInitDb();
             fixture.Initalize();
 
-            await fixture.ExecuteBatchAsync("Update");
+            await fixture.ExecuteBatchAsync("Update").ConfigureAwait(false);
             using (var orderContext = fixture.CreateContext())
             {
                 var category = orderContext.Categories.Single(t => t.Name == "sombrero jacket");

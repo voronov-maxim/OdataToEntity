@@ -37,7 +37,7 @@ namespace OdataToEntity.Test
         }
         public virtual async Task Execute<T, TResult>(QueryParametersScalar<T, TResult> parameters)
         {
-            IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri, false, 0);
+            IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri, false, 0).ConfigureAwait(false);
             IList fromDb;
             using (var dataContext = (DbContext)DbDataAdapter.CreateDataContext())
                 fromDb = TestHelper.ExecuteDb(dataContext, parameters.Expression);
@@ -47,7 +47,7 @@ namespace OdataToEntity.Test
         }
         public virtual async Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
         {
-            IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri, parameters.NavigationNextLink, parameters.PageSize);
+            IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri, parameters.NavigationNextLink, parameters.PageSize).ConfigureAwait(false);
             IList fromDb;
             IReadOnlyList<IncludeVisitor.Include> includes;
             using (var dataContext = (DbContext)DbDataAdapter.CreateDataContext())
@@ -63,7 +63,7 @@ namespace OdataToEntity.Test
             byte[] bytes = File.ReadAllBytes(fileName);
             var responseStream = new MemoryStream();
 
-            await parser.ExecuteBatchAsync(new MemoryStream(bytes), responseStream, CancellationToken.None);
+            await parser.ExecuteBatchAsync(new MemoryStream(bytes), responseStream, CancellationToken.None).ConfigureAwait(false);
         }
         public async Task<IList> ExecuteOe<TResult>(String requestUri, bool navigationNextLink, int pageSize)
         {
@@ -76,7 +76,7 @@ namespace OdataToEntity.Test
             do
             {
                 var response = new MemoryStream();
-                await parser.ExecuteGetAsync(uri, OeRequestHeaders.JsonDefault, response, CancellationToken.None);
+                await parser.ExecuteGetAsync(uri, OeRequestHeaders.JsonDefault, response, CancellationToken.None).ConfigureAwait(false);
                 response.Position = 0;
 
                 List<Object> result;
@@ -103,7 +103,7 @@ namespace OdataToEntity.Test
 
                 var navigationParser = new OeParser(odataUri.ServiceRoot, DbDataAdapter, EdmModel);
                 foreach (Object entity in fromOe)
-                    await responseReader.FillNextLinkProperties(navigationParser, entity, CancellationToken.None);
+                    await responseReader.FillNextLinkProperties(navigationParser, entity, CancellationToken.None).ConfigureAwait(false);
 
                 if (count < 0)
                     count = responseReader.ResourceSet.Count.GetValueOrDefault();
