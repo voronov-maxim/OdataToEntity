@@ -27,7 +27,7 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
             var parser = new OeParser(apiSegment.Length == 1 ? _rootUri : new Uri(_rootUri, apiSegment[0]), _dataAdapter, _edmModel);
 
             await parser.ExecuteBatchAsync(base.HttpContext.Request.Body, base.HttpContext.Response.Body,
-                CancellationToken.None, base.HttpContext.Request.ContentType);
+                base.HttpContext.Request.ContentType, CancellationToken.None);
         }
     }
 }

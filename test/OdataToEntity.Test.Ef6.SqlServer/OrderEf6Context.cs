@@ -8,6 +8,10 @@ namespace OdataToEntity.Test.Ef6.SqlServer
 {
     public sealed class OrderEf6Context  : DbContext
     {
+        static OrderEf6Context()
+        {
+            Database.SetInitializer<OrderEf6Context>(null);
+        }
         public OrderEf6Context() : base(@"Server=.\sqlexpress;Initial Catalog=OdataToEntity;Trusted_Connection=Yes;")
         {
         }

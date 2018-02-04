@@ -6,12 +6,13 @@ namespace OdataToEntity.AspServer
     {
         private readonly HttpResponse _response;
 
-        public OeHttpRequestHeaders(OeRequestHeaders headers, HttpResponse response)
-            : base(headers.MimeType, headers.MetadataLevel, headers.Streaming, headers.Charset)
+        public OeHttpRequestHeaders(OeRequestHeaders headers, HttpResponse response) : base(headers)
         {
             _response = response;
             _response.ContentType = base.ContentType;
         }
+
+        protected override OeRequestHeaders Clone() => new OeHttpRequestHeaders(this, _response);
 
         public override string ResponseContentType
         {

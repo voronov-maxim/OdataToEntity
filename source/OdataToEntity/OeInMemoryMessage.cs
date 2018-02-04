@@ -23,26 +23,14 @@ namespace OdataToEntity
             _headers.TryGetValue(headerName, out String result);
             return result;
         }
-        public Stream GetStream()
-        {
-            return _stream;
-        }
-        public void SetHeader(String headerName, String headerValue)
-        {
-            _headers[headerName] = headerValue;
-        }
+        public Stream GetStream() => _stream;
+        public void SetHeader(String headerName, String headerValue) => _headers[headerName] = headerValue;
 
         public IEnumerable<KeyValuePair<String, String>> Headers => _headers;
         public String Method
         {
-            get
-            {
-                throw new NotImplementedException();
-            }
-            set
-            {
-                throw new NotImplementedException();
-            }
+            get => throw new NotImplementedException();
+            set => throw new NotImplementedException();
         }
         public int StatusCode
         {
@@ -51,14 +39,8 @@ namespace OdataToEntity
         }
         public Uri Url
         {
-            get
-            {
-                throw new NotImplementedException();
-            }
-            set
-            {
-                throw new NotImplementedException();
-            }
+            get => throw new NotImplementedException();
+            set => throw new NotImplementedException();
         }
     }
 }

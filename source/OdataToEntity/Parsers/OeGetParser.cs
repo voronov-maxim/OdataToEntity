@@ -46,13 +46,13 @@ namespace OdataToEntity
         }
         public async Task ExecuteAsync(ODataUri odataUri, OeRequestHeaders headers, Stream stream, CancellationToken cancellationToken)
         {
-            OeQueryContext queryContext = ParseUri(odataUri);
+            OeQueryContext queryContext = ParseUri(odataUri, headers.MaxPageSize, headers.NavigationNextLink);
             queryContext.MetadataLevel = headers.MetadataLevel;
             queryContext.EntitySetAdapter = _dataAdapter.GetEntitySetAdapter(queryContext.EntitySet.Name);
 
-            if (PageSize > 0)
+            if (headers.MaxPageSize > 0)
             {
-                queryContext.ODataUri.Top = PageSize;
+                queryContext.ODataUri.Top = headers.MaxPageSize;
                 odataUri.OrderBy = queryContext.SkipTokenParser.UniqueOrderBy;
             }
 
@@ -79,7 +79,7 @@ namespace OdataToEntity
                     _dataAdapter.CloseDataContext(dataContext);
             }
         }
-        public OeQueryContext ParseUri(ODataUri odataUri)
+        public OeQueryContext ParseUri(ODataUri odataUri, int pageSize, bool navigationNextLink)
         {
             List<OeParseNavigationSegment> navigationSegments = null;
             if (odataUri.Path.LastSegment is KeySegment ||
@@ -126,10 +126,7 @@ namespace OdataToEntity
             IEdmEntitySet entitySet = entitySetSegment.EntitySet;
             bool isCountSegment = odataUri.Path.LastSegment is CountSegment;
             return new OeQueryContext(_model, odataUri, entitySet, navigationSegments,
-                isCountSegment, PageSize, NavigationNextLink, _dataAdapter.IsDatabaseNullHighestValue);
+                isCountSegment, pageSize, navigationNextLink, _dataAdapter.IsDatabaseNullHighestValue);
         }
-
-        public bool NavigationNextLink { get; set; }
-        public int PageSize { get; set; }
     }
 }

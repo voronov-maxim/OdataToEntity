@@ -34,8 +34,9 @@ namespace OdataToEntity.Test.WcfClient
                 if (requestStream == null)
                 {
                     String accept = requestMessage.GetHeader("Accept");
+                    String prefer = requestMessage.GetHeader("Prefer");
                     var query = new MemoryStream(Encoding.UTF8.GetBytes(requestMessage.Url.PathAndQuery));
-                    response = await client.Get(new OdataWcfQuery() { Content = query, ContentType = accept });
+                    response = await client.Get(new OdataWcfQuery() { Content = query, ContentType = accept, Prefer = prefer });
                 }
                 else
                 {

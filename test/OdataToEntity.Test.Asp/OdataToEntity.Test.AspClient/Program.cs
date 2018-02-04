@@ -19,7 +19,6 @@ namespace OdataToEntity.Test.AspClient
         {
             DbFixtureInitDb.ContainerFactory = CreateContainer;
 
-            //new ProcedureTest().GetOrders_id_get();
             DbFixtureInitDb.RunTest(new BatchTest()).GetAwaiter().GetResult();
             DbFixtureInitDb.RunTest(new SelectTest(new DbFixtureInitDb())).GetAwaiter().GetResult();
             DbFixtureInitDb.RunTest(new ManyColumnsTest(new ManyColumnsFixtureInitDb())).GetAwaiter().GetResult();
@@ -28,29 +27,6 @@ namespace OdataToEntity.Test.AspClient
             Console.WriteLine();
             Console.WriteLine("Press any key to continue...");
             Console.ReadKey();
-        }
-
-        private async static Task TestNextLink()
-        {
-            System.Threading.Thread.Sleep(500);
-
-            var container = DbFixtureInitDb.CreateContainer();
-            var query = (DataServiceQuery)container.Orders.Expand(o => o.Items).OrderBy(o => o.Id);
-
-            var orders = new List<Order>();
-            DataServiceQueryContinuation<Order> continuation = null;
-            for (var response = (QueryOperationResponse<Order>) await query.ExecuteAsync(); response != null;
-                continuation = response.GetContinuation(), response = continuation == null ? null : (QueryOperationResponse<Order>)await container.ExecuteAsync(continuation))
-                foreach (var order in response)
-                {
-                    DataServiceQueryContinuation itemsContinuation = response.GetContinuation(order.Items);
-                    while (itemsContinuation != null)
-                    {
-                        QueryOperationResponse itemsResponse = await container.LoadPropertyAsync(order, nameof(order.Items), itemsContinuation);
-                        itemsContinuation = itemsResponse.GetContinuation();
-                    }
-                    orders.Add(order);
-                }
         }
     }
 }

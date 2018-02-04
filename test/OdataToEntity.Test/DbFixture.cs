@@ -68,15 +68,16 @@ namespace OdataToEntity.Test
         public async Task<IList> ExecuteOe<TResult>(String requestUri, bool navigationNextLink, int pageSize)
         {
             ODataUri odataUri = ParseUri(requestUri);
-            var parser = new OeParser(odataUri.ServiceRoot, OeDataAdapter, EdmModel) { NavigationNextLink = navigationNextLink, PageSize = pageSize };
+            var parser = new OeParser(odataUri.ServiceRoot, OeDataAdapter, EdmModel);
             var uri = new Uri(odataUri.ServiceRoot, requestUri);
+            OeRequestHeaders requestHeaders = OeRequestHeaders.JsonDefault.SetMaxPageSize(pageSize).SetNavigationNextLink(navigationNextLink);
 
             long count = -1;
             var fromOe = new List<Object>();
             do
             {
                 var response = new MemoryStream();
-                await parser.ExecuteGetAsync(uri, OeRequestHeaders.JsonDefault, response, CancellationToken.None).ConfigureAwait(false);
+                await parser.ExecuteGetAsync(uri, requestHeaders, response, CancellationToken.None).ConfigureAwait(false);
                 response.Position = 0;
 
                 List<Object> result;
@@ -98,7 +99,7 @@ namespace OdataToEntity.Test
                 }
 
                 if (pageSize > 0)
-                    Xunit.Assert.InRange(result.Count, 0, parser.PageSize);
+                    Xunit.Assert.InRange(result.Count, 0, requestHeaders.MaxPageSize);
                 fromOe.AddRange(result);
 
                 var navigationParser = new OeParser(odataUri.ServiceRoot, DbDataAdapter, EdmModel);

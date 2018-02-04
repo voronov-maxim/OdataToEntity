@@ -33,11 +33,11 @@ namespace OdataToEntity.Test.AspClient
             var fixture = new DbFixtureInitDb(true);
             fixture.Initalize();
 
-            Container container = DbFixtureInitDb.CreateContainer();
+            Container container = DbFixtureInitDb.CreateContainer(0);
             Add(container);
             await container.SaveChangesAsync(SaveChangesOptions.BatchWithSingleChangeset);
 
-            container = DbFixtureInitDb.CreateContainer();
+            container = DbFixtureInitDb.CreateContainer(0);
 
             Assert.Equal(8, (await container.Categories.ToListAsync()).Count);
             Assert.Equal(4, (await container.Customers.ToListAsync()).Count);
@@ -329,11 +329,11 @@ namespace OdataToEntity.Test.AspClient
             var fixture = new DbFixtureInitDb();
             fixture.Initalize();
 
-            Container container = DbFixtureInitDb.CreateContainer();
+            Container container = DbFixtureInitDb.CreateContainer(0);
             Delete(container);
             await container.SaveChangesAsync(SaveChangesOptions.BatchWithSingleChangeset);
 
-            container = DbFixtureInitDb.CreateContainer();
+            container = DbFixtureInitDb.CreateContainer(0);
 
             Assert.Equal(5, (await container.Categories.ToListAsync()).Count);
             Assert.Equal(4, (await container.Customers.ToListAsync()).Count);
@@ -383,11 +383,11 @@ namespace OdataToEntity.Test.AspClient
             var fixture = new DbFixtureInitDb();
             fixture.Initalize();
 
-            Container container = DbFixtureInitDb.CreateContainer();
+            Container container = DbFixtureInitDb.CreateContainer(0);
             await Update(container);
             await container.SaveChangesAsync(SaveChangesOptions.BatchWithSingleChangeset);
 
-            container = DbFixtureInitDb.CreateContainer();
+            container = DbFixtureInitDb.CreateContainer(0);
 
             var category = await container.Categories.Where(t => t.Name == "sombrero jacket").SingleAsync();
             Assert.Equal("jackets", (await container.Categories.Where(t => t.Id == category.ParentId).SingleAsync()).Name);

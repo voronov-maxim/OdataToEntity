@@ -12,12 +12,15 @@ namespace OdataToEntity.Test.Model
     internal sealed class TypeMapperVisitor : ExpressionVisitor
     {
         private readonly IQueryable _query;
+        private readonly List<LambdaExpression> _navigationPropertyAccessors;
         private readonly Dictionary<ParameterExpression, ParameterExpression> _parameters;
         private Expression _source;
 
         public TypeMapperVisitor(IQueryable query)
         {
             _query = query;
+
+            _navigationPropertyAccessors = new List<LambdaExpression>();
             _parameters = new Dictionary<ParameterExpression, ParameterExpression>();
         }
 
@@ -120,6 +123,7 @@ namespace OdataToEntity.Test.Model
                     Type dataServiceQueryType = typeof(DataServiceQuery<>).MakeGenericType(itemType);
                     var arg1 = (UnaryExpression)arguments[1];
 
+                    _navigationPropertyAccessors.Add((LambdaExpression)arg1.Operand);
                     MethodInfo expandMethod = GetExpandMethodInfo((dynamic)_query, (dynamic)arg1.Operand);
                     Expression instance = Expression.Convert(arguments[0], dataServiceQueryType);
                     return Expression.Call(instance, expandMethod, arg1);
@@ -137,7 +141,7 @@ namespace OdataToEntity.Test.Model
         }
         private static MethodInfo GetExpandMethodInfo<TElement, TTarget>(DataServiceQuery<TElement> dsq, Expression<Func<TElement, TTarget>> navigationPropertyAccessor)
         {
-            Func<Expression<Func<TElement, TTarget>>, DataServiceQuery<TElement>> expand = dsq.Expand<TTarget>;
+            Func<Expression<Func<TElement, TTarget>>, DataServiceQuery<TElement>> expand = dsq.Expand;
             return expand.GetMethodInfo();
         }
         protected override Expression VisitNew(NewExpression node)
@@ -170,6 +174,7 @@ namespace OdataToEntity.Test.Model
             return Expression.MakeUnary(node.NodeType, operand, type, method);
         }
 
+        public IReadOnlyList<LambdaExpression> NavigationPropertyAccessors => _navigationPropertyAccessors;
         public Func<Type, Type> TypeMap { get; set; }
     }
 }

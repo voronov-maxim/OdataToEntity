@@ -1,8 +1,10 @@
-﻿using ODataClient.Default;
+﻿using Microsoft.OData.Client;
+using ODataClient.Default;
 using OdataToEntity.Test.Model;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -14,6 +16,7 @@ namespace OdataToEntity.Test
     public partial class DbFixtureInitDb
     {
         private delegate IList ExecuteQueryFunc<out T>(IQueryable query, Expression expression);
+        private delegate Task<IList> ExecuteQueryFuncAsync<out T>(IQueryable query, Expression expression, IReadOnlyList<LambdaExpression> navigationPropertyAccessors);
 
         private readonly bool _clear;
         private String _databaseName;
@@ -23,9 +26,12 @@ namespace OdataToEntity.Test
             _clear = clear;
         }
 
-        public static Container CreateContainer()
+        public static Container CreateContainer(int maxPageSize)
         {
-            return ContainerFactory();
+            Container container = ContainerFactory();
+            if (maxPageSize > 0)
+                container.BuildingRequest += (s, e) => { e.Headers.Add("Prefer", "odata.maxpagesize=" + maxPageSize.ToString(CultureInfo.InvariantCulture)); };
+            return container;
         }
         private static ExecuteQueryFunc<Object> CreateDelegate(Type elementType, ExecuteQueryFunc<Object> execFunc)
         {
@@ -33,20 +39,25 @@ namespace OdataToEntity.Test
             var execFuncType = execFunc.GetType().GetGenericTypeDefinition().MakeGenericType(elementType);
             return (ExecuteQueryFunc<Object>)execMethodInfo.CreateDelegate(execFuncType);
         }
-        partial void DbInit(String databaseName, bool clear);
-        public virtual Task Execute<T, TResult>(QueryParametersScalar<T, TResult> parameters)
+        private static ExecuteQueryFuncAsync<Object> CreateDelegate(Type elementType, ExecuteQueryFuncAsync<Object> execFunc)
         {
-            IList fromOe = ExecuteOe<T, TResult>(parameters.Expression);
+            MethodInfo execMethodInfo = execFunc.GetMethodInfo().GetGenericMethodDefinition().MakeGenericMethod(elementType);
+            var execFuncType = execFunc.GetType().GetGenericTypeDefinition().MakeGenericType(elementType);
+            return (ExecuteQueryFuncAsync<Object>)execMethodInfo.CreateDelegate(execFuncType);
+        }
+        partial void DbInit(String databaseName, bool clear);
+        public async virtual Task Execute<T, TResult>(QueryParametersScalar<T, TResult> parameters)
+        {
+            IList fromOe = await ExecuteOe<T, TResult>(parameters.Expression, 0);
             IList fromDb;
             using (var dataContext = OrderContext.Create(_databaseName))
                 fromDb = TestHelper.ExecuteDb<T, TResult>(dataContext, parameters.Expression);
 
             TestHelper.Compare(fromDb, fromOe, null);
-            return Task.CompletedTask;
         }
-        public virtual Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
+        public async virtual Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
         {
-            IList fromOe = ExecuteOe<T, TResult>(parameters.Expression);
+            IList fromOe = await ExecuteOe<T, TResult>(parameters.Expression, parameters.PageSize);
             List<IncludeVisitor.Include> includes = GetIncludes(parameters.Expression);
             if (typeof(TResult) == typeof(Object))
                 fromOe = TestHelper.ToOpenType(fromOe);
@@ -59,34 +70,56 @@ namespace OdataToEntity.Test
             }
 
             TestHelper.Compare(fromDb, fromOe, includes);
-            return Task.CompletedTask;
         }
-        private IList ExecuteOe<T, TResult>(LambdaExpression lambda)
+        private async Task<IList> ExecuteOe<T, TResult>(LambdaExpression lambda, int maxPageSize)
         {
-            Container container = CreateContainer();
+            Container container = CreateContainer(maxPageSize);
             IQueryable query = GetQuerableOe<T>(container);
             var visitor = new TypeMapperVisitor(query) { TypeMap = t => Type.GetType("ODataClient." + t.FullName) };
             var call = visitor.Visit(lambda.Body);
 
             Type elementType;
-            ExecuteQueryFunc<Object> func;
             if (call.Type.GetTypeInfo().IsGenericType)
             {
                 elementType = call.Type.GetGenericArguments()[0];
-                func = ExecuteQuery<Object>;
+                ExecuteQueryFuncAsync<Object> func = ExecuteQueryAsync<Object>;
+                return await CreateDelegate(elementType, func)(query, call, visitor.NavigationPropertyAccessors);
             }
             else
             {
                 elementType = typeof(Object);
-                func = ExecuteQueryScalar<Object>;
+                ExecuteQueryFunc<Object> func = ExecuteQueryScalar<Object>;
+                return CreateDelegate(elementType, func)(query, call);
             }
-
-            return CreateDelegate(elementType, func)(query, call);
         }
-        private static IList ExecuteQuery<T>(IQueryable query, Expression expression)
+        private async static Task<IList> ExecuteQueryAsync<T>(IQueryable query, Expression expression, IReadOnlyList<LambdaExpression> navigationPropertyAccessors)
         {
-            var newQuery = (Microsoft.OData.Client.DataServiceQuery<T>)query.Provider.CreateQuery<T>(expression);
-            return newQuery.ExecuteAsync().GetAwaiter().GetResult().ToList();
+            var items = new List<T>();
+            var newQuery = (DataServiceQuery<T>)query.Provider.CreateQuery<T>(expression);
+
+            DataServiceQueryContinuation<T> continuation = null;
+            for (var response = (QueryOperationResponse<T>)await newQuery.ExecuteAsync(); response != null;
+                continuation = response.GetContinuation(), response = continuation == null ? null : (QueryOperationResponse<T>)await newQuery.Context.ExecuteAsync(continuation))
+                foreach (T item in response)
+                {
+                    foreach (LambdaExpression navigationPropertyAccessor in navigationPropertyAccessors)
+                    {
+                        var propertyExpression = (MemberExpression)navigationPropertyAccessor.Body;
+                        var property = ((PropertyInfo)propertyExpression.Member).GetValue(item) as IEnumerable;
+                        if (property == null)
+                            continue;
+
+                        DataServiceQueryContinuation itemsContinuation = response.GetContinuation(property);
+                        while (itemsContinuation != null)
+                        {
+                            QueryOperationResponse itemsResponse = await newQuery.Context.LoadPropertyAsync(item, propertyExpression.Member.Name, itemsContinuation);
+                            itemsContinuation = itemsResponse.GetContinuation();
+                        }
+                    }
+                    items.Add(item);
+                }
+
+            return items;
         }
         private static IList ExecuteQueryScalar<T>(IQueryable query, Expression expression)
         {
@@ -153,17 +186,17 @@ namespace OdataToEntity.Test
                     if (methodInfo.GetParameters().Length == 1 && methodInfo.GetParameters()[0].ParameterType == typeof(bool))
                     {
                         var methodCall = (Func<T, bool, Task>)methodInfo.CreateDelegate(typeof(Func<T, bool, Task>));
-                        testMethod = i => methodCall(i, false);
+                        testMethod = async i => await methodCall(i, false);
                     }
                     if (methodInfo.GetParameters().Length == 1 && methodInfo.GetParameters()[0].ParameterType == typeof(int))
                     {
                         var methodCall = (Func<T, int, Task>)methodInfo.CreateDelegate(typeof(Func<T, int, Task>));
-                        testMethod = i => methodCall(i, 0);
+                        testMethod = async i => { await methodCall(i, 0); await methodCall(i, 1); };
                     }
                     else
                     {
                         var methodCall = (Func<T, int, bool, Task>)methodInfo.CreateDelegate(typeof(Func<T, int, bool, Task>));
-                        testMethod = i => methodCall(i, 0, false);
+                        testMethod = async i => { await methodCall(i, 0, false); await methodCall(i, 1, false); };
                     }
                 }
                 else

@@ -155,7 +155,7 @@ namespace OdataToEntity.Test
             var parser = new OeGetParser(fixture.OeDataAdapter, fixture.EdmModel);
             for (int i = 0; i < requestMethodNames.Length; i++)
             {
-                OeQueryContext queryContext = parser.ParseUri(fixture.ParseUri(requestMethodNames[i].Request));
+                OeQueryContext queryContext = parser.ParseUri(fixture.ParseUri(requestMethodNames[i].Request), 0, false);
                 int hash = OeCacheComparer.GetCacheCode(queryContext.CreateCacheContext());
                 if (!hashes.TryGetValue(hash, out List<String> value))
                 {
@@ -176,8 +176,8 @@ namespace OdataToEntity.Test
             var parser = new OeGetParser(fixture.OeDataAdapter, fixture.EdmModel);
             for (int i = 0; i < requestMethodNames.Length; i++)
             {
-                OeQueryContext queryContext1 = parser.ParseUri(fixture.ParseUri(requestMethodNames[i].Request));
-                OeQueryContext queryContext2 = parser.ParseUri(fixture.ParseUri(requestMethodNames[i].Request));
+                OeQueryContext queryContext1 = parser.ParseUri(fixture.ParseUri(requestMethodNames[i].Request), 0, false);
+                OeQueryContext queryContext2 = parser.ParseUri(fixture.ParseUri(requestMethodNames[i].Request), 0, false);
 
                 var constantToParameterMapper = new FakeReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition>();
                 if (queryContext1.ODataUri.Skip != null)
@@ -198,7 +198,7 @@ namespace OdataToEntity.Test
 
                 for (int j = i + 1; j < requestMethodNames.Length; j++)
                 {
-                    queryContext2 = parser.ParseUri(fixture.ParseUri(requestMethodNames[j].Request));
+                    queryContext2 = parser.ParseUri(fixture.ParseUri(requestMethodNames[j].Request), 0, false);
 
                     constantToParameterMapper = new FakeReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition>();
                     result = new OeCacheComparer(constantToParameterMapper, false).Compare(cacheContext1, cacheContext2);

@@ -19,6 +19,8 @@ namespace OdataToEntity.Test.WcfService
     {
         [MessageHeader]
         public String ContentType { get; set; }
+        [MessageHeader]
+        public String Prefer { get; set; }
         [MessageBodyMember]
         public Stream Content { get; set; }
     }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http;
+using Microsoft.Extensions.Primitives;
 using Microsoft.OData.Edm;
 using Microsoft.OData.Edm.Csdl;
 using Microsoft.OData.Edm.Validation;
@@ -37,9 +38,8 @@ namespace OdataToEntity.AspServer
         }
         private static bool GetCsdlSchema(IEdmModel edmModel, Stream stream)
         {
-            IEnumerable<EdmError> errors;
             using (XmlWriter xmlWriter = XmlWriter.Create(stream))
-                if (CsdlWriter.TryWriteCsdl(edmModel, xmlWriter, CsdlTarget.OData, out errors))
+                if (CsdlWriter.TryWriteCsdl(edmModel, xmlWriter, CsdlTarget.OData, out IEnumerable<EdmError> errors))
                     return true;
 
             return false;
@@ -61,7 +61,10 @@ namespace OdataToEntity.AspServer
             var uri = new Uri(baseUri.OriginalString + remaining + httpContext.Request.QueryString);
 
             var requestHeaders = (FrameRequestHeaders)httpContext.Request.Headers;
-            OeRequestHeaders headers = OeRequestHeaders.Parse(requestHeaders.HeaderAccept);
+
+            ((IDictionary<String, StringValues>)requestHeaders).TryGetValue("Prefer", out StringValues preferHeader);
+            OeRequestHeaders headers = OeRequestHeaders.Parse(requestHeaders.HeaderAccept, preferHeader);
+
             var parser = new OeParser(baseUri, _dataAdapter, _edmModel);
             await parser.ExecuteGetAsync(uri, new OeHttpRequestHeaders(headers, httpContext.Response), httpContext.Response.Body, CancellationToken.None);
         }
@@ -70,7 +73,7 @@ namespace OdataToEntity.AspServer
             httpContext.Response.ContentType = httpContext.Request.ContentType;
             var parser = new OeParser(GetBaseUri(httpContext), _dataAdapter, _edmModel);
             await parser.ExecuteBatchAsync(httpContext.Request.Body, httpContext.Response.Body,
-                CancellationToken.None, httpContext.Request.ContentType);
+                httpContext.Request.ContentType, CancellationToken.None);
         }
         private void InvokeMetadata(HttpContext httpContext)
         {

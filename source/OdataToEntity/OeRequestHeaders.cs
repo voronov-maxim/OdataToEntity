@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.OData;
+using System;
 
 namespace OdataToEntity
 {
@@ -20,6 +21,11 @@ namespace OdataToEntity
         public static readonly OeRequestHeaders JsonDefault = new OeRequestHeaders("application/json", OeMetadataLevel.Minimal, true, "utf-8");
         public static readonly OeRequestHeaders TextDefault = new OeRequestHeaders("text/plain", OeMetadataLevel.Minimal, true, "utf-8");
 
+        protected OeRequestHeaders(OeRequestHeaders clone) : this(clone.MimeType, clone.MetadataLevel, clone.Streaming, clone.Charset)
+        {
+            MaxPageSize = clone.MaxPageSize;
+            NavigationNextLink = clone.NavigationNextLink;
+        }
         protected OeRequestHeaders(String mimeType, OeMetadataLevel metadataLevel, bool streaming, String charset)
         {
             _mimeType = mimeType;
@@ -113,11 +119,46 @@ namespace OdataToEntity
             else
                 return new OeRequestHeaders("application/json", metadataLevel, streaming, "utf-8");
         }
+        public static OeRequestHeaders Parse(String acceptHeader, String preferHeader)
+        {
+            OeRequestHeaders requestHeaders = Parse(acceptHeader);
+            if (String.IsNullOrEmpty(preferHeader))
+                return requestHeaders;
+
+            var message = new OeInMemoryMessage(null, null);
+            message.SetHeader("Prefer", preferHeader);
+            ODataPreferenceHeader preferenceHeader = message.PreferHeader();
+            if (preferenceHeader.MaxPageSize == null)
+                return requestHeaders;
+
+            return requestHeaders.SetMaxPageSize(preferenceHeader.MaxPageSize.GetValueOrDefault());
+        }
+        protected virtual OeRequestHeaders Clone() => new OeRequestHeaders(this);
+        public OeRequestHeaders SetMaxPageSize(int maxPageSize)
+        {
+            if (MaxPageSize == maxPageSize)
+                return this;
+
+            OeRequestHeaders requestHeaders = Clone();
+            requestHeaders.MaxPageSize = maxPageSize;
+            return requestHeaders;
+        }
+        public OeRequestHeaders SetNavigationNextLink(bool navigationNextLink = false)
+        {
+            if (NavigationNextLink == navigationNextLink)
+                return this;
+
+            OeRequestHeaders requestHeaders = Clone();
+            requestHeaders.NavigationNextLink = navigationNextLink;
+            return requestHeaders;
+        }
 
         public String Charset => _charset;
         public String ContentType => _contentType;
         public OeMetadataLevel MetadataLevel => _metadataLevel;
         public string MimeType => _mimeType;
+        public int MaxPageSize { get; private set; }
+        public bool NavigationNextLink { get; private set; }
         public virtual string ResponseContentType { get; set; }
         public bool Streaming => _streaming;
     }

@@ -14,7 +14,7 @@ namespace OdataToEntity.Test
 
         private async static Task DbInitAsync(bool clear)
         {
-            Container container = CreateContainer();
+            Container container = CreateContainer(0);
             await container.ResetDb().ExecuteAsync();
             await container.ResetManyColumns().ExecuteAsync();
 

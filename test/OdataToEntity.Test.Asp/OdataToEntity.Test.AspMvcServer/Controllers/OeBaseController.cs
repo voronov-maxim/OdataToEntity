@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http;
+using Microsoft.Extensions.Primitives;
 using Microsoft.OData.Edm;
 using OdataToEntity.AspServer;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -27,11 +29,12 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
             var requestHeaders = (FrameRequestHeaders)httpContext.Request.Headers;
             httpContext.Response.ContentType = requestHeaders.HeaderAccept;
 
-            String[] apiSegment = httpContext.Request.Path.Value.Split('/', 2, StringSplitOptions.RemoveEmptyEntries);
-            var parser = new OeParser(apiSegment.Length == 1 ? rootUri : new Uri(rootUri, apiSegment[0]), _dataAdapter, _edmModel) { NavigationNextLink = navigationNextLink, PageSize = pageSize };
+            ((IDictionary<String, StringValues>)requestHeaders).TryGetValue("Prefer", out StringValues preferHeader);
+            OeRequestHeaders headers = OeRequestHeaders.Parse(requestHeaders.HeaderAccept, preferHeader).SetNavigationNextLink(navigationNextLink);
 
             var uri = new Uri(rootUri.OriginalString + httpContext.Request.Path + httpContext.Request.QueryString);
-            OeRequestHeaders headers = OeRequestHeaders.Parse(requestHeaders.HeaderAccept);
+            String[] apiSegment = httpContext.Request.Path.Value.Split('/', 2, StringSplitOptions.RemoveEmptyEntries);
+            var parser = new OeParser(apiSegment.Length == 1 ? rootUri : new Uri(rootUri, apiSegment[0]), _dataAdapter, _edmModel);
             await parser.ExecuteGetAsync(uri, new OeHttpRequestHeaders(headers, httpContext.Response), responseStream, CancellationToken.None);
         }
     }

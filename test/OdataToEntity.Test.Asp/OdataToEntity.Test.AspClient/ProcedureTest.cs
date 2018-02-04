@@ -23,7 +23,7 @@ namespace OdataToEntity.Test.AspClient
         [Fact]
         public async Task GetOrders_id_get()
         {
-            Container container = DbFixtureInitDb.CreateContainer();
+            Container container = DbFixtureInitDb.CreateContainer(0);
             Order[] orders = await container.GetOrders(1, null, null).ToArrayAsync();
             var expected = Execute(c => c.GetOrders(1, null, null));
 
@@ -32,7 +32,7 @@ namespace OdataToEntity.Test.AspClient
         [Fact]
         public async Task GetOrders_name_get()
         {
-            Container container = DbFixtureInitDb.CreateContainer();
+            Container container = DbFixtureInitDb.CreateContainer(0);
             Order[] orders = await container.GetOrders(null, "Order 1", null).ToArrayAsync();
             var expected = Execute(c => c.GetOrders(null, "Order 1", null));
 
@@ -41,7 +41,7 @@ namespace OdataToEntity.Test.AspClient
         [Fact]
         public async Task GetOrders_status_get()
         {
-            Container container = DbFixtureInitDb.CreateContainer();
+            Container container = DbFixtureInitDb.CreateContainer(0);
             Order[] orders = await container.GetOrders(null, null, OrderStatus.Processing).ToArrayAsync();
             var expected = Execute(c => c.GetOrders(null, null, Model.OrderStatus.Processing));
 
@@ -50,7 +50,7 @@ namespace OdataToEntity.Test.AspClient
         [Fact]
         public async Task ScalarFunction_get()
         {
-            Container container = DbFixtureInitDb.CreateContainer();
+            Container container = DbFixtureInitDb.CreateContainer(0);
             int value = await container.ScalarFunction().GetValueAsync();
             int expected = Execute(c => c.ScalarFunction());
 
@@ -59,7 +59,7 @@ namespace OdataToEntity.Test.AspClient
         [Fact]
         public async Task ScalarFunctionWithParameters_get()
         {
-            Container container = DbFixtureInitDb.CreateContainer();
+            Container container = DbFixtureInitDb.CreateContainer(0);
             int value = await container.ScalarFunctionWithParameters(1, "Order 1", null).GetValueAsync();
             int expected = Execute(c => c.ScalarFunctionWithParameters(1, "Order 1", null));
 
@@ -68,7 +68,7 @@ namespace OdataToEntity.Test.AspClient
         [Fact]
         public async Task TableFunction_get()
         {
-            Container container = DbFixtureInitDb.CreateContainer();
+            Container container = DbFixtureInitDb.CreateContainer(0);
             Order[] orders = await container.TableFunction().ToArrayAsync();
             var expected = Execute(c => c.TableFunction());
 
@@ -77,7 +77,7 @@ namespace OdataToEntity.Test.AspClient
         [Fact]
         public async Task TableFunctionWithParameters_get()
         {
-            Container container = DbFixtureInitDb.CreateContainer();
+            Container container = DbFixtureInitDb.CreateContainer(0);
             Order[] orders = await container.TableFunctionWithParameters(1, "Order1", null).ToArrayAsync();
             var expected = Execute(c => c.TableFunctionWithParameters(1, "Order1", null));
 

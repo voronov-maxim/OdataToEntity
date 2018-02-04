@@ -47,7 +47,7 @@ namespace OdataToEntity
         }
         public async Task ExecuteQueryAsync(ODataUri odataUri, OeRequestHeaders headers, Stream responseStream, CancellationToken cancellationToken)
         {
-            var parser = new OeGetParser(_dataAdapter, _model) { NavigationNextLink = NavigationNextLink, PageSize = PageSize };
+            var parser = new OeGetParser(_dataAdapter, _model);
             await parser.ExecuteAsync(odataUri, headers, responseStream, cancellationToken).ConfigureAwait(false);
         }
         public async Task ExecuteOperationAsync(ODataUri odataUri, OeRequestHeaders headers, Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
@@ -104,7 +104,5 @@ namespace OdataToEntity
 
         public Db.OeDataAdapter DataAdapter => _dataAdapter;
         public IEdmModel Model => _model;
-        public bool NavigationNextLink { get; set; }
-        public int PageSize { get; set; }
     }
 }
