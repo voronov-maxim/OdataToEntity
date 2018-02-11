@@ -169,12 +169,31 @@ namespace OdataToEntity.Test
             {
                 RequestUri = "OrderItems?$apply=groupby((OrderId), aggregate(substring(Product, 0, 10) with countdistinct as dcnt, $count as cnt))/filter(dcnt ne cnt)",
                 Expression = t => t.GroupBy(i => i.OrderId).Select(g => new
-                    {
-                        OrderId = g.Key,
-                        dcnt = g.Select(i => i.Product.Substring(0, 10)).Distinct().Count(),
-                        cnt = g.Count()
-                    }).Where(a => a.dcnt != a.cnt)
+                {
+                    OrderId = g.Key,
+                    dcnt = g.Select(i => i.Product.Substring(0, 10)).Distinct().Count(),
+                    cnt = g.Count()
+                }).Where(a => a.dcnt != a.cnt)
 
+            };
+            await Fixture.Execute(parameters).ConfigureAwait(false);
+        }
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task Compute(bool navigationNextLink)
+        {
+            var parameters = new QueryParameters<OrderItem, Object>()
+            {
+                RequestUri = "OrderItems?$select=Product&$expand=Order&$compute=Count mul Price as Total,Id add OrderId as SumId",
+                Expression = t => t.Select(i => new
+                {
+                    Product = i.Product,
+                    Order = i.Order,
+                    Total = i.Count * i.Price,
+                    SumId = i.Id + i.OrderId
+                }),
+                NavigationNextLink = navigationNextLink
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }

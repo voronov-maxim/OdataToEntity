@@ -11,7 +11,7 @@ namespace OdataToEntity.Parsers
         private readonly Dictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition> _constantToParameterMapper;
         private Db.OeQueryCacheDbParameterValue[] _parameterValues;
 
-        public OeConstantToParameterVisitor()
+        public OeConstantToParameterVisitor(bool simplifySkipTokenFilter) : base(simplifySkipTokenFilter)
         {
             _constantToParameterMapper = new Dictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition>();
         }
@@ -28,8 +28,7 @@ namespace OdataToEntity.Parsers
                 String parameterName = "__p_" + i.ToString(CultureInfo.InvariantCulture);
 
                 ConstantNode constantNode = constantMappings[constantExpression];
-                if (!_constantToParameterMapper.ContainsKey(constantNode))
-                    _constantToParameterMapper.Add(constantNode, new Db.OeQueryCacheDbParameterDefinition(parameterName, constantExpression.Type));
+                _constantToParameterMapper.Add(constantNode, new Db.OeQueryCacheDbParameterDefinition(parameterName, constantExpression.Type));
 
                 _parameterValues[i] = new Db.OeQueryCacheDbParameterValue(parameterName, constantExpression.Value);
                 parameters[i] = Expression.Parameter(constantExpression.Type, parameterName);

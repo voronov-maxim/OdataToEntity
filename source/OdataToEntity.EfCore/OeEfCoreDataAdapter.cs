@@ -225,7 +225,10 @@ namespace OdataToEntity.EfCore
             if (base.QueryCache.AllowCache)
                 asyncEnumerable = GetFromCache<Object>(queryContext, (T)dataContext, base.QueryCache);
             else
-                asyncEnumerable = ((IQueryable<Object>)CreateQuery(queryContext, dataContext, new OeConstantToVariableVisitor())).AsAsyncEnumerable();
+            {
+                IQueryable query = CreateQuery(queryContext, dataContext, new OeConstantToVariableVisitor(queryContext.SkipTokenParser != null));
+                asyncEnumerable = ((IQueryable<Object>)query).AsAsyncEnumerable();
+            }
 
             Db.OeAsyncEnumerator asyncEnumerator = new Db.OeAsyncEnumerator(asyncEnumerable.GetEnumerator(), cancellationToken);
             if (queryContext.CountExpression != null)
@@ -242,7 +245,7 @@ namespace OdataToEntity.EfCore
                 return GetFromCache<TResult>(queryContext, (T)dataContext, base.QueryCache).Single().GetAwaiter().GetResult();
 
             IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dataContext);
-            Expression expression = queryContext.CreateExpression(query, new OeConstantToVariableVisitor());
+            Expression expression = queryContext.CreateExpression(query, new OeConstantToVariableVisitor(false));
             return query.Provider.Execute<TResult>(expression);
         }
         public override Db.OeEntitySetAdapter GetEntitySetAdapter(String entitySetName)
@@ -260,7 +263,7 @@ namespace OdataToEntity.EfCore
             if (queryCacheItem == null)
             {
                 IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dbContext);
-                var parameterVisitor = new OeConstantToParameterVisitor();
+                var parameterVisitor = new OeConstantToParameterVisitor(false);
 
                 Expression expression = queryContext.CreateExpression(query, parameterVisitor);
                 queryExecutor = dbContext.CreateAsyncQueryExecutor<TResult>(expression);
@@ -293,7 +296,7 @@ namespace OdataToEntity.EfCore
         {
             IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dbContext);
 
-            var parameterVisitor = new OeConstantToParameterVisitor();
+            var parameterVisitor = new OeConstantToParameterVisitor(queryContext.SkipTokenParser != null);
             Expression expression = queryContext.CreateExpression(query, parameterVisitor);
             Func<QueryContext, IAsyncEnumerable<TResult>> queryExecutor = dbContext.CreateAsyncQueryExecutor<TResult>(expression);
 

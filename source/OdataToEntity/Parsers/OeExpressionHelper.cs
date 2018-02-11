@@ -12,6 +12,8 @@ namespace OdataToEntity.Parsers
 {
     public static class OeExpressionHelper
     {
+        private static readonly Type[] ArithmethicTypes = new Type[] { typeof(sbyte), typeof(short), typeof(int), typeof(long), typeof(float), typeof(double), typeof(Decimal) };
+
         public static ConstantExpression ConstantChangeType(ConstantExpression constantExpression, Type targetType)
         {
             if (constantExpression.Value == null)
@@ -84,6 +86,24 @@ namespace OdataToEntity.Parsers
             }
             return restNew;
         }
+        private static Type GetArithmethicPrecedenceType(Type leftType, Type rightType)
+        {
+            if (leftType == rightType)
+                return leftType;
+
+            leftType = GetUnsignedToSignedType(leftType);
+            rightType = GetUnsignedToSignedType(rightType);
+
+            int leftIndex = Array.IndexOf(ArithmethicTypes, leftType);
+            if (leftIndex == -1)
+                throw new InvalidOperationException("cannot convert not numeric type");
+
+            int rightIndex = Array.IndexOf(ArithmethicTypes, rightType);
+            if (rightIndex == -1)
+                throw new InvalidOperationException("cannot convert not numeric type");
+
+            return ArithmethicTypes[Math.Max(leftIndex, rightIndex)];
+        }
         public static Type GetCollectionItemType(Type collectionType)
         {
             if (collectionType.IsPrimitive)
@@ -96,6 +116,20 @@ namespace OdataToEntity.Parsers
                 if (iface.IsGenericType && iface.GetGenericTypeDefinition() == typeof(IEnumerable<>))
                     return iface.GetGenericArguments()[0];
             return null;
+        }
+        public static IReadOnlyList<MemberExpression> GetPropertyExpressions(Expression instance)
+        {
+            PropertyInfo[] properties = instance.Type.GetProperties();
+            var expressions = new List<MemberExpression>(properties.Length);
+            for (int i = 0; i < properties.Length; i++)
+            {
+                MemberExpression propertyExpression = Expression.Property(instance, properties[i]);
+                if (i == 7 && IsTupleType(properties[7].PropertyType))
+                    expressions.AddRange(GetPropertyExpressions(propertyExpression));
+                else
+                    expressions.Add(propertyExpression);
+            }
+            return expressions;
         }
         private static Type GetTupleType(Type[] typeArguments)
         {
@@ -132,19 +166,47 @@ namespace OdataToEntity.Parsers
 
             return tupleType.MakeGenericType(typeArguments);
         }
-        public static IReadOnlyList<MemberExpression> GetPropertyExpressions(Expression instance)
+        public static Type GetTypeConversion(Type leftType, Type rightType)
         {
-            PropertyInfo[] properties = instance.Type.GetProperties();
-            var expressions = new List<MemberExpression>(properties.Length);
-            for (int i = 0; i < properties.Length; i++)
+            Type leftUnderlyingType = Nullable.GetUnderlyingType(leftType);
+            Type rightUnderlyingType = Nullable.GetUnderlyingType(rightType);
+
+            if (leftUnderlyingType == null && rightUnderlyingType == null)
+                return GetArithmethicPrecedenceType(leftType, rightType);
+
+            Type precedenceType;
+            if (leftUnderlyingType == null)
             {
-                MemberExpression propertyExpression = Expression.Property(instance, properties[i]);
-                if (i == 7 && IsTupleType(properties[7].PropertyType))
-                    expressions.AddRange(GetPropertyExpressions(propertyExpression));
-                else
-                    expressions.Add(propertyExpression);
+                if (leftType == rightUnderlyingType)
+                    return typeof(Nullable<>).MakeGenericType(leftType);
+
+                precedenceType = GetArithmethicPrecedenceType(leftType, rightUnderlyingType);
+                return typeof(Nullable<>).MakeGenericType(precedenceType);
             }
-            return expressions;
+
+            if (rightUnderlyingType == null)
+            {
+                if (rightType == leftUnderlyingType)
+                    return typeof(Nullable<>).MakeGenericType(rightType);
+
+                precedenceType = GetArithmethicPrecedenceType(rightType, leftUnderlyingType);
+                return typeof(Nullable<>).MakeGenericType(precedenceType);
+            }
+
+            precedenceType = GetArithmethicPrecedenceType(leftUnderlyingType, rightUnderlyingType);
+            return typeof(Nullable<>).MakeGenericType(precedenceType);
+        }
+        private static Type GetUnsignedToSignedType(Type type)
+        {
+            if (type == typeof(byte))
+                return typeof(short);
+            if (type == typeof(ushort))
+                return typeof(int);
+            if (type == typeof(uint))
+                return typeof(long);
+            if (type == typeof(ulong))
+                return typeof(Decimal);
+            return type;
         }
         public static bool IsNull(Expression expression)
         {
@@ -207,6 +269,25 @@ namespace OdataToEntity.Parsers
                 default:
                     throw new ArgumentOutOfRangeException(nameof(operatorKind));
             }
+        }
+        public static bool TryGetConstantValue(Expression expression, out Object value)
+        {
+            value = null;
+
+            MemberExpression propertyExpression = expression as MemberExpression;
+            if (propertyExpression == null && expression is UnaryExpression convertExpression)
+                propertyExpression = convertExpression.Operand as MemberExpression;
+
+            if (propertyExpression == null)
+                return false;
+
+            if (propertyExpression.Expression is ConstantExpression constantExpression)
+            {
+                value = (propertyExpression.Member as PropertyInfo).GetValue(constantExpression.Value);
+                return true;
+            }
+
+            return false;
         }
     }
 }

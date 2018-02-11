@@ -185,7 +185,7 @@ namespace OdataToEntity.Ef6
         public override Db.OeAsyncEnumerator ExecuteEnumerator(Object dataContext, OeQueryContext queryContext, CancellationToken cancellationToken)
         {
             IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dataContext);
-            Expression expression = queryContext.CreateExpression(query, new OeConstantToVariableVisitor());
+            Expression expression = queryContext.CreateExpression(query, new OeConstantToVariableVisitor(queryContext.SkipTokenParser != null));
 
             expression = new EnumerableToQuerableVisitor().Visit(expression);
             var queryAsync = (IDbAsyncEnumerable)query.Provider.CreateQuery(expression);
@@ -198,7 +198,7 @@ namespace OdataToEntity.Ef6
         public override TResult ExecuteScalar<TResult>(Object dataContext, OeQueryContext queryContext)
         {
             IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dataContext);
-            Expression expression = queryContext.CreateExpression(query, new OeConstantToVariableVisitor());
+            Expression expression = queryContext.CreateExpression(query, new OeConstantToVariableVisitor(false));
             return query.Provider.Execute<TResult>(expression);
         }
         public override Db.OeEntitySetAdapter GetEntitySetAdapter(String entitySetName)

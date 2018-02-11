@@ -30,25 +30,6 @@ namespace OdataToEntity.Linq2Db
                 _parameters = new Dictionary<ParameterExpression, ParameterExpression>();
             }
 
-            private static bool TryGetConstant(Expression e, out Object value)
-            {
-                value = null;
-
-                MemberExpression propertyExpression = e as MemberExpression;
-                if (propertyExpression == null && e is UnaryExpression convertExpression)
-                    propertyExpression = convertExpression.Operand as MemberExpression;
-
-                if (propertyExpression == null)
-                    return false;
-
-                if (propertyExpression.Expression is ConstantExpression constantExpression)
-                {
-                    value = (propertyExpression.Member as PropertyInfo).GetValue(constantExpression.Value);
-                    return true;
-                }
-
-                return false;
-            }
             private bool IsNullable(MemberExpression propertyExpression)
             {
                 return !OeLinq2DbEdmModelMetadataProvider.IsRequiredLinq2Db((PropertyInfo)propertyExpression.Member);
@@ -60,11 +41,11 @@ namespace OdataToEntity.Linq2Db
                 {
                     MemberExpression propertyExpression;
                     Object value;
-                    if (TryGetConstant(e.Right, out value))
+                    if (OeExpressionHelper.TryGetConstantValue(e.Right, out value))
                         propertyExpression = e.Left as MemberExpression;
                     else
                     {
-                        if (!TryGetConstant(e.Left, out value))
+                        if (!OeExpressionHelper.TryGetConstantValue(e.Left, out value))
                             return e;
 
                         propertyExpression = e.Right as MemberExpression;
@@ -196,7 +177,7 @@ namespace OdataToEntity.Linq2Db
         public override OeAsyncEnumerator ExecuteEnumerator(Object dataContext, OeQueryContext queryContext, CancellationToken cancellationToken)
         {
             IQueryable entitySet = queryContext.EntitySetAdapter.GetEntitySet(dataContext);
-            Expression expression = queryContext.CreateExpression(entitySet, new OeConstantToVariableVisitor());
+            Expression expression = queryContext.CreateExpression(entitySet, new OeConstantToVariableVisitor(queryContext.SkipTokenParser != null));
             expression = new ParameterVisitor().Visit(expression);
 
             var query = (IQueryable<Object>)entitySet.Provider.CreateQuery(expression);
@@ -209,7 +190,7 @@ namespace OdataToEntity.Linq2Db
         public override TResult ExecuteScalar<TResult>(Object dataContext, OeQueryContext queryContext)
         {
             IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dataContext);
-            Expression expression = queryContext.CreateExpression(query, new OeConstantToVariableVisitor());
+            Expression expression = queryContext.CreateExpression(query, new OeConstantToVariableVisitor(false));
             expression = new ParameterVisitor().Visit(expression);
             return query.Provider.Execute<TResult>(expression);
         }

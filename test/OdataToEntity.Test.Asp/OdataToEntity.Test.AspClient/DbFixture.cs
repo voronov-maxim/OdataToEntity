@@ -188,7 +188,7 @@ namespace OdataToEntity.Test
                         var methodCall = (Func<T, bool, Task>)methodInfo.CreateDelegate(typeof(Func<T, bool, Task>));
                         testMethod = async i => await methodCall(i, false);
                     }
-                    if (methodInfo.GetParameters().Length == 1 && methodInfo.GetParameters()[0].ParameterType == typeof(int))
+                    else if (methodInfo.GetParameters().Length == 1 && methodInfo.GetParameters()[0].ParameterType == typeof(int))
                     {
                         var methodCall = (Func<T, int, Task>)methodInfo.CreateDelegate(typeof(Func<T, int, Task>));
                         testMethod = async i => { await methodCall(i, 0); await methodCall(i, 1); };

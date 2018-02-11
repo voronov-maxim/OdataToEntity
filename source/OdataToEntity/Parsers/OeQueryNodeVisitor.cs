@@ -185,7 +185,13 @@ namespace OdataToEntity.Parsers
                         right = Expression.Convert(newConstant, left.Type);
                     }
                     else
-                        right = Expression.Convert(right, left.Type);
+                    {
+                        Type precedenceType = OeExpressionHelper.GetTypeConversion(left.Type, right.Type);
+                        if (left.Type != precedenceType)
+                            left = Expression.Convert(left, precedenceType);
+                        if (right.Type != precedenceType)
+                            right = Expression.Convert(right, precedenceType);
+                    }
                 }
             }
             ExpressionType binaryType = OeExpressionHelper.ToExpressionType(nodeIn.OperatorKind);

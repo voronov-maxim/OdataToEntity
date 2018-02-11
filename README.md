@@ -132,7 +132,7 @@ var parser = new OeParser(new Uri("http://dummy"), dataAdapter, dataAdapter.Buil
 //Query
 var uri = new Uri("http://dummy/Orders?$select=Name&$orderby=Date");
 //Set max page size
-OeRequestHeaders requestHeaders = OeRequestHeaders.JsonDefault.SetMaxPageSize(pageSize);
+OeRequestHeaders requestHeaders = OeRequestHeaders.JsonDefault.SetMaxPageSize(10);
 //The result of the query
 var response = new MemoryStream();
 //Execute query
@@ -144,7 +144,7 @@ To use server side paging in expanded to-many navigation properties, should invo
 //Query
 var uri = new Uri("http://dummy/Orders?$expand=Items");
 //Set max page size,  to-many navigation properties
-OeRequestHeaders requestHeaders = OeRequestHeaders.JsonDefault.SetMaxPageSize(pageSize).SetNavigationNextLink(true);
+OeRequestHeaders requestHeaders = OeRequestHeaders.JsonDefault.SetMaxPageSize(10).SetNavigationNextLink(true);
 //The result of the query
 var response = new MemoryStream();
 //Execute query
