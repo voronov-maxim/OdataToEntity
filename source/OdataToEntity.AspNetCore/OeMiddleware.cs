@@ -5,7 +5,6 @@ using Microsoft.OData.Edm;
 using Microsoft.OData.Edm.Csdl;
 using Microsoft.OData.Edm.Validation;
 using OdataToEntity.Db;
-using OdataToEntity.EfCore;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,22 +12,22 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 
-namespace OdataToEntity.AspServer
+namespace OdataToEntity.AspNetCore
 {
-    public sealed class OdataToEntityMiddleware
+    public sealed class OeMiddleware
     {
         private readonly PathString _apiPath;
-        private OeDataAdapter _dataAdapter;
+        private readonly OeDataAdapter _dataAdapter;
         private readonly IEdmModel _edmModel;
         private readonly RequestDelegate _next;
 
-        public OdataToEntityMiddleware(RequestDelegate next, PathString apiPath, OeDataAdapter dataAdapter)
+        public OeMiddleware(RequestDelegate next, PathString apiPath, OeDataAdapter dataAdapter, IEdmModel edmModel)
         {
             _next = next;
             _apiPath = apiPath;
 
             _dataAdapter = dataAdapter;
-            _edmModel = _dataAdapter.BuildEdmModelFromEfCoreModel();
+            _edmModel = edmModel;
         }
 
         private static Uri GetBaseUri(HttpContext httpContext)

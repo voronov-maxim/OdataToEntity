@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.OData.Edm;
+using OdataToEntity.AspNetCore;
 using System.Threading.Tasks;
 
 namespace OdataToEntity.Test.AspMvcServer.Controllers

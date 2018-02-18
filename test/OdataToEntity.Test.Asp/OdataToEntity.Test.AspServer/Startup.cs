@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using OdataToEntity.AspNetCore;
+using OdataToEntity.EfCore;
 using OdataToEntity.Test;
 
 namespace OdataToEntity.AspServer
@@ -37,7 +39,7 @@ namespace OdataToEntity.AspServer
             loggerFactory.AddConsole(Configuration.GetSection("Logging"));
             loggerFactory.AddDebug();
 
-            app.UseOdataToEntityMiddleware("/api", _dataAdapter);
+            app.UseOdataToEntityMiddleware("/api", _dataAdapter, _dataAdapter.BuildEdmModelFromEfCoreModel());
             app.UseMvcWithDefaultRoute();
         }
     }

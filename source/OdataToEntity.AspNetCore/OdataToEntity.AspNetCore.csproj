@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\build\dependencies.props" />
+  
+  <PropertyGroup>
+    <Description>OdataToEnity Asp Mvc .Net Core extension</Description>
+    <Authors>Maxim Voronov</Authors>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>portable</DebugType>
+    <AssemblyName>OdataToEntity.AspNetCore</AssemblyName>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <AssemblyCopyright>MIT</AssemblyCopyright>
+    <AssemblyDescription>Extension for easy create Asp Mvc .Net Core service</AssemblyDescription>
+    <AssemblyTitle>OdataToEnity Asp Mvc .Net Core</AssemblyTitle>
+    <AssemblyVersion>$(OdataToEntityVersion)</AssemblyVersion>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageId>OdataToEntity.AspNetCore</PackageId>
+    <PackageTags>odata;data;services;odatalib;edmlib;asp;mvc;controller;core</PackageTags>
+    <PackageProjectUrl>https://github.com/voronov-maxim/OdataToEntity</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/voronov-maxim/OdataToEntity/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageVersion>$(OdataToEntityVersion)</PackageVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore" Version="$(AspNetCoreVersion)" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="$(AspNetCoreVersion)" />
+    <PackageReference Include="Microsoft.OData.Core" Version="$(ODataLibVersion)" />
+    <PackageReference Include="Microsoft.OData.Edm" Version="$(ODataLibVersion)" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\OdataToEntity\OdataToEntity.csproj" />
+  </ItemGroup>
+</Project>

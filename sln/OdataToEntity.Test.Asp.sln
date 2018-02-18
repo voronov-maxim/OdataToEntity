@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26730.16
+VisualStudioVersion = 15.0.27130.2026
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OdataToEntity", "..\source\OdataToEntity\OdataToEntity.csproj", "{70ED8CE4-4FA6-418A-A5BC-8697F5CA0B03}"
 EndProject
@@ -14,6 +14,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OdataToEntity.Test.AspMvcServer", "..\test\OdataToEntity.Test.Asp\OdataToEntity.Test.AspMvcServer\OdataToEntity.Test.AspMvcServer.csproj", "{7A9C1393-D8C8-4CBF-BEEB-0026A4FD463A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OdataToEntity.Test.EfCore.SqlServer", "..\test\OdataToEntity.Test.EfCore.SqlServer\OdataToEntity.Test.EfCore.SqlServer.csproj", "{C56F950D-D2ED-4902-903F-87ACED8B19A2}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OdataToEntity.AspNetCore", "..\source\OdataToEntity.AspNetCore\OdataToEntity.AspNetCore.csproj", "{FDCC9F11-E9F8-48B1-9DD0-25D8930D1C20}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,6 +47,10 @@ Global
 		{C56F950D-D2ED-4902-903F-87ACED8B19A2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C56F950D-D2ED-4902-903F-87ACED8B19A2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C56F950D-D2ED-4902-903F-87ACED8B19A2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FDCC9F11-E9F8-48B1-9DD0-25D8930D1C20}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FDCC9F11-E9F8-48B1-9DD0-25D8930D1C20}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FDCC9F11-E9F8-48B1-9DD0-25D8930D1C20}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FDCC9F11-E9F8-48B1-9DD0-25D8930D1C20}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
+using OdataToEntity;
 
-namespace OdataToEntity.AspServer
+namespace OdataToEntity.AspNetCore
 {
     public sealed class OeHttpRequestHeaders : OeRequestHeaders
     {

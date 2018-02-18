@@ -11,7 +11,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <AssemblyCopyright>LGPL-3.0</AssemblyCopyright>
+    <AssemblyCopyright>MIT</AssemblyCopyright>
     <AssemblyDescription>Classes to serialize, deserialize OData JSON payloads. Supports OData v4 only. Enables construction of OData services via Entity Framework (Linq2Db) DataContext (without controller). Targets .NET Core with support for .NET 4.6</AssemblyDescription>
     <AssemblyTitle>OData via Entity Framework (Linq2Db)</AssemblyTitle>
     <AssemblyVersion>$(OdataToEntityVersion)</AssemblyVersion>

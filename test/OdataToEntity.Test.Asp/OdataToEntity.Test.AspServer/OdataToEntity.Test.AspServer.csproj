@@ -30,6 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\source\OdataToEntity.AspNetCore\OdataToEntity.AspNetCore.csproj" />
     <ProjectReference Include="..\..\..\source\OdataToEntity.EfCore\OdataToEntity.EfCore.csproj" />
     <ProjectReference Include="..\..\..\source\OdataToEntity\OdataToEntity.csproj" />
     <ProjectReference Include="..\..\OdataToEntity.Test.EfCore.SqlServer\OdataToEntity.Test.EfCore.SqlServer.csproj" />

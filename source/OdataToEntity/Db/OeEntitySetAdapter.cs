@@ -14,43 +14,13 @@ namespace OdataToEntity.Db
             _dataAdapter = dataAdapter;
         }
 
-        public void AddEntity(Object dataContext, Object entity)
-        {
-            _entitySetMetaAdapter.AddEntity(dataContext, entity);
-        }
-        public void AttachEntity(Object dataContext, Object entity)
-        {
-            _entitySetMetaAdapter.AttachEntity(dataContext, entity);
-        }
-        public IQueryable GetEntitySet(Object dataContext)
-        {
-            return _entitySetMetaAdapter.GetEntitySet(dataContext);
-        }
-        public void RemoveEntity(Object dataContext, Object entity)
-        {
-            _entitySetMetaAdapter.RemoveEntity(dataContext, entity);
-        }
+        public void AddEntity(Object dataContext, Object entity) => _entitySetMetaAdapter.AddEntity(dataContext, entity);
+        public void AttachEntity(Object dataContext, Object entity) => _entitySetMetaAdapter.AttachEntity(dataContext, entity);
+        public IQueryable GetEntitySet(Object dataContext) => _entitySetMetaAdapter.GetEntitySet(dataContext);
+        public void RemoveEntity(Object dataContext, Object entity) => _entitySetMetaAdapter.RemoveEntity(dataContext, entity);
 
-        public OeDataAdapter DataAdapter
-        {
-            get
-            {
-                return _dataAdapter;
-            }
-        }
-        public OeEntitySetMetaAdapter EntitySetMetaAdapter
-        {
-            get
-            {
-                return _entitySetMetaAdapter;
-            }
-        }
-        public Type EntityType
-        {
-            get
-            {
-                return _entitySetMetaAdapter.EntityType;
-            }
-        }
+        public OeDataAdapter DataAdapter => _dataAdapter;
+        public OeEntitySetMetaAdapter EntitySetMetaAdapter => _entitySetMetaAdapter;
+        public Type EntityType => _entitySetMetaAdapter.EntityType;
     }
 }

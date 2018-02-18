@@ -93,34 +93,10 @@ namespace OdataToEntity.Parsers
             return new OeEntityItem(entitySet, entityType, entitySetMetaAdapter.EntityType, entry);
         }
 
-        public String ContentId
-        {
-            get
-            {
-                return _contentId;
-            }
-        }
-        public String ContentType
-        {
-            get
-            {
-                return _contentType;
-            }
-        }
-        public String Method
-        {
-            get
-            {
-                return _method;
-            }
-        }
-        public Uri RequestUrl
-        {
-            get
-            {
-                return _requestUrl;
-            }
-        }
+        public String ContentId => _contentId;
+        public String ContentType => _contentType;
+        public String Method => _method;
+        public Uri RequestUrl => _requestUrl;
         public HttpStatusCode StatusCode
         {
             get

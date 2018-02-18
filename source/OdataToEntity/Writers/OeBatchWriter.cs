@@ -8,7 +8,7 @@ using System.Net;
 
 namespace OdataToEntity.Writers
 {
-    internal sealed class OeBatchWriter
+    public sealed class OeBatchWriter
     {
         private readonly IEdmModel _model;
         private readonly ODataMessageWriterSettings _settings;

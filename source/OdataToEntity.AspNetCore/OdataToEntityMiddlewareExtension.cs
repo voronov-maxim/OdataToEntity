@@ -1,14 +1,15 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Builder.Extensions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.OData.Edm;
 using OdataToEntity.Db;
 using System;
 
-namespace OdataToEntity.AspServer
+namespace OdataToEntity.AspNetCore
 {
     public static class OdataToEntityMiddlewareExtension
     {
-        public static IApplicationBuilder UseOdataToEntityMiddleware(this IApplicationBuilder app, PathString pathMatch, OeDataAdapter dataAdapater)
+        public static IApplicationBuilder UseOdataToEntityMiddleware(this IApplicationBuilder app, PathString pathMatch, OeDataAdapter dataAdapater, IEdmModel edmModel)
         {
             if (app == null)
                 throw new ArgumentNullException("app");
@@ -16,7 +17,7 @@ namespace OdataToEntity.AspServer
                 throw new ArgumentException("The path must not end with a '/'", "pathMatch");
 
             IApplicationBuilder applicationBuilder = app.New();
-            applicationBuilder.UseMiddleware<OdataToEntityMiddleware>(pathMatch, dataAdapater);
+            applicationBuilder.UseMiddleware<OeMiddleware>(pathMatch, dataAdapater, edmModel);
             RequestDelegate branch = applicationBuilder.Build();
             MapOptions options = new MapOptions
             {

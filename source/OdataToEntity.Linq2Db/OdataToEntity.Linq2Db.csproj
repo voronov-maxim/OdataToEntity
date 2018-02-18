@@ -11,7 +11,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <AssemblyCopyright>LGPL-3.0</AssemblyCopyright>
+    <AssemblyCopyright>MIT</AssemblyCopyright>
     <AssemblyDescription>Classes bridge from OdataToEntity to Linq2Db. Abstraction layer access to DataContext Entity Linq2Db. Targets .NET 4.6</AssemblyDescription>
     <AssemblyTitle>Linq2Db adapter for OdataEntity</AssemblyTitle>
     <AssemblyVersion>$(OdataToEntityVersion)</AssemblyVersion>
