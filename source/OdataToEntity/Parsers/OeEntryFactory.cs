@@ -1,57 +1,47 @@
 ﻿using Microsoft.OData;
 using Microsoft.OData.Edm;
-using Microsoft.OData.UriParser;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
 
 namespace OdataToEntity.Parsers
 {
     public sealed class OeEntryFactory
     {
-        private readonly OePropertyAccessor[] _accessors;
-        private readonly IEdmEntitySet _entitySet;
-        private readonly IEdmEntityType _entityType;
-        private readonly IReadOnlyList<OeEntryFactory> _navigationLinks;
-        private readonly ODataNestedResourceInfo _resourceInfo;
         private readonly String _typeName;
 
         private OeEntryFactory(IEdmEntitySet entitySet, OePropertyAccessor[] accessors)
         {
-            _entitySet = entitySet;
-            _accessors = accessors;
+            EntitySet = entitySet;
+            Accessors = accessors;
 
-            _entityType = entitySet.EntityType();
-            _navigationLinks = Array.Empty<OeEntryFactory>();
+            EntityType = entitySet.EntityType();
+            NavigationLinks = Array.Empty<OeEntryFactory>();
             _typeName = EntityType.FullName();
         }
         private OeEntryFactory(IEdmEntitySet entitySet, OePropertyAccessor[] accessors, IReadOnlyList<OeEntryFactory> navigationLinks)
             : this(entitySet, accessors)
         {
-            _navigationLinks = navigationLinks ?? Array.Empty<OeEntryFactory>();
+            NavigationLinks = navigationLinks ?? Array.Empty<OeEntryFactory>();
         }
         private OeEntryFactory(IEdmEntitySet entitySet, OePropertyAccessor[] accessors, ODataNestedResourceInfo resourceInfo)
             : this(entitySet, accessors)
         {
-            _resourceInfo = resourceInfo;
+            ResourceInfo = resourceInfo;
         }
         private OeEntryFactory(IEdmEntitySet entitySet, OePropertyAccessor[] accessors, ODataNestedResourceInfo resourceInfo, IReadOnlyList<OeEntryFactory> navigationLinks)
             : this(entitySet, accessors)
         {
-            _resourceInfo = resourceInfo;
-            _navigationLinks = navigationLinks;
+            ResourceInfo = resourceInfo;
+            NavigationLinks = navigationLinks;
         }
 
         public ODataResource CreateEntry(Object entity)
         {
-            var odataProperties = new ODataProperty[_accessors.Length];
-            for (int i = 0; i < _accessors.Length; i++)
-                odataProperties[i] = new ODataProperty() { Name = _accessors[i].Name };
-
-            for (int i = 0; i < _accessors.Length; i++)
+            var odataProperties = new ODataProperty[Accessors.Length];
+            for (int i = 0; i < Accessors.Length; i++)
             {
-                OePropertyAccessor accessor = _accessors[i];
+                OePropertyAccessor accessor = Accessors[i];
                 Object value = accessor.Accessor(entity);
 
                 ODataValue odataValue = null;
@@ -59,9 +49,8 @@ namespace OdataToEntity.Parsers
                     odataValue = new ODataNullValue();
                 else if (value.GetType().IsEnum)
                     odataValue = new ODataEnumValue(value.ToString());
-                else if (value is DateTime)
+                else if (value is DateTime dateTime)
                 {
-                    var dateTime = (DateTime)value;
                     switch (dateTime.Kind)
                     {
                         case DateTimeKind.Unspecified:
@@ -82,7 +71,7 @@ namespace OdataToEntity.Parsers
                     odataValue = new ODataPrimitiveValue(value);
 
                 odataValue.TypeAnnotation = accessor.TypeAnnotation;
-                odataProperties[i].Value = odataValue;
+                odataProperties[i] = new ODataProperty() { Name = accessor.Name, Value = odataValue };
             }
 
             return new ODataResource
@@ -140,12 +129,12 @@ namespace OdataToEntity.Parsers
             return value;
         }
 
-        public OePropertyAccessor[] Accessors => _accessors;
+        public OePropertyAccessor[] Accessors { get; }
         public bool? CountOption { get; set; }
-        public IEdmEntitySet EntitySet => _entitySet;
-        public IEdmEntityType EntityType => _entityType;
+        public IEdmEntitySet EntitySet { get; }
+        public IEdmEntityType EntityType { get; }
         public Func<Object, Object> LinkAccessor { get; set; }
-        public IReadOnlyList<OeEntryFactory> NavigationLinks => _navigationLinks;
-        public ODataNestedResourceInfo ResourceInfo => _resourceInfo;
+        public IReadOnlyList<OeEntryFactory> NavigationLinks { get; }
+        public ODataNestedResourceInfo ResourceInfo { get; }
     }
 }

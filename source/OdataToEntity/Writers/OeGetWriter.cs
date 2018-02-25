@@ -23,7 +23,7 @@ namespace OdataToEntity.Writers
                 Writer = writer;
             }
 
-            private static Uri BuildNavigationMextPageLink(ODataResource entry, IEdmEntitySet entitySet, ExpandedNavigationSelectItem expandedNavigationSelectItem)
+            private static Uri BuildNavigationNextPageLink(ODataResource entry, IEdmEntitySet entitySet, ExpandedNavigationSelectItem expandedNavigationSelectItem)
             {
                 var keys = new List<KeyValuePair<String, Object>>(1);
                 foreach (IEdmStructuralProperty key in entitySet.EntityType().Key())
@@ -115,21 +115,15 @@ namespace OdataToEntity.Writers
                 {
                     if (entryFactory.ResourceInfo.IsCollection.GetValueOrDefault())
                     {
-                        var resourceSet = new ODataResourceSet() { Count = count };
-
-                        Writer.WriteStart(resourceSet);
-                        ExpandedNavigationSelectItem expandedNavigationSelectItem = null;
-                        if (expandedNavigationSelectItem == null)
-                            foreach (Object entity in (IEnumerable)navigationValue)
-                            {
-                                ODataResource navigationEntry = CreateEntry(entryFactory, entity);
-                                Writer.WriteStart(navigationEntry);
-                                foreach (OeEntryFactory navigationLink in entryFactory.NavigationLinks)
-                                    WriteNavigationLink(entity, navigationLink, navigationEntry, navigationLink.EntitySet);
-                                Writer.WriteEnd();
-                            }
-                        else
-                            resourceSet.NextPageLink = BuildNavigationMextPageLink(parentEntry, parentEntitySet, expandedNavigationSelectItem);
+                        Writer.WriteStart(new ODataResourceSet() { Count = count });
+                        foreach (Object entity in (IEnumerable)navigationValue)
+                        {
+                            ODataResource navigationEntry = CreateEntry(entryFactory, entity);
+                            Writer.WriteStart(navigationEntry);
+                            foreach (OeEntryFactory navigationLink in entryFactory.NavigationLinks)
+                                WriteNavigationLink(entity, navigationLink, navigationEntry, navigationLink.EntitySet);
+                            Writer.WriteEnd();
+                        }
                         Writer.WriteEnd();
                     }
                     else
@@ -155,7 +149,7 @@ namespace OdataToEntity.Writers
 
                 Writer.WriteStart(resourceInfo);
 
-                var resourceSet = new ODataResourceSet() { NextPageLink = BuildNavigationMextPageLink(parentEntry, parentEntitySet, item) };
+                var resourceSet = new ODataResourceSet() { NextPageLink = BuildNavigationNextPageLink(parentEntry, parentEntitySet, item) };
                 Writer.WriteStart(resourceSet);
                 Writer.WriteEnd();
 

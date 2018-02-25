@@ -14,14 +14,6 @@ namespace OdataToEntity.Test.Linq2Db
         {
             //new SelectTest(new DbFixtureInitDb()).ApplyGroupByAggregateFilter().GetAwaiter().GetResult();
             new BatchTest().Add().GetAwaiter().GetResult();
-
-            //using (var ctx = new OdataToEntityDB("OdataToEntity"))
-            //{
-            //    var zzz = ctx.Orders.Where(o => o.Status == lq2db::OdataToEntity.Test.Model.OrderStatus.Shipped)
-            //        .GroupBy(o => new Tuple<string>(o.Name))
-            //        .Select(g => new Tuple<Tuple<string>, int>(g.Key, g.Select(Param_3 => Param_3.Id).Distinct().Count())).ToArray();
-            //    //Param_2.Select(Param_3 => Param_3.Id).Distinct().Count()))
-            //}
         }
     }
 }

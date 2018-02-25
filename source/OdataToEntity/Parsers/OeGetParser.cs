@@ -11,15 +11,15 @@ using System.Threading.Tasks;
 
 namespace OdataToEntity
 {
-    public sealed class OeGetParser
+    public struct OeGetParser
     {
-        private readonly IEdmModel _model;
+        private readonly IEdmModel _edmModel;
         private readonly Db.OeDataAdapter _dataAdapter;
 
         public OeGetParser(Db.OeDataAdapter dataAdapter, IEdmModel model)
         {
             _dataAdapter = dataAdapter;
-            _model = model;
+            _edmModel = model;
         }
 
         private static FilterClause CreateFilterClause(IEdmEntitySet entitySet, IEnumerable<KeyValuePair<String, Object>> keys)
@@ -44,42 +44,7 @@ namespace OdataToEntity
             }
             return new FilterClause(compositeNode, range);
         }
-        public async Task ExecuteAsync(ODataUri odataUri, OeRequestHeaders headers, Stream stream, CancellationToken cancellationToken)
-        {
-            OeQueryContext queryContext = ParseUri(odataUri, headers.MaxPageSize, headers.NavigationNextLink);
-            queryContext.MetadataLevel = headers.MetadataLevel;
-            queryContext.EntitySetAdapter = _dataAdapter.GetEntitySetAdapter(queryContext.EntitySet.Name);
-
-            if (headers.MaxPageSize > 0)
-            {
-                queryContext.ODataUri.Top = headers.MaxPageSize;
-                odataUri.OrderBy = queryContext.SkipTokenParser.UniqueOrderBy;
-            }
-
-            Object dataContext = null;
-            try
-            {
-                dataContext = _dataAdapter.CreateDataContext();
-                if (queryContext.IsCountSegment)
-                {
-                    headers.ResponseContentType = OeRequestHeaders.TextDefault.ContentType;
-                    int count = _dataAdapter.ExecuteScalar<int>(dataContext, queryContext);
-                    byte[] buffer = System.Text.Encoding.UTF8.GetBytes(count.ToString(CultureInfo.InvariantCulture));
-                    stream.Write(buffer, 0, buffer.Length);
-                }
-                else
-                {
-                    using (Db.OeAsyncEnumerator asyncEnumerator = _dataAdapter.ExecuteEnumerator(dataContext, queryContext, cancellationToken))
-                        await Writers.OeGetWriter.SerializeAsync(queryContext, asyncEnumerator, headers.ContentType, stream).ConfigureAwait(false);
-                }
-            }
-            finally
-            {
-                if (dataContext != null)
-                    _dataAdapter.CloseDataContext(dataContext);
-            }
-        }
-        public OeQueryContext ParseUri(ODataUri odataUri, int pageSize, bool navigationNextLink)
+        public OeQueryContext CreateQueryContext(ODataUri odataUri, int pageSize, bool navigationNextLink, OeMetadataLevel metadataLevel)
         {
             List<OeParseNavigationSegment> navigationSegments = null;
             if (odataUri.Path.LastSegment is KeySegment ||
@@ -122,11 +87,58 @@ namespace OdataToEntity
                 }
             }
 
+            if (pageSize > 0)
+            {
+                odataUri.Top = pageSize;
+                IEdmEntityType edmEntityType = GetEntityType(odataUri.Path, navigationSegments);
+                odataUri.OrderBy = OeSkipTokenParser.GetUniqueOrderBy(_edmModel, edmEntityType, odataUri.OrderBy);
+            }
+
             var entitySetSegment = (EntitySetSegment)odataUri.Path.FirstSegment;
             IEdmEntitySet entitySet = entitySetSegment.EntitySet;
+            Db.OeEntitySetAdapter entitySetAdapter = _dataAdapter.GetEntitySetAdapter(entitySet.Name);
             bool isCountSegment = odataUri.Path.LastSegment is CountSegment;
-            return new OeQueryContext(_model, odataUri, entitySet, navigationSegments,
-                isCountSegment, pageSize, navigationNextLink, _dataAdapter.IsDatabaseNullHighestValue);
+            return new OeQueryContext(_edmModel, odataUri, entitySet, navigationSegments,
+                isCountSegment, pageSize, navigationNextLink, _dataAdapter.IsDatabaseNullHighestValue, metadataLevel, ref entitySetAdapter);
+        }
+        public async Task ExecuteAsync(ODataUri odataUri, OeRequestHeaders headers, Stream stream, CancellationToken cancellationToken)
+        {
+            Object dataContext = null;
+            try
+            {
+                dataContext = _dataAdapter.CreateDataContext();
+                OeQueryContext queryContext = CreateQueryContext(odataUri, headers.MaxPageSize, headers.NavigationNextLink, headers.MetadataLevel);
+                if (queryContext.IsCountSegment)
+                {
+                    headers.ResponseContentType = OeRequestHeaders.TextDefault.ContentType;
+                    int count = _dataAdapter.ExecuteScalar<int>(dataContext, queryContext);
+                    byte[] buffer = System.Text.Encoding.UTF8.GetBytes(count.ToString(CultureInfo.InvariantCulture));
+                    stream.Write(buffer, 0, buffer.Length);
+                }
+                else
+                {
+                    using (Db.OeAsyncEnumerator asyncEnumerator = _dataAdapter.ExecuteEnumerator(dataContext, queryContext, cancellationToken))
+                        await Writers.OeGetWriter.SerializeAsync(queryContext, asyncEnumerator, headers.ContentType, stream).ConfigureAwait(false);
+                }
+            }
+            finally
+            {
+                if (dataContext != null)
+                    _dataAdapter.CloseDataContext(dataContext);
+            }
+        }
+        internal static IEdmEntityType GetEntityType(ODataPath odataPath, IReadOnlyList<OeParseNavigationSegment> navigationSegments)
+        {
+            var entitySetSegment = (EntitySetSegment)odataPath.FirstSegment;
+            IEdmEntityType entityType = entitySetSegment.EntitySet.EntityType();
+            if (navigationSegments != null)
+                for (int i = navigationSegments.Count - 1; i >= 0; i--)
+                    if (navigationSegments[i].NavigationSegment != null)
+                    {
+                        entityType = navigationSegments[i].NavigationSegment.NavigationSource.EntityType();
+                        break;
+                    }
+            return entityType;
         }
     }
 }

@@ -75,29 +75,26 @@ namespace OdataToEntity.Parsers
             }
         }
 
-        private readonly IEdmModel _edmModel;
-        private readonly IEdmEntitySet _entitySet;
-        private readonly bool _isCountSegment;
-        private readonly bool _navigationNextLink;
-        private readonly ODataUri _odataUri;
-        private readonly int _pageSize;
-        private readonly IReadOnlyList<OeParseNavigationSegment> _parseNavigationSegments;
-        private readonly OeSkipTokenParser _skipTokenParser;
-
-        public OeQueryContext(IEdmModel edmModel, ODataUri odataUri,
+        internal OeQueryContext(IEdmModel edmModel, ODataUri odataUri,
             IEdmEntitySet entitySet, IReadOnlyList<OeParseNavigationSegment> parseNavigationSegments,
-            bool isCountSegment, int pageSize, bool navigationNextLink, bool isDatabaseNullHighestValue)
+            bool isCountSegment, int pageSize, bool navigationNextLink, bool isDatabaseNullHighestValue,
+            OeMetadataLevel metadataLevel, ref Db.OeEntitySetAdapter entitySetAdapter)
         {
-            _edmModel = edmModel;
-            _odataUri = odataUri;
-            _entitySet = entitySet;
-            _parseNavigationSegments = parseNavigationSegments;
-            _isCountSegment = isCountSegment;
-            _pageSize = pageSize;
-            _navigationNextLink = navigationNextLink;
+            EntitySetAdapter = entitySetAdapter;
+            EdmModel = edmModel;
+            ODataUri = odataUri;
+            EntitySet = entitySet;
+            ParseNavigationSegments = parseNavigationSegments;
+            IsCountSegment = isCountSegment;
+            PageSize = pageSize;
+            NavigationNextLink = navigationNextLink;
+            MetadataLevel = metadataLevel;
 
             if (pageSize > 0 || (odataUri.OrderBy != null && odataUri.Skip != null && odataUri.Top != null))
-                _skipTokenParser = CreateSkipTokenParser(EdmModel, ODataUri, ParseNavigationSegments, isDatabaseNullHighestValue);
+            {
+                IEdmEntityType edmEntityType = OeGetParser.GetEntityType(odataUri.Path, parseNavigationSegments);
+                SkipTokenParser = new OeSkipTokenParser(edmModel, edmEntityType, isDatabaseNullHighestValue, odataUri.OrderBy);
+            }
         }
 
         public OeCacheContext CreateCacheContext() => new OeCacheContext(this);
@@ -151,22 +148,6 @@ namespace OdataToEntity.Parsers
 
             return SourceVisitor.Translate(query, expression);
         }
-        private static OeSkipTokenParser CreateSkipTokenParser(IEdmModel edmModel, ODataUri odataUri,
-            IReadOnlyList<OeParseNavigationSegment> navigationSegments, bool isDatabaseNullHighestValue)
-        {
-            var entitySetSegment = (EntitySetSegment)odataUri.Path.FirstSegment;
-            IEdmEntityType edmEntityType = entitySetSegment.EntitySet.EntityType();
-            if (navigationSegments != null)
-                for (int i = navigationSegments.Count - 1; i >= 0; i--)
-                    if (navigationSegments[i].NavigationSegment != null)
-                    {
-                        edmEntityType = navigationSegments[i].NavigationSegment.NavigationSource.EntityType();
-                        break;
-                    }
-
-            return odataUri.OrderBy == null ? new OeSkipTokenParser(edmModel, edmEntityType, isDatabaseNullHighestValue)
-                : new OeSkipTokenParser(edmModel, edmEntityType, isDatabaseNullHighestValue, odataUri.OrderBy);
-        }
         public IEnumerable<ExpandedNavigationSelectItem> GetExpandedNavigationSelectItems()
         {
             foreach (SelectItem selectItem in ODataUri.SelectAndExpand.SelectedItems)
@@ -180,16 +161,16 @@ namespace OdataToEntity.Parsers
         }
 
         public Expression CountExpression { get; set; }
-        public IEdmModel EdmModel => _edmModel;
-        public IEdmEntitySet EntitySet => _entitySet;
-        public Db.OeEntitySetAdapter EntitySetAdapter { get; set; }
+        public IEdmModel EdmModel { get; }
+        public IEdmEntitySet EntitySet { get; }
+        public Db.OeEntitySetAdapter EntitySetAdapter { get; }
         public OeEntryFactory EntryFactory { get; set; }
-        public bool IsCountSegment => _isCountSegment;
-        public OeMetadataLevel MetadataLevel { get; set; }
-        public bool NavigationNextLink => _navigationNextLink;
-        public ODataUri ODataUri => _odataUri;
-        public int PageSize => _pageSize;
-        public IReadOnlyList<OeParseNavigationSegment> ParseNavigationSegments => _parseNavigationSegments;
-        public OeSkipTokenParser SkipTokenParser => _skipTokenParser;
+        public bool IsCountSegment { get; }
+        public OeMetadataLevel MetadataLevel { get; }
+        public bool NavigationNextLink { get; }
+        public ODataUri ODataUri { get; }
+        public int PageSize { get; }
+        public IReadOnlyList<OeParseNavigationSegment> ParseNavigationSegments { get; }
+        public OeSkipTokenParser SkipTokenParser { get; }
     }
 }

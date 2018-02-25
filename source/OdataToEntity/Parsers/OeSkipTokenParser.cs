@@ -19,24 +19,18 @@ namespace OdataToEntity.Parsers
         private readonly bool _isDatabaseNullHighestValue;
         private readonly OrderByClause _orderByClause;
 
-        public OeSkipTokenParser(IEdmModel edmModel, IEdmEntityType edmType, bool isDatabaseNullHighestValue)
-        {
-            _edmModel = edmModel;
-            _isDatabaseNullHighestValue = isDatabaseNullHighestValue;
-            _orderByClause = GetUniqueOrderBy(edmModel, edmType, null);
-        }
         public OeSkipTokenParser(IEdmModel edmModel, IEdmEntityType edmType, bool isDatabaseNullHighestValue, OrderByClause orderByClause)
         {
             _edmModel = edmModel;
             _isDatabaseNullHighestValue = isDatabaseNullHighestValue;
-            _orderByClause = orderByClause;
-
-            if (!GetIsKey(edmType, GetEdmProperies(orderByClause)))
-                _orderByClause = GetUniqueOrderBy(edmModel, edmType, orderByClause);
+            _orderByClause = GetUniqueOrderBy(edmModel, edmType, orderByClause);
         }
 
-        private static OrderByClause GetUniqueOrderBy(IEdmModel edmModel, IEdmEntityType edmType, OrderByClause orderByClause)
+        internal static OrderByClause GetUniqueOrderBy(IEdmModel edmModel, IEdmEntityType edmType, OrderByClause orderByClause)
         {
+            if (orderByClause != null && GetIsKey(edmType, GetEdmProperies(orderByClause)))
+                return orderByClause;
+
             IEdmEntitySet entitySet = null;
             foreach (IEdmEntitySet element in edmModel.EntityContainer.EntitySets())
                 if (element.EntityType() == edmType)
@@ -55,12 +49,17 @@ namespace OdataToEntity.Parsers
                 uniqueOrderByClause = new OrderByClause(uniqueOrderByClause, node, OrderByDirection.Ascending, source.RangeVariable);
             }
 
+            if (orderByClause == null)
+                return uniqueOrderByClause;
+
             var orderByClauses = new Stack<OrderByClause>();
-            while (orderByClause != null)
+            do
             {
                 orderByClauses.Push(orderByClause);
                 orderByClause = orderByClause.ThenBy;
             }
+            while (orderByClause != null);
+
             while (orderByClauses.Count > 0)
             {
                 orderByClause = orderByClauses.Pop();
@@ -127,6 +126,11 @@ namespace OdataToEntity.Parsers
         public String GetSkipToken(Object value)
         {
             String json = GetJson(_edmModel, GetKeys(value));
+            return Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
+        }
+        public static String GetSkipToken(IEdmModel edmModel, IEnumerable<KeyValuePair<String, Object>> keys)
+        {
+            String json = GetJson(edmModel, keys);
             return Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
         }
         public static IEnumerable<KeyValuePair<String, Object>> ParseJson(IEdmModel model, String skipToken, IEnumerable<IEdmStructuralProperty> keys)

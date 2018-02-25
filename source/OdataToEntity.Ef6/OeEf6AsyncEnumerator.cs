@@ -11,7 +11,7 @@ namespace OdataToEntity.Ef6
         private readonly IDbAsyncEnumerator _asyncEnumerator;
 
         public OeEf6AsyncEnumerator(IDbAsyncEnumerator asyncEnumerator, CancellationToken cancellationToken)
-            : base(null, cancellationToken)
+            : base(cancellationToken)
         {
             _asyncEnumerator = asyncEnumerator;
         }

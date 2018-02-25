@@ -78,7 +78,6 @@ namespace OdataToEntity.Parsers
             public IEdmEntitySet EntitySet => _entitySet;
             public OeEntryFactory EntryFactory { get; set; }
             public Expression Expression { get; set; }
-            public ExpandedNavigationSelectItem ExpandedNavigationSelectItem { get; set; }
             public bool PropertySelect => _propertySelect;
             public ODataNestedResourceInfo ResourceInfo => _resource;
         }

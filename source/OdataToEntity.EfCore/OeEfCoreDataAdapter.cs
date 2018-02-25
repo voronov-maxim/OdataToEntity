@@ -230,7 +230,7 @@ namespace OdataToEntity.EfCore
                 asyncEnumerable = ((IQueryable<Object>)query).AsAsyncEnumerable();
             }
 
-            Db.OeAsyncEnumerator asyncEnumerator = new Db.OeAsyncEnumerator(asyncEnumerable.GetEnumerator(), cancellationToken);
+            Db.OeAsyncEnumerator asyncEnumerator = new OeEfCoreAsyncEnumerator(asyncEnumerable.GetEnumerator(), cancellationToken);
             if (queryContext.CountExpression != null)
             {
                 IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dataContext);

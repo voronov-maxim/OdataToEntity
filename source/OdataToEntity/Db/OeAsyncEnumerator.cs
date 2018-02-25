@@ -1,16 +1,15 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace OdataToEntity.Db
 {
-    public class OeAsyncEnumerator : IDisposable
+    public abstract class OeAsyncEnumerator : IDisposable
     {
         private sealed class EmptyAsyncEnumerator : OeAsyncEnumerator
         {
-            public EmptyAsyncEnumerator() : base(null, CancellationToken.None)
+            public EmptyAsyncEnumerator() : base(CancellationToken.None)
             {
             }
 
@@ -20,22 +19,20 @@ namespace OdataToEntity.Db
             public override object Current => null;
         }
 
-        private readonly IAsyncEnumerator<Object> _asyncEnumerator;
         private readonly CancellationToken _cancellationToken;
         private static readonly OeAsyncEnumerator _empty = new EmptyAsyncEnumerator();
 
-        public OeAsyncEnumerator(IAsyncEnumerator<Object> asyncEnumerator, CancellationToken cancellationToken)
+        public OeAsyncEnumerator(CancellationToken cancellationToken)
         {
-            _asyncEnumerator = asyncEnumerator;
             _cancellationToken = cancellationToken;
         }
 
         protected CancellationToken CancellationToken => _cancellationToken;
-        public virtual void  Dispose() => _asyncEnumerator.Dispose();
-        public virtual Task<bool> MoveNextAsync() => _asyncEnumerator.MoveNext(_cancellationToken);
+        public abstract void Dispose();
+        public abstract Task<bool> MoveNextAsync();
 
         public int? Count { get; set; }
-        public virtual Object Current => _asyncEnumerator.Current;
+        public abstract Object Current { get; }
         public static OeAsyncEnumerator Empty => _empty;
     }
 
@@ -44,7 +41,7 @@ namespace OdataToEntity.Db
         private readonly IEnumerator _enumerator;
 
         public OeAsyncEnumeratorAdapter(IEnumerable enumerable, CancellationToken cancellationToken)
-            : base(null, cancellationToken)
+            : base(cancellationToken)
         {
             _enumerator = enumerable.GetEnumerator();
         }
@@ -71,7 +68,7 @@ namespace OdataToEntity.Db
         private readonly CancellationToken _cancellationToken;
 
         public OeScalarAsyncEnumeratorAdapter(Task<Object> scalarTask, CancellationToken cancellationToken)
-            : base(null, cancellationToken)
+            : base(cancellationToken)
         {
             _scalarTask = scalarTask;
             _cancellationToken = cancellationToken;

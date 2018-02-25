@@ -48,10 +48,11 @@ namespace OdataToEntity
                         IEdmEntitySet entitySet = _model.FindDeclaredEntitySet(entitySetName);
                         OePropertyAccessor[] accessors = OePropertyAccessor.CreateFromType(returnClrType, entitySet);
 
-                        var queryContext = new OeQueryContext(_model, odataUri, entitySet, null, false, 0, false, _dataAdapter.IsDatabaseNullHighestValue)
+                        Db.OeEntitySetAdapter entitySetAdapter = _dataAdapter.GetEntitySetAdapter(entitySet.Name);
+                        var queryContext = new OeQueryContext(_model, odataUri, entitySet, null, false, 0, false,
+                            _dataAdapter.IsDatabaseNullHighestValue, headers.MetadataLevel, ref entitySetAdapter)
                         {
                             EntryFactory = OeEntryFactory.CreateEntryFactory(entitySet, accessors),
-                            MetadataLevel = headers.MetadataLevel
                         };
                         await Writers.OeGetWriter.SerializeAsync(queryContext, asyncEnumerator, headers.ContentType, responseStream).ConfigureAwait(false);
                     }
