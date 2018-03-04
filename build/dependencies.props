@@ -8,9 +8,10 @@
     <JsonNetVersion>10.0.3</JsonNetVersion>
     <NetStandardVersion>2.0.0</NetStandardVersion>
     <ODataLibVersion>7.4.1</ODataLibVersion>
-    <OdataToEntityVersion>1.3.0</OdataToEntityVersion>
+    <OdataToEntityVersion>1.4.0</OdataToEntityVersion>
     <SystemInteractiveAsyncVersion>3.1.1</SystemInteractiveAsyncVersion>
     <TestSdkVersion>15.6.0</TestSdkVersion>
+    <Version>1.4.0</Version>
     <XunitVersion>2.3.1</XunitVersion>
   </PropertyGroup>
 </Project>
