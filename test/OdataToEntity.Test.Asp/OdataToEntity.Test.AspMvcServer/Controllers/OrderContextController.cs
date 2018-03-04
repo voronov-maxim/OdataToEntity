@@ -6,40 +6,47 @@ using System.Threading.Tasks;
 namespace OdataToEntity.Test.AspMvcServer.Controllers
 {
     [Route("api/[controller]")]
-    public sealed class OrderContextController : OeBaseController
+    public sealed class OrderContextController : OeControllerBase
     {
         public OrderContextController(Db.OeDataAdapter dataAdapter, IEdmModel edmModel)
                 : base(dataAdapter, edmModel)
         {
         }
 
-        public async Task GetOrders()
+        public IActionResult GetOrders()
         {
-            await base.Get(base.HttpContext, base.HttpContext.Response.Body);
+            Db.OeAsyncEnumerator asyncEnumerator = base.GetAsyncEnumerator(base.HttpContext, base.HttpContext.Response.Body);
+            return base.OData(asyncEnumerator);
         }
-        public async Task ScalarFunction()
+        public async Task<IActionResult> ScalarFunction()
         {
-            await base.Get(base.HttpContext, base.HttpContext.Response.Body);
+            Db.OeAsyncEnumerator asyncEnumerator = base.GetAsyncEnumerator(base.HttpContext, base.HttpContext.Response.Body);
+            return await base.ODataScalar(asyncEnumerator);
         }
-        public async Task ResetDb()
+        public async Task<IActionResult> ResetDb()
         {
-            await base.Get(base.HttpContext, base.HttpContext.Response.Body);
+            Db.OeAsyncEnumerator asyncEnumerator = base.GetAsyncEnumerator(base.HttpContext, base.HttpContext.Response.Body);
+            return await base.ODataScalar(asyncEnumerator);
         }
-        public async Task ResetManyColumns()
+        public async Task<IActionResult> ResetManyColumns()
         {
-            await base.Get(base.HttpContext, base.HttpContext.Response.Body);
+            Db.OeAsyncEnumerator asyncEnumerator = base.GetAsyncEnumerator(base.HttpContext, base.HttpContext.Response.Body);
+            return await base.ODataScalar(asyncEnumerator);
         }
-        public async Task ScalarFunctionWithParameters()
+        public async Task<IActionResult> ScalarFunctionWithParameters()
         {
-            await base.Get(base.HttpContext, base.HttpContext.Response.Body);
+            Db.OeAsyncEnumerator asyncEnumerator = base.GetAsyncEnumerator(base.HttpContext, base.HttpContext.Response.Body);
+            return await base.ODataScalar(asyncEnumerator);
         }
-        public async Task TableFunction()
+        public IActionResult TableFunction()
         {
-            await base.Get(base.HttpContext, base.HttpContext.Response.Body);
+            Db.OeAsyncEnumerator asyncEnumerator = base.GetAsyncEnumerator(base.HttpContext, base.HttpContext.Response.Body);
+            return base.OData(asyncEnumerator);
         }
-        public async Task TableFunctionWithParameters()
+        public IActionResult TableFunctionWithParameters()
         {
-            await base.Get(base.HttpContext, base.HttpContext.Response.Body);
+            Db.OeAsyncEnumerator asyncEnumerator = base.GetAsyncEnumerator(base.HttpContext, base.HttpContext.Response.Body);
+            return base.OData(asyncEnumerator);
         }
     }
 }

@@ -8,7 +8,7 @@ using System.Xml;
 
 namespace OdataToEntity.AspNetCore
 {
-    public class OeMetadataController : Controller
+    public class OeMetadataController : ControllerBase
     {
         protected void GetCsdlSchema()
         {

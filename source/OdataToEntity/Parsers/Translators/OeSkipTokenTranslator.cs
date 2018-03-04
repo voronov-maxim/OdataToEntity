@@ -55,7 +55,7 @@ namespace OdataToEntity.Parsers
             {
                 parameterExpression = Expression.Constant(orderProperty.Value, propertyExpression.Type);
                 orderProperty.ParmeterExpression = parameterExpression;
-                visitor.AddSkipTokenConstant(parameterExpression, propertyExpression.Member.Name);
+                visitor.AddSkipTokenConstant(parameterExpression, OeSkipTokenParser.GetPropertyName(propertyExpression));
             }
 
             ExpressionType binaryType = orderProperty.Direction == OrderByDirection.Ascending ? ExpressionType.GreaterThan : ExpressionType.LessThan;
@@ -142,12 +142,16 @@ namespace OdataToEntity.Parsers
         }
         private static OrderByClause GetOrderBy(OrderByClause orderByClause, String propertyName)
         {
-            for (;
-                String.Compare((orderByClause.Expression as SingleValuePropertyAccessNode).Property.Name, propertyName, StringComparison.OrdinalIgnoreCase) != 0;
-                orderByClause = orderByClause.ThenBy)
+            while (orderByClause != null)
             {
+                IEdmProperty edmProperty = ((SingleValuePropertyAccessNode)orderByClause.Expression).Property;
+                if (String.Compare(OeSkipTokenParser.GetPropertyName(edmProperty), propertyName, StringComparison.OrdinalIgnoreCase) == 0)
+                    return orderByClause;
+
+                orderByClause = orderByClause.ThenBy;
             }
-            return orderByClause;
+
+            throw new InvalidOperationException("Property " + propertyName + " not found in OrderBy");
         }
     }
 }

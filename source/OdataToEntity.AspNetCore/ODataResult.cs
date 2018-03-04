@@ -6,12 +6,13 @@ using OdataToEntity.Parsers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
 
 namespace OdataToEntity.AspNetCore
 {
-    public sealed class ODataResult<T> : ActionResult
+    public sealed class ODataResult<T> : IActionResult
     {
         private struct EntityPropertiesInfo
         {
@@ -140,11 +141,7 @@ namespace OdataToEntity.AspNetCore
                 Properties = odataProperties
             };
         }
-        public override void ExecuteResult(ActionContext context)
-        {
-            throw new NotImplementedException();
-        }
-        public override async Task ExecuteResultAsync(ActionContext context)
+        public async Task ExecuteResultAsync(ActionContext context)
         {
             var settings = new ODataMessageWriterSettings()
             {
@@ -180,6 +177,23 @@ namespace OdataToEntity.AspNetCore
                 ODataWriter writer = messageWriter.CreateODataResourceSetWriter(edmEntitySet, edmEntityType);
                 await SerializeAsync(writer);
             }
+        }
+        private IEnumerable<KeyValuePair<String, Object>> GetKeys(T entity)
+        {
+            var visitor = new OeQueryNodeVisitor(_edmModel, Expression.Parameter(typeof(T)));
+            OrderByClause orderByClause = _odataUri.OrderBy;
+            do
+            {
+                var propertyExpression = (MemberExpression)visitor.TranslateNode(orderByClause.Expression);
+                UnaryExpression body = Expression.Convert(propertyExpression, typeof(Object));
+                Expression<Func<T, Object>> getValueLambda = Expression.Lambda<Func<T, Object>>(body, visitor.Parameter);
+                Object value = getValueLambda.Compile()(entity);
+
+                yield return new KeyValuePair<String, Object>(OeSkipTokenParser.GetPropertyName(propertyExpression), value);
+
+                orderByClause = orderByClause.ThenBy;
+            }
+            while (orderByClause != null);
         }
         private EntityPropertiesInfo GetProperties(Object entity)
         {
@@ -249,19 +263,9 @@ namespace OdataToEntity.AspNetCore
             }
 
             if (PageSize > 0 && count > 0 && (Count ?? Int32.MaxValue) > count)
-                resourceSet.NextPageLink = BuildNextPageLink(OeSkipTokenParser.GetSkipToken(_edmModel, GetKeys()));
+                resourceSet.NextPageLink = BuildNextPageLink(OeSkipTokenParser.GetSkipToken(_edmModel, GetKeys(entity)));
 
             writer.WriteEnd();
-
-            IEnumerable<KeyValuePair<String, Object>> GetKeys()
-            {
-                Type clrType = entity.GetType();
-                foreach (IEdmStructuralProperty edmProperty in entityPropertiesInfo.EdmEntityType.Key())
-                {
-                    PropertyInfo clrProperty = clrType.GetProperty(edmProperty.Name);
-                    yield return new KeyValuePair<String, Object>(clrProperty.Name, clrProperty.GetValue(entity));
-                }
-           }
         }
         private void WriteEntry(ODataWriter writer, Object entity, ref EntityPropertiesInfo entityPropertiesInfo)
         {

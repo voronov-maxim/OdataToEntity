@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Internal;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.OData.Edm;
-using OdataToEntity;
 using OdataToEntity.Db;
 using OdataToEntity.Parsers;
 using OdataToEntity.Writers;
@@ -15,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace OdataToEntity.AspNetCore
 {
-    public class OeBatchController : Controller
+    public class OeBatchController : ControllerBase
     {
         private OeDataAdapter _dataAdapter;
         private IEdmModel _edmModel;
@@ -30,7 +29,7 @@ namespace OdataToEntity.AspNetCore
             var actionInvokerFactory = GetService<IActionInvokerFactory>();
 
             String[] apiSegments = base.HttpContext.Request.Path.Value.Split(new[] { '/' }, 2, StringSplitOptions.RemoveEmptyEntries);
-            Uri baseUri = apiSegments.Length == 1 ? _rootUri : new Uri(_rootUri, apiSegments[0]);
+            Uri baseUri = UriHelper.GetBaseUri(base.Request);
 
             var messageContext = new OeMessageContext(baseUri, EdmModel, DataAdapter.EntitySetMetaAdapters);
             OeBatchMessage batchMessage = OeBatchMessage.CreateBatchMessage(messageContext, base.HttpContext.Request.Body, base.HttpContext.Request.ContentType);
@@ -90,10 +89,7 @@ namespace OdataToEntity.AspNetCore
         {
             base.HttpContext.Response.ContentType = base.HttpContext.Request.ContentType;
 
-            String[] apiSegment = base.HttpContext.Request.Path.Value.Split(new[] { '/' }, 2, StringSplitOptions.RemoveEmptyEntries);
-            Uri baseUri = apiSegment.Length == 1 ? _rootUri : new Uri(_rootUri, apiSegment[0]);
-
-            var parser = new OeBatchParser(baseUri, DataAdapter, EdmModel);
+            var parser = new OeBatchParser(UriHelper.GetBaseUri(base.Request), DataAdapter, EdmModel);
             await parser.ExecuteAsync(base.HttpContext.Request.Body, base.HttpContext.Response.Body,
                 base.HttpContext.Request.ContentType, CancellationToken.None).ConfigureAwait(false);
         }

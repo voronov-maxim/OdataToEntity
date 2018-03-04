@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 namespace OdataToEntity.Test.AspMvcServer.Controllers
 {
     [Route("api/[controller]")]
-    public class ManyColumnsViewController : OeBaseController
+    public class ManyColumnsViewController : OeControllerBase
     {
         public ManyColumnsViewController(Db.OeDataAdapter dataAdapter, IEdmModel edmModel)
             : base(dataAdapter, edmModel)

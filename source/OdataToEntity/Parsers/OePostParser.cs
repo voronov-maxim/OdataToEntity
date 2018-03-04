@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace OdataToEntity
 {
-    public sealed class OePostParser
+    public struct OePostParser
     {
         private readonly IEdmModel _model;
         private readonly Db.OeDataAdapter _dataAdapter;
@@ -23,6 +23,19 @@ namespace OdataToEntity
             _model = model;
         }
 
+        public OeQueryContext CreateQueryContext(ODataUri odataUri, OeMetadataLevel metadataLevel, Type returnClrType)
+        {
+            String entitySetName = _dataAdapter.EntitySetMetaAdapters.FindByClrType(returnClrType).EntitySetName;
+            IEdmEntitySet entitySet = _model.FindDeclaredEntitySet(entitySetName);
+            OePropertyAccessor[] accessors = OePropertyAccessor.CreateFromType(returnClrType, entitySet);
+
+            Db.OeEntitySetAdapter entitySetAdapter = _dataAdapter.GetEntitySetAdapter(entitySet.Name);
+            return new OeQueryContext(_model, odataUri, entitySet, null, false, 0, false,
+                _dataAdapter.IsDatabaseNullHighestValue, metadataLevel, ref entitySetAdapter)
+                {
+                    EntryFactory = OeEntryFactory.CreateEntryFactory(entitySet, accessors),
+                };
+        }
         public async Task ExecuteAsync(ODataUri odataUri, Stream requestStream, OeRequestHeaders headers, Stream responseStream, CancellationToken cancellationToken)
         {
             Object dataContext = null;
@@ -31,7 +44,7 @@ namespace OdataToEntity
                 dataContext = _dataAdapter.CreateDataContext();
                 using (Db.OeAsyncEnumerator asyncEnumerator = GetAsyncEnumerator(odataUri, requestStream, headers, dataContext, out Type returnClrType))
                 {
-                    if (returnClrType == null || returnClrType.IsPrimitive)
+                    if (returnClrType == null || returnClrType.IsPrimitive || returnClrType == typeof(String))
                     {
                         if (await asyncEnumerator.MoveNextAsync().ConfigureAwait(false) && asyncEnumerator.Current != null)
                         {
@@ -44,16 +57,7 @@ namespace OdataToEntity
                     }
                     else
                     {
-                        String entitySetName = _dataAdapter.EntitySetMetaAdapters.FindByClrType(returnClrType).EntitySetName;
-                        IEdmEntitySet entitySet = _model.FindDeclaredEntitySet(entitySetName);
-                        OePropertyAccessor[] accessors = OePropertyAccessor.CreateFromType(returnClrType, entitySet);
-
-                        Db.OeEntitySetAdapter entitySetAdapter = _dataAdapter.GetEntitySetAdapter(entitySet.Name);
-                        var queryContext = new OeQueryContext(_model, odataUri, entitySet, null, false, 0, false,
-                            _dataAdapter.IsDatabaseNullHighestValue, headers.MetadataLevel, ref entitySetAdapter)
-                        {
-                            EntryFactory = OeEntryFactory.CreateEntryFactory(entitySet, accessors),
-                        };
+                        OeQueryContext queryContext = CreateQueryContext(odataUri, headers.MetadataLevel, returnClrType);
                         await Writers.OeGetWriter.SerializeAsync(queryContext, asyncEnumerator, headers.ContentType, responseStream).ConfigureAwait(false);
                     }
                 }
@@ -110,7 +114,7 @@ namespace OdataToEntity
                 }
             }
         }
-        private Db.OeAsyncEnumerator GetAsyncEnumerator(ODataUri odataUri, Stream requestStream, OeRequestHeaders headers, Object dataContext, out Type returnClrType)
+        public Db.OeAsyncEnumerator GetAsyncEnumerator(ODataUri odataUri, Stream requestStream, OeRequestHeaders headers, Object dataContext, out Type returnClrType)
         {
             var importSegment = (OperationImportSegment)odataUri.Path.LastSegment;
 

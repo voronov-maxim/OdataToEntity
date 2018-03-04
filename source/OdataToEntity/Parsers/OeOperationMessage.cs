@@ -41,21 +41,17 @@ namespace OdataToEntity.Parsers
         {
             entitySet = null;
             foreach (ODataPathSegment segment in odataPath)
-            {
-                var entitySegment = segment as EntitySetSegment;
-                if (entitySegment != null)
+                if (segment is EntitySetSegment entitySegment)
                 {
                     entitySet = entitySegment.EntitySet;
                     return (IEdmEntityTypeReference)((IEdmCollectionType)entitySegment.EdmType).ElementType;
                 }
-            }
             throw new InvalidOperationException("not supported type ODataPath");
         }
         private OeEntityItem ReadEntityFromStream(OeMessageContext context, Stream content)
         {
             var parser = new ODataUriParser(context.Model, context.BaseUri, RequestUrl);
-            IEdmEntitySet entitySet;
-            IEdmEntityTypeReference entityTypeRef = GetEdmEntityTypeRef(parser.ParsePath(), out entitySet);
+            IEdmEntityTypeReference entityTypeRef = GetEdmEntityTypeRef(parser.ParsePath(), out IEdmEntitySet entitySet);
             var entityType = (IEdmEntityType)entityTypeRef.Definition;
 
             ODataResource entry = null;

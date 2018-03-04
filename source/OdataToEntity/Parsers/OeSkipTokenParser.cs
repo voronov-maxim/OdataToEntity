@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 
 namespace OdataToEntity.Parsers
@@ -15,15 +16,11 @@ namespace OdataToEntity.Parsers
         private static readonly ODataMessageReaderSettings ReaderSettings = new ODataMessageReaderSettings() { EnableMessageStreamDisposal = false };
         private static readonly ODataMessageWriterSettings WriterSettings = new ODataMessageWriterSettings() { EnableMessageStreamDisposal = false };
 
-        private readonly IEdmModel _edmModel;
-        private readonly bool _isDatabaseNullHighestValue;
-        private readonly OrderByClause _orderByClause;
-
         public OeSkipTokenParser(IEdmModel edmModel, IEdmEntityType edmType, bool isDatabaseNullHighestValue, OrderByClause orderByClause)
         {
-            _edmModel = edmModel;
-            _isDatabaseNullHighestValue = isDatabaseNullHighestValue;
-            _orderByClause = GetUniqueOrderBy(edmModel, edmType, orderByClause);
+            EdmModel = edmModel;
+            IsDatabaseNullHighestValue = isDatabaseNullHighestValue;
+            UniqueOrderBy = GetUniqueOrderBy(edmModel, edmType, orderByClause);
         }
 
         internal static OrderByClause GetUniqueOrderBy(IEdmModel edmModel, IEdmEntityType edmType, OrderByClause orderByClause)
@@ -72,7 +69,7 @@ namespace OdataToEntity.Parsers
         {
             var keys = new KeyValuePair<String, Object>[Accessors.Length];
             for (int i = 0; i < keys.Length; i++)
-                keys[i] = new KeyValuePair<String, Object>(Accessors[i].Name, Accessors[i].Accessor(value));
+                keys[i] = new KeyValuePair<String, Object>(GetPropertyName(Accessors[i].EdmProperty), Accessors[i].Accessor(value));
             return keys;
         }
         private static IEdmStructuralProperty[] GetEdmProperies(OrderByClause orderByClause)
@@ -123,9 +120,11 @@ namespace OdataToEntity.Parsers
             }
             return true;
         }
+        public static String GetPropertyName(MemberExpression propertyExpression) => propertyExpression.Member.DeclaringType.Name + "_" + propertyExpression.Member.Name;
+        public static String GetPropertyName(IEdmProperty edmProperty) => ((IEdmNamedElement)edmProperty.DeclaringType).Name + "_" + edmProperty.Name;
         public String GetSkipToken(Object value)
         {
-            String json = GetJson(_edmModel, GetKeys(value));
+            String json = GetJson(EdmModel, GetKeys(value));
             return Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
         }
         public static String GetSkipToken(IEdmModel edmModel, IEnumerable<KeyValuePair<String, Object>> keys)
@@ -142,7 +141,7 @@ namespace OdataToEntity.Parsers
                 {
                     var operation = new EdmAction("", "", null);
                     foreach (IEdmStructuralProperty key in keys)
-                        operation.AddParameter(key.Name, key.Type);
+                        operation.AddParameter(GetPropertyName(key), key.Type);
 
                     ODataParameterReader reader = messageReader.CreateODataParameterReader(operation);
                     while (reader.Read())
@@ -158,11 +157,12 @@ namespace OdataToEntity.Parsers
         public IEnumerable<KeyValuePair<String, Object>> ParseSkipToken(String skipToken)
         {
             String json = Encoding.UTF8.GetString(Convert.FromBase64String(skipToken));
-            return ParseJson(_edmModel, json, GetEdmProperies(_orderByClause));
+            return ParseJson(EdmModel, json, GetEdmProperies(UniqueOrderBy));
         }
 
         public OePropertyAccessor[] Accessors { get; set; }
-        public bool IsDatabaseNullHighestValue => _isDatabaseNullHighestValue;
-        public OrderByClause UniqueOrderBy => _orderByClause;
+        public IEdmModel EdmModel { get; }
+        public bool IsDatabaseNullHighestValue { get; }
+        public OrderByClause UniqueOrderBy { get; }
     }
 }

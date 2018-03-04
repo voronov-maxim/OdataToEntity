@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace OdataToEntity.AspNetCore
 {
-    public sealed class OeFilterAttribute : ActionFilterAttribute
+    public sealed class OeFilterAttribute : Attribute, IActionFilter
     {
         internal sealed class BatchModelStateDictionary : ModelStateDictionary
         {
@@ -13,7 +13,10 @@ namespace OdataToEntity.AspNetCore
             public OeDataContext DataContext { get; set; }
         }
 
-        public override void OnActionExecuting(ActionExecutingContext context)
+        public void OnActionExecuted(ActionExecutedContext context)
+        {
+        }
+        public void OnActionExecuting(ActionExecutingContext context)
         {
             if (context.ModelState is BatchModelStateDictionary batchModelState)
             {

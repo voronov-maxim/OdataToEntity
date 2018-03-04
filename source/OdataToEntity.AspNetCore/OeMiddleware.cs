@@ -30,11 +30,6 @@ namespace OdataToEntity.AspNetCore
             _edmModel = edmModel;
         }
 
-        private static Uri GetBaseUri(HttpContext httpContext)
-        {
-            var rootUri = new Uri(httpContext.Request.Scheme + "://" + httpContext.Request.Host);
-            return new Uri(rootUri, httpContext.Request.PathBase);
-        }
         private static bool GetCsdlSchema(IEdmModel edmModel, Stream stream)
         {
             using (XmlWriter xmlWriter = XmlWriter.Create(stream))
@@ -56,21 +51,17 @@ namespace OdataToEntity.AspNetCore
         }
         private async Task Invoke(HttpContext httpContext, PathString remaining)
         {
-            var baseUri = GetBaseUri(httpContext);
-            var uri = new Uri(baseUri.OriginalString + remaining + httpContext.Request.QueryString);
-
             var requestHeaders = (FrameRequestHeaders)httpContext.Request.Headers;
-
             ((IDictionary<String, StringValues>)requestHeaders).TryGetValue("Prefer", out StringValues preferHeader);
             OeRequestHeaders headers = OeRequestHeaders.Parse(requestHeaders.HeaderAccept, preferHeader);
 
-            var parser = new OeParser(baseUri, _dataAdapter, _edmModel);
-            await parser.ExecuteGetAsync(uri, new OeHttpRequestHeaders(headers, httpContext.Response), httpContext.Response.Body, CancellationToken.None);
+            var parser = new OeParser(UriHelper.GetBaseUri(httpContext.Request), _dataAdapter, _edmModel);
+            await parser.ExecuteGetAsync(UriHelper.GetUri(httpContext.Request), new OeHttpRequestHeaders(headers, httpContext.Response), httpContext.Response.Body, CancellationToken.None);
         }
         private async Task InvokeBatch(HttpContext httpContext)
         {
             httpContext.Response.ContentType = httpContext.Request.ContentType;
-            var parser = new OeParser(GetBaseUri(httpContext), _dataAdapter, _edmModel);
+            var parser = new OeParser(UriHelper.GetBaseUri(httpContext.Request), _dataAdapter, _edmModel);
             await parser.ExecuteBatchAsync(httpContext.Request.Body, httpContext.Response.Body,
                 httpContext.Request.ContentType, CancellationToken.None);
         }
