@@ -25,8 +25,7 @@ namespace OdataToEntity.Linq2Db
                 for (int i = 0; i < properties.Length; i++)
                 {
                     String propertyName = propertyNames[i].Trim();
-                    property = propertyInfo.DeclaringType.GetPropertyIgnoreCase(propertyName);
-                    if (property == null)
+                    property = propertyInfo.DeclaringType.GetPropertyIgnoreCase(propertyName) ??
                         throw new InvalidOperationException("property " + propertyName + " foreign key " + propertyInfo.Name + " not found");
 
                     properties[i] = property;

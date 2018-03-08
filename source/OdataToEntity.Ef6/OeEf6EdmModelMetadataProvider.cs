@@ -22,8 +22,7 @@ namespace OdataToEntity.Ef6
 
         private IEnumerable<EntityType> GetEntityTypes(PropertyInfo propertyInfo)
         {
-            EntityType efEntityType;
-            if (_entityTypes.TryGetValue(propertyInfo.DeclaringType, out efEntityType))
+            if (_entityTypes.TryGetValue(propertyInfo.DeclaringType, out EntityType efEntityType))
                 yield return efEntityType;
             else
                 foreach (KeyValuePair<Type, EntityType> pair in _entityTypes)
@@ -60,8 +59,7 @@ namespace OdataToEntity.Ef6
                 foreach (NavigationProperty navigationProperty in efEntityType.NavigationProperties)
                     if (navigationProperty.Name == propertyInfo.Name)
                     {
-                        MetadataProperty metadataProperty;
-                        if (!navigationProperty.ToEndMember.MetadataProperties.TryGetValue("ClrPropertyInfo", false, out metadataProperty))
+                        if (!navigationProperty.ToEndMember.MetadataProperties.TryGetValue("ClrPropertyInfo", false, out MetadataProperty metadataProperty))
                             return null;
 
                         var inverseProperty = (PropertyInfo)metadataProperty.Value;

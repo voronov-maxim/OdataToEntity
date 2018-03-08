@@ -4,7 +4,9 @@ using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Internal;
+using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.Routing.Template;
 using Microsoft.OData.Edm;
 using OdataToEntity.Db;
 using System;
@@ -16,25 +18,18 @@ namespace OdataToEntity.AspNetCore
 {
     public sealed class OeRouter : IRouter
     {
-        private readonly IActionDescriptorCollectionProvider _actionDescriptorCollectionProvider;
+        private readonly ActionDescriptorCollection _actionDescriptors;
         private readonly IActionInvokerFactory _actionInvokerFactory;
-        private readonly IActionSelector _actionSelector;
         private readonly OeDataAdapter _dataAdapter;
         private readonly IEdmModel _edmModel;
-        private readonly Dictionary<String, IReadOnlyList<ActionDescriptor>> _operationDescriptors;
-        private readonly Dictionary<String, IEdmOperationImport> _operationImports;
 
-        public OeRouter(IActionInvokerFactory actionInvokerFactory, IActionSelector actionSelector, IActionDescriptorCollectionProvider actionDescriptorCollectionProvider,
-            IEdmModel edmModel, OeDataAdapter dataAdapter)
+        public OeRouter(IActionInvokerFactory actionInvokerFactory, IActionDescriptorCollectionProvider actionDescriptorCollectionProvider,
+            IEdmModel edmModel, OeDataAdapter dataAdapter, IUrlHelperFactory urlHelperFactory)
         {
             _actionInvokerFactory = actionInvokerFactory;
-            _actionSelector = actionSelector;
-            _actionDescriptorCollectionProvider = actionDescriptorCollectionProvider;
+            _actionDescriptors = actionDescriptorCollectionProvider.ActionDescriptors;
             _edmModel = edmModel;
             _dataAdapter = dataAdapter;
-
-            _operationDescriptors = GetOperationDescriptors(actionDescriptorCollectionProvider.ActionDescriptors.Items);
-            _operationImports = edmModel.EntityContainer.OperationImports().ToDictionary(o => o.Name);
         }
 
         private static bool ActionConstaint(ActionDescriptor actionDescriptor, String httpMethod)
@@ -53,43 +48,31 @@ namespace OdataToEntity.AspNetCore
 
             return false;
         }
-        private static Dictionary<String, IReadOnlyList<ActionDescriptor>> GetOperationDescriptors(IReadOnlyList<ActionDescriptor> actionDescriptors)
-        {
-            return actionDescriptors.Cast<ControllerActionDescriptor>().GroupBy(o => o.ActionName).
-                ToDictionary(g => g.First().ControllerName + "." + g.Key, g => (IReadOnlyList<ActionDescriptor>)g.ToList<ActionDescriptor>());
-        }
-        private IReadOnlyList<ActionDescriptor> GetOperationCadidates(String[] segments)
-        {
-            if (!_operationImports.TryGetValue(segments.Last(), out IEdmOperationImport operationImport))
-                return Array.Empty<ActionDescriptor>();
-
-            if (!_operationDescriptors.TryGetValue(operationImport.Operation.Name, out IReadOnlyList<ActionDescriptor> candidates))
-                return Array.Empty<ActionDescriptor>();
-
-            return candidates;
-        }
         private static String GetPath(String path)
         {
-            int pos;
+            int pos1, pos2;
             if (path[path.Length - 1] == ')')
             {
-                pos = path.LastIndexOf('(');
-                if (pos == -1)
+                pos1 = path.LastIndexOf('(');
+                if (pos1 == -1)
                     return null;
-            }
-            else if ((pos = path.IndexOf(")/")) != -1)
-            {
-                pos = path.LastIndexOf('(', pos);
-                if (pos == -1)
-                    return null;
-            }
-            else if ((pos = path.IndexOf("/$")) != -1)
-            {
-            }
-            else
-                return null;
 
-            return path.Substring(0, pos);
+                return path.Substring(0, pos1) + "/" + path.Substring(pos1 + 1, path.Length - pos1 - 2);
+            }
+
+            if ((pos2 = path.IndexOf(")/")) != -1)
+            {
+                pos1 = path.LastIndexOf('(', pos2);
+                if (pos1 == -1)
+                    return null;
+
+                return path.Substring(0, pos1) + "/" + path.Substring(pos1 + 1, pos2 - pos1 - 1) + path.Substring(pos2 + 1);
+            }
+
+            if ((pos1 = path.IndexOf("/$")) != -1)
+                return path.Substring(0, pos1);
+
+            return path;
         }
         public VirtualPathData GetVirtualPath(VirtualPathContext context)
         {
@@ -97,77 +80,63 @@ namespace OdataToEntity.AspNetCore
         }
         public Task RouteAsync(RouteContext context)
         {
-            IReadOnlyList<ActionDescriptor> candidates = _actionSelector.SelectCandidates(context);
+            String path = GetPath(context.HttpContext.Request.Path.Value);
+            IReadOnlyList<ActionDescriptor> candidates = SelectCandidates(_actionDescriptors.Items, context.RouteData.Values, path, context.HttpContext.Request.Method);
             if (candidates.Count == 0)
+                return Task.CompletedTask;
+            if (candidates.Count > 1)
+                throw new AmbiguousActionException(path + " " + String.Join(";", candidates.Select(c => c.DisplayName)));
+
+            context.Handler = async ctx =>
             {
-                String path = GetPath(context.HttpContext.Request.Path.Value);
-                if (path == null)
-                {
-                    path = context.HttpContext.Request.Path.Value;
-                    String[] segments = path.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
-                    candidates = GetOperationCadidates(segments);
+                var actionContext = new ActionContext(context.HttpContext, ctx.GetRouteData(), candidates[0]);
+                IActionInvoker actionInvoker = _actionInvokerFactory.CreateInvoker(actionContext);
+                if (actionInvoker == null)
+                    return;
 
-                    int length = path.Length - segments.Last().Length - 2;
-                    if (length > 0)
-                        candidates = candidates.Where(c => String.Compare(c.AttributeRouteInfo.Template, 0, path, 1, length, StringComparison.OrdinalIgnoreCase) == 0).ToList();
-                }
-                else
-                {
-                    String[] segments = path.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
-                    candidates = SelectCandidates(_actionDescriptorCollectionProvider.ActionDescriptors.Items, segments, context.HttpContext.Request.Method);
-                    if (candidates.Count == 0)
-                        candidates = GetOperationCadidates(segments);
-                }
-                if (candidates.Count == 0)
-                    return Task.CompletedTask;
-            }
-
-            ActionDescriptor actionDescriptor = _actionSelector.SelectBestCandidate(context, candidates);
-            if (actionDescriptor != null)
-                context.Handler = async ctx =>
-                {
-                    var actionContext = new ActionContext(context.HttpContext, ctx.GetRouteData(), actionDescriptor);
-                    IActionInvoker actionInvoker = _actionInvokerFactory.CreateInvoker(actionContext);
-                    if (actionInvoker == null)
-                        return;
-
-                    await actionInvoker.InvokeAsync();
-                };
+                await actionInvoker.InvokeAsync();
+            };
 
             return Task.CompletedTask;
         }
-        internal static List<ActionDescriptor> SelectCandidates(IReadOnlyList<ActionDescriptor> actionDescriptors, String[] segments, String httpMethod)
+        internal static List<ActionDescriptor> SelectCandidates(IReadOnlyList<ActionDescriptor> actionDescriptors, RouteValueDictionary values, String path, String httpMethod)
         {
             var selectCandidates = new List<ActionDescriptor>();
             for (int i = 0; i < actionDescriptors.Count; i++)
             {
                 ActionDescriptor actionDescriptor = actionDescriptors[i];
-                if (actionDescriptor.AttributeRouteInfo == null)
+                if (actionDescriptor.AttributeRouteInfo != null)
                 {
-                    actionDescriptor.RouteValues.TryGetValue("controller", out String value);
-                    if (String.Compare(value, segments[0], StringComparison.OrdinalIgnoreCase) == 0 && ActionConstaint(actionDescriptor, httpMethod))
-                        selectCandidates.Add(actionDescriptor);
-                }
-                else
-                {
-                    String[] controllerSegments = actionDescriptor.AttributeRouteInfo.Template.Split('/');
-                    if (controllerSegments.Length != segments.Length)
-                        continue;
-
-                    bool match = false;
-                    for (int j = 0; j < controllerSegments.Length; j++)
-                    {
-                        match = String.Compare(controllerSegments[j], segments[j], StringComparison.OrdinalIgnoreCase) == 0;
-                        if (!match)
-                            break;
-                    }
-                    if (match && ActionConstaint(actionDescriptor, httpMethod))
+                    RouteTemplate template = TemplateParser.Parse(actionDescriptor.AttributeRouteInfo.Template);
+                    var matcher = new TemplateMatcher(template, null);
+                    if (matcher.TryMatch(path, values) && ActionConstaint(actionDescriptor, httpMethod))
                         selectCandidates.Add(actionDescriptor);
                 }
             }
 
-            if (selectCandidates.Count == 0 && (HttpMethods.IsPatch(httpMethod) || HttpMethods.IsDelete(httpMethod) || HttpMethods.IsPut(httpMethod)))
-                return SelectCandidates(actionDescriptors, segments, HttpMethods.Post);
+            if (selectCandidates.Count == 0)
+            {
+                if (HttpMethods.IsGet(httpMethod))
+                {
+                    for (int i = 0; i < actionDescriptors.Count; i++)
+                    {
+                        ActionDescriptor actionDescriptor = actionDescriptors[i];
+                        if (actionDescriptor.AttributeRouteInfo != null
+                            && path.IndexOf(actionDescriptor.AttributeRouteInfo.Template) == 1
+                            && path[actionDescriptor.AttributeRouteInfo.Template.Length + 1] == '/'
+                            && ActionConstaint(actionDescriptor, httpMethod))
+                        {
+                            selectCandidates.Add(actionDescriptor);
+                            break;
+                        }
+                    }
+                    return selectCandidates;
+                }
+
+                if (HttpMethods.IsPatch(httpMethod) || HttpMethods.IsDelete(httpMethod) || HttpMethods.IsPut(httpMethod))
+                    return SelectCandidates(actionDescriptors, values, path, HttpMethods.Post);
+            }
+
             return selectCandidates;
         }
     }

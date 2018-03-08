@@ -42,8 +42,7 @@ namespace OdataToEntity.ModelBuilder
             if (clrType == null)
                 clrType = dependentNavigationProperty.PropertyType;
 
-            EntityTypeInfo principalInfo;
-            if (!entityTypes.TryGetValue(clrType, out principalInfo))
+            if (!entityTypes.TryGetValue(clrType, out EntityTypeInfo principalInfo))
                 return null;
 
             PropertyInfo[] dependentStructuralProperties = GetDependentStructuralProperties(metadataProvider, dependentInfo, dependentNavigationProperty);

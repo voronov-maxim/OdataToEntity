@@ -21,10 +21,7 @@ namespace OdataToEntity.ModelBuilder
         }
         public OeOperationConfiguration(String name, String namespaceName, String methodInfoName, Type returnType, bool? isDbFunction)
         {
-            if (name == null)
-                throw new ArgumentNullException(nameof(name));
-
-            _name = name;
+            _name = name ?? throw new ArgumentNullException(nameof(name));
             _namespaceName = namespaceName;
             _methodInfoName = methodInfoName;
             _returnType = returnType;

@@ -96,8 +96,7 @@ namespace OdataToEntity.ModelBuilder
         }
         public static IEdmPrimitiveType GetPrimitiveType(Type clrType)
         {
-            IEdmPrimitiveType edmType;
-            _clrTypeMappings.TryGetValue(clrType, out edmType);
+            _clrTypeMappings.TryGetValue(clrType, out IEdmPrimitiveType edmType);
             return edmType;
         }
         public static IEdmPrimitiveTypeReference GetPrimitiveTypeRef(Type clrType, bool nullable)

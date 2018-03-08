@@ -106,7 +106,7 @@ namespace OdataToEntity.AspNetCore
             Func<OeAsyncEnumerator, IActionResult> odataFunc = OData<Object>;
             return (IActionResult)odataFunc.Method.GetGenericMethodDefinition().MakeGenericMethod(clrType).Invoke(this, new Object[] { asyncEnumerator });
         }
-        protected IActionResult OData<T>(OeAsyncEnumerator asyncEnumerator)
+        protected ODataResult<T> OData<T>(OeAsyncEnumerator asyncEnumerator)
         {
             var entityAsyncEnumerator = new OeEntityAsyncEnumerator<T>(_queryContext.EntryFactory, asyncEnumerator, _queryContext.SkipTokenParser);
             return new ODataResult<T>(_edmModel, _queryContext.ODataUri, entityAsyncEnumerator)

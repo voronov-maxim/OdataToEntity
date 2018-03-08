@@ -150,9 +150,7 @@ namespace OdataToEntity.ModelBuilder
 
                 EdmEntityType edmType = null;
                 foreach (Type baseClrType in baseClrTypes)
-                {
-                    EntityTypeInfo entityTypeInfo;
-                    if (entityTypeInfos.TryGetValue(baseClrType, out entityTypeInfo))
+                    if (entityTypeInfos.TryGetValue(baseClrType, out EntityTypeInfo entityTypeInfo))
                         edmType = entityTypeInfo.EdmType;
                     else
                     {
@@ -160,7 +158,6 @@ namespace OdataToEntity.ModelBuilder
                         entityTypeInfo = new EntityTypeInfo(_metadataProvider, baseClrType, edmType);
                         entityTypeInfos.Add(baseClrType, entityTypeInfo);
                     }
-                }
             }
             return entityTypeInfos;
         }
@@ -205,16 +202,13 @@ namespace OdataToEntity.ModelBuilder
                     clrType = underlyingType;
             }
 
-            EntityTypeInfo entityTypeInfo;
-            if (entityTypeInfos.TryGetValue(clrType, out entityTypeInfo))
+            if (entityTypeInfos.TryGetValue(clrType, out EntityTypeInfo entityTypeInfo))
                 return new EdmEntityTypeReference(entityTypeInfo.EdmType, nullable);
 
-            EdmEnumType edmEnumType;
-            if (_enumTypes.TryGetValue(clrType, out edmEnumType))
+            if (_enumTypes.TryGetValue(clrType, out EdmEnumType edmEnumType))
                 return new EdmEnumTypeReference(edmEnumType, nullable);
 
-            EdmComplexType edmComplexType;
-            if (_complexTypes.TryGetValue(clrType, out edmComplexType))
+            if (_complexTypes.TryGetValue(clrType, out EdmComplexType edmComplexType))
                 return new EdmComplexTypeReference(edmComplexType, nullable);
 
             return PrimitiveTypeHelper.GetPrimitiveTypeRef(clrType, nullable);

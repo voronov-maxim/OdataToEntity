@@ -21,8 +21,7 @@ namespace OdataToEntity.EfCore
 
         private IEnumerable<IEntityType> GetEntityTypes(PropertyInfo propertyInfo)
         {
-            IEntityType efEntityType;
-            if (_entityTypes.TryGetValue(propertyInfo.DeclaringType, out efEntityType))
+            if (_entityTypes.TryGetValue(propertyInfo.DeclaringType, out IEntityType efEntityType))
                 yield return efEntityType;
             else
                 foreach (KeyValuePair<Type, IEntityType> pair in _entityTypes)
@@ -60,14 +59,14 @@ namespace OdataToEntity.EfCore
                     if (fkey.DependentToPrincipal.Name == propertyInfo.Name)
                     {
                         INavigation inverseProperty = fkey.DependentToPrincipal.FindInverse();
-                        return inverseProperty == null ? null : inverseProperty.DeclaringEntityType.ClrType.GetPropertyIgnoreCase(inverseProperty.Name);
+                        return inverseProperty?.DeclaringEntityType.ClrType.GetPropertyIgnoreCase(inverseProperty.Name);
                     }
 
                 foreach (IForeignKey fkey in efEntityType.GetReferencingForeignKeys())
                     if (fkey.PrincipalToDependent != null && fkey.PrincipalToDependent.Name == propertyInfo.Name)
                     {
                         INavigation inverseProperty = fkey.PrincipalToDependent.FindInverse();
-                        return inverseProperty == null ? null : inverseProperty.DeclaringEntityType.ClrType.GetPropertyIgnoreCase(inverseProperty.Name);
+                        return inverseProperty?.DeclaringEntityType.ClrType.GetPropertyIgnoreCase(inverseProperty.Name);
                     }
             }
 

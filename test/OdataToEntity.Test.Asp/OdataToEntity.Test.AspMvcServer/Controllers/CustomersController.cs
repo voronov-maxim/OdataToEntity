@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.OData.Edm;
 using OdataToEntity.AspNetCore;
-using System.Threading.Tasks;
+using System;
 
 namespace OdataToEntity.Test.AspMvcServer.Controllers
 {
@@ -19,10 +19,16 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
             dataContext.Update(customer);
         }
         [HttpGet]
-        public IActionResult Get()
+        public ODataResult<Model.Customer> Get()
         {
             Db.OeAsyncEnumerator asyncEnumerator = base.GetAsyncEnumerator(base.HttpContext, base.HttpContext.Response.Body);
-            return base.OData(asyncEnumerator);
+            return base.OData<Model.Customer>(asyncEnumerator);
+        }
+        [HttpGet("{country},{id}")]
+        public ODataResult<Model.Customer> Get(String country, String id)
+        {
+            Db.OeAsyncEnumerator asyncEnumerator = base.GetAsyncEnumerator(base.HttpContext, base.HttpContext.Response.Body);
+            return base.OData<Model.Customer>(asyncEnumerator);
         }
         [HttpPatch]
         public void Patch(OeDataContext dataContext, Model.Customer customer)

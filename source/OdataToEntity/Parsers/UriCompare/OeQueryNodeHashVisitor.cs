@@ -68,8 +68,7 @@ namespace OdataToEntity.Parsers.UriCompare
         }
         public override int Visit(SingleNavigationNode nodeIn)
         {
-            var sourceNode = nodeIn.Source as SingleNavigationNode;
-            if (sourceNode != null)
+            if (nodeIn.Source is SingleNavigationNode sourceNode)
                 return sourceNode.NavigationProperty.Name.GetHashCode();
 
             return TranslateNode(nodeIn.Source);

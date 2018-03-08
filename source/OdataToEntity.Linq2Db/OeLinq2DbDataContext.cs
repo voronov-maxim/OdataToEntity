@@ -51,9 +51,7 @@ namespace OdataToEntity.Linq2Db
             var orderedTypes = new List<ClrTypeEdmSet>();
             while (clrTypeEdmSetList.Count > 0)
                 for (int i = 0; i < clrTypeEdmSetList.Count; i++)
-                {
-                    PropertyInfo selfRefProperty;
-                    if (IsDependent(clrTypeEdmSetList[i], clrTypeEdmSetList, out selfRefProperty))
+                    if (IsDependent(clrTypeEdmSetList[i], clrTypeEdmSetList, out PropertyInfo selfRefProperty))
                     {
                         if (selfRefProperty != null)
                             _tables[selfRefProperty.DeclaringType].SelfRefProperty = selfRefProperty;
@@ -62,7 +60,6 @@ namespace OdataToEntity.Linq2Db
                         clrTypeEdmSetList.RemoveAt(i);
                         break;
                     }
-                }
             return orderedTypes;
         }
         private static List<PropertyInfo> GetDependentProperties(Type clrType, IEdmNavigationProperty navigationPropery)
@@ -74,8 +71,7 @@ namespace OdataToEntity.Linq2Db
         }
         public OeLinq2DbTable<T> GetTable<T>()
         {
-            OeLinq2DbTable value;
-            if (_tables.TryGetValue(typeof(T), out value))
+            if (_tables.TryGetValue(typeof(T), out OeLinq2DbTable value))
                 return (OeLinq2DbTable<T>)value;
 
             var table = new OeLinq2DbTable<T>();
@@ -84,8 +80,7 @@ namespace OdataToEntity.Linq2Db
         }
         public OeLinq2DbTable GetTable(Type entityType)
         {
-            OeLinq2DbTable table;
-            if (_tables.TryGetValue(entityType, out table))
+            if (_tables.TryGetValue(entityType, out OeLinq2DbTable table))
                 return table;
 
             throw new InvalidOperationException("Table entity type " + entityType.FullName + " not found");

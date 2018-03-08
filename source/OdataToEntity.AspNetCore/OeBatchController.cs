@@ -8,6 +8,7 @@ using OdataToEntity.Db;
 using OdataToEntity.Parsers;
 using OdataToEntity.Writers;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,7 +19,6 @@ namespace OdataToEntity.AspNetCore
     {
         private OeDataAdapter _dataAdapter;
         private IEdmModel _edmModel;
-        private static readonly Uri _rootUri = new Uri("http://dummy");
 
         [HttpPost]
         public Task Batch() => BatchCore();
@@ -28,7 +28,15 @@ namespace OdataToEntity.AspNetCore
             var actionDescriptors = GetService<IActionDescriptorCollectionProvider>().ActionDescriptors;
             var actionInvokerFactory = GetService<IActionInvokerFactory>();
 
-            String[] apiSegments = base.HttpContext.Request.Path.Value.Split(new[] { '/' }, 2, StringSplitOptions.RemoveEmptyEntries);
+            String basePath = "";
+            if (base.HttpContext.Request.PathBase.HasValue)
+                basePath = base.HttpContext.Request.PathBase;
+            else
+            {
+                int i = base.HttpContext.Request.Path.Value.IndexOf('/', 1);
+                if (i > 0)
+                    basePath = base.HttpContext.Request.Path.Value.Substring(0, i);
+            }
             Uri baseUri = UriHelper.GetBaseUri(base.Request);
 
             var messageContext = new OeMessageContext(baseUri, EdmModel, DataAdapter.EntitySetMetaAdapters);
@@ -42,16 +50,13 @@ namespace OdataToEntity.AspNetCore
                 foreach (OeOperationMessage operation in batchMessage.Changeset)
                 {
                     OeEntitySetAdapter entitySetAdapter = DataAdapter.GetEntitySetAdapter(operation.EntityItem.EntitySet.Name);
+                    String path = basePath + "/" + entitySetAdapter.EntitySetMetaAdapter.EntitySetName;
 
-                    var segments = new String[apiSegments.Length];
-                    Array.Copy(apiSegments, segments, 1);
-                    segments[apiSegments.Length - 1] = entitySetAdapter.EntitySetMetaAdapter.EntitySetName;
-
-                    var candidates = OeRouter.SelectCandidates(actionDescriptors.Items, segments, operation.Method);
+                    List<ActionDescriptor> candidates = OeRouter.SelectCandidates(actionDescriptors.Items, base.RouteData.Values, path, operation.Method);
                     if (candidates.Count > 1)
                         throw new AmbiguousActionException(String.Join(Environment.NewLine, candidates.Select(c => c.DisplayName)));
                     if (candidates.Count == 0)
-                        throw new InvalidOperationException("Action " + operation.Method + " for controller " + segments.Last() + " not found");
+                        throw new InvalidOperationException("Action " + operation.Method + " for controller " + basePath + " not found");
 
                     var modelState = new OeFilterAttribute.BatchModelStateDictionary()
                     {

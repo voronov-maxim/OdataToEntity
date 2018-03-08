@@ -18,10 +18,22 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
             dataContext.Update(order);
         }
         [HttpGet]
-        public IActionResult Get()
+        public ODataResult<Model.Order> Get()
         {
             Db.OeAsyncEnumerator asyncEnumerator = base.GetAsyncEnumerator(base.HttpContext, base.HttpContext.Response.Body);
-            return base.OData(asyncEnumerator);
+            return base.OData<Model.Order>(asyncEnumerator);
+        }
+        [HttpGet("{id}")]
+        public ODataResult<Model.Order> Get(int id)
+        {
+            Db.OeAsyncEnumerator asyncEnumerator = base.GetAsyncEnumerator(base.HttpContext, base.HttpContext.Response.Body);
+            return base.OData<Model.Order>(asyncEnumerator);
+        }
+        [HttpGet("{id}/Items")]
+        public ODataResult<Model.OrderItem> GetItems(int id)
+        {
+            Db.OeAsyncEnumerator asyncEnumerator = base.GetAsyncEnumerator(base.HttpContext, base.HttpContext.Response.Body);
+            return base.OData<Model.OrderItem>(asyncEnumerator);
         }
         [HttpPatch]
         public void Patch(OeDataContext dataContext, Model.Order order)

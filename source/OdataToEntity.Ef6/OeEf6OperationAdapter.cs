@@ -50,7 +50,7 @@ namespace OdataToEntity.Ef6
             if (dbFunction == null)
                 return base.GetOperationConfiguration(methodInfo);
 
-            String functionName = dbFunction.FunctionName == null ? methodInfo.Name : dbFunction.FunctionName;
+            String functionName = dbFunction.FunctionName ?? methodInfo.Name;
             if (!String.IsNullOrEmpty(dbFunction.NamespaceName) && dbFunction.NamespaceName != ".")
                 functionName = dbFunction.NamespaceName + "." + functionName;
 

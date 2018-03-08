@@ -108,7 +108,7 @@ namespace OdataToEntity.Linq2Db
             }
 
             OrderBy(base.SelfRefProperty, identityProperties[0], _inserted);
-            for(int i = 0; i < _inserted.Count; i++)
+            for (int i = 0; i < _inserted.Count; i++)
             {
                 T entity = _inserted[i];
                 Object identity = dc.InsertWithIdentity<T>(entity);
@@ -149,12 +149,8 @@ namespace OdataToEntity.Linq2Db
             foreach (T entity in Inserted)
             {
                 Object oldValue = fkeyProperty.GetValue(entity);
-                if (oldValue != null)
-                {
-                    Object newValue;
-                    if (identities.TryGetValue(oldValue, out newValue))
-                        fkeyProperty.SetValue(entity, newValue);
-                }
+                if (oldValue != null && identities.TryGetValue(oldValue, out Object newValue))
+                    fkeyProperty.SetValue(entity, newValue);
             }
         }
 

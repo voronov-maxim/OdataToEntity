@@ -40,8 +40,7 @@ namespace OdataToEntity.Linq2Db
                 if (e.NodeType == ExpressionType.NotEqual)
                 {
                     MemberExpression propertyExpression;
-                    Object value;
-                    if (OeExpressionHelper.TryGetConstantValue(e.Right, out value))
+                    if (OeExpressionHelper.TryGetConstantValue(e.Right, out Object value))
                         propertyExpression = e.Left as MemberExpression;
                     else
                     {
@@ -64,8 +63,7 @@ namespace OdataToEntity.Linq2Db
                 for (int i = 0; i < arguments.Length; i++)
                 {
                     Expression argument = base.Visit(node.Arguments[i]);
-                    var call = argument as MethodCallExpression;
-                    if (call != null && call.Type.GetTypeInfo().IsGenericType && call.Type.GetGenericTypeDefinition() == typeof(IOrderedEnumerable<>))
+                    if (argument is MethodCallExpression call && call.Type.GetTypeInfo().IsGenericType && call.Type.GetGenericTypeDefinition() == typeof(IOrderedEnumerable<>))
                     {
                         Type type = call.Type.GetGenericArguments()[0];
                         MethodInfo selectMethodInfo = OeMethodInfoHelper.GetSelectMethodInfo(type, type);
@@ -78,8 +76,7 @@ namespace OdataToEntity.Linq2Db
             }
             protected override Expression VisitParameter(ParameterExpression node)
             {
-                ParameterExpression parameter;
-                if (_parameters.TryGetValue(node, out parameter))
+                if (_parameters.TryGetValue(node, out ParameterExpression parameter))
                     return parameter;
 
                 parameter = Expression.Parameter(node.Type, node.Name ?? node.ToString());

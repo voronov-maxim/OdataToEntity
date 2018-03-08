@@ -158,8 +158,7 @@ namespace OdataToEntity.Test.Model
                 return _source;
             }
 
-            ParameterExpression parameter;
-            if (_parameters.TryGetValue(node, out parameter))
+            if (_parameters.TryGetValue(node, out ParameterExpression parameter))
                 return parameter;
 
             parameter = Expression.Parameter(Map(node.Type), node.Name);

@@ -19,10 +19,16 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
             dataContext.Update(category);
         }
         [HttpGet]
-        public IActionResult Get()
+        public ODataResult<Model.Category> Get()
         {
             Db.OeAsyncEnumerator asyncEnumerator = base.GetAsyncEnumerator(base.HttpContext, base.HttpContext.Response.Body);
-            return base.OData(asyncEnumerator);
+            return base.OData<Model.Category>(asyncEnumerator);
+        }
+        [HttpGet("{id}")]
+        public ODataResult<Model.Category> Get(int id)
+        {
+            Db.OeAsyncEnumerator asyncEnumerator = base.GetAsyncEnumerator(base.HttpContext, base.HttpContext.Response.Body);
+            return base.OData<Model.Category>(asyncEnumerator);
         }
         [HttpPatch]
         public void Patch(OeDataContext dataContext, Model.Category category)

@@ -69,7 +69,7 @@ namespace OdataToEntity.EfCore
             if (dbFunction == null)
                 return base.GetOperationConfiguration(methodInfo);
 
-            String functionName = dbFunction.FunctionName == null ? methodInfo.Name : dbFunction.FunctionName;
+            String functionName = dbFunction.FunctionName ?? methodInfo.Name;
             if (!String.IsNullOrEmpty(dbFunction.Schema))
                 functionName = dbFunction.Schema + "." + functionName;
 

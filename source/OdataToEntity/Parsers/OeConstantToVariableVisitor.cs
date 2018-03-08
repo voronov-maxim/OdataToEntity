@@ -62,8 +62,7 @@ namespace OdataToEntity.Parsers
         {
             if (_simplifySkipTokenFilter)
             {
-                bool compareResult;
-                if (IsSkipTokenNullFilter(node.Left, out compareResult))
+                if (IsSkipTokenNullFilter(node.Left, out bool compareResult))
                 {
                     if (node.NodeType == ExpressionType.OrElse)
                         return node.Right;
