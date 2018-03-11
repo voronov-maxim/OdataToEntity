@@ -188,16 +188,20 @@ namespace OdataToEntity.Test.Model
     {
     }
 
-    [Table(Schema="dbo", Name="Orders")]
-	public partial class Order
-	{
+    public abstract class OrderBase
+    {
         [Column,     Nullable ] public string          AltCustomerCountry { get; set; } // char(2)
         [Column,     Nullable ] public int?            AltCustomerId      { get; set; } // int
+		[Column,     NotNull  ] public string          Name               { get; set; } // varchar(256)
+    }
+
+    [Table(Schema="dbo", Name="Orders")]
+	public partial class Order : OrderBase
+	{
         [Column,     NotNull  ] public string          CustomerCountry    { get; set; } // char(2)
         [Column,     NotNull  ] public int             CustomerId         { get; set; } // int
 		[Column,     Nullable ] public DateTimeOffset? Date               { get; set; } // datetimeoffset(7)
 		[PrimaryKey, Identity ] public int             Id                 { get; set; } // int
-		[Column,     NotNull  ] public string          Name               { get; set; } // varchar(256)
 		[Column,     NotNull  ] public OrderStatus     Status             { get; set; } // int
 
 		#region Associations

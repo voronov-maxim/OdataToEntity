@@ -33,15 +33,20 @@ namespace OdataToEntity.Test.Model
         public Sex? Sex { get; set; }
     }
 
-    public sealed class Order
+    public abstract class OrderBase
     {
-        [ForeignKey("AltCustomerCountry,AltCustomerId")]
-        public Customer AltCustomer { get; set; }
         //[ForeignKey(nameof(AltCustomer)), Column(Order = 0)]
         public String AltCustomerCountry { get; set; }
         //[ForeignKey(nameof(AltCustomer)), Column(Order = 1)]
         public int? AltCustomerId { get; set; }
+        [Required]
+        public String Name { get; set; }
+    }
 
+    public sealed class Order : OrderBase
+    {
+        [ForeignKey("AltCustomerCountry,AltCustomerId")]
+        public Customer AltCustomer { get; set; }
         [ForeignKey("CustomerCountry,CustomerId")]
         public Customer Customer { get; set; }
         //[ForeignKey(nameof(Customer)), Column(Order = 0)]
@@ -54,8 +59,6 @@ namespace OdataToEntity.Test.Model
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
         public ICollection<OrderItem> Items { get; set; }
-        [Required]
-        public String Name { get; set; }
         public OrderStatus Status { get; set; }
     }
 

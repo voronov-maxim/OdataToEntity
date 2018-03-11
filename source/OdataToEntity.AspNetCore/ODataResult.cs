@@ -42,7 +42,7 @@ namespace OdataToEntity.AspNetCore
             public override void Handle(ExpandedNavigationSelectItem item)
             {
                 var navigationSegment = (NavigationPropertySegment)item.PathToNavigationProperty.LastSegment;
-                if (navigationSegment.NavigationProperty.DeclaringType == _edmStructuredType)
+                if (IsPropertyDefineInType(navigationSegment.NavigationProperty))
                     NavigationProperties.Add(navigationSegment.NavigationProperty);
                 else
                     Handle(item.SelectAndExpand);
@@ -51,13 +51,13 @@ namespace OdataToEntity.AspNetCore
             {
                 if (item.SelectedPath.LastSegment is NavigationPropertySegment navigationSegment)
                 {
-                    if (navigationSegment.NavigationProperty.DeclaringType == _edmStructuredType &&
+                    if (IsPropertyDefineInType(navigationSegment.NavigationProperty) &&
                         !NavigationProperties.Contains(navigationSegment.NavigationProperty))
                         NavigationProperties.Add(navigationSegment.NavigationProperty);
                 }
                 else if (item.SelectedPath.LastSegment is PropertySegment propertySegment)
                 {
-                    if (propertySegment.Property.DeclaringType == _edmStructuredType)
+                    if (IsPropertyDefineInType(propertySegment.Property))
                         StructuralProperties.Add(propertySegment.Property);
                 }
                 else
@@ -67,6 +67,14 @@ namespace OdataToEntity.AspNetCore
             {
                 foreach (SelectItem selectItem in selectAndExpand.SelectedItems)
                     selectItem.HandleWith(this);
+            }
+            private bool IsPropertyDefineInType(IEdmProperty edmProperty)
+            {
+                IEdmStructuredType edmType;
+                for (edmType = _edmStructuredType; edmType != null && edmType != edmProperty.DeclaringType; edmType = edmType.BaseType)
+                {
+                }
+                return edmType != null;
             }
 
             public List<IEdmNavigationProperty> NavigationProperties { get; }

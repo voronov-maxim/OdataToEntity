@@ -154,7 +154,7 @@ namespace OdataToEntity.ModelBuilder
                         edmType = entityTypeInfo.EdmType;
                     else
                     {
-                        edmType = new EdmEntityType(baseClrType.Namespace, baseClrType.Name, edmType);
+                        edmType = new EdmEntityType(baseClrType.Namespace, baseClrType.Name, edmType, baseClrType.IsAbstract, false);
                         entityTypeInfo = new EntityTypeInfo(_metadataProvider, baseClrType, edmType);
                         entityTypeInfos.Add(baseClrType, entityTypeInfo);
                     }

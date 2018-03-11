@@ -40,7 +40,7 @@ namespace OdataToEntity.ModelBuilder
                     key = _clrType.GetPropertyIgnoreCase(_clrType.Name + "id");
                     if (key == null)
                     {
-                        if (EdmType.Key().Any())
+                        if (EdmType.Key().Any() || _clrType.IsAbstract)
                             return;
 
                         throw new InvalidOperationException("Key property not matching");
