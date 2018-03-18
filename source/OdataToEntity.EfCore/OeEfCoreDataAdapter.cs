@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.OData;
 using Microsoft.OData.Edm;
 using OdataToEntity.Parsers;
 using System;
@@ -29,101 +30,130 @@ namespace OdataToEntity.EfCore
     {
         private sealed class DbSetAdapterImpl<TEntity> : Db.OeEntitySetMetaAdapter, IFromSql where TEntity : class
         {
-            private readonly String _entitySetName;
+            private IEntityType _entityType;
             private readonly Func<T, DbSet<TEntity>> _getEntitySet;
-            private IKey _key;
-            private IClrPropertyGetter[] _keyGetters;
-            private IProperty[] _properties;
+            private Func<ValueBuffer, Object> _materializer;
+            private Func<Object[]> _valueBufferArrayInit;
             private IForeignKey _selfReferenceKey;
 
             public DbSetAdapterImpl(Func<T, DbSet<TEntity>> getEntitySet, String entitySetName)
             {
                 _getEntitySet = getEntitySet;
-                _entitySetName = entitySetName;
+                EntitySetName = entitySetName;
             }
 
-            public override void AddEntity(Object dataContext, Object entity)
+            public override void AddEntity(Object dataContext, ODataResourceBase entry)
             {
                 var context = (T)dataContext;
                 DbSet<TEntity> dbSet = _getEntitySet(context);
-                EntityEntry<TEntity> entry = dbSet.Add((TEntity)entity);
+                EntityEntry<TEntity> entityEntry = dbSet.Add(CreateEntity(context, entry));
 
-                InitKey(context);
-                for (int i = 0; i < _key.Properties.Count; i++)
-                {
-                    IProperty property = _key.Properties[i];
-                    if (property.ValueGenerated == ValueGenerated.OnAdd)
-                        entry.GetInfrastructure().MarkAsTemporary(property);
-                }
+                IReadOnlyList<IProperty> keyProperties = _entityType.FindPrimaryKey().Properties;
+                for (int i = 0; i < keyProperties.Count; i++)
+                    if (keyProperties[i].ValueGenerated == ValueGenerated.OnAdd)
+                        entityEntry.GetInfrastructure().MarkAsTemporary(keyProperties[i]);
             }
-            public override void AttachEntity(Object dataContext, Object entity)
-            {
-                AttachEntity(dataContext, entity, EntityState.Modified);
-            }
-            private void AttachEntity(Object dataContext, Object entity, EntityState entityState)
+            public override void AttachEntity(Object dataContext, ODataResourceBase entry)
             {
                 var context = (T)dataContext;
-                InternalEntityEntry internalEntry = GetEntityEntry(context, entity);
+                InternalEntityEntry internalEntry = GetEntityEntry(context, entry);
                 if (internalEntry == null)
                 {
-                    DbSet<TEntity> dbSet = _getEntitySet(context);
-                    dbSet.Attach((TEntity)entity);
-                    context.Entry(entity).State = entityState;
+                    TEntity entity = CreateEntity(context, entry);
+                    _getEntitySet(context).Attach(entity);
+                    internalEntry = _getEntitySet(context).Attach(entity).GetInfrastructure();
+
+                    IKey key = _entityType.FindPrimaryKey();
+                    foreach (ODataProperty odataProperty in entry.Properties)
+                    {
+                        IProperty property = _entityType.FindProperty(odataProperty.Name);
+                        if (!key.Properties.Contains(property))
+                            internalEntry.SetPropertyModified(property);
+                    }
                 }
                 else
                 {
-                    if (entityState == EntityState.Modified)
-                        foreach (IProperty property in _properties)
-                        {
-                            Object value = property.GetGetter().GetClrValue(entity);
-                            internalEntry.SetCurrentValue(property, value);
-                        }
-                    else
-                        internalEntry.SetEntityState(entityState);
+                    foreach (ODataProperty odataProperty in entry.Properties)
+                    {
+                        IProperty property = _entityType.FindProperty(odataProperty.Name);
+                        Object value = OeEdmClrHelper.GetStructuralValue(property.ClrType, odataProperty.Value);
+                        internalEntry.SetProperty(property, value);
+                    }
                 }
+            }
+            private TEntity CreateEntity(DbContext context, ODataResourceBase entry)
+            {
+                Initialize(context);
+
+                var values = _valueBufferArrayInit();
+                foreach (ODataProperty odataProperty in entry.Properties)
+                {
+                    IProperty property = _entityType.FindProperty(odataProperty.Name);
+                    Object value = OeEdmClrHelper.GetStructuralValue(property.ClrType, odataProperty.Value);
+                    values[property.GetIndex()] = value;
+                }
+                return (TEntity)_materializer(new ValueBuffer(values));
+            }
+            private static Func<Object[]> CreateNewArrayInit(IEntityType entityType)
+            {
+                var constants = new Expression[entityType.PropertyCount()];
+                foreach (IProperty property in entityType.GetProperties())
+                    constants[property.GetIndex()] = property.ClrType.IsValueType ?
+                        Expression.Convert(Expression.Constant(Activator.CreateInstance(property.ClrType)), typeof(Object)) :
+                        (Expression)Expression.Constant(null);
+
+                NewArrayExpression newArrayExpression = Expression.NewArrayInit(typeof(Object), constants);
+                return Expression.Lambda<Func<Object[]>>(newArrayExpression).Compile();
             }
             public IQueryable FromSql(Object dataContext, String sql, Object[] parameters)
             {
                 DbSet<TEntity> dbSet = _getEntitySet((T)dataContext);
-                return dbSet.FromSql<TEntity>(sql, parameters);
+                return dbSet.FromSql(sql, parameters);
             }
-            public override IQueryable GetEntitySet(Object dataContext)
+            public override IQueryable GetEntitySet(Object dataContext) => _getEntitySet((T)dataContext);
+            private InternalEntityEntry GetEntityEntry(T context, ODataResourceBase entity)
             {
-                return _getEntitySet((T)dataContext);
-            }
-            private InternalEntityEntry GetEntityEntry(T context, Object entity)
-            {
-                InitKey(context);
-                var buffer = new ValueBuffer(GetKeyValues((TEntity)entity));
+                Initialize(context);
+                var buffer = new ValueBuffer(GetKeyValues(entity));
                 var stateManager = (IInfrastructure<IStateManager>)context.ChangeTracker;
-                return stateManager.Instance.TryGetEntry(_key, buffer, false);
+                return stateManager.Instance.TryGetEntry(_entityType.FindPrimaryKey(), buffer, false);
             }
-            private Object[] GetKeyValues(TEntity entity)
+            private Object[] GetKeyValues(ODataResourceBase entity)
             {
-                var keyValues = new Object[_keyGetters.Length];
+                IKey key = _entityType.FindPrimaryKey();
+                var keyValues = new Object[key.Properties.Count];
                 for (int i = 0; i < keyValues.Length; i++)
-                    keyValues[i] = _keyGetters[i].GetClrValue(entity);
+                {
+                    String keyName = key.Properties[i].Name;
+                    foreach (ODataProperty odataProperty in entity.Properties)
+                        if (String.Compare(odataProperty.Name, keyName, StringComparison.OrdinalIgnoreCase) == 0)
+                        {
+                            keyValues[i] = odataProperty.Value;
+                            break;
+                        }
+                }
                 return keyValues;
             }
-            public override void RemoveEntity(Object dataContext, Object entity)
+            public override void RemoveEntity(Object dataContext, ODataResourceBase entry)
             {
                 var context = (T)dataContext;
-                InternalEntityEntry internalEntry = GetEntityEntry(context, entity);
-                if (internalEntry == null)
+                InternalEntityEntry entityEntry = GetEntityEntry(context, entry);
+                if (entityEntry == null)
                 {
+                    TEntity entity = CreateEntity(context, entry);
                     DbSet<TEntity> dbSet = _getEntitySet(context);
                     if (_selfReferenceKey == null)
-                        dbSet.Attach((TEntity)entity);
+                        dbSet.Attach(entity);
                     else
-                        entity = dbSet.Find(GetKeyValues((TEntity)entity));
+                        entity = dbSet.Find(GetKeyValues(entry));
                     context.Entry(entity).State = EntityState.Deleted;
                 }
                 else
-                    internalEntry.SetEntityState(EntityState.Deleted);
+                    entityEntry.SetEntityState(EntityState.Deleted);
             }
-            private void InitKey(T context)
+            private void Initialize(DbContext context)
             {
-                if (_keyGetters == null)
+                if (_entityType == null)
                 {
                     IEntityType entityType = context.Model.FindEntityType(EntityType);
                     foreach (IForeignKey fkey in entityType.GetForeignKeys())
@@ -133,26 +163,17 @@ namespace OdataToEntity.EfCore
                             break;
                         }
 
-                    Volatile.Write(ref _key, entityType.FindPrimaryKey());
-                    Volatile.Write(ref _properties, entityType.GetProperties().Where(p => !p.IsPrimaryKey()).ToArray());
-                    Volatile.Write(ref _keyGetters, _key.Properties.Select(k => k.GetGetter()).ToArray());
+                    Volatile.Write(ref _valueBufferArrayInit, CreateNewArrayInit(entityType));
+
+                    var entityMaterializerSource = context.GetService<IEntityMaterializerSource>();
+                    Volatile.Write(ref _materializer, entityMaterializerSource.GetMaterializer(entityType));
+
+                    Volatile.Write(ref _entityType, entityType);
                 }
             }
 
-            public override Type EntityType
-            {
-                get
-                {
-                    return typeof(TEntity);
-                }
-            }
-            public override String EntitySetName
-            {
-                get
-                {
-                    return _entitySetName;
-                }
-            }
+            public override Type EntityType => typeof(TEntity);
+            public override String EntitySetName { get; }
         }
 
         private readonly DbContextPool<T> _dbContextPool;

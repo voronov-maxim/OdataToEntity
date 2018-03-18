@@ -39,9 +39,7 @@ namespace OdataToEntity.AspNetCore
             }
             Uri baseUri = UriHelper.GetBaseUri(base.Request);
 
-            var messageContext = new OeMessageContext(baseUri, EdmModel, DataAdapter.EntitySetMetaAdapters);
-            OeBatchMessage batchMessage = OeBatchMessage.CreateBatchMessage(messageContext, base.HttpContext.Request.Body, base.HttpContext.Request.ContentType);
-
+            OeBatchMessage batchMessage = OeBatchMessage.CreateBatchMessage(EdmModel, baseUri, base.HttpContext.Request.Body, base.HttpContext.Request.ContentType);
             Object dataContext = null;
             try
             {
@@ -60,8 +58,8 @@ namespace OdataToEntity.AspNetCore
 
                     var modelState = new OeFilterAttribute.BatchModelStateDictionary()
                     {
-                        Entity = operation.EntityItem.Entity,
-                        DataContext = new OeDataContext(ref entitySetAdapter, dataContext, operation)
+                        Entity = OeEdmClrHelper.CreateEntity(entitySetAdapter.EntityType, operation.EntityItem.Entry),
+                        DataContext = new OeDataContext(ref entitySetAdapter, EdmModel, dataContext, operation)
                     };
                     OnBeforeInvokeController(modelState.DataContext, operation.EntityItem);
 
@@ -79,7 +77,7 @@ namespace OdataToEntity.AspNetCore
             }
 
             base.HttpContext.Response.ContentType = base.HttpContext.Request.ContentType;
-            var batchWriter = new OeBatchWriter(baseUri, EdmModel);
+            var batchWriter = new OeBatchWriter(EdmModel, baseUri);
             batchWriter.Write(base.HttpContext.Response.Body, batchMessage);
         }
         protected virtual void OnBeforeInvokeController(OeDataContext dataContext, OeEntityItem entityItem)

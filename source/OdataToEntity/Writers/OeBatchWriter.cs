@@ -13,7 +13,7 @@ namespace OdataToEntity.Writers
         private readonly IEdmModel _model;
         private readonly ODataMessageWriterSettings _settings;
 
-        public OeBatchWriter(Uri baseUri, IEdmModel model)
+        public OeBatchWriter(IEdmModel model, Uri baseUri)
         {
             _model = model;
 

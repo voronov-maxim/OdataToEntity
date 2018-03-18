@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.OData;
+using System;
 using System.Linq;
 
 namespace OdataToEntity.Db
@@ -14,10 +15,10 @@ namespace OdataToEntity.Db
             _dataAdapter = dataAdapter;
         }
 
-        public void AddEntity(Object dataContext, Object entity) => _entitySetMetaAdapter.AddEntity(dataContext, entity);
-        public void AttachEntity(Object dataContext, Object entity) => _entitySetMetaAdapter.AttachEntity(dataContext, entity);
+        public void AddEntity(Object dataContext, ODataResourceBase entry) => _entitySetMetaAdapter.AddEntity(dataContext, entry);
+        public void AttachEntity(Object dataContext, ODataResourceBase entry) => _entitySetMetaAdapter.AttachEntity(dataContext, entry);
         public IQueryable GetEntitySet(Object dataContext) => _entitySetMetaAdapter.GetEntitySet(dataContext);
-        public void RemoveEntity(Object dataContext, Object entity) => _entitySetMetaAdapter.RemoveEntity(dataContext, entity);
+        public void RemoveEntity(Object dataContext, ODataResourceBase entry) => _entitySetMetaAdapter.RemoveEntity(dataContext, entry);
 
         public OeDataAdapter DataAdapter => _dataAdapter;
         public OeEntitySetMetaAdapter EntitySetMetaAdapter => _entitySetMetaAdapter;

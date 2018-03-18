@@ -1,16 +1,16 @@
 ﻿<Project>
   <PropertyGroup>
-    <AspNetCoreVersion>2.0.1</AspNetCoreVersion>
-    <AspNetCoreMvcVersion>2.0.2</AspNetCoreMvcVersion>
+    <AspNetCoreVersion>2.0.2</AspNetCoreVersion>
+    <AspNetCoreMvcVersion>2.0.3</AspNetCoreMvcVersion>
     <CoreFxVersion>4.4.1</CoreFxVersion>
-    <EfCoreVersion>2.0.1</EfCoreVersion> 
+    <EfCoreVersion>2.0.2</EfCoreVersion> 
     <MicrosoftExtensionsVersion>2.0.0</MicrosoftExtensionsVersion>
     <JsonNetVersion>10.0.3</JsonNetVersion>
     <NetStandardVersion>2.0.0</NetStandardVersion>
     <ODataLibVersion>7.4.1</ODataLibVersion>
     <OdataToEntityVersion>1.4.0</OdataToEntityVersion>
     <SystemInteractiveAsyncVersion>3.1.1</SystemInteractiveAsyncVersion>
-    <TestSdkVersion>15.6.0</TestSdkVersion>
+    <TestSdkVersion>15.6.1</TestSdkVersion>
     <Version>1.4.0</Version>
     <XunitVersion>2.3.1</XunitVersion>
   </PropertyGroup>

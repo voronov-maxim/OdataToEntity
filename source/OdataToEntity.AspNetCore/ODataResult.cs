@@ -107,48 +107,6 @@ namespace OdataToEntity.AspNetCore
 
             return nextOdataUri.BuildUri(ODataUrlKeyDelimiter.Parentheses);
         }
-        private static ODataResource CreateEntry(Object entity, PropertyInfo[] structuralProperties)
-        {
-            Type clrEntityType = entity.GetType();
-            var odataProperties = new ODataProperty[structuralProperties.Length];
-            for (int i = 0; i < odataProperties.Length; i++)
-            {
-                Object value = structuralProperties[i].GetValue(entity);
-                ODataValue odataValue = null;
-                if (value == null)
-                    odataValue = new ODataNullValue();
-                else if (value.GetType().IsEnum)
-                    odataValue = new ODataEnumValue(value.ToString());
-                else if (value is DateTime dateTime)
-                {
-                    switch (dateTime.Kind)
-                    {
-                        case DateTimeKind.Unspecified:
-                            value = new DateTimeOffset(DateTime.SpecifyKind(dateTime, DateTimeKind.Utc));
-                            break;
-                        case DateTimeKind.Utc:
-                            value = new DateTimeOffset(dateTime);
-                            break;
-                        case DateTimeKind.Local:
-                            value = new DateTimeOffset(dateTime.ToUniversalTime());
-                            break;
-                        default:
-                            throw new ArgumentOutOfRangeException("unknown DateTimeKind " + dateTime.Kind.ToString());
-                    }
-                    odataValue = new ODataPrimitiveValue(value);
-                }
-                else
-                    odataValue = new ODataPrimitiveValue(value);
-
-                odataProperties[i] = new ODataProperty() { Name = structuralProperties[i].Name, Value = odataValue };
-            }
-
-            return new ODataResource
-            {
-                TypeName = clrEntityType.FullName,
-                Properties = odataProperties
-            };
-        }
         public async Task ExecuteResultAsync(ActionContext context)
         {
             var settings = new ODataMessageWriterSettings()
@@ -280,7 +238,7 @@ namespace OdataToEntity.AspNetCore
             if (entityPropertiesInfo.EdmEntityType == null)
                 entityPropertiesInfo = GetProperties(entity);
 
-            ODataResource entry = CreateEntry(entity, entityPropertiesInfo.Structurals);
+            ODataResource entry = OeDataContext.CreateEntry(entity, entityPropertiesInfo.Structurals);
             writer.WriteStart(entry);
 
             foreach (PropertyInfo navigationProperty in entityPropertiesInfo.Navigations)

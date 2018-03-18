@@ -23,17 +23,17 @@ namespace OdataToEntity.Parsers
             _requestUrl = batchRequest.Url;
         }
 
-        public static OeOperationMessage Create(OeMessageContext context, ODataBatchReader reader)
+        public static OeOperationMessage Create(IEdmModel edmModel, Uri baseUri, ODataBatchReader reader)
         {
             ODataBatchOperationRequestMessage batchRequest = reader.CreateOperationRequestMessage();
             var operation = new OeOperationMessage(batchRequest);
 
             if (batchRequest.Method == ODataConstants.MethodDelete)
-                operation.EntityItem = operation.ReadEntityFromUrl(context);
+                operation.EntityItem = operation.ReadEntityFromUrl(edmModel, baseUri);
             else
             {
                 using (Stream stream = batchRequest.GetStream())
-                    operation.EntityItem = operation.ReadEntityFromStream(context, stream);
+                    operation.EntityItem = operation.ReadEntityFromStream(edmModel, baseUri, stream);
             }
             return operation;
         }
@@ -48,16 +48,16 @@ namespace OdataToEntity.Parsers
                 }
             throw new InvalidOperationException("not supported type ODataPath");
         }
-        private OeEntityItem ReadEntityFromStream(OeMessageContext context, Stream content)
+        private OeEntityItem ReadEntityFromStream(IEdmModel edmModel, Uri baseUri, Stream content)
         {
-            var parser = new ODataUriParser(context.Model, context.BaseUri, RequestUrl);
+            var parser = new ODataUriParser(edmModel, baseUri, RequestUrl);
             IEdmEntityTypeReference entityTypeRef = GetEdmEntityTypeRef(parser.ParsePath(), out IEdmEntitySet entitySet);
             var entityType = (IEdmEntityType)entityTypeRef.Definition;
 
             ODataResource entry = null;
             IODataRequestMessage requestMessage = new OeInMemoryMessage(content, ContentType);
             var settings = new ODataMessageReaderSettings { EnableMessageStreamDisposal = false };
-            using (var messageReader = new ODataMessageReader(requestMessage, settings, context.Model))
+            using (var messageReader = new ODataMessageReader(requestMessage, settings, edmModel))
             {
                 ODataReader reader = messageReader.CreateODataResourceReader(entitySet, entityType);
 
@@ -68,12 +68,11 @@ namespace OdataToEntity.Parsers
                     throw new InvalidOperationException("operation not contain entry");
             }
 
-            Db.OeEntitySetMetaAdapter entitySetMetaAdapter = context.EntitySetMetaAdapters.FindByEntitySetName(entitySet.Name);
-            return new OeEntityItem(entitySet, entityType, entitySetMetaAdapter.EntityType, entry);
+            return new OeEntityItem(entitySet, entityType, entry);
         }
-        private OeEntityItem ReadEntityFromUrl(OeMessageContext context)
+        private OeEntityItem ReadEntityFromUrl(IEdmModel edmModel, Uri baseUri)
         {
-            var parser = new ODataUriParser(context.Model, context.BaseUri, RequestUrl);
+            var parser = new ODataUriParser(edmModel, baseUri, RequestUrl);
 
             ODataPath path = parser.ParsePath();
             var keySegment = (KeySegment)path.LastSegment;
@@ -85,8 +84,7 @@ namespace OdataToEntity.Parsers
                 properties.Add(new ODataProperty() { Name = key.Key, Value = key.Value });
             var entry = new ODataResource() { Properties = properties };
 
-            Db.OeEntitySetMetaAdapter entitySetMetaAdapter = context.EntitySetMetaAdapters.FindByEntitySetName(entitySet.Name);
-            return new OeEntityItem(entitySet, entityType, entitySetMetaAdapter.EntityType, entry);
+            return new OeEntityItem(entitySet, entityType, entry);
         }
 
         public String ContentId => _contentId;

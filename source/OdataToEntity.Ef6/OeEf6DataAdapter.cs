@@ -1,4 +1,5 @@
-﻿using Microsoft.OData.Edm;
+﻿using Microsoft.OData;
+using Microsoft.OData.Edm;
 using OdataToEntity.Parsers;
 using System;
 using System.Collections.Generic;
@@ -19,7 +20,6 @@ namespace OdataToEntity.Ef6
     {
         private sealed class DbSetAdapterImpl<TEntity> : Db.OeEntitySetMetaAdapter where TEntity : class
         {
-            private readonly String _entitySetName;
             private readonly Func<T, IDbSet<TEntity>> _getEntitySet;
             private bool _isCascade;
             private bool _isInitialized;
@@ -28,36 +28,39 @@ namespace OdataToEntity.Ef6
             public DbSetAdapterImpl(Func<T, IDbSet<TEntity>> getEntitySet, String entitySetName)
             {
                 _getEntitySet = getEntitySet;
-                _entitySetName = entitySetName;
+                EntitySetName = entitySetName;
             }
 
-            public override void AddEntity(Object dataContext, Object entity)
+            public override void AddEntity(Object dataContext, ODataResourceBase entry)
             {
                 IDbSet<TEntity> dbSet = _getEntitySet((T)dataContext);
-                dbSet.Add((TEntity)entity);
+                var entity = (TEntity)OeEdmClrHelper.CreateEntity(EntityType, entry);
+                dbSet.Add(entity);
             }
-            public override void AttachEntity(Object dataContext, Object entity)
+            public override void AttachEntity(Object dataContext, ODataResourceBase entry)
             {
-                AttachEntity(dataContext, entity, EntityState.Modified);
-            }
-            private void AttachEntity(Object dataContext, Object entity, EntityState entityState)
-            {
+                var entity = (TEntity)OeEdmClrHelper.CreateEntity(EntityType, entry);
                 ObjectContext objectContext = ((IObjectContextAdapter)dataContext).ObjectContext;
                 EntityKey entityKey = objectContext.CreateEntityKey(EntitySetName, entity);
 
                 if (objectContext.ObjectStateManager.TryGetObjectStateEntry(entityKey, out ObjectStateEntry objectStateEntry))
                 {
-                    if (entityState == EntityState.Modified)
-                        objectStateEntry.ApplyCurrentValues(entity);
-                    else
-                        objectStateEntry.ChangeState(entityState);
+                    foreach (ODataProperty odataProperty in entry.Properties)
+                        if (Array.Find(objectStateEntry.EntityKey.EntityKeyValues, k => k.Key == odataProperty.Name) == null)
+                        {
+                            int i = objectStateEntry.CurrentValues.GetOrdinal(odataProperty.Name);
+                            objectStateEntry.CurrentValues.SetValue(i, odataProperty.Value);
+                        }
                 }
                 else
                 {
                     var context = (T)dataContext;
-                    IDbSet<TEntity> dbSet = _getEntitySet(context);
-                    dbSet.Attach((TEntity)entity);
-                    context.Entry(entity).State = entityState;
+                    _getEntitySet(context).Attach(entity);
+                    objectContext.ObjectStateManager.TryGetObjectStateEntry(entityKey, out objectStateEntry);
+
+                    foreach (ODataProperty odataProperty in entry.Properties)
+                        if (Array.Find(objectStateEntry.EntityKey.EntityKeyValues, k => k.Key == odataProperty.Name) == null)
+                            objectStateEntry.SetModifiedProperty(odataProperty.Name);
                 }
             }
             public override IQueryable GetEntitySet(Object dataContext)
@@ -94,12 +97,13 @@ namespace OdataToEntity.Ef6
                 Volatile.Write(ref _isSelfReference, isSelfReference);
                 Volatile.Write(ref _isInitialized, true);
             }
-            public override void RemoveEntity(Object dataContext, Object entity)
+            public override void RemoveEntity(Object dataContext, ODataResourceBase entry)
             {
                 var context = (T)dataContext;
                 InitKey(context);
 
                 ObjectContext objectContext = ((IObjectContextAdapter)context).ObjectContext;
+                var entity = (TEntity)OeEdmClrHelper.CreateEntity(EntityType, entry);
                 EntityKey entityKey = objectContext.CreateEntityKey(EntitySetName, entity);
 
                 if (objectContext.ObjectStateManager.TryGetObjectStateEntry(entityKey, out ObjectStateEntry objectStateEntry))
@@ -120,20 +124,8 @@ namespace OdataToEntity.Ef6
                 }
             }
 
-            public override Type EntityType
-            {
-                get
-                {
-                    return typeof(TEntity);
-                }
-            }
-            public override String EntitySetName
-            {
-                get
-                {
-                    return _entitySetName;
-                }
-            }
+            public override Type EntityType => typeof(TEntity);
+            public override String EntitySetName { get; }
         }
 
         private readonly static Db.OeEntitySetMetaAdapterCollection _entitySetMetaAdapters = CreateEntitySetMetaAdapters();

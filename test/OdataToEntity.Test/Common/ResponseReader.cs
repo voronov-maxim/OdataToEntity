@@ -119,7 +119,7 @@ namespace OdataToEntity.Test
         protected Object CreateEntity(ODataResource resource, IReadOnlyList<NavigationPorperty> navigationProperties)
         {
             Db.OeEntitySetMetaAdapter entitySetMetaAdapter = EntitySetMetaAdapters.FindByTypeName(resource.TypeName);
-            Object entity = OeEntityItem.CreateEntity(entitySetMetaAdapter.EntityType, resource);
+            Object entity = OeEdmClrHelper.CreateEntity(entitySetMetaAdapter.EntityType, resource);
             Dictionary<PropertyInfo, ODataResourceSetBase> propertyInfos = null;
 
             foreach (NavigationPorperty navigationProperty in navigationProperties)

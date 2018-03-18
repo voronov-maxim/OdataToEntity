@@ -1,14 +1,29 @@
 ﻿using Microsoft.OData;
 using Microsoft.OData.Edm;
+using OdataToEntity.ModelBuilder;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 
-namespace OdataToEntity.ModelBuilder
+namespace OdataToEntity
 {
     public static class OeEdmClrHelper
     {
+        public static Object CreateEntity(Type clrType, ODataResourceBase entry)
+        {
+            Object entity = Activator.CreateInstance(clrType);
+            foreach (ODataProperty property in entry.Properties)
+            {
+                PropertyInfo clrProperty = clrType.GetProperty(property.Name);
+                if (clrProperty != null)
+                {
+                    Object value = GetStructuralValue(clrProperty.PropertyType, property.Value);
+                    clrProperty.SetValue(entity, value);
+                }
+            }
+            return entity;
+        }
         public static Type GetClrType(this IEdmModel edmModel, IEdmType edmType)
         {
             if (edmType.TypeKind == EdmTypeKind.Primitive)
@@ -51,6 +66,23 @@ namespace OdataToEntity.ModelBuilder
         {
             return declaringType.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase);
         }
+        public static Object GetStructuralValue(Type clrType, Object edmValue)
+        {
+            if (edmValue is ODataEnumValue enumValue)
+            {
+                Type enumType;
+                if (clrType.IsEnum)
+                    enumType = clrType;
+                else
+                    enumType = Nullable.GetUnderlyingType(clrType);
+                return Enum.Parse(enumType, enumValue.Value);
+            }
+
+            if (edmValue is DateTimeOffset dateTimeOffset && (clrType == typeof(DateTime) || clrType == typeof(DateTime?)))
+                return dateTimeOffset.UtcDateTime;
+
+            return edmValue;
+        }
         public static Object GetValue(IEdmModel edmModel, ODataEnumValue odataValue)
         {
             IEdmSchemaType schemaType = edmModel.FindType(odataValue.TypeName);
@@ -81,7 +113,10 @@ namespace OdataToEntity.ModelBuilder
             foreach (ODataProperty edmProperty in resource.Properties)
             {
                 PropertyInfo clrProperty = clrType.GetProperty(edmProperty.Name);
-                clrProperty.SetValue(instance, GetValue(edmModel, edmProperty.Value));
+                if (clrProperty.PropertyType == typeof(DateTime) || clrProperty.PropertyType == typeof(DateTime?))
+                    clrProperty.SetValue(instance, ((DateTimeOffset)edmProperty.Value).UtcDateTime);
+                else
+                    clrProperty.SetValue(instance, GetValue(edmModel, edmProperty.Value));
             }
             return instance;
         }
@@ -90,14 +125,14 @@ namespace OdataToEntity.ModelBuilder
             if (odataValue == null)
                 return null;
 
-            if (odataValue is ODataEnumValue)
-                return GetValue(edmModel, odataValue as ODataEnumValue);
+            if (odataValue is ODataEnumValue enumValue)
+                return GetValue(edmModel, enumValue);
 
-            if (odataValue is ODataCollectionValue)
-                return GetValue(edmModel, odataValue as ODataCollectionValue);
+            if (odataValue is ODataCollectionValue collectionValue)
+                return GetValue(edmModel, collectionValue);
 
-            if (odataValue is ODataResource)
-                return GetValue(edmModel, odataValue as ODataResource);
+            if (odataValue is ODataResource resourceValue)
+                return GetValue(edmModel, resourceValue);
 
             return odataValue;
         }

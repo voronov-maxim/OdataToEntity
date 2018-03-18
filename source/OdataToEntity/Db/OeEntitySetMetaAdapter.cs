@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.OData;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -7,19 +8,13 @@ namespace OdataToEntity.Db
 {
     public abstract class OeEntitySetMetaAdapter
     {
-        public abstract void AddEntity(Object dataContext, Object entity);
-        public abstract void AttachEntity(Object dataContext, Object entity);
+        public abstract void AddEntity(Object dataContext, ODataResourceBase entry);
+        public abstract void AttachEntity(Object dataContext, ODataResourceBase entry);
         public abstract IQueryable GetEntitySet(Object dataContext);
-        public abstract void RemoveEntity(Object dataContext, Object entity);
+        public abstract void RemoveEntity(Object dataContext, ODataResourceBase entry);
 
-        public abstract Type EntityType
-        {
-            get;
-        }
-        public abstract String EntitySetName
-        {
-            get;
-        }
+        public abstract Type EntityType { get; }
+        public abstract String EntitySetName { get; }
     }
 
     public sealed class OeEntitySetMetaAdapterCollection : ReadOnlyCollection<OeEntitySetMetaAdapter>

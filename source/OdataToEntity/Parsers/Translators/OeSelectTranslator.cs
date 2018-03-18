@@ -1,7 +1,6 @@
 ﻿using Microsoft.OData;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
-using OdataToEntity.ModelBuilder;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,7 +22,7 @@ namespace OdataToEntity.Parsers
                 _edmTypeReference = edmTypeReference;
             }
 
-            public IEdmStructuredType DeclaringType => PrimitiveTypeHelper.TupleEdmType;
+            public IEdmStructuredType DeclaringType => ModelBuilder.PrimitiveTypeHelper.TupleEdmType;
             public string Name => _alias;
             public EdmPropertyKind PropertyKind => throw new NotSupportedException();
             public IEdmTypeReference Type => _edmTypeReference;

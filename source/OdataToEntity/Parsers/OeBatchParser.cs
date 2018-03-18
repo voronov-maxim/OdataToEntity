@@ -27,13 +27,13 @@ namespace OdataToEntity.Parsers
             switch (operation.Method)
             {
                 case ODataConstants.MethodDelete:
-                    entitySetAdapter.RemoveEntity(dataContext, operation.EntityItem.Entity);
+                    entitySetAdapter.RemoveEntity(dataContext, operation.EntityItem.Entry);
                     break;
                 case ODataConstants.MethodPatch:
-                    entitySetAdapter.AttachEntity(dataContext, operation.EntityItem.Entity);
+                    entitySetAdapter.AttachEntity(dataContext, operation.EntityItem.Entry);
                     break;
                 case ODataConstants.MethodPost:
-                    entitySetAdapter.AddEntity(dataContext, operation.EntityItem.Entity);
+                    entitySetAdapter.AddEntity(dataContext, operation.EntityItem.Entry);
                     break;
                 default:
                     throw new NotImplementedException(operation.Method);
@@ -41,14 +41,13 @@ namespace OdataToEntity.Parsers
         }
         public async Task ExecuteAsync(Stream requestStream, Stream responseStream, String contentType, CancellationToken cancellationToken)
         {
-            var context = new OeMessageContext(_baseUri, _model, _dataAdapter.EntitySetMetaAdapters);
-            OeBatchMessage batchMessage = OeBatchMessage.CreateBatchMessage(context, requestStream, contentType);
+            OeBatchMessage batchMessage = OeBatchMessage.CreateBatchMessage(_model, _baseUri, requestStream, contentType);
             if (batchMessage.Changeset != null)
                 await ExecuteChangeset(batchMessage.Changeset, cancellationToken).ConfigureAwait(false);
             else if (batchMessage.Operation != null)
                 await ExecuteOperation(batchMessage.Operation, cancellationToken).ConfigureAwait(false);
 
-            var batchWriter = new Writers.OeBatchWriter(context.BaseUri, context.Model);
+            var batchWriter = new Writers.OeBatchWriter(_model, _baseUri);
             batchWriter.Write(responseStream, batchMessage);
         }
         private async Task ExecuteChangeset(IReadOnlyList<OeOperationMessage> changeset, CancellationToken cancellationToken)

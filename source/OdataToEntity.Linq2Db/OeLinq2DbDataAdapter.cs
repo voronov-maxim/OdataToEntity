@@ -1,5 +1,6 @@
 ﻿using LinqToDB;
 using LinqToDB.Data;
+using Microsoft.OData;
 using Microsoft.OData.Edm;
 using OdataToEntity.Db;
 using OdataToEntity.Parsers;
@@ -96,13 +97,15 @@ namespace OdataToEntity.Linq2Db
                 _entitySetName = entitySetName;
             }
 
-            public override void AddEntity(Object dataContext, Object entity)
+            public override void AddEntity(Object dataContext, ODataResourceBase entry)
             {
-                GetTable(dataContext).Insert((TEntity)entity);
+                var entity = (TEntity)OeEdmClrHelper.CreateEntity(EntityType, entry);
+                GetTable(dataContext).Insert(entity);
             }
-            public override void AttachEntity(Object dataContext, Object entity)
+            public override void AttachEntity(Object dataContext, ODataResourceBase entry)
             {
-                GetTable(dataContext).Update((TEntity)entity);
+                var entity = (TEntity)OeEdmClrHelper.CreateEntity(EntityType, entry);
+                GetTable(dataContext).Update(entity);
             }
             private static OeLinq2DbTable<TEntity> GetTable(Object dataContext)
             {
@@ -114,13 +117,11 @@ namespace OdataToEntity.Linq2Db
                     dc.DataContext = new OeLinq2DbDataContext();
                 return dc.DataContext.GetTable<TEntity>();
             }
-            public override IQueryable GetEntitySet(Object dataContext)
+            public override IQueryable GetEntitySet(Object dataContext) => _getEntitySet((T)dataContext);
+            public override void RemoveEntity(Object dataContext, ODataResourceBase entry)
             {
-                return _getEntitySet((T)dataContext);
-            }
-            public override void RemoveEntity(Object dataContext, Object entity)
-            {
-                GetTable(dataContext).Delete((TEntity)entity);
+                var entity = (TEntity)OeEdmClrHelper.CreateEntity(EntityType, entry);
+                GetTable(dataContext).Delete(entity);
             }
 
             public override Type EntityType => typeof(TEntity);

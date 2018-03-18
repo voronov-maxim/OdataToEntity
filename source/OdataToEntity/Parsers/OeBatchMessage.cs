@@ -1,4 +1,5 @@
 ﻿using Microsoft.OData;
+using Microsoft.OData.Edm;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -23,7 +24,7 @@ namespace OdataToEntity.Parsers
             _operation = operation;
         }
 
-        public static OeBatchMessage CreateBatchMessage(OeMessageContext context, Stream requestStream, String contentType)
+        public static OeBatchMessage CreateBatchMessage(IEdmModel edmModel, Uri baseUri, Stream requestStream, String contentType)
         {
             IODataRequestMessage requestMessage = new OeInMemoryMessage(requestStream, contentType);
             var settings = new ODataMessageReaderSettings() { EnableMessageStreamDisposal = false };
@@ -40,7 +41,7 @@ namespace OdataToEntity.Parsers
                         {
                             if (batchReader.State == ODataBatchReaderState.Operation)
                             {
-                                OeOperationMessage operation = OeOperationMessage.Create(context, batchReader);
+                                OeOperationMessage operation = OeOperationMessage.Create(edmModel, baseUri, batchReader);
                                 operations.Add(operation);
                             }
                         }
@@ -48,7 +49,7 @@ namespace OdataToEntity.Parsers
                     }
                     else if (batchReader.State == ODataBatchReaderState.Operation)
                     {
-                        OeOperationMessage operation = OeOperationMessage.Create(context, batchReader);
+                        OeOperationMessage operation = OeOperationMessage.Create(edmModel, baseUri, batchReader);
                         return new OeBatchMessage(contentType, operation);
                     }
                 }
