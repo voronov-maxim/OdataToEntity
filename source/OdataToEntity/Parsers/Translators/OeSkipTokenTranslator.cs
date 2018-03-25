@@ -12,8 +12,8 @@ namespace OdataToEntity.Parsers
         private struct OrderProperty
         {
             public readonly OrderByDirection Direction;
-            public ConstantExpression ParmeterExpression;
-            public MemberExpression PropertyExpression;
+            public Expression ParameterExpression;
+            public Expression PropertyExpression;
             public readonly SingleValuePropertyAccessNode PropertyNode;
             public readonly Object Value;
 
@@ -23,7 +23,7 @@ namespace OdataToEntity.Parsers
                 Direction = direction;
                 Value = value;
 
-                ParmeterExpression = null;
+                ParameterExpression = null;
                 PropertyExpression = null;
             }
         }
@@ -48,14 +48,31 @@ namespace OdataToEntity.Parsers
         }
         private static BinaryExpression CreateBinaryExpression(OeQueryNodeVisitor visitor, bool isDatabaseNullHighestValue, ref OrderProperty orderProperty)
         {
-            MemberExpression propertyExpression = orderProperty.PropertyExpression;
+            Expression propertyExpression = orderProperty.PropertyExpression;
 
-            ConstantExpression parameterExpression = orderProperty.ParmeterExpression;
+            Expression parameterExpression = orderProperty.ParameterExpression;
             if (parameterExpression == null)
             {
                 parameterExpression = Expression.Constant(orderProperty.Value, propertyExpression.Type);
-                orderProperty.ParmeterExpression = parameterExpression;
-                visitor.AddSkipTokenConstant(parameterExpression, OeSkipTokenParser.GetPropertyName(propertyExpression));
+                visitor.AddSkipTokenConstant((ConstantExpression)parameterExpression, OeSkipTokenParser.GetPropertyName(propertyExpression));
+
+                Type underlyingType = Nullable.GetUnderlyingType(propertyExpression.Type);
+                bool isNullableType = underlyingType != null;
+                if (!isNullableType)
+                    underlyingType = propertyExpression.Type;
+
+                if (underlyingType.IsEnum)
+                {
+                    Type enumUnderlyingType = Enum.GetUnderlyingType(underlyingType);
+                    if (isNullableType)
+                        enumUnderlyingType = typeof(Nullable<>).MakeGenericType(enumUnderlyingType);
+                    parameterExpression = Expression.Convert(parameterExpression, enumUnderlyingType);
+
+                    propertyExpression = Expression.Convert(propertyExpression, enumUnderlyingType);
+                    orderProperty.PropertyExpression = propertyExpression;
+                }
+
+                orderProperty.ParameterExpression = parameterExpression;
             }
 
             ExpressionType binaryType = orderProperty.Direction == OrderByDirection.Ascending ? ExpressionType.GreaterThan : ExpressionType.LessThan;
@@ -105,9 +122,9 @@ namespace OdataToEntity.Parsers
                 BinaryExpression eqFilter = null;
                 for (int j = 0; j < i; j++)
                 {
-                    MemberExpression propertyExpression = orderProperties[j].PropertyExpression;
-                    ConstantExpression parameterExpression = orderProperties[j].ParmeterExpression;
-                    BinaryExpression eq = Expression.Equal(propertyExpression, parameterExpression);
+                    Expression propertyExpression = orderProperties[j].PropertyExpression;
+                    Expression parameterExpression = orderProperties[j].ParameterExpression;
+                    BinaryExpression eq = Expression.Equal(Expression.Convert(propertyExpression, parameterExpression.Type), parameterExpression);
 
                     if (OeExpressionHelper.IsNullable(propertyExpression))
                     {
@@ -119,7 +136,7 @@ namespace OdataToEntity.Parsers
                     eqFilter = eqFilter == null ? eq : Expression.AndAlso(eqFilter, eq);
                 }
 
-                orderProperties[i].PropertyExpression = (MemberExpression)visitor.TranslateNode(orderProperties[i].PropertyNode);
+                orderProperties[i].PropertyExpression = visitor.TranslateNode(orderProperties[i].PropertyNode);
                 if (orderProperties[i].PropertyExpression == null)
                     orderProperties[i].PropertyExpression = tupleProperty.Build(visitor.Parameter, orderProperties[i].PropertyNode.Property);
                 BinaryExpression ge = CreateBinaryExpression(visitor, isDatabaseNullHighestValue, ref orderProperties[i]);

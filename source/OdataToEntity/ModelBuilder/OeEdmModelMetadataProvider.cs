@@ -1,5 +1,6 @@
 ﻿using OdataToEntity.Parsers;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Reflection;
@@ -64,5 +65,22 @@ namespace OdataToEntity.ModelBuilder
         {
             return !PrimitiveTypeHelper.IsNullable(propertyInfo.PropertyType) || propertyInfo.GetCustomAttribute(typeof(RequiredAttribute)) != null;
         }
+        public PropertyInfo[] SortClrPropertyByOrder(List<PropertyInfo> clrProperties)
+        {
+            var propertyList = new PropertyInfo[clrProperties.Count];
+            foreach (PropertyInfo clrProperty in clrProperties)
+            {
+                int order = GetOrder(clrProperty);
+                if (order == -1)
+                {
+                    clrProperties.CopyTo(propertyList);
+                    break;
+                }
+
+                propertyList[order] = clrProperty;
+            }
+            return propertyList;
+        }
+
     }
 }

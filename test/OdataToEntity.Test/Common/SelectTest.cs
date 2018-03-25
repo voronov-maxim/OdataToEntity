@@ -17,38 +17,49 @@ namespace OdataToEntity.Test
             _fixture = fixture;
         }
 
-        [Fact]
-        public async Task ApplyFilter()
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task ApplyFilter(int pageSize)
         {
             var parameters = new QueryParameters<OrderItem>()
             {
                 RequestUri = "OrderItems?$apply=filter(Order/Status eq OdataToEntity.Test.Model.OrderStatus'Processing')",
-                Expression = t => t.Where(i => i.Order.Status == OrderStatus.Processing)
+                Expression = t => t.Where(i => i.Order.Status == OrderStatus.Processing),
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
-        [Fact]
-        public async Task ApplyFilterGroupBy()
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task ApplyFilterGroupBy(int pageSize)
         {
             var parameters = new QueryParameters<Order, Object>()
             {
                 RequestUri = "Orders?$apply=filter(Status eq OdataToEntity.Test.Model.OrderStatus'Unknown')/groupby((Name), aggregate(Id with countdistinct as cnt))",
-                Expression = t => t.Where(o => o.Status == OrderStatus.Unknown).GroupBy(o => o.Name).Select(g => new { Name = g.Key, cnt = g.Count() })
+                Expression = t => t.Where(o => o.Status == OrderStatus.Unknown).GroupBy(o => o.Name).Select(g => new { Name = g.Key, cnt = g.Count() }),
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
-        [Fact]
-        public async Task ApplyGroupBy()
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task ApplyGroupBy(int pageSize)
         {
             var parameters = new QueryParameters<OrderItem, Object>()
             {
-                RequestUri = "OrderItems?$apply=groupby((Product))",
-                Expression = t => t.GroupBy(i => i.Product).Select(g => new { Product = g.Key })
+                RequestUri = "OrderItems?$apply=groupby((Product))&$orderby=Product",
+                Expression = t => t.GroupBy(i => i.Product).Select(g => new { Product = g.Key }).OrderBy(a => a.Product),
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
-        [Fact]
-        public async Task ApplyGroupByAggregate()
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task ApplyGroupByAggregate(int pageSize)
         {
             var parameters = new QueryParameters<OrderItem, Object>()
             {
@@ -64,12 +75,15 @@ namespace OdataToEntity.Test
                     min = g.Min(i => i.Price),
                     sum = g.Sum(i => i.Price),
                     cnt = g.Count()
-                })
+                }),
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
-        [Fact]
-        public async Task ApplyGroupByAggregateFilter()
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task ApplyGroupByAggregateFilter(int pageSize)
         {
             var parameters = new QueryParameters<OrderItem, Object>()
             {
@@ -78,12 +92,15 @@ namespace OdataToEntity.Test
                 {
                     OrderId = g.Key,
                     sum = g.Sum(i => i.Price)
-                }).Where(a => a.OrderId == 2 && a.sum >= 4)
+                }).Where(a => a.OrderId == 2 && a.sum >= 4),
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
-        [Fact]
-        public async Task ApplyGroupByAggregateFilterOrdinal()
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task ApplyGroupByAggregateFilterOrdinal(int pageSize)
         {
             var parameters = new QueryParameters<OrderItem, Object>()
             {
@@ -92,41 +109,51 @@ namespace OdataToEntity.Test
                 {
                     OrderId = g.Key,
                     sum = g.Sum(i => i.Price)
-                }).Where(a => a.OrderId == 2)
+                }).Where(a => a.OrderId == 2),
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
-        [Fact]
-        public async Task ApplyGroupByFilter()
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task ApplyGroupByFilter(int pageSize)
         {
             var parameters = new QueryParameters<OrderItem, Object>()
             {
                 RequestUri = "OrderItems?$apply=groupby((OrderId, Order/Name))/filter(OrderId eq 1 and Order/Name eq 'Order 1')",
                 Expression = t => t.GroupBy(i => new { i.OrderId, i.Order.Name })
                     .Where(g => g.Key.OrderId == 1 && g.Key.Name == "Order 1")
-                    .Select(g => new { OrderId = g.Key.OrderId, Order_Name = g.Key.Name })
+                    .Select(g => new { OrderId = g.Key.OrderId, Order_Name = g.Key.Name }),
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
-        [Fact]
-        public async Task ApplyGroupByMul()
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task ApplyGroupByMul(int pageSize)
         {
             var parameters = new QueryParameters<OrderItem, Object>()
             {
                 RequestUri = "OrderItems?$apply=groupby((OrderId), aggregate(Price mul Count with sum as sum))",
-                Expression = t => t.GroupBy(i => i.OrderId).Select(g => new { OrderId = g.Key, sum = g.Sum(i => i.Price * i.Count) })
+                Expression = t => t.GroupBy(i => i.OrderId).Select(g => new { OrderId = g.Key, sum = g.Sum(i => i.Price * i.Count) }),
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
-        [Fact]
-        public async Task ApplyGroupByOrderBy()
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task ApplyGroupByOrderBy(int pageSize)
         {
             var parameters = new QueryParameters<OrderItem, Object>()
             {
                 RequestUri = "OrderItems?$apply=groupby((OrderId, Order/Name))&$orderby=OrderId desc, Order/Name",
                 Expression = t => t.GroupBy(i => new { i.OrderId, i.Order.Name })
                     .Select(g => new { OrderId = g.Key.OrderId, Order_Name = g.Key.Name })
-                    .OrderByDescending(a => a.OrderId).ThenBy(a => a.Order_Name)
+                    .OrderByDescending(a => a.OrderId).ThenBy(a => a.Order_Name),
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
@@ -142,13 +169,16 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
-        [Fact]
-        public async Task ApplyGroupBySkip()
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task ApplyGroupBySkip(int pageSize)
         {
             var parameters = new QueryParameters<OrderItem, Object>()
             {
                 RequestUri = "OrderItems?$apply=groupby((OrderId))&$orderby=OrderId&$skip=1",
-                Expression = t => t.GroupBy(i => i.OrderId).OrderBy(g => g.Key).Skip(1).Select(g => new { OrderId = g.Key })
+                Expression = t => t.GroupBy(i => i.OrderId).OrderBy(g => g.Key).Skip(1).Select(g => new { OrderId = g.Key }),
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
@@ -162,8 +192,10 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
-        [Fact]
-        public async Task ApplyGroupByVirtualCount()
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task ApplyGroupByVirtualCount(int pageSize)
         {
             var parameters = new QueryParameters<OrderItem, Object>()
             {
@@ -173,8 +205,8 @@ namespace OdataToEntity.Test
                     OrderId = g.Key,
                     dcnt = g.Select(i => i.Product.Substring(0, 10)).Distinct().Count(),
                     cnt = g.Count()
-                }).Where(a => a.dcnt != a.cnt)
-
+                }).Where(a => a.dcnt != a.cnt),
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
@@ -409,13 +441,16 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
-        [Fact]
-        public async Task FilterApplyGroupBy()
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterApplyGroupBy(int pageSize)
         {
             var parameters = new QueryParameters<Order, Object>()
             {
                 RequestUri = "Orders?$filter=Status eq OdataToEntity.Test.Model.OrderStatus'Unknown'&$apply=groupby((Name), aggregate(Id with countdistinct as cnt))",
-                Expression = t => t.Where(o => o.Status == OrderStatus.Unknown).GroupBy(o => o.Name).Select(g => new { Name = g.Key, cnt = g.Count() })
+                Expression = t => t.Where(o => o.Status == OrderStatus.Unknown).GroupBy(o => o.Name).Select(g => new { Name = g.Key, cnt = g.Count() }),
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
@@ -904,8 +939,10 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
-        [Fact]
-        public async Task KeyNavigationGroupBy()
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task KeyNavigationGroupBy(int pageSize)
         {
             var parameters = new QueryParameters<OrderItem, Object>()
             {
@@ -914,7 +951,8 @@ namespace OdataToEntity.Test
                 {
                     CustomerId = g.Key,
                     min = g.Min(a => a.Status)
-                })
+                }),
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
@@ -970,13 +1008,16 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
-        [Fact]
-        public async Task OrderByNavigation()
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task OrderByNavigation(int pageSize)
         {
             var parameters = new QueryParameters<OrderItem>()
             {
                 RequestUri = "OrderItems?$orderby=Order/Customer/Sex desc,Order/Customer/Name,Id desc",
-                Expression = t => t.OrderByDescending(i => i.Order.Customer.Sex).ThenBy(i => i.Order.Customer.Name).ThenByDescending(i => i.Id)
+                Expression = t => t.OrderByDescending(i => i.Order.Customer.Sex).ThenBy(i => i.Order.Customer.Name).ThenByDescending(i => i.Id),
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }

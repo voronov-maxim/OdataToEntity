@@ -105,7 +105,7 @@ namespace OdataToEntity.Linq2Db
             public override void AttachEntity(Object dataContext, ODataResourceBase entry)
             {
                 var entity = (TEntity)OeEdmClrHelper.CreateEntity(EntityType, entry);
-                GetTable(dataContext).Update(entity);
+                GetTable(dataContext).Update(entity, entry.Properties.Select(p => p.Name));
             }
             private static OeLinq2DbTable<TEntity> GetTable(Object dataContext)
             {

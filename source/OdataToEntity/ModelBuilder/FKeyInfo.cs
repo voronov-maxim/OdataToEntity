@@ -55,7 +55,7 @@ namespace OdataToEntity.ModelBuilder
         private static PropertyInfo[] GetDependentStructuralProperties(OeEdmModelMetadataProvider metadataProvider,
             EntityTypeInfo dependentInfo, PropertyInfo dependentProperty)
         {
-            var dependentProperties = new List<PropertyInfo>(1);
+            var dependentProperties = new List<PropertyInfo>();
 
             PropertyInfo[] fkey = metadataProvider.GetForeignKey(dependentProperty);
             if (fkey == null)
@@ -77,10 +77,7 @@ namespace OdataToEntity.ModelBuilder
             else
                 dependentProperties.AddRange(fkey);
 
-            if (dependentProperties.Count == 1)
-                return dependentProperties.ToArray();
-            else
-                return SortClrPropertyByOrder(metadataProvider, dependentProperties).ToArray();
+            return metadataProvider.SortClrPropertyByOrder(dependentProperties);
         }
         private static EdmMultiplicity GetEdmMultiplicity(Type propertyType, PropertyInfo[] dependentStructuralProperties)
         {
@@ -113,19 +110,6 @@ namespace OdataToEntity.ModelBuilder
                 }
 
             return null;
-        }
-        private static IEnumerable<PropertyInfo> SortClrPropertyByOrder(OeEdmModelMetadataProvider metadataProvider, IEnumerable<PropertyInfo> clrProperties)
-        {
-            var propertyList = new List<Tuple<PropertyInfo, int>>(2);
-            foreach (PropertyInfo clrProperty in clrProperties)
-            {
-                int order = metadataProvider.GetOrder(clrProperty);
-                if (order == -1)
-                    return clrProperties;
-
-                propertyList.Add(new Tuple<PropertyInfo, int>(clrProperty, order));
-            }
-            return propertyList.OrderBy(t => t.Item2).Select(t => t.Item1);
         }
 
         public EntityTypeInfo DependentInfo => _dependentInfo;

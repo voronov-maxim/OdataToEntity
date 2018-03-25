@@ -3,6 +3,7 @@ using System;
 using OdataToEntity.Parsers;
 using LinqToDB.Mapping;
 using System.Reflection;
+using System.Collections.Generic;
 
 namespace OdataToEntity.Linq2Db
 {
@@ -59,10 +60,16 @@ namespace OdataToEntity.Linq2Db
             var key = (PrimaryKeyAttribute)propertyInfo.GetCustomAttribute(typeof(PrimaryKeyAttribute));
             return key == null ? -1 : key.Order;
         }
-        public override bool IsKey(PropertyInfo propertyInfo)
+        internal PropertyInfo[] GetPrimaryKey(Type entityType)
         {
-            return propertyInfo.GetCustomAttribute(typeof(PrimaryKeyAttribute)) != null;
+            var keys = new List<PropertyInfo>();
+            PropertyInfo[] properties = entityType.GetProperties();
+            foreach (PropertyInfo property in properties)
+                if (IsKey(property))
+                    keys.Add(property);
+            return SortClrPropertyByOrder(keys);
         }
+        public override bool IsKey(PropertyInfo propertyInfo) => propertyInfo.GetCustomAttribute(typeof(PrimaryKeyAttribute)) != null;
         public override bool IsNotMapped(PropertyInfo propertyInfo)
         {
             if (propertyInfo.GetCustomAttribute(typeof(ColumnAttribute)) != null)
@@ -74,10 +81,7 @@ namespace OdataToEntity.Linq2Db
 
             return true;
         }
-        public override bool IsRequired(PropertyInfo propertyInfo)
-        {
-            return IsRequiredLinq2Db(propertyInfo);
-        }
+        public override bool IsRequired(PropertyInfo propertyInfo) => IsRequiredLinq2Db(propertyInfo);
         internal static bool IsRequiredLinq2Db(PropertyInfo propertyInfo)
         {
             Type clrType = propertyInfo.PropertyType;

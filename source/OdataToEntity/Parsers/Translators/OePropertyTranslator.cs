@@ -59,11 +59,15 @@ namespace OdataToEntity.Parsers
             Expression propertyExpression = _expressions[0];
             for (int i = 0; i < _expressions.Count; i++)
             {
-                PropertyInfo propertyInfo;
+                PropertyInfo propertyInfo = null;
                 if (i < _expressions.Count - 1)
                 {
-                    PropertyInfo[] properties = _expressions[i].Type.GetProperties();
-                    propertyInfo = properties[properties.Length - 1];
+                    foreach (PropertyInfo property in _expressions[i].Type.GetProperties())
+                        if (property.PropertyType == _expressions[i + 1].Type)
+                        {
+                            propertyInfo = property;
+                            break;
+                        }
                 }
                 else
                     propertyInfo = _foundProperty;

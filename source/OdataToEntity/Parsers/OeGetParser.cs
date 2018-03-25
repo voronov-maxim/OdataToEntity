@@ -91,7 +91,7 @@ namespace OdataToEntity
             {
                 odataUri.Top = pageSize;
                 IEdmEntityType edmEntityType = GetEntityType(odataUri.Path, navigationSegments);
-                odataUri.OrderBy = OeSkipTokenParser.GetUniqueOrderBy(_edmModel, edmEntityType, odataUri.OrderBy);
+                odataUri.OrderBy = OeSkipTokenParser.GetUniqueOrderBy(_edmModel, edmEntityType, odataUri.OrderBy, odataUri.Apply);
             }
 
             var entitySetSegment = (EntitySetSegment)odataUri.Path.FirstSegment;

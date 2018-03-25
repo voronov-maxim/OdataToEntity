@@ -1,4 +1,5 @@
-﻿using LinqToDB.Data;
+﻿using LinqToDB;
+using LinqToDB.Data;
 using Microsoft.OData.Edm;
 using OdataToEntity.Db;
 using System;
@@ -69,7 +70,7 @@ namespace OdataToEntity.Linq2Db
                 clrProperties.Add(clrType.GetProperty(edmProperty.Name));
             return clrProperties;
         }
-        public OeLinq2DbTable<T> GetTable<T>()
+        public OeLinq2DbTable<T> GetTable<T>() where T : class
         {
             if (_tables.TryGetValue(typeof(T), out OeLinq2DbTable value))
                 return (OeLinq2DbTable<T>)value;
@@ -140,8 +141,8 @@ namespace OdataToEntity.Linq2Db
                     for (int j = 0; j <= lastIndex; j++)
                         if (clrTypeEdmSetList[j].EdmSet == navigationBinding.Target)
                         {
-                            var dependentProperties = GetDependentProperties(clrTypeEdmSetList[j].ClrType, navigationBinding.NavigationProperty);
-                            GetTable(clrTypeEdmSetList[j].ClrType).UpdateIdentities(dependentProperties.Single(), table.Identities);
+                            List<PropertyInfo> dependentProperties = GetDependentProperties(clrTypeEdmSetList[j].ClrType, navigationBinding.NavigationProperty);
+                            GetTable(clrTypeEdmSetList[j].ClrType).UpdateIdentities(dependentProperties[0], table.Identities);
                             break;
                         }
         }

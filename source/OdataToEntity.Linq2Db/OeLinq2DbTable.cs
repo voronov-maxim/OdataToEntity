@@ -1,14 +1,27 @@
 ﻿using LinqToDB;
 using LinqToDB.Data;
+using LinqToDB.Linq;
 using LinqToDB.Mapping;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 
 namespace OdataToEntity.Linq2Db
 {
     public abstract class OeLinq2DbTable
     {
+        public struct UpdatableEntity<T> where T : class
+        {
+            public UpdatableEntity(T entity, IReadOnlyList<String> updatedPropertyNames)
+            {
+                Entity = entity;
+                UpdatedPropertyNames = updatedPropertyNames;
+            }
+            public T Entity { get; }
+            public IReadOnlyList<String> UpdatedPropertyNames { get; }
+        }
+
         public abstract int SaveDeleted(DataConnection dc);
         public abstract int SaveInserted(DataConnection dc);
         public abstract int SaveUpdated(DataConnection dc);
@@ -18,20 +31,27 @@ namespace OdataToEntity.Linq2Db
         public PropertyInfo SelfRefProperty { get; set; }
     }
 
-    public sealed class OeLinq2DbTable<T> : OeLinq2DbTable
+    public sealed class OeLinq2DbTable<T> : OeLinq2DbTable where T : class
     {
         private readonly List<T> _deleted;
         private readonly Dictionary<Object, Object> _identities;
         private readonly List<T> _inserted;
-        private readonly List<T> _updated;
+        private static readonly PropertyInfo[] _primaryKey;
+        private readonly List<UpdatableEntity<T>> _updated;
 
+        static OeLinq2DbTable()
+        {
+            var provider = new OeLinq2DbEdmModelMetadataProvider();
+            _primaryKey = provider.GetPrimaryKey(typeof(T));
+        }
         public OeLinq2DbTable()
         {
             _deleted = new List<T>();
             _inserted = new List<T>();
             _identities = new Dictionary<Object, Object>();
-            _updated = new List<T>();
+            _updated = new List<UpdatableEntity<T>>();
         }
+
         public void Delete(T entity)
         {
             _deleted.Add(entity);
@@ -111,7 +131,7 @@ namespace OdataToEntity.Linq2Db
             for (int i = 0; i < _inserted.Count; i++)
             {
                 T entity = _inserted[i];
-                Object identity = dc.InsertWithIdentity<T>(entity);
+                Object identity = dc.InsertWithIdentity(entity);
                 identity = Convert.ChangeType(identity, identityProperties[0].PropertyType);
                 Object old = identityProperties[0].GetValue(entity);
                 identityProperties[0].SetValue(entity, identity);
@@ -124,13 +144,32 @@ namespace OdataToEntity.Linq2Db
         }
         public override int SaveUpdated(DataConnection dc)
         {
-            foreach (T entity in Updated)
-                dc.Update(entity);
+            if (Updated.Count == 0)
+                return 0;
+
+            ITable<T> table = dc.GetTable<T>();
+            foreach (UpdatableEntity<T> updatableEntity in Updated)
+                if (updatableEntity.UpdatedPropertyNames == null)
+                    dc.Update(updatableEntity.Entity);
+                else
+                    Updatable(table, updatableEntity.Entity, updatableEntity.UpdatedPropertyNames).Update();
             return Updated.Count;
         }
-        public void Update(T entity)
+        private IUpdatable<T> Updatable(ITable<T> table, T entity, IReadOnlyList<String> updatedPropertyNames)
         {
-            _updated.Add(entity);
+            IUpdatable<T> updatable = null;
+            IQueryable<T> query = table.Where(EntityUpdateHelper.GetWhere(_primaryKey, entity));
+            foreach (String updatedPropertyName in updatedPropertyNames.Except(_primaryKey.Select(p => p.Name)))
+            {
+                PropertyInfo updatedProperty = typeof(T).GetProperty(updatedPropertyName);
+                SetBuilder<T> setBuilder = EntityUpdateHelper.GetSetBuilder<T>(updatedProperty);
+                updatable = updatable == null ? setBuilder.GetSet(query, entity) : setBuilder.GetSet(updatable, entity);
+            }
+            return updatable;
+        }
+        public void Update(T entity, IEnumerable<String> updatedPropertyNames)
+        {
+            _updated.Add(new UpdatableEntity<T>(entity, updatedPropertyNames.ToList()));
         }
         private void UpdateParentIdentity(Object oldIdentity, Object newIdentity, int entityIndex)
         {
@@ -157,6 +196,6 @@ namespace OdataToEntity.Linq2Db
         public IReadOnlyList<T> Deleted => _deleted;
         public override IDictionary<Object, Object> Identities => _identities;
         public IReadOnlyList<T> Inserted => _inserted;
-        public IReadOnlyList<T> Updated => _updated;
+        public IReadOnlyList<UpdatableEntity<T>> Updated => _updated;
     }
 }

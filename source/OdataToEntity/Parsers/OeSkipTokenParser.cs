@@ -1,6 +1,7 @@
 ﻿using Microsoft.OData;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
+using Microsoft.OData.UriParser.Aggregation;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -15,18 +16,53 @@ namespace OdataToEntity.Parsers
         private static readonly ODataMessageReaderSettings ReaderSettings = new ODataMessageReaderSettings() { EnableMessageStreamDisposal = false };
         private static readonly ODataMessageWriterSettings WriterSettings = new ODataMessageWriterSettings() { EnableMessageStreamDisposal = false };
 
-        public OeSkipTokenParser(IEdmModel edmModel, IEdmEntityType edmType, bool isDatabaseNullHighestValue, OrderByClause orderByClause)
+        public OeSkipTokenParser(IEdmModel edmModel, IEdmEntityType edmType, bool isDatabaseNullHighestValue, OrderByClause uniqueOrderBy)
         {
             EdmModel = edmModel;
             IsDatabaseNullHighestValue = isDatabaseNullHighestValue;
-            UniqueOrderBy = GetUniqueOrderBy(edmModel, edmType, orderByClause);
+            UniqueOrderBy = uniqueOrderBy;
         }
 
-        internal static OrderByClause GetUniqueOrderBy(IEdmModel edmModel, IEdmEntityType edmType, OrderByClause orderByClause)
+        private static List<SingleValuePropertyAccessNode> GetOrderByProperties(IEdmModel edmModel, IEdmEntityType edmType, OrderByClause orderByClause, ApplyClause applyClause)
         {
-            if (orderByClause != null && GetIsKey(edmType, GetEdmProperies(orderByClause)))
-                return orderByClause;
+            var keys = new List<SingleValuePropertyAccessNode>();
+            GroupByTransformationNode groupByNode;
+            if (applyClause != null && (groupByNode = applyClause.Transformations.OfType<GroupByTransformationNode>().SingleOrDefault()) != null)
+            {
+                foreach (GroupByPropertyNode node in groupByNode.GroupingProperties)
+                {
+                    SingleValuePropertyAccessNode propertyNode;
+                    if (node.Expression == null)
+                    {
+                        GroupByPropertyNode childNode = node.ChildTransformations.Single();
+                        propertyNode = (SingleValuePropertyAccessNode)childNode.Expression;
+                    }
+                    else
+                        propertyNode = (SingleValuePropertyAccessNode)node.Expression;
+                    keys.Add(propertyNode);
+                }
+            }
+            else
+            {
+                ResourceRangeVariableReferenceNode source = GetResourceRangeNode(edmModel, edmType);
+                foreach (IEdmStructuralProperty key in edmType.Key())
+                    keys.Add(new SingleValuePropertyAccessNode(source, key));
+            }
 
+            if (orderByClause == null)
+                return keys;
+
+            for (; orderByClause != null; orderByClause = orderByClause.ThenBy)
+            {
+                var propertyNode = (SingleValuePropertyAccessNode)orderByClause.Expression;
+                int i = keys.FindIndex(p => p.Property == propertyNode.Property);
+                if (i >= 0)
+                    keys.RemoveAt(i);
+            }
+            return keys;
+        }
+        private static ResourceRangeVariableReferenceNode GetResourceRangeNode(IEdmModel edmModel, IEdmEntityType edmType)
+        {
             IEdmEntitySet entitySet = null;
             foreach (IEdmEntitySet element in edmModel.EntityContainer.EntitySets())
                 if (element.EntityType() == edmType)
@@ -35,14 +71,31 @@ namespace OdataToEntity.Parsers
                     break;
                 }
 
+            if (entitySet == null)
+                throw new InvalidOperationException("IEdmEntitySet not found for IEdmEntityType " + edmType.FullName());
+
+            var entityTypeRef = (IEdmEntityTypeReference)((IEdmCollectionType)entitySet.Type).ElementType;
+            var range = new ResourceRangeVariable("", entityTypeRef, entitySet);
+            return new ResourceRangeVariableReferenceNode("$it", range);
+        }
+        internal static OrderByClause GetUniqueOrderBy(IEdmModel edmModel, IEdmEntityType edmType, OrderByClause orderByClause, ApplyClause applyClause)
+        {
+            if (orderByClause != null && applyClause == null && GetIsKey(edmType, GetEdmProperies(orderByClause)))
+                return orderByClause;
+
+            List<SingleValuePropertyAccessNode> orderByProperties = GetOrderByProperties(edmModel, edmType, orderByClause, applyClause);
+            if (orderByProperties.Count == 0)
+                return orderByClause ?? throw new InvalidOperationException("orderByClause must not null");
+
             OrderByClause uniqueOrderByClause = null;
-            foreach (IEdmStructuralProperty keyProperty in edmType.Key().Reverse())
+            for (int i = orderByProperties.Count - 1; i >= 0; i--)
             {
-                var entityTypeRef = (IEdmEntityTypeReference)((IEdmCollectionType)entitySet.Type).ElementType;
-                var range = new ResourceRangeVariable("", entityTypeRef, entitySet);
-                var source = new ResourceRangeVariableReferenceNode("$it", range);
-                var node = new SingleValuePropertyAccessNode(source, keyProperty);
-                uniqueOrderByClause = new OrderByClause(uniqueOrderByClause, node, OrderByDirection.Ascending, source.RangeVariable);
+                ResourceRangeVariableReferenceNode source;
+                if (orderByProperties[i].Source is SingleNavigationNode navigationNode)
+                    source = (ResourceRangeVariableReferenceNode)navigationNode.Source;
+                else
+                    source = (ResourceRangeVariableReferenceNode)orderByProperties[i].Source;
+                uniqueOrderByClause = new OrderByClause(uniqueOrderByClause, orderByProperties[i], OrderByDirection.Ascending, source.RangeVariable);
             }
 
             if (orderByClause == null)
@@ -119,7 +172,15 @@ namespace OdataToEntity.Parsers
             }
             return true;
         }
-        public static String GetPropertyName(MemberExpression propertyExpression) => propertyExpression.Member.DeclaringType.Name + "_" + propertyExpression.Member.Name;
+        public static String GetPropertyName(Expression expression)
+        {
+            MemberExpression propertyExpression;
+            if (expression is UnaryExpression unaryExpression)
+                propertyExpression = (MemberExpression)unaryExpression.Operand;
+            else
+                propertyExpression = (MemberExpression)expression;
+            return propertyExpression.Member.DeclaringType.Name + "_" + propertyExpression.Member.Name;
+        }
         public static String GetPropertyName(IEdmProperty edmProperty) => ((IEdmNamedElement)edmProperty.DeclaringType).Name + "_" + edmProperty.Name;
         public String GetSkipToken(Object value)
         {
