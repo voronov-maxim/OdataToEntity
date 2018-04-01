@@ -2,18 +2,19 @@
   <Import Project="..\..\build\dependencies.props" />
 
   <PropertyGroup>
-    <Description>OData via Entity Framework (Linq2Db)</Description>
+    <Description>Classes to serialize, deserialize OData JSON payloads. Supports OData v4 only. Enables construction of OData services via Entity Framework (Linq2Db) DataContext (without controller). Targets .NET Core with support for .NET 4.6</Description>
     <Authors>Maxim Voronov</Authors>
     <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity</AssemblyName>
+    <Title>OData via Entity Framework (Linq2Db)</Title>
   </PropertyGroup>
 
   <PropertyGroup>
     <AssemblyCopyright>MIT</AssemblyCopyright>
-    <AssemblyDescription>Classes to serialize, deserialize OData JSON payloads. Supports OData v4 only. Enables construction of OData services via Entity Framework (Linq2Db) DataContext (without controller). Targets .NET Core with support for .NET 4.6</AssemblyDescription>
-    <AssemblyTitle>OData via Entity Framework (Linq2Db)</AssemblyTitle>
+    <AssemblyDescription>$(Description)</AssemblyDescription>
+    <AssemblyTitle>$(Title)</AssemblyTitle>
     <AssemblyVersion>$(OdataToEntityVersion)</AssemblyVersion>
   </PropertyGroup>
 

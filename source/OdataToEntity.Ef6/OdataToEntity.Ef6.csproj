@@ -2,18 +2,19 @@
   <Import Project="..\..\build\dependencies.props" />
 
   <PropertyGroup>
-    <Description>Entity Framework 6 adapter for OdataEntity</Description>
+    <Description>Classes bridge from OdataToEntity to Entity Framework 6.2.0. Abstraction layer access to DataContext Entity Framework 6.2.0. Targets .NET 4.6</Description>
     <Authors>Maxim Voronov</Authors>
     <TargetFrameworks>net461</TargetFrameworks>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity.Ef6</AssemblyName>
+    <Title>Entity Framework 6 adapter for OdataEntity</Title>
   </PropertyGroup>
 
   <PropertyGroup>
     <AssemblyCopyright>MIT</AssemblyCopyright>
-    <AssemblyDescription>Classes bridge from OdataToEntity to Entity Framework 6.2.0. Abstraction layer access to DataContext Entity Framework 6.2.0. Targets .NET 4.6</AssemblyDescription>
-    <AssemblyTitle>Entity Framework 6 adapter for OdataEntity</AssemblyTitle>
+    <AssemblyDescription>$(Description)</AssemblyDescription>
+    <AssemblyTitle>$(Title)</AssemblyTitle>
     <AssemblyVersion>$(OdataToEntityVersion)</AssemblyVersion>
   </PropertyGroup>
 

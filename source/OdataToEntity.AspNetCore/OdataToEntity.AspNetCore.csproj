@@ -2,18 +2,19 @@
   <Import Project="..\..\build\dependencies.props" />
   
   <PropertyGroup>
-    <Description>OdataToEnity Asp Mvc .Net Core extension</Description>
+    <Description>Extension for easy create Asp Mvc .Net Core service</Description>
     <Authors>Maxim Voronov</Authors>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity.AspNetCore</AssemblyName>
+    <Title>OdataToEnity Asp Mvc .Net Core extension</Title>
   </PropertyGroup>
 
   <PropertyGroup>
     <AssemblyCopyright>MIT</AssemblyCopyright>
-    <AssemblyDescription>Extension for easy create Asp Mvc .Net Core service</AssemblyDescription>
-    <AssemblyTitle>OdataToEnity Asp Mvc .Net Core</AssemblyTitle>
+    <AssemblyDescription>$(Description)</AssemblyDescription>
+    <AssemblyTitle>$(Title)</AssemblyTitle>
     <AssemblyVersion>$(OdataToEntityVersion)</AssemblyVersion>
   </PropertyGroup>
 

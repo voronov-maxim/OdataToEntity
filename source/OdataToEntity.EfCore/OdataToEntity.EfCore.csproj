@@ -2,19 +2,20 @@
   <Import Project="..\..\build\dependencies.props" />
 
   <PropertyGroup>
-    <Description>Entity Framework Core adapter for OdataEntity</Description>
+    <Description>Classes bridge from ODataToEntity to Entity Framework Core. Abstraction layer access to DataContext Entity Framework Core. Targets .NET Core with support for .NET 4.6</Description>
     <Authors>Maxim Voronov</Authors>
     <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity.EfCore</AssemblyName>
     <AssemblyVersion>$(OdataToEntityVersion)</AssemblyVersion>
+    <Title>Entity Framework Core adapter for OdataEntity</Title>
   </PropertyGroup>
 
   <PropertyGroup>
     <AssemblyCopyright>MIT</AssemblyCopyright>
-    <AssemblyDescription>Classes bridge from ODataToEntity to Entity Framework Core. Abstraction layer access to DataContext Entity Framework Core. Targets .NET Core with support for .NET 4.6</AssemblyDescription>
-    <AssemblyTitle>Entity Framework Core adapter for OdataEntity</AssemblyTitle>
+    <AssemblyDescription>$(Description)</AssemblyDescription>
+    <AssemblyTitle>$(Title)</AssemblyTitle>
     <AssemblyVersion>$(OdataToEntityVersion)</AssemblyVersion>
   </PropertyGroup>
   

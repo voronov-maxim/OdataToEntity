@@ -2,18 +2,19 @@
   <Import Project="..\..\build\dependencies.props" />
 
   <PropertyGroup>
-    <Description>Linq2Db adapter for OdataEntity</Description>
+    <Description>Classes bridge from OdataToEntity to Linq2Db. Abstraction layer access to DataContext Entity Linq2Db. Targets .NET 4.6</Description>
     <Authors>Maxim Voronov</Authors>
     <TargetFrameworks>net461</TargetFrameworks>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity.Linq2Db</AssemblyName>
+    <Title>Linq2Db adapter for OdataEntity</Title>
   </PropertyGroup>
 
   <PropertyGroup>
     <AssemblyCopyright>MIT</AssemblyCopyright>
-    <AssemblyDescription>Classes bridge from OdataToEntity to Linq2Db. Abstraction layer access to DataContext Entity Linq2Db. Targets .NET 4.6</AssemblyDescription>
-    <AssemblyTitle>Linq2Db adapter for OdataEntity</AssemblyTitle>
+    <AssemblyDescription>$(Description)</AssemblyDescription>
+    <AssemblyTitle>$(Title)</AssemblyTitle>
     <AssemblyVersion>$(OdataToEntityVersion)</AssemblyVersion>
   </PropertyGroup>
   
