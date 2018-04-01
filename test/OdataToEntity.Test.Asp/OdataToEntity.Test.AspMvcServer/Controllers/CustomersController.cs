@@ -2,6 +2,7 @@
 using Microsoft.OData.Edm;
 using OdataToEntity.AspNetCore;
 using System;
+using System.Collections.Generic;
 
 namespace OdataToEntity.Test.AspMvcServer.Controllers
 {
@@ -31,9 +32,9 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
             return base.OData<Model.Customer>(asyncEnumerator);
         }
         [HttpPatch]
-        public void Patch(OeDataContext dataContext, Model.Customer customer)
+        public void Patch(OeDataContext dataContext, IDictionary<String, Object> customerProperties)
         {
-            dataContext.Update(customer);
+            dataContext.Update(customerProperties);
         }
         [HttpPost]
         public void Post(OeDataContext dataContext, Model.Customer customer)

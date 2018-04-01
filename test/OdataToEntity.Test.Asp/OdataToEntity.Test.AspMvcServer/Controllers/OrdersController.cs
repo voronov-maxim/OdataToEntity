@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.OData.Edm;
 using OdataToEntity.AspNetCore;
+using System;
+using System.Collections.Generic;
 
 namespace OdataToEntity.Test.AspMvcServer.Controllers
 {
@@ -36,9 +38,9 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
             return base.OData<Model.OrderItem>(asyncEnumerator);
         }
         [HttpPatch]
-        public void Patch(OeDataContext dataContext, Model.Order order)
+        public void Patch(OeDataContext dataContext, IDictionary<String, Object> orderProperties)
         {
-            dataContext.Update(order);
+            dataContext.Update(orderProperties);
         }
         [HttpPost]
         public void Post(OeDataContext dataContext, Model.Order order)

@@ -171,7 +171,7 @@ namespace OdataToEntity.AspNetCore
             if (_odataUri.SelectAndExpand == null)
             {
                 structuralProperties = edmEntityType.StructuralProperties();
-                navigationProperties = edmEntityType.NavigationProperties();
+                navigationProperties = Array.Empty<IEdmNavigationProperty>();
             }
             else
             {

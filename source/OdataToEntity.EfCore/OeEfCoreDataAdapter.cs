@@ -76,7 +76,7 @@ namespace OdataToEntity.EfCore
                     foreach (ODataProperty odataProperty in entry.Properties)
                     {
                         IProperty property = _entityType.FindProperty(odataProperty.Name);
-                        Object value = OeEdmClrHelper.GetStructuralValue(property.ClrType, odataProperty.Value);
+                        Object value = OeEdmClrHelper.GetClrValue(property.ClrType, odataProperty.Value);
                         internalEntry.SetProperty(property, value);
                     }
                 }
@@ -89,7 +89,7 @@ namespace OdataToEntity.EfCore
                 foreach (ODataProperty odataProperty in entry.Properties)
                 {
                     IProperty property = _entityType.FindProperty(odataProperty.Name);
-                    Object value = OeEdmClrHelper.GetStructuralValue(property.ClrType, odataProperty.Value);
+                    Object value = OeEdmClrHelper.GetClrValue(property.ClrType, odataProperty.Value);
                     values[property.GetIndex()] = value;
                 }
                 return (TEntity)_materializer(new ValueBuffer(values));

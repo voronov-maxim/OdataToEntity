@@ -249,8 +249,23 @@ namespace OdataToEntity.Parsers
         {
             return new OeQueryNodeVisitor(_visitor, parameter);
         }
-        internal Expression GetTuplePropertyByAliasName(Expression source, String aliasName)
+        internal Expression GetTuplePropertyByAliasName(Expression source, SingleValueNode singleValueNode)
         {
+            String aliasName;
+            if (singleValueNode is SingleValuePropertyAccessNode propertyNode)
+            {
+                if (propertyNode.Source is ResourceRangeVariableReferenceNode)
+                    aliasName = propertyNode.Property.Name;
+                else if (propertyNode.Source is SingleNavigationNode navigationNode)
+                    aliasName = navigationNode.NavigationProperty.Name + "_" + propertyNode.Property.Name;
+                else
+                    throw new NotSupportedException("SingleValuePropertyAccessNode.Source type " + propertyNode.Source.GetType().FullName);
+            }
+            else if (singleValueNode is SingleValueOpenPropertyAccessNode openPropertyNode)
+                aliasName = openPropertyNode.Name;
+            else
+                throw new ArgumentException("invalid type", nameof(singleValueNode));
+
             int groupCount = 0;
             for (int i = 0; i < _aggProperties.Count; i++)
             {

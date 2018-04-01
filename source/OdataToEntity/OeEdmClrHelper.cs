@@ -18,7 +18,7 @@ namespace OdataToEntity
                 PropertyInfo clrProperty = clrType.GetProperty(property.Name);
                 if (clrProperty != null)
                 {
-                    Object value = GetStructuralValue(clrProperty.PropertyType, property.Value);
+                    Object value = GetClrValue(clrProperty.PropertyType, property.Value);
                     clrProperty.SetValue(entity, value);
                 }
             }
@@ -37,6 +37,23 @@ namespace OdataToEntity
                 return edmModel.GetClrType((edmType as IEdmCollectionType).ElementType.Definition);
 
             throw new InvalidOperationException("Add OeClrTypeAnnotation for " + edmType.FullTypeName());
+        }
+        public static Object GetClrValue(Type clrType, Object edmValue)
+        {
+            if (edmValue is ODataEnumValue enumValue)
+            {
+                Type enumType;
+                if (clrType.IsEnum)
+                    enumType = clrType;
+                else
+                    enumType = Nullable.GetUnderlyingType(clrType);
+                return Enum.Parse(enumType, enumValue.Value);
+            }
+
+            if (edmValue is DateTimeOffset dateTimeOffset && (clrType == typeof(DateTime) || clrType == typeof(DateTime?)))
+                return dateTimeOffset.UtcDateTime;
+
+            return edmValue;
         }
         public static IEdmTypeReference GetEdmTypeReference(this IEdmModel edmModel, Type clrType)
         {
@@ -62,26 +79,39 @@ namespace OdataToEntity
 
             return edmTypeRef;
         }
+        public static ODataValue CreateODataValue(Object value)
+        {
+            if (value == null)
+                return new ODataNullValue();
+
+            if (value.GetType().IsEnum)
+                return new ODataEnumValue(value.ToString());
+
+            if (value is DateTime dateTime)
+            {
+                DateTimeOffset dateTimeOffset;
+                switch (dateTime.Kind)
+                {
+                    case DateTimeKind.Unspecified:
+                        dateTimeOffset = new DateTimeOffset(DateTime.SpecifyKind(dateTime, DateTimeKind.Utc));
+                        break;
+                    case DateTimeKind.Utc:
+                        dateTimeOffset = new DateTimeOffset(dateTime);
+                        break;
+                    case DateTimeKind.Local:
+                        dateTimeOffset = new DateTimeOffset(dateTime.ToUniversalTime());
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException("unknown DateTimeKind " + dateTime.Kind.ToString());
+                }
+                return new ODataPrimitiveValue(dateTimeOffset);
+            }
+
+            return new ODataPrimitiveValue(value);
+        }
         public static PropertyInfo GetPropertyIgnoreCase(this Type declaringType, String propertyName)
         {
             return declaringType.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase);
-        }
-        public static Object GetStructuralValue(Type clrType, Object edmValue)
-        {
-            if (edmValue is ODataEnumValue enumValue)
-            {
-                Type enumType;
-                if (clrType.IsEnum)
-                    enumType = clrType;
-                else
-                    enumType = Nullable.GetUnderlyingType(clrType);
-                return Enum.Parse(enumType, enumValue.Value);
-            }
-
-            if (edmValue is DateTimeOffset dateTimeOffset && (clrType == typeof(DateTime) || clrType == typeof(DateTime?)))
-                return dateTimeOffset.UtcDateTime;
-
-            return edmValue;
         }
         public static Object GetValue(IEdmModel edmModel, ODataEnumValue odataValue)
         {

@@ -43,33 +43,7 @@ namespace OdataToEntity.Parsers
             {
                 OePropertyAccessor accessor = Accessors[i];
                 Object value = accessor.Accessor(entity);
-
-                ODataValue odataValue = null;
-                if (value == null)
-                    odataValue = new ODataNullValue();
-                else if (value.GetType().IsEnum)
-                    odataValue = new ODataEnumValue(value.ToString());
-                else if (value is DateTime dateTime)
-                {
-                    switch (dateTime.Kind)
-                    {
-                        case DateTimeKind.Unspecified:
-                            value = new DateTimeOffset(DateTime.SpecifyKind(dateTime, DateTimeKind.Utc));
-                            break;
-                        case DateTimeKind.Utc:
-                            value = new DateTimeOffset(dateTime);
-                            break;
-                        case DateTimeKind.Local:
-                            value = new DateTimeOffset(dateTime.ToUniversalTime());
-                            break;
-                        default:
-                            throw new ArgumentOutOfRangeException("unknown DateTimeKind " + dateTime.Kind.ToString());
-                    }
-                    odataValue = new ODataPrimitiveValue(value);
-                }
-                else
-                    odataValue = new ODataPrimitiveValue(value);
-
+                ODataValue odataValue = OeEdmClrHelper.CreateODataValue(value);
                 odataValue.TypeAnnotation = accessor.TypeAnnotation;
                 odataProperties[i] = new ODataProperty() { Name = accessor.Name, Value = odataValue };
             }

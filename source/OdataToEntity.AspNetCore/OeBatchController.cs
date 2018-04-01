@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Internal;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.OData;
 using Microsoft.OData.Edm;
 using OdataToEntity.Db;
 using OdataToEntity.Parsers;
@@ -10,6 +11,7 @@ using OdataToEntity.Writers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -56,9 +58,23 @@ namespace OdataToEntity.AspNetCore
                     if (candidates.Count == 0)
                         throw new InvalidOperationException("Action " + operation.Method + " for controller " + basePath + " not found");
 
+                    Object entity;
+                    if (operation.Method == ODataConstants.MethodPatch)
+                    {
+                        var properties = new Dictionary<String, Object>();
+                        foreach (ODataProperty odataProperty in operation.EntityItem.Entry.Properties)
+                        {
+                            PropertyInfo propertyInfo = entitySetAdapter.EntityType.GetProperty(odataProperty.Name);
+                            properties[odataProperty.Name] = OeEdmClrHelper.GetClrValue(propertyInfo.PropertyType, odataProperty.Value);
+                        }
+                        entity = properties;
+                    }
+                    else
+                        entity = OeEdmClrHelper.CreateEntity(entitySetAdapter.EntityType, operation.EntityItem.Entry);
+
                     var modelState = new OeFilterAttribute.BatchModelStateDictionary()
                     {
-                        Entity = OeEdmClrHelper.CreateEntity(entitySetAdapter.EntityType, operation.EntityItem.Entry),
+                        Entity = entity,
                         DataContext = new OeDataContext(ref entitySetAdapter, EdmModel, dataContext, operation)
                     };
                     OnBeforeInvokeController(modelState.DataContext, operation.EntityItem);

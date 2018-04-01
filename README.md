@@ -7,14 +7,6 @@ This library provides a simple approach to creating OData service from ORM data 
 This translates the OData query into an expression tree and passes it to the ORM framework.
 Supported ORM: Entity Framework 6, Entity Framework Core, Linq2Db
 
-Example Asp.Net Core OData service in \sln\OdataToEntityCore.Asp.sln  
-client Microsoft.OData.Client - test\OdataToEntity.Test.Asp\OdataToEntity.Test.AspClient  
-server Asp .net core - test\OdataToEntity.Test.Asp\OdataToEntity.Test.AspServer  
-server Asp mvc .net core - test\OdataToEntity.Test.Asp\OdataToEntity.Test.AspMvcServer
-
-Script create Sql Server database \test\OdataToEntity.Test.EfCore.SqlServer\script.sql  
-Script create PostgreSql database \test\OdataToEntity.Test.EfCore.PostgreSql\script.sql
-
 ```c#
 public sealed class OrderContext : DbContext
 {
@@ -106,7 +98,7 @@ var response = new MemoryStream();
 await parser.ExecuteBatchAsync(request, response, CancellationToken.None);
 ```
 
-### Sample OData stored procedure
+### Sample OData stored procedure ###
 ```c#
 //Create adapter data access, where OrderContext your DbContext
 var dataAdapter = new OeEfCoreDataAdapter<Model.OrderContext>();
@@ -118,9 +110,8 @@ var response = new MemoryStream();
 await parser.ExecuteGetAsync(new Uri("http://dummy/GetOrders(name='Order 1',id=1,status=null)"), OeRequestHeaders.JsonDefault, response, CancellationToken.None);
 ```
 
-### Server-Driven Paging
-
-To use responses that include only a partial set of the items identified by the request indicate maximum page size through the invoke method *OeRequestHeaders.SetMaxPageSize(int maxPageSize)*. The service serializes the returned continuation token into the $skiptoken query option and returns it as part of the next link to the client. If request returns result set sorted by nullable property, should set *OeDataAdapter.IsDatabaseNullHighestValue* (SQLite, MySql, Sql Server set *false*, for PostgreSql, Oracle set *true*).
+### Server-Driven Paging ###
+To use responses that include only a partial set of the items identified by the request indicate maximum page size through the invoke method *OeRequestHeaders.SetMaxPageSize(int maxPageSize)*. The service serializes the returned continuation token into the $skiptoken query option and returns it as part of the next link to the client. If request returns result set sorted by nullable database column, should set *OeDataAdapter.IsDatabaseNullHighestValue* (SQLite, MySql, Sql Server set *false*, for PostgreSql, Oracle set *true*), or mark property *RequiredAttribute*.
 ```c#
 //Create adapter data access, where OrderContext your DbContext
 var dataAdapter = new OeEfCoreDataAdapter<Model.OrderContext>(Model.OrderContext.CreateOptions())
@@ -151,10 +142,24 @@ var response = new MemoryStream();
 await parser.ExecuteGetAsync(uri, requestHeaders, response, CancellationToken.None);
 ```
 
-### Data context pooling
+### A function specific to the Entity Framework Core ###
+For the Entity Framework Core provider, there is the ability to cache queries, which on existing tests allows you to increase the performance up to two times. The cache key is a parsed OData query with remote constant values, and the value is a delegate accepting the data context and returning the query result. This allows to exclude the stage of building the data query itself (*IQueryable*). To use this feature, you need to use the constructor *OeEfCoreDataAdapter(DbContextOptions options, Db.OeQueryCache queryCache)*.
 
-For use pooling (DbContextPool) in Entity Framework Core create instance OeEfCoreDataAdapter use constructor with DbContextOptions parameter.
+For use pooling (*DbContextPool*) in Entity Framework Core create instance *OeEfCoreDataAdapter* use constructor with *DbContextOptions* parameter.
 ```c#
 //Create adapter data access, where OrderContext your DbContext
 var dataAdapter = new OeEfCoreDataAdapter<Model.OrderContext>(Model.OrderContext.CreateOptions());
 ```
+
+### Project structure ###
+Library *source/OdataEntity*.
+Data context adapter Entity Framework Core - *source\OdataToEntity.EfCore*.
+Data context adapter Entity Framework 6.2 - *source\OdataToEntity.Ef6*.
+Data context adapter Linq2Db - *source\OdataToEntity.Linq2Db*.
+Routing, middleware, controller base class - *source\OdataToEntity.AspNetCore*.
+Client Microsoft.OData.Client - *test\OdataToEntity.Test.Asp\OdataToEntity.Test.AspClient*.
+Server Asp .net core - *test\OdataToEntity.Test.Asp\OdataToEntity.Test.AspServer*.
+Server Asp mvc .net core - *test\OdataToEntity.Test.Asp\OdataToEntity.Test.AspMvcServer*.
+
+Script create Sql Server database - *\test\OdataToEntity.Test.EfCore.SqlServer\script.sql*.
+Script create PostgreSql database - *\test\OdataToEntity.Test.EfCore.PostgreSql\script.sql*.

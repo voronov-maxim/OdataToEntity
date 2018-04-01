@@ -1,4 +1,5 @@
-﻿using Microsoft.OData.Edm;
+﻿using Microsoft.OData;
+using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using OdataToEntity.ModelBuilder;
 using System;
@@ -12,13 +13,12 @@ namespace OdataToEntity.Parsers
     public sealed class OeQueryNodeVisitor : QueryNodeVisitor<Expression>
     {
         private readonly Dictionary<ConstantExpression, ConstantNode> _constants;
-        private readonly IEdmModel _edmModel;
         private readonly Stack<ParameterExpression> _parameters;
         private readonly OeQueryNodeVisitor _parentVisitor;
 
         public OeQueryNodeVisitor(IEdmModel edmModel, ParameterExpression it)
         {
-            _edmModel = edmModel;
+            EdmModel = edmModel;
             _parameters = new Stack<ParameterExpression>();
             _parameters.Push(it);
 
@@ -31,7 +31,7 @@ namespace OdataToEntity.Parsers
                 AddConstant(pair.Key, pair.Value);
         }
         public OeQueryNodeVisitor(OeQueryNodeVisitor parentVisitor, ParameterExpression it)
-                : this(parentVisitor._edmModel, it)
+                : this(parentVisitor.EdmModel, it)
         {
             _parentVisitor = parentVisitor;
         }
@@ -196,14 +196,43 @@ namespace OdataToEntity.Parsers
             }
             ExpressionType binaryType = OeExpressionHelper.ToExpressionType(nodeIn.OperatorKind);
 
-            if (left.Type == typeof(String) && !(binaryType == ExpressionType.Equal || binaryType == ExpressionType.NotEqual))
+            if (!(binaryType == ExpressionType.Equal || binaryType == ExpressionType.NotEqual))
             {
-                Func<String, String, int> compareToFunc = String.Compare;
-                MethodCallExpression compareToCall = Expression.Call(null, compareToFunc.GetMethodInfo(), left, right);
-                return Expression.MakeBinary(binaryType, compareToCall, OeConstantToVariableVisitor.ZeroStringCompareConstantExpression);
+                if (left.Type == typeof(String))
+                {
+                    Func<String, String, int> compareToFunc = String.Compare;
+                    MethodCallExpression compareToCall = Expression.Call(null, compareToFunc.GetMethodInfo(), left, right);
+                    return Expression.MakeBinary(binaryType, compareToCall, OeConstantToVariableVisitor.ZeroStringCompareConstantExpression);
+                }
+
+                Type underlyingType;
+                if (left.Type.IsEnum)
+                {
+                    Type enumUnderlyingType = Enum.GetUnderlyingType(left.Type);
+                    left = ConvertEnumExpression(left, enumUnderlyingType);
+                    right = ConvertEnumExpression(right, enumUnderlyingType);
+                }
+                else if ((underlyingType = Nullable.GetUnderlyingType(left.Type)) != null && underlyingType.IsEnum)
+                {
+                    Type enumUnderlyingType = Enum.GetUnderlyingType(underlyingType);
+                    Type nullableUnderlyingType = typeof(Nullable<>).MakeGenericType(enumUnderlyingType);
+                    left = ConvertEnumExpression(left, nullableUnderlyingType);
+                    right = ConvertEnumExpression(right, nullableUnderlyingType);
+                }
             }
 
             return Expression.MakeBinary(binaryType, left, right);
+
+            UnaryExpression ConvertEnumExpression(Expression e, Type nullableType)
+            {
+                if (e is UnaryExpression unaryExpression)
+                {
+                    var value = (ConstantExpression)unaryExpression.Operand;
+                    return Expression.Convert(value, nullableType);
+                }
+
+                return Expression.Convert(e, nullableType);
+            }
         }
         public override Expression Visit(CollectionNavigationNode nodeIn)
         {
@@ -230,7 +259,7 @@ namespace OdataToEntity.Parsers
                     if (primitiveTypeKind == EdmPrimitiveTypeKind.None)
                     {
                         if (nodeIn.TypeReference.IsEnum())
-                            clrType = _edmModel.GetClrType(nodeIn.TypeReference.Definition);
+                            clrType = EdmModel.GetClrType(nodeIn.TypeReference.Definition);
                         else
                             throw new NotSupportedException(nodeIn.TypeReference.FullName());
                     }
@@ -302,14 +331,7 @@ namespace OdataToEntity.Parsers
             }
 
             Expression source = TranslateNode(nodeIn.Source);
-            if (source == null)
-            {
-                var navigationNode = (SingleNavigationNode)nodeIn.Source;
-                String aliasName = navigationNode.NavigationProperty.Name + "_" + nodeIn.Property.Name;
-                return TuplePropertyByAliasName(Parameter, aliasName);
-            }
-
-            e = TuplePropertyByAliasName(source, nodeIn.Property.Name);
+            e = TuplePropertyByAliasName(source ?? Parameter, nodeIn);
             if (e == null)
             {
                 e = GetPropertyExpression(nodeIn);
@@ -328,13 +350,13 @@ namespace OdataToEntity.Parsers
             if (TuplePropertyByAliasName == null)
                 return Expression.Property(source, nodeIn.Name);
             else
-                return TuplePropertyByAliasName(source, nodeIn.Name);
+                return TuplePropertyByAliasName(source, nodeIn);
         }
 
         public IReadOnlyDictionary<ConstantExpression, ConstantNode> Constans => _parentVisitor == null ? _constants : _parentVisitor.Constans;
-        public IEdmModel EdmModel => _edmModel;
+        public IEdmModel EdmModel { get; }
         public ParameterExpression Parameter => _parameters.Peek();
-        public Func<Expression, String, Expression> TuplePropertyByAliasName { get; set; }
+        public Func<Expression, SingleValueNode, Expression> TuplePropertyByAliasName { get; set; }
         public Func<Expression, IEdmProperty, Expression> TuplePropertyByEdmProperty { get; set; }
     }
 }

@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.OData.Edm;
 using OdataToEntity.AspNetCore;
+using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace OdataToEntity.Test.AspMvcServer.Controllers
@@ -31,9 +33,9 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
             return base.OData<Model.Category>(asyncEnumerator);
         }
         [HttpPatch]
-        public void Patch(OeDataContext dataContext, Model.Category category)
+        public void Patch(OeDataContext dataContext, IDictionary<String, Object> categoryProperties)
         {
-            dataContext.Update(category);
+            dataContext.Update(categoryProperties);
         }
         [HttpPost]
         public void Post(OeDataContext dataContext, Model.Category category)

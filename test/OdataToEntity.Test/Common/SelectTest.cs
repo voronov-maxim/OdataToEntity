@@ -588,6 +588,58 @@ namespace OdataToEntity.Test
         [Theory]
         [InlineData(0)]
         [InlineData(1)]
+        public async Task FilterEnumGe(int pageSize)
+        {
+            var parameters = new QueryParameters<Order>()
+            {
+                RequestUri = "Orders?$filter=Status ge OdataToEntity.Test.Model.OrderStatus'Unknown'",
+                Expression = t => t.Where(o => o.Status >= OrderStatus.Unknown),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters).ConfigureAwait(false);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterEnumLt(int pageSize)
+        {
+            var parameters = new QueryParameters<Order>()
+            {
+                RequestUri = "Orders?$filter=OdataToEntity.Test.Model.OrderStatus'Unknown' lt Status",
+                Expression = t => t.Where(o => OrderStatus.Unknown < o.Status),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters).ConfigureAwait(false);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterEnumNullableGe(int pageSize)
+        {
+            var parameters = new QueryParameters<Customer>()
+            {
+                RequestUri = "Customers?$filter=Sex ge OdataToEntity.Test.Model.Sex'Male'&$orderby=Country,Id",
+                Expression = t => t.Where(c => c.Sex >= Sex.Male).OrderBy(c => c.Country).ThenBy(c => c.Id),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters).ConfigureAwait(false);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterEnumNullableLt(int pageSize)
+        {
+            var parameters = new QueryParameters<Customer>()
+            {
+                RequestUri = "Customers?$filter=OdataToEntity.Test.Model.Sex'Male' lt Sex&$orderby=Country,Id",
+                Expression = t => t.Where(c => Sex.Male < c.Sex).OrderBy(c => c.Country).ThenBy(c => c.Id),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters).ConfigureAwait(false);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
         public async Task FilterEnumNull(int pageSize)
         {
             var parameters = new QueryParameters<Customer>()

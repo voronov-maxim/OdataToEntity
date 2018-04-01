@@ -3,6 +3,7 @@ using Microsoft.OData.Edm;
 using OdataToEntity.Db;
 using OdataToEntity.Parsers;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
@@ -31,33 +32,7 @@ namespace OdataToEntity.AspNetCore
             var odataProperties = new ODataProperty[structuralProperties.Length];
             for (int i = 0; i < odataProperties.Length; i++)
             {
-                Object value = structuralProperties[i].GetValue(entity);
-                ODataValue odataValue = null;
-                if (value == null)
-                    odataValue = new ODataNullValue();
-                else if (value.GetType().IsEnum)
-                    odataValue = new ODataEnumValue(value.ToString());
-                else if (value is DateTime dateTime)
-                {
-                    switch (dateTime.Kind)
-                    {
-                        case DateTimeKind.Unspecified:
-                            value = new DateTimeOffset(DateTime.SpecifyKind(dateTime, DateTimeKind.Utc));
-                            break;
-                        case DateTimeKind.Utc:
-                            value = new DateTimeOffset(dateTime);
-                            break;
-                        case DateTimeKind.Local:
-                            value = new DateTimeOffset(dateTime.ToUniversalTime());
-                            break;
-                        default:
-                            throw new ArgumentOutOfRangeException("unknown DateTimeKind " + dateTime.Kind.ToString());
-                    }
-                    odataValue = new ODataPrimitiveValue(value);
-                }
-                else
-                    odataValue = new ODataPrimitiveValue(value);
-
+                ODataValue odataValue = OeEdmClrHelper.CreateODataValue(structuralProperties[i].GetValue(entity));
                 odataProperties[i] = new ODataProperty() { Name = structuralProperties[i].Name, Value = odataValue };
             }
 
@@ -73,18 +48,37 @@ namespace OdataToEntity.AspNetCore
             PropertyInfo[] structuralProperties = entitySet.EntityType().StructuralProperties().Select(p => _entitySetAdapter.EntityType.GetProperty(p.Name)).ToArray();
             return CreateEntry(entity, structuralProperties);
         }
+        private ODataResource CreateEntry(IDictionary<String, Object> entityProperties)
+        {
+            var odataProperties = new ODataProperty[entityProperties.Count];
+            int i = 0;
+            foreach (KeyValuePair<String, Object> entityProperty in entityProperties)
+            {
+                ODataValue odataValue = OeEdmClrHelper.CreateODataValue(entityProperty.Value);
+                odataProperties[i++] = new ODataProperty() { Name = entityProperty.Key, Value = odataValue };
+            }
+
+            return new ODataResource
+            {
+                TypeName = _entitySetAdapter.EntitySetMetaAdapter.EntityType.FullName,
+                Properties = odataProperties
+            };
+        }
         public void Update(Object entity)
         {
-            ODataResource entry = CreateEntry(entity);
+            ODataResource entry;
             switch (_operation.Method)
             {
                 case ODataConstants.MethodDelete:
+                    entry = CreateEntry(entity);
                     _entitySetAdapter.RemoveEntity(DataContext, entry);
                     break;
                 case ODataConstants.MethodPatch:
+                    entry = CreateEntry((IDictionary<String, Object>)entity);
                     _entitySetAdapter.AttachEntity(DataContext, entry);
                     break;
                 case ODataConstants.MethodPost:
+                    entry = CreateEntry(entity);
                     _entitySetAdapter.AddEntity(DataContext, entry);
                     break;
                 default:

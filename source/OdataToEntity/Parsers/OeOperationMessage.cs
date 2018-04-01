@@ -10,17 +10,12 @@ namespace OdataToEntity.Parsers
 {
     public sealed class OeOperationMessage
     {
-        private readonly String _contentId;
-        private readonly String _contentType;
-        private readonly String _method;
-        private readonly Uri _requestUrl;
-
         private OeOperationMessage(ODataBatchOperationRequestMessage batchRequest)
         {
-            _contentId = batchRequest.ContentId;
-            _contentType = batchRequest.GetHeader(ODataConstants.ContentTypeHeader);
-            _method = batchRequest.Method;
-            _requestUrl = batchRequest.Url;
+            ContentId = batchRequest.ContentId;
+            ContentType = batchRequest.GetHeader(ODataConstants.ContentTypeHeader);
+            Method = batchRequest.Method;
+            RequestUrl = batchRequest.Url;
         }
 
         public static OeOperationMessage Create(IEdmModel edmModel, Uri baseUri, ODataBatchReader reader)
@@ -87,10 +82,11 @@ namespace OdataToEntity.Parsers
             return new OeEntityItem(entitySet, entityType, entry);
         }
 
-        public String ContentId => _contentId;
-        public String ContentType => _contentType;
-        public String Method => _method;
-        public Uri RequestUrl => _requestUrl;
+        public String ContentId { get; }
+        public String ContentType { get; }
+        public OeEntityItem EntityItem { get; private set; }
+        public String Method { get; }
+        public Uri RequestUrl { get; }
         public HttpStatusCode StatusCode
         {
             get
@@ -107,11 +103,6 @@ namespace OdataToEntity.Parsers
                         throw new NotImplementedException(Method);
                 }
             }
-        }
-        public OeEntityItem EntityItem
-        {
-            get;
-            private set;
         }
     }
 }

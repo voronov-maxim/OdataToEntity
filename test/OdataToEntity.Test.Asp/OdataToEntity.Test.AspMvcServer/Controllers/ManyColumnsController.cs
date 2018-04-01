@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.OData.Edm;
 using OdataToEntity.AspNetCore;
+using System;
+using System.Collections.Generic;
 
 namespace OdataToEntity.Test.AspMvcServer.Controllers
 {
@@ -30,9 +32,9 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
             return base.OData<Model.ManyColumns>(asyncEnumerator);
         }
         [HttpPatch]
-        public void Patch(OeDataContext dataContext, Model.ManyColumns manyColumns)
+        public void Patch(OeDataContext dataContext, IDictionary<String, Object> manyColumnsProperties)
         {
-            dataContext.Update(manyColumns);
+            dataContext.Update(manyColumnsProperties);
         }
         [HttpPost]
         public void Post(OeDataContext dataContext, Model.ManyColumns manyColumns)

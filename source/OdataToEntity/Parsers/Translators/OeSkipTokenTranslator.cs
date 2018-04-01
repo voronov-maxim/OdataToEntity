@@ -12,8 +12,8 @@ namespace OdataToEntity.Parsers
         private struct OrderProperty
         {
             public readonly OrderByDirection Direction;
-            public Expression ParameterExpression;
-            public Expression PropertyExpression;
+            public ConstantExpression ParameterExpression;
+            public MemberExpression PropertyExpression;
             public readonly SingleValuePropertyAccessNode PropertyNode;
             public readonly Object Value;
 
@@ -49,30 +49,21 @@ namespace OdataToEntity.Parsers
         private static BinaryExpression CreateBinaryExpression(OeQueryNodeVisitor visitor, bool isDatabaseNullHighestValue, ref OrderProperty orderProperty)
         {
             Expression propertyExpression = orderProperty.PropertyExpression;
-
             Expression parameterExpression = orderProperty.ParameterExpression;
-            if (parameterExpression == null)
+
+            Type underlyingType = Nullable.GetUnderlyingType(propertyExpression.Type);
+            bool isNullableType = underlyingType != null;
+            if (!isNullableType)
+                underlyingType = propertyExpression.Type;
+
+            if (underlyingType.IsEnum)
             {
-                parameterExpression = Expression.Constant(orderProperty.Value, propertyExpression.Type);
-                visitor.AddSkipTokenConstant((ConstantExpression)parameterExpression, OeSkipTokenParser.GetPropertyName(propertyExpression));
+                Type enumUnderlyingType = Enum.GetUnderlyingType(underlyingType);
+                if (isNullableType)
+                    enumUnderlyingType = typeof(Nullable<>).MakeGenericType(enumUnderlyingType);
 
-                Type underlyingType = Nullable.GetUnderlyingType(propertyExpression.Type);
-                bool isNullableType = underlyingType != null;
-                if (!isNullableType)
-                    underlyingType = propertyExpression.Type;
-
-                if (underlyingType.IsEnum)
-                {
-                    Type enumUnderlyingType = Enum.GetUnderlyingType(underlyingType);
-                    if (isNullableType)
-                        enumUnderlyingType = typeof(Nullable<>).MakeGenericType(enumUnderlyingType);
-                    parameterExpression = Expression.Convert(parameterExpression, enumUnderlyingType);
-
-                    propertyExpression = Expression.Convert(propertyExpression, enumUnderlyingType);
-                    orderProperty.PropertyExpression = propertyExpression;
-                }
-
-                orderProperty.ParameterExpression = parameterExpression;
+                propertyExpression = Expression.Convert(propertyExpression, enumUnderlyingType);
+                parameterExpression = Expression.Convert(parameterExpression, enumUnderlyingType);
             }
 
             ExpressionType binaryType = orderProperty.Direction == OrderByDirection.Ascending ? ExpressionType.GreaterThan : ExpressionType.LessThan;
@@ -86,6 +77,8 @@ namespace OdataToEntity.Parsers
             else
                 compare = Expression.MakeBinary(binaryType, propertyExpression, parameterExpression);
 
+            propertyExpression = orderProperty.PropertyExpression;
+            parameterExpression = orderProperty.ParameterExpression;
             if (orderProperty.PropertyNode.TypeReference.IsNullable)
             {
                 BinaryExpression isNull;
@@ -104,7 +97,7 @@ namespace OdataToEntity.Parsers
                 else
                 {
                     BinaryExpression isNotNullParameter = Expression.NotEqual(parameterExpression, typedNull);
-                    BinaryExpression isNullProperty = Expression.Equal(propertyExpression, OeConstantToVariableVisitor.NullConstantExpression);
+                    BinaryExpression isNullProperty = Expression.Equal(propertyExpression, typedNull);
                     isNull = Expression.AndAlso(isNotNullParameter, isNullProperty);
                 }
                 compare = Expression.OrElse(compare, isNull);
@@ -114,8 +107,6 @@ namespace OdataToEntity.Parsers
         }
         private static Expression CreateFilterExpression(Expression source, OeQueryNodeVisitor visitor, bool isDatabaseNullHighestValue, OrderProperty[] orderProperties)
         {
-            var tupleProperty = new OePropertyTranslator(source);
-
             Expression filter = null;
             for (int i = 0; i < orderProperties.Length; i++)
             {
@@ -124,7 +115,7 @@ namespace OdataToEntity.Parsers
                 {
                     Expression propertyExpression = orderProperties[j].PropertyExpression;
                     Expression parameterExpression = orderProperties[j].ParameterExpression;
-                    BinaryExpression eq = Expression.Equal(Expression.Convert(propertyExpression, parameterExpression.Type), parameterExpression);
+                    BinaryExpression eq = Expression.Equal(propertyExpression, parameterExpression);
 
                     if (OeExpressionHelper.IsNullable(propertyExpression))
                     {
@@ -136,11 +127,9 @@ namespace OdataToEntity.Parsers
                     eqFilter = eqFilter == null ? eq : Expression.AndAlso(eqFilter, eq);
                 }
 
-                orderProperties[i].PropertyExpression = visitor.TranslateNode(orderProperties[i].PropertyNode);
-                if (orderProperties[i].PropertyExpression == null)
-                    orderProperties[i].PropertyExpression = tupleProperty.Build(visitor.Parameter, orderProperties[i].PropertyNode.Property);
-                BinaryExpression ge = CreateBinaryExpression(visitor, isDatabaseNullHighestValue, ref orderProperties[i]);
+                InitializeOrderPropertyExpression(source, visitor, ref orderProperties[i]);
 
+                BinaryExpression ge = CreateBinaryExpression(visitor, isDatabaseNullHighestValue, ref orderProperties[i]);
                 eqFilter = eqFilter == null ? ge : Expression.AndAlso(eqFilter, ge);
                 filter = filter == null ? eqFilter : Expression.OrElse(filter, eqFilter);
             }
@@ -169,6 +158,18 @@ namespace OdataToEntity.Parsers
             }
 
             throw new InvalidOperationException("Property " + propertyName + " not found in OrderBy");
+        }
+        private static void InitializeOrderPropertyExpression(Expression source, OeQueryNodeVisitor visitor, ref OrderProperty orderProperty)
+        {
+            orderProperty.PropertyExpression = (MemberExpression)visitor.TranslateNode(orderProperty.PropertyNode);
+            if (orderProperty.PropertyExpression == null)
+            {
+                var tupleProperty = new OePropertyTranslator(source);
+                orderProperty.PropertyExpression = tupleProperty.Build(visitor.Parameter, orderProperty.PropertyNode.Property);
+            }
+
+            orderProperty.ParameterExpression = Expression.Constant(orderProperty.Value, orderProperty.PropertyExpression.Type);
+            visitor.AddSkipTokenConstant(orderProperty.ParameterExpression, OeSkipTokenParser.GetPropertyName(orderProperty.PropertyExpression));
         }
     }
 }

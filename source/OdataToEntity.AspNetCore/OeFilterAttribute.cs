@@ -26,7 +26,7 @@ namespace OdataToEntity.AspNetCore
                 if (parameterName != null)
                     context.ActionArguments[parameterName] = batchModelState.DataContext;
 
-                parameterName = context.ActionArguments.SingleOrDefault(a => a.Value.GetType() == batchModelState.Entity.GetType()).Key;
+                parameterName = context.ActionArguments.SingleOrDefault(a => a.Value.GetType().IsAssignableFrom(batchModelState.Entity.GetType())).Key;
                 if (parameterName != null)
                     context.ActionArguments[parameterName] = batchModelState.Entity;
             }
