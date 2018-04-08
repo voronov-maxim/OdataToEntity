@@ -4,7 +4,6 @@ using Microsoft.OData.UriParser.Aggregation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 
 namespace OdataToEntity.Parsers.UriCompare
 {
@@ -66,6 +65,9 @@ namespace OdataToEntity.Parsers.UriCompare
             if (!CompareSkipToken(uri1.SkipToken, uri2.SkipToken, cacheContext1.SkipTokenParser))
                 return false;
 
+            if (!CompareCompute(uri1.Compute, uri2.Compute))
+                return false;
+
             return true;
         }
         private bool CompareAggregate(AggregateTransformationNode node1, AggregateTransformationNode node2)
@@ -92,6 +94,32 @@ namespace OdataToEntity.Parsers.UriCompare
                 return false;
 
             return EnumerableComparer.Compare(clause1.Transformations, clause2.Transformations, CompareTransformation);
+        }
+        private bool CompareCompute(ComputeClause clause1, ComputeClause clause2)
+        {
+            if (clause1 == clause2)
+                return true;
+            if (clause1 == null || clause2 == null)
+                return false;
+
+            return EnumerableComparer.Compare(clause1.ComputedItems, clause2.ComputedItems, CompareComputeExpression);
+        }
+        private bool CompareComputeExpression(ComputeExpression expression1, ComputeExpression expression2)
+        {
+            if (expression1.Alias != expression2.Alias)
+                return false;
+
+            return expression1.TypeReference.IsEqual(expression2.TypeReference) &&
+                _queryNodeComparer.Compare(expression1.Expression, expression2.Expression);
+        }
+        private bool CompareComputeTransformation(ComputeTransformationNode node1, ComputeTransformationNode node2)
+        {
+            if (node1 == node2)
+                return true;
+            if (node1 == null || node2 == null)
+                return false;
+
+            return EnumerableComparer.Compare(node1.Expressions, node2.Expressions, CompareComputeExpression);
         }
         private bool CompareFilter(FilterClause clause1, FilterClause clause2, bool navigationNextLink)
         {
@@ -281,21 +309,26 @@ namespace OdataToEntity.Parsers.UriCompare
             if (node1.GetType() != node2.GetType())
                 return false;
 
-            if (node1 is GroupByTransformationNode)
+            if (node1 is GroupByTransformationNode groupByTransformation1)
             {
-                if (!CompareGroupBy(node1 as GroupByTransformationNode, node2 as GroupByTransformationNode))
+                if (!CompareGroupBy(groupByTransformation1, node2 as GroupByTransformationNode))
                     return false;
             }
-            else if (node1 is AggregateTransformationNode)
+            else if (node1 is AggregateTransformationNode aggregateTransformation1)
             {
-                if (!CompareAggregate(node1 as AggregateTransformationNode, node2 as AggregateTransformationNode))
+                if (!CompareAggregate(aggregateTransformation1, node2 as AggregateTransformationNode))
                     return false;
             }
-            else if (node1 is FilterTransformationNode)
+            else if (node1 is FilterTransformationNode filterTransformation1)
             {
-                FilterClause filter1 = (node1 as FilterTransformationNode).FilterClause;
+                FilterClause filter1 = filterTransformation1.FilterClause;
                 FilterClause filter2 = (node2 as FilterTransformationNode).FilterClause;
                 if (!CompareFilter(filter1, filter2, false))
+                    return false;
+            }
+            else if (node1 is ComputeTransformationNode computeTransformation1)
+            {
+                if (!CompareComputeTransformation(computeTransformation1, (node2 as ComputeTransformationNode)))
                     return false;
             }
             else
@@ -331,20 +364,25 @@ namespace OdataToEntity.Parsers.UriCompare
             {
                 foreach (TransformationNode transformationNode in uri.Apply.Transformations)
                 {
-                    if (transformationNode is FilterTransformationNode)
+                    if (transformationNode is FilterTransformationNode filterTransformationNode)
                     {
-                        FilterClause filter = (transformationNode as FilterTransformationNode).FilterClause;
+                        FilterClause filter = filterTransformationNode.FilterClause;
                         hash = CombineHashCodes(hash, hashVistitor.TranslateNode(filter.Expression));
                     }
-                    else if (transformationNode is AggregateTransformationNode)
+                    else if (transformationNode is AggregateTransformationNode aggregateTransformationNode)
                     {
-                        foreach (AggregateExpression aggregate in (transformationNode as AggregateTransformationNode).Expressions)
+                        foreach (AggregateExpression aggregate in aggregateTransformationNode.Expressions)
                             hash = CombineHashCodes(hash, (int)aggregate.Method);
                     }
-                    else if (transformationNode is GroupByTransformationNode)
+                    else if (transformationNode is GroupByTransformationNode groupByTransformationNode)
                     {
-                        foreach (GroupByPropertyNode group in (transformationNode as GroupByTransformationNode).GroupingProperties)
+                        foreach (GroupByPropertyNode group in groupByTransformationNode.GroupingProperties)
                             hash = CombineHashCodes(hash, group.Name.GetHashCode());
+                    }
+                    else if (transformationNode is ComputeTransformationNode computeTransformationNode)
+                    {
+                        foreach (ComputeExpression compute in computeTransformationNode.Expressions)
+                            hash = CombineHashCodes(hash, compute.Alias.GetHashCode());
                     }
                     else
                         throw new InvalidProgramException("unknown TransformationNode " + transformationNode.GetType().ToString());

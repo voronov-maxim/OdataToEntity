@@ -347,10 +347,7 @@ namespace OdataToEntity.Parsers
         public override Expression Visit(SingleValueOpenPropertyAccessNode nodeIn)
         {
             Expression source = TranslateNode(nodeIn.Source);
-            if (TuplePropertyByAliasName == null)
-                return Expression.Property(source, nodeIn.Name);
-            else
-                return TuplePropertyByAliasName(source, nodeIn);
+            return TuplePropertyByAliasName(source, nodeIn);
         }
 
         public IReadOnlyDictionary<ConstantExpression, ConstantNode> Constans => _parentVisitor == null ? _constants : _parentVisitor.Constans;

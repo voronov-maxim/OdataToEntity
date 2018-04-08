@@ -30,17 +30,10 @@ namespace OdataToEntity.Parsers
             if (applyClause != null && (groupByNode = applyClause.Transformations.OfType<GroupByTransformationNode>().SingleOrDefault()) != null)
             {
                 foreach (GroupByPropertyNode node in groupByNode.GroupingProperties)
-                {
-                    SingleValuePropertyAccessNode propertyNode;
                     if (node.Expression == null)
-                    {
-                        GroupByPropertyNode childNode = node.ChildTransformations.Single();
-                        propertyNode = (SingleValuePropertyAccessNode)childNode.Expression;
-                    }
+                        keys.AddRange(node.ChildTransformations.Select(n => (SingleValuePropertyAccessNode)n.Expression));
                     else
-                        propertyNode = (SingleValuePropertyAccessNode)node.Expression;
-                    keys.Add(propertyNode);
-                }
+                        keys.Add((SingleValuePropertyAccessNode)node.Expression);
             }
             else
             {

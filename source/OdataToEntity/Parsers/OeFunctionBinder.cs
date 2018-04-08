@@ -11,7 +11,7 @@ namespace OdataToEntity.Parsers
     {
         public static Expression Bind(OeQueryNodeVisitor visitor, SingleValueFunctionCallNode nodeIn)
         {
-            var expressions = new List<Expression>(2);
+            var expressions = new List<Expression>();
             foreach (QueryNode node in nodeIn.Parameters)
                 expressions.Add(visitor.TranslateNode(node));
 

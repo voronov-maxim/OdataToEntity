@@ -82,6 +82,26 @@ namespace OdataToEntity.Test
         }
         [Theory]
         [InlineData(0)]
+        //[InlineData(1)] zzz
+        public async Task ApplyGropuByAggregateCompute(int pageSize)
+        {
+            var parameters = new QueryParameters<OrderItem, Object>()
+            {
+                RequestUri = "OrderItems?$apply=groupby((Order/Id, Order/Name),aggregate(Price with sum as sum))/compute(Order/Id mul 1000 as mulOrderId, length(Order/Name) as nameLength)",
+                Expression = t => t.GroupBy(i => new { i.Order.Id, i.Order.Name }).Select(g => new
+                {
+                    Order_Id = g.Key.Id,
+                    Order_Name = g.Key.Name,
+                    sum = g.Sum(i => i.Price),
+                    mulOrderId = g.Key.Id * 1000,
+                    nameLength = g.Key.Name.Length
+                }),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters).ConfigureAwait(false);
+        }
+        [Theory]
+        [InlineData(0)]
         [InlineData(1)]
         public async Task ApplyGroupByAggregateFilter(int pageSize)
         {

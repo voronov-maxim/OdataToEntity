@@ -97,8 +97,24 @@ namespace OdataToEntity.Test
                 var factAttribute = (FactAttribute)methodInfo.GetCustomAttribute(typeof(FactAttribute), false);
                 if (factAttribute is TheoryAttribute)
                 {
-                    var methodCall = (Func<SelectTest, bool, Task>)methodInfo.CreateDelegate(typeof(Func<SelectTest, bool, Task>));
-                    testMethod = i => methodCall(i, false);
+                    if (methodInfo.GetParameters().Length == 1)
+                    {
+                        if (methodInfo.GetParameters()[0].ParameterType == typeof(bool))
+                        {
+                            var methodCall = (Func<SelectTest, bool, Task>)methodInfo.CreateDelegate(typeof(Func<SelectTest, bool, Task>));
+                            testMethod = i => methodCall(i, false);
+                        }
+                        else
+                        {
+                            var methodCall = (Func<SelectTest, int, Task>)methodInfo.CreateDelegate(typeof(Func<SelectTest, int, Task>));
+                            testMethod = i => methodCall(i, 0);
+                        }
+                    }
+                    else
+                    {
+                        var methodCall = (Func<SelectTest, int, bool, Task>)methodInfo.CreateDelegate(typeof(Func<SelectTest, int, bool, Task>));
+                        testMethod = i => methodCall(i, 0, false);
+                    }
                 }
                 else if (factAttribute is FactAttribute)
                     testMethod = (Func<SelectTest, Task>)methodInfo.CreateDelegate(typeof(Func<SelectTest, Task>));

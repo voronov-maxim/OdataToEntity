@@ -13,16 +13,40 @@ namespace OdataToEntity.Parsers
 {
     public struct OeAggregationTranslator
     {
-        private sealed class AggProperty : EdmStructuralProperty
+        private struct ComputeAliasNameResolver
         {
-            private readonly bool _isGroup;
+            private readonly List<AggProperty> _aggProperties;
+            private readonly List<Expression> _aggExpressions;
 
-            public AggProperty(String name, IEdmTypeReference type, bool isGroup) : base(PrimitiveTypeHelper.TupleEdmType, name, type)
+            public ComputeAliasNameResolver(List<AggProperty> aggProperties, List<Expression> aggExpressions)
             {
-                _isGroup = isGroup;
+                _aggProperties = aggProperties;
+                _aggExpressions = aggExpressions;
             }
 
-            public bool IsGroup => _isGroup;
+            public Expression GetTuplePropertyByAliasName(Expression source, SingleValueNode singleValueNode)
+            {
+                String aliasName = GetAliasName(singleValueNode);
+                int i = _aggProperties.FindIndex(p => p.Name == aliasName);
+                if (_aggProperties[i].IsGroup)
+                    return OeExpressionHelper.GetPropertyExpressions(_aggExpressions[0])[i];
+
+                int groupCount;
+                for (groupCount = 0; groupCount < _aggProperties.Count && _aggProperties[groupCount].IsGroup; groupCount++)
+                {
+                }
+                return _aggExpressions[i - groupCount];
+            }
+        }
+
+        private sealed class AggProperty : EdmStructuralProperty
+        {
+            public AggProperty(String name, IEdmTypeReference type, bool isGroup) : base(PrimitiveTypeHelper.TupleEdmType, name, type)
+            {
+                IsGroup = isGroup;
+            }
+
+            public bool IsGroup { get; }
         }
 
         private readonly List<AggProperty> _aggProperties;
@@ -104,7 +128,7 @@ namespace OdataToEntity.Parsers
             {
                 LambdaExpression aggLambda = null;
                 if (aggExpression.Expression.Kind != QueryNodeKind.Count)
-                { 
+                {
                     Expression e = visitor.TranslateNode(aggExpression.Expression);
                     aggLambda = Expression.Lambda(e, lambdaParameter);
                 }
@@ -112,11 +136,46 @@ namespace OdataToEntity.Parsers
                 MethodCallExpression aggCallExpression = AggCallExpression(aggExpression.Method, sourceParameter, aggLambda);
                 expressions.Add(aggCallExpression);
 
-                _aggProperties.Add(CreateEdmProperty(_visitor.EdmModel, aggCallExpression.Type, aggExpression.Alias, false));
+                _aggProperties.Add(CreateEdmProperty(visitor.EdmModel, aggCallExpression.Type, aggExpression.Alias, false));
             }
 
             NewExpression newExpression = OeExpressionHelper.CreateTupleExpression(expressions);
             MethodInfo selectMethodInfo = OeMethodInfoHelper.GetSelectMethodInfo(sourceType, newExpression.Type);
+            LambdaExpression lambda = Expression.Lambda(newExpression, sourceParameter);
+            return Expression.Call(selectMethodInfo, source, lambda);
+        }
+        private MethodCallExpression ApplyCompute(Expression source, ComputeTransformationNode transformation)
+        {
+            var expressions = new List<Expression>();
+
+            Type sourceType = OeExpressionHelper.GetCollectionItemType(source.Type);
+            ParameterExpression sourceParameter = Expression.Parameter(sourceType);
+
+            if (_aggProperties.Count > 0)
+            {
+                var callExpression = (MethodCallExpression)source;
+                source = callExpression.Arguments[0];
+                var aggLambda = (LambdaExpression)callExpression.Arguments[1];
+                expressions.AddRange(((NewExpression)aggLambda.Body).Arguments);
+
+                sourceType = OeExpressionHelper.GetCollectionItemType(source.Type);
+                sourceParameter = aggLambda.Parameters[0];
+            }
+
+            OeQueryNodeVisitor visitor = CreateVisitor(sourceParameter);
+            if (_aggProperties.Count > 0)
+                visitor.TuplePropertyByAliasName = new ComputeAliasNameResolver(_aggProperties, expressions).GetTuplePropertyByAliasName;
+
+            foreach (ComputeExpression computeExpression in transformation.Expressions)
+            {
+                Expression expression = visitor.TranslateNode(computeExpression.Expression);
+                expressions.Add(expression);
+
+                _aggProperties.Add(CreateEdmProperty(visitor.EdmModel, expression.Type, computeExpression.Alias, false));
+            }
+
+            NewExpression newExpression = OeExpressionHelper.CreateTupleExpression(expressions);
+            MethodInfo selectMethodInfo = OeMethodInfoHelper.GetSelectMethodInfo(sourceParameter.Type, newExpression.Type);
             LambdaExpression lambda = Expression.Lambda(newExpression, sourceParameter);
             return Expression.Call(selectMethodInfo, source, lambda);
         }
@@ -144,23 +203,21 @@ namespace OdataToEntity.Parsers
             foreach (GroupByPropertyNode node in transformation.GroupingProperties)
                 if (node.ChildTransformations != null && node.ChildTransformations.Count > 0)
                 {
-                    if (node.ChildTransformations.Count > 1)
-                        throw new NotSupportedException();
+                    for (int i = 0; i < node.ChildTransformations.Count; i++)
+                    {
+                        Expression e = visitor.TranslateNode(node.ChildTransformations[i].Expression);
+                        expressions.Add(e);
 
-                    GroupByPropertyNode childNode = node.ChildTransformations[0];
-                    String propertyName = node.Name + "_" + childNode.Name;
-
-                    Expression e = visitor.TranslateNode(childNode.Expression);
-                    expressions.Add(e);
-
-                    _aggProperties.Add(CreateEdmProperty(_visitor.EdmModel, e.Type, propertyName, true));
+                        String aliasName = node.Name + "_" + node.ChildTransformations[i].Name;
+                        _aggProperties.Add(CreateEdmProperty(visitor.EdmModel, e.Type, aliasName, true));
+                    }
                 }
                 else
                 {
                     Expression e = visitor.TranslateNode(node.Expression);
                     expressions.Add(e);
 
-                    _aggProperties.Add(CreateEdmProperty(_visitor.EdmModel, e.Type, node.Name, true));
+                    _aggProperties.Add(CreateEdmProperty(visitor.EdmModel, e.Type, node.Name, true));
                 }
 
             NewExpression newExpression = OeExpressionHelper.CreateTupleExpression(expressions);
@@ -193,24 +250,16 @@ namespace OdataToEntity.Parsers
 
             foreach (TransformationNode transformation in applyClause.Transformations)
             {
-                if (transformation is GroupByTransformationNode)
-                {
-                    var groupTransformation = transformation as GroupByTransformationNode;
+                if (transformation is GroupByTransformationNode groupTransformation)
                     source = ApplyGroupBy(source, groupTransformation);
-                }
-                else if (transformation is AggregateTransformationNode)
-                {
-                    throw new NotSupportedException();
-                }
-                else if (transformation is FilterTransformationNode)
-                {
-                    var filterTransformation = transformation as FilterTransformationNode;
+                else if (transformation is FilterTransformationNode filterTransformation)
                     source = ApplyFilter(source, filterTransformation);
-                }
-                else
-                {
+                else if (transformation is ComputeTransformationNode computeTransformation)
+                    source = ApplyCompute(source, computeTransformation);
+                else if (transformation is AggregateTransformationNode)
                     throw new NotSupportedException();
-                }
+                else
+                    throw new NotSupportedException();
             }
 
             return source;
@@ -242,30 +291,37 @@ namespace OdataToEntity.Parsers
             if (_aggProperties.Count == 0)
                 accessors = OePropertyAccessor.CreateFromType(entityType, entitySet);
             else
-                accessors = OePropertyAccessor.CreateFromTuple(sourceType, _aggProperties, 0);
+            {
+                int groupIndex = _aggProperties.FindIndex(a => a.IsGroup);
+                accessors = OePropertyAccessor.CreateFromTuple(sourceType, _aggProperties, groupIndex);
+            }
             return OeEntryFactory.CreateEntryFactory(entitySet, accessors);
         }
         private OeQueryNodeVisitor CreateVisitor(ParameterExpression parameter)
         {
             return new OeQueryNodeVisitor(_visitor, parameter);
         }
-        internal Expression GetTuplePropertyByAliasName(Expression source, SingleValueNode singleValueNode)
+        private static String GetAliasName(SingleValueNode singleValueNode)
         {
-            String aliasName;
             if (singleValueNode is SingleValuePropertyAccessNode propertyNode)
             {
                 if (propertyNode.Source is ResourceRangeVariableReferenceNode)
-                    aliasName = propertyNode.Property.Name;
-                else if (propertyNode.Source is SingleNavigationNode navigationNode)
-                    aliasName = navigationNode.NavigationProperty.Name + "_" + propertyNode.Property.Name;
-                else
-                    throw new NotSupportedException("SingleValuePropertyAccessNode.Source type " + propertyNode.Source.GetType().FullName);
-            }
-            else if (singleValueNode is SingleValueOpenPropertyAccessNode openPropertyNode)
-                aliasName = openPropertyNode.Name;
-            else
-                throw new ArgumentException("invalid type", nameof(singleValueNode));
+                    return propertyNode.Property.Name;
 
+                if (propertyNode.Source is SingleNavigationNode navigationNode)
+                    return navigationNode.NavigationProperty.Name + "_" + propertyNode.Property.Name;
+
+                throw new NotSupportedException("SingleValuePropertyAccessNode.Source type " + propertyNode.Source.GetType().FullName);
+            }
+
+            if (singleValueNode is SingleValueOpenPropertyAccessNode openPropertyNode)
+                return openPropertyNode.Name;
+
+            throw new ArgumentException("invalid type", nameof(singleValueNode));
+        }
+        internal Expression GetTuplePropertyByAliasName(Expression source, SingleValueNode singleValueNode)
+        {
+            String aliasName = GetAliasName(singleValueNode);
             int groupCount = 0;
             for (int i = 0; i < _aggProperties.Count; i++)
             {
