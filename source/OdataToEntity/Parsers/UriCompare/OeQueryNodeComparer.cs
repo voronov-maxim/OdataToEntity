@@ -115,8 +115,10 @@ namespace OdataToEntity.Parsers.UriCompare
         }
         private bool Visit(ConstantNode node1, ConstantNode node2)
         {
-            if (_parameterValues.ParameterValues == null)
-                return Object.Equals(node1.Value, node2.Value);
+            if (node1.Value == null && node2.Value == null)
+                return true;
+            if (node1.Value == null || node2.Value == null)
+                return false;
 
             _parameterValues.AddParameter(node1, node2);
             return true;

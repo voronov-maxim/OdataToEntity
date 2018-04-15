@@ -1,4 +1,4 @@
-# OdataToEntity
+# OdataToEntity #
 [![Travis](https://img.shields.io/travis/voronov-maxim/OdataToEntity.svg)](https://travis-ci.org/voronov-maxim/OdataToEntity)
 
 OData .net core
@@ -17,7 +17,7 @@ public sealed class OrderContext : DbContext
 }
 ```
 
-### Build OData EdmModel
+### Build OData EdmModel ###
 Buid from entity classes marked data annotation attribute, the general case for all providers
 ```c#
 //Create adapter data access, where OrderContext your DbContext
@@ -41,18 +41,13 @@ var dataAdapter = new OeEf6DataAdapter<OrderEf6Context>();
 EdmModel edmModel = dataAdapter.BuildEdmModelFromEf6Model();
 ```
 
-### Sample OData query
-For use odata.nextLink, the next link of a collection with partial results set property PageSize class OeParser  
-For use to-many navigation property odata.nextLink, the next link of a collection with results set property NavigationNextLink class OeParser
+### Sample OData query ###
+By default used cached queries parsed to expression tree, which on existing tests allows you to increase the performance up to three times. For disable this feature, you need pass in base constructor *OeDataAdapter* parameter *new OeQueryCache(false)*. The query is parameterized (i.e. constant expressions are replaced with variables) except null value, therefore for best performance must use database null semantics. For Ef Core method *UseRelationalNulls* class *RelationalDbContextOptionsBuilder<TBuilder, TExtension>*, for Ef6 property *UseDatabaseNullSemantics* class *DbContextConfiguration*.
 ```c#
 //Create adapter data access, where OrderContext your DbContext
 var dataAdapter = new OeEfCoreDataAdapter<Model.OrderContext>();
 //Create query parser
-var parser = new OeParser(new Uri("http://dummy"), dataAdapter, dataAdapter.BuildEdmModel())
-{
-  NavigationNextLink = true,
-  PageSize = 2
-};
+var parser = new OeParser(new Uri("http://dummy"), dataAdapter, dataAdapter.BuildEdmModel());
 //Query
 var uri = new Uri("http://dummy/Orders?$select=Name");
 //The result of the query
@@ -61,7 +56,7 @@ var response = new MemoryStream();
 await parser.ExecuteGetAsync(uri, OeRequestHeaders.JsonDefault, response, CancellationToken.None);
 ```
 
-### Sample OData batch request
+### Sample OData batch request ###
 ```c#
 string batch = @"
 --batch_6263d2a1-1ddc-4b02-a1c1-7031cfa93691
@@ -111,7 +106,7 @@ await parser.ExecuteGetAsync(new Uri("http://dummy/GetOrders(name='Order 1',id=1
 ```
 
 ### Server-Driven Paging ###
-To use responses that include only a partial set of the items identified by the request indicate maximum page size through the invoke method *OeRequestHeaders.SetMaxPageSize(int maxPageSize)*. The service serializes the returned continuation token into the $skiptoken query option and returns it as part of the next link to the client. If request returns result set sorted by nullable database column, should set *OeDataAdapter.IsDatabaseNullHighestValue* (SQLite, MySql, Sql Server set *false*, for PostgreSql, Oracle set *true*), or mark property *RequiredAttribute*.
+To use responses that include only a partial set of the items identified by the request indicate maximum page size through the invoke method *OeRequestHeaders.SetMaxPageSize(int maxPageSize)*. The service serializes the returned continuation token into the $skiptoken query option and returns it as part of the next link (*@odata.nextLink*)to the client. If request returns result set sorted by nullable database column, should set *OeDataAdapter.IsDatabaseNullHighestValue* (SQLite, MySql, Sql Server set *false*, for PostgreSql, Oracle set *true*), or mark property *RequiredAttribute*.
 ```c#
 //Create adapter data access, where OrderContext your DbContext
 var dataAdapter = new OeEfCoreDataAdapter<Model.OrderContext>(Model.OrderContext.CreateOptions())
@@ -143,8 +138,7 @@ await parser.ExecuteGetAsync(uri, requestHeaders, response, CancellationToken.No
 ```
 
 ### A function specific to the Entity Framework Core ###
-For the Entity Framework Core provider, there is the ability to cache queries, which on existing tests allows you to increase the performance up to two times. The cache key is a parsed OData query with remote constant values, and the value is a delegate accepting the data context and returning the query result. This allows to exclude the stage of building the data query itself (*IQueryable*). To use this feature, you need to use the constructor *OeEfCoreDataAdapter(DbContextOptions options, Db.OeQueryCache queryCache)*.
-
+For the Entity Framework Core provider used more deep cached queries, cache value is a delegate accepting the data context and returning the query result. This allows to exclude the stage of building the data query itself (*IQueryable*). To use this feature, you need to use the constructor *OeEfCoreDataAdapter(DbContextOptions options, Db.OeQueryCache queryCache)*.
 For use pooling (*DbContextPool*) in Entity Framework Core create instance *OeEfCoreDataAdapter* use constructor with *DbContextOptions* parameter.
 ```c#
 //Create adapter data access, where OrderContext your DbContext

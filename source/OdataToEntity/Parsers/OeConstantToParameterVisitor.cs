@@ -11,7 +11,7 @@ namespace OdataToEntity.Parsers
         private readonly Dictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition> _constantToParameterMapper;
         private Db.OeQueryCacheDbParameterValue[] _parameterValues;
 
-        public OeConstantToParameterVisitor(bool simplifySkipTokenFilter) : base(simplifySkipTokenFilter)
+        public OeConstantToParameterVisitor()
         {
             _constantToParameterMapper = new Dictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition>();
         }

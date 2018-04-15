@@ -37,9 +37,9 @@ namespace OdataToEntity.Parsers
             _visitor = visitor;
         }
 
-        public Expression Build(Expression source, String skipToken)
+        public Expression Build(Expression source)
         {
-            OrderProperty[] orderProperties = CreateOrderProperies(_skipTokenParser, skipToken);
+            OrderProperty[] orderProperties = CreateOrderProperies(_skipTokenParser);
             Expression filter = CreateFilterExpression(source, _visitor, _skipTokenParser.IsDatabaseNullHighestValue, orderProperties);
 
             LambdaExpression lambda = Expression.Lambda(filter, _visitor.Parameter);
@@ -81,26 +81,11 @@ namespace OdataToEntity.Parsers
             parameterExpression = orderProperty.ParameterExpression;
             if (orderProperty.PropertyNode.TypeReference.IsNullable)
             {
-                BinaryExpression isNull;
-                UnaryExpression typedNull = Expression.Convert(OeConstantToVariableVisitor.NullConstantExpression, parameterExpression.Type);
-
-                OrderByDirection direction = orderProperty.Direction;
-                if (isDatabaseNullHighestValue)
-                    direction = orderProperty.Direction == OrderByDirection.Ascending ? OrderByDirection.Descending : OrderByDirection.Ascending;
-
-                if (direction == OrderByDirection.Ascending)
+                if (GetDatabaseNullHighestValueDirection(orderProperty.Direction, isDatabaseNullHighestValue) == OrderByDirection.Descending)
                 {
-                    BinaryExpression isNullParameter = Expression.Equal(parameterExpression, typedNull);
-                    BinaryExpression isNotNullProperty = Expression.NotEqual(propertyExpression, OeConstantToVariableVisitor.NullConstantExpression);
-                    isNull = Expression.AndAlso(isNullParameter, isNotNullProperty);
+                    BinaryExpression isNull = Expression.Equal(orderProperty.PropertyExpression, OeConstantToVariableVisitor.NullConstantExpression);
+                    compare = Expression.OrElse(compare, isNull);
                 }
-                else
-                {
-                    BinaryExpression isNotNullParameter = Expression.NotEqual(parameterExpression, typedNull);
-                    BinaryExpression isNullProperty = Expression.Equal(propertyExpression, typedNull);
-                    isNull = Expression.AndAlso(isNotNullParameter, isNullProperty);
-                }
-                compare = Expression.OrElse(compare, isNull);
             }
 
             return compare;
@@ -117,34 +102,42 @@ namespace OdataToEntity.Parsers
                     Expression parameterExpression = orderProperties[j].ParameterExpression;
                     BinaryExpression eq = Expression.Equal(propertyExpression, parameterExpression);
 
-                    if (OeExpressionHelper.IsNullable(propertyExpression))
-                    {
-                        UnaryExpression typedNull = Expression.Convert(OeConstantToVariableVisitor.NullConstantExpression, parameterExpression.Type);
-                        BinaryExpression isNull = Expression.Equal(parameterExpression, typedNull);
-                        eq = Expression.OrElse(eq, isNull);
-                    }
-
                     eqFilter = eqFilter == null ? eq : Expression.AndAlso(eqFilter, eq);
                 }
 
                 InitializeOrderPropertyExpression(source, visitor, ref orderProperties[i]);
 
-                BinaryExpression ge = CreateBinaryExpression(visitor, isDatabaseNullHighestValue, ref orderProperties[i]);
+                BinaryExpression ge;
+                if (orderProperties[i].Value == null)
+                {
+                    if (GetDatabaseNullHighestValueDirection(orderProperties[i].Direction, isDatabaseNullHighestValue) == OrderByDirection.Descending)
+                        continue;
+
+                    ge = Expression.NotEqual(orderProperties[i].PropertyExpression, OeConstantToVariableVisitor.NullConstantExpression);
+                }
+                else
+                    ge = CreateBinaryExpression(visitor, isDatabaseNullHighestValue, ref orderProperties[i]);
                 eqFilter = eqFilter == null ? ge : Expression.AndAlso(eqFilter, ge);
                 filter = filter == null ? eqFilter : Expression.OrElse(filter, eqFilter);
             }
             return filter;
         }
-        private static OrderProperty[] CreateOrderProperies(OeSkipTokenParser skipTokenParser, String skipToken)
+        private static OrderProperty[] CreateOrderProperies(OeSkipTokenParser skipTokenParser)
         {
-            var orderProperties = new List<OrderProperty>();
-            foreach (KeyValuePair<String, Object> keyValue in skipTokenParser.ParseSkipToken(skipToken))
+            var orderProperties = new OrderProperty[skipTokenParser.KeyValues.Count];
+            for (int i = 0; i < skipTokenParser.KeyValues.Count; i++)
             {
-                OrderByClause orderBy = GetOrderBy(skipTokenParser.UniqueOrderBy, keyValue.Key);
+                OrderByClause orderBy = GetOrderBy(skipTokenParser.UniqueOrderBy, skipTokenParser.KeyValues[i].Key);
                 var propertyNode = (SingleValuePropertyAccessNode)orderBy.Expression;
-                orderProperties.Add(new OrderProperty(propertyNode, orderBy.Direction, keyValue.Value));
+                orderProperties[i] = new OrderProperty(propertyNode, orderBy.Direction, skipTokenParser.KeyValues[i].Value);
             }
-            return orderProperties.ToArray();
+            return orderProperties;
+        }
+        private static OrderByDirection GetDatabaseNullHighestValueDirection(OrderByDirection direction, bool isDatabaseNullHighestValue)
+        {
+            if (isDatabaseNullHighestValue)
+                direction = direction == OrderByDirection.Ascending ? OrderByDirection.Descending : OrderByDirection.Ascending;
+            return direction;
         }
         private static OrderByClause GetOrderBy(OrderByClause orderByClause, String propertyName)
         {
@@ -168,8 +161,13 @@ namespace OdataToEntity.Parsers
                 orderProperty.PropertyExpression = tupleProperty.Build(visitor.Parameter, orderProperty.PropertyNode.Property);
             }
 
-            orderProperty.ParameterExpression = Expression.Constant(orderProperty.Value, orderProperty.PropertyExpression.Type);
-            visitor.AddSkipTokenConstant(orderProperty.ParameterExpression, OeSkipTokenParser.GetPropertyName(orderProperty.PropertyExpression));
+            if (orderProperty.Value == null)
+                orderProperty.ParameterExpression = OeConstantToParameterVisitor.NullConstantExpression;
+            else
+            {
+                orderProperty.ParameterExpression = Expression.Constant(orderProperty.Value, orderProperty.PropertyExpression.Type);
+                visitor.AddSkipTokenConstant(orderProperty.ParameterExpression, OeSkipTokenParser.GetPropertyName(orderProperty.PropertyExpression));
+            }
         }
     }
 }

@@ -1,7 +1,6 @@
 ﻿using Microsoft.OData;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
-using OdataToEntity.ModelBuilder;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,51 +13,49 @@ namespace OdataToEntity.Parsers
     {
         private sealed class FilterVisitor : ExpressionVisitor
         {
-            private readonly Type _filterType;
-            private readonly IQueryable _query;
-            private MethodCallExpression _whereExpression;
+            private Type _sourceType;
 
-            private FilterVisitor(IQueryable query, Type filterType)
-            {
-                _query = query;
-                _filterType = filterType;
-            }
-
-            public static Expression Translate(IQueryable query, Expression expression, Type filterType)
-            {
-                var visitor = new FilterVisitor(query, filterType);
-                visitor.Visit(expression);
-                return visitor._whereExpression;
-            }
             protected override Expression VisitConstant(ConstantExpression node)
             {
-                if (node.Type.IsGenericType)
+                Type sourceType = OeExpressionHelper.GetCollectionItemType(node.Type);
+                if (sourceType != null)
                 {
-                    Type[] args = node.Type.GetGenericArguments();
-                    if (args.Length == 1 && args[0] == _query.ElementType)
-                        return _query.Expression;
+                    Source = node;
+                    _sourceType = sourceType;
                 }
-                return base.VisitConstant(node);
+                return node;
             }
             protected override Expression VisitMethodCall(MethodCallExpression node)
             {
+                if (node.Method.Name == nameof(Enumerable.Take))
+                    return base.Visit(node.Arguments[0]);
+
                 var e = (MethodCallExpression)base.VisitMethodCall(node);
-                if (e.Method.Name == nameof(Enumerable.Where) && e.Method.GetGenericArguments()[0] == _filterType)
-                    _whereExpression = e;
+                if ((e.Method.Name == nameof(Enumerable.Where) || e.Method.Name == nameof(Enumerable.SelectMany)))// && e.Method.GetGenericArguments()[0] == _sourceType)
+                    WhereExpression = e;
                 return e;
             }
+            protected override Expression VisitNew(NewExpression node)
+            {
+                return node;
+            }
+
+            public ConstantExpression Source { get; private set; }
+            public MethodCallExpression WhereExpression { get; private set; }
         }
 
         private sealed class SourceVisitor : ExpressionVisitor
         {
-            private readonly IQueryable _query;
+            private readonly Type _elementType;
+            private readonly Expression _sourceExpression;
 
-            private SourceVisitor(IQueryable query)
+            private SourceVisitor(Expression sourceExpression)
             {
-                _query = query;
+                _sourceExpression = sourceExpression;
+                _elementType = OeExpressionHelper.GetCollectionItemType(sourceExpression.Type);
             }
 
-            public static Expression Translate(IQueryable query, Expression expression)
+            public static Expression Translate(Expression query, Expression expression)
             {
                 var visitor = new SourceVisitor(query);
                 return visitor.Visit(expression);
@@ -68,8 +65,8 @@ namespace OdataToEntity.Parsers
                 if (node.Type.IsGenericType)
                 {
                     Type[] args = node.Type.GetGenericArguments();
-                    if (args.Length == 1 && args[0] == _query.ElementType)
-                        return _query.Expression;
+                    if (args.Length == 1 && args[0] == _elementType)
+                        return _sourceExpression;
                 }
                 return base.VisitConstant(node);
             }
@@ -93,21 +90,24 @@ namespace OdataToEntity.Parsers
             if (pageSize > 0 || (odataUri.OrderBy != null && odataUri.Skip != null && odataUri.Top != null))
             {
                 IEdmEntityType edmEntityType = OeGetParser.GetEntityType(odataUri.Path, parseNavigationSegments);
-                SkipTokenParser = new OeSkipTokenParser(edmModel, edmEntityType, isDatabaseNullHighestValue, odataUri.OrderBy);
+                SkipTokenParser = new OeSkipTokenParser(edmModel, edmEntityType, isDatabaseNullHighestValue, odataUri.OrderBy, odataUri.SkipToken);
             }
         }
 
         public OeCacheContext CreateCacheContext() => new OeCacheContext(this);
         public OeCacheContext CreateCacheContext(IReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition> constantToParameterMapper) => new OeCacheContext(this, constantToParameterMapper);
-        public Expression CreateCountExpression(IQueryable query, Expression expression)
+        public static MethodCallExpression CreateCountExpression(Expression expression)
         {
-            Type filterType = EntryFactory == null ? query.ElementType : EdmModel.GetClrType(EntryFactory.EntityType);
-            Expression filterExpression = ODataUri.Filter == null ? query.Expression : FilterVisitor.Translate(query, expression, filterType);
+            var filterVisitor = new FilterVisitor();
+            filterVisitor.Visit(expression);
 
-            Type sourceType = OeExpressionHelper.GetCollectionItemType(filterExpression.Type);
+            Expression whereExpression = filterVisitor.WhereExpression;
+            if (whereExpression == null)
+                whereExpression = filterVisitor.Source;
+
+            Type sourceType = OeExpressionHelper.GetCollectionItemType(whereExpression.Type);
             MethodInfo countMethodInfo = OeMethodInfoHelper.GetCountMethodInfo(sourceType);
-
-            return Expression.Call(countMethodInfo, filterExpression);
+            return Expression.Call(countMethodInfo, whereExpression);
         }
         private OeEntryFactory CreateEntryFactory(OeExpressionBuilder expressionBuilder)
         {
@@ -123,7 +123,7 @@ namespace OdataToEntity.Parsers
 
             return expressionBuilder.CreateEntryFactory(entitySet);
         }
-        public Expression CreateExpression(IQueryable query, OeConstantToVariableVisitor constantToVariableVisitor)
+        public Expression CreateExpression(OeConstantToVariableVisitor constantToVariableVisitor)
         {
             Expression expression;
             var expressionBuilder = new OeExpressionBuilder(EdmModel, EntitySetAdapter.EntityType);
@@ -131,7 +131,7 @@ namespace OdataToEntity.Parsers
             expression = Expression.Constant(null, typeof(IEnumerable<>).MakeGenericType(EntitySetAdapter.EntityType));
             expression = expressionBuilder.ApplyNavigation(expression, ParseNavigationSegments);
             expression = expressionBuilder.ApplyFilter(expression, ODataUri.Filter);
-            expression = expressionBuilder.ApplySkipToken(expression, SkipTokenParser, ODataUri.SkipToken);
+            expression = expressionBuilder.ApplySkipToken(expression, SkipTokenParser);
             expression = expressionBuilder.ApplyAggregation(expression, ODataUri.Apply);
             expression = expressionBuilder.ApplySelect(expression, this);
             expression = expressionBuilder.ApplyOrderBy(expression, ODataUri.OrderBy);
@@ -142,11 +142,7 @@ namespace OdataToEntity.Parsers
             if (!IsCountSegment)
                 EntryFactory = CreateEntryFactory(expressionBuilder);
 
-            expression = constantToVariableVisitor.Translate(expression, expressionBuilder.Constants);
-            if (ODataUri.QueryCount.GetValueOrDefault())
-                CountExpression = CreateCountExpression(query, expression);
-
-            return SourceVisitor.Translate(query, expression);
+            return constantToVariableVisitor.Translate(expression, expressionBuilder.Constants);
         }
         public IEnumerable<ExpandedNavigationSelectItem> GetExpandedNavigationSelectItems()
         {
@@ -159,8 +155,8 @@ namespace OdataToEntity.Parsers
                         yield return item;
                 }
         }
+        public static Expression TranslateSource(Expression query, Expression expression) => SourceVisitor.Translate(query, expression);
 
-        public Expression CountExpression { get; set; }
         public IEdmModel EdmModel { get; }
         public IEdmEntitySet EntitySet { get; }
         public Db.OeEntitySetAdapter EntitySetAdapter { get; }

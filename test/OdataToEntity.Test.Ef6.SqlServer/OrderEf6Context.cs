@@ -14,6 +14,7 @@ namespace OdataToEntity.Test.Ef6.SqlServer
         }
         public OrderEf6Context() : base(@"Server=.\sqlexpress;Initial Catalog=OdataToEntity;Trusted_Connection=Yes;")
         {
+            base.Configuration.UseDatabaseNullSemantics = true;
         }
 
         public DbSet<Category> Categories { get; set; }

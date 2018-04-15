@@ -27,7 +27,7 @@ namespace OdataToEntity.Test
     {
         private String _databaseName;
 
-        public OrderOeDataAdapter(String databaseName) : base(Model.OrderContext.CreateOptions(), new Db.OeQueryCache())
+        public OrderOeDataAdapter(String databaseName) : base(Model.OrderContext.CreateOptions())
         {
             _databaseName = databaseName;
         }

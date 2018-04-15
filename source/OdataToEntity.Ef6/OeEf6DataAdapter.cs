@@ -1,5 +1,6 @@
 ﻿using Microsoft.OData;
 using Microsoft.OData.Edm;
+using Microsoft.OData.UriParser;
 using OdataToEntity.Parsers;
 using System;
 using System.Collections.Generic;
@@ -133,6 +134,9 @@ namespace OdataToEntity.Ef6
         public OeEf6DataAdapter() : this(null, new OeEf6OperationAdapter(typeof(T)))
         {
         }
+        public OeEf6DataAdapter(Db.OeQueryCache queryCache) : this(queryCache, new OeEf6OperationAdapter(typeof(T)))
+        {
+        }
         public OeEf6DataAdapter(Db.OeQueryCache queryCache, OeEf6OperationAdapter operationAdapter)
             : base(queryCache, operationAdapter)
         {
@@ -176,22 +180,83 @@ namespace OdataToEntity.Ef6
         }
         public override Db.OeAsyncEnumerator ExecuteEnumerator(Object dataContext, OeQueryContext queryContext, CancellationToken cancellationToken)
         {
+            Expression expression;
+            MethodCallExpression countExpression = null;
             IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dataContext);
-            Expression expression = queryContext.CreateExpression(query, new OeConstantToVariableVisitor(queryContext.SkipTokenParser != null));
+            if (base.QueryCache.AllowCache)
+                expression = GetFromCache(queryContext, (T)dataContext, base.QueryCache, out countExpression);
+            else
+            {
+                expression = queryContext.CreateExpression(new OeConstantToVariableVisitor());
+                expression = new EnumerableToQuerableVisitor(queryContext.EntitySetAdapter.EntityType).Visit(expression);
+                expression = OeQueryContext.TranslateSource(query.Expression, expression);
 
-            expression = new EnumerableToQuerableVisitor().Visit(expression);
-            var queryAsync = (IDbAsyncEnumerable)query.Provider.CreateQuery(expression);
-            Db.OeAsyncEnumerator asyncEnumerator = new OeEf6AsyncEnumerator(queryAsync.GetAsyncEnumerator(), cancellationToken);
-            if (queryContext.CountExpression != null)
-                asyncEnumerator.Count = query.Provider.Execute<int>(queryContext.CountExpression);
+                if (queryContext.ODataUri.QueryCount.GetValueOrDefault())
+                    countExpression = OeQueryContext.CreateCountExpression(expression);
+            }
+
+            IDbAsyncEnumerable asyncEnumerable = (IDbAsyncEnumerable)query.Provider.CreateQuery(expression);
+            Db.OeAsyncEnumerator asyncEnumerator = new OeEf6AsyncEnumerator(asyncEnumerable.GetAsyncEnumerator(), cancellationToken);
+            if (countExpression != null)
+            {
+                query = queryContext.EntitySetAdapter.GetEntitySet(dataContext);
+                asyncEnumerator.Count = query.Provider.Execute<int>(countExpression);
+            }
 
             return asyncEnumerator;
         }
         public override TResult ExecuteScalar<TResult>(Object dataContext, OeQueryContext queryContext)
         {
+            Expression expression;
+            if (base.QueryCache.AllowCache)
+                expression = GetFromCache(queryContext, (T)dataContext, base.QueryCache, out _);
+            else
+                expression = queryContext.CreateExpression(new OeConstantToVariableVisitor());
             IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dataContext);
-            Expression expression = queryContext.CreateExpression(query, new OeConstantToVariableVisitor(false));
-            return query.Provider.Execute<TResult>(expression);
+            return query.Provider.Execute<TResult>(OeQueryContext.TranslateSource(query.Expression, expression));
+        }
+        private static Expression GetFromCache(OeQueryContext queryContext, T dbContext, Db.OeQueryCache queryCache,
+            out MethodCallExpression countExpression)
+        {
+            OeCacheContext cacheContext = queryContext.CreateCacheContext();
+            Db.QueryCacheItem queryCacheItem = queryCache.GetQuery(cacheContext);
+
+            Expression expression;
+            IReadOnlyList<Db.OeQueryCacheDbParameterValue> parameterValues;
+            IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dbContext);
+            if (queryCacheItem == null)
+            {
+                var parameterVisitor = new OeConstantToParameterVisitor();
+                expression = queryContext.CreateExpression(parameterVisitor);
+                expression = new EnumerableToQuerableVisitor(queryContext.EntitySetAdapter.EntityType).Visit(expression);
+
+                countExpression = OeQueryContext.CreateCountExpression(expression);
+                queryCache.AddQuery(queryContext.CreateCacheContext(parameterVisitor.ConstantToParameterMapper), expression, null,
+                    queryContext.EntryFactory, queryContext.SkipTokenParser?.Accessors);
+                parameterValues = parameterVisitor.ParameterValues;
+            }
+            else
+            {
+                expression = (Expression)queryCacheItem.Query;
+                queryContext.EntryFactory = queryCacheItem.EntryFactory;
+                if (queryContext.SkipTokenParser != null)
+                    queryContext.SkipTokenParser.Accessors = queryCacheItem.SkipTokenAccessors;
+                countExpression = queryCacheItem.CountExpression;
+                parameterValues = cacheContext.ParameterValues;
+            }
+
+            expression = new OeParameterToVariableVisitor().Translate(expression, parameterValues);
+            expression = OeQueryContext.TranslateSource(query.Expression, expression);
+
+            if (queryContext.ODataUri.QueryCount.GetValueOrDefault())
+            {
+                countExpression = (MethodCallExpression)OeQueryContext.TranslateSource(query.Expression, countExpression);
+                countExpression = (MethodCallExpression)new OeParameterToVariableVisitor().Translate(countExpression, parameterValues);
+            }
+            else
+                countExpression = null;
+
+            return expression;
         }
         public override Db.OeEntitySetAdapter GetEntitySetAdapter(String entitySetName)
         {

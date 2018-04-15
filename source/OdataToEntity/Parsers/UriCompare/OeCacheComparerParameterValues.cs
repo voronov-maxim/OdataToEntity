@@ -32,6 +32,9 @@ namespace OdataToEntity.Parsers.UriCompare
 
         public void AddParameter(ConstantNode keyConstantNode, ConstantNode parameterConstanNode)
         {
+            if (_constantToParameterMapper == null)
+                return;
+
             Db.OeQueryCacheDbParameterDefinition parameterDefinition = _constantToParameterMapper[keyConstantNode];
             if (parameterConstanNode.Value == null)
                 _parameterValues.Add(new Db.OeQueryCacheDbParameterValue(parameterDefinition.ParameterName, null));
@@ -61,6 +64,9 @@ namespace OdataToEntity.Parsers.UriCompare
         }
         public void AddSkipTokenParameter(Object value, String propertyName)
         {
+            if (value == null)
+                return;
+
             foreach (KeyValuePair<ConstantNode, Db.OeQueryCacheDbParameterDefinition> pair in _constantToParameterMapper)
                 if (pair.Key.TypeReference == SkipTokenMarker.Instance && String.CompareOrdinal(pair.Key.LiteralText, propertyName) == 0)
                     _parameterValues.Add(new Db.OeQueryCacheDbParameterValue(pair.Value.ParameterName, value));

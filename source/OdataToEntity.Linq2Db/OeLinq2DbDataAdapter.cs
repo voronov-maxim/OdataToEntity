@@ -2,7 +2,6 @@
 using LinqToDB.Data;
 using Microsoft.OData;
 using Microsoft.OData.Edm;
-using OdataToEntity.Db;
 using OdataToEntity.Parsers;
 using System;
 using System.Collections.Generic;
@@ -20,7 +19,7 @@ namespace OdataToEntity.Linq2Db
         public static int DatePart(Sql.DateParts part, DateTimeOffset date) => 0;
     }
 
-    public class OeLinq2DbDataAdapter<T> : OeDataAdapter where T : DataConnection
+    public class OeLinq2DbDataAdapter<T> : Db.OeDataAdapter where T : DataConnection
     {
         private sealed class ParameterVisitor : ExpressionVisitor
         {
@@ -31,33 +30,6 @@ namespace OdataToEntity.Linq2Db
                 _parameters = new Dictionary<ParameterExpression, ParameterExpression>();
             }
 
-            private bool IsNullable(MemberExpression propertyExpression)
-            {
-                return !OeLinq2DbEdmModelMetadataProvider.IsRequiredLinq2Db((PropertyInfo)propertyExpression.Member);
-            }
-            protected override Expression VisitBinary(BinaryExpression node)
-            {
-                var e = (BinaryExpression)base.VisitBinary(node);
-                if (e.NodeType == ExpressionType.NotEqual)
-                {
-                    MemberExpression propertyExpression;
-                    if (OeExpressionHelper.TryGetConstantValue(e.Right, out Object value))
-                        propertyExpression = e.Left as MemberExpression;
-                    else
-                    {
-                        if (!OeExpressionHelper.TryGetConstantValue(e.Left, out value))
-                            return e;
-
-                        propertyExpression = e.Right as MemberExpression;
-                    }
-
-                    if (propertyExpression == null || value == null || !IsNullable(propertyExpression))
-                        return e;
-
-                    e = Expression.OrElse(e, Expression.Equal(propertyExpression, Expression.Constant(null, propertyExpression.Type)));
-                }
-                return e;
-            }
             protected override Expression VisitNew(NewExpression node)
             {
                 var arguments = new Expression[node.Arguments.Count];
@@ -86,7 +58,7 @@ namespace OdataToEntity.Linq2Db
             }
         }
 
-        private sealed class TableAdapterImpl<TEntity> : OeEntitySetMetaAdapter where TEntity : class
+        private sealed class TableAdapterImpl<TEntity> : Db.OeEntitySetMetaAdapter where TEntity : class
         {
             private readonly String _entitySetName;
             private readonly Func<T, ITable<TEntity>> _getEntitySet;
@@ -128,12 +100,12 @@ namespace OdataToEntity.Linq2Db
             public override String EntitySetName => _entitySetName;
         }
 
-        private readonly static OeEntitySetMetaAdapterCollection _entitySetMetaAdapters = CreateEntitySetMetaAdapters();
+        private readonly static Db.OeEntitySetMetaAdapterCollection _entitySetMetaAdapters = CreateEntitySetMetaAdapters();
 
         public OeLinq2DbDataAdapter() : this(null)
         {
         }
-        public OeLinq2DbDataAdapter(OeQueryCache queryCache)
+        public OeLinq2DbDataAdapter(Db.OeQueryCache queryCache)
             : base(queryCache, new OeLinq2DbOperationAdapter(typeof(T)))
         {
         }
@@ -145,56 +117,118 @@ namespace OdataToEntity.Linq2Db
         }
         public override Object CreateDataContext()
         {
-            return FastActivator.CreateInstance<T>();
+            return Db.FastActivator.CreateInstance<T>();
         }
-        private static OeEntitySetMetaAdapterCollection CreateEntitySetMetaAdapters()
+        private static Db.OeEntitySetMetaAdapterCollection CreateEntitySetMetaAdapters()
         {
             InitializeLinq2Db();
 
-            var entitySetMetaAdapters = new List<OeEntitySetMetaAdapter>();
+            var entitySetMetaAdapters = new List<Db.OeEntitySetMetaAdapter>();
             foreach (PropertyInfo property in typeof(T).GetTypeInfo().GetProperties())
             {
                 Type entitySetType = property.PropertyType.GetTypeInfo().GetInterface(typeof(IQueryable<>).FullName);
                 if (entitySetType != null)
                     entitySetMetaAdapters.Add(CreateDbSetInvoker(property, entitySetType));
             }
-            return new OeEntitySetMetaAdapterCollection(entitySetMetaAdapters.ToArray(), new OeLinq2DbEdmModelMetadataProvider());
+            return new Db.OeEntitySetMetaAdapterCollection(entitySetMetaAdapters.ToArray(), new OeLinq2DbEdmModelMetadataProvider());
         }
-        private static OeEntitySetMetaAdapter CreateDbSetInvoker(PropertyInfo property, Type entitySetType)
+        private static Db.OeEntitySetMetaAdapter CreateDbSetInvoker(PropertyInfo property, Type entitySetType)
         {
-            MethodInfo mi = ((Func<PropertyInfo, OeEntitySetMetaAdapter>)CreateEntitySetInvoker<Object>).GetMethodInfo().GetGenericMethodDefinition();
+            MethodInfo mi = ((Func<PropertyInfo, Db.OeEntitySetMetaAdapter>)CreateEntitySetInvoker<Object>).GetMethodInfo().GetGenericMethodDefinition();
             Type entityType = entitySetType.GetTypeInfo().GetGenericArguments()[0];
             MethodInfo func = mi.GetGenericMethodDefinition().MakeGenericMethod(entityType);
-            return (OeEntitySetMetaAdapter)func.Invoke(null, new Object[] { property });
+            return (Db.OeEntitySetMetaAdapter)func.Invoke(null, new Object[] { property });
         }
-        private static OeEntitySetMetaAdapter CreateEntitySetInvoker<TEntity>(PropertyInfo property) where TEntity : class
+        private static Db.OeEntitySetMetaAdapter CreateEntitySetInvoker<TEntity>(PropertyInfo property) where TEntity : class
         {
             var getEntitySet = (Func<T, ITable<TEntity>>)property.GetGetMethod().CreateDelegate(typeof(Func<T, ITable<TEntity>>));
             return new TableAdapterImpl<TEntity>(getEntitySet, property.Name);
         }
-        public override OeAsyncEnumerator ExecuteEnumerator(Object dataContext, OeQueryContext queryContext, CancellationToken cancellationToken)
+        public override Db.OeAsyncEnumerator ExecuteEnumerator(Object dataContext, OeQueryContext queryContext, CancellationToken cancellationToken)
         {
+            Expression expression;
+            MethodCallExpression countExpression = null;
             IQueryable entitySet = queryContext.EntitySetAdapter.GetEntitySet(dataContext);
-            Expression expression = queryContext.CreateExpression(entitySet, new OeConstantToVariableVisitor(queryContext.SkipTokenParser != null));
-            expression = new ParameterVisitor().Visit(expression);
+            if (base.QueryCache.AllowCache)
+                expression = GetFromCache(queryContext, (T)dataContext, base.QueryCache, out countExpression);
+            else
+            {
+                expression = queryContext.CreateExpression(new OeConstantToVariableVisitor());
+                expression = OeQueryContext.TranslateSource(entitySet.Expression, expression);
+                expression = new ParameterVisitor().Visit(expression);
 
-            var query = (IQueryable<Object>)entitySet.Provider.CreateQuery(expression);
-            OeAsyncEnumerator asyncEnumerator = new OeAsyncEnumeratorAdapter(query, cancellationToken);
-            if (queryContext.CountExpression != null)
-                asyncEnumerator.Count = query.Provider.Execute<int>(queryContext.CountExpression);
+                if (queryContext.ODataUri.QueryCount.GetValueOrDefault())
+                    countExpression = OeQueryContext.CreateCountExpression(expression);
+            }
+
+            IQueryable<Object> query = (IQueryable<Object>)entitySet.Provider.CreateQuery(expression);
+            Db.OeAsyncEnumerator asyncEnumerator = new Db.OeAsyncEnumeratorAdapter(query, cancellationToken);
+
+            if (countExpression != null)
+                asyncEnumerator.Count = entitySet.Provider.Execute<int>(countExpression);
 
             return asyncEnumerator;
         }
         public override TResult ExecuteScalar<TResult>(Object dataContext, OeQueryContext queryContext)
         {
             IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dataContext);
-            Expression expression = queryContext.CreateExpression(query, new OeConstantToVariableVisitor(false));
-            expression = new ParameterVisitor().Visit(expression);
+            Expression expression;
+            if (base.QueryCache.AllowCache)
+                expression = GetFromCache(queryContext, (T)dataContext, base.QueryCache, out _);
+            else
+            {
+                expression = queryContext.CreateExpression(new OeConstantToVariableVisitor());
+                expression = OeQueryContext.TranslateSource(query.Expression, expression);
+                expression = new ParameterVisitor().Visit(expression);
+            }
             return query.Provider.Execute<TResult>(expression);
         }
-        public override OeEntitySetAdapter GetEntitySetAdapter(String entitySetName)
+        public override Db.OeEntitySetAdapter GetEntitySetAdapter(String entitySetName)
         {
-            return new OeEntitySetAdapter(EntitySetMetaAdapters.FindByEntitySetName(entitySetName), this);
+            return new Db.OeEntitySetAdapter(EntitySetMetaAdapters.FindByEntitySetName(entitySetName), this);
+        }
+        private static Expression GetFromCache(OeQueryContext queryContext, T dbContext, Db.OeQueryCache queryCache,
+            out MethodCallExpression countExpression)
+        {
+            OeCacheContext cacheContext = queryContext.CreateCacheContext();
+            Db.QueryCacheItem queryCacheItem = queryCache.GetQuery(cacheContext);
+
+            Expression expression;
+            IReadOnlyList<Db.OeQueryCacheDbParameterValue> parameterValues;
+            IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dbContext);
+            if (queryCacheItem == null)
+            {
+                var parameterVisitor = new OeConstantToParameterVisitor();
+                expression = queryContext.CreateExpression(parameterVisitor);
+                expression = new ParameterVisitor().Visit(expression);
+
+                countExpression = OeQueryContext.CreateCountExpression(expression);
+                queryCache.AddQuery(queryContext.CreateCacheContext(parameterVisitor.ConstantToParameterMapper), expression, null,
+                    queryContext.EntryFactory, queryContext.SkipTokenParser?.Accessors);
+                parameterValues = parameterVisitor.ParameterValues;
+            }
+            else
+            {
+                expression = (Expression)queryCacheItem.Query;
+                queryContext.EntryFactory = queryCacheItem.EntryFactory;
+                if (queryContext.SkipTokenParser != null)
+                    queryContext.SkipTokenParser.Accessors = queryCacheItem.SkipTokenAccessors;
+                countExpression = queryCacheItem.CountExpression;
+                parameterValues = cacheContext.ParameterValues;
+            }
+
+            expression = new OeParameterToVariableVisitor().Translate(expression, parameterValues);
+            expression = OeQueryContext.TranslateSource(query.Expression, expression);
+
+            if (queryContext.ODataUri.QueryCount.GetValueOrDefault())
+            {
+                countExpression = (MethodCallExpression)OeQueryContext.TranslateSource(query.Expression, countExpression);
+                countExpression = (MethodCallExpression)new OeParameterToVariableVisitor().Translate(countExpression, parameterValues);
+            }
+            else
+                countExpression = null;
+
+            return expression;
         }
         private static void InitializeLinq2Db()
         {
@@ -220,6 +254,6 @@ namespace OdataToEntity.Linq2Db
             return Task.FromResult(count);
         }
 
-        public override OeEntitySetMetaAdapterCollection EntitySetMetaAdapters => _entitySetMetaAdapters;
+        public override Db.OeEntitySetMetaAdapterCollection EntitySetMetaAdapters => _entitySetMetaAdapters;
     }
 }

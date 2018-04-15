@@ -62,7 +62,7 @@ namespace OdataToEntity.Parsers.UriCompare
             if (!CompareTop(uri1.Top, uri2.Top, uri1.Path))
                 return false;
 
-            if (!CompareSkipToken(uri1.SkipToken, uri2.SkipToken, cacheContext1.SkipTokenParser))
+            if (!CompareSkipToken(cacheContext1.SkipTokenParser, cacheContext2.SkipTokenParser))
                 return false;
 
             if (!CompareCompute(uri1.Compute, uri2.Compute))
@@ -287,13 +287,20 @@ namespace OdataToEntity.Parsers.UriCompare
             _parameterValues.AddSkipParameter(skip2.Value, path);
             return true;
         }
-        private bool CompareSkipToken(String skipToken1, String skipToken2, OeSkipTokenParser skipTokenParser)
+        private bool CompareSkipToken(OeSkipTokenParser skipTokenParser1, OeSkipTokenParser skipTokenParser2)
         {
-            if (skipToken1 == null || skipToken2 == null)
-                return skipToken1 == skipToken2;
+            if (skipTokenParser1 == null && skipTokenParser2 == null)
+                return true;
+            if (skipTokenParser1.KeyValues.Count != skipTokenParser2.KeyValues.Count)
+                return false;
 
-            foreach (KeyValuePair<String, Object> skipToken in skipTokenParser.ParseSkipToken(skipToken2))
-                _parameterValues.AddSkipTokenParameter(skipToken.Value, skipToken.Key);
+            for (int i = 0; i < skipTokenParser2.KeyValues.Count; i++)
+                if ((skipTokenParser1.KeyValues[i].Value == null || skipTokenParser2.KeyValues[i].Value == null) &&
+                    skipTokenParser1.KeyValues[i].Value != skipTokenParser2.KeyValues[i].Value)
+                    return false;
+
+            for (int i = 0; i < skipTokenParser2.KeyValues.Count; i++)
+                _parameterValues.AddSkipTokenParameter(skipTokenParser2.KeyValues[i].Value, skipTokenParser2.KeyValues[i].Key);
             return true;
         }
         private bool CompareTop(long? top1, long? top2, ODataPath path)
@@ -340,7 +347,7 @@ namespace OdataToEntity.Parsers.UriCompare
         }
         public static int GetCacheCode(OeCacheContext cacheContext)
         {
-            var hashVistitor = new OeQueryNodeHashVisitor();
+            var hashVisitor = new OeQueryNodeHashVisitor();
 
             ODataUri uri = cacheContext.ODataUri;
             int hash = uri.Path.FirstSegment.Identifier.GetHashCode();
@@ -352,42 +359,16 @@ namespace OdataToEntity.Parsers.UriCompare
                     OeParseNavigationSegment parseNavigationSegment = cacheContext.ParseNavigationSegments[i];
                     if (parseNavigationSegment.Filter != null)
                     {
-                        int h = hashVistitor.TranslateNode(cacheContext.ParseNavigationSegments[i].Filter.Expression);
+                        int h = hashVisitor.TranslateNode(cacheContext.ParseNavigationSegments[i].Filter.Expression);
                         hash = CombineHashCodes(hash, h);
                     }
                 }
 
             if (uri.Filter != null)
-                hash = CombineHashCodes(hash, hashVistitor.TranslateNode(uri.Filter.Expression));
+                hash = CombineHashCodes(hash, hashVisitor.TranslateNode(uri.Filter.Expression));
 
             if (uri.Apply != null)
-            {
-                foreach (TransformationNode transformationNode in uri.Apply.Transformations)
-                {
-                    if (transformationNode is FilterTransformationNode filterTransformationNode)
-                    {
-                        FilterClause filter = filterTransformationNode.FilterClause;
-                        hash = CombineHashCodes(hash, hashVistitor.TranslateNode(filter.Expression));
-                    }
-                    else if (transformationNode is AggregateTransformationNode aggregateTransformationNode)
-                    {
-                        foreach (AggregateExpression aggregate in aggregateTransformationNode.Expressions)
-                            hash = CombineHashCodes(hash, (int)aggregate.Method);
-                    }
-                    else if (transformationNode is GroupByTransformationNode groupByTransformationNode)
-                    {
-                        foreach (GroupByPropertyNode group in groupByTransformationNode.GroupingProperties)
-                            hash = CombineHashCodes(hash, group.Name.GetHashCode());
-                    }
-                    else if (transformationNode is ComputeTransformationNode computeTransformationNode)
-                    {
-                        foreach (ComputeExpression compute in computeTransformationNode.Expressions)
-                            hash = CombineHashCodes(hash, compute.Alias.GetHashCode());
-                    }
-                    else
-                        throw new InvalidProgramException("unknown TransformationNode " + transformationNode.GetType().ToString());
-                }
-            }
+                hash = GetCacheCode(hash, uri.Apply, hashVisitor);
 
             if (uri.SelectAndExpand != null)
                 hash = GetCacheCode(hash, uri.SelectAndExpand);
@@ -395,12 +376,49 @@ namespace OdataToEntity.Parsers.UriCompare
             if (uri.OrderBy != null)
             {
                 hash = CombineHashCodes(hash, (int)uri.OrderBy.Direction);
-                hash = CombineHashCodes(hash, hashVistitor.TranslateNode(uri.OrderBy.Expression));
+                hash = CombineHashCodes(hash, hashVisitor.TranslateNode(uri.OrderBy.Expression));
+            }
+
+            if (uri.Compute != null)
+                foreach (ComputeExpression computeExpression in uri.Compute.ComputedItems)
+                    hash = CombineHashCodes(hash, computeExpression.Alias.GetHashCode());
+
+            if (uri.SkipToken != null)
+                hash = CombineHashCodes(hash, 4999559);
+
+            return hash;
+        }
+        private static int GetCacheCode(int hash,ApplyClause applyClause, OeQueryNodeHashVisitor hashVisitor)
+        {
+            foreach (TransformationNode transformationNode in applyClause.Transformations)
+            {
+                if (transformationNode is FilterTransformationNode filterTransformationNode)
+                {
+                    FilterClause filter = filterTransformationNode.FilterClause;
+                    hash = CombineHashCodes(hash, hashVisitor.TranslateNode(filter.Expression));
+                }
+                else if (transformationNode is AggregateTransformationNode aggregateTransformationNode)
+                {
+                    foreach (AggregateExpression aggregate in aggregateTransformationNode.Expressions)
+                        hash = CombineHashCodes(hash, (int)aggregate.Method);
+                }
+                else if (transformationNode is GroupByTransformationNode groupByTransformationNode)
+                {
+                    foreach (GroupByPropertyNode group in groupByTransformationNode.GroupingProperties)
+                        hash = CombineHashCodes(hash, group.Name.GetHashCode());
+                }
+                else if (transformationNode is ComputeTransformationNode computeTransformationNode)
+                {
+                    foreach (ComputeExpression compute in computeTransformationNode.Expressions)
+                        hash = CombineHashCodes(hash, compute.Alias.GetHashCode());
+                }
+                else
+                    throw new InvalidProgramException("unknown TransformationNode " + transformationNode.GetType().ToString());
             }
 
             return hash;
         }
-        public static int GetCacheCode(int hash, SelectExpandClause selectExpandClause)
+        private static int GetCacheCode(int hash, SelectExpandClause selectExpandClause)
         {
             foreach (SelectItem selectItem in selectExpandClause.SelectedItems)
             {

@@ -114,9 +114,7 @@ namespace OdataToEntity.Test
             while (uri != null);
 
             if (odataUri.QueryCount != null)
-            {
                 Xunit.Assert.Equal(count, fromOe.Count);
-            }
 
             return fromOe;
         }

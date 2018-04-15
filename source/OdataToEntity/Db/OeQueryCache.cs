@@ -1,45 +1,41 @@
-﻿using Microsoft.OData.UriParser;
-using OdataToEntity.Parsers;
+﻿using OdataToEntity.Parsers;
 using OdataToEntity.Parsers.UriCompare;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq.Expressions;
 
 namespace OdataToEntity.Db
 {
     public sealed class QueryCacheItem
     {
-        private readonly Expression _countExpression;
-        private readonly OeEntryFactory _entryFactory;
-        private readonly Object _query;
-        private readonly OePropertyAccessor[] _skipTokenAccessors;
-
-        public QueryCacheItem(Object query, Expression countExpression, OeEntryFactory entryFactory, OePropertyAccessor[] skipTokenAccessors)
+        public QueryCacheItem(Object query, MethodCallExpression countExpression, OeEntryFactory entryFactory, OePropertyAccessor[] skipTokenAccessors)
         {
-            _query = query;
-            _countExpression = countExpression;
-            _entryFactory = entryFactory;
-            _skipTokenAccessors = skipTokenAccessors;
+            Query = query;
+            CountExpression = countExpression;
+            EntryFactory = entryFactory;
+            SkipTokenAccessors = skipTokenAccessors;
         }
 
-        public Expression CountExpression => _countExpression;
-        public OeEntryFactory EntryFactory => _entryFactory;
-        public Object Query => _query;
-        public OePropertyAccessor[] SkipTokenAccessors => _skipTokenAccessors;
+        public MethodCallExpression CountExpression { get; }
+        public OeEntryFactory EntryFactory { get; }
+        public Object Query { get; }
+        public OePropertyAccessor[] SkipTokenAccessors { get; }
     }
 
     public sealed class OeQueryCache
     {
         private readonly ConcurrentDictionary<OeCacheContext, QueryCacheItem> _cache;
 
-        public OeQueryCache()
+        public OeQueryCache() : this(true)
+        {
+        }
+        public OeQueryCache(bool allowCache)
         {
             _cache = new ConcurrentDictionary<OeCacheContext, QueryCacheItem>(new OeCacheContextEqualityComparer());
-            AllowCache = true;
+            AllowCache = allowCache;
         }
 
-        public void AddQuery(OeCacheContext cacheContext, Object query, Expression countExpression, OeEntryFactory entryFactory,
+        public void AddQuery(OeCacheContext cacheContext, Object query, MethodCallExpression countExpression, OeEntryFactory entryFactory,
             OePropertyAccessor[] skipTokenAccessors)
         {
             var queryCacheItem = new QueryCacheItem(query, countExpression, entryFactory, skipTokenAccessors);

@@ -16,11 +16,13 @@ namespace OdataToEntity.Parsers
         private static readonly ODataMessageReaderSettings ReaderSettings = new ODataMessageReaderSettings() { EnableMessageStreamDisposal = false };
         private static readonly ODataMessageWriterSettings WriterSettings = new ODataMessageWriterSettings() { EnableMessageStreamDisposal = false };
 
-        public OeSkipTokenParser(IEdmModel edmModel, IEdmEntityType edmType, bool isDatabaseNullHighestValue, OrderByClause uniqueOrderBy)
+        public OeSkipTokenParser(IEdmModel edmModel, IEdmEntityType edmType, bool isDatabaseNullHighestValue, OrderByClause uniqueOrderBy, String skipToken)
         {
             EdmModel = edmModel;
             IsDatabaseNullHighestValue = isDatabaseNullHighestValue;
             UniqueOrderBy = uniqueOrderBy;
+
+            KeyValues = skipToken == null ? (IReadOnlyList<KeyValuePair<String, Object>>)Array.Empty<KeyValuePair<String, Object>>() : ParseSkipToken(skipToken);
         }
 
         private static List<SingleValuePropertyAccessNode> GetOrderByProperties(IEdmModel edmModel, IEdmEntityType edmType, OrderByClause orderByClause, ApplyClause applyClause)
@@ -207,15 +209,16 @@ namespace OdataToEntity.Parsers
                 }
             }
         }
-        public IEnumerable<KeyValuePair<String, Object>> ParseSkipToken(String skipToken)
+        private List<KeyValuePair<String, Object>> ParseSkipToken(String skipToken)
         {
             String json = Encoding.UTF8.GetString(Convert.FromBase64String(skipToken));
-            return ParseJson(EdmModel, json, GetEdmProperies(UniqueOrderBy));
+            return new List<KeyValuePair<String, Object>>(ParseJson(EdmModel, json, GetEdmProperies(UniqueOrderBy)));
         }
 
         public OePropertyAccessor[] Accessors { get; set; }
         public IEdmModel EdmModel { get; }
         public bool IsDatabaseNullHighestValue { get; }
+        public IReadOnlyList<KeyValuePair<String, Object>> KeyValues { get; }
         public OrderByClause UniqueOrderBy { get; }
     }
 }

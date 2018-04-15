@@ -150,13 +150,13 @@ namespace OdataToEntity.Parsers
             MethodInfo skipMethodInfo = OeMethodInfoHelper.GetSkipMethodInfo(ParameterType);
             return Expression.Call(skipMethodInfo, source, skipConstant);
         }
-        public Expression ApplySkipToken(Expression source, OeSkipTokenParser skipTokenParser, String skipToken)
+        public Expression ApplySkipToken(Expression source, OeSkipTokenParser skipTokenParser)
         {
-            if (skipToken == null)
+            if (skipTokenParser == null || skipTokenParser.KeyValues.Count == 0)
                 return source;
 
             var skipTokenTranslator = new OeSkipTokenTranslator(_visitor, skipTokenParser);
-            return skipTokenTranslator.Build(source, skipToken);
+            return skipTokenTranslator.Build(source);
         }
         public Expression ApplyTake(Expression source, long? top, ODataPath path)
         {

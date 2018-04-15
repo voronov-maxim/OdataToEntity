@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using System;
 
 namespace OdataToEntity.Test.Model
@@ -16,7 +17,7 @@ namespace OdataToEntity.Test.Model
         internal static DbContextOptions CreateOptions()
         {
             var optionsBuilder = new DbContextOptionsBuilder<OrderContext>();
-            optionsBuilder.UseSqlServer(@"Server=.\sqlexpress;Initial Catalog=OdataToEntity;Trusted_Connection=Yes;");
+            optionsBuilder.UseSqlServer(@"Server=.\sqlexpress;Initial Catalog=OdataToEntity;Trusted_Connection=Yes;", opt => opt.UseRelationalNulls());
             return optionsBuilder.Options;
         }
 

@@ -4,16 +4,13 @@ namespace OdataToEntity.Db
 {
     public struct OeQueryCacheDbParameterValue
     {
-        private readonly String _parameterName;
-        private readonly Object _parameterValue;
-
         public OeQueryCacheDbParameterValue(String parameterName, Object parameterValue)
         {
-            _parameterName = parameterName;
-            _parameterValue = parameterValue;
+            ParameterName = parameterName;
+            ParameterValue = parameterValue;
         }
 
-        public String ParameterName => _parameterName;
-        public Object ParameterValue => _parameterValue;
+        public String ParameterName { get; }
+        public Object ParameterValue { get; }
     }
 }

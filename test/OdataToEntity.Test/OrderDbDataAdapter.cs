@@ -7,7 +7,7 @@ namespace OdataToEntity.Test
     {
         private String _databaseName;
 
-        public OrderDbDataAdapter(String databaseName)
+        public OrderDbDataAdapter(String databaseName) : base(new Db.OeQueryCache(false))
         {
             _databaseName = databaseName;
         }
@@ -26,7 +26,7 @@ namespace OdataToEntity.Test
     {
         private String _databaseName;
 
-        public OrderOeDataAdapter(String databaseName)
+        public OrderOeDataAdapter(String databaseName) : base(new Db.OeQueryCache(false))
         {
             _databaseName = databaseName;
         }

@@ -146,22 +146,14 @@ namespace OdataToEntity.Parsers
                 if (OeExpressionHelper.IsNullable(left) && !OeExpressionHelper.IsNull(left))
                 {
                     if (OeExpressionHelper.IsNull(right))
-                    {
-                        ConstantExpression newConstant = Expression.Constant(null, leftType);
-                        ReplaceConstant((ConstantExpression)right, newConstant);
-                        right = newConstant;
-                    }
+                        right = OeConstantToVariableVisitor.NullConstantExpression;
                     else
                         leftType = Nullable.GetUnderlyingType(left.Type);
                 }
                 else if (OeExpressionHelper.IsNullable(right) && !OeExpressionHelper.IsNull(right))
                 {
                     if (OeExpressionHelper.IsNull(left))
-                    {
-                        ConstantExpression newConstant = Expression.Constant(null, rightType);
-                        ReplaceConstant((ConstantExpression)left, newConstant);
-                        left = newConstant;
-                    }
+                        left = OeConstantToVariableVisitor.NullConstantExpression;
                     else
                         rightType = Nullable.GetUnderlyingType(right.Type);
                 }
@@ -242,6 +234,9 @@ namespace OdataToEntity.Parsers
         }
         public override Expression Visit(ConstantNode nodeIn)
         {
+            if (nodeIn.Value == null)
+                return OeConstantToVariableVisitor.NullConstantExpression;
+
             ConstantExpression e = Expression.Constant(nodeIn.Value);
             AddConstant(e, nodeIn);
             return e;
@@ -268,9 +263,7 @@ namespace OdataToEntity.Parsers
                     if (nodeIn.TypeReference.IsNullable && clrType.IsValueType)
                         clrType = typeof(Nullable<>).MakeGenericType(clrType);
 
-                    ConstantExpression newConstantExpression = Expression.Constant(null, clrType);
-                    ReplaceConstant(constantExpression, newConstantExpression);
-                    e = newConstantExpression;
+                    e = OeConstantToVariableVisitor.NullConstantExpression;
                 }
             }
             return e;

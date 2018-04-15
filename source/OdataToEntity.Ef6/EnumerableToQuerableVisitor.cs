@@ -9,6 +9,13 @@ namespace OdataToEntity.Ef6
 {
     public sealed class EnumerableToQuerableVisitor : ExpressionVisitor
     {
+        private readonly Type _elementType;
+
+        public EnumerableToQuerableVisitor(Type elementType)
+        {
+            _elementType = elementType;
+        }
+
         private static MethodInfo GetQuerableMethodInfo(MethodInfo enumerableMethodInfo, ReadOnlyCollection<Expression> arguments)
         {
             var enumerableTypes = new Type[arguments.Count - 1];
@@ -57,9 +64,19 @@ namespace OdataToEntity.Ef6
             throw new InvalidOperationException("method " + enumerableMethodInfo.Name + " not found in Querable");
         }
 
+        protected override Expression VisitConstant(ConstantExpression node)
+        {
+            if (node.Type.IsGenericType)
+            {
+                Type[] args = node.Type.GetGenericArguments();
+                if (args.Length == 1 && args[0] == _elementType)
+                    return Expression.Constant(null, typeof(IQueryable<>).MakeGenericType(_elementType));
+            }
+            return base.VisitConstant(node);
+        }
         protected override Expression VisitLambda<T>(Expression<T> node)
         {
-            node = (Expression<T>)base.VisitLambda<T>(node);
+            node = (Expression<T>)base.VisitLambda(node);
             if (node.ReturnType.IsGenericType && node.ReturnType.GetGenericTypeDefinition() == typeof(ICollection<>))
             {
                 Expression body = Expression.Convert(node.Body, typeof(IEnumerable<>).MakeGenericType(node.ReturnType.GetGenericArguments()));

@@ -1,21 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
-using System.Text;
 
 namespace OdataToEntity.Parsers
 {
     public sealed class OeParameterToVariableVisitor : ExpressionVisitor
     {
-        private readonly List<ConstantExpression> _constantExpressions;
-        private IReadOnlyList<Expression> _parameterExpressions;
+        private readonly SortedDictionary<String, ConstantExpression> _constantExpressions;
+        private Dictionary<String, MemberExpression> _propertyExpressions;
         private IReadOnlyList<Db.OeQueryCacheDbParameterValue> _parameterValues;
 
         public OeParameterToVariableVisitor()
         {
-            _constantExpressions = new List<ConstantExpression>();
+            _constantExpressions = new SortedDictionary<String, ConstantExpression>(StringComparer.Ordinal);
         }
 
+        private Object GetParameterValue(String parameterName)
+        {
+            for (int i = 0; i < _parameterValues.Count; i++)
+                if (String.CompareOrdinal(_parameterValues[i].ParameterName, parameterName) == 0)
+                    return _parameterValues[i].ParameterValue;
+
+            throw new InvalidOperationException("parameter name " + parameterName + " not found");
+        }
         public Expression Translate(Expression expression, IReadOnlyList<Db.OeQueryCacheDbParameterValue> parameterValues)
         {
             _parameterValues = parameterValues;
@@ -23,21 +30,44 @@ namespace OdataToEntity.Parsers
             if (_constantExpressions.Count == 0)
                 return expression;
 
-            NewExpression tupleNew = OeExpressionHelper.CreateTupleExpression(_constantExpressions);
-            var tupleCtor = (Func<Object>)LambdaExpression.Lambda(tupleNew).Compile();
+            var constantExpressions = new ConstantExpression[_constantExpressions.Count];
+            int i = 0;
+            foreach (KeyValuePair<String, ConstantExpression> constantExpression in _constantExpressions)
+                constantExpressions[i++] = constantExpression.Value;
+            NewExpression tupleNew = OeExpressionHelper.CreateTupleExpression(constantExpressions);
+
+            var tupleCtor = (Func<Object>)Expression.Lambda(tupleNew).Compile();
             Object tuple = tupleCtor();
 
-            _parameterExpressions = OeExpressionHelper.GetPropertyExpressions(Expression.Constant(tuple));
+            IReadOnlyList<MemberExpression> tupleProperties = OeExpressionHelper.GetPropertyExpressions(Expression.Constant(tuple));
+            _propertyExpressions = new Dictionary<String, MemberExpression>(tupleProperties.Count);
+            var constants = _constantExpressions.GetEnumerator();
+            for (i = 0; i < tupleProperties.Count; i++)
+            {
+                constants.MoveNext();
+                _propertyExpressions.Add(constants.Current.Key, tupleProperties[i]);
+            }
+            constants.Dispose();
+
             return base.Visit(expression);
         }
         protected override Expression VisitParameter(ParameterExpression node)
         {
-            for (int i = 0; i < _parameterValues.Count; i++)
-                if (_parameterValues[i].ParameterName == node.Name)
-                    if (_parameterExpressions == null)
-                        _constantExpressions.Add(Expression.Constant(_parameterValues[i].ParameterValue, node.Type));
-                    else
-                        return _parameterExpressions[i];
+            if (_propertyExpressions == null)
+            {
+                for (int i = 0; i < _parameterValues.Count; i++)
+                    if (_parameterValues[i].ParameterName == node.Name)
+                    {
+                        if (!_constantExpressions.ContainsKey(node.Name))
+                            _constantExpressions.Add(node.Name, Expression.Constant(_parameterValues[i].ParameterValue, node.Type));
+                    }
+            }
+            else
+            {
+                if (node.Name != null && _propertyExpressions.TryGetValue(node.Name, out MemberExpression propertyExpression))
+                    return propertyExpression;
+            }
+
             return node;
         }
     }

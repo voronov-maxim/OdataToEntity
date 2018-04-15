@@ -33,11 +33,6 @@ namespace OdataToEntity.Test
             _databaseName = databaseName;
         }
 
-        public override Object CreateDataContext()
-        {
-            return new OrderEf6Context();
-        }
-
         public new Db.OeQueryCache QueryCache => base.QueryCache;
     }
 }
