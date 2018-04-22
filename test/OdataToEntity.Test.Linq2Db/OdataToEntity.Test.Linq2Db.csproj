@@ -13,6 +13,10 @@
   </PropertyGroup>
 
   <PropertyGroup>
+    <DefineConstants>IGNORE_AC_PLNull;IGNORE_NC_PLNull</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <OutputType>Exe</OutputType>
     <OutputPath>bin\Debug\</OutputPath>
   </PropertyGroup>
@@ -36,9 +40,9 @@
 
   <ItemGroup>
     <Compile Include="..\OdataToEntity.Test.EfCore.SqlServer\DbFixtureInitDb.cs" Link="DbFixtureInitDb.cs" />
+    <Compile Include="..\OdataToEntity.Test.EfCore.SqlServer\OrderContextOptions.cs" Link="OrderContextOptions.cs" />
     <Compile Include="..\OdataToEntity.Test.EfCore.SqlServer\PerformanceCacheTest.cs" Link="PerformanceCacheTest.cs" />
     <Compile Include="..\OdataToEntity.Test.EfCore.SqlServer\ProcedureTest.cs" Link="ProcedureTest.cs" />
-    <Compile Include="..\OdataToEntity.Test.EfCore.SqlServer\SqlServerOrderContext.cs" Link="SqlServerOrderContext.cs" />
     <Compile Include="..\OdataToEntity.Test\DbFixture.cs" Link="DbFixture.cs" />
     <Compile Include="..\OdataToEntity.Test\QueryComparerTest.cs" Link="QueryComparerTest.cs" />
     <Compile Include="..\OdataToEntity.Test\Model\*.cs" Link="Model\%(FileName).cs" />

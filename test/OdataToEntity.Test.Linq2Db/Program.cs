@@ -12,8 +12,8 @@ namespace OdataToEntity.Test.Linq2Db
     {
         static void Main(string[] args)
         {
-            //new SelectTest(new DbFixtureInitDb()).ApplyGroupByAggregateFilter().GetAwaiter().GetResult();
-            new BatchTest().Add().GetAwaiter().GetResult();
+            //EfCore.SqlServer.PerformanceCacheTest.RunTest(100);
+            //new AC_RDBNull(new AC_RDBNull_DbFixtureInitDb()).Table(0).GetAwaiter().GetResult();
         }
     }
 }

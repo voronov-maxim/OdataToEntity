@@ -16,6 +16,10 @@
     <StartupObject>OdataToEntity.Test.Program</StartupObject>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <DefineConstants>IGNORE_AC_PLNull;IGNORE_AC_RDBNull;IGNORE_NC_RDBNull</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\source\OdataToEntity\OdataToEntity.csproj" />
     <ProjectReference Include="..\..\source\OdataToEntity.EfCore\OdataToEntity.EfCore.csproj" />

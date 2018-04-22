@@ -9,10 +9,10 @@ namespace OdataToEntity.Test
     public sealed class BatchTest
     {
         [Fact]
-        public Task Add()
+        public async Task Add()
         {
-            var fixture = new DbFixtureInitDb();
-            fixture.Initalize();
+            var fixture = new NC_RDBNull_DbFixtureInitDb();
+            await fixture.Initalize();
 
             using (var orderContext = fixture.CreateContext())
             {
@@ -34,13 +34,12 @@ namespace OdataToEntity.Test
                 var order3 = orderContext.Orders.Include(t => t.Items).Single(t => t.Name == "Order unknown");
                 Assert.Equal(2, order3.Items.Count());
             }
-            return Task.CompletedTask;
         }
         [Fact]
         public async Task Delete()
         {
-            var fixture = new DbFixtureInitDb();
-            fixture.Initalize();
+            var fixture = new NC_RDBNull_DbFixtureInitDb();
+            await fixture.Initalize();
 
             await fixture.ExecuteBatchAsync("Delete").ConfigureAwait(false);
             using (var orderContext = fixture.CreateContext())
@@ -57,8 +56,8 @@ namespace OdataToEntity.Test
         [Fact]
         public async Task Update()
         {
-            var fixture = new DbFixtureInitDb();
-            fixture.Initalize();
+            var fixture = new NC_RDBNull_DbFixtureInitDb();
+            await fixture.Initalize();
 
             await fixture.ExecuteBatchAsync("Update").ConfigureAwait(false);
             using (var orderContext = fixture.CreateContext())

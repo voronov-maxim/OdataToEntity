@@ -7,13 +7,13 @@ using Xunit;
 
 namespace OdataToEntity.Test
 {
-    public sealed partial class SelectTest : IClassFixture<DbFixtureInitDb>
+    public abstract partial class SelectTest
     {
         private readonly DbFixtureInitDb _fixture;
 
-        public SelectTest(DbFixtureInitDb fixture)
+        protected SelectTest(DbFixtureInitDb fixture)
         {
-            fixture.Initalize();
+            fixture.Initalize().GetAwaiter().GetResult();
             _fixture = fixture;
         }
 

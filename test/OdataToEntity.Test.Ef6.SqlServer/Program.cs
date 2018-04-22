@@ -8,8 +8,8 @@ namespace OdataToEntity.Test.Ef6.SqlServer
     {
         static void Main(string[] args)
         {
-            //new ProcedureTest().ResetDb_get().GetAwaiter().GetResult();
-            new SelectTest(new DbFixtureInitDb()).KeyOrderBy(1).GetAwaiter().GetResult();
+            EfCore.SqlServer.PerformanceCacheTest.RunTest(100);
+            //new AC_RDBNull(new AC_RDBNull_DbFixtureInitDb()).Table(0).GetAwaiter().GetResult();
         }
     }
 }

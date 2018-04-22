@@ -1,5 +1,4 @@
 ﻿using Microsoft.OData.Edm;
-using OdataToEntity.Db;
 using OdataToEntity.EfCore;
 using OdataToEntity.Test.Model;
 using System;
@@ -12,11 +11,11 @@ namespace OdataToEntity.Test
         [Fact]
         public void FluentApi()
         {
-            var ethalonDataAdapter = new OrderDbDataAdapter(OrderContext.GenerateDatabaseName());
+            var ethalonDataAdapter = new OrderDbDataAdapter(false, false, null);
             EdmModel ethalonEdmModel = ethalonDataAdapter.BuildEdmModel();
             String ethalonSchema = TestHelper.GetCsdlSchema(ethalonEdmModel);
 
-            var testDataAdapter = new OrderDbDataAdapter(OrderContext.GenerateDatabaseName());
+            var testDataAdapter = new OrderDbDataAdapter(false, false, null);
             EdmModel testEdmModel = testDataAdapter.BuildEdmModelFromEfCoreModel();
             String testSchema = TestHelper.GetCsdlSchema(testEdmModel);
 

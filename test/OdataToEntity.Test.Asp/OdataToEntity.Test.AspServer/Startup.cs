@@ -29,7 +29,7 @@ namespace OdataToEntity.AspServer
         {
             services.AddMvcCore();
 
-            _dataAdapter = new OrderOeDataAdapter(Test.Model.OrderContext.GenerateDatabaseName());
+            _dataAdapter = new OrderOeDataAdapter(true, true, null);
             services.AddSingleton(typeof(Db.OeDataAdapter), _dataAdapter);
         }
 

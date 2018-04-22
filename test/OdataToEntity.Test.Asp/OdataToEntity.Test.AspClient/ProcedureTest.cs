@@ -12,12 +12,12 @@ namespace OdataToEntity.Test.AspClient
     {
         private static T[] Execute<T>(Func<Model.OrderContext, IEnumerable<T>> lamda)
         {
-            using (var orderContext = Model.OrderContext.Create(""))
+            using (var orderContext = new Model.OrderContext(Model.OrderContextOptions.Create(true, null)))
                 return lamda(orderContext).ToArray();
         }
         private static T Execute<T>(Func<Model.OrderContext, T> lamda)
         {
-            using (var orderContext = Model.OrderContext.Create(""))
+            using (var orderContext = new Model.OrderContext(Model.OrderContextOptions.Create(true, null)))
                 return lamda(orderContext);
         }
         [Fact]

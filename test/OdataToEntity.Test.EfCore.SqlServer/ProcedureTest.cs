@@ -15,8 +15,8 @@ namespace OdataToEntity.Test
     {
         private static async Task<T[]> Execute<T>(String request, Object requestData, Func<OrderContext, IEnumerable<T>> fromDbFunc)
         {
-            var fixture = new DbFixtureInitDb();
-            fixture.Initalize();
+            var fixture = new NC_RDBNull_DbFixtureInitDb();
+            await fixture.Initalize();
 
             var parser = new OeParser(new Uri("http://dummy/"), fixture.OeDataAdapter, fixture.EdmModel);
             var responseStream = new MemoryStream();
@@ -109,7 +109,7 @@ namespace OdataToEntity.Test
             String request = "ResetDb";
             await Execute<int>(request, null, null);
 
-            var fixture = new DbFixtureInitDb();
+            var fixture = new NC_RDBNull_DbFixtureInitDb();
             using (var orderContext = (OrderContext)fixture.DbDataAdapter.CreateDataContext())
             {
                 int count = orderContext.Categories.Count() +
@@ -125,7 +125,7 @@ namespace OdataToEntity.Test
             String request = "ResetDb";
             await Execute<int>(request, "", null);
 
-            var fixture = new DbFixtureInitDb();
+            var fixture = new NC_RDBNull_DbFixtureInitDb();
             using (var orderContext = (OrderContext)fixture.DbDataAdapter.CreateDataContext())
             {
                 int count = orderContext.Categories.Count() +
@@ -141,7 +141,7 @@ namespace OdataToEntity.Test
             String request = "dbo.ScalarFunction";
             int[] result = await Execute<int>(request, null, null);
 
-            var fixture = new DbFixtureInitDb();
+            var fixture = new NC_RDBNull_DbFixtureInitDb();
             using (var orderContext = (OrderContext)fixture.DbDataAdapter.CreateDataContext())
             {
                 int count = orderContext.ScalarFunction();
@@ -154,7 +154,7 @@ namespace OdataToEntity.Test
             String request = "dbo.ScalarFunctionWithParameters(name='Order 1',id=1,status=null)";
             int[] result = await Execute<int>(request, null, null);
 
-            var fixture = new DbFixtureInitDb();
+            var fixture = new NC_RDBNull_DbFixtureInitDb();
             using (var orderContext = (OrderContext)fixture.DbDataAdapter.CreateDataContext())
             {
                 int count = orderContext.ScalarFunctionWithParameters(1, "Order 1", null);
@@ -168,7 +168,7 @@ namespace OdataToEntity.Test
             var requestData = new { id = (int?)1, name = "Order 1", status = (OrderStatus?)null };
             int[] result = await Execute<int>(request, requestData, null);
 
-            var fixture = new DbFixtureInitDb();
+            var fixture = new NC_RDBNull_DbFixtureInitDb();
             using (var orderContext = (OrderContext)fixture.DbDataAdapter.CreateDataContext())
             {
                 int count = orderContext.ScalarFunctionWithParameters(1, "Order 1", null);

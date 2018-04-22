@@ -1,28 +1,28 @@
-﻿using System.Threading.Tasks;
-using System;
+﻿using System;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace OdataToEntity.Test
 {
-    public class DbFixtureInitDb : DbFixture, IDisposable
+    public abstract class DbFixtureInitDb : DbFixture, IDisposable
     {
         private bool _initialized;
         private int _queryCount;
 
-        public DbFixtureInitDb()
+        protected DbFixtureInitDb(bool allowCache, bool useRelationalNulls) : base(allowCache, useRelationalNulls)
         {
         }
 
-        public override void Initalize()
+        public async override Task Initalize()
         {
             if (_initialized)
                 return;
 
             _initialized = true;
             var parser = new OeParser(new Uri("http://dummy/"), base.OeDataAdapter, base.EdmModel);
-            parser.ExecuteOperationAsync(base.ParseUri("ResetDb"), OeRequestHeaders.JsonDefault, null, new MemoryStream(), CancellationToken.None).GetAwaiter().GetResult();
-            base.ExecuteBatchAsync("Add").GetAwaiter().GetResult();
+            await parser.ExecuteOperationAsync(base.ParseUri("ResetDb"), OeRequestHeaders.JsonDefault, null, new MemoryStream(), CancellationToken.None);
+            await base.ExecuteBatchAsync("Add");
         }
 
         public override async Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
@@ -47,24 +47,24 @@ namespace OdataToEntity.Test
         }
     }
 
-    public class ManyColumnsFixtureInitDb : DbFixture, IDisposable
+    public abstract class ManyColumnsFixtureInitDb : DbFixture, IDisposable
     {
         private bool _initialized;
         private int _queryCount;
 
-        public ManyColumnsFixtureInitDb()
+        protected ManyColumnsFixtureInitDb(bool allowCache, bool useRelationalNulls) : base(allowCache, useRelationalNulls)
         {
         }
 
-        public override void Initalize()
+        public async override Task Initalize()
         {
             if (_initialized)
                 return;
 
             _initialized = true;
             var parser = new OeParser(new Uri("http://dummy/"), base.OeDataAdapter, base.EdmModel);
-            parser.ExecuteOperationAsync(base.ParseUri("ResetManyColumns"), OeRequestHeaders.JsonDefault, null, new MemoryStream(), CancellationToken.None).GetAwaiter().GetResult();
-            base.ExecuteBatchAsync("ManyColumns").GetAwaiter().GetResult();
+            await parser.ExecuteOperationAsync(base.ParseUri("ResetManyColumns"), OeRequestHeaders.JsonDefault, null, new MemoryStream(), CancellationToken.None);
+            await base.ExecuteBatchAsync("ManyColumns");
         }
 
         public override async Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)

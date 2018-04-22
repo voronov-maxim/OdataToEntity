@@ -35,8 +35,8 @@
 
   <ItemGroup>
     <Compile Include="..\..\OdataToEntity.Test\Model\*.cs" Link="Model\%(FileName).cs" />
-    <Compile Include="..\..\OdataToEntity.Test.EfCore.SqlServer\SqlServerOrderContext.cs" Link="SqlServerOrderContext.cs" />
-    <Compile Include="..\..\OdataToEntity.Test.EfCore.SqlServer\OrderDbDataAdapter.cs" Link="OrderDbDataAdapter.cs" />
+    <Compile Include="..\..\OdataToEntity.Test\OrderDbDataAdapter.cs" Link="OrderDbDataAdapter.cs" />
+    <Compile Include="..\..\OdataToEntity.Test.EfCore.SqlServer\OrderContextOptions.cs" Link="OrderContextOptions.cs" />
   </ItemGroup>
 
   <ItemGroup>

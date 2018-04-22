@@ -6,14 +6,14 @@ using Xunit;
 
 namespace OdataToEntity.Test
 {
-    public sealed class ManyColumnsTest : IClassFixture<ManyColumnsFixtureInitDb>
+    public abstract class ManyColumnsTest 
     {
         private readonly ManyColumnsFixtureInitDb _fixture;
         private static readonly string _selectNames = String.Join(",", Enumerable.Range(1, 30).Select(i => "Column" + i.ToString("00")));
 
-        public ManyColumnsTest(ManyColumnsFixtureInitDb fixture)
+        protected ManyColumnsTest(ManyColumnsFixtureInitDb fixture)
         {
-            fixture.Initalize();
+            fixture.Initalize().GetAwaiter().GetResult();
             _fixture = fixture;
         }
 

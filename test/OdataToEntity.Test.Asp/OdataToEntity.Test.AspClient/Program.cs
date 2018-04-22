@@ -1,13 +1,23 @@
 ﻿using Microsoft.OData.Client;
 using ODataClient.Default;
-using ODataClient.OdataToEntity.Test.Model;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace OdataToEntity.Test.AspClient
 {
+    internal sealed class NC_PLNull : SelectTest
+    {
+        public NC_PLNull() : base(new DbFixtureInitDb())
+        {
+        }
+    }
+
+    internal sealed class NC_PLNull_ManyColumns : ManyColumnsTest
+    {
+        public NC_PLNull_ManyColumns() : base(new ManyColumnsFixtureInitDb())
+        {
+        }
+    }
+
     class Program
     {
         private static Container CreateContainer()
@@ -20,8 +30,8 @@ namespace OdataToEntity.Test.AspClient
             DbFixtureInitDb.ContainerFactory = CreateContainer;
 
             DbFixtureInitDb.RunTest(new BatchTest()).GetAwaiter().GetResult();
-            DbFixtureInitDb.RunTest(new SelectTest(new DbFixtureInitDb())).GetAwaiter().GetResult();
-            DbFixtureInitDb.RunTest(new ManyColumnsTest(new ManyColumnsFixtureInitDb())).GetAwaiter().GetResult();
+            DbFixtureInitDb.RunTest(new NC_PLNull()).GetAwaiter().GetResult();
+            DbFixtureInitDb.RunTest(new NC_PLNull_ManyColumns()).GetAwaiter().GetResult();
             DbFixtureInitDb.RunTest(new ProcedureTest()).GetAwaiter().GetResult();
 
             Console.WriteLine();

@@ -46,7 +46,11 @@ namespace OdataToEntity.Test
             }
         }
 
-        private sealed class SelectTestDefinitionFixture : DbFixtureInitDb
+#if !IGNORE_NC_PLNull
+        private sealed class SelectTestDefinitionFixture : NC_PLNull_DbFixtureInitDb
+#elif IGNORE_NC_PLNull && !IGNORE_NC_RDBNull
+        private sealed class SelectTestDefinitionFixture : NC_RDBNull_DbFixtureInitDb
+#endif
         {
             private readonly List<SelectTestDefinition> _selectTestDefinitions;
 
@@ -68,8 +72,9 @@ namespace OdataToEntity.Test
                 return Task.CompletedTask;
 
             }
-            public override void Initalize()
+            public override Task Initalize()
             {
+                return Task.CompletedTask;
             }
 
             public IReadOnlyList<SelectTestDefinition> SelectTestDefinitions => _selectTestDefinitions;
@@ -88,7 +93,11 @@ namespace OdataToEntity.Test
         public static SelectTestDefinition[] GetSelectTestDefinitions()
         {
             var fixture = new SelectTestDefinitionFixture();
-            var selectTest = new SelectTest(fixture);
+#if !IGNORE_NC_PLNull
+            var selectTest = new NC_PLNull(fixture);
+#elif IGNORE_NC_PLNull && !IGNORE_NC_RDBNull
+            var selectTest = new NC_RDBNull(fixture);
+#endif
 
             var methodNames = new List<String>();
             foreach (MethodInfo methodInfo in selectTest.GetType().GetMethods().Where(m => m.GetCustomAttributes(typeof(FactAttribute), false).Count() == 1))
@@ -167,7 +176,7 @@ namespace OdataToEntity.Test
 
             SelectTestDefinition[] requestMethodNames = SelectTestDefinition.GetSelectTestDefinitions();
 
-            var fixture = new DbFixtureInitDb();
+            var fixture = new NC_RDBNull_DbFixtureInitDb();
             var parser = new OeGetParser(fixture.OeDataAdapter, fixture.EdmModel);
             for (int i = 0; i < requestMethodNames.Length; i++)
             {
@@ -188,7 +197,7 @@ namespace OdataToEntity.Test
             SelectTestDefinition[] requestMethodNames = SelectTestDefinition.GetSelectTestDefinitions();
             requestMethodNames = requestMethodNames.Where(t => t.MethodName == "FilterEnum" || t.MethodName == "FilterEnumNull").ToArray();
 
-            var fixture = new DbFixtureInitDb();
+            var fixture = new NC_RDBNull_DbFixtureInitDb();
             var parser = new OeGetParser(fixture.OeDataAdapter, fixture.EdmModel);
             for (int i = 0; i < requestMethodNames.Length; i++)
             {

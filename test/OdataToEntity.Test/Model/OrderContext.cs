@@ -10,6 +10,8 @@ namespace OdataToEntity.Test.Model
     {
         public OrderContext(DbContextOptions options) : base(options)
         {
+            base.ChangeTracker.AutoDetectChangesEnabled = false;
+            base.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
         }
 
         protected override void OnModelCreating(Microsoft.EntityFrameworkCore.ModelBuilder modelBuilder)
@@ -17,6 +19,7 @@ namespace OdataToEntity.Test.Model
             modelBuilder.Entity<Customer>().HasKey(c => new { c.Country, c.Id });
             base.OnModelCreating(modelBuilder);
         }
+        public static String GenerateDatabaseName() => Guid.NewGuid().ToString();
 
         [Description("dbo.GetOrders")]
         public IEnumerable<Order> GetOrders(int? id, String name, OrderStatus? status)

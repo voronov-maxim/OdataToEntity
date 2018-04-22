@@ -31,7 +31,7 @@ namespace OdataToEntity.Test.AspClient
         public async Task Add()
         {
             var fixture = new DbFixtureInitDb(true);
-            fixture.Initalize();
+            await fixture.Initalize();
 
             Container container = DbFixtureInitDb.CreateContainer(0);
             Add(container);
@@ -327,7 +327,7 @@ namespace OdataToEntity.Test.AspClient
         public async Task Delete()
         {
             var fixture = new DbFixtureInitDb();
-            fixture.Initalize();
+            await fixture.Initalize();
 
             Container container = DbFixtureInitDb.CreateContainer(0);
             Delete(container);
@@ -381,7 +381,7 @@ namespace OdataToEntity.Test.AspClient
         public async Task Update()
         {
             var fixture = new DbFixtureInitDb();
-            fixture.Initalize();
+            await fixture.Initalize();
 
             Container container = DbFixtureInitDb.CreateContainer(0);
             await Update(container);

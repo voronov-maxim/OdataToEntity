@@ -20,16 +20,16 @@ namespace OdataToEntity.Test.WcfService
             public ServiceInstanceProvider(OdataWcfServiceBehaviorAttribute odataWcfServiceBehavior)
             {
                 _odataWcfServiceBehavior = odataWcfServiceBehavior;
-                var args = new Object[] { Model.OrderContext.GenerateDatabaseName() };
+                var args = new Object[] { true, true, null };
                 _dataAdapter = (OeDataAdapter)Activator.CreateInstance(odataWcfServiceBehavior._dataAdapterType, args);
                 _edmModel = _dataAdapter.BuildEdmModel();
             }
 
-            public object GetInstance(InstanceContext instanceContext)
+            public Object GetInstance(InstanceContext instanceContext)
             {
                 return _odataWcfServiceBehavior.CreateOdataWcfService(_dataAdapter, _edmModel);
             }
-            public object GetInstance(InstanceContext instanceContext, Message message)
+            public Object GetInstance(InstanceContext instanceContext, Message message)
             {
                 return _odataWcfServiceBehavior.CreateOdataWcfService(_dataAdapter, _edmModel);
             }

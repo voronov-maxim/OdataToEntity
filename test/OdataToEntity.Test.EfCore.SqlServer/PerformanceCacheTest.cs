@@ -18,7 +18,7 @@ namespace OdataToEntity.Test.EfCore.SqlServer
 
             //warming-up
             foreach (SelectTestDefinition testDefinition in testDefinitions)
-                using (var dbContext = OrderContext.Create("dummy"))
+                using (var dbContext = new OrderContext(OrderContextOptions.Create(true, null)))
                     testDefinition.ExecutorDb(dbContext);
 
             PerformanceCacheOeTest(testDefinitions, testCount, true);
@@ -27,7 +27,7 @@ namespace OdataToEntity.Test.EfCore.SqlServer
         }
         private static void PerformanceCacheDbTest(SelectTestDefinition[] testDefinitions, int testCount)
         {
-            var pool = new DbContextPool<OrderContext>(OrderContext.CreateOptions());
+            var pool = new DbContextPool<OrderContext>(OrderContextOptions.Create(true, null));
 
             GC.Collect();
             GC.WaitForPendingFinalizers();
@@ -45,9 +45,9 @@ namespace OdataToEntity.Test.EfCore.SqlServer
             stopWatch.Stop();
             Console.WriteLine("Entity Framework " + stopWatch.Elapsed);
         }
-        private static void PerformanceCacheOeTest(SelectTestDefinition[] testDefinitions, int testCount, bool cache)
+        private static void PerformanceCacheOeTest(SelectTestDefinition[] testDefinitions, int testCount, bool allowCache)
         {
-            var dataAdapter = new OeEfCoreDataAdapter<OrderContext>(OrderContext.CreateOptions(), new OeQueryCache() { AllowCache = cache });
+            var dataAdapter = new OeEfCoreDataAdapter<OrderContext>(OrderContextOptions.Create(true, null), new OeQueryCache(allowCache));
             IEdmModel edmModel = dataAdapter.BuildEdmModel();
             var parser = new OeParser(new Uri("http://dummy"), dataAdapter, edmModel);
 
@@ -65,7 +65,7 @@ namespace OdataToEntity.Test.EfCore.SqlServer
                         parser.ExecuteGetAsync(uri, OeRequestHeaders.JsonDefault, response, CancellationToken.None).GetAwaiter().GetResult();
                 }
             stopWatch.Stop();
-            Console.WriteLine("OdataToEntity cache = " + cache + " " + stopWatch.Elapsed);
+            Console.WriteLine("OdataToEntity cache = " + allowCache + " " + stopWatch.Elapsed);
         }
     }
 }

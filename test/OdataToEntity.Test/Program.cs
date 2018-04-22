@@ -7,11 +7,7 @@ namespace OdataToEntity.Test
     {
         static void Main(string[] args)
         {
-            //new BatchTest().Add().Wait();
-            Console.WriteLine();
-            new SelectTest(new DbFixtureInitDb()).FilterStringLe(1).Wait();
-
-            Console.ReadLine();
+            //new NC_PLNull(new NC_PLNull_DbFixtureInitDb()).Table(0).GetAwaiter().GetResult();
         }
     }
 }

@@ -45,7 +45,7 @@ namespace OdataToEntity.Test
             EdmModel ethalonEdmModel = ethalonDataAdapter.BuildEdmModel();
             String ethalonSchema = TestHelper.GetCsdlSchema(ethalonEdmModel);
 
-            var testDataAdapter = new OeEf6DataAdapter<OrderEf6Context>();
+            var testDataAdapter = new OrderOeDataAdapter(false, false, null);
             EdmModel testEdmModel = BuildEdmModelFromEf6Model(testDataAdapter);
             String testSchema = TestHelper.GetCsdlSchema(testEdmModel);
 

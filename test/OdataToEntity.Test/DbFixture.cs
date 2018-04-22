@@ -2,8 +2,6 @@
 using Microsoft.OData;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
-using OdataToEntity.Db;
-using OdataToEntity.Test.Model;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -21,19 +19,22 @@ namespace OdataToEntity.Test
         private readonly String _databaseName;
         private readonly EdmModel _edmModel;
         private readonly OrderOeDataAdapter _oeDataAdapter;
+        private readonly bool _useRelationalNulls;
 
-        public DbFixture()
+        public DbFixture(bool allowCache, bool useRelationalNulls)
         {
-            _databaseName = OrderContext.GenerateDatabaseName();
-            _dbDataAdapter = new OrderDbDataAdapter(_databaseName);
-            _oeDataAdapter = new OrderOeDataAdapter(_databaseName);
+            _useRelationalNulls = useRelationalNulls;
+
+            _databaseName = Model.OrderContext.GenerateDatabaseName();
+            _dbDataAdapter = new OrderDbDataAdapter(allowCache, useRelationalNulls, _databaseName);
+            _oeDataAdapter = new OrderOeDataAdapter(allowCache, useRelationalNulls, _databaseName);
 
             _edmModel = OeDataAdapter.BuildEdmModel();
         }
 
-        public OrderContext CreateContext()
+        public Model.OrderContext CreateContext()
         {
-            return OrderContext.Create(_databaseName);
+            return new Model.OrderContext(Model.OrderContextOptions.Create(_useRelationalNulls, _databaseName));
         }
         public virtual async Task Execute<T, TResult>(QueryParametersScalar<T, TResult> parameters)
         {
@@ -118,7 +119,7 @@ namespace OdataToEntity.Test
 
             return fromOe;
         }
-        public abstract void Initalize();
+        public abstract Task Initalize();
         public ODataUri ParseUri(String requestRelativeUri)
         {
             var baseUri = new Uri("http://dummy/");

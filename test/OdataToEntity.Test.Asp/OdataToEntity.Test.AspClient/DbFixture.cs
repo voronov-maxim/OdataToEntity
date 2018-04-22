@@ -13,13 +13,12 @@ using Xunit;
 
 namespace OdataToEntity.Test
 {
-    public partial class DbFixtureInitDb
+    public class DbFixtureInitDb
     {
         private delegate IList ExecuteQueryFunc<out T>(IQueryable query, Expression expression);
         private delegate Task<IList> ExecuteQueryFuncAsync<out T>(IQueryable query, Expression expression, IReadOnlyList<LambdaExpression> navigationPropertyAccessors);
 
         private readonly bool _clear;
-        private String _databaseName;
 
         public DbFixtureInitDb(bool clear = false)
         {
@@ -45,13 +44,12 @@ namespace OdataToEntity.Test
             var execFuncType = execFunc.GetType().GetGenericTypeDefinition().MakeGenericType(elementType);
             return (ExecuteQueryFuncAsync<Object>)execMethodInfo.CreateDelegate(execFuncType);
         }
-        partial void DbInit(String databaseName, bool clear);
         public async virtual Task Execute<T, TResult>(QueryParametersScalar<T, TResult> parameters)
         {
             IList fromOe = await ExecuteOe<T, TResult>(parameters.Expression, 0);
             IList fromDb;
-            using (var dataContext = OrderContext.Create(_databaseName))
-                fromDb = TestHelper.ExecuteDb<T, TResult>(dataContext, parameters.Expression);
+            using (var dataContext = new OrderContext(OrderContextOptions.Create(true, null)))
+                fromDb = TestHelper.ExecuteDb(dataContext, parameters.Expression);
 
             TestHelper.Compare(fromDb, fromOe, null);
         }
@@ -63,9 +61,9 @@ namespace OdataToEntity.Test
                 fromOe = TestHelper.ToOpenType(fromOe);
 
             IList fromDb;
-            using (var dataContext = OrderContext.Create(_databaseName))
+            using (var dataContext = new OrderContext(OrderContextOptions.Create(true, null)))
             {
-                fromDb = TestHelper.ExecuteDb<T, TResult>(dataContext, parameters.Expression, out IReadOnlyList<IncludeVisitor.Include> includesDb);
+                fromDb = TestHelper.ExecuteDb(dataContext, parameters.Expression, out IReadOnlyList<IncludeVisitor.Include> includesDb);
                 includes.AddRange(includesDb);
             }
 
@@ -169,10 +167,17 @@ namespace OdataToEntity.Test
 
             throw new InvalidOperationException("unknown type " + typeof(T).Name);
         }
-        public virtual void Initalize()
+        public async Task Initalize()
         {
-            _databaseName = OrderContext.GenerateDatabaseName();
-            DbInit(_databaseName, _clear);
+            Container container = CreateContainer(0);
+            await container.ResetDb().ExecuteAsync();
+            await container.ResetManyColumns().ExecuteAsync();
+
+            if (!_clear)
+            {
+                AspClient.BatchTest.Add(container);
+                await container.SaveChangesAsync(SaveChangesOptions.BatchWithSingleChangeset);
+            }
         }
         internal async static Task RunTest<T>(T testClass)
         {
@@ -230,4 +235,9 @@ namespace OdataToEntity.Test
             set;
         }
     }
+
+    public sealed class ManyColumnsFixtureInitDb : DbFixtureInitDb
+    {
+    }
+
 }

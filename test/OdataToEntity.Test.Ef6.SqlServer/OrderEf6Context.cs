@@ -12,9 +12,12 @@ namespace OdataToEntity.Test.Ef6.SqlServer
         {
             Database.SetInitializer<OrderEf6Context>(null);
         }
-        public OrderEf6Context() : base(@"Server=.\sqlexpress;Initial Catalog=OdataToEntity;Trusted_Connection=Yes;")
+        public OrderEf6Context(bool useRelationalNulls) : base(@"Server=.\sqlexpress;Initial Catalog=OdataToEntity;Trusted_Connection=Yes;")
         {
-            base.Configuration.UseDatabaseNullSemantics = true;
+            base.Configuration.AutoDetectChangesEnabled = false;
+            base.Configuration.LazyLoadingEnabled = false;
+            base.Configuration.ProxyCreationEnabled = false;
+            base.Configuration.UseDatabaseNullSemantics = useRelationalNulls;
         }
 
         public DbSet<Category> Categories { get; set; }

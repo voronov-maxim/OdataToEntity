@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Threading.Tasks;
 
 namespace OdataToEntity.Test
 {
@@ -6,13 +6,17 @@ namespace OdataToEntity.Test
     {
         private bool _initialized;
 
-        public override void Initalize()
+        protected DbFixtureInitDb(bool allowCache, bool useRelationalNulls) : base(allowCache, useRelationalNulls)
+        {
+        }
+
+        public async override Task Initalize()
         {
             if (_initialized)
                 return;
 
             _initialized = true;
-            base.ExecuteBatchAsync("Add").GetAwaiter().GetResult();
+            await base.ExecuteBatchAsync("Add");
         }
     }
 
@@ -20,13 +24,17 @@ namespace OdataToEntity.Test
     {
         private bool _initialized;
 
-        public override void Initalize()
+        protected ManyColumnsFixtureInitDb(bool allowCache, bool useRelationalNulls) : base(allowCache, useRelationalNulls)
+        {
+        }
+
+        public async override Task Initalize()
         {
             if (_initialized)
                 return;
 
             _initialized = true;
-            base.ExecuteBatchAsync("ManyColumns").GetAwaiter().GetResult();
+            await base.ExecuteBatchAsync("ManyColumns");
         }
     }
 }

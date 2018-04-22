@@ -7,30 +7,31 @@ namespace OdataToEntity.Test
 {
     public sealed class OrderDbDataAdapter : OeEfCoreDataAdapter<Model.OrderContext>
     {
-        private String _databaseName;
+        private readonly bool _useRelationalNulls;
 
-        public OrderDbDataAdapter(String databaseName)
+        public OrderDbDataAdapter(bool allowCache, bool useRelationalNulls, String databaseName) : base(new Db.OeQueryCache(allowCache))
         {
-            _databaseName = databaseName;
+            _useRelationalNulls = useRelationalNulls;
         }
 
         public override Object CreateDataContext()
         {
-            return Model.OrderContext.Create(_databaseName);
-        }
-        public void ResetDatabase()
-        {
-            _databaseName = Model.OrderContext.GenerateDatabaseName();
+            return new Model.OrderContext(Model.OrderContextOptions.Create(_useRelationalNulls, null));
         }
     }
 
     public sealed class OrderOeDataAdapter : OeEf6DataAdapter<OrderEf6Context>
     {
-        private String _databaseName;
+        private readonly bool _useRelationalNulls;
 
-        public OrderOeDataAdapter(String databaseName)
+        public OrderOeDataAdapter(bool allowCache, bool useRelationalNulls, String databaseName) : base(new Db.OeQueryCache(allowCache))
         {
-            _databaseName = databaseName;
+            _useRelationalNulls = useRelationalNulls;
+        }
+
+        public override Object CreateDataContext()
+        {
+            return new OrderEf6Context(_useRelationalNulls);
         }
 
         public new Db.OeQueryCache QueryCache => base.QueryCache;

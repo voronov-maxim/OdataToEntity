@@ -6,35 +6,17 @@ namespace OdataToEntity.Test
 {
     public sealed class OrderDbDataAdapter : OeEfCoreDataAdapter<Model.OrderContext>
     {
-        private String _databaseName;
-
-        public OrderDbDataAdapter(String databaseName)
+        public OrderDbDataAdapter(bool allowCache, bool useRelationalNulls, String databaseName) :
+            base(Model.OrderContextOptions.Create(useRelationalNulls, ""), new Db.OeQueryCache(allowCache))
         {
-            _databaseName = databaseName;
-        }
-
-        public override Object CreateDataContext()
-        {
-            return Model.OrderContext.Create(_databaseName);
-        }
-        public void ResetDatabase()
-        {
-            _databaseName = Model.OrderContext.GenerateDatabaseName();
         }
     }
 
     public sealed partial class OrderOeDataAdapter : OeEfCorePostgreSqlDataAdapter<Model.OrderContext>
     {
-        private String _databaseName;
-
-        public OrderOeDataAdapter(String databaseName) : base(Model.OrderContext.CreateOptions(), new Db.OeQueryCache())
+        public OrderOeDataAdapter(bool allowCache, bool useRelationalNulls, String databaseName) :
+            base(Model.OrderContextOptions.Create(useRelationalNulls, null), new Db.OeQueryCache(allowCache))
         {
-            _databaseName = databaseName;
-        }
-
-        public void ResetDatabase()
-        {
-            _databaseName = Model.OrderContext.GenerateDatabaseName();
         }
 
         public new Db.OeQueryCache QueryCache => base.QueryCache;

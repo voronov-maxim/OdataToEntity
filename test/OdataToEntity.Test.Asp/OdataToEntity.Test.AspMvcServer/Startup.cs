@@ -27,7 +27,7 @@ namespace OdataToEntity.Test.AspMvcServer
         {
             services.AddMvcCore();
 
-            var dataAdapter = new OrderOeDataAdapter(Model.OrderContext.GenerateDatabaseName());
+            var dataAdapter = new OrderOeDataAdapter(true, true, null);
             services.AddOdataToEntity(dataAdapter, dataAdapter.BuildEdmModelFromEfCoreModel());
         }
 

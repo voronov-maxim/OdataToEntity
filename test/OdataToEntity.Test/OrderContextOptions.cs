@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace OdataToEntity.Test.Model
 {
-    public sealed partial class OrderContext : DbContext
+    internal static class OrderContextOptions
     {
         private sealed class ZStateManager : StateManager
         {
@@ -39,17 +39,12 @@ namespace OdataToEntity.Test.Model
 
         }
 
-        public static OrderContext Create(String databaseName)
+        public static DbContextOptions Create(bool useRelationalNulls, String databaseName)
         {
             var optionsBuilder = new DbContextOptionsBuilder<OrderContext>();
             optionsBuilder.UseInMemoryDatabase(databaseName);
             optionsBuilder.ReplaceService<IStateManager, ZStateManager>();
-
-            return new OrderContext(optionsBuilder.Options);
-        }
-        public static String GenerateDatabaseName()
-        {
-            return Guid.NewGuid().ToString();
+            return optionsBuilder.Options;
         }
     }
 }
