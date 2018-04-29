@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace OdataToEntity.Parsers
 {
-    public sealed class OeBatchParser
+    public readonly struct OeBatchParser
     {
         private readonly Uri _baseUri;
         private readonly IEdmModel _model;
@@ -21,19 +21,19 @@ namespace OdataToEntity.Parsers
             _model = model;
         }
 
-        private void AddToEntitySet(Object dataContext, OeOperationMessage operation)
+        private void AddToEntitySet(Object dataContext, in OeOperationMessage operation)
         {
-            Db.OeEntitySetAdapter entitySetAdapter = _dataAdapter.GetEntitySetAdapter(operation.EntityItem.EntitySet.Name);
+            Db.OeEntitySetAdapter entitySetAdapter = _dataAdapter.EntitySetAdapters.FindByEntitySetName(operation.EntitySet.Name);
             switch (operation.Method)
             {
                 case ODataConstants.MethodDelete:
-                    entitySetAdapter.RemoveEntity(dataContext, operation.EntityItem.Entry);
+                    entitySetAdapter.RemoveEntity(dataContext, operation.Entry);
                     break;
                 case ODataConstants.MethodPatch:
-                    entitySetAdapter.AttachEntity(dataContext, operation.EntityItem.Entry);
+                    entitySetAdapter.AttachEntity(dataContext, operation.Entry);
                     break;
                 case ODataConstants.MethodPost:
-                    entitySetAdapter.AddEntity(dataContext, operation.EntityItem.Entry);
+                    entitySetAdapter.AddEntity(dataContext, operation.Entry);
                     break;
                 default:
                     throw new NotImplementedException(operation.Method);
@@ -42,10 +42,10 @@ namespace OdataToEntity.Parsers
         public async Task ExecuteAsync(Stream requestStream, Stream responseStream, String contentType, CancellationToken cancellationToken)
         {
             OeBatchMessage batchMessage = OeBatchMessage.CreateBatchMessage(_model, _baseUri, requestStream, contentType);
-            if (batchMessage.Changeset != null)
-                await ExecuteChangeset(batchMessage.Changeset, cancellationToken).ConfigureAwait(false);
-            else if (batchMessage.Operation != null)
+            if (batchMessage.Changeset == null)
                 await ExecuteOperation(batchMessage.Operation, cancellationToken).ConfigureAwait(false);
+            else
+                await ExecuteChangeset(batchMessage.Changeset, cancellationToken).ConfigureAwait(false);
 
             var batchWriter = new Writers.OeBatchWriter(_model, _baseUri);
             batchWriter.Write(responseStream, batchMessage);

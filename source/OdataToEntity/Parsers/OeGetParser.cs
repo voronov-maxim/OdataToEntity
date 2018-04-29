@@ -11,10 +11,10 @@ using System.Threading.Tasks;
 
 namespace OdataToEntity
 {
-    public struct OeGetParser
+    public readonly struct OeGetParser
     {
-        private readonly IEdmModel _edmModel;
         private readonly Db.OeDataAdapter _dataAdapter;
+        private readonly IEdmModel _edmModel;
 
         public OeGetParser(Db.OeDataAdapter dataAdapter, IEdmModel model)
         {
@@ -96,10 +96,10 @@ namespace OdataToEntity
 
             var entitySetSegment = (EntitySetSegment)odataUri.Path.FirstSegment;
             IEdmEntitySet entitySet = entitySetSegment.EntitySet;
-            Db.OeEntitySetAdapter entitySetAdapter = _dataAdapter.GetEntitySetAdapter(entitySet.Name);
+            Db.OeEntitySetAdapter entitySetAdapter = _dataAdapter.EntitySetAdapters.FindByEntitySetName(entitySet.Name);
             bool isCountSegment = odataUri.Path.LastSegment is CountSegment;
             return new OeQueryContext(_edmModel, odataUri, entitySet, navigationSegments,
-                isCountSegment, pageSize, navigationNextLink, _dataAdapter.IsDatabaseNullHighestValue, metadataLevel, ref entitySetAdapter);
+                isCountSegment, pageSize, navigationNextLink, _dataAdapter.IsDatabaseNullHighestValue, metadataLevel, entitySetAdapter);
         }
         public async Task ExecuteAsync(ODataUri odataUri, OeRequestHeaders headers, Stream stream, CancellationToken cancellationToken)
         {

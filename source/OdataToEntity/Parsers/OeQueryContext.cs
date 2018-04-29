@@ -75,7 +75,7 @@ namespace OdataToEntity.Parsers
         internal OeQueryContext(IEdmModel edmModel, ODataUri odataUri,
             IEdmEntitySet entitySet, IReadOnlyList<OeParseNavigationSegment> parseNavigationSegments,
             bool isCountSegment, int pageSize, bool navigationNextLink, bool isDatabaseNullHighestValue,
-            OeMetadataLevel metadataLevel, ref Db.OeEntitySetAdapter entitySetAdapter)
+            OeMetadataLevel metadataLevel, Db.OeEntitySetAdapter entitySetAdapter)
         {
             EntitySetAdapter = entitySetAdapter;
             EdmModel = edmModel;
@@ -94,8 +94,14 @@ namespace OdataToEntity.Parsers
             }
         }
 
-        public OeCacheContext CreateCacheContext() => new OeCacheContext(this);
-        public OeCacheContext CreateCacheContext(IReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition> constantToParameterMapper) => new OeCacheContext(this, constantToParameterMapper);
+        public OeCacheContext CreateCacheContext()
+        {
+            return new OeCacheContext(this);
+        }
+        public OeCacheContext CreateCacheContext(IReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition> constantToParameterMapper)
+        {
+            return new OeCacheContext(this, constantToParameterMapper);
+        }
         public static MethodCallExpression CreateCountExpression(Expression expression)
         {
             var filterVisitor = new FilterVisitor();
@@ -113,13 +119,7 @@ namespace OdataToEntity.Parsers
         {
             IEdmEntitySet entitySet = EntitySet;
             if (expressionBuilder.EntityType != EntitySetAdapter.EntityType)
-            {
-                String typeName = expressionBuilder.EntityType.FullName;
-                Db.OeDataAdapter dataAdapter = EntitySetAdapter.DataAdapter;
-                Db.OeEntitySetMetaAdapter entitySetMetaAdapter = dataAdapter.EntitySetMetaAdapters.FindByTypeName(typeName);
-                if (entitySetMetaAdapter != null)
-                    entitySet = EdmModel.FindDeclaredEntitySet(entitySetMetaAdapter.EntitySetName);
-            }
+                entitySet = OeEdmClrHelper.GetEntitySet(EdmModel, expressionBuilder.EntityType);
 
             return expressionBuilder.CreateEntryFactory(entitySet);
         }

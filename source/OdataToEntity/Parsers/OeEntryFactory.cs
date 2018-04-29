@@ -41,11 +41,10 @@ namespace OdataToEntity.Parsers
             var odataProperties = new ODataProperty[Accessors.Length];
             for (int i = 0; i < Accessors.Length; i++)
             {
-                OePropertyAccessor accessor = Accessors[i];
-                Object value = accessor.Accessor(entity);
+                Object value = Accessors[i].GetValue(entity);
                 ODataValue odataValue = OeEdmClrHelper.CreateODataValue(value);
-                odataValue.TypeAnnotation = accessor.TypeAnnotation;
-                odataProperties[i] = new ODataProperty() { Name = accessor.Name, Value = odataValue };
+                odataValue.TypeAnnotation = Accessors[i].TypeAnnotation;
+                odataProperties[i] = new ODataProperty() { Name = Accessors[i].EdmProperty.Name, Value = odataValue };
             }
 
             return new ODataResource

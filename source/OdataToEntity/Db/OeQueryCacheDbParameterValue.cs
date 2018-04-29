@@ -2,7 +2,7 @@
 
 namespace OdataToEntity.Db
 {
-    public struct OeQueryCacheDbParameterValue
+    public readonly struct OeQueryCacheDbParameterValue
     {
         public OeQueryCacheDbParameterValue(String parameterName, Object parameterValue)
         {

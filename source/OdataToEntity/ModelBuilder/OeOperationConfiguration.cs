@@ -48,18 +48,15 @@ namespace OdataToEntity.ModelBuilder
         public Type ReturnType => _returnType;
     }
 
-    public struct OeOperationParameterConfiguration
+    public readonly struct OeOperationParameterConfiguration
     {
-        private readonly Type _clrType;
-        private readonly String _name;
-
         public OeOperationParameterConfiguration(String name, Type clrType)
         {
-            _name = name;
-            _clrType = clrType;
+            Name = name;
+            ClrType = clrType;
         }
 
-        public Type ClrType => _clrType;
-        public String Name => _name;
+        public Type ClrType { get; }
+        public String Name { get; }
     }
 }

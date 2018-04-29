@@ -31,7 +31,7 @@ namespace OdataToEntity.Test
                 await parser.ExecutePostAsync(requestUri, OeRequestHeaders.JsonDefault, requestStream, responseStream, CancellationToken.None);
             }
 
-            var reader = new ResponseReader(fixture.EdmModel, fixture.DbDataAdapter.EntitySetMetaAdapters);
+            var reader = new ResponseReader(fixture.EdmModel, fixture.DbDataAdapter);
             responseStream.Position = 0;
             T[] fromOe;
             if (typeof(T) == typeof(int))

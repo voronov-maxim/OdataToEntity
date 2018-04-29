@@ -28,7 +28,7 @@ namespace OdataToEntity.EfCore
 
     public class OeEfCoreDataAdapter<T> : Db.OeDataAdapter where T : DbContext
     {
-        private sealed class DbSetAdapterImpl<TEntity> : Db.OeEntitySetMetaAdapter, IFromSql where TEntity : class
+        private sealed class DbSetAdapterImpl<TEntity> : Db.OeEntitySetAdapter, IFromSql where TEntity : class
         {
             private IEntityType _entityType;
             private readonly Func<T, DbSet<TEntity>> _getEntitySet;
@@ -177,7 +177,7 @@ namespace OdataToEntity.EfCore
         }
 
         private readonly DbContextPool<T> _dbContextPool;
-        protected readonly static Db.OeEntitySetMetaAdapterCollection _entitySetMetaAdapters = CreateEntitySetMetaAdapters();
+        protected readonly static Db.OeEntitySetAdapterCollection _entitySetAdapters = CreateEntitySetAdapters();
 
         public OeEfCoreDataAdapter() : this(null, null)
         {
@@ -189,7 +189,7 @@ namespace OdataToEntity.EfCore
         {
         }
         public OeEfCoreDataAdapter(DbContextOptions options, Db.OeQueryCache queryCache)
-            : this(options, queryCache, new OeEfCoreOperationAdapter(typeof(T), _entitySetMetaAdapters))
+            : this(options, queryCache, new OeEfCoreOperationAdapter(typeof(T), _entitySetAdapters))
         {
         }
         public OeEfCoreDataAdapter(DbContextOptions options, Db.OeQueryCache queryCache, OeEfCoreOperationAdapter operationAdapter)
@@ -219,26 +219,26 @@ namespace OdataToEntity.EfCore
             dbContext.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
             return dbContext;
         }
-        private static Db.OeEntitySetMetaAdapterCollection CreateEntitySetMetaAdapters()
+        private static Db.OeEntitySetAdapterCollection CreateEntitySetAdapters()
         {
-            var entitySetMetaAdapters = new List<Db.OeEntitySetMetaAdapter>();
+            var entitySetAdapters = new List<Db.OeEntitySetAdapter>();
             foreach (PropertyInfo property in typeof(T).GetProperties())
             {
                 Type dbSetType = property.PropertyType.GetInterface(typeof(IQueryable<>).FullName);
                 if (dbSetType != null)
-                    entitySetMetaAdapters.Add(CreateDbSetInvoker(property, dbSetType));
+                    entitySetAdapters.Add(CreateEntitySetAdapter(property, dbSetType));
             }
 
-            return new Db.OeEntitySetMetaAdapterCollection(entitySetMetaAdapters.ToArray(), new ModelBuilder.OeEdmModelMetadataProvider());
+            return new Db.OeEntitySetAdapterCollection(entitySetAdapters.ToArray(), new ModelBuilder.OeEdmModelMetadataProvider());
         }
-        private static Db.OeEntitySetMetaAdapter CreateDbSetInvoker(PropertyInfo property, Type dbSetType)
+        private static Db.OeEntitySetAdapter CreateEntitySetAdapter(PropertyInfo property, Type dbSetType)
         {
-            MethodInfo mi = ((Func<PropertyInfo, Db.OeEntitySetMetaAdapter>)CreateDbSetInvoker<Object>).GetMethodInfo().GetGenericMethodDefinition();
+            MethodInfo mi = ((Func<PropertyInfo, Db.OeEntitySetAdapter>)CreateDbSetInvoker<Object>).GetMethodInfo().GetGenericMethodDefinition();
             Type entityType = dbSetType.GetGenericArguments()[0];
             MethodInfo func = mi.GetGenericMethodDefinition().MakeGenericMethod(entityType);
-            return (Db.OeEntitySetMetaAdapter)func.Invoke(null, new Object[] { property });
+            return (Db.OeEntitySetAdapter)func.Invoke(null, new Object[] { property });
         }
-        private static Db.OeEntitySetMetaAdapter CreateDbSetInvoker<TEntity>(PropertyInfo property) where TEntity : class
+        private static Db.OeEntitySetAdapter CreateDbSetInvoker<TEntity>(PropertyInfo property) where TEntity : class
         {
             var getDbSet = (Func<T, DbSet<TEntity>>)property.GetGetMethod().CreateDelegate(typeof(Func<T, DbSet<TEntity>>));
             return new DbSetAdapterImpl<TEntity>(getDbSet, property.Name);
@@ -277,10 +277,6 @@ namespace OdataToEntity.EfCore
             IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dataContext);
             Expression expression = queryContext.CreateExpression(new OeConstantToVariableVisitor());
             return query.Provider.Execute<TResult>(OeQueryContext.TranslateSource(query.Expression, expression));
-        }
-        public override Db.OeEntitySetAdapter GetEntitySetAdapter(String entitySetName)
-        {
-            return new Db.OeEntitySetAdapter(_entitySetMetaAdapters.FindByEntitySetName(entitySetName), this);
         }
         private static IAsyncEnumerable<TResult> GetFromCache<TResult>(OeQueryContext queryContext, T dbContext, Db.OeQueryCache queryCache,
             out MethodCallExpression countExpression)
@@ -335,6 +331,6 @@ namespace OdataToEntity.EfCore
             return dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        public sealed override Db.OeEntitySetMetaAdapterCollection EntitySetMetaAdapters => _entitySetMetaAdapters;
+        public sealed override Db.OeEntitySetAdapterCollection EntitySetAdapters => _entitySetAdapters;
     }
 }

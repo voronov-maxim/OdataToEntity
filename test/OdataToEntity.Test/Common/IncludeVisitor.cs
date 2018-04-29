@@ -10,18 +10,18 @@ namespace OdataToEntity.Test
 {
     internal sealed class IncludeVisitor : ExpressionVisitor
     {
-        public struct Include
+        public readonly struct Include
         {
-            public readonly Func<IEnumerable, IList> Filter;
-            public readonly bool IsSelect;
-            public readonly PropertyInfo Property;
-
             public Include(PropertyInfo property, Func<IEnumerable, IList> filter, bool isSelect)
             {
                 Property = property;
                 Filter = filter;
                 IsSelect = isSelect;
             }
+
+            public Func<IEnumerable, IList> Filter { get; }
+            public bool IsSelect { get; }
+            public PropertyInfo Property { get; }
         }
 
         private sealed class NewVisitor : ExpressionVisitor

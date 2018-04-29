@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace OdataToEntity.Parsers
 {
-    public struct OeParseNavigationSegment
+    public readonly struct OeParseNavigationSegment
     {
         public OeParseNavigationSegment(NavigationPropertySegment navigationSegment, FilterClause filter)
         {

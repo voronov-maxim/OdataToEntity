@@ -72,8 +72,8 @@ namespace OdataToEntity.AspNetCore
             for (int i = 0; i < accessors.Length; i++)
             {
                 OePropertyAccessor accessor = accessors[i];
-                Object value = accessor.Accessor(tuple);
-                clrType.GetProperty(accessor.Name).SetValue(entity, value);
+                Object value = accessor.GetValue(tuple);
+                clrType.GetProperty(accessor.EdmProperty.Name).SetValue(entity, value);
             }
             return entity;
         }
@@ -140,7 +140,7 @@ namespace OdataToEntity.AspNetCore
             while (orderByClause != null)
             {
                 var propertyExpression = (MemberExpression)visitor.TranslateNode(orderByClause.Expression);
-                Object orderValue = _skipTokenParser.Accessors[i++].Accessor(value);
+                Object orderValue = _skipTokenParser.Accessors[i++].GetValue(value);
                 setPropertyValueVisitor.SetPropertyValue(entity, propertyExpression, orderValue);
 
                 orderByClause = orderByClause.ThenBy;

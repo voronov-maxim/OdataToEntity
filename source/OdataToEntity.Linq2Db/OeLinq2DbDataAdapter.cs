@@ -58,7 +58,7 @@ namespace OdataToEntity.Linq2Db
             }
         }
 
-        private sealed class TableAdapterImpl<TEntity> : Db.OeEntitySetMetaAdapter where TEntity : class
+        private sealed class TableAdapterImpl<TEntity> : Db.OeEntitySetAdapter where TEntity : class
         {
             private readonly String _entitySetName;
             private readonly Func<T, ITable<TEntity>> _getEntitySet;
@@ -100,7 +100,7 @@ namespace OdataToEntity.Linq2Db
             public override String EntitySetName => _entitySetName;
         }
 
-        private readonly static Db.OeEntitySetMetaAdapterCollection _entitySetMetaAdapters = CreateEntitySetMetaAdapters();
+        private readonly static Db.OeEntitySetAdapterCollection _entitySetAdapters = CreateEntitySetAdapters();
 
         public OeLinq2DbDataAdapter() : this(null)
         {
@@ -119,27 +119,27 @@ namespace OdataToEntity.Linq2Db
         {
             return Db.FastActivator.CreateInstance<T>();
         }
-        private static Db.OeEntitySetMetaAdapterCollection CreateEntitySetMetaAdapters()
+        private static Db.OeEntitySetAdapterCollection CreateEntitySetAdapters()
         {
             InitializeLinq2Db();
 
-            var entitySetMetaAdapters = new List<Db.OeEntitySetMetaAdapter>();
+            var entitySetAdapters = new List<Db.OeEntitySetAdapter>();
             foreach (PropertyInfo property in typeof(T).GetTypeInfo().GetProperties())
             {
                 Type entitySetType = property.PropertyType.GetTypeInfo().GetInterface(typeof(IQueryable<>).FullName);
                 if (entitySetType != null)
-                    entitySetMetaAdapters.Add(CreateDbSetInvoker(property, entitySetType));
+                    entitySetAdapters.Add(CreateEntitySetAdapter(property, entitySetType));
             }
-            return new Db.OeEntitySetMetaAdapterCollection(entitySetMetaAdapters.ToArray(), new OeLinq2DbEdmModelMetadataProvider());
+            return new Db.OeEntitySetAdapterCollection(entitySetAdapters.ToArray(), new OeLinq2DbEdmModelMetadataProvider());
         }
-        private static Db.OeEntitySetMetaAdapter CreateDbSetInvoker(PropertyInfo property, Type entitySetType)
+        private static Db.OeEntitySetAdapter CreateEntitySetAdapter(PropertyInfo property, Type entitySetType)
         {
-            MethodInfo mi = ((Func<PropertyInfo, Db.OeEntitySetMetaAdapter>)CreateEntitySetInvoker<Object>).GetMethodInfo().GetGenericMethodDefinition();
+            MethodInfo mi = ((Func<PropertyInfo, Db.OeEntitySetAdapter>)CreateEntitySetInvoker<Object>).GetMethodInfo().GetGenericMethodDefinition();
             Type entityType = entitySetType.GetTypeInfo().GetGenericArguments()[0];
             MethodInfo func = mi.GetGenericMethodDefinition().MakeGenericMethod(entityType);
-            return (Db.OeEntitySetMetaAdapter)func.Invoke(null, new Object[] { property });
+            return (Db.OeEntitySetAdapter)func.Invoke(null, new Object[] { property });
         }
-        private static Db.OeEntitySetMetaAdapter CreateEntitySetInvoker<TEntity>(PropertyInfo property) where TEntity : class
+        private static Db.OeEntitySetAdapter CreateEntitySetInvoker<TEntity>(PropertyInfo property) where TEntity : class
         {
             var getEntitySet = (Func<T, ITable<TEntity>>)property.GetGetMethod().CreateDelegate(typeof(Func<T, ITable<TEntity>>));
             return new TableAdapterImpl<TEntity>(getEntitySet, property.Name);
@@ -182,10 +182,6 @@ namespace OdataToEntity.Linq2Db
                 expression = new ParameterVisitor().Visit(expression);
             }
             return query.Provider.Execute<TResult>(expression);
-        }
-        public override Db.OeEntitySetAdapter GetEntitySetAdapter(String entitySetName)
-        {
-            return new Db.OeEntitySetAdapter(EntitySetMetaAdapters.FindByEntitySetName(entitySetName), this);
         }
         private static Expression GetFromCache(OeQueryContext queryContext, T dbContext, Db.OeQueryCache queryCache,
             out MethodCallExpression countExpression)
@@ -250,10 +246,10 @@ namespace OdataToEntity.Linq2Db
         {
             var dataConnection = (DataConnection)dataContext;
             OeLinq2DbDataContext dc = ((IOeLinq2DbDataContext)dataConnection).DataContext;
-            int count = dc.SaveChanges(edmModel, EntitySetMetaAdapters, dataConnection);
+            int count = dc.SaveChanges(edmModel, EntitySetAdapters, dataConnection);
             return Task.FromResult(count);
         }
 
-        public override Db.OeEntitySetMetaAdapterCollection EntitySetMetaAdapters => _entitySetMetaAdapters;
+        public override Db.OeEntitySetAdapterCollection EntitySetAdapters => _entitySetAdapters;
     }
 }

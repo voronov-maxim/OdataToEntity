@@ -7,7 +7,7 @@ using System.Text;
 
 namespace OdataToEntity.Parsers.UriCompare
 {
-    public struct OeCacheComparerParameterValues
+    public readonly struct OeCacheComparerParameterValues
     {
         private sealed class SkipTokenMarker : IEdmTypeReference
         {

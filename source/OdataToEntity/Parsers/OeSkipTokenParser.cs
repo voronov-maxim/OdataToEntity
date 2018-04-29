@@ -116,7 +116,7 @@ namespace OdataToEntity.Parsers
         {
             var keys = new KeyValuePair<String, Object>[Accessors.Length];
             for (int i = 0; i < keys.Length; i++)
-                keys[i] = new KeyValuePair<String, Object>(GetPropertyName(Accessors[i].EdmProperty), Accessors[i].Accessor(value));
+                keys[i] = new KeyValuePair<String, Object>(GetPropertyName(Accessors[i].EdmProperty), Accessors[i].GetValue(value));
             return keys;
         }
         private static IEdmStructuralProperty[] GetEdmProperies(OrderByClause orderByClause)

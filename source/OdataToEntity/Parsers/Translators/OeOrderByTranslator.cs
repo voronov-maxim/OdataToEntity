@@ -9,7 +9,7 @@ using System.Reflection;
 
 namespace OdataToEntity.Parsers
 {
-    public struct OeOrderByTranslator
+    public readonly struct OeOrderByTranslator
     {
         private struct OrderByExpressionBuider
         {

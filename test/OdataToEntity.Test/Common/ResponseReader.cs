@@ -16,30 +16,30 @@ namespace OdataToEntity.Test
 {
     public class ResponseReader
     {
-        protected struct NavigationPorperty
+        protected readonly struct NavigationProperty
         {
-            public readonly String Name;
-            public readonly ODataResourceSetBase ResourceSet;
-            public readonly Object Value;
-
-            public NavigationPorperty(String name, Object value, ODataResourceSetBase resourceSet)
+            public NavigationProperty(String name, Object value, ODataResourceSetBase resourceSet)
             {
                 Name = name;
                 Value = value;
                 ResourceSet = resourceSet;
             }
+
+            public String Name { get; }
+            public ODataResourceSetBase ResourceSet { get; }
+            public Object Value { get; }
         }
 
         private sealed class StackItem
         {
             private readonly ODataItem _item;
-            private readonly List<NavigationPorperty> _navigationProperties;
+            private readonly List<NavigationProperty> _navigationProperties;
             private Object _value;
 
             public StackItem(ODataItem item)
             {
                 _item = item;
-                _navigationProperties = new List<NavigationPorperty>();
+                _navigationProperties = new List<NavigationProperty>();
             }
 
             public void AddEntry(Object value)
@@ -70,7 +70,7 @@ namespace OdataToEntity.Test
             }
             public void AddLink(ODataNestedResourceInfo link, Object value, ODataResourceSetBase resourceSet)
             {
-                _navigationProperties.Add(new NavigationPorperty(link.Name, value, resourceSet));
+                _navigationProperties.Add(new NavigationProperty(link.Name, value, resourceSet));
             }
             private void AddToList<T>(T value)
             {
@@ -81,22 +81,20 @@ namespace OdataToEntity.Test
 
             public ODataItem Item => _item;
             public Object Value => _value;
-            public IReadOnlyList<NavigationPorperty> NavigationProperties => _navigationProperties;
+            public IReadOnlyList<NavigationProperty> NavigationProperties => _navigationProperties;
             public ODataResourceSetBase ResourceSet { get; set; }
         }
 
-        private readonly IEdmModel _edmModel;
-        private readonly Db.OeEntitySetMetaAdapterCollection _entitySetMetaAdapters;
-        private readonly Dictionary<IEnumerable, ODataResourceSetBase> _navigationProperties;
-        private readonly Dictionary<Object, Dictionary<PropertyInfo, ODataResourceSetBase>> _navigationPropertyEntities;
+        private readonly Db.OeDataAdapter _dataAdapter;
         private static readonly Dictionary<PropertyInfo, ODataResourceSetBase> EmptyNavigationPropertyEntities = new Dictionary<PropertyInfo, ODataResourceSetBase>();
 
-        public ResponseReader(IEdmModel edmModel, Db.OeEntitySetMetaAdapterCollection entitySetMetaAdapters)
+        public ResponseReader(IEdmModel edmModel, Db.OeDataAdapter dataAdapter)
         {
-            _edmModel = edmModel;
-            _entitySetMetaAdapters = entitySetMetaAdapters;
-            _navigationProperties = new Dictionary<IEnumerable, ODataResourceSetBase>();
-            _navigationPropertyEntities = new Dictionary<Object, Dictionary<PropertyInfo, ODataResourceSetBase>>();
+            EdmModel = edmModel;
+            _dataAdapter = dataAdapter;
+
+            NavigationProperties = new Dictionary<IEnumerable, ODataResourceSetBase>();
+            NavigationPropertyEntities = new Dictionary<Object, Dictionary<PropertyInfo, ODataResourceSetBase>>();
         }
 
         protected virtual void AddItems(Object entity, PropertyInfo propertyInfo, IEnumerable values)
@@ -116,15 +114,15 @@ namespace OdataToEntity.Test
             Type itemType = OeExpressionHelper.GetCollectionItemType(type);
             return (IEnumerable)Activator.CreateInstance(typeof(List<>).MakeGenericType(itemType));
         }
-        protected Object CreateEntity(ODataResource resource, IReadOnlyList<NavigationPorperty> navigationProperties)
+        protected Object CreateEntity(ODataResource resource, IReadOnlyList<NavigationProperty> navigationProperties)
         {
-            Db.OeEntitySetMetaAdapter entitySetMetaAdapter = EntitySetMetaAdapters.FindByTypeName(resource.TypeName);
-            Object entity = OeEdmClrHelper.CreateEntity(entitySetMetaAdapter.EntityType, resource);
+            Db.OeEntitySetAdapter entitySetAdapter = EntitySetAdapters.FindByTypeName(resource.TypeName);
+            Object entity = OeEdmClrHelper.CreateEntity(entitySetAdapter.EntityType, resource);
             Dictionary<PropertyInfo, ODataResourceSetBase> propertyInfos = null;
 
-            foreach (NavigationPorperty navigationProperty in navigationProperties)
+            foreach (NavigationProperty navigationProperty in navigationProperties)
             {
-                PropertyInfo clrProperty = entitySetMetaAdapter.EntityType.GetProperty(navigationProperty.Name);
+                PropertyInfo clrProperty = entitySetAdapter.EntityType.GetProperty(navigationProperty.Name);
                 Object value = navigationProperty.Value;
 
                 if (navigationProperty.ResourceSet == null || (navigationProperty.ResourceSet.Count == null && navigationProperty.ResourceSet.NextPageLink == null))
@@ -152,12 +150,13 @@ namespace OdataToEntity.Test
 
             return entity;
         }
-        protected virtual Object CreateRootEntity(ODataResource resource, IReadOnlyList<NavigationPorperty> navigationProperties, Type entityType)
+        protected virtual Object CreateRootEntity(ODataResource resource, IReadOnlyList<NavigationProperty> navigationProperties, Type entityType)
         {
             return CreateEntity(resource, navigationProperties);
         }
-        public async Task FillNextLinkProperties(OeParser parser, Object entity, CancellationToken token)
+        public async Task FillNextLinkProperties(Uri baseUri, Object entity, CancellationToken token)
         {
+            var parser = new OeParser(baseUri, _dataAdapter, EdmModel);
             using (var response = new MemoryStream())
                 foreach (KeyValuePair<PropertyInfo, ODataResourceSetBase> propertyResourceSet in GetResourceSets(entity))
                 {
@@ -165,7 +164,7 @@ namespace OdataToEntity.Test
                     await parser.ExecuteGetAsync(propertyResourceSet.Value.NextPageLink, OeRequestHeaders.JsonDefault, response, token).ConfigureAwait(false);
                     response.Position = 0;
 
-                    var navigationPropertyReader = new ResponseReader(parser.Model, parser.DataAdapter.EntitySetMetaAdapters);
+                    var navigationPropertyReader = new ResponseReader(EdmModel, _dataAdapter);
                     AddItems(entity, propertyResourceSet.Key, navigationPropertyReader.Read(response));
                 }
         }
@@ -201,7 +200,7 @@ namespace OdataToEntity.Test
         }
         public IReadOnlyDictionary<PropertyInfo, ODataResourceSetBase> GetResourceSets(Object entity)
         {
-            if (_navigationPropertyEntities.TryGetValue(entity, out Dictionary<PropertyInfo, ODataResourceSetBase> resourceSets))
+            if (NavigationPropertyEntities.TryGetValue(entity, out Dictionary<PropertyInfo, ODataResourceSetBase> resourceSets))
                 return resourceSets;
             return EmptyNavigationPropertyEntities;
         }
@@ -209,15 +208,15 @@ namespace OdataToEntity.Test
         {
             String entitySetName = GetEntitSetName(response);
             response.Position = 0;
-            Db.OeEntitySetMetaAdapter entitySetMetaAdatpter = EntitySetMetaAdapters.FindByEntitySetName(entitySetName);
+            Db.OeEntitySetAdapter entitySetMetaAdatpter = EntitySetAdapters.FindByEntitySetName(entitySetName);
             return ReadImpl(response, entitySetMetaAdatpter);
         }
         public IEnumerable<T> Read<T>(Stream response)
         {
-            Db.OeEntitySetMetaAdapter entitySetMetaAdatpter = EntitySetMetaAdapters.FindByClrType(typeof(T));
+            Db.OeEntitySetAdapter entitySetMetaAdatpter = EntitySetAdapters.FindByClrType(typeof(T));
             return ReadImpl(response, entitySetMetaAdatpter).Cast<T>();
         }
-        protected IEnumerable ReadImpl(Stream response, Db.OeEntitySetMetaAdapter entitySetMetaAdatpter)
+        protected IEnumerable ReadImpl(Stream response, Db.OeEntitySetAdapter entitySetMetaAdatpter)
         {
             ResourceSet = null;
             NavigationProperties.Clear();
@@ -264,10 +263,10 @@ namespace OdataToEntity.Test
             }
         }
 
-        protected IEdmModel EdmModel => _edmModel;
-        protected Db.OeEntitySetMetaAdapterCollection EntitySetMetaAdapters => _entitySetMetaAdapters;
-        protected Dictionary<IEnumerable, ODataResourceSetBase> NavigationProperties => _navigationProperties;
-        public Dictionary<Object, Dictionary<PropertyInfo, ODataResourceSetBase>> NavigationPropertyEntities => _navigationPropertyEntities;
+        protected IEdmModel EdmModel { get; }
+        protected Db.OeEntitySetAdapterCollection EntitySetAdapters => _dataAdapter.EntitySetAdapters;
+        protected Dictionary<IEnumerable, ODataResourceSetBase> NavigationProperties { get; }
+        public Dictionary<Object, Dictionary<PropertyInfo, ODataResourceSetBase>> NavigationPropertyEntities { get; }
         public ODataResourceSetBase ResourceSet { get; protected set; }
     }
 }

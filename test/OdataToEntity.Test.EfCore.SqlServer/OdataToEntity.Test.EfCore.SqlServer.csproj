@@ -5,15 +5,15 @@
     <Description>Test Ef core Sql Server for OdataToEntity</Description>
     <AssemblyTitle>Test Ef core Sql Server for OdataToEntity</AssemblyTitle>
     <Authors>Maxim Voronov</Authors>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFrameworks>$(NetCoreAppVersion)</TargetFrameworks>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity.Test.EfCore.SqlServer</AssemblyName>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <LangVersion>$(CSharpVersion)</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup>
-    <RuntimeFrameworkVersion>2.0</RuntimeFrameworkVersion>
     <StartupObject>OdataToEntity.Test.EfCore.SqlServer.Program</StartupObject>
   </PropertyGroup>
 

@@ -5,7 +5,7 @@
     <Description>Test Linq2Db Sql Server for OdataToEntity</Description>
     <AssemblyTitle>Test Linq2Db Sql Server for OdataToEntity</AssemblyTitle>
     <Authors>Maxim Voronov</Authors>
-    <TargetFrameworks>net461</TargetFrameworks>
+    <TargetFrameworks>$(FrameworkVersion)</TargetFrameworks>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity.Test.Linq2DbModel</AssemblyName>
@@ -33,5 +33,5 @@
   <ItemGroup>
     <ProjectReference Include="..\..\source\OdataToEntity.Linq2Db\OdataToEntity.Linq2Db.csproj" />
   </ItemGroup>
-  
+
 </Project>

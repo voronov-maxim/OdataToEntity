@@ -15,10 +15,7 @@ namespace OdataToEntity.Test
 {
     public abstract class DbFixture
     {
-        private readonly OrderDbDataAdapter _dbDataAdapter;
         private readonly String _databaseName;
-        private readonly EdmModel _edmModel;
-        private readonly OrderOeDataAdapter _oeDataAdapter;
         private readonly bool _useRelationalNulls;
 
         public DbFixture(bool allowCache, bool useRelationalNulls)
@@ -26,10 +23,10 @@ namespace OdataToEntity.Test
             _useRelationalNulls = useRelationalNulls;
 
             _databaseName = Model.OrderContext.GenerateDatabaseName();
-            _dbDataAdapter = new OrderDbDataAdapter(allowCache, useRelationalNulls, _databaseName);
-            _oeDataAdapter = new OrderOeDataAdapter(allowCache, useRelationalNulls, _databaseName);
+            DbDataAdapter = new OrderDbDataAdapter(allowCache, useRelationalNulls, _databaseName);
+            OeDataAdapter = new OrderOeDataAdapter(allowCache, useRelationalNulls, _databaseName);
 
-            _edmModel = OeDataAdapter.BuildEdmModel();
+            EdmModel = OeDataAdapter.BuildEdmModel();
         }
 
         public Model.OrderContext CreateContext()
@@ -90,12 +87,12 @@ namespace OdataToEntity.Test
                 }
                 else if (typeof(TResult) == typeof(Object))
                 {
-                    responseReader = new OpenTypeResponseReader(EdmModel, DbDataAdapter.EntitySetMetaAdapters);
+                    responseReader = new OpenTypeResponseReader(EdmModel, DbDataAdapter);
                     result = responseReader.Read(response).Cast<Object>().ToList();
                 }
                 else
                 {
-                    responseReader = new ResponseReader(EdmModel, DbDataAdapter.EntitySetMetaAdapters);
+                    responseReader = new ResponseReader(EdmModel, DbDataAdapter);
                     result = responseReader.Read<TResult>(response).Cast<Object>().ToList();
                 }
 
@@ -103,9 +100,8 @@ namespace OdataToEntity.Test
                     Xunit.Assert.InRange(result.Count, 0, requestHeaders.MaxPageSize);
                 fromOe.AddRange(result);
 
-                var navigationParser = new OeParser(odataUri.ServiceRoot, DbDataAdapter, EdmModel);
                 foreach (Object entity in fromOe)
-                    await responseReader.FillNextLinkProperties(navigationParser, entity, CancellationToken.None).ConfigureAwait(false);
+                    await responseReader.FillNextLinkProperties(odataUri.ServiceRoot, entity, CancellationToken.None).ConfigureAwait(false);
 
                 if (count < 0)
                     count = responseReader.ResourceSet.Count.GetValueOrDefault();
@@ -128,8 +124,8 @@ namespace OdataToEntity.Test
             return odataParser.ParseUri();
         }
 
-        internal OrderDbDataAdapter DbDataAdapter => _dbDataAdapter;
-        internal EdmModel EdmModel => _edmModel;
-        internal OrderOeDataAdapter OeDataAdapter => _oeDataAdapter;
+        internal OrderDbDataAdapter DbDataAdapter { get; }
+        internal EdmModel EdmModel { get; }
+        internal OrderOeDataAdapter OeDataAdapter { get; }
     }
 }

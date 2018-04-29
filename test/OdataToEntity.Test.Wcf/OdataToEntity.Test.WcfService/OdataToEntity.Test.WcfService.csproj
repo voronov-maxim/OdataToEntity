@@ -5,7 +5,7 @@
     <Description>Test Wcf service for OdataToEntity</Description>
     <AssemblyTitle>Test Wcf service for OdataToEntity</AssemblyTitle>
     <Authors>Maxim Voronov</Authors>
-    <TargetFrameworks>net461</TargetFrameworks>
+    <TargetFrameworks>$(FrameworkVersion)</TargetFrameworks>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity.Test.WcfService</AssemblyName>

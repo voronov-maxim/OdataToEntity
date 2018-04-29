@@ -12,7 +12,7 @@ namespace OdataToEntity.Writers
 {
     public static class OeGetWriter
     {
-        private struct GetWriter
+        private readonly struct GetWriter
         {
             private readonly OeQueryContext QueryContext;
             private readonly ODataWriter Writer;
@@ -169,7 +169,6 @@ namespace OdataToEntity.Writers
                 Version = ODataVersion.V4
             };
 
-            Stream = stream;
             IODataResponseMessage responseMessage = new OeInMemoryMessage(stream, contentType);
             using (ODataMessageWriter messageWriter = new ODataMessageWriter(responseMessage, settings, queryContext.EdmModel))
             {
@@ -179,8 +178,6 @@ namespace OdataToEntity.Writers
                 await getWriter.SerializeAsync(entryFactory, asyncEnumerator, queryContext).ConfigureAwait(false);
             }
         }
-
-        public static Stream Stream { get; set; }
     }
 }
 

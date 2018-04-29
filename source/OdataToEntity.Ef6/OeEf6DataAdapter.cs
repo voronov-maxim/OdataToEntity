@@ -19,7 +19,7 @@ namespace OdataToEntity.Ef6
 {
     public class OeEf6DataAdapter<T> : Db.OeDataAdapter where T : DbContext
     {
-        private sealed class DbSetAdapterImpl<TEntity> : Db.OeEntitySetMetaAdapter where TEntity : class
+        private sealed class DbSetAdapterImpl<TEntity> : Db.OeEntitySetAdapter where TEntity : class
         {
             private readonly Func<T, IDbSet<TEntity>> _getEntitySet;
             private bool _isCascade;
@@ -129,7 +129,7 @@ namespace OdataToEntity.Ef6
             public override String EntitySetName { get; }
         }
 
-        private readonly static Db.OeEntitySetMetaAdapterCollection _entitySetMetaAdapters = CreateEntitySetMetaAdapters();
+        private readonly static Db.OeEntitySetAdapterCollection _entitySetAdapters = CreateEntitySetAdapters();
 
         public OeEf6DataAdapter() : this(null, new OeEf6OperationAdapter(typeof(T)))
         {
@@ -155,25 +155,25 @@ namespace OdataToEntity.Ef6
             dbContext.Configuration.ProxyCreationEnabled = false;
             return dbContext;
         }
-        private static Db.OeEntitySetMetaAdapterCollection CreateEntitySetMetaAdapters()
+        private static Db.OeEntitySetAdapterCollection CreateEntitySetAdapters()
         {
-            var entitySetMetaAdapters = new List<Db.OeEntitySetMetaAdapter>();
+            var entitySetAdapters = new List<Db.OeEntitySetAdapter>();
             foreach (PropertyInfo property in typeof(T).GetProperties())
             {
                 Type dbSetType = property.PropertyType.GetInterface(typeof(IDbSet<>).FullName);
                 if (dbSetType != null)
-                    entitySetMetaAdapters.Add(CreateDbSetInvoker(property, dbSetType));
+                    entitySetAdapters.Add(CreateEntitySetAdapter(property, dbSetType));
             }
-            return new Db.OeEntitySetMetaAdapterCollection(entitySetMetaAdapters.ToArray(), new ModelBuilder.OeEdmModelMetadataProvider());
+            return new Db.OeEntitySetAdapterCollection(entitySetAdapters.ToArray(), new ModelBuilder.OeEdmModelMetadataProvider());
         }
-        private static Db.OeEntitySetMetaAdapter CreateDbSetInvoker(PropertyInfo property, Type dbSetType)
+        private static Db.OeEntitySetAdapter CreateEntitySetAdapter(PropertyInfo property, Type dbSetType)
         {
-            MethodInfo mi = ((Func<PropertyInfo, Db.OeEntitySetMetaAdapter>)CreateDbSetInvoker<Object>).Method.GetGenericMethodDefinition();
+            MethodInfo mi = ((Func<PropertyInfo, Db.OeEntitySetAdapter>)CreateDbSetInvoker<Object>).Method.GetGenericMethodDefinition();
             Type entityType = dbSetType.GetGenericArguments()[0];
             MethodInfo func = mi.GetGenericMethodDefinition().MakeGenericMethod(entityType);
-            return (Db.OeEntitySetMetaAdapter)func.Invoke(null, new Object[] { property });
+            return (Db.OeEntitySetAdapter)func.Invoke(null, new Object[] { property });
         }
-        private static Db.OeEntitySetMetaAdapter CreateDbSetInvoker<TEntity>(PropertyInfo property) where TEntity : class
+        private static Db.OeEntitySetAdapter CreateDbSetInvoker<TEntity>(PropertyInfo property) where TEntity : class
         {
             var getDbSet = (Func<T, IDbSet<TEntity>>)Delegate.CreateDelegate(typeof(Func<T, IDbSet<TEntity>>), property.GetGetMethod());
             return new DbSetAdapterImpl<TEntity>(getDbSet, property.Name);
@@ -258,16 +258,12 @@ namespace OdataToEntity.Ef6
 
             return expression;
         }
-        public override Db.OeEntitySetAdapter GetEntitySetAdapter(String entitySetName)
-        {
-            return new Db.OeEntitySetAdapter(_entitySetMetaAdapters.FindByEntitySetName(entitySetName), this);
-        }
         public override Task<int> SaveChangesAsync(IEdmModel edmModel, Object dataContext, CancellationToken cancellationToken)
         {
             var dbContext = (T)dataContext;
             return dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        public override Db.OeEntitySetMetaAdapterCollection EntitySetMetaAdapters => _entitySetMetaAdapters;
+        public override Db.OeEntitySetAdapterCollection EntitySetAdapters => _entitySetAdapters;
     }
 }

@@ -26,7 +26,7 @@ namespace OdataToEntity.Test
             response.Position = 0;
 
             var actualCounts = new List<long>();
-            var reader = new ResponseReader(Fixture.EdmModel, Fixture.OeDataAdapter.EntitySetMetaAdapters);
+            var reader = new ResponseReader(Fixture.EdmModel, Fixture.OeDataAdapter);
             foreach (dynamic order in reader.Read(response))
             {
                 var navigationProperty = (IEnumerable)order.Items;
@@ -51,7 +51,7 @@ namespace OdataToEntity.Test
             await parser.ExecuteQueryAsync(odataUri, OeRequestHeaders.JsonDefault, response, CancellationToken.None).ConfigureAwait(false);
             response.Position = 0;
 
-            var reader = new ResponseReader(Fixture.EdmModel, Fixture.OeDataAdapter.EntitySetMetaAdapters);
+            var reader = new ResponseReader(Fixture.EdmModel, Fixture.OeDataAdapter);
             reader.Read(response).Cast<Object>().Single();
 
             int? expectedCount;
@@ -72,7 +72,7 @@ namespace OdataToEntity.Test
             await parser.ExecuteQueryAsync(odataUri, OeRequestHeaders.JsonDefault, response, CancellationToken.None).ConfigureAwait(false);
             response.Position = 0;
 
-            var reader = new ResponseReader(Fixture.EdmModel, Fixture.OeDataAdapter.EntitySetMetaAdapters);
+            var reader = new ResponseReader(Fixture.EdmModel, Fixture.OeDataAdapter);
             reader.Read(response).Cast<Object>().Single();
 
             int? expectedCount;
@@ -100,7 +100,7 @@ namespace OdataToEntity.Test
                 await parser.ExecuteGetAsync(uri, requestHeaders, response, CancellationToken.None).ConfigureAwait(false);
                 response.Position = 0;
 
-                var reader = new ResponseReader(Fixture.EdmModel, Fixture.OeDataAdapter.EntitySetMetaAdapters);
+                var reader = new ResponseReader(Fixture.EdmModel, Fixture.OeDataAdapter);
                 List<Object> result = reader.Read(response).Cast<Object>().ToList();
                 Assert.InRange(result.Count, 0, requestHeaders.MaxPageSize);
                 fromOe.AddRange(result);
@@ -115,7 +115,7 @@ namespace OdataToEntity.Test
                     await navigationPropertyParser.ExecuteGetAsync(resourceSet.NextPageLink, OeRequestHeaders.JsonDefault, navigationPropertyResponse, CancellationToken.None).ConfigureAwait(false);
                     navigationPropertyResponse.Position = 0;
 
-                    var navigationPropertyReader = new ResponseReader(Fixture.EdmModel, Fixture.OeDataAdapter.EntitySetMetaAdapters);
+                    var navigationPropertyReader = new ResponseReader(Fixture.EdmModel, Fixture.OeDataAdapter);
                     foreach (dynamic orderItem in navigationPropertyReader.Read(navigationPropertyResponse))
                         order.Items.Add(orderItem);
 
@@ -136,7 +136,7 @@ namespace OdataToEntity.Test
             await expectedParser.ExecuteGetAsync(requestUri, OeRequestHeaders.JsonDefault, exprectedResponse, CancellationToken.None).ConfigureAwait(false);
             exprectedResponse.Position = 0;
 
-            var exprectedReader = new ResponseReader(Fixture.EdmModel, Fixture.OeDataAdapter.EntitySetMetaAdapters);
+            var exprectedReader = new ResponseReader(Fixture.EdmModel, Fixture.OeDataAdapter);
             List<Object> expectedResult = exprectedReader.Read(exprectedResponse).Cast<Object>().ToList();
 
             TestHelper.Compare(expectedResult, fromOe, null);
@@ -157,7 +157,7 @@ namespace OdataToEntity.Test
             {
                 var response = new MemoryStream();
                 await parser.ExecuteGetAsync(uri, requestHeaders, response, CancellationToken.None).ConfigureAwait(false);
-                var reader = new ResponseReader(Fixture.EdmModel, Fixture.OeDataAdapter.EntitySetMetaAdapters);
+                var reader = new ResponseReader(Fixture.EdmModel, Fixture.OeDataAdapter);
                 response.Position = 0;
 
                 List<Object> result = reader.Read(response).Cast<Object>().ToList();

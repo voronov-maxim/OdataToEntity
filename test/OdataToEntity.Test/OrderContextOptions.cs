@@ -19,7 +19,7 @@ namespace OdataToEntity.Test.Model
                 : base(factory, subscriber, notifier, valueGeneration, model, database, concurrencyDetector, currentContext, loggingOptions, updateLogger)
             {
             }
-            protected override async Task<int> SaveChangesAsync(IReadOnlyList<InternalEntityEntry> entriesToSave, CancellationToken cancellationToken = default(CancellationToken))
+            protected override async Task<int> SaveChangesAsync(IReadOnlyList<InternalEntityEntry> entriesToSave, CancellationToken cancellationToken = default)
             {
                 UpdateTemporaryKey(entriesToSave);
                 int count = await base.SaveChangesAsync(entriesToSave, cancellationToken).ConfigureAwait(false);

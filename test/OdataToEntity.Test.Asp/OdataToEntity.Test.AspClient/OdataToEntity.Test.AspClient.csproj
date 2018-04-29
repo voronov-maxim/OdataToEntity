@@ -5,15 +5,15 @@
     <Description>Test Asp client for OdataToEntity</Description>
     <AssemblyTitle>Test Asp client for OdataToEntity</AssemblyTitle>
     <Authors>Maxim Voronov</Authors>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFrameworks>$(NetCoreAppVersion)</TargetFrameworks>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity.Test.AspClient</AssemblyName>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <LangVersion>$(CSharpVersion)</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup>
-    <RuntimeFrameworkVersion>2.0</RuntimeFrameworkVersion>
     <OutputType>Exe</OutputType>
   </PropertyGroup>
 

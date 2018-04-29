@@ -5,15 +5,15 @@
     <Description>Test Ef core PostgreSql for OdataToEntity</Description>
     <AssemblyTitle>Test Ef core PostgreSql for OdataToEntity</AssemblyTitle>
     <Authors>Maxim Voronov</Authors>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFrameworks>$(NetCoreAppVersion)</TargetFrameworks>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity.Test.EfCore.PostgreSql</AssemblyName>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <LangVersion>$(CSharpVersion)</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup>
-    <RuntimeFrameworkVersion>2.0</RuntimeFrameworkVersion>
     <StartupObject>OdataToEntity.Test.EfCore.PostgreSql.Program</StartupObject>
   </PropertyGroup>
 

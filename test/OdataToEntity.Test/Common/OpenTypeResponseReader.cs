@@ -10,8 +10,8 @@ namespace OdataToEntity.Test
 {
     public sealed class OpenTypeResponseReader : ResponseReader
     {
-        public OpenTypeResponseReader(IEdmModel edmModel, Db.OeEntitySetMetaAdapterCollection entitySetMetaAdapters)
-            : base(edmModel, entitySetMetaAdapters)
+        public OpenTypeResponseReader(IEdmModel edmModel, Db.OeDataAdapter dataAdapter)
+            : base(edmModel, dataAdapter)
         {
         }
 
@@ -23,7 +23,7 @@ namespace OdataToEntity.Test
             foreach (dynamic value in values)
                 ((dynamic)collection).Add(value);
         }
-        protected override Object CreateRootEntity(ODataResource resource, IReadOnlyList<NavigationPorperty> navigationProperties, Type entityType)
+        protected override Object CreateRootEntity(ODataResource resource, IReadOnlyList<NavigationProperty> navigationProperties, Type entityType)
         {
             var openType = new SortedDictionary<String, Object>(StringComparer.Ordinal);
 
@@ -39,7 +39,7 @@ namespace OdataToEntity.Test
                     openType.Add(property.Name, property.Value);
 
             Dictionary<PropertyInfo, ODataResourceSetBase> propertyInfos = null;
-            foreach (NavigationPorperty property in navigationProperties)
+            foreach (NavigationProperty property in navigationProperties)
             {
                 Object value = property.Value;
 
@@ -71,7 +71,7 @@ namespace OdataToEntity.Test
         {
             String entitySetName = ResponseReader.GetEntitSetName(response);
             response.Position = 0;
-            Db.OeEntitySetMetaAdapter entitySetMetaAdatpter = base.EntitySetMetaAdapters.FindByEntitySetName(entitySetName);
+            Db.OeEntitySetAdapter entitySetMetaAdatpter = base.EntitySetAdapters.FindByEntitySetName(entitySetName);
             return base.ReadImpl(response, entitySetMetaAdatpter);
         }
     }

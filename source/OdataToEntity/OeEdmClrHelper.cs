@@ -24,6 +24,36 @@ namespace OdataToEntity
             }
             return entity;
         }
+        public static ODataValue CreateODataValue(Object value)
+        {
+            if (value == null)
+                return new ODataNullValue();
+
+            if (value.GetType().IsEnum)
+                return new ODataEnumValue(value.ToString());
+
+            if (value is DateTime dateTime)
+            {
+                DateTimeOffset dateTimeOffset;
+                switch (dateTime.Kind)
+                {
+                    case DateTimeKind.Unspecified:
+                        dateTimeOffset = new DateTimeOffset(DateTime.SpecifyKind(dateTime, DateTimeKind.Utc));
+                        break;
+                    case DateTimeKind.Utc:
+                        dateTimeOffset = new DateTimeOffset(dateTime);
+                        break;
+                    case DateTimeKind.Local:
+                        dateTimeOffset = new DateTimeOffset(dateTime.ToUniversalTime());
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException("unknown DateTimeKind " + dateTime.Kind.ToString());
+                }
+                return new ODataPrimitiveValue(dateTimeOffset);
+            }
+
+            return new ODataPrimitiveValue(value);
+        }
         public static Type GetClrType(this IEdmModel edmModel, IEdmType edmType)
         {
             if (edmType.TypeKind == EdmTypeKind.Primitive)
@@ -79,35 +109,20 @@ namespace OdataToEntity
 
             return edmTypeRef;
         }
-        public static ODataValue CreateODataValue(Object value)
+        public static IEdmEntitySet GetEntitySet(IEdmModel edmModel, Type clrType)
         {
-            if (value == null)
-                return new ODataNullValue();
-
-            if (value.GetType().IsEnum)
-                return new ODataEnumValue(value.ToString());
-
-            if (value is DateTime dateTime)
-            {
-                DateTimeOffset dateTimeOffset;
-                switch (dateTime.Kind)
-                {
-                    case DateTimeKind.Unspecified:
-                        dateTimeOffset = new DateTimeOffset(DateTime.SpecifyKind(dateTime, DateTimeKind.Utc));
-                        break;
-                    case DateTimeKind.Utc:
-                        dateTimeOffset = new DateTimeOffset(dateTime);
-                        break;
-                    case DateTimeKind.Local:
-                        dateTimeOffset = new DateTimeOffset(dateTime.ToUniversalTime());
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException("unknown DateTimeKind " + dateTime.Kind.ToString());
-                }
-                return new ODataPrimitiveValue(dateTimeOffset);
-            }
-
-            return new ODataPrimitiveValue(value);
+            String fullName = clrType.FullName;
+            foreach (IEdmEntitySet element in edmModel.EntityContainer.EntitySets())
+                if (String.CompareOrdinal(element.EntityType().FullTypeName(), fullName) == 0)
+                    return element;
+            return null;
+        }
+        public static IEdmEntitySet GetEntitySet(IEdmModel edmModel, IEdmType edmType)
+        {
+            foreach (IEdmEntitySet element in edmModel.EntityContainer.EntitySets())
+                if (element.Type == edmType)
+                    return element;
+            return null;
         }
         public static PropertyInfo GetPropertyIgnoreCase(this Type declaringType, String propertyName)
         {

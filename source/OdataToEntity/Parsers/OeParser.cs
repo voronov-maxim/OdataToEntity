@@ -9,17 +9,17 @@ using Microsoft.OData.UriParser;
 
 namespace OdataToEntity
 {
-    public sealed class OeParser
+    public readonly struct OeParser
     {
         private readonly Uri _baseUri;
-        private readonly IEdmModel _model;
         private readonly Db.OeDataAdapter _dataAdapter;
+        private readonly IEdmModel _edmModel;
 
-        public OeParser(Uri baseUri, Db.OeDataAdapter dataAdapter, IEdmModel model)
+        public OeParser(Uri baseUri, Db.OeDataAdapter dataAdapter, IEdmModel edmModel)
         {
             _baseUri = baseUri;
             _dataAdapter = dataAdapter;
-            _model = model;
+            _edmModel = edmModel;
         }
 
         public async Task<String> ExecuteBatchAsync(Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
@@ -31,12 +31,12 @@ namespace OdataToEntity
         }
         public async Task ExecuteBatchAsync(Stream requestStream, Stream responseStream, String contentType, CancellationToken cancellationToken)
         {
-            var paser = new Parsers.OeBatchParser(_baseUri, _dataAdapter, _model);
+            var paser = new Parsers.OeBatchParser(_baseUri, _dataAdapter, _edmModel);
             await paser.ExecuteAsync(requestStream, responseStream, contentType, cancellationToken).ConfigureAwait(false);
         }
         public async Task ExecuteGetAsync(Uri requestUri, OeRequestHeaders headers, Stream responseStream, CancellationToken cancellationToken)
         {
-            var odataParser = new ODataUriParser(_model, _baseUri, requestUri);
+            var odataParser = new ODataUriParser(_edmModel, _baseUri, requestUri);
             odataParser.Resolver.EnableCaseInsensitive = true;
             ODataUri odataUri = odataParser.ParseUri();
 
@@ -47,17 +47,17 @@ namespace OdataToEntity
         }
         public async Task ExecuteQueryAsync(ODataUri odataUri, OeRequestHeaders headers, Stream responseStream, CancellationToken cancellationToken)
         {
-            var parser = new OeGetParser(_dataAdapter, _model);
+            var parser = new OeGetParser(_dataAdapter, _edmModel);
             await parser.ExecuteAsync(odataUri, headers, responseStream, cancellationToken).ConfigureAwait(false);
         }
         public async Task ExecuteOperationAsync(ODataUri odataUri, OeRequestHeaders headers, Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
         {
-            var parser = new OePostParser(_dataAdapter, _model);
+            var parser = new OePostParser(_dataAdapter, _edmModel);
             await parser.ExecuteAsync(odataUri, requestStream, headers, responseStream, cancellationToken).ConfigureAwait(false);
         }
         public async Task ExecutePostAsync(Uri requestUri, OeRequestHeaders headers, Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
         {
-            var odataParser = new ODataUriParser(_model, _baseUri, requestUri);
+            var odataParser = new ODataUriParser(_edmModel, _baseUri, requestUri);
             odataParser.Resolver.EnableCaseInsensitive = true;
             ODataUri odataUri = odataParser.ParseUri();
 
@@ -101,8 +101,5 @@ namespace OdataToEntity
 
             throw new InvalidDataException("is not batch stream");
         }
-
-        public Db.OeDataAdapter DataAdapter => _dataAdapter;
-        public IEdmModel Model => _model;
     }
 }

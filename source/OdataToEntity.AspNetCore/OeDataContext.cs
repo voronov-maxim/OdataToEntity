@@ -18,7 +18,7 @@ namespace OdataToEntity.AspNetCore
         {
         }
 
-        public OeDataContext(ref OeEntitySetAdapter entitySetAdapter, IEdmModel edmModel, Object dataContext, OeOperationMessage operation)
+        public OeDataContext(OeEntitySetAdapter entitySetAdapter, IEdmModel edmModel, Object dataContext, in OeOperationMessage operation)
         {
             _entitySetAdapter = entitySetAdapter;
             DataContext = dataContext;
@@ -44,7 +44,7 @@ namespace OdataToEntity.AspNetCore
         }
         private ODataResource CreateEntry(Object entity)
         {
-            IEdmEntitySet entitySet = EdmModel.FindDeclaredEntitySet(_entitySetAdapter.EntitySetMetaAdapter.EntitySetName);
+            IEdmEntitySet entitySet = EdmModel.FindDeclaredEntitySet(_entitySetAdapter.EntitySetName);
             PropertyInfo[] structuralProperties = entitySet.EntityType().StructuralProperties().Select(p => _entitySetAdapter.EntityType.GetProperty(p.Name)).ToArray();
             return CreateEntry(entity, structuralProperties);
         }
@@ -60,7 +60,7 @@ namespace OdataToEntity.AspNetCore
 
             return new ODataResource
             {
-                TypeName = _entitySetAdapter.EntitySetMetaAdapter.EntityType.FullName,
+                TypeName = _entitySetAdapter.EntityType.FullName,
                 Properties = odataProperties
             };
         }
@@ -88,6 +88,6 @@ namespace OdataToEntity.AspNetCore
 
         public Object DataContext { get; }
         public IEdmModel EdmModel { get; }
-        public String HttpMethod => _operation?.Method;
+        public String HttpMethod => _operation.Method;
     }
 }

@@ -7,21 +7,15 @@ using System.Linq.Expressions;
 
 namespace OdataToEntity.Parsers
 {
-    public sealed class OePropertyAccessor
+    public readonly struct OePropertyAccessor
     {
         private readonly Func<Object, Object> _accessor;
-        private readonly IEdmProperty _edmProperty;
-        private readonly String _name;
-        private readonly ODataTypeAnnotation _typeAnnotation;
 
         private OePropertyAccessor(IEdmProperty edmProperty, Func<Object, Object> accessor)
         {
-            _name = edmProperty.Name;
+            EdmProperty = edmProperty;
             _accessor = accessor;
-            _edmProperty = edmProperty;
-
-            if (edmProperty.DeclaringType == PrimitiveTypeHelper.TupleEdmType)
-                _typeAnnotation = new ODataTypeAnnotation(edmProperty.Type.ShortQualifiedName());
+            TypeAnnotation = edmProperty.DeclaringType == PrimitiveTypeHelper.TupleEdmType ? new ODataTypeAnnotation(edmProperty.Type.ShortQualifiedName()) : null;
         }
 
         public static OePropertyAccessor CreatePropertyAccessor(IEdmProperty edmProperty, Expression expression, ParameterExpression parameter)
@@ -74,10 +68,12 @@ namespace OdataToEntity.Parsers
             }
             return propertyAccessors.ToArray();
         }
+        public Object GetValue(Object item)
+        {
+            return _accessor(item);
+        }
 
-        public Func<Object, Object> Accessor => _accessor;
-        public IEdmProperty EdmProperty => _edmProperty;
-        public String Name => _name;
-        public ODataTypeAnnotation TypeAnnotation => _typeAnnotation;
+        public IEdmProperty EdmProperty { get; }
+        public ODataTypeAnnotation TypeAnnotation { get; }
     }
 }

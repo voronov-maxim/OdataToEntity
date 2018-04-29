@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace OdataToEntity.Parsers.UriCompare
 {
-    public struct OeQueryNodeComparer
+    public readonly struct OeQueryNodeComparer
     {
         private readonly OeCacheComparerParameterValues _parameterValues;
 

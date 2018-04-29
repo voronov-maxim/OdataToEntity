@@ -1,27 +1,61 @@
 ﻿using Microsoft.OData;
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace OdataToEntity.Db
 {
-    public struct OeEntitySetAdapter
+    public abstract class OeEntitySetAdapter
     {
-        private readonly OeDataAdapter _dataAdapter;
-        private readonly OeEntitySetMetaAdapter _entitySetMetaAdapter;
+        public abstract void AddEntity(Object dataContext, ODataResourceBase entry);
+        public abstract void AttachEntity(Object dataContext, ODataResourceBase entry);
+        public abstract IQueryable GetEntitySet(Object dataContext);
+        public abstract void RemoveEntity(Object dataContext, ODataResourceBase entry);
 
-        public OeEntitySetAdapter(OeEntitySetMetaAdapter entitySetMetaAdapter, OeDataAdapter dataAdapter)
+        public abstract Type EntityType { get; }
+        public abstract String EntitySetName { get; }
+    }
+
+    public sealed class OeEntitySetAdapterCollection : ReadOnlyCollection<OeEntitySetAdapter>
+    {
+        public OeEntitySetAdapterCollection(OeEntitySetAdapter[] entitySetAdapters,
+            ModelBuilder.OeEdmModelMetadataProvider metadataProvider) : base(entitySetAdapters)
         {
-            _entitySetMetaAdapter = entitySetMetaAdapter;
-            _dataAdapter = dataAdapter;
+            EdmModelMetadataProvider = metadataProvider;
         }
 
-        public void AddEntity(Object dataContext, ODataResourceBase entry) => _entitySetMetaAdapter.AddEntity(dataContext, entry);
-        public void AttachEntity(Object dataContext, ODataResourceBase entry) => _entitySetMetaAdapter.AttachEntity(dataContext, entry);
-        public IQueryable GetEntitySet(Object dataContext) => _entitySetMetaAdapter.GetEntitySet(dataContext);
-        public void RemoveEntity(Object dataContext, ODataResourceBase entry) => _entitySetMetaAdapter.RemoveEntity(dataContext, entry);
+        public OeEntitySetAdapter FindByClrType(Type entityType)
+        {
+            var entitySetAdapters = (OeEntitySetAdapter[])base.Items;
+            foreach (OeEntitySetAdapter entitySetAdapter in entitySetAdapters)
+                if (entitySetAdapter.EntityType == entityType)
+                    return entitySetAdapter;
+            return null;
+        }
+        public OeEntitySetAdapter FindByEntitySetName(String entitySetName)
+        {
+            var entitySetAdapters = (OeEntitySetAdapter[])base.Items;
+            foreach (OeEntitySetAdapter entitySetAdapter in entitySetAdapters)
+                if (entitySetAdapter.EntitySetName == entitySetName)
+                    return entitySetAdapter;
+            return null;
+        }
+        public OeEntitySetAdapter FindByTypeName(String typeName)
+        {
+            var entitySetAdapters = (OeEntitySetAdapter[])base.Items;
+            foreach (OeEntitySetAdapter entitySetAdapter in entitySetAdapters)
+                if (entitySetAdapter.EntityType.FullName == typeName)
+                    return entitySetAdapter;
+            return null;
+        }
+        public IEnumerable<KeyValuePair<String, Type>> GetEntitySetNamesEntityTypes()
+        {
+            var entitySetAdapters = (OeEntitySetAdapter[])base.Items;
+            foreach (OeEntitySetAdapter entitySetAdapter in entitySetAdapters)
+                yield return new KeyValuePair<string, Type>(entitySetAdapter.EntitySetName, entitySetAdapter.EntityType);
+        }
 
-        public OeDataAdapter DataAdapter => _dataAdapter;
-        public OeEntitySetMetaAdapter EntitySetMetaAdapter => _entitySetMetaAdapter;
-        public Type EntityType => _entitySetMetaAdapter.EntityType;
+        public ModelBuilder.OeEdmModelMetadataProvider EdmModelMetadataProvider { get; }
     }
 }

@@ -8,29 +8,32 @@ using System.Net;
 
 namespace OdataToEntity.Parsers
 {
-    public sealed class OeOperationMessage
+    public readonly struct OeOperationMessage
     {
-        private OeOperationMessage(ODataBatchOperationRequestMessage batchRequest)
+        private OeOperationMessage(ODataBatchOperationRequestMessage batchRequest, IEdmEntitySet entitySet, ODataResource entry)
         {
             ContentId = batchRequest.ContentId;
             ContentType = batchRequest.GetHeader(ODataConstants.ContentTypeHeader);
             Method = batchRequest.Method;
             RequestUrl = batchRequest.Url;
+            EntitySet = entitySet;
+            Entry = entry;
         }
 
         public static OeOperationMessage Create(IEdmModel edmModel, Uri baseUri, ODataBatchReader reader)
         {
             ODataBatchOperationRequestMessage batchRequest = reader.CreateOperationRequestMessage();
-            var operation = new OeOperationMessage(batchRequest);
-
+            ODataResource entry = CreateEntry(edmModel, baseUri, batchRequest, out IEdmEntitySet entitSet);
+            return new OeOperationMessage(batchRequest, entitSet, entry);
+        }
+        private static ODataResource CreateEntry(IEdmModel edmModel, Uri baseUri, ODataBatchOperationRequestMessage batchRequest, out IEdmEntitySet entitSet)
+        {
             if (batchRequest.Method == ODataConstants.MethodDelete)
-                operation.EntityItem = operation.ReadEntityFromUrl(edmModel, baseUri);
-            else
-            {
-                using (Stream stream = batchRequest.GetStream())
-                    operation.EntityItem = operation.ReadEntityFromStream(edmModel, baseUri, stream);
-            }
-            return operation;
+                return ReadEntityFromUrl(edmModel, baseUri, batchRequest.Url, out entitSet);
+
+            String contentType = batchRequest.GetHeader(ODataConstants.ContentTypeHeader);
+            using (Stream stream = batchRequest.GetStream())
+                return ReadEntityFromStream(edmModel, baseUri, stream, batchRequest.Url, contentType, out entitSet);
         }
         private static IEdmEntityTypeReference GetEdmEntityTypeRef(ODataPath odataPath, out IEdmEntitySet entitySet)
         {
@@ -43,19 +46,17 @@ namespace OdataToEntity.Parsers
                 }
             throw new InvalidOperationException("not supported type ODataPath");
         }
-        private OeEntityItem ReadEntityFromStream(IEdmModel edmModel, Uri baseUri, Stream content)
+        private static ODataResource ReadEntityFromStream(IEdmModel edmModel, Uri baseUri, Stream content, Uri requestUrl, String contentType, out IEdmEntitySet entitySet)
         {
-            var parser = new ODataUriParser(edmModel, baseUri, RequestUrl);
-            IEdmEntityTypeReference entityTypeRef = GetEdmEntityTypeRef(parser.ParsePath(), out IEdmEntitySet entitySet);
-            var entityType = (IEdmEntityType)entityTypeRef.Definition;
+            var parser = new ODataUriParser(edmModel, baseUri, requestUrl);
+            IEdmEntityTypeReference entityTypeRef = GetEdmEntityTypeRef(parser.ParsePath(), out entitySet);
 
             ODataResource entry = null;
-            IODataRequestMessage requestMessage = new OeInMemoryMessage(content, ContentType);
+            IODataRequestMessage requestMessage = new OeInMemoryMessage(content, contentType);
             var settings = new ODataMessageReaderSettings { EnableMessageStreamDisposal = false };
             using (var messageReader = new ODataMessageReader(requestMessage, settings, edmModel))
             {
-                ODataReader reader = messageReader.CreateODataResourceReader(entitySet, entityType);
-
+                ODataReader reader = messageReader.CreateODataResourceReader(entitySet, entitySet.EntityType());
                 while (reader.Read())
                     if (reader.State == ODataReaderState.ResourceEnd)
                         entry = (ODataResource)reader.Item;
@@ -63,28 +64,27 @@ namespace OdataToEntity.Parsers
                     throw new InvalidOperationException("operation not contain entry");
             }
 
-            return new OeEntityItem(entitySet, entityType, entry);
+            return entry;
         }
-        private OeEntityItem ReadEntityFromUrl(IEdmModel edmModel, Uri baseUri)
+        private static ODataResource ReadEntityFromUrl(IEdmModel edmModel, Uri baseUri, Uri requestUrl, out IEdmEntitySet entitySet)
         {
-            var parser = new ODataUriParser(edmModel, baseUri, RequestUrl);
-
+            var parser = new ODataUriParser(edmModel, baseUri, requestUrl);
             ODataPath path = parser.ParsePath();
             var keySegment = (KeySegment)path.LastSegment;
-            var entityType = (IEdmEntityType)keySegment.EdmType;
-            var entitySet = (IEdmEntitySet)keySegment.NavigationSource;
+            entitySet = (IEdmEntitySet)keySegment.NavigationSource;
 
-            var properties = new List<ODataProperty>(1);
+            var properties = new List<ODataProperty>();
             foreach (var key in keySegment.Keys)
                 properties.Add(new ODataProperty() { Name = key.Key, Value = key.Value });
             var entry = new ODataResource() { Properties = properties };
 
-            return new OeEntityItem(entitySet, entityType, entry);
+            return entry;
         }
 
         public String ContentId { get; }
         public String ContentType { get; }
-        public OeEntityItem EntityItem { get; private set; }
+        public IEdmEntitySet EntitySet { get; }
+        public ODataResource Entry { get; }
         public String Method { get; }
         public Uri RequestUrl { get; }
         public HttpStatusCode StatusCode

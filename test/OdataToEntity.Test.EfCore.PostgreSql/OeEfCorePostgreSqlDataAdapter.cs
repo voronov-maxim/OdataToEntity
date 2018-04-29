@@ -9,8 +9,8 @@ namespace OdataToEntity.EfCore
     {
         private sealed class OeEfCorePostgreSqlOperationAdapter : OeEfCoreOperationAdapter
         {
-            public OeEfCorePostgreSqlOperationAdapter(Type dataContextType, OeEntitySetMetaAdapterCollection entitySetMetaAdapters)
-                : base(dataContextType, entitySetMetaAdapters)
+            public OeEfCorePostgreSqlOperationAdapter(Type dataContextType, OeEntitySetAdapterCollection entitySetAdapters)
+                : base(dataContextType, entitySetAdapters)
             {
             }
 
@@ -24,7 +24,7 @@ namespace OdataToEntity.EfCore
         {
         }
         public OeEfCorePostgreSqlDataAdapter(DbContextOptions options, OeQueryCache queryCache)
-            : base(options, queryCache, new OeEfCorePostgreSqlOperationAdapter(typeof(T), _entitySetMetaAdapters))
+            : base(options, queryCache, new OeEfCorePostgreSqlOperationAdapter(typeof(T), _entitySetAdapters))
         {
             base.IsDatabaseNullHighestValue = true;
         }

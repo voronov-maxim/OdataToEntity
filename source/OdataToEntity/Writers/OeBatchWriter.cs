@@ -8,7 +8,7 @@ using System.Net;
 
 namespace OdataToEntity.Writers
 {
-    public sealed class OeBatchWriter
+    public readonly struct OeBatchWriter
     {
         private readonly IEdmModel _model;
         private readonly ODataMessageWriterSettings _settings;
@@ -26,7 +26,7 @@ namespace OdataToEntity.Writers
             };
         }
 
-        public void Write(Stream stream, OeBatchMessage batchMessage)
+        public void Write(Stream stream, in OeBatchMessage batchMessage)
         {
             IODataResponseMessage responseMessage = new OeInMemoryMessage(stream, batchMessage.ContentType);
             var settings = new ODataMessageWriterSettings()
@@ -42,12 +42,12 @@ namespace OdataToEntity.Writers
             WriteBatch(writer, batchMessage);
             writer.WriteEndBatch();
         }
-        private void WriteBatch(ODataBatchWriter writer, OeBatchMessage batchMessage)
+        private void WriteBatch(ODataBatchWriter writer, in OeBatchMessage batchMessage)
         {
-            if (batchMessage.Changeset != null)
-                WriteChangeset(writer, batchMessage.Changeset);
-            if (batchMessage.Operation != null)
+            if (batchMessage.Changeset == null)
                 WriteOperation(writer, batchMessage.Operation);
+            else
+                WriteChangeset(writer, batchMessage.Changeset);
         }
         private void WriteChangeset(ODataBatchWriter writer, IReadOnlyList<OeOperationMessage> changeset)
         {
@@ -56,19 +56,19 @@ namespace OdataToEntity.Writers
                 WriteOperation(writer, operation);
             writer.WriteEndChangeset();
         }
-        private void WriteEntity(Stream stream, OeEntityItem entityItem)
+        private void WriteEntity(IEdmEntitySet entitySet, ODataResource entry, Stream stream)
         {
             IODataResponseMessage responseMessage = new OeInMemoryMessage(stream, null);
             using (ODataMessageWriter messageWriter = new ODataMessageWriter(responseMessage, _settings, _model))
             {
                 ODataUtils.SetHeadersForPayload(messageWriter, ODataPayloadKind.Resource);
-                ODataWriter writer = messageWriter.CreateODataResourceWriter(entityItem.EntitySet, entityItem.EntityType);
+                ODataWriter writer = messageWriter.CreateODataResourceWriter(entitySet, entitySet.EntityType());
 
-                writer.WriteStart(entityItem.Entry);
+                writer.WriteStart(entry);
                 writer.WriteEnd();
             }
         }
-        private void WriteOperation(ODataBatchWriter writer, OeOperationMessage operation)
+        private void WriteOperation(ODataBatchWriter writer, in OeOperationMessage operation)
         {
             ODataBatchOperationResponseMessage operationMessage = writer.CreateOperationResponseMessage(operation.ContentId);
             operationMessage.SetHeader("Location", operation.RequestUrl.AbsoluteUri);
@@ -77,7 +77,7 @@ namespace OdataToEntity.Writers
 
             if (operation.StatusCode != HttpStatusCode.NoContent)
                 using (Stream stream = operationMessage.GetStream())
-                    WriteEntity(stream, operation.EntityItem);
+                    WriteEntity(operation.EntitySet, operation.Entry, stream);
         }
     }
 }

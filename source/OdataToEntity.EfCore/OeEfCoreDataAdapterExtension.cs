@@ -13,7 +13,7 @@ namespace OdataToEntity.EfCore
             {
                 var metadataProvider = new OeEfCoreEdmModelMetadataProvider(context.Model);
                 var modelBuilder = new OeEdmModelBuilder(metadataProvider);
-                modelBuilder.AddEntitySetRange(dataAdapter.EntitySetMetaAdapters.GetEntitySetNamesEntityTypes());
+                modelBuilder.AddEntitySetRange(dataAdapter.EntitySetAdapters.GetEntitySetNamesEntityTypes());
                 OeDataAdapterExtension.BuildOperations(dataAdapter, modelBuilder);
                 return modelBuilder.BuildEdmModel();
             }

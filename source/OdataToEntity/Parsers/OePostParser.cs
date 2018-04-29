@@ -11,26 +11,26 @@ using System.Threading.Tasks;
 
 namespace OdataToEntity
 {
-    public struct OePostParser
+    public readonly struct OePostParser
     {
-        private readonly IEdmModel _model;
+        private readonly IEdmModel _edmModel;
         private readonly Db.OeDataAdapter _dataAdapter;
 
-        public OePostParser(Db.OeDataAdapter dataAdapter, IEdmModel model)
+        public OePostParser(Db.OeDataAdapter dataAdapter, IEdmModel edmModel)
         {
             _dataAdapter = dataAdapter;
-            _model = model;
+            _edmModel = edmModel;
         }
 
         public OeQueryContext CreateQueryContext(ODataUri odataUri, OeMetadataLevel metadataLevel, Type returnClrType)
         {
-            String entitySetName = _dataAdapter.EntitySetMetaAdapters.FindByClrType(returnClrType).EntitySetName;
-            IEdmEntitySet entitySet = _model.FindDeclaredEntitySet(entitySetName);
+            String entitySetName = _dataAdapter.EntitySetAdapters.FindByClrType(returnClrType).EntitySetName;
+            IEdmEntitySet entitySet = _edmModel.FindDeclaredEntitySet(entitySetName);
             OePropertyAccessor[] accessors = OePropertyAccessor.CreateFromType(returnClrType, entitySet);
 
-            Db.OeEntitySetAdapter entitySetAdapter = _dataAdapter.GetEntitySetAdapter(entitySet.Name);
-            return new OeQueryContext(_model, odataUri, entitySet, null, false, 0, false,
-                _dataAdapter.IsDatabaseNullHighestValue, metadataLevel, ref entitySetAdapter)
+            Db.OeEntitySetAdapter entitySetAdapter = _dataAdapter.EntitySetAdapters.FindByEntitySetName(entitySet.Name);
+            return new OeQueryContext(_edmModel, odataUri, entitySet, null, false, 0, false,
+                _dataAdapter.IsDatabaseNullHighestValue, metadataLevel, entitySetAdapter)
                 {
                     EntryFactory = OeEntryFactory.CreateEntryFactory(entitySet, accessors),
                 };
@@ -74,7 +74,7 @@ namespace OdataToEntity
 
             IODataRequestMessage requestMessage = new OeInMemoryMessage(requestStream, contentType);
             var settings = new ODataMessageReaderSettings() { EnableMessageStreamDisposal = false };
-            using (var messageReader = new ODataMessageReader(requestMessage, settings, _model))
+            using (var messageReader = new ODataMessageReader(requestMessage, settings, _edmModel))
             {
                 ODataParameterReader parameterReader = messageReader.CreateODataParameterReader(operation);
                 while (parameterReader.Read())
@@ -84,25 +84,25 @@ namespace OdataToEntity
                     {
                         case ODataParameterReaderState.Value:
                             {
-                                value = OeEdmClrHelper.GetValue(_model, parameterReader.Value);
+                                value = OeEdmClrHelper.GetValue(_edmModel, parameterReader.Value);
                                 break;
                             }
                         case ODataParameterReaderState.Collection:
                             {
                                 ODataCollectionReader collectionReader = parameterReader.CreateCollectionReader();
-                                value = OeEdmClrHelper.GetValue(_model, ReadCollection(collectionReader));
+                                value = OeEdmClrHelper.GetValue(_edmModel, ReadCollection(collectionReader));
                                 break;
                             }
                         case ODataParameterReaderState.Resource:
                             {
                                 ODataReader reader = parameterReader.CreateResourceReader();
-                                value = OeEdmClrHelper.GetValue(_model, ReadResource(reader));
+                                value = OeEdmClrHelper.GetValue(_edmModel, ReadResource(reader));
                                 break;
                             }
                         case ODataParameterReaderState.ResourceSet:
                             {
                                 ODataReader reader = parameterReader.CreateResourceSetReader();
-                                value = OeEdmClrHelper.GetValue(_model, ReadResourceSet(reader));
+                                value = OeEdmClrHelper.GetValue(_edmModel, ReadResourceSet(reader));
                                 break;
                             }
                         default:
@@ -126,10 +126,10 @@ namespace OdataToEntity
                 IEdmTypeReference returnEdmTypeReference = operationImport.Operation.ReturnType;
                 if (returnEdmTypeReference is IEdmCollectionTypeReference)
                     returnEdmTypeReference = (returnEdmTypeReference.Definition as IEdmCollectionType).ElementType;
-                returnClrType = OeEdmClrHelper.GetClrType(_model, returnEdmTypeReference.Definition);
+                returnClrType = OeEdmClrHelper.GetClrType(_edmModel, returnEdmTypeReference.Definition);
             }
 
-            if (_model.IsDbFunction(operationImport.Operation))
+            if (_edmModel.IsDbFunction(operationImport.Operation))
                 return _dataAdapter.OperationAdapter.ExecuteFunction(dataContext, operationImport.Name, parameters, returnClrType);
             else
                 return _dataAdapter.OperationAdapter.ExecuteProcedure(dataContext, operationImport.Name, parameters, returnClrType);
@@ -143,9 +143,9 @@ namespace OdataToEntity
                 Object value;
                 var constantNode = segmentParameter.Value as ConstantNode;
                 if (constantNode == null)
-                    value = OeEdmClrHelper.GetValue(_model, segmentParameter.Value);
+                    value = OeEdmClrHelper.GetValue(_edmModel, segmentParameter.Value);
                 else
-                    value = OeEdmClrHelper.GetValue(_model, constantNode.Value);
+                    value = OeEdmClrHelper.GetValue(_edmModel, constantNode.Value);
                 parameters.Add(new KeyValuePair<String, Object>(segmentParameter.Name, value));
             }
 

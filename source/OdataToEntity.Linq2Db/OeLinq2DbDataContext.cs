@@ -39,13 +39,13 @@ namespace OdataToEntity.Linq2Db
             _tables = new Dictionary<Type, OeLinq2DbTable>();
         }
 
-        private List<ClrTypeEdmSet> GetClrTypeEdmSetList(IEdmModel edmModel, OeEntitySetMetaAdapterCollection entitySetMetaAdapters)
+        private List<ClrTypeEdmSet> GetClrTypeEdmSetList(IEdmModel edmModel, OeEntitySetAdapterCollection entitySetAdapters)
         {
             var clrTypeEdmSetList = new List<ClrTypeEdmSet>();
             foreach (Type entityType in _tables.Keys)
             {
-                OeEntitySetMetaAdapter metaAdapter = entitySetMetaAdapters.FindByClrType(entityType);
-                IEdmEntitySet entitySet = edmModel.FindDeclaredEntitySet(metaAdapter.EntitySetName);
+                OeEntitySetAdapter entitSetAdapter = entitySetAdapters.FindByClrType(entityType);
+                IEdmEntitySet entitySet = edmModel.FindDeclaredEntitySet(entitSetAdapter.EntitySetName);
                 clrTypeEdmSetList.Add(new ClrTypeEdmSet(entityType, entitySet));
             }
 
@@ -108,9 +108,9 @@ namespace OdataToEntity.Linq2Db
             }
             return true;
         }
-        public int SaveChanges(IEdmModel edmModel, OeEntitySetMetaAdapterCollection entitySetMetaAdapters, DataConnection dataConnection)
+        public int SaveChanges(IEdmModel edmModel, OeEntitySetAdapterCollection entitySetAdapters, DataConnection dataConnection)
         {
-            List<ClrTypeEdmSet> clrTypeEdmSetList = GetClrTypeEdmSetList(edmModel, entitySetMetaAdapters);
+            List<ClrTypeEdmSet> clrTypeEdmSetList = GetClrTypeEdmSetList(edmModel, entitySetAdapters);
             int count = 0;
 
             for (int i = clrTypeEdmSetList.Count - 1; i >= 0; i--)

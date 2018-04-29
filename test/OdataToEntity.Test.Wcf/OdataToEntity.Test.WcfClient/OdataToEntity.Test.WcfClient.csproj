@@ -5,11 +5,12 @@
     <Description>Test Wcf client for OdataToEntity</Description>
     <AssemblyTitle>Test Wcf client for OdataToEntity</AssemblyTitle>
     <Authors>Maxim Voronov</Authors>
-    <TargetFrameworks>net461</TargetFrameworks>
+    <TargetFrameworks>$(FrameworkVersion)</TargetFrameworks>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity.Test.WcfClient</AssemblyName>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <LangVersion>$(CSharpVersion)</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup>

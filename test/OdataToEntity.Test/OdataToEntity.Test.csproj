@@ -5,11 +5,12 @@
     <Description>Test Ef core in memory for OdataToEntity</Description>
     <AssemblyTitle>Test Ef core in memory for OdataToEntity</AssemblyTitle>
     <Authors>Maxim Voronov</Authors>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFrameworks>$(NetCoreAppVersion)</TargetFrameworks>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity.Test</AssemblyName>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <LangVersion>$(CSharpVersion)</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup>

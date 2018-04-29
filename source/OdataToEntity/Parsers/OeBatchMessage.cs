@@ -3,25 +3,22 @@ using Microsoft.OData.Edm;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace OdataToEntity.Parsers
 {
-    public sealed class OeBatchMessage
+    public readonly struct OeBatchMessage
     {
-        private readonly IReadOnlyList<OeOperationMessage> _changeset;
-        private readonly String _contentType;
-        private readonly OeOperationMessage _operation;
-
         private OeBatchMessage(String contentType, IReadOnlyList<OeOperationMessage> changeset)
         {
-            _contentType = contentType;
-            _changeset = changeset;
+            ContentType = contentType;
+            Changeset = changeset;
+            Operation = default;
         }
-        private OeBatchMessage(String contentType, OeOperationMessage operation)
+        private OeBatchMessage(String contentType, in OeOperationMessage operation)
         {
-            _contentType = contentType;
-            _operation = operation;
+            ContentType = contentType;
+            Changeset = null;
+            Operation = operation;
         }
 
         public static OeBatchMessage CreateBatchMessage(IEdmModel edmModel, Uri baseUri, Stream requestStream, String contentType)
@@ -38,19 +35,13 @@ namespace OdataToEntity.Parsers
                     {
                         var operations = new List<OeOperationMessage>();
                         while (batchReader.Read() && batchReader.State != ODataBatchReaderState.ChangesetEnd)
-                        {
                             if (batchReader.State == ODataBatchReaderState.Operation)
-                            {
-                                OeOperationMessage operation = OeOperationMessage.Create(edmModel, baseUri, batchReader);
-                                operations.Add(operation);
-                            }
-                        }
+                                operations.Add(OeOperationMessage.Create(edmModel, baseUri, batchReader));
                         return new OeBatchMessage(contentType, operations);
                     }
                     else if (batchReader.State == ODataBatchReaderState.Operation)
                     {
-                        OeOperationMessage operation = OeOperationMessage.Create(edmModel, baseUri, batchReader);
-                        return new OeBatchMessage(contentType, operation);
+                        return new OeBatchMessage(contentType, OeOperationMessage.Create(edmModel, baseUri, batchReader));
                     }
                 }
             }
@@ -58,8 +49,8 @@ namespace OdataToEntity.Parsers
             throw new InvalidOperationException("batch not found");
         }
 
-        public IReadOnlyList<OeOperationMessage> Changeset => _changeset;
-        public String ContentType => _contentType;
-        public OeOperationMessage Operation => _operation;
+        public IReadOnlyList<OeOperationMessage> Changeset { get; }
+        public String ContentType { get; }
+        public readonly OeOperationMessage Operation;
     }
 }

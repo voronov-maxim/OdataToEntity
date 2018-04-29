@@ -11,9 +11,9 @@ using System.Reflection;
 
 namespace OdataToEntity.Parsers
 {
-    public struct OeAggregationTranslator
+    public readonly struct OeAggregationTranslator
     {
-        private struct ComputeAliasNameResolver
+        private readonly struct ComputeAliasNameResolver
         {
             private readonly List<AggProperty> _aggProperties;
             private readonly List<Expression> _aggExpressions;

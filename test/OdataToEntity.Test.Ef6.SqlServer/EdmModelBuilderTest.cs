@@ -20,7 +20,7 @@ namespace OdataToEntity.Test
             {
                 var metadataProvider = new OeEf6EdmModelMetadataProvider(context);
                 var modelBuilder = new OeEdmModelBuilder(metadataProvider);
-                modelBuilder.AddEntitySetRange(dataAdapter.EntitySetMetaAdapters.GetEntitySetNamesEntityTypes());
+                modelBuilder.AddEntitySetRange(dataAdapter.EntitySetAdapters.GetEntitySetNamesEntityTypes());
                 FixOperations(dataAdapter, modelBuilder);
                 return modelBuilder.BuildEdmModel();
             }

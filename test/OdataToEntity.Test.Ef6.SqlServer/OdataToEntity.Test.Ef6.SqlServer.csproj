@@ -5,11 +5,12 @@
     <Description>Test Ef6 Sql Server for OdataToEntity</Description>
     <AssemblyTitle>Test Ef6 Sql Server for OdataToEntity</AssemblyTitle>
     <Authors>Maxim Voronov</Authors>
-    <TargetFrameworks>net461</TargetFrameworks>
+    <TargetFrameworks>$(FrameworkVersion)</TargetFrameworks>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity.Test.Ef6.SqlServer</AssemblyName>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <LangVersion>$(CSharpVersion)</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup>

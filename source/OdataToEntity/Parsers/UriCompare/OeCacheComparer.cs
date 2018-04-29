@@ -7,9 +7,9 @@ using System.Linq;
 
 namespace OdataToEntity.Parsers.UriCompare
 {
-    public struct OeCacheComparer
+    public readonly struct OeCacheComparer
     {
-        private bool _navigationNextLink;
+        private readonly bool _navigationNextLink;
         private readonly OeCacheComparerParameterValues _parameterValues;
         private readonly OeQueryNodeComparer _queryNodeComparer;
 
@@ -131,7 +131,7 @@ namespace OdataToEntity.Parsers.UriCompare
             if (!clause1.ItemType.IsEqual(clause1.ItemType))
                 return false;
 
-            OeQueryNodeComparer queryNodeComparer = navigationNextLink ? new OeQueryNodeComparer(default(OeCacheComparerParameterValues)) : _queryNodeComparer;
+            OeQueryNodeComparer queryNodeComparer = navigationNextLink ? new OeQueryNodeComparer(default) : _queryNodeComparer;
             if (!queryNodeComparer.Compare(clause1.RangeVariable, clause2.RangeVariable))
                 return false;
             return queryNodeComparer.Compare(clause1.Expression, clause2.Expression);
@@ -180,7 +180,7 @@ namespace OdataToEntity.Parsers.UriCompare
             if (clause1 == null || clause2 == null)
                 return false;
 
-            OeQueryNodeComparer queryNodeComparer = navigationNextLink ? new OeQueryNodeComparer(default(OeCacheComparerParameterValues)) : _queryNodeComparer;
+            OeQueryNodeComparer queryNodeComparer = navigationNextLink ? new OeQueryNodeComparer(default) : _queryNodeComparer;
             return clause1.Direction == clause2.Direction &&
                 clause1.ItemType.IsEqual(clause2.ItemType) &&
                 queryNodeComparer.Compare(clause1.RangeVariable, clause2.RangeVariable) &&

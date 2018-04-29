@@ -15,12 +15,12 @@ namespace OdataToEntity.EfCore
 {
     public class OeEfCoreOperationAdapter : OeOperationAdapter
     {
-        private readonly OeEntitySetMetaAdapterCollection _entitySetMetaAdapters;
+        private readonly OeEntitySetAdapterCollection _entitySetAdapters;
 
-        public OeEfCoreOperationAdapter(Type dataContextType, OeEntitySetMetaAdapterCollection entitySetMetaAdapters)
+        public OeEfCoreOperationAdapter(Type dataContextType, OeEntitySetAdapterCollection entitySetAdapters)
             : base(dataContextType)
         {
-            _entitySetMetaAdapters = entitySetMetaAdapters;
+            _entitySetAdapters = entitySetAdapters;
         }
 
         protected override OeAsyncEnumerator ExecuteNonQuery(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters)
@@ -30,7 +30,7 @@ namespace OdataToEntity.EfCore
         }
         protected override OeAsyncEnumerator ExecuteReader(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
         {
-            var fromSql = (IFromSql)_entitySetMetaAdapters.FindByClrType(returnType);
+            var fromSql = (IFromSql)_entitySetAdapters.FindByClrType(returnType);
             if (fromSql == null)
                 throw new NotSupportedException("supported only Entity type");
 
