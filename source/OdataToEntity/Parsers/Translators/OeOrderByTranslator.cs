@@ -11,10 +11,10 @@ namespace OdataToEntity.Parsers
 {
     public readonly struct OeOrderByTranslator
     {
-        private struct OrderByExpressionBuider
+        private readonly struct OrderByExpressionBuider
         {
             private readonly Func<OrderByDirection, Type, Type, MethodInfo> _getMethodInfo;
-            private bool _isInsertedOrderByMethod;
+            private readonly bool _isInsertedOrderByMethod;
             private readonly OeQueryNodeVisitor _visitor;
 
             public OrderByExpressionBuider(OeQueryNodeVisitor visitor, Func<OrderByDirection, Type, Type, MethodInfo> getMethodInfo, bool isInsertedOrderByMethod)
@@ -24,13 +24,14 @@ namespace OdataToEntity.Parsers
                 _isInsertedOrderByMethod = isInsertedOrderByMethod;
             }
 
-            public Expression ApplyOrderBy(Expression source, OrderByClause orderByClause)
+            public Expression ApplyOrderBy(Expression source, OrderByClause orderByClause, out bool isInsertedOrderByMethod)
             {
+                isInsertedOrderByMethod = _isInsertedOrderByMethod;
                 if (orderByClause == null)
                     return source;
 
                 Expression keySelector = null;
-                if (!IsInsertedOrderByMethod)
+                if (!_isInsertedOrderByMethod)
                 {
                     var tupleProperty = new OePropertyTranslator(source);
                     _visitor.TuplePropertyByEdmProperty = tupleProperty.Build;
@@ -61,6 +62,8 @@ namespace OdataToEntity.Parsers
                             navigationNode = navigationNode.Source as SingleNavigationNode;
                         edmSplitType = navigationNode.NavigationProperty.DeclaringType;
                     }
+
+                    isInsertedOrderByMethod = true;
                     return InsertOrderByMethod(source, orderByClause, edmSplitType);
                 }
 
@@ -75,18 +78,15 @@ namespace OdataToEntity.Parsers
             private Expression InsertOrderByMethod(Expression source, OrderByClause orderByClause, IEdmType edmSplitType)
             {
                 Type sourceItemType = _visitor.EdmModel.GetClrType(edmSplitType);
-                Type sourceTypeGeneric = IsInsertedOrderByMethod ? typeof(IOrderedEnumerable<>) : typeof(IEnumerable<>);
+                Type sourceTypeGeneric = _isInsertedOrderByMethod ? typeof(IOrderedEnumerable<>) : typeof(IEnumerable<>);
                 var splitterVisitor = new OeExpressionSplitterVisitor(sourceTypeGeneric.MakeGenericType(sourceItemType));
                 Expression beforeExpression = splitterVisitor.GetBefore(source);
 
                 var visitor = new OeQueryNodeVisitor(_visitor.EdmModel, Expression.Parameter(sourceItemType), _visitor.Constans);
                 Expression keySelector = visitor.TranslateNode(orderByClause.Expression);
                 Expression orderByCall = GetOrderByExpression(beforeExpression, visitor.Parameter, orderByClause.Direction, keySelector);
-                _isInsertedOrderByMethod = true;
                 return splitterVisitor.Join(orderByCall);
             }
-
-            public bool IsInsertedOrderByMethod => _isInsertedOrderByMethod;
         }
 
         private readonly OeQueryNodeVisitor _visitor;
@@ -98,13 +98,10 @@ namespace OdataToEntity.Parsers
 
         public Expression Build(Expression source, OrderByClause orderByClause)
         {
-            bool isInsertedOrderByMethod = false;
             var orderByExpressionBuider = new OrderByExpressionBuider(_visitor, GetOrderByMethodInfo, false);
             while (orderByClause != null)
             {
-                source = orderByExpressionBuider.ApplyOrderBy(source, orderByClause);
-                isInsertedOrderByMethod |= orderByExpressionBuider.IsInsertedOrderByMethod;
-
+                source = orderByExpressionBuider.ApplyOrderBy(source, orderByClause, out bool isInsertedOrderByMethod);
                 orderByExpressionBuider = new OrderByExpressionBuider(_visitor, GetThenByMethodInfo, isInsertedOrderByMethod);
                 orderByClause = orderByClause.ThenBy;
             }

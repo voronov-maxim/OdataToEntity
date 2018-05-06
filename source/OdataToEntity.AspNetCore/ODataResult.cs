@@ -14,18 +14,18 @@ namespace OdataToEntity.AspNetCore
 {
     public sealed class ODataResult<T> : IActionResult
     {
-        private struct EntityPropertiesInfo
+        private readonly struct EntityPropertiesInfo
         {
-            public readonly IEdmEntityType EdmEntityType;
-            public readonly PropertyInfo[] Structurals;
-            public readonly PropertyInfo[] Navigations;
-
             public EntityPropertiesInfo(IEdmEntityType edmEntityType, PropertyInfo[] structurals, PropertyInfo[] navigations)
             {
                 EdmEntityType = edmEntityType;
                 Structurals = structurals;
                 Navigations = navigations;
             }
+
+            public IEdmEntityType EdmEntityType { get; }
+            public PropertyInfo[] Navigations { get; }
+            public PropertyInfo[] Structurals { get; }
         }
 
         private sealed class SelectProperyHandler : SelectItemHandler
@@ -217,8 +217,8 @@ namespace OdataToEntity.AspNetCore
             writer.WriteStart(resourceSet);
 
             int count = 0;
-            T entity = default(T);
-            EntityPropertiesInfo entityPropertiesInfo = default(EntityPropertiesInfo);
+            T entity = default;
+            EntityPropertiesInfo entityPropertiesInfo = default;
             while (await _entities.MoveNext())
             {
                 entity = _entities.Current;

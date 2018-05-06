@@ -11,13 +11,14 @@ namespace OdataToEntity.Linq2Db
 {
     public abstract class OeLinq2DbTable
     {
-        public struct UpdatableEntity<T> where T : class
+        public readonly struct UpdatableEntity<T> where T : class
         {
             public UpdatableEntity(T entity, IReadOnlyList<String> updatedPropertyNames)
             {
                 Entity = entity;
                 UpdatedPropertyNames = updatedPropertyNames;
             }
+
             public T Entity { get; }
             public IReadOnlyList<String> UpdatedPropertyNames { get; }
         }

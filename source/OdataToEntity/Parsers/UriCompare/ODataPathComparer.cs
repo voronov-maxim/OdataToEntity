@@ -43,23 +43,20 @@ namespace OdataToEntity.Parsers.UriCompare
         }
         public override bool Translate(EntitySetSegment segment)
         {
-            EntitySetSegment entitySetSegment = GetNextSegment() as EntitySetSegment;
-            return entitySetSegment != null && entitySetSegment.EntitySet == segment.EntitySet;
+            return GetNextSegment() is EntitySetSegment entitySetSegment && entitySetSegment.EntitySet == segment.EntitySet;
         }
         public override bool Translate(KeySegment segment)
         {
-            KeySegment keySegment = GetNextSegment() as KeySegment;
-            return keySegment != null && keySegment.Keys.SequenceEqual(segment.Keys) && keySegment.EdmType == segment.EdmType && keySegment.NavigationSource == segment.NavigationSource;
+            return GetNextSegment() is KeySegment keySegment && keySegment.Keys.SequenceEqual(segment.Keys) &&
+                keySegment.EdmType == segment.EdmType && keySegment.NavigationSource == segment.NavigationSource;
         }
         public override bool Translate(NavigationPropertySegment segment)
         {
-            NavigationPropertySegment navigationPropertySegment = GetNextSegment() as NavigationPropertySegment;
-            return navigationPropertySegment != null && navigationPropertySegment.NavigationProperty == segment.NavigationProperty;
+            return GetNextSegment() is NavigationPropertySegment navigationPropertySegment && navigationPropertySegment.NavigationProperty == segment.NavigationProperty;
         }
         public override bool Translate(PropertySegment segment)
         {
-            PropertySegment propertySegment = GetNextSegment() as PropertySegment;
-            return propertySegment != null && propertySegment.Property == segment.Property;
+            return GetNextSegment() is PropertySegment propertySegment && propertySegment.Property == segment.Property;
         }
     }
 }

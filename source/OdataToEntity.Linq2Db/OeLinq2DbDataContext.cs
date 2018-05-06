@@ -20,16 +20,16 @@ namespace OdataToEntity.Linq2Db
 
     public sealed class OeLinq2DbDataContext
     {
-        private struct ClrTypeEdmSet
+        private readonly struct ClrTypeEdmSet
         {
-            public readonly Type ClrType;
-            public readonly IEdmEntitySet EdmSet;
-
             public ClrTypeEdmSet(Type clrType, IEdmEntitySet edmSet)
             {
                 ClrType = clrType;
-                EdmSet = edmSet;
+                EdmEntitySet = edmSet;
             }
+
+            public Type ClrType { get; }
+            public IEdmEntitySet EdmEntitySet { get; }
         }
 
         private readonly Dictionary<Type, OeLinq2DbTable> _tables;
@@ -90,11 +90,11 @@ namespace OdataToEntity.Linq2Db
         {
             selfRefProperty = null;
 
-            foreach (IEdmNavigationPropertyBinding navigationBinding in clrTypeEdmSet.EdmSet.NavigationPropertyBindings)
+            foreach (IEdmNavigationPropertyBinding navigationBinding in clrTypeEdmSet.EdmEntitySet.NavigationPropertyBindings)
             {
                 if (!navigationBinding.NavigationProperty.IsPrincipal())
                 {
-                    if (clrTypeEdmSet.EdmSet == navigationBinding.Target)
+                    if (clrTypeEdmSet.EdmEntitySet == navigationBinding.Target)
                     {
                         IEdmStructuralProperty edmSelfRefProperty = navigationBinding.NavigationProperty.DependentProperties().Single();
                         selfRefProperty = clrTypeEdmSet.ClrType.GetProperty(edmSelfRefProperty.Name);
@@ -103,7 +103,7 @@ namespace OdataToEntity.Linq2Db
                 }
 
                 foreach (ClrTypeEdmSet clrTypeEdmSet2 in clrTypeEdmSetList)
-                    if (clrTypeEdmSet2.EdmSet == navigationBinding.Target && clrTypeEdmSet.EdmSet != navigationBinding.Target)
+                    if (clrTypeEdmSet2.EdmEntitySet == navigationBinding.Target && clrTypeEdmSet.EdmEntitySet != navigationBinding.Target)
                         return false;
             }
             return true;
@@ -136,10 +136,10 @@ namespace OdataToEntity.Linq2Db
             if (table.Identities.Count == 0)
                 return;
 
-            foreach (IEdmNavigationPropertyBinding navigationBinding in clrTypeEdmSetList[lastIndex].EdmSet.NavigationPropertyBindings)
+            foreach (IEdmNavigationPropertyBinding navigationBinding in clrTypeEdmSetList[lastIndex].EdmEntitySet.NavigationPropertyBindings)
                 if (navigationBinding.NavigationProperty.IsPrincipal())
                     for (int j = 0; j <= lastIndex; j++)
-                        if (clrTypeEdmSetList[j].EdmSet == navigationBinding.Target)
+                        if (clrTypeEdmSetList[j].EdmEntitySet == navigationBinding.Target)
                         {
                             List<PropertyInfo> dependentProperties = GetDependentProperties(clrTypeEdmSetList[j].ClrType, navigationBinding.NavigationProperty);
                             GetTable(clrTypeEdmSetList[j].ClrType).UpdateIdentities(dependentProperties[0], table.Identities);

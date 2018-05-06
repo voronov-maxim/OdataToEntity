@@ -9,6 +9,7 @@
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity.Linq2Db</AssemblyName>
     <Title>Linq2Db adapter for OdataEntity</Title>
+    <LangVersion>$(CSharpVersion)</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup>
