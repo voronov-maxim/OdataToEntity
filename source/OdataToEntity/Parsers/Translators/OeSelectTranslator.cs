@@ -9,23 +9,20 @@ using System.Reflection;
 
 namespace OdataToEntity.Parsers
 {
-    public sealed class OeSelectTranslator
+    public readonly struct OeSelectTranslator
     {
         private sealed class ComputeProperty : IEdmProperty
         {
-            private readonly String _alias;
-            private readonly IEdmTypeReference _edmTypeReference;
-
             public ComputeProperty(String alias, IEdmTypeReference edmTypeReference)
             {
-                _alias = alias;
-                _edmTypeReference = edmTypeReference;
+                Name = alias;
+                Type = edmTypeReference;
             }
 
             public IEdmStructuredType DeclaringType => ModelBuilder.PrimitiveTypeHelper.TupleEdmType;
-            public string Name => _alias;
+            public String Name { get; }
             public EdmPropertyKind PropertyKind => throw new NotSupportedException();
-            public IEdmTypeReference Type => _edmTypeReference;
+            public IEdmTypeReference Type { get; }
         }
 
         private sealed class ParameterVisitor : ExpressionVisitor
@@ -49,12 +46,6 @@ namespace OdataToEntity.Parsers
 
         private sealed class SelectItemInfo
         {
-            private readonly bool? _countOption;
-            private readonly IEdmProperty _edmProperty;
-            private readonly IEdmEntitySet _entitySet;
-            private readonly bool _propertySelect;
-            private readonly ODataNestedResourceInfo _resource;
-
             public SelectItemInfo(Expression expression) : this(null, null, null, false, null)
             {
                 Expression = expression;
@@ -65,20 +56,20 @@ namespace OdataToEntity.Parsers
             }
             public SelectItemInfo(IEdmEntitySet entitySet, IEdmProperty edmProperty, ODataNestedResourceInfo resource, bool propertySelect, bool? countOption)
             {
-                _entitySet = entitySet;
-                _edmProperty = edmProperty;
-                _resource = resource;
-                _propertySelect = propertySelect;
-                _countOption = countOption;
+                EntitySet = entitySet;
+                EdmProperty = edmProperty;
+                Resource = resource;
+                PropertySelect = propertySelect;
+                CountOption = countOption;
             }
 
-            public bool? CountOption => _countOption;
-            public IEdmProperty EdmProperty => _edmProperty;
-            public IEdmEntitySet EntitySet => _entitySet;
+            public bool? CountOption { get; }
+            public IEdmProperty EdmProperty { get; }
+            public IEdmEntitySet EntitySet { get; }
             public OeEntryFactory EntryFactory { get; set; }
             public Expression Expression { get; set; }
-            public bool PropertySelect => _propertySelect;
-            public ODataNestedResourceInfo ResourceInfo => _resource;
+            public bool PropertySelect { get; }
+            public ODataNestedResourceInfo Resource { get; }
         }
 
         private sealed class SelectItemTranslator : SelectItemTranslator<SelectItemInfo>
@@ -179,7 +170,7 @@ namespace OdataToEntity.Parsers
                         nestedType = OeExpressionHelper.GetCollectionItemType(nestedExpression.Type);
                     }
 
-                    selectItemInfo.EntryFactory = selectTranslator.CreateNestedEntryFactory(nestedType, selectItemInfo.EntitySet, selectItemInfo.ResourceInfo);
+                    selectItemInfo.EntryFactory = selectTranslator.CreateNestedEntryFactory(nestedType, selectItemInfo.EntitySet, selectItemInfo.Resource);
                     expression = nestedExpression;
                 }
 
@@ -245,30 +236,19 @@ namespace OdataToEntity.Parsers
         }
         public Expression Build(Expression source, OeQueryContext queryContext)
         {
-            OrderByClause orderBy = queryContext.ODataUri.OrderBy;
-            SelectExpandClause selectAndExpand = queryContext.ODataUri.SelectAndExpand;
-            ComputeClause compute = queryContext.ODataUri.Compute;
+            if (queryContext.ODataUri.SelectAndExpand != null)
+                BuildSelect(queryContext.ODataUri.SelectAndExpand, source, _visitor.Parameter, queryContext.MetadataLevel, queryContext.NavigationNextLink);
 
-            if (selectAndExpand != null)
-                BuildSelect(selectAndExpand, source, _visitor.Parameter, queryContext.MetadataLevel, queryContext.NavigationNextLink);
+            if (queryContext.ODataUri.Compute != null)
+                BuildCompute(queryContext.ODataUri.Compute);
 
-            if (compute != null)
-                BuildCompute(compute);
+            if (queryContext.ODataUri.OrderBy != null)
+                BuildOrderBy(queryContext.ODataUri.OrderBy);
 
-            if (orderBy != null)
-                BuildOrderBy(orderBy);
-
-            if (_selectItemInfos.Count == 0 && queryContext.SkipTokenParser != null)
-            {
-                queryContext.SkipTokenParser.Accessors = GetAccessors(source, orderBy);
+            if (_selectItemInfos.Count == 0)
                 return null;
-            }
 
-            var selectExpression = CreateSelectExpression(source, _visitor.Parameter);
-            if (queryContext.SkipTokenParser != null)
-                queryContext.SkipTokenParser.Accessors = GetAccessors(selectExpression, orderBy);
-
-            return selectExpression;
+            return CreateSelectExpression(source, _visitor.Parameter);
         }
         private void BuildCompute(ComputeClause computeClause)
         {
@@ -386,28 +366,6 @@ namespace OdataToEntity.Parsers
                 expressions[i] = _selectItemInfos[i].Expression;
             return OeExpressionHelper.CreateTupleExpression(expressions);
         }
-        private static OePropertyAccessor[] GetAccessors(Expression source, OrderByClause orderByClause)
-        {
-            var accessors = new List<OePropertyAccessor>();
-
-            var tupleProperty = new OePropertyTranslator(source);
-            Type itemType = OeExpressionHelper.GetCollectionItemType(source.Type);
-            ParameterExpression parameter = Expression.Parameter(typeof(Object));
-            UnaryExpression instance = Expression.Convert(parameter, itemType);
-
-            while (orderByClause != null)
-            {
-                var propertyNode = (SingleValuePropertyAccessNode)orderByClause.Expression;
-                MemberExpression propertyExpression = tupleProperty.Build(instance, propertyNode.Property);
-                if (propertyExpression == null)
-                    throw new InvalidOperationException("order by property " + propertyNode.Property.Name + "not found");
-
-                accessors.Add(OePropertyAccessor.CreatePropertyAccessor(propertyNode.Property, propertyExpression, parameter));
-                orderByClause = orderByClause.ThenBy;
-            }
-
-            return accessors.ToArray();
-        }
         private List<OeEntryFactory> GetNavigationLinks(IReadOnlyList<MemberExpression> itemExpressions, ParameterExpression parameter)
         {
             var navigationLinks = new List<OeEntryFactory>(_selectItemInfos.Count);
@@ -420,11 +378,11 @@ namespace OdataToEntity.Parsers
                     if (itemInfo.EntryFactory == null)
                     {
                         Type type = itemInfo.Expression.Type;
-                        if (itemInfo.ResourceInfo.IsCollection.GetValueOrDefault())
+                        if (itemInfo.Resource.IsCollection.GetValueOrDefault())
                             type = OeExpressionHelper.GetCollectionItemType(type);
 
                         OePropertyAccessor[] accessors = OePropertyAccessor.CreateFromType(type, itemInfo.EntitySet);
-                        entryFactory = OeEntryFactory.CreateEntryFactoryChild(itemInfo.EntitySet, accessors, itemInfo.ResourceInfo);
+                        entryFactory = OeEntryFactory.CreateEntryFactoryChild(itemInfo.EntitySet, accessors, itemInfo.Resource);
                         entryFactory.CountOption = itemInfo.CountOption;
                     }
                     else

@@ -102,14 +102,16 @@ var parser = new OeParser(new Uri("http://dummy"), dataAdapter, dataAdapter.Buil
 //The result of the stored procedure
 var response = new MemoryStream();
 //Execute sored procedure
-await parser.ExecuteGetAsync(new Uri("http://dummy/GetOrders(name='Order 1',id=1,status=null)"), OeRequestHeaders.JsonDefault, response, CancellationToken.None);
+await parser.ExecuteGetAsync(new Uri("http://dummy/dbo.GetOrders(name='Order 1',id=1,status=null)"), OeRequestHeaders.JsonDefault, response, CancellationToken.None);
 ```
+If procedure name different from method name use attrubute Description("dbo.GetOrders") on method data context.
 
 ### Server-Driven Paging ###
 To use responses that include only a partial set of the items identified by the request indicate maximum page size through the invoke method *OeRequestHeaders.SetMaxPageSize(int maxPageSize)*. The service serializes the returned continuation token into the $skiptoken query option and returns it as part of the next link (*@odata.nextLink*)to the client. If request returns result set sorted by nullable database column, should set *OeDataAdapter.IsDatabaseNullHighestValue* (SQLite, MySql, Sql Server set *false*, for PostgreSql, Oracle set *true*), or mark property *RequiredAttribute*.
 ```c#
 //Create adapter data access, where OrderContext your DbContext
-var dataAdapter = new OeEfCoreDataAdapter<Model.OrderContext>(Model.OrderContext.CreateOptions())
+DbContextOptions contextOptions = OrderContextOptions.Create(useRelationalNulls: true, null);
+var dataAdapter = new OeEfCoreDataAdapter<Model.OrderContext>(contextOptions)
 {
   IsDatabaseNullHighestValue = true //PostgreSql
 };
@@ -138,7 +140,7 @@ await parser.ExecuteGetAsync(uri, requestHeaders, response, CancellationToken.No
 ```
 
 ### A function specific to the Entity Framework Core ###
-For the Entity Framework Core provider used more deep cached queries, cache value is a delegate accepting the data context and returning the query result. This allows to exclude the stage of building the data query itself (*IQueryable*). To use this feature, you need to use the constructor *OeEfCoreDataAdapter(DbContextOptions options, Db.OeQueryCache queryCache)*.
+For the Entity Framework Core provider used more deep cached queries, cache value is a delegate accepting the data context and returning the query result. This allows to exclude the stage of building the data query itself (*IQueryable*). To use this feature, you need to use the constructor *OeEfCoreDataAdapter(DbContextOptions options, Cache.OeQueryCache queryCache)*.
 For use pooling (*DbContextPool*) in Entity Framework Core create instance *OeEfCoreDataAdapter* use constructor with *DbContextOptions* parameter.
 ```c#
 //Create adapter data access, where OrderContext your DbContext

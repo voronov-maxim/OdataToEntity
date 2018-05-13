@@ -50,7 +50,7 @@ namespace OdataToEntity.AspNetCore
         private readonly OeEntryFactory _entryFactory;
         private bool _isFirstMoveNext;
         private bool _isMoveNext;
-        private readonly OeSkipTokenParser _skipTokenParser;
+        private readonly OeQueryContext _queryContext;
 
         public OeEntityAsyncEnumerator(OeEntryFactory entryFactory, Db.OeAsyncEnumerator asyncEnumerator)
         {
@@ -59,10 +59,10 @@ namespace OdataToEntity.AspNetCore
 
             _isFirstMoveNext = true;
         }
-        public OeEntityAsyncEnumerator(OeEntryFactory entryFactory, Db.OeAsyncEnumerator asyncEnumerator, OeSkipTokenParser skipTokenParser)
+        public OeEntityAsyncEnumerator(OeEntryFactory entryFactory, Db.OeAsyncEnumerator asyncEnumerator, OeQueryContext queryContext)
             : this(entryFactory, asyncEnumerator)
         {
-            _skipTokenParser = skipTokenParser;
+            _queryContext = queryContext;
         }
 
         public T CreateEntityFromTuple(Object tuple, OePropertyAccessor[] accessors)
@@ -119,7 +119,7 @@ namespace OdataToEntity.AspNetCore
                 SetNavigationProperty(navigationLink, value, Current);
 
             _isMoveNext = await _asyncEnumerator.MoveNextAsync().ConfigureAwait(false);
-            if (!_isMoveNext && _skipTokenParser != null && _skipTokenParser.Accessors != null)
+            if (!_isMoveNext && _queryContext.SkipTokenNameValues != null && _queryContext.SkipTokenAccessors != null)
                 SetOrderByProperties(Current, value);
 
             return true;
@@ -132,15 +132,15 @@ namespace OdataToEntity.AspNetCore
         }
         private void SetOrderByProperties(Object entity, Object value)
         {
-            var visitor = new OeQueryNodeVisitor(_skipTokenParser.EdmModel, Expression.Parameter(typeof(T)));
+            var visitor = new OeQueryNodeVisitor(_queryContext.EdmModel, Expression.Parameter(typeof(T)));
             var setPropertyValueVisitor = new SetPropertyValueVisitor();
 
             int i = 0;
-            OrderByClause orderByClause = _skipTokenParser.UniqueOrderBy;
+            OrderByClause orderByClause = _queryContext.ODataUri.OrderBy;
             while (orderByClause != null)
             {
                 var propertyExpression = (MemberExpression)visitor.TranslateNode(orderByClause.Expression);
-                Object orderValue = _skipTokenParser.Accessors[i++].GetValue(value);
+                Object orderValue = _queryContext.SkipTokenAccessors[i++].GetValue(value);
                 setPropertyValueVisitor.SetPropertyValue(entity, propertyExpression, orderValue);
 
                 orderByClause = orderByClause.ThenBy;

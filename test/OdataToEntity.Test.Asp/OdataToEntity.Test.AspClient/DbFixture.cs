@@ -103,15 +103,14 @@ namespace OdataToEntity.Test
                     foreach (LambdaExpression navigationPropertyAccessor in navigationPropertyAccessors)
                     {
                         var propertyExpression = (MemberExpression)navigationPropertyAccessor.Body;
-                        var property = ((PropertyInfo)propertyExpression.Member).GetValue(item) as IEnumerable;
-                        if (property == null)
-                            continue;
-
-                        DataServiceQueryContinuation itemsContinuation = response.GetContinuation(property);
-                        while (itemsContinuation != null)
+                        if (((PropertyInfo)propertyExpression.Member).GetValue(item) is IEnumerable property)
                         {
-                            QueryOperationResponse itemsResponse = await newQuery.Context.LoadPropertyAsync(item, propertyExpression.Member.Name, itemsContinuation);
-                            itemsContinuation = itemsResponse.GetContinuation();
+                            DataServiceQueryContinuation itemsContinuation = response.GetContinuation(property);
+                            while (itemsContinuation != null)
+                            {
+                                QueryOperationResponse itemsResponse = await newQuery.Context.LoadPropertyAsync(item, propertyExpression.Member.Name, itemsContinuation);
+                                itemsContinuation = itemsResponse.GetContinuation();
+                            }
                         }
                     }
                     items.Add(item);

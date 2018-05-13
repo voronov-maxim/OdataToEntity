@@ -1,22 +1,11 @@
 ﻿using Microsoft.OData;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
+using OdataToEntity.Parsers;
 using System.Collections.Generic;
 
-namespace OdataToEntity.Parsers
+namespace OdataToEntity.Cache
 {
-    public readonly struct OeParseNavigationSegment
-    {
-        public OeParseNavigationSegment(NavigationPropertySegment navigationSegment, FilterClause filter)
-        {
-            NavigationSegment = navigationSegment;
-            Filter = filter;
-        }
-
-        public FilterClause Filter { get; }
-        public NavigationPropertySegment NavigationSegment { get; }
-    }
-
     public sealed class OeCacheContext
     {
         public OeCacheContext(OeQueryContext queryContext)
@@ -26,22 +15,22 @@ namespace OdataToEntity.Parsers
             ParseNavigationSegments = queryContext.ParseNavigationSegments;
             MetadataLevel = queryContext.MetadataLevel;
             NavigationNextLink = queryContext.NavigationNextLink;
-            SkipTokenParser = queryContext.SkipTokenParser;
+            SkipTokenNameValues = queryContext.SkipTokenNameValues;
         }
-        public OeCacheContext(OeQueryContext queryContext, IReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition> constantToParameterMapper)
+        public OeCacheContext(OeQueryContext queryContext, IReadOnlyDictionary<ConstantNode, OeQueryCacheDbParameterDefinition> constantToParameterMapper)
             : this(queryContext)
         {
             ConstantToParameterMapper = constantToParameterMapper;
         }
 
 
-        public IReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition> ConstantToParameterMapper { get; }
+        public IReadOnlyDictionary<ConstantNode, OeQueryCacheDbParameterDefinition> ConstantToParameterMapper { get; }
         public IEdmEntitySet EntitySet { get; }
         public OeMetadataLevel MetadataLevel { get; }
         public bool NavigationNextLink { get; }
         public ODataUri ODataUri { get; }
-        public IReadOnlyList<Db.OeQueryCacheDbParameterValue> ParameterValues { get; set; }
+        public IReadOnlyList<OeQueryCacheDbParameterValue> ParameterValues { get; set; }
         public IReadOnlyList<OeParseNavigationSegment> ParseNavigationSegments { get; }
-        public OeSkipTokenParser SkipTokenParser { get; }
+        public OeSkipTokenNameValue[] SkipTokenNameValues { get; }
     }
 }

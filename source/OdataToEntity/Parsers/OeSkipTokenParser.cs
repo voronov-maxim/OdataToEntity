@@ -11,20 +11,49 @@ using System.Text;
 
 namespace OdataToEntity.Parsers
 {
-    public sealed class OeSkipTokenParser
+    public readonly struct OeSkipTokenNameValue
+    {
+        public OeSkipTokenNameValue(String name, Object value)
+        {
+            Name = name;
+            Value = value;
+        }
+
+        public String Name { get; }
+        public Object Value { get; }
+    }
+
+    public static class OeSkipTokenParser
     {
         private static readonly ODataMessageReaderSettings ReaderSettings = new ODataMessageReaderSettings() { EnableMessageStreamDisposal = false };
         private static readonly ODataMessageWriterSettings WriterSettings = new ODataMessageWriterSettings() { EnableMessageStreamDisposal = false };
 
-        public OeSkipTokenParser(IEdmModel edmModel, IEdmEntityType edmType, bool isDatabaseNullHighestValue, OrderByClause uniqueOrderBy, String skipToken)
+        public static OeSkipTokenNameValue[] CreateNameValues(IEdmModel edmModel, OrderByClause uniqueOrderBy, String skipToken)
         {
-            EdmModel = edmModel;
-            IsDatabaseNullHighestValue = isDatabaseNullHighestValue;
-            UniqueOrderBy = uniqueOrderBy;
-
-            KeyValues = skipToken == null ? (IReadOnlyList<KeyValuePair<String, Object>>)Array.Empty<KeyValuePair<String, Object>>() : ParseSkipToken(skipToken);
+            return skipToken == null ? Array.Empty<OeSkipTokenNameValue>() : ParseSkipToken(edmModel, uniqueOrderBy, skipToken);
         }
+        public static OePropertyAccessor[] GetAccessors(Expression source, OrderByClause orderByClause)
+        {
+            var accessors = new List<OePropertyAccessor>();
 
+            var tupleProperty = new OePropertyTranslator(source);
+            Type itemType = OeExpressionHelper.GetCollectionItemType(source.Type);
+            ParameterExpression parameter = Expression.Parameter(typeof(Object));
+            UnaryExpression instance = Expression.Convert(parameter, itemType);
+
+            while (orderByClause != null)
+            {
+                var propertyNode = (SingleValuePropertyAccessNode)orderByClause.Expression;
+                MemberExpression propertyExpression = tupleProperty.Build(instance, propertyNode.Property);
+                if (propertyExpression == null)
+                    throw new InvalidOperationException("order by property " + propertyNode.Property.Name + "not found");
+
+                accessors.Add(OePropertyAccessor.CreatePropertyAccessor(propertyNode.Property, propertyExpression, parameter));
+                orderByClause = orderByClause.ThenBy;
+            }
+
+            return accessors.ToArray();
+        }
         private static List<SingleValuePropertyAccessNode> GetOrderByProperties(IEdmModel edmModel, IEdmEntityType edmType, OrderByClause orderByClause, ApplyClause applyClause)
         {
             var keys = new List<SingleValuePropertyAccessNode>();
@@ -112,11 +141,11 @@ namespace OdataToEntity.Parsers
 
             return uniqueOrderByClause;
         }
-        private KeyValuePair<String, Object>[] GetKeys(Object value)
+        private static KeyValuePair<String, Object>[] GetKeys(OePropertyAccessor[] accessors, Object value)
         {
-            var keys = new KeyValuePair<String, Object>[Accessors.Length];
+            var keys = new KeyValuePair<String, Object>[accessors.Length];
             for (int i = 0; i < keys.Length; i++)
-                keys[i] = new KeyValuePair<String, Object>(GetPropertyName(Accessors[i].EdmProperty), Accessors[i].GetValue(value));
+                keys[i] = new KeyValuePair<String, Object>(GetPropertyName(accessors[i].EdmProperty), accessors[i].GetValue(value));
             return keys;
         }
         private static IEdmStructuralProperty[] GetEdmProperies(OrderByClause orderByClause)
@@ -124,11 +153,11 @@ namespace OdataToEntity.Parsers
             var edmProperties = new List<IEdmStructuralProperty>();
             while (orderByClause != null)
             {
-                var propertyNode = orderByClause.Expression as SingleValuePropertyAccessNode;
-                if (propertyNode == null)
+                if (orderByClause.Expression is SingleValuePropertyAccessNode propertyNode)
+                    edmProperties.Add((IEdmStructuralProperty)propertyNode.Property);
+                else
                     throw new NotSupportedException("support only SingleValuePropertyAccessNode");
 
-                edmProperties.Add((IEdmStructuralProperty)propertyNode.Property);
                 orderByClause = orderByClause.ThenBy;
             }
             return edmProperties.ToArray();
@@ -176,19 +205,21 @@ namespace OdataToEntity.Parsers
                 propertyExpression = (MemberExpression)expression;
             return propertyExpression.Member.DeclaringType.Name + "_" + propertyExpression.Member.Name;
         }
-        public static String GetPropertyName(IEdmProperty edmProperty) => ((IEdmNamedElement)edmProperty.DeclaringType).Name + "_" + edmProperty.Name;
-        public String GetSkipToken(Object value)
+        public static String GetPropertyName(IEdmProperty edmProperty)
         {
-            String json = GetJson(EdmModel, GetKeys(value));
-            return Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
+            return ((IEdmNamedElement)edmProperty.DeclaringType).Name + "_" + edmProperty.Name;
+        }
+        public static String GetSkipToken(IEdmModel edmModel, OePropertyAccessor[] accessors, Object value)
+        {
+            return GetJson(edmModel, GetKeys(accessors, value));
         }
         public static String GetSkipToken(IEdmModel edmModel, IEnumerable<KeyValuePair<String, Object>> keys)
         {
-            String json = GetJson(edmModel, keys);
-            return Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
+            return GetJson(edmModel, keys);
         }
-        public static IEnumerable<KeyValuePair<String, Object>> ParseJson(IEdmModel model, String skipToken, IEnumerable<IEdmStructuralProperty> keys)
+        private static OeSkipTokenNameValue[] ParseJson(IEdmModel model, String skipToken, IEdmStructuralProperty[] keys)
         {
+            var skipTokenNameValues = new OeSkipTokenNameValue[keys.Length];
             using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(skipToken)))
             {
                 IODataRequestMessage requestMessage = new OeInMemoryMessage(stream, null);
@@ -199,26 +230,21 @@ namespace OdataToEntity.Parsers
                         operation.AddParameter(GetPropertyName(key), key.Type);
 
                     ODataParameterReader reader = messageReader.CreateODataParameterReader(operation);
+                    int i = 0;
                     while (reader.Read())
                     {
                         Object value = reader.Value;
                         if (value is ODataEnumValue enumValue)
                             value = OeEdmClrHelper.GetValue(model, enumValue);
-                        yield return new KeyValuePair<String, Object>(reader.Name, value);
+                        skipTokenNameValues[i++] = new OeSkipTokenNameValue(reader.Name, value);
                     }
                 }
             }
+            return skipTokenNameValues;
         }
-        private List<KeyValuePair<String, Object>> ParseSkipToken(String skipToken)
+        private static OeSkipTokenNameValue[] ParseSkipToken(IEdmModel edmModel, OrderByClause uniqueOrderBy, String skipToken)
         {
-            String json = Encoding.UTF8.GetString(Convert.FromBase64String(skipToken));
-            return new List<KeyValuePair<String, Object>>(ParseJson(EdmModel, json, GetEdmProperies(UniqueOrderBy)));
+            return ParseJson(edmModel, skipToken, GetEdmProperies(uniqueOrderBy));
         }
-
-        public OePropertyAccessor[] Accessors { get; set; }
-        public IEdmModel EdmModel { get; }
-        public bool IsDatabaseNullHighestValue { get; }
-        public IReadOnlyList<KeyValuePair<String, Object>> KeyValues { get; }
-        public OrderByClause UniqueOrderBy { get; }
     }
 }

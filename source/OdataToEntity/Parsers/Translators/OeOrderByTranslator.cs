@@ -53,15 +53,14 @@ namespace OdataToEntity.Parsers
                         throw new NotSupportedException("rewrite expression support only sort by property");
 
                     IEdmType edmSplitType;
-                    var navigationNode = propertyNode.Source as SingleNavigationNode;
-                    if (navigationNode == null)
-                        edmSplitType = propertyNode.Property.DeclaringType;
-                    else
+                    if (propertyNode.Source is SingleNavigationNode navigationNode)
                     {
                         while (navigationNode.Source is SingleNavigationNode)
                             navigationNode = navigationNode.Source as SingleNavigationNode;
                         edmSplitType = navigationNode.NavigationProperty.DeclaringType;
                     }
+                    else
+                        edmSplitType = propertyNode.Property.DeclaringType;
 
                     isInsertedOrderByMethod = true;
                     return InsertOrderByMethod(source, orderByClause, edmSplitType);

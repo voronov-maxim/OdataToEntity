@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace OdataToEntity.Db
+namespace OdataToEntity.Cache
 {
     public readonly struct OeQueryCacheDbParameterValue
     {

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text;
 
-namespace OdataToEntity.Parsers.UriCompare
+namespace OdataToEntity.Cache.UriCompare
 {
     public readonly struct OeCacheComparerParameterValues
     {
@@ -21,42 +21,41 @@ namespace OdataToEntity.Parsers.UriCompare
             public IEdmType Definition => throw new NotImplementedException();
         }
 
-        private readonly IReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition> _constantToParameterMapper;
-        private readonly List<Db.OeQueryCacheDbParameterValue> _parameterValues;
+        private readonly IReadOnlyDictionary<ConstantNode, OeQueryCacheDbParameterDefinition> _constantToParameterMapper;
+        private readonly List<OeQueryCacheDbParameterValue> _parameterValues;
 
-        public OeCacheComparerParameterValues(IReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition> constantToParameterMapper)
+        public OeCacheComparerParameterValues(IReadOnlyDictionary<ConstantNode, OeQueryCacheDbParameterDefinition> constantToParameterMapper)
         {
             _constantToParameterMapper = constantToParameterMapper;
-            _parameterValues = new List<Db.OeQueryCacheDbParameterValue>(_constantToParameterMapper.Count);
+            _parameterValues = new List<OeQueryCacheDbParameterValue>(_constantToParameterMapper.Count);
         }
 
         public void AddParameter(ConstantNode keyConstantNode, ConstantNode parameterConstanNode)
         {
             if (_constantToParameterMapper == null)
                 return;
-
-            Db.OeQueryCacheDbParameterDefinition parameterDefinition = _constantToParameterMapper[keyConstantNode];
+            OeQueryCacheDbParameterDefinition parameterDefinition = _constantToParameterMapper[keyConstantNode];
             if (parameterConstanNode.Value == null)
-                _parameterValues.Add(new Db.OeQueryCacheDbParameterValue(parameterDefinition.ParameterName, null));
+                _parameterValues.Add(new OeQueryCacheDbParameterValue(parameterDefinition.ParameterName, null));
             else
             {
                 if (parameterConstanNode.Value.GetType() != parameterDefinition.ParameterType)
                 {
                     ConstantExpression oldConstant = Expression.Constant(parameterConstanNode.Value, parameterConstanNode.Value.GetType());
-                    ConstantExpression newConstant = OeExpressionHelper.ConstantChangeType(oldConstant, parameterDefinition.ParameterType);
-                    _parameterValues.Add(new Db.OeQueryCacheDbParameterValue(parameterDefinition.ParameterName, newConstant.Value));
+                    ConstantExpression newConstant = Parsers.OeExpressionHelper.ConstantChangeType(oldConstant, parameterDefinition.ParameterType);
+                    _parameterValues.Add(new OeQueryCacheDbParameterValue(parameterDefinition.ParameterName, newConstant.Value));
                 }
                 else
-                    _parameterValues.Add(new Db.OeQueryCacheDbParameterValue(parameterDefinition.ParameterName, parameterConstanNode.Value));
+                    _parameterValues.Add(new OeQueryCacheDbParameterValue(parameterDefinition.ParameterName, parameterConstanNode.Value));
             }
         }
         public void AddSkipParameter(long value, ODataPath path)
         {
             String resourcePath = GetSegmentResourcePathSkip(path);
-            foreach (KeyValuePair<ConstantNode, Db.OeQueryCacheDbParameterDefinition> pair in _constantToParameterMapper)
+            foreach (KeyValuePair<ConstantNode, OeQueryCacheDbParameterDefinition> pair in _constantToParameterMapper)
                 if (pair.Value.ParameterType == typeof(int) && pair.Key.LiteralText == resourcePath)
                 {
-                    _parameterValues.Add(new Db.OeQueryCacheDbParameterValue(pair.Value.ParameterName, (int)value));
+                    _parameterValues.Add(new OeQueryCacheDbParameterValue(pair.Value.ParameterName, (int)value));
                     return;
                 }
 
@@ -67,17 +66,17 @@ namespace OdataToEntity.Parsers.UriCompare
             if (value == null)
                 return;
 
-            foreach (KeyValuePair<ConstantNode, Db.OeQueryCacheDbParameterDefinition> pair in _constantToParameterMapper)
+            foreach (KeyValuePair<ConstantNode, OeQueryCacheDbParameterDefinition> pair in _constantToParameterMapper)
                 if (pair.Key.TypeReference == SkipTokenMarker.Instance && String.CompareOrdinal(pair.Key.LiteralText, propertyName) == 0)
-                    _parameterValues.Add(new Db.OeQueryCacheDbParameterValue(pair.Value.ParameterName, value));
+                    _parameterValues.Add(new OeQueryCacheDbParameterValue(pair.Value.ParameterName, value));
         }
         public void AddTopParameter(long value, ODataPath path)
         {
             String resourcePath = GetSegmentResourcePathTop(path);
-            foreach (KeyValuePair<ConstantNode, Db.OeQueryCacheDbParameterDefinition> pair in _constantToParameterMapper)
+            foreach (KeyValuePair<ConstantNode, OeQueryCacheDbParameterDefinition> pair in _constantToParameterMapper)
                 if (pair.Value.ParameterType == typeof(int) && pair.Key.LiteralText == resourcePath)
                 {
-                    _parameterValues.Add(new Db.OeQueryCacheDbParameterValue(pair.Value.ParameterName, (int)value));
+                    _parameterValues.Add(new OeQueryCacheDbParameterValue(pair.Value.ParameterName, (int)value));
                     return;
                 }
 
@@ -128,6 +127,6 @@ namespace OdataToEntity.Parsers.UriCompare
             return stringBuilder.Append(':').Append(skipOrTop).ToString();
         }
 
-        public IReadOnlyList<Db.OeQueryCacheDbParameterValue> ParameterValues => _parameterValues;
+        public IReadOnlyList<OeQueryCacheDbParameterValue> ParameterValues => _parameterValues;
     }
 }

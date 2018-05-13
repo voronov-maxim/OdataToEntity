@@ -48,12 +48,11 @@ namespace OdataToEntity.Test
                 {
                     if (link.IsCollection.GetValueOrDefault())
                     {
-                        var list = value as IList;
-                        if (list == null)
-                            AddToList((dynamic)value);
-                        else
+                        if (value is IList list)
                             foreach (Object item in list)
                                 AddToList((dynamic)item);
+                        else
+                            AddToList((dynamic)value);
                     }
                     else
                         _value = value;

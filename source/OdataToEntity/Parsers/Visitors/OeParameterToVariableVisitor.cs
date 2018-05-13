@@ -8,7 +8,7 @@ namespace OdataToEntity.Parsers
     {
         private readonly SortedDictionary<String, ConstantExpression> _constantExpressions;
         private Dictionary<String, MemberExpression> _propertyExpressions;
-        private IReadOnlyList<Db.OeQueryCacheDbParameterValue> _parameterValues;
+        private IReadOnlyList<Cache.OeQueryCacheDbParameterValue> _parameterValues;
 
         public OeParameterToVariableVisitor()
         {
@@ -23,7 +23,7 @@ namespace OdataToEntity.Parsers
 
             throw new InvalidOperationException("parameter name " + parameterName + " not found");
         }
-        public Expression Translate(Expression expression, IReadOnlyList<Db.OeQueryCacheDbParameterValue> parameterValues)
+        public Expression Translate(Expression expression, IReadOnlyList<Cache.OeQueryCacheDbParameterValue> parameterValues)
         {
             _parameterValues = parameterValues;
             base.Visit(expression);

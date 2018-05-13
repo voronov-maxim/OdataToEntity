@@ -210,8 +210,7 @@ namespace OdataToEntity.Parsers
         }
         public static bool IsNull(Expression expression)
         {
-            var constantExpression = expression as ConstantExpression;
-            return constantExpression == null ? false : constantExpression.Value == null;
+            return expression is ConstantExpression constantExpression ? constantExpression.Value == null : false;
         }
         public static bool IsNullable(Expression expression)
         {

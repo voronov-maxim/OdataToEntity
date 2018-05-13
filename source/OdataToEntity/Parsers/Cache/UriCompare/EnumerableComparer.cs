@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace OdataToEntity.Parsers.UriCompare
+namespace OdataToEntity.Cache.UriCompare
 {
     internal static class EnumerableComparer
     {

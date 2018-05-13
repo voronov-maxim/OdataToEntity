@@ -10,7 +10,7 @@ namespace OdataToEntity.Test
     {
         private readonly bool _useRelationalNulls;
 
-        public OrderDbDataAdapter(bool allowCache, bool useRelationalNulls, String databaseName) : base(new Db.OeQueryCache(allowCache))
+        public OrderDbDataAdapter(bool allowCache, bool useRelationalNulls, String databaseName) : base(new Cache.OeQueryCache(allowCache))
         {
             _useRelationalNulls = useRelationalNulls;
         }
@@ -23,7 +23,7 @@ namespace OdataToEntity.Test
 
     public sealed class OrderOeDataAdapter : OeLinq2DbDataAdapter<OdataToEntityDB>
     {
-        public OrderOeDataAdapter(bool allowCache, bool useRelationalNulls, String databaseName) : base(new Db.OeQueryCache(allowCache))
+        public OrderOeDataAdapter(bool allowCache, bool useRelationalNulls, String databaseName) : base(new Cache.OeQueryCache(allowCache))
         {
         }
 
@@ -33,6 +33,6 @@ namespace OdataToEntity.Test
             return new OdataToEntityDB("OdataToEntity");
         }
 
-        public new Db.OeQueryCache QueryCache => base.QueryCache;
+        public new Cache.OeQueryCache QueryCache => base.QueryCache;
     }
 }

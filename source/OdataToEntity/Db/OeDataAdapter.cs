@@ -8,9 +8,9 @@ namespace OdataToEntity.Db
 {
     public abstract class OeDataAdapter
     {
-        public OeDataAdapter(OeQueryCache queryCache, OeOperationAdapter operationAdapter)
+        public OeDataAdapter(Cache.OeQueryCache queryCache, OeOperationAdapter operationAdapter)
         {
-            QueryCache = queryCache ?? new OeQueryCache(true);
+            QueryCache = queryCache ?? new Cache.OeQueryCache(true);
             OperationAdapter = operationAdapter;
         }
 
@@ -20,7 +20,7 @@ namespace OdataToEntity.Db
         public abstract TResult ExecuteScalar<TResult>(Object dataContext, OeQueryContext queryContext);
         public abstract Task<int> SaveChangesAsync(IEdmModel edmModel, Object dataContext, CancellationToken cancellationToken);
 
-        protected OeQueryCache QueryCache { get; }
+        protected Cache.OeQueryCache QueryCache { get; }
         public abstract OeEntitySetAdapterCollection EntitySetAdapters { get; }
         public bool IsDatabaseNullHighestValue { get; set; }
         public OeOperationAdapter OperationAdapter { get; }

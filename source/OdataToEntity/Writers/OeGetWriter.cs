@@ -54,14 +54,14 @@ namespace OdataToEntity.Writers
 
                 return odataUri.BuildUri(ODataUrlKeyDelimiter.Parentheses);
             }
-            private static Uri BuildNextPageLink(OeQueryContext queryContext, String skipToken)
+            private static Uri BuildNextPageLink(OeQueryContext queryContext, Object value)
             {
                 ODataUri nextOdataUri = queryContext.ODataUri.Clone();
                 nextOdataUri.ServiceRoot = null;
                 nextOdataUri.QueryCount = null;
                 nextOdataUri.Top = queryContext.PageSize;
                 nextOdataUri.Skip = null;
-                nextOdataUri.SkipToken = skipToken;
+                nextOdataUri.SkipToken = OeSkipTokenParser.GetSkipToken(queryContext.EdmModel, queryContext.SkipTokenAccessors, value);
 
                 return nextOdataUri.BuildUri(ODataUrlKeyDelimiter.Parentheses);
             }
@@ -82,7 +82,7 @@ namespace OdataToEntity.Writers
                 while (await asyncEnumerator.MoveNextAsync().ConfigureAwait(false))
                 {
                     value = asyncEnumerator.Current;
-                    ODataResource entry = CreateEntry(entryFactory, entryFactory.GetValue(value, out int? dummy));
+                    ODataResource entry = CreateEntry(entryFactory, entryFactory.GetValue(value, out _));
                     Writer.WriteStart(entry);
 
                     foreach (OeEntryFactory navigationLink in entryFactory.NavigationLinks)
@@ -97,7 +97,7 @@ namespace OdataToEntity.Writers
                 }
 
                 if (queryContext.PageSize > 0 && count > 0 && (asyncEnumerator.Count ?? Int32.MaxValue) > count)
-                    resourceSet.NextPageLink = BuildNextPageLink(queryContext, queryContext.SkipTokenParser.GetSkipToken(value));
+                    resourceSet.NextPageLink = BuildNextPageLink(queryContext, value);
 
                 Writer.WriteEnd();
             }

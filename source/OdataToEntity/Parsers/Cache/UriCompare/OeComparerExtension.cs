@@ -1,6 +1,6 @@
 ﻿using Microsoft.OData.Edm;
 
-namespace OdataToEntity.Parsers.UriCompare
+namespace OdataToEntity.Cache.UriCompare
 {
     public static class OeComparerExtension
     {

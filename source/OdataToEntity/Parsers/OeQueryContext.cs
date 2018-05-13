@@ -85,22 +85,20 @@ namespace OdataToEntity.Parsers
             IsCountSegment = isCountSegment;
             PageSize = pageSize;
             NavigationNextLink = navigationNextLink;
+            IsDatabaseNullHighestValue = isDatabaseNullHighestValue;
             MetadataLevel = metadataLevel;
 
             if (pageSize > 0 || (odataUri.OrderBy != null && odataUri.Skip != null && odataUri.Top != null))
-            {
-                IEdmEntityType edmEntityType = OeGetParser.GetEntityType(odataUri.Path, parseNavigationSegments);
-                SkipTokenParser = new OeSkipTokenParser(edmModel, edmEntityType, isDatabaseNullHighestValue, odataUri.OrderBy, odataUri.SkipToken);
-            }
+                SkipTokenNameValues = OeSkipTokenParser.CreateNameValues(edmModel, odataUri.OrderBy, odataUri.SkipToken);
         }
 
-        public OeCacheContext CreateCacheContext()
+        public Cache.OeCacheContext CreateCacheContext()
         {
-            return new OeCacheContext(this);
+            return new Cache.OeCacheContext(this);
         }
-        public OeCacheContext CreateCacheContext(IReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition> constantToParameterMapper)
+        public Cache.OeCacheContext CreateCacheContext(IReadOnlyDictionary<ConstantNode, Cache.OeQueryCacheDbParameterDefinition> constantToParameterMapper)
         {
-            return new OeCacheContext(this, constantToParameterMapper);
+            return new Cache.OeCacheContext(this, constantToParameterMapper);
         }
         public static MethodCallExpression CreateCountExpression(Expression expression)
         {
@@ -131,7 +129,7 @@ namespace OdataToEntity.Parsers
             expression = Expression.Constant(null, typeof(IEnumerable<>).MakeGenericType(EntitySetAdapter.EntityType));
             expression = expressionBuilder.ApplyNavigation(expression, ParseNavigationSegments);
             expression = expressionBuilder.ApplyFilter(expression, ODataUri.Filter);
-            expression = expressionBuilder.ApplySkipToken(expression, SkipTokenParser);
+            expression = expressionBuilder.ApplySkipToken(expression, SkipTokenNameValues, ODataUri.OrderBy, IsDatabaseNullHighestValue);
             expression = expressionBuilder.ApplyAggregation(expression, ODataUri.Apply);
             expression = expressionBuilder.ApplySelect(expression, this);
             expression = expressionBuilder.ApplyOrderBy(expression, ODataUri.OrderBy);
@@ -141,6 +139,8 @@ namespace OdataToEntity.Parsers
 
             if (!IsCountSegment)
                 EntryFactory = CreateEntryFactory(expressionBuilder);
+            if (SkipTokenNameValues != null)
+                SkipTokenAccessors = OeSkipTokenParser.GetAccessors(expression, ODataUri.OrderBy);
 
             return constantToVariableVisitor.Translate(expression, expressionBuilder.Constants);
         }
@@ -155,18 +155,23 @@ namespace OdataToEntity.Parsers
                         yield return item;
                 }
         }
-        public static Expression TranslateSource(Expression query, Expression expression) => SourceVisitor.Translate(query, expression);
+        public static Expression TranslateSource(Expression query, Expression expression)
+        {
+            return SourceVisitor.Translate(query, expression);
+        }
 
         public IEdmModel EdmModel { get; }
         public IEdmEntitySet EntitySet { get; }
         public Db.OeEntitySetAdapter EntitySetAdapter { get; }
         public OeEntryFactory EntryFactory { get; set; }
         public bool IsCountSegment { get; }
+        public bool IsDatabaseNullHighestValue { get; }
         public OeMetadataLevel MetadataLevel { get; }
         public bool NavigationNextLink { get; }
         public ODataUri ODataUri { get; }
         public int PageSize { get; }
         public IReadOnlyList<OeParseNavigationSegment> ParseNavigationSegments { get; }
-        public OeSkipTokenParser SkipTokenParser { get; }
+        public OePropertyAccessor[] SkipTokenAccessors { get; set; }
+        public OeSkipTokenNameValue[] SkipTokenNameValues { get; }
     }
 }

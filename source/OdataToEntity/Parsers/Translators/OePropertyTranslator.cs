@@ -79,34 +79,35 @@ namespace OdataToEntity.Parsers
         {
             for (int i = 0; i < ctorArguments.Count; i++)
             {
-                var propertyExpression = ctorArguments[i] as MemberExpression;
-                if (propertyExpression == null)
+                if (ctorArguments[i] is MemberExpression propertyExpression)
                 {
-                    var newExpression = ctorArguments[i] as NewExpression;
-                    if (newExpression == null)
-                        continue;
-
-                    _expressions.Add(newExpression);
-                    VisitNew(newExpression);
-                    if (_foundProperty != null)
+                    if (String.Compare(propertyExpression.Member.Name, _edmProperty.Name, StringComparison.OrdinalIgnoreCase) == 0 &&
+                        String.Compare(propertyExpression.Member.DeclaringType.FullName, _edmProperty.DeclaringType.FullTypeName(), StringComparison.OrdinalIgnoreCase) == 0)
+                    {
+                        _foundProperty = _expressions[_expressions.Count - 1].Type.GetProperties()[i];
                         return;
-                    _expressions.RemoveAt(_expressions.Count - 1);
-                }
-                else if (String.Compare(propertyExpression.Member.Name, _edmProperty.Name, StringComparison.OrdinalIgnoreCase) == 0 &&
-                    String.Compare(propertyExpression.Member.DeclaringType.FullName, _edmProperty.DeclaringType.FullTypeName(), StringComparison.OrdinalIgnoreCase) == 0)
-                {
-                    _foundProperty = _expressions[_expressions.Count - 1].Type.GetProperties()[i];
-                    return;
+                    }
+                    else
+                    {
+                        var tupleVisitor = new OePropertyTranslator(_source);
+                        propertyExpression = tupleVisitor.CreatePropertyExpression(propertyExpression, _edmProperty);
+                        if (propertyExpression != null)
+                        {
+                            _foundProperty = (PropertyInfo)propertyExpression.Member;
+                            _expressions.AddRange(tupleVisitor._expressions);
+                            return;
+                        }
+                    }
                 }
                 else
                 {
-                    var tupleVisitor = new OePropertyTranslator(_source);
-                    propertyExpression = tupleVisitor.CreatePropertyExpression(propertyExpression, _edmProperty);
-                    if (propertyExpression != null)
+                    if (ctorArguments[i] is NewExpression newExpression)
                     {
-                        _foundProperty = (PropertyInfo)propertyExpression.Member;
-                        _expressions.AddRange(tupleVisitor._expressions);
-                        return;
+                        _expressions.Add(newExpression);
+                        VisitNew(newExpression);
+                        if (_foundProperty != null)
+                            return;
+                        _expressions.RemoveAt(_expressions.Count - 1);
                     }
                 }
             }

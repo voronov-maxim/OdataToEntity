@@ -1,6 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using OdataToEntity.Cache.UriCompare;
+using System.Collections.Generic;
 
-namespace OdataToEntity.Parsers.UriCompare
+namespace OdataToEntity.Cache
 {
     public sealed class OeCacheContextEqualityComparer : IEqualityComparer<OeCacheContext>
     {

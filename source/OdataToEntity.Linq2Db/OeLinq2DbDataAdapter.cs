@@ -81,13 +81,14 @@ namespace OdataToEntity.Linq2Db
             }
             private static OeLinq2DbTable<TEntity> GetTable(Object dataContext)
             {
-                var dc = dataContext as IOeLinq2DbDataContext;
-                if (dc == null)
-                    throw new InvalidOperationException(dataContext.GetType().ToString() + "must implement " + nameof(IOeLinq2DbDataContext));
+                if (dataContext is IOeLinq2DbDataContext dc)
+                {
+                    if (dc.DataContext == null)
+                        dc.DataContext = new OeLinq2DbDataContext();
+                    return dc.DataContext.GetTable<TEntity>();
+                }
 
-                if (dc.DataContext == null)
-                    dc.DataContext = new OeLinq2DbDataContext();
-                return dc.DataContext.GetTable<TEntity>();
+                throw new InvalidOperationException(dataContext.GetType().ToString() + "must implement " + nameof(IOeLinq2DbDataContext));
             }
             public override IQueryable GetEntitySet(Object dataContext) => _getEntitySet((T)dataContext);
             public override void RemoveEntity(Object dataContext, ODataResourceBase entry)
@@ -105,7 +106,7 @@ namespace OdataToEntity.Linq2Db
         public OeLinq2DbDataAdapter() : this(null)
         {
         }
-        public OeLinq2DbDataAdapter(Db.OeQueryCache queryCache)
+        public OeLinq2DbDataAdapter(Cache.OeQueryCache queryCache)
             : base(queryCache, new OeLinq2DbOperationAdapter(typeof(T)))
         {
         }
@@ -183,14 +184,14 @@ namespace OdataToEntity.Linq2Db
             }
             return query.Provider.Execute<TResult>(expression);
         }
-        private static Expression GetFromCache(OeQueryContext queryContext, T dbContext, Db.OeQueryCache queryCache,
+        private static Expression GetFromCache(OeQueryContext queryContext, T dbContext, Cache.OeQueryCache queryCache,
             out MethodCallExpression countExpression)
         {
-            OeCacheContext cacheContext = queryContext.CreateCacheContext();
-            Db.QueryCacheItem queryCacheItem = queryCache.GetQuery(cacheContext);
+            Cache.OeCacheContext cacheContext = queryContext.CreateCacheContext();
+            Cache.OeQueryCacheItem queryCacheItem = queryCache.GetQuery(cacheContext);
 
             Expression expression;
-            IReadOnlyList<Db.OeQueryCacheDbParameterValue> parameterValues;
+            IReadOnlyList<Cache.OeQueryCacheDbParameterValue> parameterValues;
             IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dbContext);
             if (queryCacheItem == null)
             {
@@ -200,15 +201,14 @@ namespace OdataToEntity.Linq2Db
 
                 countExpression = OeQueryContext.CreateCountExpression(expression);
                 queryCache.AddQuery(queryContext.CreateCacheContext(parameterVisitor.ConstantToParameterMapper), expression, null,
-                    queryContext.EntryFactory, queryContext.SkipTokenParser?.Accessors);
+                    queryContext.EntryFactory, queryContext.SkipTokenAccessors);
                 parameterValues = parameterVisitor.ParameterValues;
             }
             else
             {
                 expression = (Expression)queryCacheItem.Query;
                 queryContext.EntryFactory = queryCacheItem.EntryFactory;
-                if (queryContext.SkipTokenParser != null)
-                    queryContext.SkipTokenParser.Accessors = queryCacheItem.SkipTokenAccessors;
+                queryContext.SkipTokenAccessors = queryCacheItem.SkipTokenAccessors;
                 countExpression = queryCacheItem.CountExpression;
                 parameterValues = cacheContext.ParameterValues;
             }

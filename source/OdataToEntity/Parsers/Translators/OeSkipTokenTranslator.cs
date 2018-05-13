@@ -1,6 +1,7 @@
 ﻿using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using System;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -25,19 +26,19 @@ namespace OdataToEntity.Parsers
             public SingleValuePropertyAccessNode PropertyNode { get; }
         }
 
-        private readonly OeSkipTokenParser _skipTokenParser;
+        private readonly bool _isDatabaseNullHighestValue;
         private readonly OeQueryNodeVisitor _visitor;
 
-        public OeSkipTokenTranslator(OeQueryNodeVisitor visitor, OeSkipTokenParser skipTokenParser)
+        public OeSkipTokenTranslator(OeQueryNodeVisitor visitor, bool isDatabaseNullHighestValue)
         {
-            _skipTokenParser = skipTokenParser;
             _visitor = visitor;
+            _isDatabaseNullHighestValue = isDatabaseNullHighestValue;
         }
 
-        public Expression Build(Expression source)
+        public Expression Build(Expression source, IReadOnlyList<OeSkipTokenNameValue> skipTokenNameValues, OrderByClause uniqueOrderBy)
         {
-            OrderProperty[] orderProperties = CreateOrderProperies(source, _visitor, _skipTokenParser);
-            Expression filter = CreateFilterExpression(_visitor, _skipTokenParser.IsDatabaseNullHighestValue, orderProperties);
+            OrderProperty[] orderProperties = CreateOrderProperies(source, _visitor, skipTokenNameValues, uniqueOrderBy);
+            Expression filter = CreateFilterExpression(_visitor, _isDatabaseNullHighestValue, orderProperties);
 
             LambdaExpression lambda = Expression.Lambda(filter, _visitor.Parameter);
             MethodInfo whereMethodInfo = OeMethodInfoHelper.GetWhereMethodInfo(_visitor.Parameter.Type);
@@ -117,12 +118,12 @@ namespace OdataToEntity.Parsers
             }
             return filter;
         }
-        private static OrderProperty[] CreateOrderProperies(Expression source, OeQueryNodeVisitor visitor, OeSkipTokenParser skipTokenParser)
+        private static OrderProperty[] CreateOrderProperies(Expression source, OeQueryNodeVisitor visitor, IReadOnlyList<OeSkipTokenNameValue> skipTokenNameValues, OrderByClause uniqueOrderBy)
         {
-            var orderProperties = new OrderProperty[skipTokenParser.KeyValues.Count];
-            for (int i = 0; i < skipTokenParser.KeyValues.Count; i++)
+            var orderProperties = new OrderProperty[skipTokenNameValues.Count];
+            for (int i = 0; i < skipTokenNameValues.Count; i++)
             {
-                OrderByClause orderBy = GetOrderBy(skipTokenParser.UniqueOrderBy, skipTokenParser.KeyValues[i].Key);
+                OrderByClause orderBy = GetOrderBy(uniqueOrderBy, skipTokenNameValues[i].Name);
                 var propertyNode = (SingleValuePropertyAccessNode)orderBy.Expression;
 
                 var propertyExpression = (MemberExpression)visitor.TranslateNode(propertyNode);
@@ -133,11 +134,11 @@ namespace OdataToEntity.Parsers
                 }
 
                 ConstantExpression parameterExpression;
-                if (skipTokenParser.KeyValues[i].Value == null)
+                if (skipTokenNameValues[i].Value == null)
                     parameterExpression = OeConstantToVariableVisitor.NullConstantExpression;
                 else
                 {
-                    parameterExpression = Expression.Constant(skipTokenParser.KeyValues[i].Value, propertyExpression.Type);
+                    parameterExpression = Expression.Constant(skipTokenNameValues[i].Value, propertyExpression.Type);
                     visitor.AddSkipTokenConstant(parameterExpression, OeSkipTokenParser.GetPropertyName(propertyExpression));
                 }
 

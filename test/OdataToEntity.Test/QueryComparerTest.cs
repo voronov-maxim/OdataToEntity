@@ -1,7 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.OData.UriParser;
+using OdataToEntity.Cache;
+using OdataToEntity.Cache.UriCompare;
 using OdataToEntity.Parsers;
-using OdataToEntity.Parsers.UriCompare;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -162,7 +163,7 @@ namespace OdataToEntity.Test
 
                     var constantNode = (ConstantNode)(Object)key;
                     Type type = constantNode.Value == null ? typeof(Object) : constantNode.Value.GetType();
-                    value = (TValue)(Object)new Db.OeQueryCacheDbParameterDefinition("p_" + base.Count.ToString(CultureInfo.InvariantCulture), type);
+                    value = (TValue)(Object)new OeQueryCacheDbParameterDefinition("p_" + base.Count.ToString(CultureInfo.InvariantCulture), type);
                     base[key] = value;
                     return value;
                 }
@@ -204,16 +205,16 @@ namespace OdataToEntity.Test
                 OeQueryContext queryContext1 = parser.CreateQueryContext(fixture.ParseUri(requestMethodNames[i].Request), 0, false, OeMetadataLevel.Minimal);
                 OeQueryContext queryContext2 = parser.CreateQueryContext(fixture.ParseUri(requestMethodNames[i].Request), 0, false, OeMetadataLevel.Minimal);
 
-                var constantToParameterMapper = new FakeReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition>();
+                var constantToParameterMapper = new FakeReadOnlyDictionary<ConstantNode, OeQueryCacheDbParameterDefinition>();
                 if (queryContext1.ODataUri.Skip != null)
                 {
                     var constantNode = OeCacheComparerParameterValues.CreateSkipConstantNode((int)queryContext1.ODataUri.Skip.Value, queryContext1.ODataUri.Path);
-                    constantToParameterMapper.Add(constantNode, new Db.OeQueryCacheDbParameterDefinition("p_0", typeof(int)));
+                    constantToParameterMapper.Add(constantNode, new OeQueryCacheDbParameterDefinition("p_0", typeof(int)));
                 }
                 if (queryContext1.ODataUri.Top != null)
                 {
                     var constantNode = OeCacheComparerParameterValues.CreateTopConstantNode((int)queryContext1.ODataUri.Top.Value, queryContext1.ODataUri.Path);
-                    constantToParameterMapper.Add(constantNode, new Db.OeQueryCacheDbParameterDefinition($"p_{constantToParameterMapper.Count}", typeof(int)));
+                    constantToParameterMapper.Add(constantNode, new OeQueryCacheDbParameterDefinition($"p_{constantToParameterMapper.Count}", typeof(int)));
                 }
 
                 OeCacheContext cacheContext1 = queryContext1.CreateCacheContext();
@@ -225,7 +226,7 @@ namespace OdataToEntity.Test
                 {
                     queryContext2 = parser.CreateQueryContext(fixture.ParseUri(requestMethodNames[j].Request), 0, false, OeMetadataLevel.Minimal);
 
-                    constantToParameterMapper = new FakeReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition>();
+                    constantToParameterMapper = new FakeReadOnlyDictionary<ConstantNode, OeQueryCacheDbParameterDefinition>();
                     result = new OeCacheComparer(constantToParameterMapper, false).Compare(cacheContext1, cacheContext2);
                     Assert.False(result);
                 }

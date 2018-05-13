@@ -1,12 +1,11 @@
-﻿using OdataToEntity.Db;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace OdataToEntity.EfCore
 {
-    public sealed class OeEfCoreAsyncEnumerator : OeAsyncEnumerator
+    public sealed class OeEfCoreAsyncEnumerator : Db.OeAsyncEnumerator
     {
         private readonly IAsyncEnumerator<Object> _enumerator;
 

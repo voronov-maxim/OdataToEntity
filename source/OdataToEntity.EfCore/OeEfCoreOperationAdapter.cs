@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.Storage;
-using OdataToEntity.Db;
 using OdataToEntity.ModelBuilder;
 using System;
 using System.Collections.Generic;
@@ -13,31 +12,31 @@ using System.Threading.Tasks;
 
 namespace OdataToEntity.EfCore
 {
-    public class OeEfCoreOperationAdapter : OeOperationAdapter
+    public class OeEfCoreOperationAdapter : Db.OeOperationAdapter
     {
-        private readonly OeEntitySetAdapterCollection _entitySetAdapters;
+        private readonly Db.OeEntitySetAdapterCollection _entitySetAdapters;
 
-        public OeEfCoreOperationAdapter(Type dataContextType, OeEntitySetAdapterCollection entitySetAdapters)
+        public OeEfCoreOperationAdapter(Type dataContextType, Db.OeEntitySetAdapterCollection entitySetAdapters)
             : base(dataContextType)
         {
             _entitySetAdapters = entitySetAdapters;
         }
 
-        protected override OeAsyncEnumerator ExecuteNonQuery(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters)
+        protected override Db.OeAsyncEnumerator ExecuteNonQuery(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters)
         {
             ((DbContext)dataContext).Database.ExecuteSqlCommand(sql, GetParameterValues(parameters));
-            return OeAsyncEnumerator.Empty;
+            return Db.OeAsyncEnumerator.Empty;
         }
-        protected override OeAsyncEnumerator ExecuteReader(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
+        protected override Db.OeAsyncEnumerator ExecuteReader(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
         {
             var fromSql = (IFromSql)_entitySetAdapters.FindByClrType(returnType);
             if (fromSql == null)
                 throw new NotSupportedException("supported only Entity type");
 
             var query = (IQueryable<Object>)fromSql.FromSql((DbContext)dataContext, sql, GetParameterValues(parameters));
-            return new OeAsyncEnumeratorAdapter(query, CancellationToken.None);
+            return new Db.OeAsyncEnumeratorAdapter(query, CancellationToken.None);
         }
-        protected override OeAsyncEnumerator ExecuteScalar(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
+        protected override Db.OeAsyncEnumerator ExecuteScalar(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
         {
             var dbContext = (DbContext)dataContext;
             var connection = dbContext.GetService<IRelationalConnection>();
@@ -60,7 +59,7 @@ namespace OdataToEntity.EfCore
 
             IRelationalCommand command = commandBuilder.Build();
             Task<Object> scalarTask = command.ExecuteScalarAsync(connection, parameterValues);
-            return new OeScalarAsyncEnumeratorAdapter(scalarTask, CancellationToken.None);
+            return new Db.OeScalarAsyncEnumeratorAdapter(scalarTask, CancellationToken.None);
         }
         protected override String GetDefaultSchema(Object dataContext) => ((Model)((DbContext)dataContext).Model).Relational().DefaultSchema;
         protected override OeOperationConfiguration GetOperationConfiguration(MethodInfo methodInfo)

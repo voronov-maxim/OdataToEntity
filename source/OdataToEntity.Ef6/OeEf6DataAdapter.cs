@@ -134,10 +134,10 @@ namespace OdataToEntity.Ef6
         public OeEf6DataAdapter() : this(null, new OeEf6OperationAdapter(typeof(T)))
         {
         }
-        public OeEf6DataAdapter(Db.OeQueryCache queryCache) : this(queryCache, new OeEf6OperationAdapter(typeof(T)))
+        public OeEf6DataAdapter(Cache.OeQueryCache queryCache) : this(queryCache, new OeEf6OperationAdapter(typeof(T)))
         {
         }
-        public OeEf6DataAdapter(Db.OeQueryCache queryCache, OeEf6OperationAdapter operationAdapter)
+        public OeEf6DataAdapter(Cache.OeQueryCache queryCache, OeEf6OperationAdapter operationAdapter)
             : base(queryCache, operationAdapter)
         {
         }
@@ -215,14 +215,14 @@ namespace OdataToEntity.Ef6
             IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dataContext);
             return query.Provider.Execute<TResult>(OeQueryContext.TranslateSource(query.Expression, expression));
         }
-        private static Expression GetFromCache(OeQueryContext queryContext, T dbContext, Db.OeQueryCache queryCache,
+        private static Expression GetFromCache(OeQueryContext queryContext, T dbContext, Cache.OeQueryCache queryCache,
             out MethodCallExpression countExpression)
         {
-            OeCacheContext cacheContext = queryContext.CreateCacheContext();
-            Db.QueryCacheItem queryCacheItem = queryCache.GetQuery(cacheContext);
+            Cache.OeCacheContext cacheContext = queryContext.CreateCacheContext();
+            Cache.OeQueryCacheItem queryCacheItem = queryCache.GetQuery(cacheContext);
 
             Expression expression;
-            IReadOnlyList<Db.OeQueryCacheDbParameterValue> parameterValues;
+            IReadOnlyList<Cache.OeQueryCacheDbParameterValue> parameterValues;
             IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dbContext);
             if (queryCacheItem == null)
             {
@@ -232,15 +232,14 @@ namespace OdataToEntity.Ef6
 
                 countExpression = OeQueryContext.CreateCountExpression(expression);
                 queryCache.AddQuery(queryContext.CreateCacheContext(parameterVisitor.ConstantToParameterMapper), expression, null,
-                    queryContext.EntryFactory, queryContext.SkipTokenParser?.Accessors);
+                    queryContext.EntryFactory, queryContext.SkipTokenAccessors);
                 parameterValues = parameterVisitor.ParameterValues;
             }
             else
             {
                 expression = (Expression)queryCacheItem.Query;
                 queryContext.EntryFactory = queryCacheItem.EntryFactory;
-                if (queryContext.SkipTokenParser != null)
-                    queryContext.SkipTokenParser.Accessors = queryCacheItem.SkipTokenAccessors;
+                queryContext.SkipTokenAccessors = queryCacheItem.SkipTokenAccessors;
                 countExpression = queryCacheItem.CountExpression;
                 parameterValues = cacheContext.ParameterValues;
             }
@@ -260,8 +259,7 @@ namespace OdataToEntity.Ef6
         }
         public override Task<int> SaveChangesAsync(IEdmModel edmModel, Object dataContext, CancellationToken cancellationToken)
         {
-            var dbContext = (T)dataContext;
-            return dbContext.SaveChangesAsync(cancellationToken);
+            return ((T)dataContext).SaveChangesAsync(cancellationToken);
         }
 
         public override Db.OeEntitySetAdapterCollection EntitySetAdapters => _entitySetAdapters;

@@ -127,7 +127,7 @@ namespace OdataToEntity
                     _dataAdapter.CloseDataContext(dataContext);
             }
         }
-        internal static IEdmEntityType GetEntityType(ODataPath odataPath, IReadOnlyList<OeParseNavigationSegment> navigationSegments)
+        private static IEdmEntityType GetEntityType(ODataPath odataPath, IReadOnlyList<OeParseNavigationSegment> navigationSegments)
         {
             var entitySetSegment = (EntitySetSegment)odataPath.FirstSegment;
             IEdmEntityType entityType = entitySetSegment.EntitySet.EntityType();

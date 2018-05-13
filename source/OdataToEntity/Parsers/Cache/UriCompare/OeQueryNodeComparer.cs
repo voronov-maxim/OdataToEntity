@@ -2,13 +2,13 @@
 using System;
 using System.Collections.Generic;
 
-namespace OdataToEntity.Parsers.UriCompare
+namespace OdataToEntity.Cache.UriCompare
 {
     public readonly struct OeQueryNodeComparer
     {
         private readonly OeCacheComparerParameterValues _parameterValues;
 
-        public OeQueryNodeComparer(OeCacheComparerParameterValues parameterValues)
+        public OeQueryNodeComparer(in OeCacheComparerParameterValues parameterValues)
         {
             _parameterValues = parameterValues;
         }

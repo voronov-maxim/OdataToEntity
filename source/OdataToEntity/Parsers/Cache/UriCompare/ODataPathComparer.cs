@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace OdataToEntity.Parsers.UriCompare
+namespace OdataToEntity.Cache.UriCompare
 {
     internal sealed class ODataPathComparer : PathSegmentTranslator<bool>
     {

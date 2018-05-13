@@ -185,14 +185,14 @@ namespace OdataToEntity.EfCore
         public OeEfCoreDataAdapter(DbContextOptions options) : this(options, null)
         {
         }
-        public OeEfCoreDataAdapter(Db.OeQueryCache queryCache) : this(null, queryCache)
+        public OeEfCoreDataAdapter(Cache.OeQueryCache queryCache) : this(null, queryCache)
         {
         }
-        public OeEfCoreDataAdapter(DbContextOptions options, Db.OeQueryCache queryCache)
+        public OeEfCoreDataAdapter(DbContextOptions options, Cache.OeQueryCache queryCache)
             : this(options, queryCache, new OeEfCoreOperationAdapter(typeof(T), _entitySetAdapters))
         {
         }
-        public OeEfCoreDataAdapter(DbContextOptions options, Db.OeQueryCache queryCache, OeEfCoreOperationAdapter operationAdapter)
+        public OeEfCoreDataAdapter(DbContextOptions options, Cache.OeQueryCache queryCache, OeEfCoreOperationAdapter operationAdapter)
             : base(queryCache, operationAdapter)
         {
             if (options != null)
@@ -278,15 +278,15 @@ namespace OdataToEntity.EfCore
             Expression expression = queryContext.CreateExpression(new OeConstantToVariableVisitor());
             return query.Provider.Execute<TResult>(OeQueryContext.TranslateSource(query.Expression, expression));
         }
-        private static IAsyncEnumerable<TResult> GetFromCache<TResult>(OeQueryContext queryContext, T dbContext, Db.OeQueryCache queryCache,
+        private static IAsyncEnumerable<TResult> GetFromCache<TResult>(OeQueryContext queryContext, T dbContext, Cache.OeQueryCache queryCache,
             out MethodCallExpression countExpression)
         {
             countExpression = null;
-            OeCacheContext cacheContext = queryContext.CreateCacheContext();
-            Db.QueryCacheItem queryCacheItem = queryCache.GetQuery(cacheContext);
+            Cache.OeCacheContext cacheContext = queryContext.CreateCacheContext();
+            Cache.OeQueryCacheItem queryCacheItem = queryCache.GetQuery(cacheContext);
 
             Func<QueryContext, IAsyncEnumerable<TResult>> queryExecutor;
-            IReadOnlyList<Db.OeQueryCacheDbParameterValue> parameterValues;
+            IReadOnlyList<Cache.OeQueryCacheDbParameterValue> parameterValues;
             IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dbContext);
             if (queryCacheItem == null)
             {
@@ -297,22 +297,21 @@ namespace OdataToEntity.EfCore
                 queryExecutor = dbContext.CreateAsyncQueryExecutor<TResult>(expression);
                 countExpression = OeQueryContext.CreateCountExpression(expression);
                 queryCache.AddQuery(queryContext.CreateCacheContext(parameterVisitor.ConstantToParameterMapper), queryExecutor, countExpression,
-                    queryContext.EntryFactory, queryContext.SkipTokenParser?.Accessors);
+                    queryContext.EntryFactory, queryContext.SkipTokenAccessors);
                 parameterValues = parameterVisitor.ParameterValues;
             }
             else
             {
                 queryExecutor = (Func<QueryContext, IAsyncEnumerable<TResult>>)queryCacheItem.Query;
                 queryContext.EntryFactory = queryCacheItem.EntryFactory;
-                if (queryContext.SkipTokenParser != null)
-                    queryContext.SkipTokenParser.Accessors = queryCacheItem.SkipTokenAccessors;
+                queryContext.SkipTokenAccessors = queryCacheItem.SkipTokenAccessors;
                 countExpression = queryCacheItem.CountExpression;
                 parameterValues = cacheContext.ParameterValues;
             }
 
             var queryContextFactory = dbContext.GetService<IQueryContextFactory>();
             QueryContext efQueryContext = queryContextFactory.Create();
-            foreach (Db.OeQueryCacheDbParameterValue parameterValue in parameterValues)
+            foreach (Cache.OeQueryCacheDbParameterValue parameterValue in parameterValues)
                 efQueryContext.AddParameter(parameterValue.ParameterName, parameterValue.ParameterValue);
 
             if (queryContext.ODataUri.QueryCount.GetValueOrDefault())

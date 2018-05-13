@@ -1,6 +1,7 @@
 ﻿using Microsoft.OData;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
+using OdataToEntity.Cache.UriCompare;
 using OdataToEntity.ModelBuilder;
 using System;
 using System.Collections.Generic;
@@ -45,17 +46,17 @@ namespace OdataToEntity.Parsers
         }
         public void AddSkipConstant(ConstantExpression skipConstant, ODataPath path)
         {
-            ConstantNode skipNode = UriCompare.OeCacheComparerParameterValues.CreateSkipConstantNode((int)skipConstant.Value, path);
+            ConstantNode skipNode = OeCacheComparerParameterValues.CreateSkipConstantNode((int)skipConstant.Value, path);
             AddConstant(skipConstant, skipNode);
         }
         public void AddSkipTokenConstant(ConstantExpression skipTokenConstant, String propertyName)
         {
-            ConstantNode skipTokenNode = UriCompare.OeCacheComparerParameterValues.CreateSkipTokenConstantNode(skipTokenConstant.Value, propertyName);
+            ConstantNode skipTokenNode = OeCacheComparerParameterValues.CreateSkipTokenConstantNode(skipTokenConstant.Value, propertyName);
             AddConstant(skipTokenConstant, skipTokenNode);
         }
         public void AddTopConstant(ConstantExpression topConstant, ODataPath path)
         {
-            ConstantNode topNode = UriCompare.OeCacheComparerParameterValues.CreateTopConstantNode((int)topConstant.Value, path);
+            ConstantNode topNode = OeCacheComparerParameterValues.CreateTopConstantNode((int)topConstant.Value, path);
             AddConstant(topConstant, topNode);
         }
         private Expression GetPropertyExpression(SingleValuePropertyAccessNode nodeIn)

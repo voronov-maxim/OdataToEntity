@@ -1,11 +1,12 @@
 ﻿using Microsoft.OData;
 using Microsoft.OData.UriParser;
 using Microsoft.OData.UriParser.Aggregation;
+using OdataToEntity.Parsers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace OdataToEntity.Parsers.UriCompare
+namespace OdataToEntity.Cache.UriCompare
 {
     public readonly struct OeCacheComparer
     {
@@ -13,7 +14,7 @@ namespace OdataToEntity.Parsers.UriCompare
         private readonly OeCacheComparerParameterValues _parameterValues;
         private readonly OeQueryNodeComparer _queryNodeComparer;
 
-        public OeCacheComparer(IReadOnlyDictionary<ConstantNode, Db.OeQueryCacheDbParameterDefinition> constantToParameterMapper, bool navigationNextLink)
+        public OeCacheComparer(IReadOnlyDictionary<ConstantNode, OeQueryCacheDbParameterDefinition> constantToParameterMapper, bool navigationNextLink)
         {
             _parameterValues = new OeCacheComparerParameterValues(constantToParameterMapper);
             _queryNodeComparer = new OeQueryNodeComparer(_parameterValues);
@@ -62,7 +63,7 @@ namespace OdataToEntity.Parsers.UriCompare
             if (!CompareTop(uri1.Top, uri2.Top, uri1.Path))
                 return false;
 
-            if (!CompareSkipToken(cacheContext1.SkipTokenParser, cacheContext2.SkipTokenParser))
+            if (!CompareSkipToken(cacheContext1.SkipTokenNameValues, cacheContext2.SkipTokenNameValues))
                 return false;
 
             if (!CompareCompute(uri1.Compute, uri2.Compute))
@@ -287,20 +288,23 @@ namespace OdataToEntity.Parsers.UriCompare
             _parameterValues.AddSkipParameter(skip2.Value, path);
             return true;
         }
-        private bool CompareSkipToken(OeSkipTokenParser skipTokenParser1, OeSkipTokenParser skipTokenParser2)
+        private bool CompareSkipToken(OeSkipTokenNameValue[] skipTokenNameValues1, OeSkipTokenNameValue[] skipTokenNameValues2)
         {
-            if (skipTokenParser1 == null && skipTokenParser2 == null)
+            if (skipTokenNameValues1 == null && skipTokenNameValues2 == null)
                 return true;
-            if (skipTokenParser1.KeyValues.Count != skipTokenParser2.KeyValues.Count)
+            if (skipTokenNameValues1 == null || skipTokenNameValues2 == null)
                 return false;
 
-            for (int i = 0; i < skipTokenParser2.KeyValues.Count; i++)
-                if ((skipTokenParser1.KeyValues[i].Value == null || skipTokenParser2.KeyValues[i].Value == null) &&
-                    skipTokenParser1.KeyValues[i].Value != skipTokenParser2.KeyValues[i].Value)
+            if (skipTokenNameValues1.Length != skipTokenNameValues2.Length)
+                return false;
+
+            for (int i = 0; i < skipTokenNameValues2.Length; i++)
+                if ((skipTokenNameValues1[i].Value == null || skipTokenNameValues2[i].Value == null) &&
+                    skipTokenNameValues1[i].Value != skipTokenNameValues2[i].Value)
                     return false;
 
-            for (int i = 0; i < skipTokenParser2.KeyValues.Count; i++)
-                _parameterValues.AddSkipTokenParameter(skipTokenParser2.KeyValues[i].Value, skipTokenParser2.KeyValues[i].Key);
+            for (int i = 0; i < skipTokenNameValues2.Length; i++)
+                _parameterValues.AddSkipTokenParameter(skipTokenNameValues2[i].Value, skipTokenNameValues2[i].Name);
             return true;
         }
         private bool CompareTop(long? top1, long? top2, ODataPath path)
@@ -388,7 +392,7 @@ namespace OdataToEntity.Parsers.UriCompare
 
             return hash;
         }
-        private static int GetCacheCode(int hash,ApplyClause applyClause, OeQueryNodeHashVisitor hashVisitor)
+        private static int GetCacheCode(int hash, ApplyClause applyClause, OeQueryNodeHashVisitor hashVisitor)
         {
             foreach (TransformationNode transformationNode in applyClause.Transformations)
             {
@@ -442,6 +446,6 @@ namespace OdataToEntity.Parsers.UriCompare
             return hash;
         }
 
-        public IReadOnlyList<Db.OeQueryCacheDbParameterValue> ParameterValues => _parameterValues.ParameterValues;
+        public IReadOnlyList<OeQueryCacheDbParameterValue> ParameterValues => _parameterValues.ParameterValues;
     }
 }

@@ -1,11 +1,7 @@
 ﻿using Microsoft.OData.UriParser;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace OdataToEntity.Parsers.UriCompare
+namespace OdataToEntity.Cache.UriCompare
 {
     public sealed class OeQueryNodeHashVisitor : QueryNodeVisitor<int>
     {

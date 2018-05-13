@@ -451,6 +451,20 @@ namespace OdataToEntity.Test
         [Theory]
         [InlineData(0)]
         [InlineData(1)]
+        public async Task FilterAndHaving(int pageSize)
+        {
+            var parameters = new QueryParameters<OrderItem, Object>()
+            {
+                RequestUri = "OrderItems?$filter=Order/CustomerCountry ne 'UN'&$apply=groupby((OrderId), aggregate(Price mul Count with sum as sum))/filter(sum gt 7)",
+                Expression = t => t.Where(i => i.Order.CustomerCountry != "UN").GroupBy(i => i.OrderId)
+                    .Select(g => new { OrderId = g.Key, sum = g.Sum(i => i.Price * i.Count) }).Where(a => a.sum > 7),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters).ConfigureAwait(false);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
         public async Task FilterAny(int pageSize)
         {
             var parameters = new QueryParameters<Order>()

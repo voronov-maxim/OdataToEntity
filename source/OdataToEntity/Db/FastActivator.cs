@@ -15,6 +15,9 @@ namespace OdataToEntity.Db
             private static Func<T> GetFactory()
             {
                 ConstructorInfo ctor = typeof(T).GetConstructor(Type.EmptyTypes);
+                if (ctor == null)
+                    throw new InvalidOperationException(typeof(T).Name + " must have default constructor or override OeDataAdapter.CreateDataContext()");
+
                 return (Func<T>)Expression.Lambda(Expression.New(ctor)).Compile();
             }
         }

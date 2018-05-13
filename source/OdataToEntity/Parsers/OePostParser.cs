@@ -141,11 +141,10 @@ namespace OdataToEntity
             foreach (OperationSegmentParameter segmentParameter in importSegment.Parameters)
             {
                 Object value;
-                var constantNode = segmentParameter.Value as ConstantNode;
-                if (constantNode == null)
-                    value = OeEdmClrHelper.GetValue(_edmModel, segmentParameter.Value);
-                else
+                if (segmentParameter.Value is ConstantNode constantNode)
                     value = OeEdmClrHelper.GetValue(_edmModel, constantNode.Value);
+                else
+                    value = OeEdmClrHelper.GetValue(_edmModel, segmentParameter.Value);
                 parameters.Add(new KeyValuePair<String, Object>(segmentParameter.Name, value));
             }
 

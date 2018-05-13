@@ -6,7 +6,7 @@ namespace OdataToEntity.Test
     public sealed class OrderDbDataAdapter : OeEfCoreDataAdapter<Model.OrderContext>
     {
         public OrderDbDataAdapter(bool allowCache, bool useRelationalNulls, String databaseName) :
-            base(Model.OrderContextOptions.Create(useRelationalNulls, databaseName), new Db.OeQueryCache(allowCache))
+            base(Model.OrderContextOptions.Create(useRelationalNulls, databaseName), new Cache.OeQueryCache(allowCache))
         {
         }
     }
@@ -14,10 +14,10 @@ namespace OdataToEntity.Test
     public sealed class OrderOeDataAdapter : OeEfCoreDataAdapter<Model.OrderContext>
     {
         public OrderOeDataAdapter(bool allowCache, bool useRelationalNulls, String databaseName) :
-            base(Model.OrderContextOptions.Create(useRelationalNulls, databaseName), new Db.OeQueryCache(allowCache))
+            base(Model.OrderContextOptions.Create(useRelationalNulls, databaseName), new Cache.OeQueryCache(allowCache))
         {
         }
 
-        public new Db.OeQueryCache QueryCache => base.QueryCache;
+        public new Cache.OeQueryCache QueryCache => base.QueryCache;
     }
 }

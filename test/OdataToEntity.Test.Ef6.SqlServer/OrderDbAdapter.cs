@@ -9,7 +9,7 @@ namespace OdataToEntity.Test
     {
         private readonly bool _useRelationalNulls;
 
-        public OrderDbDataAdapter(bool allowCache, bool useRelationalNulls, String databaseName) : base(new Db.OeQueryCache(allowCache))
+        public OrderDbDataAdapter(bool allowCache, bool useRelationalNulls, String databaseName) : base(new Cache.OeQueryCache(allowCache))
         {
             _useRelationalNulls = useRelationalNulls;
         }
@@ -24,7 +24,7 @@ namespace OdataToEntity.Test
     {
         private readonly bool _useRelationalNulls;
 
-        public OrderOeDataAdapter(bool allowCache, bool useRelationalNulls, String databaseName) : base(new Db.OeQueryCache(allowCache))
+        public OrderOeDataAdapter(bool allowCache, bool useRelationalNulls, String databaseName) : base(new Cache.OeQueryCache(allowCache))
         {
             _useRelationalNulls = useRelationalNulls;
         }
@@ -34,6 +34,6 @@ namespace OdataToEntity.Test
             return new OrderEf6Context(_useRelationalNulls);
         }
 
-        public new Db.OeQueryCache QueryCache => base.QueryCache;
+        public new Cache.OeQueryCache QueryCache => base.QueryCache;
     }
 }
