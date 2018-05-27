@@ -65,19 +65,18 @@ namespace OdataToEntity.AspNetCore
             _queryContext = queryContext;
         }
 
-        public T CreateEntityFromTuple(Object tuple, OePropertyAccessor[] accessors)
+        private static Object CreateEntityFromTuple(Type entityType, Object tuple, OePropertyAccessor[] accessors)
         {
-            Type clrType = typeof(T);
-            var entity = (T)Activator.CreateInstance(clrType);
+            Object entity = Activator.CreateInstance(entityType);
             for (int i = 0; i < accessors.Length; i++)
             {
                 OePropertyAccessor accessor = accessors[i];
                 Object value = accessor.GetValue(tuple);
-                clrType.GetProperty(accessor.EdmProperty.Name).SetValue(entity, value);
+                entityType.GetProperty(accessor.EdmProperty.Name).SetValue(entity, value);
             }
             return entity;
         }
-        private static Object CreateNestedEntity(OeEntryFactory entryFactory, Object value)
+        private static Object CreateNestedEntity(OeEntryFactory entryFactory, Object value, Type nestedEntityType)
         {
             Object navigationValue = entryFactory.GetValue(value, out int? dummy);
             if (navigationValue == null)
@@ -85,17 +84,26 @@ namespace OdataToEntity.AspNetCore
 
             if (entryFactory.ResourceInfo.IsCollection.GetValueOrDefault())
             {
-                foreach (Object entity in (IEnumerable)navigationValue)
-                    foreach (OeEntryFactory navigationLink in entryFactory.NavigationLinks)
-                        SetNavigationProperty(navigationLink, value, entity);
-            }
-            else
-            {
-                foreach (OeEntryFactory navigationLink in entryFactory.NavigationLinks)
-                    SetNavigationProperty(navigationLink, value, navigationValue);
+                var entityList = new List<Object>();
+                foreach (Object item in (IEnumerable)navigationValue)
+                    entityList.Add(CreateEntity(item));
+
+                var entities = (Object[])Array.CreateInstance(nestedEntityType, entityList.Count);
+                entityList.CopyTo(entities);
+                return entities;
             }
 
-            return navigationValue;
+            return CreateEntity(navigationValue);
+
+            Object CreateEntity(Object entity)
+            {
+                if (OeExpressionHelper.IsTupleType(entity.GetType()))
+                    entity = CreateEntityFromTuple(nestedEntityType, entity, entryFactory.Accessors);
+                foreach (OeEntryFactory navigationLink in entryFactory.NavigationLinks)
+                    SetNavigationProperty(navigationLink, value, entity);
+
+                return entity;
+            }
         }
         public void Dispose() => _asyncEnumerator.Dispose();
         public async Task<bool> MoveNext(CancellationToken cancellationToken)
@@ -111,7 +119,7 @@ namespace OdataToEntity.AspNetCore
             Object value = _asyncEnumerator.Current;
             Object entry = _entryFactory.GetValue(value, out int? dummy);
             if (OeExpressionHelper.IsTupleType(entry.GetType()))
-                Current = CreateEntityFromTuple(entry, _entryFactory.Accessors);
+                Current = (T)CreateEntityFromTuple(typeof(T), entry, _entryFactory.Accessors);
             else
                 Current = (T)entry;
 
@@ -126,8 +134,12 @@ namespace OdataToEntity.AspNetCore
         }
         private static void SetNavigationProperty(OeEntryFactory navigationLink, Object value, Object ownerEntry)
         {
-            Object navigationValue = CreateNestedEntity(navigationLink, value);
             PropertyInfo propertyInfo = ownerEntry.GetType().GetProperty(navigationLink.ResourceInfo.Name);
+            Type nestedEntityType = OeExpressionHelper.GetCollectionItemType(propertyInfo.PropertyType);
+            if (nestedEntityType == null)
+                nestedEntityType = propertyInfo.PropertyType;
+
+            Object navigationValue = CreateNestedEntity(navigationLink, value, nestedEntityType);
             propertyInfo.SetValue(ownerEntry, navigationValue);
         }
         private void SetOrderByProperties(Object entity, Object value)

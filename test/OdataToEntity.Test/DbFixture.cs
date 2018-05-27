@@ -38,7 +38,7 @@ namespace OdataToEntity.Test
             IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri, false, 0).ConfigureAwait(false);
             IList fromDb;
             using (var dataContext = (DbContext)DbDataAdapter.CreateDataContext())
-                fromDb = TestHelper.ExecuteDb(dataContext, parameters.Expression);
+                fromDb = TestHelper.ExecuteDb(DbDataAdapter.EntitySetAdapters, dataContext, parameters.Expression);
 
             Console.WriteLine(parameters.RequestUri);
             TestHelper.Compare(fromDb, fromOe, null);
@@ -49,7 +49,7 @@ namespace OdataToEntity.Test
             IList fromDb;
             IReadOnlyList<IncludeVisitor.Include> includes;
             using (var dataContext = (DbContext)DbDataAdapter.CreateDataContext())
-                fromDb = TestHelper.ExecuteDb(dataContext, parameters.Expression, out includes);
+                fromDb = TestHelper.ExecuteDb(DbDataAdapter.EntitySetAdapters, dataContext, parameters.Expression, out includes);
 
             Console.WriteLine(parameters.RequestUri);
             TestHelper.Compare(fromDb, fromOe, includes);

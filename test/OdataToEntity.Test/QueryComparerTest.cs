@@ -26,9 +26,9 @@ namespace OdataToEntity.Test
                 _expression = expression;
             }
 
-            public IList Execute(DbContext dbContext)
+            public IList Execute(Db.OeEntitySetAdapterCollection entitySetAdapters, DbContext dbContext)
             {
-                return TestHelper.ExecuteDb(dbContext, _expression, out IReadOnlyList<IncludeVisitor.Include> includes);
+                return TestHelper.ExecuteDb(entitySetAdapters, dbContext, _expression, out _);
             }
         }
 
@@ -41,9 +41,9 @@ namespace OdataToEntity.Test
                 _expression = expression;
             }
 
-            public IList Execute(DbContext dbContext)
+            public IList Execute(Db.OeEntitySetAdapterCollection entitySetAdapters, DbContext dbContext)
             {
-                return TestHelper.ExecuteDb(dbContext, _expression);
+                return TestHelper.ExecuteDb(entitySetAdapters, dbContext, _expression);
             }
         }
 
@@ -62,13 +62,13 @@ namespace OdataToEntity.Test
 
             public override Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
             {
-                var executorDb = (Func<DbContext, IList>)new ExpressionClosure<T, TResult>(parameters.Expression).Execute;
+                var executorDb = (Func<Db.OeEntitySetAdapterCollection, DbContext, IList>)new ExpressionClosure<T, TResult>(parameters.Expression).Execute;
                 _selectTestDefinitions.Add(new SelectTestDefinition(parameters.RequestUri, executorDb));
                 return Task.CompletedTask;
             }
             public override Task Execute<T, TResult>(QueryParametersScalar<T, TResult> parameters)
             {
-                var executorDb = (Func<DbContext, IList>)new ExpressionScalarClosure<T, TResult>(parameters.Expression).Execute;
+                var executorDb = (Func<Db.OeEntitySetAdapterCollection, DbContext, IList>)new ExpressionScalarClosure<T, TResult>(parameters.Expression).Execute;
                 _selectTestDefinitions.Add(new SelectTestDefinition(parameters.RequestUri, executorDb));
                 return Task.CompletedTask;
 
@@ -81,16 +81,12 @@ namespace OdataToEntity.Test
             public IReadOnlyList<SelectTestDefinition> SelectTestDefinitions => _selectTestDefinitions;
         }
 
-        private readonly Func<DbContext, IList> _executorDb;
-        private readonly String _request;
-
-        public SelectTestDefinition(String request, Func<DbContext, IList> executorDb)
+        public SelectTestDefinition(String request, Func<Db.OeEntitySetAdapterCollection, DbContext, IList> executorDb)
         {
-            _request = request;
-            _executorDb = executorDb;
+            Request = request;
+            ExecutorDb = executorDb;
         }
 
-        public Func<DbContext, IList> ExecutorDb => _executorDb;
         public static SelectTestDefinition[] GetSelectTestDefinitions()
         {
             var fixture = new SelectTestDefinitionFixture();
@@ -144,10 +140,11 @@ namespace OdataToEntity.Test
             return fixture.SelectTestDefinitions.ToArray();
         }
 
+        public Func<Db.OeEntitySetAdapterCollection, DbContext, IList> ExecutorDb { get; }
         public String MethodName { get; set; }
-        public String Request => _request;
+        public String Request {get;}
 
-        public override String ToString() => _request;
+        public override String ToString() => Request;
     }
 
     public sealed class QueryComparerTest

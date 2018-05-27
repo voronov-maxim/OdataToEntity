@@ -26,11 +26,9 @@ namespace OdataToEntity.Test
 
         private sealed class NewVisitor : ExpressionVisitor
         {
-            private readonly List<PropertyInfo> _selectProperties;
-
             public NewVisitor()
             {
-                _selectProperties = new List<PropertyInfo>();
+                SelectProperties = new List<PropertyInfo>();
             }
 
             protected override Expression VisitNew(NewExpression node)
@@ -39,11 +37,12 @@ namespace OdataToEntity.Test
                 {
                     var property = (PropertyInfo)propertyExpression.Member;
                     if (TestContractResolver.IsEntity(property.PropertyType))
-                        _selectProperties.Add(property);
+                        SelectProperties.Add(property);
                 }
                 return node;
             }
-            public List<PropertyInfo> SelectProperties => _selectProperties;
+
+            public List<PropertyInfo> SelectProperties { get; }
         }
 
         private sealed class PropertyVisitor : ExpressionVisitor
@@ -138,10 +137,10 @@ namespace OdataToEntity.Test
             }
             else
             {
-                if (node.Arguments.Count == 1)
-                    node = Expression.Call(node.Object, node.Method, expression);
-                else
-                    node = Expression.Call(node.Object, node.Method, expression, node.Arguments[1]);
+                var arguments = new Expression[node.Arguments.Count];
+                node.Arguments.CopyTo(arguments, 0);
+                arguments[0] = expression;
+                node = Expression.Call(node.Object, node.Method, arguments);
             }
             return node;
         }

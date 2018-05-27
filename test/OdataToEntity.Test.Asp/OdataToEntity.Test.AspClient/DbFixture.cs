@@ -19,10 +19,12 @@ namespace OdataToEntity.Test
         private delegate Task<IList> ExecuteQueryFuncAsync<out T>(IQueryable query, Expression expression, IReadOnlyList<LambdaExpression> navigationPropertyAccessors);
 
         private readonly bool _clear;
+        private readonly Db.OeEntitySetAdapterCollection _entitySetAdapters;
 
         public DbFixtureInitDb(bool clear = false)
         {
             _clear = clear;
+            _entitySetAdapters = new EfCore.OeEfCoreDataAdapter<OrderContext>().EntitySetAdapters;
         }
 
         public static Container CreateContainer(int maxPageSize)
@@ -48,8 +50,9 @@ namespace OdataToEntity.Test
         {
             IList fromOe = await ExecuteOe<T, TResult>(parameters.Expression, 0);
             IList fromDb;
+
             using (var dataContext = new OrderContext(OrderContextOptions.Create(true, null)))
-                fromDb = TestHelper.ExecuteDb(dataContext, parameters.Expression);
+                fromDb = TestHelper.ExecuteDb(_entitySetAdapters, dataContext, parameters.Expression);
 
             TestHelper.Compare(fromDb, fromOe, null);
         }
@@ -63,7 +66,7 @@ namespace OdataToEntity.Test
             IList fromDb;
             using (var dataContext = new OrderContext(OrderContextOptions.Create(true, null)))
             {
-                fromDb = TestHelper.ExecuteDb(dataContext, parameters.Expression, out IReadOnlyList<IncludeVisitor.Include> includesDb);
+                fromDb = TestHelper.ExecuteDb(_entitySetAdapters, dataContext, parameters.Expression, out IReadOnlyList<IncludeVisitor.Include> includesDb);
                 includes.AddRange(includesDb);
             }
 

@@ -2,9 +2,9 @@
   <Import Project="..\..\build\dependencies.props" />
 
   <PropertyGroup>
-    <Description>Classes bridge from OdataToEntity to Linq2Db. Abstraction layer access to DataContext Entity Linq2Db. Targets .NET 4.6.1</Description>
+    <Description>Classes bridge from OdataToEntity to Linq2Db. Abstraction layer access to DataContext Entity Linq2Db</Description>
     <Authors>Maxim Voronov</Authors>
-    <TargetFrameworks>$(FrameworkVersion)</TargetFrameworks>
+    <TargetFrameworks>$(NetStandardVersion);$(FrameworkVersion)</TargetFrameworks>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity.Linq2Db</AssemblyName>
@@ -27,24 +27,9 @@
     <PackageVersion>$(OdataToEntityVersion)</PackageVersion>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <OutputType>Library</OutputType>
-    <OutputPath>bin\Debug\</OutputPath>
-  </PropertyGroup>
-  
   <ItemGroup>
-    <None Include="App.config" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.ComponentModel.DataAnnotations" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Data" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="linq2db" Version="1.10.2" />
+    <PackageReference Include="linq2db" Version="2.0.0" />
+    <PackageReference Include="System.ComponentModel.Annotations" Version="$(CoreFxVersion)" />
   </ItemGroup>
   
   <ItemGroup>

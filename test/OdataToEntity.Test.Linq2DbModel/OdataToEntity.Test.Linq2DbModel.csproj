@@ -5,29 +5,17 @@
     <Description>Test Linq2Db Sql Server for OdataToEntity</Description>
     <AssemblyTitle>Test Linq2Db Sql Server for OdataToEntity</AssemblyTitle>
     <Authors>Maxim Voronov</Authors>
-    <TargetFrameworks>$(FrameworkVersion)</TargetFrameworks>
+    <TargetFrameworks>$(NetStandardVersion);$(FrameworkVersion)</TargetFrameworks>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity.Test.Linq2DbModel</AssemblyName>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <OutputType>Library</OutputType>
-    <OutputPath>bin\Debug\</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.ComponentModel.DataAnnotations" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Data" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="linq2db" Version="1.10.2" />
-    <PackageReference Include="linq2db.SqlServer" Version="1.10.0" />
+    <PackageReference Include="linq2db" Version="2.0.0" />
+    <PackageReference Include="linq2db.SqlServer" Version="2.0.0" />
     <PackageReference Include="linq2db.t4models" Version="1.10.0" />
+    <PackageReference Include="System.ComponentModel.Annotations" Version="$(CoreFxVersion)" />
   </ItemGroup>
 
   <ItemGroup>

@@ -63,8 +63,8 @@ namespace OdataToEntity
             if (clrTypeAnnotation != null)
                 return clrTypeAnnotation.Value;
 
-            if (edmType.TypeKind == EdmTypeKind.Collection)
-                return edmModel.GetClrType((edmType as IEdmCollectionType).ElementType.Definition);
+            if (edmType is IEdmCollectionType collectionType)
+                return edmModel.GetClrType(collectionType.ElementType.Definition);
 
             throw new InvalidOperationException("Add OeClrTypeAnnotation for " + edmType.FullTypeName());
         }
@@ -120,7 +120,7 @@ namespace OdataToEntity
         public static IEdmEntitySet GetEntitySet(IEdmModel edmModel, IEdmType edmType)
         {
             foreach (IEdmEntitySet element in edmModel.EntityContainer.EntitySets())
-                if (element.Type == edmType)
+                if (element.EntityType() == edmType)
                     return element;
             return null;
         }

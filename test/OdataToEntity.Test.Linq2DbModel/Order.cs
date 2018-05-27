@@ -37,13 +37,8 @@ namespace OdataToEntity.Test.Model
             set;
         }
 
-        public OdataToEntityDB()
-		{
-			InitDataContext();
-		}
-
-		public OdataToEntityDB(string configuration)
-			: base(configuration)
+		public OdataToEntityDB()
+			: base("SqlServer", @"Server=.\sqlexpress;Initial Catalog=OdataToEntity;Trusted_Connection=Yes;")
 		{
 			InitDataContext();
 		}

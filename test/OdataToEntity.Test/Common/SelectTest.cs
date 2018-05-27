@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using OdataToEntity.Test.Model;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
@@ -376,22 +377,6 @@ namespace OdataToEntity.Test
         [InlineData(1, false)]
         [InlineData(0, true)]
         [InlineData(1, true)]
-        public async Task ExpandFilter(int pageSize, bool navigationNextLink)
-        {
-            var parameters = new QueryParameters<Customer, Customer>()
-            {
-                RequestUri = "Customers?$expand=Orders($filter=Status eq OdataToEntity.Test.Model.OrderStatus'Processing')&$orderby=Country,Id",
-                Expression = t => t.Include(c => c.Orders.Where(o => o.Status == OrderStatus.Processing)).OrderBy(c => c.Country).ThenBy(c => c.Id),
-                NavigationNextLink = navigationNextLink,
-                PageSize = pageSize
-            };
-            await Fixture.Execute(parameters).ConfigureAwait(false);
-        }
-        [Theory]
-        [InlineData(0, false)]
-        [InlineData(1, false)]
-        [InlineData(0, true)]
-        [InlineData(1, true)]
         public async Task ExpandInverseProperty(int pageSize, bool navigationNextLink)
         {
             var parameters = new QueryParameters<Customer, Customer>()
@@ -408,12 +393,46 @@ namespace OdataToEntity.Test
         [InlineData(1, false)]
         [InlineData(0, true)]
         [InlineData(1, true)]
+        public async Task ExpandManyFilter(int pageSize, bool navigationNextLink)
+        {
+            var parameters = new QueryParameters<Customer, Customer>()
+            {
+                RequestUri = "Customers?$expand=Orders($filter=Status eq OdataToEntity.Test.Model.OrderStatus'Processing')&$orderby=Country,Id",
+                Expression = t => t.Include(c => c.Orders.Where(o => o.Status == OrderStatus.Processing)).OrderBy(c => c.Country).ThenBy(c => c.Id),
+                NavigationNextLink = navigationNextLink,
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters).ConfigureAwait(false);
+        }
+        [Theory]
+        [InlineData(0, false)]
+        [InlineData(1, false)]
+        [InlineData(0, true)]
+        [InlineData(1, true)]
         public async Task ExpandNestedSelect(int pageSize, bool navigationNextLink)
         {
             var parameters = new QueryParameters<Customer, Customer>()
             {
                 RequestUri = "Customers?$expand=Orders($select=AltCustomerCountry,AltCustomerId,CustomerCountry,CustomerId,Date,Id,Name,Status)&$orderby=Country,Id",
                 Expression = t => t.Include(c => c.Orders).OrderBy(c => c.Country).ThenBy(c => c.Id),
+                NavigationNextLink = navigationNextLink,
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters).ConfigureAwait(false);
+        }
+        //[Theory(Skip = "alpha")]
+        [InlineData(0, false)]
+        [InlineData(1, false)]
+        [InlineData(0, true)]
+        [InlineData(1, true)]
+        public async Task ExpandOneFilter(int pageSize, bool navigationNextLink)
+        {
+            IQueryable<Customer> customers = null;
+            var parameters = new QueryParameters<Order>()
+            {
+                RequestUri = "Orders?$expand=Customer($filter=Sex eq OdataToEntity.Test.Model.Sex'Male')",
+                Expression = t => t.GroupJoin(customers, o => o.CustomerCountry, c => c.Country, (o, c) => new { order = o, customer = c })
+                    .SelectMany(z => z.customer.DefaultIfEmpty(), (o, c) => new { o.order, sex = c.Sex }).Select(a => a.order),
                 NavigationNextLink = navigationNextLink,
                 PageSize = pageSize
             };

@@ -125,7 +125,7 @@ namespace OdataToEntity.Parsers
             public override SelectItemInfo Translate(ExpandedNavigationSelectItem item)
             {
                 var segment = (NavigationPropertySegment)item.PathToNavigationProperty.LastSegment;
-                if (_navigationNextLink && segment.NavigationProperty.Type.Definition is IEdmCollectionType)
+                if (_navigationNextLink && segment.NavigationProperty.Type is IEdmCollectionTypeReference)
                     return null;
 
                 SelectItemInfo selectItemInfo = CreateNavigationSelectItemInfo(_model, segment, false, item.CountOption);

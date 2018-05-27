@@ -30,7 +30,7 @@ namespace OdataToEntity.Test
         public override Object CreateDataContext()
         {
             LinqToDB.Common.Configuration.Linq.AllowMultipleQuery = true;
-            return new OdataToEntityDB("OdataToEntity");
+            return new OdataToEntityDB();
         }
 
         public new Cache.OeQueryCache QueryCache => base.QueryCache;

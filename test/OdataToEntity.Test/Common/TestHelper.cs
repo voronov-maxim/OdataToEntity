@@ -3,7 +3,6 @@ using Microsoft.OData.Edm;
 using Microsoft.OData.Edm.Csdl;
 using Microsoft.OData.Edm.Validation;
 using Newtonsoft.Json;
-using OdataToEntity.Test.Model;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -21,23 +20,40 @@ namespace OdataToEntity.Test
     {
         private sealed class QueryVisitor<T> : ExpressionVisitor
         {
-            private readonly IQueryable _query;
-            private ConstantExpression _parameter;
+            private readonly Object _dataContext;
+            private readonly Db.OeEntitySetAdapterCollection _entitySetAdapters;
+            private IQueryable<T> _query;
 
-            public QueryVisitor(IQueryable query)
+            public QueryVisitor(Db.OeEntitySetAdapterCollection entitySetAdapters, Object dataContext)
             {
-                _query = query;
+                _entitySetAdapters = entitySetAdapters;
+                _dataContext = dataContext;
             }
 
+            private ConstantExpression GetQueryConstantExpression(Expression node)
+            {
+                if (node.Type.IsGenericType && node.Type.GetGenericTypeDefinition() == typeof(IQueryable<>))
+                {
+                    Db.OeEntitySetAdapter entitySetAdapter = _entitySetAdapters.FindByClrType(node.Type.GetGenericArguments()[0]);
+                    IQueryable query = entitySetAdapter.GetEntitySet(_dataContext);
+                    if (_query == null && entitySetAdapter.EntityType == typeof(T))
+                        _query = (IQueryable<T>)query;
+
+                    return Expression.Constant(query);
+                }
+
+                return null;
+            }
             protected override Expression VisitParameter(ParameterExpression node)
             {
-                if (_parameter == null && node.Type == typeof(IQueryable<T>))
-                {
-                    _parameter = Expression.Constant(_query);
-                    return _parameter;
-                }
-                return base.VisitParameter(node);
+                return GetQueryConstantExpression(node) ?? base.VisitParameter(node);
             }
+            protected override Expression VisitMember(MemberExpression node)
+            {
+                return GetQueryConstantExpression(node) ?? base.VisitMember(node);
+            }
+
+            public IQueryable<T> Query => _query;
         }
 
         public static void Compare(IList fromDb, IList fromOe, IReadOnlyList<IncludeVisitor.Include> includes)
@@ -56,24 +72,23 @@ namespace OdataToEntity.Test
 
             Assert.Equal(jsonDb, jsonOe);
         }
-        public static IList ExecuteDb<T, TResult>(DbContext dataContext, Expression<Func<IQueryable<T>, TResult>> expression)
+        public static IList ExecuteDb<T, TResult>(Db.OeEntitySetAdapterCollection entitySetAdapters, DbContext dataContext, Expression<Func<IQueryable<T>, TResult>> expression)
         {
-            IQueryable<T> query = GetQuerableDb<T>(dataContext);
-            var visitor = new QueryVisitor<T>(query);
+            var visitor = new QueryVisitor<T>(entitySetAdapters, dataContext);
             Expression call = visitor.Visit(expression.Body);
-            return new[] { query.Provider.Execute<TResult>(call) };
+            return new[] { visitor.Query.Provider.Execute<TResult>(call) };
         }
-        public static IList ExecuteDb<T, TResult>(DbContext dataContext, Expression<Func<IQueryable<T>, IQueryable<TResult>>> expression, out IReadOnlyList<IncludeVisitor.Include> includes)
+        public static IList ExecuteDb<T, TResult>(Db.OeEntitySetAdapterCollection entitySetAdapters, DbContext dataContext,
+            Expression<Func<IQueryable<T>, IQueryable<TResult>>> expression, out IReadOnlyList<IncludeVisitor.Include> includes)
         {
-            IQueryable<T> query = GetQuerableDb<T>(dataContext);
-            var visitor = new QueryVisitor<T>(query);
+            var visitor = new QueryVisitor<T>(entitySetAdapters, dataContext);
             Expression call = visitor.Visit(expression.Body);
 
             var includeVisitor = new IncludeVisitor();
             call = includeVisitor.Visit(call);
             includes = includeVisitor.Includes;
 
-            IList fromDb = query.Provider.CreateQuery<TResult>(call).ToList();
+            IList fromDb = visitor.Query.Provider.CreateQuery<TResult>(call).ToList();
             if (typeof(TResult) == typeof(Object))
                 fromDb = ToOpenType(fromDb);
 
@@ -104,22 +119,6 @@ namespace OdataToEntity.Test
                 if (iface.IsGenericType && iface.GetGenericTypeDefinition() == typeof(IEnumerable<>))
                     return iface.GetGenericArguments()[0];
             return null;
-        }
-        private static IQueryable<T> GetQuerableDb<T>(DbContext dataContext)
-        {
-            var orderContext = (OrderContext)dataContext;
-            if (typeof(T) == typeof(Customer))
-                return (IQueryable<T>)orderContext.Customers;
-            if (typeof(T) == typeof(OrderItem))
-                return (IQueryable<T>)orderContext.OrderItems;
-            if (typeof(T) == typeof(Order))
-                return (IQueryable<T>)orderContext.Orders;
-            if (typeof(T) == typeof(Category))
-                return (IQueryable<T>)orderContext.Categories;
-            if (typeof(T) == typeof(ManyColumns))
-                return (IQueryable<T>)orderContext.ManyColumns;
-
-            throw new InvalidOperationException("unknown type " + typeof(T).Name);
         }
         public static IList ToOpenType(IEnumerable entities)
         {

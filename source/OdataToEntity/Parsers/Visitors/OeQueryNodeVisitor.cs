@@ -283,8 +283,8 @@ namespace OdataToEntity.Parsers
         public override Expression Visit(SingleNavigationNode nodeIn)
         {
             Expression source;
-            if (nodeIn.Source is SingleNavigationNode)
-                source = TranslateNode(nodeIn.Source);
+            if (nodeIn.Source is SingleNavigationNode singleNavigationNode)
+                source = Visit(singleNavigationNode);
             else
                 source = Parameter;
 
