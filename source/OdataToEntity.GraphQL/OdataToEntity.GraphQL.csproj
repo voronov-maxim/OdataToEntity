@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\build\dependencies.props" />
+
+  <PropertyGroup>
+    <TargetFrameworks>$(NetStandardVersion)</TargetFrameworks>
+    <LangVersion>$(CSharpVersion)</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="GraphQL" Version="0.17.3" />
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OdataToEntity.AspNetCore\OdataToEntity.AspNetCore.csproj" />
+    <ProjectReference Include="..\OdataToEntity\OdataToEntity.csproj" />
+  </ItemGroup>
+
+</Project>
