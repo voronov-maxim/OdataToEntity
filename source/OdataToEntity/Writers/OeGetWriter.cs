@@ -23,28 +23,48 @@ namespace OdataToEntity.Writers
                 Writer = writer;
             }
 
-            private static Uri BuildNavigationNextPageLink(ODataResource entry, IEdmEntitySet entitySet, ExpandedNavigationSelectItem expandedNavigationSelectItem)
+            private static Uri BuildNavigationNextPageLink(ODataResource entry, ExpandedNavigationSelectItem expandedNavigationSelectItem)
             {
-                var keys = new List<KeyValuePair<String, Object>>(1);
-                foreach (IEdmStructuralProperty key in entitySet.EntityType().Key())
-                    foreach (ODataProperty property in entry.Properties)
-                        if (property.Name == key.Name)
-                        {
-                            keys.Add(new KeyValuePair<String, Object>(property.Name, property.Value));
-                            break;
-                        }
+                var segment = (NavigationPropertySegment)expandedNavigationSelectItem.PathToNavigationProperty.LastSegment;
+                ResourceRangeVariableReferenceNode refNode = OeGetParser.CreateRangeVariableReferenceNode((IEdmEntitySet)segment.NavigationSource);
+                IEdmNavigationProperty navigationProperty = segment.NavigationProperty;
 
-                var segments = new List<ODataPathSegment>()
+                var keys = new List<KeyValuePair<IEdmStructuralProperty, Object>>();
+                if (navigationProperty.IsPrincipal())
                 {
-                    new EntitySetSegment(entitySet),
-                    new KeySegment(keys, entitySet.EntityType(), entitySet)
-                };
-                segments.AddRange(expandedNavigationSelectItem.PathToNavigationProperty);
+                    IEnumerator<IEdmStructuralProperty> dependentProperties = navigationProperty.Partner.DependentProperties().GetEnumerator();
+                    foreach (IEdmStructuralProperty key in navigationProperty.Partner.PrincipalProperties())
+                        foreach (ODataProperty property in entry.Properties)
+                            if (property.Name == key.Name)
+                            {
+                                dependentProperties.MoveNext();
+                                keys.Add(new KeyValuePair<IEdmStructuralProperty, Object>(dependentProperties.Current, property.Value));
+                                break;
+                            }
+                }
+                else
+                {
+                    IEnumerator<IEdmStructuralProperty> principalProperties = navigationProperty.PrincipalProperties().GetEnumerator();
+                    foreach (IEdmStructuralProperty key in navigationProperty.DependentProperties())
+                        foreach (ODataProperty property in entry.Properties)
+                            if (property.Name == key.Name)
+                            {
+                                principalProperties.MoveNext();
+                                keys.Add(new KeyValuePair<IEdmStructuralProperty, Object>(principalProperties.Current, property.Value));
+                                break;
+                            }
+                }
+
+                BinaryOperatorNode filterExpression = OeGetParser.CreateFilterExpression(refNode, keys);
+                if (expandedNavigationSelectItem.FilterOption != null)
+                    filterExpression = new BinaryOperatorNode(BinaryOperatorKind.And, filterExpression, expandedNavigationSelectItem.FilterOption.Expression);
+
+                var segments = new ODataPathSegment[] { new EntitySetSegment((IEdmEntitySet)refNode.NavigationSource) };
 
                 var odataUri = new ODataUri()
                 {
                     Path = new ODataPath(segments),
-                    Filter = expandedNavigationSelectItem.FilterOption,
+                    Filter = new FilterClause(filterExpression, refNode.RangeVariable),
                     OrderBy = expandedNavigationSelectItem.OrderByOption,
                     SelectAndExpand = expandedNavigationSelectItem.SelectAndExpand,
                     Top = expandedNavigationSelectItem.TopOption,
@@ -90,7 +110,7 @@ namespace OdataToEntity.Writers
 
                     if (QueryContext.NavigationNextLink)
                         foreach (ExpandedNavigationSelectItem item in QueryContext.GetExpandedNavigationSelectItems())
-                            WriteNavigationNextLink(entry, entryFactory.EntitySet, item);
+                            WriteNavigationNextLink(entry, item);
 
                     Writer.WriteEnd();
                     count++;
@@ -138,7 +158,7 @@ namespace OdataToEntity.Writers
 
                 Writer.WriteEnd();
             }
-            private void WriteNavigationNextLink(ODataResource parentEntry, IEdmEntitySet parentEntitySet, ExpandedNavigationSelectItem item)
+            private void WriteNavigationNextLink(ODataResource parentEntry, ExpandedNavigationSelectItem item)
             {
                 var segment = (NavigationPropertySegment)item.PathToNavigationProperty.LastSegment;
                 var resourceInfo = new ODataNestedResourceInfo()
@@ -149,7 +169,7 @@ namespace OdataToEntity.Writers
 
                 Writer.WriteStart(resourceInfo);
 
-                var resourceSet = new ODataResourceSet() { NextPageLink = BuildNavigationNextPageLink(parentEntry, parentEntitySet, item) };
+                var resourceSet = new ODataResourceSet() { NextPageLink = BuildNavigationNextPageLink(parentEntry, item) };
                 Writer.WriteStart(resourceSet);
                 Writer.WriteEnd();
 

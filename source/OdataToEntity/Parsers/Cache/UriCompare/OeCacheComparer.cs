@@ -129,7 +129,7 @@ namespace OdataToEntity.Cache.UriCompare
             if (clause1 == null || clause2 == null)
                 return false;
 
-            if (!clause1.ItemType.IsEqual(clause1.ItemType))
+            if (!clause1.ItemType.IsEqual(clause2.ItemType))
                 return false;
 
             OeQueryNodeComparer queryNodeComparer = navigationNextLink ? new OeQueryNodeComparer(default) : _queryNodeComparer;

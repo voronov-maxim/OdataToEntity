@@ -32,7 +32,7 @@ namespace OdataToEntity.EfCore
         {
             private IEntityType _entityType;
             private readonly Func<T, DbSet<TEntity>> _getEntitySet;
-            private Func<ValueBuffer, Object> _materializer;
+            private Func<MaterializationContext, Object> _materializer;
             private Func<Object[]> _valueBufferArrayInit;
             private IForeignKey _selfReferenceKey;
 
@@ -92,7 +92,7 @@ namespace OdataToEntity.EfCore
                     Object value = OeEdmClrHelper.GetClrValue(property.ClrType, odataProperty.Value);
                     values[property.GetIndex()] = value;
                 }
-                return (TEntity)_materializer(new ValueBuffer(values));
+                return (TEntity)_materializer(new MaterializationContext(new ValueBuffer(values), context));
             }
             private static Func<Object[]> CreateNewArrayInit(IEntityType entityType)
             {

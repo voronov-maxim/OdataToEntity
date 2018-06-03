@@ -182,7 +182,7 @@ namespace OdataToEntity.Cache.UriCompare
             try
             {
                 e1 = node1.Parameters.GetEnumerator();
-                e2 = node1.Parameters.GetEnumerator();
+                e2 = node2.Parameters.GetEnumerator();
                 for (;;)
                 {
                     bool f1 = e1.MoveNext();

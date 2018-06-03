@@ -200,7 +200,7 @@ namespace OdataToEntity.Linq2Db
                 expression = new ParameterVisitor().Visit(expression);
 
                 countExpression = OeQueryContext.CreateCountExpression(expression);
-                queryCache.AddQuery(queryContext.CreateCacheContext(parameterVisitor.ConstantToParameterMapper), expression, null,
+                queryCache.AddQuery(queryContext.CreateCacheContext(parameterVisitor.ConstantToParameterMapper), expression, countExpression,
                     queryContext.EntryFactory, queryContext.SkipTokenAccessors);
                 parameterValues = parameterVisitor.ParameterValues;
             }

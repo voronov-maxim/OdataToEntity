@@ -12,6 +12,7 @@ namespace Xunit
 
     internal sealed class TheoryAttribute : Attribute
     {
+        public String Skip { get; set; }
     }
 
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]

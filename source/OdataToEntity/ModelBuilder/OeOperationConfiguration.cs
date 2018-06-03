@@ -6,12 +6,7 @@ namespace OdataToEntity.ModelBuilder
 {
     public sealed class OeOperationConfiguration
     {
-        private readonly bool? _isDbFunction;
-        private readonly String _methodInfoName;
-        private readonly String _name;
-        private readonly String _namespaceName;
         private readonly List<OeOperationParameterConfiguration> _parameters;
-        private readonly Type _returnType;
 
         public OeOperationConfiguration(String name, MethodInfo methodInfo, bool? isDbFunction)
             : this(name, methodInfo.DeclaringType.Namespace, methodInfo.DeclaringType.Name + "." + methodInfo.Name, methodInfo.ReturnType, isDbFunction)
@@ -21,11 +16,16 @@ namespace OdataToEntity.ModelBuilder
         }
         public OeOperationConfiguration(String name, String namespaceName, String methodInfoName, Type returnType, bool? isDbFunction)
         {
-            _name = name ?? throw new ArgumentNullException(nameof(name));
-            _namespaceName = namespaceName;
-            _methodInfoName = methodInfoName;
-            _returnType = returnType;
-            _isDbFunction = isDbFunction;
+            if (name == null)
+                throw new ArgumentNullException(nameof(name));
+
+            bool parentheses = name.EndsWith("()");
+
+            Name = parentheses ? name.Substring(0, name.Length - 2) : name;
+            NamespaceName = namespaceName;
+            MethodInfoName = methodInfoName;
+            ReturnType = returnType;
+            IsDbFunction = isDbFunction ?? (ReturnType != null && ReturnType.IsPrimitive) || parentheses;
 
             _parameters = new List<OeOperationParameterConfiguration>();
         }
@@ -39,13 +39,13 @@ namespace OdataToEntity.ModelBuilder
             _parameters.Add(new OeOperationParameterConfiguration(name, clrType));
         }
 
-        public bool IsDbFunction => _isDbFunction ?? (ReturnType != null && ReturnType.IsPrimitive);
+        public bool IsDbFunction { get; }
         public bool IsEdmFunction => ReturnType != null && ReturnType != typeof(void);
-        public String MethodInfoName => _methodInfoName;
-        public String Name => _name;
-        public String NamespaceName => _namespaceName;
+        public String MethodInfoName { get; }
+        public String Name { get; }
+        public String NamespaceName { get; }
         public IReadOnlyList<OeOperationParameterConfiguration> Parameters => _parameters;
-        public Type ReturnType => _returnType;
+        public Type ReturnType { get; }
     }
 
     public readonly struct OeOperationParameterConfiguration

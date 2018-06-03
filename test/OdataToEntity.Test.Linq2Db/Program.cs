@@ -4,7 +4,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Xunit;
 using OdataToEntityDB = lq2db::OdataToEntity.Test.Model.OdataToEntityDB;
+
+[assembly: CollectionBehavior(DisableTestParallelization = true)]
 
 namespace OdataToEntity.Test.Linq2Db
 {

@@ -24,16 +24,24 @@ namespace OdataToEntity
 
         private static FilterClause CreateFilterClause(IEdmEntitySet entitySet, IEnumerable<KeyValuePair<String, Object>> keys)
         {
-            var entityTypeRef = (IEdmEntityTypeReference)((IEdmCollectionType)entitySet.Type).ElementType;
-            var range = new ResourceRangeVariable("", entityTypeRef, entitySet);
-            var refNode = new ResourceRangeVariableReferenceNode("$it", range);
+            ResourceRangeVariableReferenceNode refNode = CreateRangeVariableReferenceNode(entitySet);
+            var entityType = (IEdmEntityType)refNode.RangeVariable.TypeReference.Definition;
 
-            BinaryOperatorNode compositeNode = null;
-            var entityType = (IEdmEntityType)entityTypeRef.Definition;
+            var propertyValues = new List<KeyValuePair<IEdmStructuralProperty, Object>>();
             foreach (KeyValuePair<String, Object> keyValue in keys)
             {
-                IEdmProperty property = entityType.FindProperty(keyValue.Key);
-                var left = new SingleValuePropertyAccessNode(refNode, property);
+                var property = (IEdmStructuralProperty)entityType.FindProperty(keyValue.Key);
+                propertyValues.Add(new KeyValuePair<IEdmStructuralProperty, Object>(property, keyValue.Value));
+            }
+
+            return new FilterClause(CreateFilterExpression(refNode, propertyValues), refNode.RangeVariable);
+        }
+        internal static BinaryOperatorNode CreateFilterExpression(ResourceRangeVariableReferenceNode referenceNode, IEnumerable<KeyValuePair<IEdmStructuralProperty, Object>> keys)
+        {
+            BinaryOperatorNode compositeNode = null;
+            foreach (KeyValuePair<IEdmStructuralProperty, Object> keyValue in keys)
+            {
+                var left = new SingleValuePropertyAccessNode(referenceNode, keyValue.Key);
                 var right = new ConstantNode(keyValue.Value, ODataUriUtils.ConvertToUriLiteral(keyValue.Value, ODataVersion.V4));
                 var node = new BinaryOperatorNode(BinaryOperatorKind.Equal, left, right);
 
@@ -42,7 +50,7 @@ namespace OdataToEntity
                 else
                     compositeNode = new BinaryOperatorNode(BinaryOperatorKind.And, compositeNode, node);
             }
-            return new FilterClause(compositeNode, range);
+            return compositeNode;
         }
         public OeQueryContext CreateQueryContext(ODataUri odataUri, int pageSize, bool navigationNextLink, OeMetadataLevel metadataLevel)
         {
@@ -100,6 +108,12 @@ namespace OdataToEntity
             bool isCountSegment = odataUri.Path.LastSegment is CountSegment;
             return new OeQueryContext(_edmModel, odataUri, entitySet, navigationSegments,
                 isCountSegment, pageSize, navigationNextLink, _dataAdapter.IsDatabaseNullHighestValue, metadataLevel, entitySetAdapter);
+        }
+        internal static ResourceRangeVariableReferenceNode CreateRangeVariableReferenceNode(IEdmEntitySet entitySet)
+        {
+            var entityTypeRef = (IEdmEntityTypeReference)((IEdmCollectionType)entitySet.Type).ElementType;
+            var range = new ResourceRangeVariable("", entityTypeRef, entitySet);
+            return new ResourceRangeVariableReferenceNode("", range);
         }
         public async Task ExecuteAsync(ODataUri odataUri, OeRequestHeaders headers, Stream stream, CancellationToken cancellationToken)
         {

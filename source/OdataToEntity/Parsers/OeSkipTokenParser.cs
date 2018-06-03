@@ -68,7 +68,8 @@ namespace OdataToEntity.Parsers
             }
             else
             {
-                ResourceRangeVariableReferenceNode source = GetResourceRangeNode(edmModel, edmType);
+                IEdmEntitySet entitySet = OeEdmClrHelper.GetEntitySet(edmModel, edmType);
+                ResourceRangeVariableReferenceNode source = OeGetParser.CreateRangeVariableReferenceNode(entitySet);
                 foreach (IEdmStructuralProperty key in edmType.Key())
                     keys.Add(new SingleValuePropertyAccessNode(source, key));
             }
@@ -84,23 +85,6 @@ namespace OdataToEntity.Parsers
                     keys.RemoveAt(i);
             }
             return keys;
-        }
-        private static ResourceRangeVariableReferenceNode GetResourceRangeNode(IEdmModel edmModel, IEdmEntityType edmType)
-        {
-            IEdmEntitySet entitySet = null;
-            foreach (IEdmEntitySet element in edmModel.EntityContainer.EntitySets())
-                if (element.EntityType() == edmType)
-                {
-                    entitySet = element;
-                    break;
-                }
-
-            if (entitySet == null)
-                throw new InvalidOperationException("IEdmEntitySet not found for IEdmEntityType " + edmType.FullName());
-
-            var entityTypeRef = (IEdmEntityTypeReference)((IEdmCollectionType)entitySet.Type).ElementType;
-            var range = new ResourceRangeVariable("", entityTypeRef, entitySet);
-            return new ResourceRangeVariableReferenceNode("$it", range);
         }
         internal static OrderByClause GetUniqueOrderBy(IEdmModel edmModel, IEdmEntityType edmType, OrderByClause orderByClause, ApplyClause applyClause)
         {

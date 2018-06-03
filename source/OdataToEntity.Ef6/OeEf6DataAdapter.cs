@@ -231,7 +231,7 @@ namespace OdataToEntity.Ef6
                 expression = new EnumerableToQuerableVisitor(queryContext.EntitySetAdapter.EntityType).Visit(expression);
 
                 countExpression = OeQueryContext.CreateCountExpression(expression);
-                queryCache.AddQuery(queryContext.CreateCacheContext(parameterVisitor.ConstantToParameterMapper), expression, null,
+                queryCache.AddQuery(queryContext.CreateCacheContext(parameterVisitor.ConstantToParameterMapper), expression, countExpression,
                     queryContext.EntryFactory, queryContext.SkipTokenAccessors);
                 parameterValues = parameterVisitor.ParameterValues;
             }
