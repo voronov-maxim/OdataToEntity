@@ -65,21 +65,13 @@ namespace OdataToEntity.ModelBuilder
         {
             return !PrimitiveTypeHelper.IsNullable(propertyInfo.PropertyType) || propertyInfo.GetCustomAttribute(typeof(RequiredAttribute)) != null;
         }
-        public PropertyInfo[] SortClrPropertyByOrder(List<PropertyInfo> clrProperties)
+        public PropertyInfo[] SortClrPropertyByOrder(PropertyInfo[] clrProperties)
         {
-            var propertyList = new PropertyInfo[clrProperties.Count];
-            foreach (PropertyInfo clrProperty in clrProperties)
-            {
-                int order = GetOrder(clrProperty);
-                if (order == -1)
-                {
-                    clrProperties.CopyTo(propertyList);
-                    break;
-                }
+            if (clrProperties.Length == 1)
+                return clrProperties;
 
-                propertyList[order] = clrProperty;
-            }
-            return propertyList;
+            Array.Sort(clrProperties, (x, y) => GetOrder(x).CompareTo(GetOrder(y)));
+            return clrProperties;
         }
 
     }

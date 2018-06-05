@@ -57,7 +57,7 @@ namespace OdataToEntity.ModelBuilder
                 return;
             }
 
-            var keys = new EdmStructuralProperty[_keyProperties.Count];
+            var keys = new ValueTuple<EdmStructuralProperty, int>[_keyProperties.Count];
             for (int i = 0; i < _keyProperties.Count; i++)
             {
                 int order = _metadataProvider.GetOrder(_keyProperties[i].Key);
@@ -67,9 +67,9 @@ namespace OdataToEntity.ModelBuilder
                     return;
                 }
 
-                keys[order] = _keyProperties[i].Value;
+                keys[i] = new ValueTuple<EdmStructuralProperty, int>(_keyProperties[i].Value, order);
             }
-            _edmType.AddKeys(keys);
+            _edmType.AddKeys(keys.OrderBy(p => p.Item2).Select(p => p.Item1));
         }
         private void BuildProperty(Dictionary<Type, EntityTypeInfo> entityTypes,
             Dictionary<Type, EdmEnumType> enumTypes, Dictionary<Type, EdmComplexType> complexTypes, PropertyInfo clrProperty)

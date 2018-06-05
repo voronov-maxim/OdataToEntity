@@ -67,7 +67,7 @@ namespace OdataToEntity.Linq2Db
             foreach (PropertyInfo property in properties)
                 if (IsKey(property))
                     keys.Add(property);
-            return SortClrPropertyByOrder(keys);
+            return SortClrPropertyByOrder(keys.ToArray());
         }
         public override bool IsKey(PropertyInfo propertyInfo) => propertyInfo.GetCustomAttribute(typeof(PrimaryKeyAttribute)) != null;
         public override bool IsNotMapped(PropertyInfo propertyInfo)
