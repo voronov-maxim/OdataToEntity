@@ -1,10 +1,10 @@
 ﻿<Project>
   <PropertyGroup>
-    <AspNetCoreVersion>2.0.2</AspNetCoreVersion>
-    <AspNetCoreMvcVersion>2.0.3</AspNetCoreMvcVersion>
+    <AspNetCoreVersion>2.1.1</AspNetCoreVersion>
+    <AspNetCoreMvcVersion>2.1.1</AspNetCoreMvcVersion>
     <CoreFxVersion>4.5.0</CoreFxVersion>
     <CSharpVersion>7.2</CSharpVersion>
-    <EfCoreVersion>2.1.0</EfCoreVersion>
+    <EfCoreVersion>2.1.1</EfCoreVersion>
     <FrameworkVersion>net461</FrameworkVersion>
     <MicrosoftExtensionsVersion>2.0.0</MicrosoftExtensionsVersion>
     <JsonNetVersion>10.0.3</JsonNetVersion>

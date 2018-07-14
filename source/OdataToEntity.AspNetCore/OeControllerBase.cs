@@ -66,7 +66,7 @@ namespace OdataToEntity.AspNetCore
         }
         protected async Task Get(HttpContext httpContext, Stream responseStream, bool navigationNextLink = false, int? maxPageSize = null)
         {
-            var requestHeaders = (FrameRequestHeaders)httpContext.Request.Headers;
+            var requestHeaders = (HttpRequestHeaders)httpContext.Request.Headers;
             OeRequestHeaders headers = GetRequestHeaders(requestHeaders, httpContext.Response, navigationNextLink, maxPageSize);
 
             var parser = new OeParser(UriHelper.GetBaseUri(httpContext.Request), _dataAdapter, _edmModel);
@@ -78,7 +78,7 @@ namespace OdataToEntity.AspNetCore
             odataParser.Resolver.EnableCaseInsensitive = true;
             ODataUri odataUri = odataParser.ParseUri();
 
-            var requestHeaders = (FrameRequestHeaders)httpContext.Request.Headers;
+            var requestHeaders = (HttpRequestHeaders)httpContext.Request.Headers;
             OeRequestHeaders headers = GetRequestHeaders(requestHeaders, httpContext.Response, navigationNextLink, maxPageSize);
 
             if (odataUri.Path.LastSegment is OperationImportSegment)
@@ -88,7 +88,7 @@ namespace OdataToEntity.AspNetCore
             _queryContext = getParser.CreateQueryContext(odataUri, headers.MaxPageSize, headers.NavigationNextLink, headers.MetadataLevel);
             return Execute(headers, responseStream, httpContext.RequestAborted);
         }
-        private static OeRequestHeaders GetRequestHeaders(FrameRequestHeaders requestHeaders, HttpResponse httpResponse, bool navigationNextLink, int? maxPageSize)
+        private static OeRequestHeaders GetRequestHeaders(HttpRequestHeaders requestHeaders, HttpResponse httpResponse, bool navigationNextLink, int? maxPageSize)
         {
             ((IDictionary<String, StringValues>)requestHeaders).TryGetValue("Prefer", out StringValues preferHeader);
             var headers = OeRequestHeaders.Parse(requestHeaders.HeaderAccept, preferHeader).SetNavigationNextLink(navigationNextLink);
