@@ -3,7 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace OdataToEntity
+namespace OdataToEntity.Infrastructure
 {
     internal sealed class CompositeReadStream : Stream
     {

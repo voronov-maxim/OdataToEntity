@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace OdataToEntity.Parsers
+namespace OdataToEntity.Parsers.Translators
 {
     public readonly struct OeSkipTokenTranslator
     {
@@ -26,25 +26,27 @@ namespace OdataToEntity.Parsers
             public SingleValuePropertyAccessNode PropertyNode { get; }
         }
 
+        private readonly OeGroupJoinExpressionBuilder _groupJoinBuilder;
         private readonly bool _isDatabaseNullHighestValue;
         private readonly OeQueryNodeVisitor _visitor;
 
-        public OeSkipTokenTranslator(OeQueryNodeVisitor visitor, bool isDatabaseNullHighestValue)
+        public OeSkipTokenTranslator(OeQueryNodeVisitor visitor, OeGroupJoinExpressionBuilder groupJoinBuilder, bool isDatabaseNullHighestValue)
         {
             _visitor = visitor;
+            _groupJoinBuilder = groupJoinBuilder;
             _isDatabaseNullHighestValue = isDatabaseNullHighestValue;
         }
 
         public Expression Build(Expression source, IReadOnlyList<OeSkipTokenNameValue> skipTokenNameValues, OrderByClause uniqueOrderBy)
         {
-            OrderProperty[] orderProperties = CreateOrderProperies(source, _visitor, skipTokenNameValues, uniqueOrderBy);
-            Expression filter = CreateFilterExpression(_visitor, _isDatabaseNullHighestValue, orderProperties);
+            OrderProperty[] orderProperties = CreateOrderProperies(source, skipTokenNameValues, uniqueOrderBy);
+            Expression filter = CreateFilterExpression(_isDatabaseNullHighestValue, orderProperties);
 
             LambdaExpression lambda = Expression.Lambda(filter, _visitor.Parameter);
             MethodInfo whereMethodInfo = OeMethodInfoHelper.GetWhereMethodInfo(_visitor.Parameter.Type);
             return Expression.Call(whereMethodInfo, source, lambda);
         }
-        private static BinaryExpression CreateBinaryExpression(OeQueryNodeVisitor visitor, bool isDatabaseNullHighestValue, in OrderProperty orderProperty)
+        private static BinaryExpression CreateBinaryExpression(bool isDatabaseNullHighestValue, in OrderProperty orderProperty)
         {
             Expression propertyExpression = orderProperty.PropertyExpression;
             Expression parameterExpression = orderProperty.ParameterExpression;
@@ -88,7 +90,7 @@ namespace OdataToEntity.Parsers
 
             return compare;
         }
-        private static Expression CreateFilterExpression(OeQueryNodeVisitor visitor, bool isDatabaseNullHighestValue, OrderProperty[] orderProperties)
+        private static Expression CreateFilterExpression(bool isDatabaseNullHighestValue, OrderProperty[] orderProperties)
         {
             Expression filter = null;
             for (int i = 0; i < orderProperties.Length; i++)
@@ -112,26 +114,19 @@ namespace OdataToEntity.Parsers
                     ge = Expression.NotEqual(orderProperties[i].PropertyExpression, OeConstantToVariableVisitor.NullConstantExpression);
                 }
                 else
-                    ge = CreateBinaryExpression(visitor, isDatabaseNullHighestValue, orderProperties[i]);
+                    ge = CreateBinaryExpression(isDatabaseNullHighestValue, orderProperties[i]);
                 eqFilter = eqFilter == null ? ge : Expression.AndAlso(eqFilter, ge);
                 filter = filter == null ? eqFilter : Expression.OrElse(filter, eqFilter);
             }
             return filter;
         }
-        private static OrderProperty[] CreateOrderProperies(Expression source, OeQueryNodeVisitor visitor, IReadOnlyList<OeSkipTokenNameValue> skipTokenNameValues, OrderByClause uniqueOrderBy)
+        private OrderProperty[] CreateOrderProperies(Expression source, IReadOnlyList<OeSkipTokenNameValue> skipTokenNameValues, OrderByClause uniqueOrderBy)
         {
             var orderProperties = new OrderProperty[skipTokenNameValues.Count];
             for (int i = 0; i < skipTokenNameValues.Count; i++)
             {
                 OrderByClause orderBy = GetOrderBy(uniqueOrderBy, skipTokenNameValues[i].Name);
-                var propertyNode = (SingleValuePropertyAccessNode)orderBy.Expression;
-
-                var propertyExpression = (MemberExpression)visitor.TranslateNode(propertyNode);
-                if (propertyExpression == null)
-                {
-                    var tupleProperty = new OePropertyTranslator(source);
-                    propertyExpression = tupleProperty.Build(visitor.Parameter, propertyNode.Property);
-                }
+                MemberExpression propertyExpression = _groupJoinBuilder.GetGroupJoinPropertyExpression(source, _visitor.Parameter, orderBy);
 
                 ConstantExpression parameterExpression;
                 if (skipTokenNameValues[i].Value == null)
@@ -139,10 +134,10 @@ namespace OdataToEntity.Parsers
                 else
                 {
                     parameterExpression = Expression.Constant(skipTokenNameValues[i].Value, propertyExpression.Type);
-                    visitor.AddSkipTokenConstant(parameterExpression, OeSkipTokenParser.GetPropertyName(propertyExpression));
+                    _visitor.AddSkipTokenConstant(parameterExpression, OeSkipTokenParser.GetPropertyName(propertyExpression));
                 }
 
-                orderProperties[i] = new OrderProperty(propertyNode, orderBy.Direction, propertyExpression, parameterExpression);
+                orderProperties[i] = new OrderProperty((SingleValuePropertyAccessNode)orderBy.Expression, orderBy.Direction, propertyExpression, parameterExpression);
             }
             return orderProperties;
         }

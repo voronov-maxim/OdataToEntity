@@ -7,12 +7,17 @@ namespace OdataToEntity.Parsers
 {
     public static class OeMethodInfoHelper
     {
+        private static MethodInfo _anyMethodInfo;
         private static MethodInfo _countMethodInfo;
+        private static MethodInfo _defaultIfEmpty;
         private static MethodInfo _distinctMethodInfo;
         private static MethodInfo _groupByMethodInfo;
+        private static MethodInfo _groupByMethodInfo2;
+        private static MethodInfo _groupJoinMethodInfo;
         private static MethodInfo _orderByMethodInfo;
         private static MethodInfo _orderByDescendingMethodInfo;
         private static MethodInfo _selectManyMethodInfo;
+        private static MethodInfo _selectManyMethodInfo2;
         private static MethodInfo _selectMethodInfo;
         private static MethodInfo _skipMethodInfo;
         private static MethodInfo _takeMethodInfo;
@@ -41,6 +46,15 @@ namespace OdataToEntity.Parsers
 
             return null;
         }
+        public static MethodInfo GetAnyMethodInfo(Type sourceType)
+        {
+            if (_anyMethodInfo == null)
+            {
+                Func<IEnumerable<Object>, Func<Object, bool>, bool> func = Enumerable.Any;
+                _anyMethodInfo = func.GetMethodInfo().GetGenericMethodDefinition();
+            }
+            return _anyMethodInfo.MakeGenericMethod(sourceType);
+        }
         public static MethodInfo GetCountMethodInfo(Type sourceType)
         {
             if (_countMethodInfo == null)
@@ -49,6 +63,15 @@ namespace OdataToEntity.Parsers
                 _countMethodInfo = func.GetMethodInfo().GetGenericMethodDefinition();
             }
             return _countMethodInfo.MakeGenericMethod(sourceType);
+        }
+        public static MethodInfo GetDefaultIfEmptyMethodInfo(Type sourceType)
+        {
+            if (_defaultIfEmpty == null)
+            {
+                Func<IEnumerable<Object>, Object> func = Enumerable.DefaultIfEmpty;
+                _defaultIfEmpty = func.GetMethodInfo().GetGenericMethodDefinition();
+            }
+            return _defaultIfEmpty.MakeGenericMethod(sourceType);
         }
         public static MethodInfo GetDistinctMethodInfo(Type type)
         {
@@ -67,6 +90,24 @@ namespace OdataToEntity.Parsers
                 _groupByMethodInfo = func.GetMethodInfo().GetGenericMethodDefinition();
             }
             return _groupByMethodInfo.MakeGenericMethod(sourceType, keyType);
+        }
+        public static MethodInfo GetGroupByMethodInfo(Type sourceType, Type keyType, Type elementSelector)
+        {
+            if (_groupByMethodInfo2 == null)
+            {
+                Func<IEnumerable<Object>, Func<Object, Object>, Func<Object, Object>, IEnumerable<IGrouping<Object, Object>>> func = Enumerable.GroupBy;
+                _groupByMethodInfo2 = func.GetMethodInfo().GetGenericMethodDefinition();
+            }
+            return _groupByMethodInfo2.MakeGenericMethod(sourceType, keyType, elementSelector);
+        }
+        public static MethodInfo GetGroupJoinMethodInfo(Type outerType, Type innerType, Type keyType, Type resultType)
+        {
+            if (_groupJoinMethodInfo == null)
+            {
+                Func<IEnumerable<Object>, IEnumerable<Object>, Func<Object, Object>, Func<Object, Object>, Func<Object, IEnumerable<Object>, Object>, IEnumerable<Object>> func = Enumerable.GroupJoin;
+                _groupJoinMethodInfo = func.GetMethodInfo().GetGenericMethodDefinition();
+            }
+            return _groupJoinMethodInfo.MakeGenericMethod(outerType, innerType, keyType, resultType);
         }
         public static MethodInfo GetOrderByMethodInfo(Type sourceType, Type resultType)
         {
@@ -94,6 +135,15 @@ namespace OdataToEntity.Parsers
                 _selectManyMethodInfo = func.GetMethodInfo().GetGenericMethodDefinition();
             }
             return _selectManyMethodInfo.MakeGenericMethod(sourceType, resultType);
+        }
+        public static MethodInfo GetSelectManyMethodInfo(Type sourceType, Type collectionType, Type resultType)
+        {
+            if (_selectManyMethodInfo2 == null)
+            {
+                Func<IEnumerable<Object>, Func<Object, IEnumerable<Object>>, Func<Object, Object, IEnumerable<Object>>, IEnumerable<Object>> func = Enumerable.SelectMany;
+                _selectManyMethodInfo2 = func.GetMethodInfo().GetGenericMethodDefinition();
+            }
+            return _selectManyMethodInfo2.MakeGenericMethod(sourceType, collectionType, resultType);
         }
         public static MethodInfo GetSelectMethodInfo(Type sourceType, Type resultType)
         {

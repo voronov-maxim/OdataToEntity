@@ -13,6 +13,23 @@ namespace OdataToEntity.Parsers
 {
     public sealed class OeQueryNodeVisitor : QueryNodeVisitor<Expression>
     {
+        private sealed class ReplaceParameterVisitor : ExpressionVisitor
+        {
+            private readonly ParameterExpression _parameter;
+            private readonly Expression _source;
+
+            public ReplaceParameterVisitor(ParameterExpression parameter, Expression source)
+            {
+                _parameter = parameter;
+                _source = source;
+            }
+
+            protected override Expression VisitParameter(ParameterExpression node)
+            {
+                return node == _parameter ? _source : base.VisitParameter(node);
+            }
+        }
+
         private readonly Dictionary<ConstantExpression, ConstantNode> _constants;
         private readonly Stack<ParameterExpression> _parameters;
         private readonly OeQueryNodeVisitor _parentVisitor;
@@ -59,6 +76,15 @@ namespace OdataToEntity.Parsers
             ConstantNode topNode = OeCacheComparerParameterValues.CreateTopConstantNode((int)topConstant.Value, path);
             AddConstant(topConstant, topNode);
         }
+        public void ChangeParameterType(Expression source)
+        {
+            Type itemType = OeExpressionHelper.GetCollectionItemType(source.Type);
+            if (Parameter.Type != itemType)
+            {
+                _parameters.Clear();
+                _parameters.Push(Expression.Parameter(itemType));
+            }
+        }
         private Expression GetPropertyExpression(SingleValuePropertyAccessNode nodeIn)
         {
             Expression e = TranslateNode(nodeIn.Source);
@@ -87,9 +113,9 @@ namespace OdataToEntity.Parsers
         }
         private static PropertyInfo GetTuplePropertyByEntityType(Type tupleType, IEdmEntityType edmEntityType)
         {
-            String fullName = edmEntityType.FullName();
             foreach (PropertyInfo propertyInfo in tupleType.GetProperties())
-                if (propertyInfo.PropertyType.FullName == fullName)
+                if (String.Compare(propertyInfo.PropertyType.Name, edmEntityType.Name, StringComparison.OrdinalIgnoreCase) == 0 &&
+                    String.Compare(propertyInfo.PropertyType.Namespace, edmEntityType.Namespace, StringComparison.OrdinalIgnoreCase) == 0)
                     return propertyInfo;
 
             return null;
@@ -119,6 +145,10 @@ namespace OdataToEntity.Parsers
             }
             else
                 _parentVisitor.ReplaceConstant(oldExpression, newExpression);
+        }
+        public Expression ReplaceParameter(Expression expression, Expression source)
+        {
+            return new ReplaceParameterVisitor(Parameter, source).Visit(expression);
         }
         public Expression TranslateNode(QueryNode node)
         {
@@ -284,7 +314,11 @@ namespace OdataToEntity.Parsers
         {
             Expression source;
             if (nodeIn.Source is SingleNavigationNode singleNavigationNode)
+            {
                 source = Visit(singleNavigationNode);
+                if (source == null)
+                    return null;
+            }
             else
                 source = Parameter;
 
@@ -300,6 +334,9 @@ namespace OdataToEntity.Parsers
             if (TuplePropertyByAliasName == null)
             {
                 e = TranslateNode(nodeIn.Source);
+                if (e == null)
+                    return null;
+
                 PropertyInfo property = e.Type.GetProperty(nodeIn.Property.Name);
                 if (property == null)
                 {

@@ -189,7 +189,7 @@ namespace OdataToEntity.Ef6
             {
                 expression = queryContext.CreateExpression(new OeConstantToVariableVisitor());
                 expression = new EnumerableToQuerableVisitor(queryContext.EntitySetAdapter.EntityType).Visit(expression);
-                expression = OeQueryContext.TranslateSource(query.Expression, expression);
+                expression = OeQueryContext.TranslateSource(EntitySetAdapters, dataContext, expression);
 
                 if (queryContext.ODataUri.QueryCount.GetValueOrDefault())
                     countExpression = OeQueryContext.CreateCountExpression(expression);
@@ -213,7 +213,7 @@ namespace OdataToEntity.Ef6
             else
                 expression = queryContext.CreateExpression(new OeConstantToVariableVisitor());
             IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dataContext);
-            return query.Provider.Execute<TResult>(OeQueryContext.TranslateSource(query.Expression, expression));
+            return query.Provider.Execute<TResult>(OeQueryContext.TranslateSource(EntitySetAdapters, dataContext, expression));
         }
         private static Expression GetFromCache(OeQueryContext queryContext, T dbContext, Cache.OeQueryCache queryCache,
             out MethodCallExpression countExpression)
@@ -245,11 +245,11 @@ namespace OdataToEntity.Ef6
             }
 
             expression = new OeParameterToVariableVisitor().Translate(expression, parameterValues);
-            expression = OeQueryContext.TranslateSource(query.Expression, expression);
+            expression = OeQueryContext.TranslateSource(_entitySetAdapters, dbContext, expression);
 
             if (queryContext.ODataUri.QueryCount.GetValueOrDefault())
             {
-                countExpression = (MethodCallExpression)OeQueryContext.TranslateSource(query.Expression, countExpression);
+                countExpression = (MethodCallExpression)OeQueryContext.TranslateSource(_entitySetAdapters, dbContext, countExpression);
                 countExpression = (MethodCallExpression)new OeParameterToVariableVisitor().Translate(countExpression, parameterValues);
             }
             else

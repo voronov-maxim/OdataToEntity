@@ -31,6 +31,8 @@ namespace OdataToEntity.Test.Model
         [InverseProperty(nameof(Order.Customer))]
         public ICollection<Order> Orders { get; set; }
         public Sex? Sex { get; set; }
+
+        public override string ToString() => "Customer: " + "Country = " + Country + ", Id = " + Id.ToString();
     }
 
     public abstract class OrderBase
@@ -60,6 +62,8 @@ namespace OdataToEntity.Test.Model
         public int Id { get; set; }
         public ICollection<OrderItem> Items { get; set; }
         public OrderStatus Status { get; set; }
+
+        public override string ToString() => "Order: Id = " + Id.ToString();
     }
 
     public sealed class OrderItem
@@ -72,6 +76,8 @@ namespace OdataToEntity.Test.Model
         public Decimal? Price { get; set; }
         [Required]
         public String Product { get; set; }
+
+        public override string ToString() => "OrderItem: Id = " + Id.ToString();
     }
 
     public class ManyColumnsBase

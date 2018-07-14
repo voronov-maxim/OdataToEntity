@@ -9,7 +9,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace OdataToEntity.Parsers
+namespace OdataToEntity.Parsers.Translators
 {
     public readonly struct OeAggregationTranslator
     {

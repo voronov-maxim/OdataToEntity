@@ -2,7 +2,7 @@
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace OdataToEntity.Db
+namespace OdataToEntity.Infrastructure
 {
     public static class FastActivator
     {

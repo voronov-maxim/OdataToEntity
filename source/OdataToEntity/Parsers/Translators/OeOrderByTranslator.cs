@@ -1,49 +1,42 @@
 ﻿using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
-using OdataToEntity.ModelBuilder;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace OdataToEntity.Parsers
+namespace OdataToEntity.Parsers.Translators
 {
     public readonly struct OeOrderByTranslator
     {
         private readonly struct OrderByExpressionBuider
         {
-            private readonly Func<OrderByDirection, Type, Type, MethodInfo> _getMethodInfo;
-            private readonly bool _isInsertedOrderByMethod;
+            private readonly OeGroupJoinExpressionBuilder _groupJoinBuilder;
             private readonly OeQueryNodeVisitor _visitor;
 
-            public OrderByExpressionBuider(OeQueryNodeVisitor visitor, Func<OrderByDirection, Type, Type, MethodInfo> getMethodInfo, bool isInsertedOrderByMethod)
+            public OrderByExpressionBuider(OeQueryNodeVisitor visitor, OeGroupJoinExpressionBuilder groupJoinBuilder)
             {
                 _visitor = visitor;
-                _getMethodInfo = getMethodInfo;
-                _isInsertedOrderByMethod = isInsertedOrderByMethod;
+                _groupJoinBuilder = groupJoinBuilder;
             }
 
-            public Expression ApplyOrderBy(Expression source, OrderByClause orderByClause, out bool isInsertedOrderByMethod)
+            public Expression ApplyOrderBy(Expression source, OrderByClause orderByClause, ref bool isInsertedOrderByMethod)
             {
-                isInsertedOrderByMethod = _isInsertedOrderByMethod;
                 if (orderByClause == null)
                     return source;
 
                 Expression keySelector = null;
-                if (!_isInsertedOrderByMethod)
+                if (!isInsertedOrderByMethod)
                 {
-                    var tupleProperty = new OePropertyTranslator(source);
-                    _visitor.TuplePropertyByEdmProperty = tupleProperty.Build;
-
-                    if (OeExpressionHelper.IsTupleType(_visitor.Parameter.Type))
+                    if (_visitor.Parameter.Type.IsGenericType && _visitor.Parameter.Type.GetGenericTypeDefinition() == typeof(IGrouping<,>))
                     {
                         var propertyNode = (SingleValuePropertyAccessNode)orderByClause.Expression;
-                        keySelector = tupleProperty.Build(_visitor.Parameter, propertyNode.Property);
+                        var tuplePropertyTranslator = new OePropertyTranslator(source);
+                        keySelector = tuplePropertyTranslator.Build(_visitor.Parameter, propertyNode.Property);
                     }
-
-                    if (keySelector == null)
-                        keySelector = _visitor.TranslateNode(orderByClause.Expression);
+                    else
+                        keySelector = _groupJoinBuilder.GetGroupJoinPropertyExpression(source, _visitor.Parameter, orderByClause);
                 }
 
                 if (keySelector == null)
@@ -62,8 +55,9 @@ namespace OdataToEntity.Parsers
                     else
                         edmSplitType = propertyNode.Property.DeclaringType;
 
+                    Expression e = InsertOrderByMethod(source, orderByClause, edmSplitType, isInsertedOrderByMethod);
                     isInsertedOrderByMethod = true;
-                    return InsertOrderByMethod(source, orderByClause, edmSplitType);
+                    return e;
                 }
 
                 return GetOrderByExpression(source, _visitor.Parameter, orderByClause.Direction, keySelector);
@@ -71,13 +65,13 @@ namespace OdataToEntity.Parsers
             private MethodCallExpression GetOrderByExpression(Expression source, ParameterExpression parameter, OrderByDirection direction, Expression keySelector)
             {
                 LambdaExpression lambda = Expression.Lambda(keySelector, parameter);
-                MethodInfo orderByMethodInfo = _getMethodInfo(direction, parameter.Type, keySelector.Type);
+                MethodInfo orderByMethodInfo = GetOrderByMethodInfo(source, direction, parameter.Type, keySelector.Type);
                 return Expression.Call(orderByMethodInfo, source, lambda);
             }
-            private Expression InsertOrderByMethod(Expression source, OrderByClause orderByClause, IEdmType edmSplitType)
+            private Expression InsertOrderByMethod(Expression source, OrderByClause orderByClause, IEdmType edmSplitType, bool isInsertedOrderByMethod)
             {
                 Type sourceItemType = _visitor.EdmModel.GetClrType(edmSplitType);
-                Type sourceTypeGeneric = _isInsertedOrderByMethod ? typeof(IOrderedEnumerable<>) : typeof(IEnumerable<>);
+                Type sourceTypeGeneric = isInsertedOrderByMethod ? typeof(IOrderedEnumerable<>) : typeof(IEnumerable<>);
                 var splitterVisitor = new OeExpressionSplitterVisitor(sourceTypeGeneric.MakeGenericType(sourceItemType));
                 Expression beforeExpression = splitterVisitor.GetBefore(source);
 
@@ -88,36 +82,38 @@ namespace OdataToEntity.Parsers
             }
         }
 
-        private readonly OeQueryNodeVisitor _visitor;
+        private readonly OrderByExpressionBuider _orderByBuilder;
 
-        public OeOrderByTranslator(OeQueryNodeVisitor visitor)
+        public OeOrderByTranslator(OeQueryNodeVisitor visitor, OeGroupJoinExpressionBuilder groupJoinBuilder)
         {
-            _visitor = visitor;
+            _orderByBuilder = new OrderByExpressionBuider(visitor, groupJoinBuilder);
         }
 
         public Expression Build(Expression source, OrderByClause orderByClause)
         {
-            var orderByExpressionBuider = new OrderByExpressionBuider(_visitor, GetOrderByMethodInfo, false);
+            bool isInsertedOrderByMethod = false;
+            return Build(source, orderByClause, ref isInsertedOrderByMethod);
+        }
+        private Expression Build(Expression source, OrderByClause orderByClause, ref bool isInsertedOrderByMethod)
+        {
             while (orderByClause != null)
             {
-                source = orderByExpressionBuider.ApplyOrderBy(source, orderByClause, out bool isInsertedOrderByMethod);
-                orderByExpressionBuider = new OrderByExpressionBuider(_visitor, GetThenByMethodInfo, isInsertedOrderByMethod);
+                source = _orderByBuilder.ApplyOrderBy(source, orderByClause, ref isInsertedOrderByMethod);
                 orderByClause = orderByClause.ThenBy;
             }
 
             return source;
         }
-        private static MethodInfo GetOrderByMethodInfo(OrderByDirection direction, Type sourceType, Type keyType)
+        private static MethodInfo GetOrderByMethodInfo(Expression source, OrderByDirection direction, Type sourceType, Type keyType)
         {
-            return direction == OrderByDirection.Ascending ?
-                OeMethodInfoHelper.GetOrderByMethodInfo(sourceType, keyType) :
-                OeMethodInfoHelper.GetOrderByDescendingMethodInfo(sourceType, keyType);
-        }
-        private static MethodInfo GetThenByMethodInfo(OrderByDirection direction, Type sourceType, Type keyType)
-        {
-            return direction == OrderByDirection.Ascending ?
-                OeMethodInfoHelper.GetThenByMethodInfo(sourceType, keyType) :
-                OeMethodInfoHelper.GetThenByDescendingMethodInfo(sourceType, keyType);
+            if (source.Type.GetGenericTypeDefinition() == typeof(IOrderedEnumerable<>))
+                return direction == OrderByDirection.Ascending ?
+                    OeMethodInfoHelper.GetThenByMethodInfo(sourceType, keyType) :
+                    OeMethodInfoHelper.GetThenByDescendingMethodInfo(sourceType, keyType);
+            else
+                return direction == OrderByDirection.Ascending ?
+                    OeMethodInfoHelper.GetOrderByMethodInfo(sourceType, keyType) :
+                    OeMethodInfoHelper.GetOrderByDescendingMethodInfo(sourceType, keyType);
         }
     }
 }

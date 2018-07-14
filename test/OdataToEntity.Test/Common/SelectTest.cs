@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using OdataToEntity.Test.Model;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
@@ -231,7 +230,7 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
-        [Theory]
+        //[Theory]
         [InlineData(false)]
         [InlineData(true)]
         public async Task Compute(bool navigationNextLink)
@@ -430,14 +429,60 @@ namespace OdataToEntity.Test
             IQueryable<Customer> customers = null;
             var parameters = new QueryParameters<Order>()
             {
-                RequestUri = "Orders?$expand=Customer($filter=Sex eq OdataToEntity.Test.Model.Sex'Male')",
-                Expression = t => t.GroupJoin(customers, o => o.CustomerCountry, c => c.Country, (o, c) => new { order = o, customer = c })
-                    .SelectMany(z => z.customer.DefaultIfEmpty(), (o, c) => new { o.order, sex = c.Sex }).Select(a => a.order),
+                RequestUri = "Orders?$expand=AltCustomer($filter=Sex eq OdataToEntity.Test.Model.Sex'Male')",
+                Expression = t => t.GroupJoin(customers.Where(c => c.Sex == Sex.Male),
+                    o => new { Country = o.AltCustomerCountry, Id = o.AltCustomerId },
+                    c => new { c.Country, Id = (int?)c.Id },
+                    (o, c) => new { Order = o, Customer = c.DefaultIfEmpty() })
+                    .SelectMany(z => z.Customer, (o, c) => new { o.Order, Customer = c }).Select(a =>
+                    new Order()
+                    {
+                        AltCustomerCountry = a.Order.AltCustomerCountry,
+                        AltCustomerId = a.Order.AltCustomerId,
+                        Customer = a.Customer,
+                        CustomerCountry = a.Order.CustomerCountry,
+                        CustomerId = a.Order.CustomerId,
+                        Date = a.Order.Date,
+                        Id = a.Order.Id,
+                        Name = a.Order.Name,
+                        Status = a.Order.Status
+                    }),
                 NavigationNextLink = navigationNextLink,
                 PageSize = pageSize
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
+        public async Task ExpandOneFilter2(int pageSize, bool navigationNextLink)
+        {
+            IQueryable<OrderItem> orderItems = null;
+            var parameters = new QueryParameters<Order>()
+            {
+                RequestUri = "Orders?$expand=Items",
+                Expression = t => t.GroupJoin(orderItems,
+                    o => o.Id,
+                    i => i.OrderId,
+                    (o, i) => new { Order = o, Items = i.DefaultIfEmpty() })
+                    .SelectMany(z => z.Items, (o, i) => new { o.Order, Items = i })
+                    .GroupBy(a => a.Order, a => a.Items)
+                    .Select(a =>
+                    new Order()
+                    {
+                        AltCustomerCountry = a.Key.AltCustomerCountry,
+                        AltCustomerId = a.Key.AltCustomerId,
+                        CustomerCountry = a.Key.CustomerCountry,
+                        CustomerId = a.Key.CustomerId,
+                        Date = a.Key.Date,
+                        Id = a.Key.Id,
+                        Items = a.ToList(),
+                        Name = a.Key.Name,
+                        Status = a.Key.Status
+                    }),
+                NavigationNextLink = navigationNextLink,
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters).ConfigureAwait(false);
+        }
+
         [Theory]
         [InlineData(0, false)]
         [InlineData(1, false)]

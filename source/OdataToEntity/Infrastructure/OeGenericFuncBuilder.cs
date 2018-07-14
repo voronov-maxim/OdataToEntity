@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace OdataToEntity
+namespace OdataToEntity.Infrastructure
 {
     public static class OeGenericFuncBuilder
     {

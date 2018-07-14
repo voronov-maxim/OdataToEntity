@@ -68,6 +68,7 @@ namespace OdataToEntity.Test
                 NullValueHandling = NullValueHandling.Ignore
             };
             String jsonDb = JsonConvert.SerializeObject(fromDb, settings);
+            //settings.ContractResolver = null;
             String jsonOe = JsonConvert.SerializeObject(fromOe, settings);
 
             Assert.Equal(jsonDb, jsonOe);
@@ -84,7 +85,8 @@ namespace OdataToEntity.Test
             var visitor = new QueryVisitor<T>(entitySetAdapters, dataContext);
             Expression call = visitor.Visit(expression.Body);
 
-            var includeVisitor = new IncludeVisitor();
+            var metadataProvider = new OdataToEntity.EfCore.OeEfCoreEdmModelMetadataProvider(dataContext.Model);
+            var includeVisitor = new IncludeVisitor(metadataProvider);
             call = includeVisitor.Visit(call);
             includes = includeVisitor.Includes;
 

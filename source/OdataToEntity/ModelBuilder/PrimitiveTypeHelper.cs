@@ -101,7 +101,7 @@ namespace OdataToEntity.ModelBuilder
         }
         public static IEdmPrimitiveTypeReference GetPrimitiveTypeRef(Type clrType, bool nullable)
         {
-            IEdmPrimitiveType primitiveEdmType = PrimitiveTypeHelper.GetPrimitiveType(clrType);
+            IEdmPrimitiveType primitiveEdmType = GetPrimitiveType(clrType);
             return primitiveEdmType == null ? null : EdmCoreModel.Instance.GetPrimitive(primitiveEdmType.PrimitiveKind, nullable);
         }
         public static IEdmPrimitiveTypeReference GetPrimitiveTypeRef(PropertyInfo clrProperty, bool isNullable)

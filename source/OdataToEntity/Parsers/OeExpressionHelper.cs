@@ -131,7 +131,7 @@ namespace OdataToEntity.Parsers
             }
             return expressions;
         }
-        private static Type GetTupleType(Type[] typeArguments)
+        public static Type GetTupleType(Type[] typeArguments)
         {
             Type tupleType;
             switch (typeArguments.Length)

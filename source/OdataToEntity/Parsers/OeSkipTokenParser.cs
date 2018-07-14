@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
 namespace OdataToEntity.Parsers
@@ -32,19 +33,17 @@ namespace OdataToEntity.Parsers
         {
             return skipToken == null ? Array.Empty<OeSkipTokenNameValue>() : ParseSkipToken(edmModel, uniqueOrderBy, skipToken);
         }
-        public static OePropertyAccessor[] GetAccessors(Expression source, OrderByClause orderByClause)
+        public static OePropertyAccessor[] GetAccessors(Expression source, OrderByClause orderByClause, Translators.OeGroupJoinExpressionBuilder groupJoinBuilder)
         {
             var accessors = new List<OePropertyAccessor>();
 
-            var tupleProperty = new OePropertyTranslator(source);
-            Type itemType = OeExpressionHelper.GetCollectionItemType(source.Type);
             ParameterExpression parameter = Expression.Parameter(typeof(Object));
-            UnaryExpression instance = Expression.Convert(parameter, itemType);
+            UnaryExpression instance = Expression.Convert(parameter, OeExpressionHelper.GetCollectionItemType(source.Type));
 
             while (orderByClause != null)
             {
                 var propertyNode = (SingleValuePropertyAccessNode)orderByClause.Expression;
-                MemberExpression propertyExpression = tupleProperty.Build(instance, propertyNode.Property);
+                Expression propertyExpression = groupJoinBuilder.GetGroupJoinPropertyExpression(source, instance, orderByClause);
                 if (propertyExpression == null)
                     throw new InvalidOperationException("order by property " + propertyNode.Property.Name + "not found");
 
@@ -69,7 +68,7 @@ namespace OdataToEntity.Parsers
             else
             {
                 IEdmEntitySet entitySet = OeEdmClrHelper.GetEntitySet(edmModel, edmType);
-                ResourceRangeVariableReferenceNode source = OeGetParser.CreateRangeVariableReferenceNode(entitySet);
+                ResourceRangeVariableReferenceNode source = OeEdmClrHelper.CreateRangeVariableReferenceNode(entitySet);
                 foreach (IEdmStructuralProperty key in edmType.Key())
                     keys.Add(new SingleValuePropertyAccessNode(source, key));
             }

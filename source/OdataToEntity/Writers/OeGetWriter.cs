@@ -26,7 +26,7 @@ namespace OdataToEntity.Writers
             private static Uri BuildNavigationNextPageLink(ODataResource entry, ExpandedNavigationSelectItem expandedNavigationSelectItem)
             {
                 var segment = (NavigationPropertySegment)expandedNavigationSelectItem.PathToNavigationProperty.LastSegment;
-                ResourceRangeVariableReferenceNode refNode = OeGetParser.CreateRangeVariableReferenceNode((IEdmEntitySet)segment.NavigationSource);
+                ResourceRangeVariableReferenceNode refNode = OeEdmClrHelper.CreateRangeVariableReferenceNode((IEdmEntitySet)segment.NavigationSource);
                 IEdmNavigationProperty navigationProperty = segment.NavigationProperty;
 
                 var keys = new List<KeyValuePair<IEdmStructuralProperty, Object>>();
@@ -99,14 +99,15 @@ namespace OdataToEntity.Writers
 
                 Object value = null;
                 int count = 0;
-                while (await asyncEnumerator.MoveNextAsync().ConfigureAwait(false))
+                var dbEnumerator = new Db.OeDbEnumerator(asyncEnumerator, entryFactory);
+                while (await dbEnumerator.MoveNextAsync())
                 {
-                    value = asyncEnumerator.Current;
+                    value = dbEnumerator.Current;
                     ODataResource entry = CreateEntry(entryFactory, entryFactory.GetValue(value, out _));
                     Writer.WriteStart(entry);
 
                     foreach (OeEntryFactory navigationLink in entryFactory.NavigationLinks)
-                        WriteNavigationLink(value, navigationLink, entry, entryFactory.EntitySet);
+                        await WriteNavigationLink(dbEnumerator.CreateChild(navigationLink), navigationLink);
 
                     if (QueryContext.NavigationNextLink)
                         foreach (ExpandedNavigationSelectItem item in QueryContext.GetExpandedNavigationSelectItems())
@@ -114,6 +115,11 @@ namespace OdataToEntity.Writers
 
                     Writer.WriteEnd();
                     count++;
+
+                    if (count > 30)
+                        throw new InvalidOperationException("zzz");
+
+                    dbEnumerator.ClearBuffer();
                 }
 
                 if (queryContext.PageSize > 0 && count > 0 && (asyncEnumerator.Count ?? Int32.MaxValue) > count)
@@ -121,37 +127,46 @@ namespace OdataToEntity.Writers
 
                 Writer.WriteEnd();
             }
-            private void WriteNavigationLink(Object value, OeEntryFactory entryFactory, ODataResource parentEntry, IEdmEntitySet parentEntitySet)
+            private async Task WriteNavigationLink(Db.OeDbEnumerator dbEnumerator, OeEntryFactory entryFactory)
             {
                 Writer.WriteStart(entryFactory.ResourceInfo);
 
-                Object navigationValue = entryFactory.GetValue(value, out int? count);
-                if (navigationValue == null)
+                if (entryFactory.ResourceInfo.IsCollection.GetValueOrDefault())
                 {
-                    Writer.WriteStart((ODataResource)null);
+                    Object value = entryFactory.GetValue(dbEnumerator.Current, out int? count);
+                    Writer.WriteStart(new ODataResourceSet() { Count = count });
+                    do
+                    {
+                        if (value == null)
+                            value = entryFactory.GetValue(dbEnumerator.Current, out _);
+
+                        if (value != null)
+                        {
+                            ODataResource navigationEntry = CreateEntry(entryFactory, value);
+                            Writer.WriteStart(navigationEntry);
+                            foreach (OeEntryFactory navigationLink in entryFactory.NavigationLinks)
+                                await WriteNavigationLink(dbEnumerator.CreateChild(navigationLink), navigationLink).ConfigureAwait(false);
+                            Writer.WriteEnd();
+                            value = null;
+                        }
+                    }
+                    while (await dbEnumerator.MoveNextAsync());
                     Writer.WriteEnd();
                 }
                 else
                 {
-                    if (entryFactory.ResourceInfo.IsCollection.GetValueOrDefault())
+                    Object value = entryFactory.GetValue(dbEnumerator.Current, out int? count);
+                    if (value == null)
                     {
-                        Writer.WriteStart(new ODataResourceSet() { Count = count });
-                        foreach (Object entity in (IEnumerable)navigationValue)
-                        {
-                            ODataResource navigationEntry = CreateEntry(entryFactory, entity);
-                            Writer.WriteStart(navigationEntry);
-                            foreach (OeEntryFactory navigationLink in entryFactory.NavigationLinks)
-                                WriteNavigationLink(entity, navigationLink, navigationEntry, navigationLink.EntitySet);
-                            Writer.WriteEnd();
-                        }
+                        Writer.WriteStart((ODataResource)null);
                         Writer.WriteEnd();
                     }
                     else
                     {
-                        ODataResource navigationEntry = CreateEntry(entryFactory, navigationValue);
+                        ODataResource navigationEntry = CreateEntry(entryFactory, value);
                         Writer.WriteStart(navigationEntry);
                         foreach (OeEntryFactory navigationLink in entryFactory.NavigationLinks)
-                            WriteNavigationLink(navigationValue, navigationLink, navigationEntry, navigationLink.EntitySet);
+                            await WriteNavigationLink(dbEnumerator.CreateChild(navigationLink), navigationLink).ConfigureAwait(false);
                         Writer.WriteEnd();
                     }
                 }

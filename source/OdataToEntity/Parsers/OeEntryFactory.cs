@@ -33,7 +33,7 @@ namespace OdataToEntity.Parsers
             : this(entitySet, accessors)
         {
             ResourceInfo = resourceInfo;
-            NavigationLinks = navigationLinks;
+            NavigationLinks = navigationLinks ?? Array.Empty<OeEntryFactory>();
         }
 
         public ODataResource CreateEntry(Object entity)
@@ -57,10 +57,6 @@ namespace OdataToEntity.Parsers
         {
             return new OeEntryFactory(entitySet, accessors);
         }
-        public static OeEntryFactory CreateEntryFactoryChild(IEdmEntitySet entitySet, OePropertyAccessor[] accessors, ODataNestedResourceInfo resourceInfo)
-        {
-            return new OeEntryFactory(entitySet, accessors, resourceInfo);
-        }
         public static OeEntryFactory CreateEntryFactoryParent(IEdmEntitySet entitySet, OePropertyAccessor[] accessors, IReadOnlyList<OeEntryFactory> navigationLinks)
         {
             return new OeEntryFactory(entitySet, accessors, navigationLinks);
@@ -68,10 +64,6 @@ namespace OdataToEntity.Parsers
         public static OeEntryFactory CreateEntryFactoryNested(IEdmEntitySet entitySet, OePropertyAccessor[] accessors, ODataNestedResourceInfo resourceInfo, IReadOnlyList<OeEntryFactory> navigationLinks)
         {
             return new OeEntryFactory(entitySet, accessors, resourceInfo, navigationLinks);
-        }
-        public static OeEntryFactory CreateNextLink(IEdmEntitySet entitySet, ODataNestedResourceInfo resourceInfo)
-        {
-            return new OeEntryFactory(entitySet, Array.Empty<OePropertyAccessor>(), resourceInfo);
         }
         public Object GetValue(Object value, out int? count)
         {

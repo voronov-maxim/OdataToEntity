@@ -25,7 +25,7 @@ namespace OdataToEntity
         public async Task<String> ExecuteBatchAsync(Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
         {
             String contentType = GetConentType(requestStream, out ArraySegment<byte> readedBytes);
-            var compositeStream = new CompositeReadStream(readedBytes, requestStream);
+            var compositeStream = new Infrastructure.CompositeReadStream(readedBytes, requestStream);
             await ExecuteBatchAsync(compositeStream, responseStream, contentType, cancellationToken).ConfigureAwait(false);
             return contentType;
         }
