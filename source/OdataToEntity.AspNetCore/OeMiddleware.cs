@@ -51,7 +51,7 @@ namespace OdataToEntity.AspNetCore
         }
         private async Task Invoke(HttpContext httpContext, PathString remaining)
         {
-            var requestHeaders = (FrameRequestHeaders)httpContext.Request.Headers;
+            var requestHeaders = (HttpRequestHeaders)httpContext.Request.Headers;
             ((IDictionary<String, StringValues>)requestHeaders).TryGetValue("Prefer", out StringValues preferHeader);
             OeRequestHeaders headers = OeRequestHeaders.Parse(requestHeaders.HeaderAccept, preferHeader);
 
