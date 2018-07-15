@@ -111,7 +111,7 @@ namespace OdataToEntity.EfCore
                         return false;
 
                 foreach (IForeignKey fkey in efEntityType.GetReferencingForeignKeys())
-                    if (fkey.PrincipalToDependent.Name == propertyInfo.Name)
+                    if (fkey.PrincipalToDependent != null && fkey.PrincipalToDependent.Name == propertyInfo.Name)
                         return false;
             }
 
@@ -130,7 +130,7 @@ namespace OdataToEntity.EfCore
                         return fkey.IsRequired;
 
                 foreach (IForeignKey fkey in efEntityType.GetReferencingForeignKeys())
-                    if (fkey.PrincipalToDependent.Name == propertyInfo.Name)
+                    if (fkey.PrincipalToDependent != null && fkey.PrincipalToDependent.Name == propertyInfo.Name)
                         return fkey.IsRequired;
             }
 

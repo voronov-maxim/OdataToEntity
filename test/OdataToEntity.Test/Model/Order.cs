@@ -132,4 +132,30 @@ namespace OdataToEntity.Test.Model
         Male,
         Female
     }
+
+    //test buil edm model
+    internal class Dept
+    {
+        public int Id { get; set; }
+
+        //public virtual ICollection<Acct> Accts { get; set; } // Adding fixes issue
+        public virtual ICollection<Stat> Stats { get; set; }
+    }
+
+    internal class Acct
+    {
+        public int Id { get; set; }
+
+        public int? DeptId { get; set; }
+        public virtual Dept Dept { get; set; }
+    }
+
+    internal class Stat
+    {
+        public int Id { get; set; }
+
+        public int? DeptId { get; set; }
+        public virtual Dept Dept { get; set; }
+    }
+
 }
