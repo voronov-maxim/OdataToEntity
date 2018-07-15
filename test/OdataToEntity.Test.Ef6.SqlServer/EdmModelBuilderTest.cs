@@ -14,6 +14,17 @@ namespace OdataToEntity.Test
 {
     public class EdmModelBuilderTest
     {
+        internal class MyFinanceDbContext : DbContext
+        {
+            public DbSet<Acct> Accts { get; set; }
+            public DbSet<Dept> Depts { get; set; }
+            public DbSet<Stat> Stats { get; set; }
+
+            public MyFinanceDbContext() : base(@"Server =.\sqlexpress; Initial Catalog = OdataToEntity; Trusted_Connection=Yes;")
+            {
+            }
+        }
+
         private static EdmModel BuildEdmModelFromEf6Model(OeDataAdapter dataAdapter)
         {
             using (var context = (DbContext)dataAdapter.CreateDataContext())
@@ -50,6 +61,12 @@ namespace OdataToEntity.Test
             String testSchema = TestHelper.GetCsdlSchema(testEdmModel);
 
             Assert.Equal(ethalonSchema, testSchema);
+        }
+        [Fact]
+        public void MissingDependentNavigationProperty()
+        {
+            var da = new OeEf6DataAdapter<MyFinanceDbContext>();
+            da.BuildEdmModelFromEf6Model();
         }
     }
 }

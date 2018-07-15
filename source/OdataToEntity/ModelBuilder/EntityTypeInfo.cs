@@ -120,7 +120,7 @@ namespace OdataToEntity.ModelBuilder
         public void BuildProperties(Dictionary<Type, EntityTypeInfo> entityTypes,
             Dictionary<Type, EdmEnumType> enumTypes, Dictionary<Type, EdmComplexType> complexTypes)
         {
-            foreach (PropertyInfo clrProperty in _clrType.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly))
+            foreach (PropertyInfo clrProperty in _metadataProvider.GetProperties(_clrType))
                 if (!_metadataProvider.IsNotMapped(clrProperty))
                     BuildProperty(entityTypes, enumTypes, complexTypes, clrProperty);
             AddKeys();

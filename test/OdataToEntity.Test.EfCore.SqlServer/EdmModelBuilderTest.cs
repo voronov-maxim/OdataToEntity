@@ -1,4 +1,5 @@
-﻿using Microsoft.OData.Edm;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.OData.Edm;
 using OdataToEntity.EfCore;
 using OdataToEntity.Test.Model;
 using System;
@@ -8,6 +9,34 @@ namespace OdataToEntity.Test
 {
     public class EdmModelBuilderTest
     {
+        private class MyFinanceDbContext1 : DbContext
+        {
+            public MyFinanceDbContext1() : base(Create<MyFinanceDbContext1>())
+            {
+            }
+
+            public DbSet<Acct> Accts { get; set; }
+            public DbSet<Dept> Depts { get; set; }
+            public DbSet<Stat> Stats { get; set; }
+        }
+
+        private class MyFinanceDbContext2 : DbContext
+        {
+            public MyFinanceDbContext2() : base(Create<MyFinanceDbContext2>())
+            {
+            }
+
+            public DbSet<Car> Cars { get; set; }
+            public DbSet<State> States { get; set; }
+        }
+
+        private static DbContextOptions Create<T>() where T : DbContext
+        {
+            var optionsBuilder = new DbContextOptionsBuilder<T>();
+            optionsBuilder.UseSqlServer(@"Server=.\sqlexpress;Initial Catalog=OdataToEntity;Trusted_Connection=Yes;", opt => opt.UseRelationalNulls(true));
+            return optionsBuilder.Options;
+        }
+
         [Fact]
         public void FluentApi()
         {
@@ -20,6 +49,18 @@ namespace OdataToEntity.Test
             String testSchema = TestHelper.GetCsdlSchema(testEdmModel);
 
             Assert.Equal(ethalonSchema, testSchema);
+        }
+        [Fact]
+        public void MissingDependentNavigationProperty()
+        {
+            var da = new OeEfCoreDataAdapter<MyFinanceDbContext1>();
+            da.BuildEdmModelFromEfCoreModel();
+        }
+        [Fact]
+        public void ShadowProperty()
+        {
+            var da = new OeEfCoreDataAdapter<MyFinanceDbContext2>();
+            da.BuildEdmModelFromEfCoreModel();
         }
     }
 }

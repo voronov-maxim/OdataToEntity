@@ -53,6 +53,10 @@ namespace OdataToEntity.ModelBuilder
             var column = (ColumnAttribute)propertyInfo.GetCustomAttribute(typeof(ColumnAttribute));
             return column == null ? -1 : column.Order;
         }
+        public virtual PropertyInfo[] GetProperties(Type type)
+        {
+            return type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
+        }
         public virtual bool IsKey(PropertyInfo propertyInfo)
         {
             return propertyInfo.GetCustomAttribute(typeof(KeyAttribute)) != null;
