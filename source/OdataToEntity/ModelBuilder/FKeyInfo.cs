@@ -60,7 +60,7 @@ namespace OdataToEntity.ModelBuilder
             PropertyInfo[] fkey = metadataProvider.GetForeignKey(dependentProperty);
             if (fkey == null)
             {
-                foreach (PropertyInfo propertyInfo in dependentInfo.ClrType.GetProperties())
+                foreach (PropertyInfo propertyInfo in metadataProvider.GetProperties(dependentInfo.ClrType))
                 {
                     fkey = metadataProvider.GetForeignKey(propertyInfo);
                     if (fkey != null && fkey.Length == 1 && fkey[0] == dependentProperty)
@@ -100,7 +100,7 @@ namespace OdataToEntity.ModelBuilder
             if (inverseProperty != null)
                 return inverseProperty;
 
-            foreach (PropertyInfo clrProperty in principalInfo.ClrType.GetProperties())
+            foreach (PropertyInfo clrProperty in metadataProvider.GetProperties(principalInfo.ClrType))
                 if (clrProperty.PropertyType == dependentInfo.ClrType ||
                     Parsers.OeExpressionHelper.GetCollectionItemType(clrProperty.PropertyType) == dependentInfo.ClrType)
                 {

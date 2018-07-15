@@ -9,30 +9,32 @@ namespace OdataToEntity.Test
 {
     public class EdmModelBuilderTest
     {
-        internal class MyFinanceDbContext : DbContext
+        private class MyFinanceDbContext1 : DbContext
         {
+            public MyFinanceDbContext1() : base(Create<MyFinanceDbContext1>())
+            {
+            }
+
             public DbSet<Acct> Accts { get; set; }
             public DbSet<Dept> Depts { get; set; }
             public DbSet<Stat> Stats { get; set; }
-
-            public MyFinanceDbContext(DbContextOptions options) : base(options)
-            {
-            }
-
-            public static DbContextOptions Create(bool useRelationalNulls, String databaseName)
-            {
-                var optionsBuilder = new DbContextOptionsBuilder<MyFinanceDbContext>();
-                optionsBuilder.UseSqlServer(@"Server=.\sqlexpress;Initial Catalog=OdataToEntity;Trusted_Connection=Yes;", opt => opt.UseRelationalNulls(useRelationalNulls));
-                return optionsBuilder.Options;
-            }
         }
 
-        internal class MyFinanceDataAdapter : OeEfCoreDataAdapter<MyFinanceDbContext>
+        private class MyFinanceDbContext2 : DbContext
         {
-            public override object CreateDataContext()
+            public MyFinanceDbContext2() : base(Create<MyFinanceDbContext2>())
             {
-                return new MyFinanceDbContext(MyFinanceDbContext.Create(true, ""));
             }
+
+            public DbSet<Car> Cars { get; set; }
+            public DbSet<State> States { get; set; }
+        }
+
+        private static DbContextOptions Create<T>() where T : DbContext
+        {
+            var optionsBuilder = new DbContextOptionsBuilder<T>();
+            optionsBuilder.UseSqlServer(@"Server=.\sqlexpress;Initial Catalog=OdataToEntity;Trusted_Connection=Yes;", opt => opt.UseRelationalNulls(true));
+            return optionsBuilder.Options;
         }
 
         [Fact]
@@ -51,7 +53,13 @@ namespace OdataToEntity.Test
         [Fact]
         public void MissingDependentNavigationProperty()
         {
-            var da = new MyFinanceDataAdapter();
+            var da = new OeEfCoreDataAdapter<MyFinanceDbContext1>();
+            da.BuildEdmModelFromEfCoreModel();
+        }
+        [Fact]
+        public void ShadowProperty()
+        {
+            var da = new OeEfCoreDataAdapter<MyFinanceDbContext2>();
             da.BuildEdmModelFromEfCoreModel();
         }
     }

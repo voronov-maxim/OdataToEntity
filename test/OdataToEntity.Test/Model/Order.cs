@@ -158,4 +158,19 @@ namespace OdataToEntity.Test.Model
         public virtual Dept Dept { get; set; }
     }
 
+    public class Car
+    {
+        public int Id { get; set; }
+
+        // Missing: `public int StateId { get; set; }`
+        public virtual State State { get; set; }
+    }
+
+    public class State
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+
+        public virtual ICollection<Car> Cars { get; set; }
+    }
 }
