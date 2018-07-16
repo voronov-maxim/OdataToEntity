@@ -420,6 +420,22 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
+        [Theory]
+        [InlineData(0, false)]
+        [InlineData(1, false)]
+        [InlineData(0, true)]
+        [InlineData(1, true)]
+        public async Task ExpandNullableNestedSelect(int pageSize, bool navigationNextLink)
+        {
+            var parameters = new QueryParameters<Order>()
+            {
+                RequestUri = "Orders?$expand=AltCustomer($select=Address,Country,Id,Name,Sex)&$orderby=Id",
+                Expression = t => t.Include(o => o.AltCustomer).OrderBy(o => o.Id),
+                NavigationNextLink = navigationNextLink,
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters).ConfigureAwait(false);
+        }
         //[Theory(Skip = "alpha")]
         [InlineData(0, false)]
         [InlineData(1, false)]

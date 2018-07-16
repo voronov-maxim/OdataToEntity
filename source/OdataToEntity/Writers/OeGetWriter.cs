@@ -92,6 +92,14 @@ namespace OdataToEntity.Writers
                     entry.Id = OeUriHelper.ComputeId(QueryContext.ODataUri.ServiceRoot, entryFactory.EntitySet, entry);
                 return entry;
             }
+            private static bool IsNullEntry(ODataResource entry)
+            {
+                foreach (ODataProperty property in entry.Properties)
+                    if (property.Value != null)
+                        return false;
+
+                return true;
+            }
             public async Task SerializeAsync(OeEntryFactory entryFactory, Db.OeAsyncEnumerator asyncEnumerator, OeQueryContext queryContext)
             {
                 var resourceSet = new ODataResourceSet() { Count = asyncEnumerator.Count };
@@ -149,10 +157,18 @@ namespace OdataToEntity.Writers
                     else
                     {
                         ODataResource navigationEntry = CreateEntry(entryFactory, navigationValue);
-                        Writer.WriteStart(navigationEntry);
-                        foreach (OeEntryFactory navigationLink in entryFactory.NavigationLinks)
-                            WriteNavigationLink(navigationValue, navigationLink, navigationEntry, navigationLink.EntitySet);
-                        Writer.WriteEnd();
+                        if (IsNullEntry(navigationEntry))
+                        {
+                            Writer.WriteStart((ODataResource)null);
+                            Writer.WriteEnd();
+                        }
+                        else
+                        {
+                            Writer.WriteStart(navigationEntry);
+                            foreach (OeEntryFactory navigationLink in entryFactory.NavigationLinks)
+                                WriteNavigationLink(navigationValue, navigationLink, navigationEntry, navigationLink.EntitySet);
+                            Writer.WriteEnd();
+                        }
                     }
                 }
 

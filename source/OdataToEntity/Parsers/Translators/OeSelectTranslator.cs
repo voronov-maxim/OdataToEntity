@@ -27,15 +27,41 @@ namespace OdataToEntity.Parsers
 
         private sealed class ParameterVisitor : ExpressionVisitor
         {
+            private readonly bool _navigationPropertyCanBeNull;
             private readonly Expression _newExpression;
             private readonly Expression _oldExpression;
 
-            public ParameterVisitor(Expression oldExpression, Expression newExpression)
+            public ParameterVisitor(Expression oldExpression, Expression newExpression, bool navigationPropertyCanBeNull)
             {
                 _oldExpression = oldExpression;
                 _newExpression = newExpression;
+                _navigationPropertyCanBeNull = navigationPropertyCanBeNull;
             }
 
+            protected override Expression VisitMember(MemberExpression node)
+            {
+                var e = (MemberExpression)base.VisitMember(node);
+                if (!_navigationPropertyCanBeNull)
+                    return e;
+
+                Type nullableType = e.Type.IsClass || OeExpressionHelper.IsNullable(e) ? e.Type : typeof(Nullable<>).MakeGenericType(e.Type);
+                return Expression.Condition(Expression.Equal(e.Expression, OeConstantToVariableVisitor.NullConstantExpression),
+                    Expression.Convert(OeConstantToVariableVisitor.NullConstantExpression, nullableType),
+                    nullableType == e.Type ? (Expression)e : Expression.Convert(e, nullableType));
+            }
+            protected override Expression VisitNew(NewExpression node)
+            {
+                if (_navigationPropertyCanBeNull)
+                {
+                    var expressions = new Expression[node.Arguments.Count];
+                    for (int i = 0; i < expressions.Length; i++)
+                        expressions[i] = base.Visit(node.Arguments[i]);
+
+                    return OeExpressionHelper.CreateTupleExpression(expressions);
+                }
+
+                return base.VisitNew(node);
+            }
             protected override Expression VisitParameter(ParameterExpression node)
             {
                 if (node == _oldExpression)
@@ -160,7 +186,7 @@ namespace OdataToEntity.Parsers
                     if (itemType == null)
                     {
                         nestedExpression = selectTranslator.CreateTupleExpression();
-                        var visitor = new ParameterVisitor(parameter, expression);
+                        var visitor = new ParameterVisitor(parameter, expression, segment.NavigationProperty.Type.IsNullable);
                         nestedExpression = visitor.Visit(nestedExpression);
                         nestedType = nestedExpression.Type;
                     }
