@@ -92,6 +92,11 @@ namespace OdataToEntity.AspNetCore
                 entityList.CopyTo(entities);
                 return entities;
             }
+            else
+            {
+                if (Writers.OeGetWriter.IsNullNavigationValue(navigationValue))
+                    return null;
+            }
 
             return CreateEntity(navigationValue);
 

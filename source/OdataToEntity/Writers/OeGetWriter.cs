@@ -6,6 +6,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace OdataToEntity.Writers
@@ -157,7 +158,7 @@ namespace OdataToEntity.Writers
                     else
                     {
                         ODataResource navigationEntry = CreateEntry(entryFactory, navigationValue);
-                        if (IsNullEntry(navigationEntry))
+                        if (IsNullEntry(navigationEntry) && IsNullNavigationValue(navigationValue))
                         {
                             Writer.WriteStart((ODataResource)null);
                             Writer.WriteEnd();
@@ -193,6 +194,19 @@ namespace OdataToEntity.Writers
             }
         }
 
+        public static bool IsNullNavigationValue(Object navigationValue)
+        {
+            if (navigationValue == null || !OeExpressionHelper.IsTupleType(navigationValue.GetType()))
+                return false;
+
+            PropertyInfo[] itemProperties = navigationValue.GetType().GetProperties();
+            navigationValue = itemProperties[itemProperties.Length - 1].GetValue(navigationValue);
+
+            if (navigationValue == OeConstantToVariableVisitor.MarkerConstantExpression.Value)
+                return true;
+
+            return IsNullNavigationValue(navigationValue);
+        }
         public static async Task SerializeAsync(OeQueryContext queryContext, Db.OeAsyncEnumerator asyncEnumerator, String contentType, Stream stream)
         {
             OeEntryFactory entryFactory = queryContext.EntryFactory;

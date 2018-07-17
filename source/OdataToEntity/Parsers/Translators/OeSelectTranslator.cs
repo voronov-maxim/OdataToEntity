@@ -53,10 +53,13 @@ namespace OdataToEntity.Parsers
             {
                 if (_navigationPropertyCanBeNull)
                 {
-                    var expressions = new Expression[node.Arguments.Count];
-                    for (int i = 0; i < expressions.Length; i++)
+                    var expressions = new Expression[node.Arguments.Count + 1];
+                    for (int i = 0; i < node.Arguments.Count; i++)
                         expressions[i] = base.Visit(node.Arguments[i]);
-
+                    expressions[expressions.Length - 1] = Expression.Condition(
+                        Expression.Equal(_newExpression, OeConstantToVariableVisitor.NullConstantExpression),
+                        OeConstantToVariableVisitor.MarkerConstantExpression,
+                        Expression.Convert(OeConstantToVariableVisitor.NullConstantExpression, OeConstantToVariableVisitor.MarkerConstantExpression.Type));
                     return OeExpressionHelper.CreateTupleExpression(expressions);
                 }
 
