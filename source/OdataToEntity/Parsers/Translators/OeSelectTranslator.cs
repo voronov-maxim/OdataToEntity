@@ -132,7 +132,7 @@ namespace OdataToEntity.Parsers.Translators
                     if (hasSelectItems)
                     {
                         Expression e = _visitor.TranslateNode(orderByClause.Expression);
-                        _navigationItem.AddSelectItem(new OeSelectItem(null, e, true));
+                        _navigationItem.AddSelectItem(new OeSelectItem(propertyNode.Property, e, true));
                     }
                 }
 
@@ -198,7 +198,7 @@ namespace OdataToEntity.Parsers.Translators
                 {
                     var accessorList = new List<OePropertyAccessor>(root.SelectItems.Count);
                     for (int i = 0; i < root.SelectItems.Count; i++)
-                        if (root.SelectItems[i].EdmProperty != null)
+                        if (!root.SelectItems[i].SkipToken)
                             accessorList.Add(OePropertyAccessor.CreatePropertyAccessor(root.SelectItems[i].EdmProperty, propertyExpressions[i], parameter));
                     accessors = accessorList.ToArray();
                 }
@@ -268,14 +268,6 @@ namespace OdataToEntity.Parsers.Translators
 
             return accessorList.ToArray();
         }
-        private static OeEntryFactory[] GetNestedNavigationLinks(OeSelectItem navigationItem)
-        {
-            var nestedEntryFactories = new List<OeEntryFactory>(navigationItem.NavigationItems.Count);
-            for (int i = 0; i < navigationItem.NavigationItems.Count; i++)
-                if (!navigationItem.NavigationItems[i].SkipToken)
-                    nestedEntryFactories.Add(navigationItem.NavigationItems[i].EntryFactory);
-            return nestedEntryFactories.ToArray();
-        }
         private static IEdmEntitySet GetEntitySet(ODataPath path)
         {
             if (path.LastSegment is EntitySetSegment entitySetSegment)
@@ -288,6 +280,14 @@ namespace OdataToEntity.Parsers.Translators
                 return (IEdmEntitySet)keySegment.NavigationSource;
 
             throw new InvalidOperationException("unknown segment type " + path.LastSegment.ToString());
+        }
+        private static OeEntryFactory[] GetNestedNavigationLinks(OeSelectItem navigationItem)
+        {
+            var nestedEntryFactories = new List<OeEntryFactory>(navigationItem.NavigationItems.Count);
+            for (int i = 0; i < navigationItem.NavigationItems.Count; i++)
+                if (!navigationItem.NavigationItems[i].SkipToken)
+                    nestedEntryFactories.Add(navigationItem.NavigationItems[i].EntryFactory);
+            return nestedEntryFactories.ToArray();
         }
     }
 }

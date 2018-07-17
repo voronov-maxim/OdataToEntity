@@ -35,8 +35,13 @@ namespace OdataToEntity.Parsers.Translators
         }
         public bool AddSelectItem(OeSelectItem selectItem)
         {
-            if (FindSelectItem(selectItem.EdmProperty) != null)
+            int existsSelectItemIndex;
+            if ((existsSelectItemIndex = FindSelectItem(selectItem.EdmProperty)) != -1)
+            {
+                if (_selectItems[existsSelectItemIndex].SkipToken && !selectItem.SkipToken)
+                    _selectItems[existsSelectItemIndex] = selectItem;
                 return false;
+            }
 
             _selectItems.Add(selectItem);
             return true;
@@ -62,12 +67,12 @@ namespace OdataToEntity.Parsers.Translators
 
             return null;
         }
-        public OeSelectItem FindSelectItem(IEdmProperty structuralProperty)
+        private int FindSelectItem(IEdmProperty structuralProperty)
         {
             for (int i = 0; i < _selectItems.Count; i++)
                 if (_selectItems[i].EdmProperty == structuralProperty)
-                    return _selectItems[i];
-            return null;
+                    return i;
+            return -1;
         }
 
         public bool? CountOption { get; }
