@@ -31,6 +31,7 @@
     <Compile Include="..\..\OdataToEntity.Test\Common\IncludeVisitor.cs" Link="Common\IncludeVisitor.cs" />
     <Compile Include="..\..\OdataToEntity.Test\Common\ManyColumnsTest.cs" Link="Common\ManyColumnsTest.cs" />
     <Compile Include="..\..\OdataToEntity.Test\Common\QueryParameters.cs" Link="Common\QueryParameters.cs" />
+    <Compile Include="..\..\OdataToEntity.Test\Common\ResponseReader.cs" Link="Common\ResponseReader.cs" />
     <Compile Include="..\..\OdataToEntity.Test\Common\SelectTest.cs" Link="Common\SelectTest.cs" />
     <Compile Include="..\..\OdataToEntity.Test\Common\TestHelper.cs" Link="Common\TestHelper.cs" />
     <Compile Include="..\..\OdataToEntity.Test\Common\TestContractResolver.cs" Link="Common\TestContractResolver.cs" />

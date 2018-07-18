@@ -43,7 +43,10 @@ namespace OdataToEntity.AspNetCore
             {
                 var navigationSegment = (NavigationPropertySegment)item.PathToNavigationProperty.LastSegment;
                 if (IsPropertyDefineInType(navigationSegment.NavigationProperty))
-                    NavigationProperties.Add(navigationSegment.NavigationProperty);
+                {
+                    if (!NavigationProperties.Contains(navigationSegment.NavigationProperty))
+                        NavigationProperties.Add(navigationSegment.NavigationProperty);
+                }
                 else
                     Handle(item.SelectAndExpand);
             }
