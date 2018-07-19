@@ -419,6 +419,22 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
+        [Theory]
+        [InlineData(0, false)]
+        [InlineData(1, false)]
+        [InlineData(0, true)]
+        [InlineData(1, true)]
+        public async Task ExpandNullableNestedSelect(int pageSize, bool navigationNextLink)
+        {
+            var parameters = new QueryParameters<Order>()
+            {
+                RequestUri = "Orders?$expand=AltCustomer($select=Address,Country,Id,Name,Sex)&$orderby=Id",
+                Expression = t => t.Include(o => o.AltCustomer).OrderBy(o => o.Id),
+                NavigationNextLink = navigationNextLink,
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters).ConfigureAwait(false);
+        }
         //[Theory(Skip = "alpha")]
         [InlineData(0, false)]
         [InlineData(1, false)]
@@ -1196,8 +1212,8 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<Order, Object>()
             {
-                RequestUri = "Orders?$select=AltCustomer,AltCustomerId,Customer,CustomerId,Date,Id,Items,Name,Status&$orderby=Id",
-                Expression = t => t.Select(o => new { o.AltCustomer, o.AltCustomerId, o.Customer, o.CustomerId, o.Date, o.Id, o.Items, o.Name, o.Status }).OrderBy(o => o.Id),
+                RequestUri = "Orders?$select=AltCustomer,AltCustomerCountry,AltCustomerId,Customer,CustomerCountry,CustomerId,Date,Id,Items,Name,Status&$orderby=Id",
+                Expression = t => t.Select(o => new { o.AltCustomer, o.AltCustomerCountry, o.AltCustomerId, o.Customer, o.CustomerCountry, o.CustomerId, o.Date, o.Id, o.Items, o.Name, o.Status }).OrderBy(o => o.Id),
                 PageSize = pageSize
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);

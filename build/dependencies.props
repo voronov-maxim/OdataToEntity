@@ -11,10 +11,10 @@
     <NetStandardVersion>netstandard2.0</NetStandardVersion>
     <NetCoreAppVersion>netcoreapp2.1</NetCoreAppVersion>
     <ODataLibVersion>7.5.0</ODataLibVersion>
-    <OdataToEntityVersion>1.4.0</OdataToEntityVersion>
+    <OdataToEntityVersion>1.6.2</OdataToEntityVersion>
     <SystemInteractiveAsyncVersion>3.1.1</SystemInteractiveAsyncVersion>
     <TestSdkVersion>15.8.0</TestSdkVersion>
-    <Version>1.6.0</Version>
-    <XunitVersion>2.3.1</XunitVersion>
+    <Version>$(OdataToEntityVersion)</Version>
+    <XunitVersion>2.4.0</XunitVersion>
   </PropertyGroup>
 </Project>

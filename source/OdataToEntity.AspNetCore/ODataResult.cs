@@ -43,7 +43,10 @@ namespace OdataToEntity.AspNetCore
             {
                 var navigationSegment = (NavigationPropertySegment)item.PathToNavigationProperty.LastSegment;
                 if (IsPropertyDefineInType(navigationSegment.NavigationProperty))
-                    NavigationProperties.Add(navigationSegment.NavigationProperty);
+                {
+                    if (!NavigationProperties.Contains(navigationSegment.NavigationProperty))
+                        NavigationProperties.Add(navigationSegment.NavigationProperty);
+                }
                 else
                     Handle(item.SelectAndExpand);
             }
@@ -128,18 +131,8 @@ namespace OdataToEntity.AspNetCore
             {
                 ODataUtils.SetHeadersForPayload(messageWriter, ODataPayloadKind.ResourceSet);
 
-                IEdmEntitySet edmEntitySet = null;
-                IEdmEntityType edmEntityType = null;
-                foreach (IEdmEntitySet element in _edmModel.EntityContainer.EntitySets())
-                {
-                    edmEntityType = element.EntityType();
-                    if (edmEntityType.FullName() == typeof(T).FullName)
-                    {
-                        edmEntitySet = element;
-                        break;
-                    }
-                }
-
+                IEdmEntitySet edmEntitySet = OeEdmClrHelper.GetEntitySet(_edmModel, typeof(T));
+                IEdmEntityType edmEntityType = edmEntitySet.EntityType();
                 ODataWriter writer = messageWriter.CreateODataResourceSetWriter(edmEntitySet, edmEntityType);
                 await SerializeAsync(writer);
             }

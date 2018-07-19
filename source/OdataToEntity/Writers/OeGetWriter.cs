@@ -6,6 +6,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace OdataToEntity.Writers
@@ -91,6 +92,14 @@ namespace OdataToEntity.Writers
                 if (QueryContext.MetadataLevel == OeMetadataLevel.Full)
                     entry.Id = OeUriHelper.ComputeId(QueryContext.ODataUri.ServiceRoot, entryFactory.EntitySet, entry);
                 return entry;
+            }
+            private static bool IsNullEntry(ODataResource entry)
+            {
+                foreach (ODataProperty property in entry.Properties)
+                    if (property.Value != null)
+                        return false;
+
+                return true;
             }
             public async Task SerializeAsync(OeEntryFactory entryFactory, Db.OeAsyncEnumerator asyncEnumerator, OeQueryContext queryContext)
             {
@@ -192,6 +201,19 @@ namespace OdataToEntity.Writers
             }
         }
 
+        public static bool IsNullNavigationValue(Object navigationValue)
+        {
+            if (navigationValue == null || !OeExpressionHelper.IsTupleType(navigationValue.GetType()))
+                return false;
+
+            PropertyInfo[] itemProperties = navigationValue.GetType().GetProperties();
+            navigationValue = itemProperties[itemProperties.Length - 1].GetValue(navigationValue);
+
+            if (navigationValue == OeConstantToVariableVisitor.MarkerConstantExpression.Value)
+                return true;
+
+            return IsNullNavigationValue(navigationValue);
+        }
         public static async Task SerializeAsync(OeQueryContext queryContext, Db.OeAsyncEnumerator asyncEnumerator, String contentType, Stream stream)
         {
             OeEntryFactory entryFactory = queryContext.EntryFactory;

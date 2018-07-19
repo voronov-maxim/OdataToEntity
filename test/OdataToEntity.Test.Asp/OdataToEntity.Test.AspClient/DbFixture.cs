@@ -1,12 +1,15 @@
 ﻿using Microsoft.OData.Client;
+using Microsoft.OData.Edm;
 using ODataClient.Default;
 using OdataToEntity.Test.Model;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
 using Xunit;
@@ -19,12 +22,17 @@ namespace OdataToEntity.Test
         private delegate Task<IList> ExecuteQueryFuncAsync<out T>(IQueryable query, Expression expression, IReadOnlyList<LambdaExpression> navigationPropertyAccessors);
 
         private readonly bool _clear;
+        private readonly Db.OeDataAdapter _dataAdapter;
         private readonly Db.OeEntitySetAdapterCollection _entitySetAdapters;
+        private readonly IEdmModel _edmModel;
 
         public DbFixtureInitDb(bool clear = false)
         {
             _clear = clear;
-            _entitySetAdapters = new EfCore.OeEfCoreDataAdapter<OrderContext>().EntitySetAdapters;
+
+            _dataAdapter = new EfCore.OeEfCoreDataAdapter<OrderContext>();
+            _edmModel = _dataAdapter.BuildEdmModel();
+            _entitySetAdapters = _dataAdapter.EntitySetAdapters;
         }
 
         public static Container CreateContainer(int maxPageSize)
@@ -58,7 +66,22 @@ namespace OdataToEntity.Test
         }
         public async virtual Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
         {
-            IList fromOe = await ExecuteOe<T, TResult>(parameters.Expression, parameters.PageSize);
+            IList fromOe;
+            try
+            {
+                fromOe = await ExecuteOe<T, TResult>(parameters.Expression, parameters.PageSize);
+            }
+            catch (NotSupportedException)
+            {
+                if (parameters.RequestUri.Contains("$apply="))
+                    throw;
+
+                fromOe = await ExecuteOeViaHttpClient(parameters);
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine(parameters.RequestUri);
+                Console.ResetColor();
+            }
+
             List<IncludeVisitor.Include> includes = GetIncludes(parameters.Expression);
             if (typeof(TResult) == typeof(Object))
                 fromOe = TestHelper.ToOpenType(fromOe);
@@ -92,6 +115,26 @@ namespace OdataToEntity.Test
                 ExecuteQueryFunc<Object> func = ExecuteQueryScalar<Object>;
                 return CreateDelegate(elementType, func)(query, call);
             }
+        }
+        private async Task<IList> ExecuteOeViaHttpClient<T, TResult>(QueryParameters<T, TResult> parameters)
+        {
+            Uri uri = CreateContainer(0).BaseUri;
+            using (var client = new HttpClient())
+            {
+                client.BaseAddress = new UriBuilder(uri.Scheme, uri.Host, uri.Port).Uri;
+                client.DefaultRequestHeaders.TryAddWithoutValidation("Accept", OeRequestHeaders.JsonDefault.ContentType);
+                using (HttpResponseMessage httpResponseMessage = await client.GetAsync(uri.LocalPath + "/" + parameters.RequestUri))
+                    if (httpResponseMessage.IsSuccessStatusCode)
+                    {
+                        using (Stream content = await httpResponseMessage.Content.ReadAsStreamAsync())
+                        {
+                            var responseReader = new ResponseReader(_edmModel, _dataAdapter);
+                            return responseReader.Read<T>(content).Cast<Object>().ToList();
+                        }
+                    }
+            }
+
+            return null;
         }
         private async static Task<IList> ExecuteQueryAsync<T>(IQueryable query, Expression expression, IReadOnlyList<LambdaExpression> navigationPropertyAccessors)
         {

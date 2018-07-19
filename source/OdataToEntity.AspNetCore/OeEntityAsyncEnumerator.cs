@@ -65,6 +65,19 @@ namespace OdataToEntity.AspNetCore
             _queryContext = queryContext;
         }
 
+        private static Object CreateEntity(OeEntryFactory entryFactory, Object value, Object entity, Type entityType)
+        {
+            if (OeExpressionHelper.IsTupleType(entity.GetType()))
+            {
+                value = entity;
+                entity = CreateEntityFromTuple(entityType, entity, entryFactory.Accessors);
+            }
+
+            foreach (OeEntryFactory navigationLink in entryFactory.NavigationLinks)
+                SetNavigationProperty(navigationLink, value, entity);
+
+            return entity;
+        }
         private static Object CreateEntityFromTuple(Type entityType, Object tuple, OePropertyAccessor[] accessors)
         {
             Object entity = Activator.CreateInstance(entityType);
@@ -78,32 +91,30 @@ namespace OdataToEntity.AspNetCore
         }
         private static Object CreateNestedEntity(OeEntryFactory entryFactory, Object value, Type nestedEntityType)
         {
-            Object navigationValue = entryFactory.GetValue(value, out int? dummy);
-            if (navigationValue == null)
+            Object entity = entryFactory.GetValue(value, out _);
+            if (entity == null)
                 return null;
 
             if (entryFactory.ResourceInfo.IsCollection.GetValueOrDefault())
             {
                 var entityList = new List<Object>();
-                foreach (Object item in (IEnumerable)navigationValue)
-                    entityList.Add(CreateEntity(item));
+                foreach (Object item in (IEnumerable)entity)
+                    entityList.Add(CreateEntity(entryFactory, item, item, nestedEntityType));
 
                 var entities = (Object[])Array.CreateInstance(nestedEntityType, entityList.Count);
                 entityList.CopyTo(entities);
                 return entities;
             }
 
-            return CreateEntity(navigationValue);
+            if (Writers.OeGetWriter.IsNullNavigationValue(entity))
+                return null;
 
-            Object CreateEntity(Object entity)
-            {
-                if (OeExpressionHelper.IsTupleType(entity.GetType()))
-                    entity = CreateEntityFromTuple(nestedEntityType, entity, entryFactory.Accessors);
-                foreach (OeEntryFactory navigationLink in entryFactory.NavigationLinks)
-                    SetNavigationProperty(navigationLink, value, entity);
-
-                return entity;
-            }
+            return CreateEntity(entryFactory, value, entity, nestedEntityType);
+        }
+        private static T CreateRootEntity(OeEntryFactory entryFactory, Object value)
+        {
+            Object entity = entryFactory.GetValue(value, out _);
+            return (T)CreateEntity(entryFactory, value, entity, typeof(T));
         }
         public void Dispose() => _asyncEnumerator.Dispose();
         public async Task<bool> MoveNext(CancellationToken cancellationToken)
@@ -117,42 +128,36 @@ namespace OdataToEntity.AspNetCore
                 return false;
 
             Object value = _asyncEnumerator.Current;
-            Object entry = _entryFactory.GetValue(value, out int? dummy);
-            if (OeExpressionHelper.IsTupleType(entry.GetType()))
-                Current = (T)CreateEntityFromTuple(typeof(T), entry, _entryFactory.Accessors);
-            else
-                Current = (T)entry;
-
-            foreach (OeEntryFactory navigationLink in _entryFactory.NavigationLinks)
-                SetNavigationProperty(navigationLink, value, Current);
+            T entity = CreateRootEntity(_entryFactory, value);
 
             _isMoveNext = await _asyncEnumerator.MoveNextAsync().ConfigureAwait(false);
             if (!_isMoveNext && _queryContext.SkipTokenNameValues != null && _queryContext.SkipTokenAccessors != null)
-                SetOrderByProperties(Current, value);
+                SetOrderByProperties(_queryContext, entity, value);
 
+            Current = entity;
             return true;
         }
-        private static void SetNavigationProperty(OeEntryFactory navigationLink, Object value, Object ownerEntry)
+        private static void SetNavigationProperty(OeEntryFactory navigationLink, Object value, Object entity)
         {
-            PropertyInfo propertyInfo = ownerEntry.GetType().GetProperty(navigationLink.ResourceInfo.Name);
+            PropertyInfo propertyInfo = entity.GetType().GetProperty(navigationLink.ResourceInfo.Name);
             Type nestedEntityType = OeExpressionHelper.GetCollectionItemType(propertyInfo.PropertyType);
             if (nestedEntityType == null)
                 nestedEntityType = propertyInfo.PropertyType;
 
             Object navigationValue = CreateNestedEntity(navigationLink, value, nestedEntityType);
-            propertyInfo.SetValue(ownerEntry, navigationValue);
+            propertyInfo.SetValue(entity, navigationValue);
         }
-        private void SetOrderByProperties(Object entity, Object value)
+        private static void SetOrderByProperties(OeQueryContext queryContext, Object entity, Object value)
         {
-            var visitor = new OeQueryNodeVisitor(_queryContext.EdmModel, Expression.Parameter(typeof(T)));
+            var visitor = new OeQueryNodeVisitor(queryContext.EdmModel, Expression.Parameter(typeof(T)));
             var setPropertyValueVisitor = new SetPropertyValueVisitor();
 
             int i = 0;
-            OrderByClause orderByClause = _queryContext.ODataUri.OrderBy;
+            OrderByClause orderByClause = queryContext.ODataUri.OrderBy;
             while (orderByClause != null)
             {
                 var propertyExpression = (MemberExpression)visitor.TranslateNode(orderByClause.Expression);
-                Object orderValue = _queryContext.SkipTokenAccessors[i++].GetValue(value);
+                Object orderValue = queryContext.SkipTokenAccessors[i++].GetValue(value);
                 setPropertyValueVisitor.SetPropertyValue(entity, propertyExpression, orderValue);
 
                 orderByClause = orderByClause.ThenBy;
