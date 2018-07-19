@@ -61,7 +61,8 @@ namespace OdataToEntity.Parsers.Translators
             {
                 bool hasSelectItems = HasSelectItems(queryContext.ODataUri.SelectAndExpand);
                 source = BuildOrderBySkipToken(queryContext.ODataUri.OrderBy, source, queryContext.GroupJoinExpressionBuilder, hasSelectItems);
-                var expressionBuilder = new OeExpressionBuilder(_visitor, queryContext.GroupJoinExpressionBuilder);
+
+                var expressionBuilder = new OeExpressionBuilder(queryContext.GroupJoinExpressionBuilder);
                 source = expressionBuilder.ApplySkipToken(source, queryContext.SkipTokenNameValues, queryContext.ODataUri.OrderBy, queryContext.IsDatabaseNullHighestValue);
                 source = expressionBuilder.ApplyOrderBy(source, queryContext.ODataUri.OrderBy);
                 source = expressionBuilder.ApplySkip(source, queryContext.ODataUri.Skip, queryContext.ODataUri.Path);
@@ -76,6 +77,7 @@ namespace OdataToEntity.Parsers.Translators
                 BuildCompute(queryContext.ODataUri.Compute);
 
             source = CreateSelectExpression(source, _visitor.Parameter);
+
             _entryFactory = CreateEntryFactory(_navigationItem, source);
             return source;
         }

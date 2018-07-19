@@ -84,7 +84,8 @@ namespace OdataToEntity.Parsers
             IsDatabaseNullHighestValue = isDatabaseNullHighestValue;
             MetadataLevel = metadataLevel;
 
-            GroupJoinExpressionBuilder = new Translators.OeGroupJoinExpressionBuilder(edmModel);
+            var visitor = new OeQueryNodeVisitor(edmModel, Expression.Parameter(entitySetAdapter.EntityType));
+            GroupJoinExpressionBuilder = new Translators.OeGroupJoinExpressionBuilder(visitor);
 
             if (pageSize > 0 || (odataUri.OrderBy != null && odataUri.Skip != null && odataUri.Top != null))
                 SkipTokenNameValues = OeSkipTokenParser.CreateNameValues(edmModel, odataUri.OrderBy, odataUri.SkipToken);
@@ -123,20 +124,29 @@ namespace OdataToEntity.Parsers
         public Expression CreateExpression(OeConstantToVariableVisitor constantToVariableVisitor)
         {
             Expression expression;
-            var expressionBuilder = new OeExpressionBuilder(EdmModel, GroupJoinExpressionBuilder, EntitySetAdapter.EntityType);
+            var expressionBuilder = new OeExpressionBuilder(GroupJoinExpressionBuilder);
 
             expression = Expression.Constant(null, typeof(IEnumerable<>).MakeGenericType(EntitySetAdapter.EntityType));
             expression = expressionBuilder.ApplyNavigation(expression, ParseNavigationSegments);
             expression = expressionBuilder.ApplyFilter(expression, ODataUri.Filter);
-            //expression = expressionBuilder.ApplySkipToken(expression, SkipTokenNameValues, ODataUri.OrderBy, IsDatabaseNullHighestValue);
-            expression = expressionBuilder.ApplyAggregation(expression, ODataUri.Apply);
-            if (ODataUri.OrderBy == null || PageSize == 0)
+            if (ODataUri.Apply == null)
             {
+                if (ODataUri.OrderBy == null || PageSize == 0)
+                {
+                    expression = expressionBuilder.ApplyOrderBy(expression, ODataUri.OrderBy);
+                    expression = expressionBuilder.ApplySkip(expression, ODataUri.Skip, ODataUri.Path);
+                    expression = expressionBuilder.ApplyTake(expression, ODataUri.Top, ODataUri.Path);
+                }
+                expression = expressionBuilder.ApplySelect(expression, this);
+            }
+            else
+            {
+                expression = expressionBuilder.ApplySkipToken(expression, SkipTokenNameValues, ODataUri.OrderBy, IsDatabaseNullHighestValue);
+                expression = expressionBuilder.ApplyAggregation(expression, ODataUri.Apply);
                 expression = expressionBuilder.ApplyOrderBy(expression, ODataUri.OrderBy);
                 expression = expressionBuilder.ApplySkip(expression, ODataUri.Skip, ODataUri.Path);
                 expression = expressionBuilder.ApplyTake(expression, ODataUri.Top, ODataUri.Path);
             }
-            expression = expressionBuilder.ApplySelect(expression, this);
             expression = expressionBuilder.ApplyCount(expression, IsCountSegment);
 
             if (!IsCountSegment)

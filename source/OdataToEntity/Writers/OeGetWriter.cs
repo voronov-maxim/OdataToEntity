@@ -125,9 +125,6 @@ namespace OdataToEntity.Writers
                     Writer.WriteEnd();
                     count++;
 
-                    if (count > 30)
-                        throw new InvalidOperationException("zzz");
-
                     dbEnumerator.ClearBuffer();
                 }
 

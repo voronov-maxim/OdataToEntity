@@ -62,7 +62,9 @@ namespace OdataToEntity.Parsers.Translators
             if (itemType == null)
                 itemType = navigationClrProperty.PropertyType;
 
-            var expressionBuilder = new OeExpressionBuilder(_visitor.EdmModel, _groupJoinBuilder, itemType);
+            var visitor = new OeQueryNodeVisitor(_visitor, Expression.Parameter(itemType));
+            var expressionBuilder = new OeExpressionBuilder(_groupJoinBuilder, visitor);
+
             Expression innerSource = Expression.Constant(null, typeof(IEnumerable<>).MakeGenericType(itemType));
             innerSource = expressionBuilder.ApplyFilter(innerSource, item.FilterOption);
             if (item.SkipOption != null || item.TopOption != null)
@@ -70,9 +72,6 @@ namespace OdataToEntity.Parsers.Translators
                 Expression source = Expression.Constant(null, typeof(IEnumerable<>).MakeGenericType(navigationClrProperty.DeclaringType));
                 innerSource = OeCrossApplyExpressionBuilder.Build(source, innerSource, item, navigationItem.Path, expressionBuilder);
             }
-
-            foreach (KeyValuePair<ConstantExpression, ConstantNode> constant in expressionBuilder.Constants)
-                _visitor.AddConstant(constant.Key, constant.Value);
 
             return innerSource;
         }

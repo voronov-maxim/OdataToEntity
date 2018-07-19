@@ -44,9 +44,6 @@ namespace OdataToEntity.Parsers
             {
                 var propertyNode = (SingleValuePropertyAccessNode)orderByClause.Expression;
                 Expression propertyExpression = groupJoinBuilder.GetGroupJoinPropertyExpression(source, instance, orderByClause);
-                if (propertyExpression == null)
-                    throw new InvalidOperationException("order by property " + propertyNode.Property.Name + "not found");
-
                 accessors.Add(OePropertyAccessor.CreatePropertyAccessor(propertyNode.Property, propertyExpression, parameter));
                 orderByClause = orderByClause.ThenBy;
             }

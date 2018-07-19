@@ -13,23 +13,6 @@ namespace OdataToEntity.Parsers
 {
     public sealed class OeQueryNodeVisitor : QueryNodeVisitor<Expression>
     {
-        private sealed class ReplaceParameterVisitor : ExpressionVisitor
-        {
-            private readonly ParameterExpression _parameter;
-            private readonly Expression _source;
-
-            public ReplaceParameterVisitor(ParameterExpression parameter, Expression source)
-            {
-                _parameter = parameter;
-                _source = source;
-            }
-
-            protected override Expression VisitParameter(ParameterExpression node)
-            {
-                return node == _parameter ? _source : base.VisitParameter(node);
-            }
-        }
-
         private readonly Dictionary<ConstantExpression, ConstantNode> _constants;
         private readonly Stack<ParameterExpression> _parameters;
         private readonly OeQueryNodeVisitor _parentVisitor;
@@ -79,6 +62,9 @@ namespace OdataToEntity.Parsers
         public void ChangeParameterType(Expression source)
         {
             Type itemType = OeExpressionHelper.GetCollectionItemType(source.Type);
+            if (itemType == null)
+                itemType = source.Type;
+
             if (Parameter.Type != itemType)
             {
                 _parameters.Clear();
@@ -145,10 +131,6 @@ namespace OdataToEntity.Parsers
             }
             else
                 _parentVisitor.ReplaceConstant(oldExpression, newExpression);
-        }
-        public Expression ReplaceParameter(Expression expression, Expression source)
-        {
-            return new ReplaceParameterVisitor(Parameter, source).Visit(expression);
         }
         public Expression TranslateNode(QueryNode node)
         {

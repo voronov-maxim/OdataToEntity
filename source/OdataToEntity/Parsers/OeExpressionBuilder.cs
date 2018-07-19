@@ -10,24 +10,18 @@ namespace OdataToEntity.Parsers
 {
     public sealed class OeExpressionBuilder
     {
-        private readonly IEdmModel _model;
         private Func<Type, IEdmEntitySet, Type, OeEntryFactory> _entryFactory;
         private readonly Translators.OeGroupJoinExpressionBuilder _groupJoinBuilder;
-        private OeQueryNodeVisitor _visitor;
 
-        public OeExpressionBuilder(IEdmModel model, Translators.OeGroupJoinExpressionBuilder groupJoinBuilder, Type entityType)
+        public OeExpressionBuilder(Translators.OeGroupJoinExpressionBuilder groupJoinBuilder)
         {
-            _model = model;
             _groupJoinBuilder = groupJoinBuilder;
-
-            _visitor = new OeQueryNodeVisitor(_model, Expression.Parameter(entityType));
+            Visitor = groupJoinBuilder.Visitor;
         }
-        public OeExpressionBuilder(OeQueryNodeVisitor visitor, Translators.OeGroupJoinExpressionBuilder groupJoinBuilder)
+        public OeExpressionBuilder(Translators.OeGroupJoinExpressionBuilder groupJoinBuilder, OeQueryNodeVisitor visitor)
         {
-            _visitor = visitor;
             _groupJoinBuilder = groupJoinBuilder;
-
-            _model = visitor.EdmModel;
+            Visitor = visitor;
         }
 
         public Expression ApplyAggregation(Expression source, ApplyClause applyClause)
@@ -35,16 +29,13 @@ namespace OdataToEntity.Parsers
             if (applyClause == null)
                 return source;
 
-            var aggTranslator = new Translators.OeAggregationTranslator(_visitor);
+            var aggTranslator = new Translators.OeAggregationTranslator(Visitor);
             Expression aggExpression = aggTranslator.Build(source, applyClause);
 
             _entryFactory = aggTranslator.CreateEntryFactory;
 
-            Type aggItemType = OeExpressionHelper.GetCollectionItemType(aggExpression.Type);
-            _visitor = new OeQueryNodeVisitor(_model, Expression.Parameter(aggItemType), _visitor.Constans)
-            {
-                TuplePropertyByAliasName = aggTranslator.GetTuplePropertyByAliasName
-            };
+            Visitor.ChangeParameterType(aggExpression);
+            Visitor.TuplePropertyByAliasName = aggTranslator.GetTuplePropertyByAliasName;
 
             return aggExpression;
         }
@@ -61,8 +52,8 @@ namespace OdataToEntity.Parsers
             if (filterClause == null)
                 return source;
 
-            Expression e = _visitor.TranslateNode(filterClause.Expression);
-            LambdaExpression lambda = Expression.Lambda(e, Parameter);
+            Expression e = Visitor.TranslateNode(filterClause.Expression);
+            LambdaExpression lambda = Expression.Lambda(e, Visitor.Parameter);
 
             MethodInfo whereMethodInfo = OeMethodInfoHelper.GetWhereMethodInfo(ParameterType);
             return Expression.Call(whereMethodInfo, source, lambda);
@@ -80,7 +71,7 @@ namespace OdataToEntity.Parsers
                 Expression e;
                 if (parseNavigationSegment.NavigationSegment == null) //EntitySetSegment
                 {
-                    parameter = Parameter;
+                    parameter = Visitor.Parameter;
                     e = source;
                     selectType = sourceItemType;
                 }
@@ -106,7 +97,7 @@ namespace OdataToEntity.Parsers
 
                 if (parseNavigationSegment.Filter != null)
                 {
-                    var visitor = new OeQueryNodeVisitor(_visitor, Expression.Parameter(selectType));
+                    var visitor = new OeQueryNodeVisitor(Visitor, Expression.Parameter(selectType));
                     e = visitor.TranslateNode(parseNavigationSegment.Filter.Expression);
                     LambdaExpression lambda = Expression.Lambda(e, visitor.Parameter);
 
@@ -117,7 +108,7 @@ namespace OdataToEntity.Parsers
                 sourceItemType = selectType;
             }
 
-            _visitor = new OeQueryNodeVisitor(_model, Expression.Parameter(sourceItemType), _visitor.Constans);
+            Visitor.ChangeParameterType(Expression.Parameter(sourceItemType));
             return source;
         }
         public Expression ApplyOrderBy(Expression source, OrderByClause orderByClause)
@@ -125,9 +116,9 @@ namespace OdataToEntity.Parsers
             if (orderByClause == null)
                 return source;
 
-            _visitor.ChangeParameterType(source);
+            Visitor.ChangeParameterType(source);
 
-            var orderBytranslator = new Translators.OeOrderByTranslator(_visitor, _groupJoinBuilder);
+            var orderBytranslator = new Translators.OeOrderByTranslator(Visitor, _groupJoinBuilder);
             return orderBytranslator.Build(source, orderByClause);
         }
         public Expression ApplySelect(Expression source, OeQueryContext queryContext)
@@ -135,11 +126,11 @@ namespace OdataToEntity.Parsers
             if (queryContext.ODataUri.SelectAndExpand == null && (queryContext.ODataUri.OrderBy == null || queryContext.PageSize == 0))
                 return source;
 
-            var selectTranslator = new Translators.OeSelectTranslator(_visitor, queryContext.ODataUri.Path);
+            var selectTranslator = new Translators.OeSelectTranslator(Visitor, queryContext.ODataUri.Path);
             source = selectTranslator.Build(source, queryContext);
             _entryFactory = selectTranslator.CreateEntryFactory;
 
-            _visitor.ChangeParameterType(source);
+            Visitor.ChangeParameterType(source);
             return source;
         }
         public Expression ApplySkip(Expression source, long? skip, ODataPath path)
@@ -148,7 +139,7 @@ namespace OdataToEntity.Parsers
                 return source;
 
             ConstantExpression skipConstant = Expression.Constant((int)skip.Value, typeof(int));
-            _visitor.AddSkipConstant(skipConstant, path);
+            Visitor.AddSkipConstant(skipConstant, path);
 
             MethodInfo skipMethodInfo = OeMethodInfoHelper.GetSkipMethodInfo(ParameterType);
             return Expression.Call(skipMethodInfo, source, skipConstant);
@@ -158,9 +149,9 @@ namespace OdataToEntity.Parsers
             if (skipTokenNameValues == null || skipTokenNameValues.Length == 0)
                 return source;
 
-            _visitor.ChangeParameterType(source);
+            Visitor.ChangeParameterType(source);
 
-            var skipTokenTranslator = new Translators.OeSkipTokenTranslator(_visitor, _groupJoinBuilder, isDatabaseNullHighestValue);
+            var skipTokenTranslator = new Translators.OeSkipTokenTranslator(Visitor, _groupJoinBuilder, isDatabaseNullHighestValue);
             return skipTokenTranslator.Build(source, skipTokenNameValues, uniqueOrderBy);
         }
         public Expression ApplyTake(Expression source, long? top, ODataPath path)
@@ -169,7 +160,7 @@ namespace OdataToEntity.Parsers
                 return source;
 
             ConstantExpression topConstant = Expression.Constant((int)top.Value, typeof(int));
-            _visitor.AddTopConstant(topConstant, path);
+            Visitor.AddTopConstant(topConstant, path);
 
             MethodInfo takeMethodInfo = OeMethodInfoHelper.GetTakeMethodInfo(ParameterType);
             return Expression.Call(takeMethodInfo, source, topConstant);
@@ -178,7 +169,7 @@ namespace OdataToEntity.Parsers
         {
             if (_entryFactory != null)
             {
-                var zzz = OeEdmClrHelper.GetClrType(_visitor.EdmModel, entitySet.EntityType());
+                var zzz = OeEdmClrHelper.GetClrType(Visitor.EdmModel, entitySet.EntityType());
                 return _entryFactory(zzz, entitySet, ParameterType);
             }
 
@@ -186,8 +177,8 @@ namespace OdataToEntity.Parsers
             return OeEntryFactory.CreateEntryFactory(entitySet, accessors);
         }
 
-        public IReadOnlyDictionary<ConstantExpression, ConstantNode> Constants => _visitor.Constans;
-        private ParameterExpression Parameter => _visitor.Parameter;
-        private Type ParameterType => _visitor.Parameter.Type;
+        public IReadOnlyDictionary<ConstantExpression, ConstantNode> Constants => Visitor.Constans;
+        private Type ParameterType => Visitor.Parameter.Type;
+        private OeQueryNodeVisitor Visitor { get; }
     }
 }
