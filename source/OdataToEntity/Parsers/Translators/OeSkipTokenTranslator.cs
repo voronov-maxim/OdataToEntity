@@ -126,7 +126,8 @@ namespace OdataToEntity.Parsers.Translators
             for (int i = 0; i < skipTokenNameValues.Count; i++)
             {
                 OrderByClause orderBy = GetOrderBy(uniqueOrderBy, skipTokenNameValues[i].Name);
-                MemberExpression propertyExpression = _groupJoinBuilder.GetGroupJoinPropertyExpression(source, _visitor.Parameter, orderBy);
+                var propertyNode = (SingleValuePropertyAccessNode)orderBy.Expression;
+                MemberExpression propertyExpression = _groupJoinBuilder.GetGroupJoinPropertyExpression(source, _visitor.Parameter, propertyNode);
 
                 ConstantExpression parameterExpression;
                 if (skipTokenNameValues[i].Value == null)
@@ -137,7 +138,7 @@ namespace OdataToEntity.Parsers.Translators
                     _visitor.AddSkipTokenConstant(parameterExpression, OeSkipTokenParser.GetPropertyName(propertyExpression));
                 }
 
-                orderProperties[i] = new OrderProperty((SingleValuePropertyAccessNode)orderBy.Expression, orderBy.Direction, propertyExpression, parameterExpression);
+                orderProperties[i] = new OrderProperty(propertyNode, orderBy.Direction, propertyExpression, parameterExpression);
             }
             return orderProperties;
         }

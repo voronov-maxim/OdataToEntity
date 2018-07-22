@@ -14,14 +14,13 @@ namespace OdataToEntity.Parsers
     public sealed class OeQueryNodeVisitor : QueryNodeVisitor<Expression>
     {
         private readonly Dictionary<ConstantExpression, ConstantNode> _constants;
-        private readonly Stack<ParameterExpression> _parameters;
+        private ParameterExpression _parameter;
         private readonly OeQueryNodeVisitor _parentVisitor;
 
-        public OeQueryNodeVisitor(IEdmModel edmModel, ParameterExpression it)
+        public OeQueryNodeVisitor(IEdmModel edmModel, ParameterExpression parameter)
         {
             EdmModel = edmModel;
-            _parameters = new Stack<ParameterExpression>();
-            _parameters.Push(it);
+            _parameter = parameter;
 
             _constants = new Dictionary<ConstantExpression, ConstantNode>();
         }
@@ -66,15 +65,12 @@ namespace OdataToEntity.Parsers
                 itemType = source.Type;
 
             if (Parameter.Type != itemType)
-            {
-                _parameters.Clear();
-                _parameters.Push(Expression.Parameter(itemType));
-            }
+                _parameter = Expression.Parameter(itemType);
         }
         private Expression GetPropertyExpression(SingleValuePropertyAccessNode nodeIn)
         {
             Expression e = TranslateNode(nodeIn.Source);
-            PropertyInfo property = e.Type.GetProperty(nodeIn.Property.Name);
+            PropertyInfo property = OeEdmClrHelper.GetPropertyIgnoreCase(e.Type, nodeIn.Property.Name);
             if (property == null)
             {
                 if (!OeExpressionHelper.IsTupleType(e.Type))
@@ -82,18 +78,6 @@ namespace OdataToEntity.Parsers
 
                 IEdmNavigationSource navigationSource = ((ResourceRangeVariableReferenceNode)nodeIn.Source).NavigationSource;
                 property = GetTuplePropertyByEntityType(e.Type, navigationSource.EntityType());
-                if (property == null)
-                {
-                    if (TuplePropertyByEdmProperty == null)
-                        throw new InvalidOperationException("entity type " + navigationSource.EntityType().FullName() + " not found in tuple properties");
-
-                    return TuplePropertyByEdmProperty(Parameter, nodeIn.Property);
-                }
-                else
-                {
-                    e = Expression.Property(e, property);
-                    property = e.Type.GetProperty(nodeIn.Property.Name);
-                }
             }
             return Expression.Property(e, property);
         }
@@ -112,14 +96,10 @@ namespace OdataToEntity.Parsers
             PropertyInfo sourceNavigationProperty = Parameter.Type.GetProperty(sourceNode.NavigationProperty.Name);
             Type targetType = OeExpressionHelper.GetCollectionItemType(sourceNavigationProperty.PropertyType);
 
-            ParameterExpression it = Expression.Parameter(targetType);
-            _parameters.Push(it);
-            var bodyExression = TranslateNode(body);
-            _parameters.Pop();
-            LambdaExpression lambda = Expression.Lambda(bodyExression, it);
-
-            var typeArguments = new Type[] { it.Type };
-            return Expression.Call(typeof(Enumerable), methodName, typeArguments, source, lambda);
+            ParameterExpression parameter = Expression.Parameter(targetType);
+            Expression bodyExression = new OeQueryNodeVisitor(this, parameter).TranslateNode(body);
+            LambdaExpression lambda = Expression.Lambda(bodyExression, parameter);
+            return Expression.Call(typeof(Enumerable), methodName, new Type[] { targetType }, source, lambda);
         }
         private void ReplaceConstant(ConstantExpression oldExpression, ConstantExpression newExpression)
         {
@@ -327,18 +307,6 @@ namespace OdataToEntity.Parsers
 
                     IEdmNavigationSource navigationSource = ((ResourceRangeVariableReferenceNode)nodeIn.Source).NavigationSource;
                     property = GetTuplePropertyByEntityType(e.Type, navigationSource.EntityType());
-                    if (property == null)
-                    {
-                        if (TuplePropertyByEdmProperty == null)
-                            throw new InvalidOperationException("entity type " + navigationSource.EntityType().FullName() + " not found in tuple properties");
-
-                        return TuplePropertyByEdmProperty(Parameter, nodeIn.Property);
-                    }
-                    else
-                    {
-                        e = Expression.Property(e, property);
-                        property = e.Type.GetProperty(nodeIn.Property.Name);
-                    }
                 }
                 return Expression.Property(e, property);
             }
@@ -365,8 +333,7 @@ namespace OdataToEntity.Parsers
 
         public IReadOnlyDictionary<ConstantExpression, ConstantNode> Constans => _parentVisitor == null ? _constants : _parentVisitor.Constans;
         public IEdmModel EdmModel { get; }
-        public ParameterExpression Parameter => _parameters.Peek();
+        public ParameterExpression Parameter => _parameter;
         public Func<Expression, SingleValueNode, Expression> TuplePropertyByAliasName { get; set; }
-        public Func<Expression, IEdmProperty, Expression> TuplePropertyByEdmProperty { get; set; }
     }
 }

@@ -11,13 +11,15 @@ namespace OdataToEntity.Parsers.Translators
     {
         private sealed class ComputeProperty : IEdmProperty
         {
-            public ComputeProperty(String alias, IEdmTypeReference edmTypeReference)
+            public ComputeProperty(String alias, IEdmTypeReference edmTypeReference, Expression expression)
             {
                 Name = alias;
                 Type = edmTypeReference;
+                Expression = expression;
             }
 
             public IEdmStructuredType DeclaringType => ModelBuilder.PrimitiveTypeHelper.TupleEdmType;
+            public Expression Expression { get; }
             public String Name { get; }
             public EdmPropertyKind PropertyKind => throw new NotSupportedException();
             public IEdmTypeReference Type { get; }
@@ -37,14 +39,10 @@ namespace OdataToEntity.Parsers.Translators
             _navigationItem = navigationItem;
         }
 
-        private void AddKey(ParameterExpression parameter)
+        private void AddKey(IEdmEntityType edmEnityType)
         {
-            var edmEnityType = (IEdmEntityType)_visitor.EdmModel.FindType(parameter.Type.FullName);
             foreach (IEdmStructuralProperty keyProperty in edmEnityType.DeclaredKey)
-            {
-                PropertyInfo property = parameter.Type.GetProperty(keyProperty.Name);
-                _navigationItem.AddSelectItem(new OeSelectItem(keyProperty, Expression.MakeMemberAccess(parameter, property), false));
-            }
+                _navigationItem.AddSelectItem(new OeSelectItem(keyProperty, false));
         }
         private static bool HasSelectItems(SelectExpandClause selectExpandClause)
         {
@@ -60,7 +58,8 @@ namespace OdataToEntity.Parsers.Translators
             if (queryContext.ODataUri.OrderBy != null && queryContext.PageSize > 0)
             {
                 bool hasSelectItems = HasSelectItems(queryContext.ODataUri.SelectAndExpand);
-                source = BuildOrderBySkipToken(queryContext.ODataUri.OrderBy, source, queryContext.GroupJoinExpressionBuilder, hasSelectItems);
+                source = BuildOrderBySkipToken(_navigationItem, queryContext.ODataUri.OrderBy, source, queryContext.GroupJoinExpressionBuilder, hasSelectItems);
+                queryContext.GroupJoinExpressionBuilder.Visitor.ChangeParameterType(source);
 
                 var expressionBuilder = new OeExpressionBuilder(queryContext.GroupJoinExpressionBuilder);
                 source = expressionBuilder.ApplySkipToken(source, queryContext.SkipTokenNameValues, queryContext.ODataUri.OrderBy, queryContext.IsDatabaseNullHighestValue);
@@ -70,13 +69,18 @@ namespace OdataToEntity.Parsers.Translators
             }
 
             if (queryContext.ODataUri.SelectAndExpand != null)
+            {
                 source = BuildSelect(queryContext.ODataUri.SelectAndExpand, source, _visitor.Parameter,
-                    queryContext.MetadataLevel, queryContext.NavigationNextLink, queryContext.GroupJoinExpressionBuilder, false);
+                    queryContext.NavigationNextLink, queryContext.GroupJoinExpressionBuilder, false);
+
+                if (_navigationItem.HasSelectItems && queryContext.MetadataLevel == OeMetadataLevel.Full)
+                    AddKey(queryContext.EntitySet.EntityType());
+            }
 
             if (queryContext.ODataUri.Compute != null)
                 BuildCompute(queryContext.ODataUri.Compute);
 
-            source = CreateSelectExpression(source, _visitor.Parameter);
+            source = CreateSelectExpression(source, queryContext.GroupJoinExpressionBuilder);
 
             _entryFactory = CreateEntryFactory(_navigationItem, source);
             return source;
@@ -87,10 +91,10 @@ namespace OdataToEntity.Parsers.Translators
             {
                 Expression expression = _visitor.TranslateNode(computeExpression.Expression);
                 IEdmTypeReference edmTypeReference = OeEdmClrHelper.GetEdmTypeReference(_visitor.EdmModel, expression.Type);
-                _navigationItem.AddSelectItem(new OeSelectItem(new ComputeProperty(computeExpression.Alias, edmTypeReference), expression, false));
+                _navigationItem.AddSelectItem(new OeSelectItem(new ComputeProperty(computeExpression.Alias, edmTypeReference, expression), false));
             }
         }
-        private Expression BuildOrderBySkipToken(OrderByClause orderByClause, Expression source, OeGroupJoinExpressionBuilder groupJoinBuilder, bool hasSelectItems)
+        private static Expression BuildOrderBySkipToken(OeSelectItem navigationItem, OrderByClause orderByClause, Expression source, OeGroupJoinExpressionBuilder groupJoinBuilder, bool hasSelectItems)
         {
             while (orderByClause != null)
             {
@@ -101,7 +105,7 @@ namespace OdataToEntity.Parsers.Translators
                     ExpandedNavigationSelectItem navigationSelectItem = null;
                     do
                     {
-                        if ((match = _navigationItem.FindHierarchyNavigationItem(navigationNode.NavigationProperty)) != null)
+                        if ((match = navigationItem.FindHierarchyNavigationItem(navigationNode.NavigationProperty)) != null)
                             break;
 
                         SelectExpandClause selectExpandClause;
@@ -121,10 +125,9 @@ namespace OdataToEntity.Parsers.Translators
                     if (navigationSelectItem != null)
                     {
                         if (match == null)
-                            match = _navigationItem;
+                            match = navigationItem;
 
-                        Type clrType = OeEdmClrHelper.GetClrType(_visitor.EdmModel, match.EntitySet.Type);
-                        var selectItemTranslator = new OeSelectItemTranslator(match, _visitor, match.Path, OeMetadataLevel.None, false, Expression.Parameter(clrType), source, groupJoinBuilder, true);
+                        var selectItemTranslator = new OeSelectItemTranslator(match, false, source, groupJoinBuilder, true);
                         navigationSelectItem.TranslateWith(selectItemTranslator);
                         source = selectItemTranslator.Source;
                     }
@@ -132,10 +135,7 @@ namespace OdataToEntity.Parsers.Translators
                 else
                 {
                     if (hasSelectItems)
-                    {
-                        Expression e = _visitor.TranslateNode(orderByClause.Expression);
-                        _navigationItem.AddSelectItem(new OeSelectItem(propertyNode.Property, e, true));
-                    }
+                        navigationItem.AddSelectItem(new OeSelectItem(propertyNode.Property, true));
                 }
 
                 orderByClause = orderByClause.ThenBy;
@@ -144,11 +144,11 @@ namespace OdataToEntity.Parsers.Translators
             return source;
         }
         public Expression BuildSelect(SelectExpandClause selectClause, Expression source, ParameterExpression parameter,
-            OeMetadataLevel metadataLevel, bool navigationNextLink, OeGroupJoinExpressionBuilder groupJoinBuilder, bool skipToken)
+            bool navigationNextLink, OeGroupJoinExpressionBuilder groupJoinBuilder, bool skipToken)
         {
             foreach (SelectItem selectItemClause in selectClause.SelectedItems)
             {
-                var selectItemTranslator = new OeSelectItemTranslator(_navigationItem, _visitor, _navigationItem.Path, metadataLevel, navigationNextLink, parameter, source, groupJoinBuilder, skipToken);
+                var selectItemTranslator = new OeSelectItemTranslator(_navigationItem, navigationNextLink, source, groupJoinBuilder, skipToken);
                 OeSelectItem selectItem = selectItemClause.TranslateWith(selectItemTranslator);
                 if (selectItem == null)
                     continue;
@@ -158,9 +158,6 @@ namespace OdataToEntity.Parsers.Translators
                 else
                     _navigationItem.AddSelectItem(selectItem);
             }
-
-            if (_navigationItem.HasSelectItems && metadataLevel == OeMetadataLevel.Full)
-                AddKey(parameter);
 
             return source;
         }
@@ -209,25 +206,31 @@ namespace OdataToEntity.Parsers.Translators
 
             return root.EntryFactory;
         }
-        public OeEntryFactory CreateEntryFactory(Type clrEntityType, IEdmEntitySet entitySet, Type sourceType)
-        {
-            return _entryFactory;
-        }
-        private MethodCallExpression CreateSelectExpression(Expression source, ParameterExpression parameter)
+        private MethodCallExpression CreateSelectExpression(Expression source, OeGroupJoinExpressionBuilder groupJoinBuilder)
         {
             if (_navigationItem.HasNavigationItems)
                 return (MethodCallExpression)source;
 
-            if (_navigationItem.SelectItems.Count == 0)
+            if (!_navigationItem.HasSelectItems)
                 return (MethodCallExpression)source;
 
             var expressions = new List<Expression>(_navigationItem.SelectItems.Count);
             for (int i = 0; i < _navigationItem.SelectItems.Count; i++)
-                expressions.Add(_navigationItem.SelectItems[i].Expression);
+            {
+                IEdmProperty edmProperty = _navigationItem.SelectItems[i].EdmProperty;
+                Expression expression;
+                PropertyInfo clrProperty = OeEdmClrHelper.GetPropertyIgnoreCase(_visitor.Parameter.Type, edmProperty.Name);
+                if (clrProperty == null)
+                    expression = groupJoinBuilder.GetGroupJoinPropertyExpression(null, _visitor.Parameter, _navigationItem.GetGroupJoinPath(), edmProperty);
+                else
+                    expression = Expression.MakeMemberAccess(_visitor.Parameter, clrProperty);
+
+                expressions.Add(expression);
+            }
             NewExpression newTupleExpression = OeExpressionHelper.CreateTupleExpression(expressions);
 
-            LambdaExpression lambda = Expression.Lambda(newTupleExpression, parameter);
-            MethodInfo selectMethodInfo = OeMethodInfoHelper.GetSelectMethodInfo(parameter.Type, newTupleExpression.Type);
+            LambdaExpression lambda = Expression.Lambda(newTupleExpression, _visitor.Parameter);
+            MethodInfo selectMethodInfo = OeMethodInfoHelper.GetSelectMethodInfo(_visitor.Parameter.Type, newTupleExpression.Type);
             return Expression.Call(selectMethodInfo, source, lambda);
         }
         private static List<OeSelectItem> FlattenNavigationItems(OeSelectItem root)
@@ -291,5 +294,7 @@ namespace OdataToEntity.Parsers.Translators
                     nestedEntryFactories.Add(navigationItem.NavigationItems[i].EntryFactory);
             return nestedEntryFactories.ToArray();
         }
+
+        public OeEntryFactory EntryFactory => _entryFactory;
     }
 }

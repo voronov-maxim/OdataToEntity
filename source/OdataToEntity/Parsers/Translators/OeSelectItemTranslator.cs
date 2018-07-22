@@ -12,25 +12,21 @@ namespace OdataToEntity.Parsers.Translators
     internal sealed class OeSelectItemTranslator : SelectItemTranslator<OeSelectItem>
     {
         private readonly OeGroupJoinExpressionBuilder _groupJoinBuilder;
-        private readonly OeMetadataLevel _metadataLevel;
         private readonly OeSelectItem _navigationItem;
         private readonly bool _navigationNextLink;
-        private readonly ParameterExpression _parameter;
         private readonly bool _skipToken;
         private Expression _source;
         private readonly OeQueryNodeVisitor _visitor;
 
-        public OeSelectItemTranslator(OeSelectItem navigationItem, OeQueryNodeVisitor visitor, ODataPath path, OeMetadataLevel metadataLevel, bool navigationNextLink,
-            ParameterExpression parameter, Expression source, OeGroupJoinExpressionBuilder groupJoinBuilder, bool skipToken)
+        public OeSelectItemTranslator(OeSelectItem navigationItem, bool navigationNextLink,
+            Expression source, OeGroupJoinExpressionBuilder groupJoinBuilder, bool skipToken)
         {
             _navigationItem = navigationItem;
-            _visitor = visitor;
-            _metadataLevel = metadataLevel;
             _navigationNextLink = navigationNextLink;
-            _parameter = parameter;
             _source = source;
             _groupJoinBuilder = groupJoinBuilder;
             _skipToken = skipToken;
+            _visitor = groupJoinBuilder.Visitor;
         }
 
         private OeSelectItem CreateNavigationItem(ExpandedNavigationSelectItem item)
@@ -48,16 +44,11 @@ namespace OdataToEntity.Parsers.Translators
             IEdmEntitySet entitySet = OeEdmClrHelper.GetEntitySet(_visitor.EdmModel, navigationProperty.ToEntityType());
             return new OeSelectItem(_navigationItem, entitySet, path, navigationProperty, resourceInfo, item.CountOption, _skipToken);
         }
-        private static List<IEdmNavigationProperty> GetGroupJoinPaths(OeSelectItem navigationItem)
-        {
-            var groupJoinPaths = new List<IEdmNavigationProperty>();
-            for (; navigationItem.Parent != null; navigationItem = navigationItem.Parent)
-                groupJoinPaths.Insert(0, (IEdmNavigationProperty)navigationItem.EdmProperty);
-            return groupJoinPaths;
-        }
         private Expression GetInnerSource(OeSelectItem navigationItem, ExpandedNavigationSelectItem item)
         {
-            PropertyInfo navigationClrProperty = OeEdmClrHelper.GetPropertyIgnoreCase(_parameter.Type, navigationItem.EdmProperty.Name);
+            Type clrEntityType =  OeEdmClrHelper.GetClrType(_visitor.EdmModel, navigationItem.EdmProperty.DeclaringType);
+            PropertyInfo navigationClrProperty = OeEdmClrHelper.GetPropertyIgnoreCase(clrEntityType, navigationItem.EdmProperty.Name);
+
             Type itemType = OeExpressionHelper.GetCollectionItemType(navigationClrProperty.PropertyType);
             if (itemType == null)
                 itemType = navigationClrProperty.PropertyType;
@@ -89,8 +80,7 @@ namespace OdataToEntity.Parsers.Translators
                 _navigationItem.AddNavigationItem(navigationItem);
 
                 Expression innerSource = GetInnerSource(navigationItem, item);
-                _source = _groupJoinBuilder.Build(_source, innerSource, GetGroupJoinPaths(_navigationItem), segment.NavigationProperty);
-                navigationItem.Expression = _source;
+                _source = _groupJoinBuilder.Build(_source, innerSource, _navigationItem.GetGroupJoinPath(), segment.NavigationProperty);
 
                 itemType = OeExpressionHelper.GetCollectionItemType(innerSource.Type);
             }
@@ -101,7 +91,7 @@ namespace OdataToEntity.Parsers.Translators
             {
                 ParameterExpression parameter = Expression.Parameter(itemType);
                 var selectTranslator = new OeSelectTranslator(_visitor, navigationItem);
-                _source = selectTranslator.BuildSelect(item.SelectAndExpand, _source, parameter, _metadataLevel, _navigationNextLink, _groupJoinBuilder, _skipToken);
+                _source = selectTranslator.BuildSelect(item.SelectAndExpand, _source, parameter, _navigationNextLink, _groupJoinBuilder, _skipToken);
             }
 
             return navigationItem;
@@ -119,14 +109,7 @@ namespace OdataToEntity.Parsers.Translators
 
             if (item.SelectedPath.LastSegment is PropertySegment propertySegment)
             {
-                Expression expression;
-                PropertyInfo property = _parameter.Type.GetProperty(propertySegment.Property.Name);
-                if (property == null)
-                    expression = new OePropertyTranslator(_source).Build(_parameter, propertySegment.Property);
-                else
-                    expression = Expression.MakeMemberAccess(_parameter, property);
-
-                return new OeSelectItem(propertySegment.Property, expression, _skipToken);
+                return new OeSelectItem(propertySegment.Property, _skipToken);
             }
 
             throw new InvalidOperationException(item.SelectedPath.LastSegment.GetType().Name + " not supported");

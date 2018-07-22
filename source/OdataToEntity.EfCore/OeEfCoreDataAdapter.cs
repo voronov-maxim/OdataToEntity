@@ -294,7 +294,7 @@ namespace OdataToEntity.EfCore
                 Expression expression = queryContext.CreateExpression(parameterVisitor);
                 expression = OeQueryContext.TranslateSource(_entitySetAdapters, dbContext, expression);
 
-                queryExecutor = dbContext.CreateAsyncQueryExecutor<TResult>(expression); //zzz
+                queryExecutor = dbContext.CreateAsyncQueryExecutor<TResult>(expression);
                 countExpression = OeQueryContext.CreateCountExpression(expression);
                 queryCache.AddQuery(queryContext.CreateCacheContext(parameterVisitor.ConstantToParameterMapper), queryExecutor, countExpression,
                     queryContext.EntryFactory, queryContext.SkipTokenAccessors);

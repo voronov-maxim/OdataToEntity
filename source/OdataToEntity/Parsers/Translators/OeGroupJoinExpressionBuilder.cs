@@ -165,9 +165,8 @@ namespace OdataToEntity.Parsers.Translators
             Expression keySelector = GetGroupJoinKeySelector(instance, structuralProperties);
             return Expression.Lambda(keySelector, outerParameter);
         }
-        private static IReadOnlyList<IEdmNavigationProperty> GetGroupJoinPath(OrderByClause orderByClause)
+        private static IReadOnlyList<IEdmNavigationProperty> GetGroupJoinPath(SingleValuePropertyAccessNode propertyNode)
         {
-            var propertyNode = (SingleValuePropertyAccessNode)orderByClause.Expression;
             if (propertyNode.Source is SingleNavigationNode navigationNode)
             {
                 var groupJoinPath = new List<IEdmNavigationProperty>();
@@ -178,33 +177,38 @@ namespace OdataToEntity.Parsers.Translators
             }
             return Array.Empty<IEdmNavigationProperty>();
         }
-        public MemberExpression GetGroupJoinPropertyExpression(Expression source, Expression parameter, OrderByClause orderByClause)
+        public MemberExpression GetGroupJoinPropertyExpression(Expression source, Expression parameter, SingleValuePropertyAccessNode propertyNode)
         {
-            IReadOnlyList<IEdmNavigationProperty> groupJoinPath = GetGroupJoinPath(orderByClause);
-            Expression propertyExpression = GetGroupJoinPropertyExpression(parameter, groupJoinPath);
+            IReadOnlyList<IEdmNavigationProperty> groupJoinPath = GetGroupJoinPath(propertyNode);
+            MemberExpression propertyExpression = GetGroupJoinPropertyExpression(source, parameter, groupJoinPath, propertyNode.Property);
             if (propertyExpression != null)
-            {
-                var propertyNode = (SingleValuePropertyAccessNode)orderByClause.Expression;
-                PropertyInfo propertyInfo = OeEdmClrHelper.GetPropertyIgnoreCase(propertyExpression.Type, propertyNode.Property.Name);
-                if (propertyInfo != null)
-                    return Expression.Property(propertyExpression, propertyInfo);
+                return propertyExpression;
 
-                if (OePropertyTranslator.IsPrimitiveType(propertyExpression.Type))
-                    return (MemberExpression)propertyExpression;
-
-                var propertyTranslator = new OePropertyTranslator(source);
-                return propertyTranslator.CreatePropertyExpression(propertyExpression, propertyNode.Property);
-            }
-
-            propertyExpression = Visitor.TranslateNode(orderByClause.Expression);
+            propertyExpression = (MemberExpression)Visitor.TranslateNode(propertyNode);
             if (propertyExpression == null)
-                throw new InvalidOperationException("Order by property not found");
+                throw new InvalidOperationException("property " + propertyNode.Property.Name + " not found");
 
             if (Visitor.Parameter == parameter)
-                return (MemberExpression)propertyExpression;
+                return propertyExpression;
 
             var replaceParameterVisitor = new ReplaceParameterVisitor(Visitor.Parameter, parameter);
             return (MemberExpression)replaceParameterVisitor.Visit(propertyExpression);
+        }
+        public MemberExpression GetGroupJoinPropertyExpression(Expression source, Expression parameter, IReadOnlyList<IEdmNavigationProperty> groupJoinPath, IEdmProperty edmProperty)
+        {
+            Expression propertyExpression = GetGroupJoinPropertyExpression(parameter, groupJoinPath);
+            if (propertyExpression == null)
+                return null;
+
+            PropertyInfo propertyInfo = OeEdmClrHelper.GetPropertyIgnoreCase(propertyExpression.Type, edmProperty.Name);
+            if (propertyInfo != null && OeExpressionHelper.IsPrimitiveType(propertyInfo.PropertyType))
+                return Expression.Property(propertyExpression, propertyInfo);
+
+            if (OeExpressionHelper.IsPrimitiveType(propertyExpression.Type))
+                return (MemberExpression)propertyExpression;
+
+            var propertyTranslator = new OePropertyTranslator(source);
+            return propertyTranslator.Build(propertyExpression, edmProperty);
         }
         private Expression GetGroupJoinPropertyExpression(Expression source, IReadOnlyList<IEdmNavigationProperty> navigationProperties)
         {

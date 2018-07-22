@@ -10,7 +10,7 @@ namespace OdataToEntity.Parsers
 {
     public sealed class OeExpressionBuilder
     {
-        private Func<Type, IEdmEntitySet, Type, OeEntryFactory> _entryFactory;
+        private OeEntryFactory _entryFactory;
         private readonly Translators.OeGroupJoinExpressionBuilder _groupJoinBuilder;
 
         public OeExpressionBuilder(Translators.OeGroupJoinExpressionBuilder groupJoinBuilder)
@@ -31,10 +31,9 @@ namespace OdataToEntity.Parsers
 
             var aggTranslator = new Translators.OeAggregationTranslator(Visitor);
             Expression aggExpression = aggTranslator.Build(source, applyClause);
+            _entryFactory = aggTranslator.EntryFactory;
 
-            _entryFactory = aggTranslator.CreateEntryFactory;
-
-            Visitor.ChangeParameterType(aggExpression);
+            ChangeParameterType(aggExpression);
             Visitor.TuplePropertyByAliasName = aggTranslator.GetTuplePropertyByAliasName;
 
             return aggExpression;
@@ -116,10 +115,8 @@ namespace OdataToEntity.Parsers
             if (orderByClause == null)
                 return source;
 
-            Visitor.ChangeParameterType(source);
-
-            var orderBytranslator = new Translators.OeOrderByTranslator(Visitor, _groupJoinBuilder);
-            return orderBytranslator.Build(source, orderByClause);
+            ChangeParameterType(source);
+            return Translators.OeOrderByTranslator.Build(_groupJoinBuilder, source, orderByClause);
         }
         public Expression ApplySelect(Expression source, OeQueryContext queryContext)
         {
@@ -128,9 +125,9 @@ namespace OdataToEntity.Parsers
 
             var selectTranslator = new Translators.OeSelectTranslator(Visitor, queryContext.ODataUri.Path);
             source = selectTranslator.Build(source, queryContext);
-            _entryFactory = selectTranslator.CreateEntryFactory;
+            _entryFactory = selectTranslator.EntryFactory;
 
-            Visitor.ChangeParameterType(source);
+            ChangeParameterType(source);
             return source;
         }
         public Expression ApplySkip(Expression source, long? skip, ODataPath path)
@@ -149,10 +146,11 @@ namespace OdataToEntity.Parsers
             if (skipTokenNameValues == null || skipTokenNameValues.Length == 0)
                 return source;
 
-            Visitor.ChangeParameterType(source);
-
             var skipTokenTranslator = new Translators.OeSkipTokenTranslator(Visitor, _groupJoinBuilder, isDatabaseNullHighestValue);
-            return skipTokenTranslator.Build(source, skipTokenNameValues, uniqueOrderBy);
+            source = skipTokenTranslator.Build(source, skipTokenNameValues, uniqueOrderBy);
+
+            Visitor.ChangeParameterType(source);
+            return source;
         }
         public Expression ApplyTake(Expression source, long? top, ODataPath path)
         {
@@ -165,13 +163,14 @@ namespace OdataToEntity.Parsers
             MethodInfo takeMethodInfo = OeMethodInfoHelper.GetTakeMethodInfo(ParameterType);
             return Expression.Call(takeMethodInfo, source, topConstant);
         }
+        private void ChangeParameterType(Expression source)
+        {
+            _groupJoinBuilder.Visitor.ChangeParameterType(source);
+        }
         public OeEntryFactory CreateEntryFactory(IEdmEntitySet entitySet)
         {
             if (_entryFactory != null)
-            {
-                var zzz = OeEdmClrHelper.GetClrType(Visitor.EdmModel, entitySet.EntityType());
-                return _entryFactory(zzz, entitySet, ParameterType);
-            }
+                return _entryFactory;
 
             OePropertyAccessor[] accessors = OePropertyAccessor.CreateFromType(ParameterType, entitySet);
             return OeEntryFactory.CreateEntryFactory(entitySet, accessors);

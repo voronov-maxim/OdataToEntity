@@ -11,9 +11,8 @@ namespace OdataToEntity.Parsers.Translators
         private readonly List<OeSelectItem> _navigationItems;
         private readonly List<OeSelectItem> _selectItems;
 
-        public OeSelectItem(IEdmProperty edmProperty, Expression expression, bool skipToken) : this(null, null, null, edmProperty, null, null, skipToken)
+        public OeSelectItem(IEdmProperty edmProperty, bool skipToken) : this(null, null, null, edmProperty, null, null, skipToken)
         {
-            Expression = expression;
         }
         public OeSelectItem(OeSelectItem parent, IEdmEntitySet entitySet, ODataPath path, IEdmProperty edmProperty, ODataNestedResourceInfo resource, bool? countOption, bool skipToken)
         {
@@ -74,12 +73,18 @@ namespace OdataToEntity.Parsers.Translators
                     return i;
             return -1;
         }
+        public IReadOnlyList<IEdmNavigationProperty> GetGroupJoinPath()
+        {
+            var groupJoinPaths = new List<IEdmNavigationProperty>();
+            for (OeSelectItem navigationItem = this; navigationItem.Parent != null; navigationItem = navigationItem.Parent)
+                groupJoinPaths.Insert(0, (IEdmNavigationProperty)navigationItem.EdmProperty);
+            return groupJoinPaths;
+        }
 
         public bool? CountOption { get; }
         public IEdmProperty EdmProperty { get; }
         public IEdmEntitySet EntitySet { get; }
         public OeEntryFactory EntryFactory { get; set; }
-        public Expression Expression { get; set; }
         public bool HasNavigationItems => _navigationItems.Count > 0;
         public bool HasSelectItems => _selectItems.Count > 0;
         public IReadOnlyList<OeSelectItem> NavigationItems => _navigationItems;
