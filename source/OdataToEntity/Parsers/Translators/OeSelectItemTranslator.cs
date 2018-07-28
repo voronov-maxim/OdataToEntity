@@ -11,7 +11,7 @@ namespace OdataToEntity.Parsers.Translators
 {
     internal sealed class OeSelectItemTranslator : SelectItemTranslator<OeSelectItem>
     {
-        private readonly OeGroupJoinExpressionBuilder _groupJoinBuilder;
+        private readonly OeJoinBuilder _joinBuilder;
         private readonly OeSelectItem _navigationItem;
         private readonly bool _navigationNextLink;
         private readonly bool _skipToken;
@@ -19,14 +19,14 @@ namespace OdataToEntity.Parsers.Translators
         private readonly OeQueryNodeVisitor _visitor;
 
         public OeSelectItemTranslator(OeSelectItem navigationItem, bool navigationNextLink,
-            Expression source, OeGroupJoinExpressionBuilder groupJoinBuilder, bool skipToken)
+            Expression source, OeJoinBuilder joinBuilder, bool skipToken)
         {
             _navigationItem = navigationItem;
             _navigationNextLink = navigationNextLink;
             _source = source;
-            _groupJoinBuilder = groupJoinBuilder;
+            _joinBuilder = joinBuilder;
             _skipToken = skipToken;
-            _visitor = groupJoinBuilder.Visitor;
+            _visitor = joinBuilder.Visitor;
         }
 
         private OeSelectItem CreateNavigationItem(ExpandedNavigationSelectItem item)
@@ -54,14 +54,14 @@ namespace OdataToEntity.Parsers.Translators
                 itemType = navigationClrProperty.PropertyType;
 
             var visitor = new OeQueryNodeVisitor(_visitor, Expression.Parameter(itemType));
-            var expressionBuilder = new OeExpressionBuilder(_groupJoinBuilder, visitor);
+            var expressionBuilder = new OeExpressionBuilder(_joinBuilder, visitor);
 
             Expression innerSource = Expression.Constant(null, typeof(IEnumerable<>).MakeGenericType(itemType));
             innerSource = expressionBuilder.ApplyFilter(innerSource, item.FilterOption);
             if (item.SkipOption != null || item.TopOption != null)
             {
                 Expression source = Expression.Constant(null, typeof(IEnumerable<>).MakeGenericType(navigationClrProperty.DeclaringType));
-                innerSource = OeCrossApplyExpressionBuilder.Build(source, innerSource, item, navigationItem.Path, expressionBuilder);
+                innerSource = OeCrossApplyBuilder.Build(source, innerSource, item, navigationItem.Path, expressionBuilder);
             }
 
             return innerSource;
@@ -80,7 +80,7 @@ namespace OdataToEntity.Parsers.Translators
                 _navigationItem.AddNavigationItem(navigationItem);
 
                 Expression innerSource = GetInnerSource(navigationItem, item);
-                _source = _groupJoinBuilder.Build(_source, innerSource, _navigationItem.GetGroupJoinPath(), segment.NavigationProperty);
+                _source = _joinBuilder.Build(_source, innerSource, _navigationItem.GetJoinPath(), segment.NavigationProperty);
 
                 itemType = OeExpressionHelper.GetCollectionItemType(innerSource.Type);
             }
@@ -89,9 +89,8 @@ namespace OdataToEntity.Parsers.Translators
 
             if (item.SelectAndExpand.SelectedItems.Any())
             {
-                ParameterExpression parameter = Expression.Parameter(itemType);
-                var selectTranslator = new OeSelectTranslator(_visitor, navigationItem);
-                _source = selectTranslator.BuildSelect(item.SelectAndExpand, _source, parameter, _navigationNextLink, _groupJoinBuilder, _skipToken);
+                var selectTranslator = new OeSelectTranslator(_joinBuilder, navigationItem);
+                _source = selectTranslator.BuildSelect(item.SelectAndExpand, _source, _navigationNextLink, _skipToken);
             }
 
             return navigationItem;
@@ -100,17 +99,12 @@ namespace OdataToEntity.Parsers.Translators
         {
             if (item.SelectedPath.LastSegment is NavigationPropertySegment navigationSegment)
             {
-                if (_navigationNextLink && navigationSegment.NavigationProperty.Type.Definition is IEdmCollectionType)
-                    return null;
-
                 var navigationSelectItem = new ExpandedNavigationSelectItem(new ODataExpandPath(item.SelectedPath), navigationSegment.NavigationSource, new SelectExpandClause(null, true));
                 return Translate(navigationSelectItem);
             }
 
             if (item.SelectedPath.LastSegment is PropertySegment propertySegment)
-            {
                 return new OeSelectItem(propertySegment.Property, _skipToken);
-            }
 
             throw new InvalidOperationException(item.SelectedPath.LastSegment.GetType().Name + " not supported");
         }

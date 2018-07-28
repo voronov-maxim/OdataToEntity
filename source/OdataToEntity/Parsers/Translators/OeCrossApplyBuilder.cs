@@ -7,7 +7,7 @@ using System.Reflection;
 
 namespace OdataToEntity.Parsers.Translators
 {
-    public static class OeCrossApplyExpressionBuilder
+    public static class OeCrossApplyBuilder
     {
         public static MethodCallExpression Build(Expression outer, Expression inner, ExpandedNavigationSelectItem item, ODataPath odataPath, OeExpressionBuilder expressionBuilder)
         {

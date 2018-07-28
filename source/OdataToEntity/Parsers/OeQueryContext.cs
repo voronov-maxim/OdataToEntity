@@ -85,7 +85,7 @@ namespace OdataToEntity.Parsers
             MetadataLevel = metadataLevel;
 
             var visitor = new OeQueryNodeVisitor(edmModel, Expression.Parameter(entitySetAdapter.EntityType));
-            GroupJoinExpressionBuilder = new Translators.OeGroupJoinExpressionBuilder(visitor);
+            JoinBuilder = new Translators.OeJoinBuilder(visitor);
 
             if (pageSize > 0 || (odataUri.OrderBy != null && odataUri.Skip != null && odataUri.Top != null))
                 SkipTokenNameValues = OeSkipTokenParser.CreateNameValues(edmModel, odataUri.OrderBy, odataUri.SkipToken);
@@ -124,7 +124,7 @@ namespace OdataToEntity.Parsers
         public Expression CreateExpression(OeConstantToVariableVisitor constantToVariableVisitor)
         {
             Expression expression;
-            var expressionBuilder = new OeExpressionBuilder(GroupJoinExpressionBuilder);
+            var expressionBuilder = new OeExpressionBuilder(JoinBuilder);
 
             expression = Expression.Constant(null, typeof(IEnumerable<>).MakeGenericType(EntitySetAdapter.EntityType));
             expression = expressionBuilder.ApplyNavigation(expression, ParseNavigationSegments);
@@ -152,7 +152,7 @@ namespace OdataToEntity.Parsers
             if (!IsCountSegment)
                 EntryFactory = CreateEntryFactory(expressionBuilder, expression);
             if (SkipTokenNameValues != null)
-                SkipTokenAccessors = OeSkipTokenParser.GetAccessors(expression, ODataUri.OrderBy, GroupJoinExpressionBuilder);
+                SkipTokenAccessors = OeSkipTokenParser.GetAccessors(expression, ODataUri.OrderBy, JoinBuilder);
 
             return constantToVariableVisitor.Translate(expression, expressionBuilder.Constants);
         }
@@ -176,7 +176,7 @@ namespace OdataToEntity.Parsers
         public IEdmEntitySet EntitySet { get; }
         public Db.OeEntitySetAdapter EntitySetAdapter { get; }
         public OeEntryFactory EntryFactory { get; set; }
-        public Translators.OeGroupJoinExpressionBuilder GroupJoinExpressionBuilder { get; }
+        public Translators.OeJoinBuilder JoinBuilder { get; }
         public bool IsCountSegment { get; }
         public bool IsDatabaseNullHighestValue { get; }
         public OeMetadataLevel MetadataLevel { get; }

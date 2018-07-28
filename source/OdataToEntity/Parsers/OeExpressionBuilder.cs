@@ -11,16 +11,16 @@ namespace OdataToEntity.Parsers
     public sealed class OeExpressionBuilder
     {
         private OeEntryFactory _entryFactory;
-        private readonly Translators.OeGroupJoinExpressionBuilder _groupJoinBuilder;
+        private readonly Translators.OeJoinBuilder _joinBuilder;
 
-        public OeExpressionBuilder(Translators.OeGroupJoinExpressionBuilder groupJoinBuilder)
+        public OeExpressionBuilder(Translators.OeJoinBuilder joinBuilder)
         {
-            _groupJoinBuilder = groupJoinBuilder;
-            Visitor = groupJoinBuilder.Visitor;
+            _joinBuilder = joinBuilder;
+            Visitor = joinBuilder.Visitor;
         }
-        public OeExpressionBuilder(Translators.OeGroupJoinExpressionBuilder groupJoinBuilder, OeQueryNodeVisitor visitor)
+        public OeExpressionBuilder(Translators.OeJoinBuilder joinBuilder, OeQueryNodeVisitor visitor)
         {
-            _groupJoinBuilder = groupJoinBuilder;
+            _joinBuilder = joinBuilder;
             Visitor = visitor;
         }
 
@@ -116,14 +116,14 @@ namespace OdataToEntity.Parsers
                 return source;
 
             ChangeParameterType(source);
-            return Translators.OeOrderByTranslator.Build(_groupJoinBuilder, source, orderByClause);
+            return Translators.OeOrderByTranslator.Build(_joinBuilder, source, orderByClause);
         }
         public Expression ApplySelect(Expression source, OeQueryContext queryContext)
         {
-            if (queryContext.ODataUri.SelectAndExpand == null && (queryContext.ODataUri.OrderBy == null || queryContext.PageSize == 0))
+            if (queryContext.ODataUri.Path.LastSegment is CountSegment)
                 return source;
 
-            var selectTranslator = new Translators.OeSelectTranslator(Visitor, queryContext.ODataUri.Path);
+            var selectTranslator = new Translators.OeSelectTranslator(_joinBuilder, queryContext.ODataUri.Path);
             source = selectTranslator.Build(source, queryContext);
             _entryFactory = selectTranslator.EntryFactory;
 
@@ -146,7 +146,7 @@ namespace OdataToEntity.Parsers
             if (skipTokenNameValues == null || skipTokenNameValues.Length == 0)
                 return source;
 
-            var skipTokenTranslator = new Translators.OeSkipTokenTranslator(Visitor, _groupJoinBuilder, isDatabaseNullHighestValue);
+            var skipTokenTranslator = new Translators.OeSkipTokenTranslator(Visitor, _joinBuilder, isDatabaseNullHighestValue);
             source = skipTokenTranslator.Build(source, skipTokenNameValues, uniqueOrderBy);
 
             Visitor.ChangeParameterType(source);
@@ -165,7 +165,7 @@ namespace OdataToEntity.Parsers
         }
         private void ChangeParameterType(Expression source)
         {
-            _groupJoinBuilder.Visitor.ChangeParameterType(source);
+            _joinBuilder.Visitor.ChangeParameterType(source);
         }
         public OeEntryFactory CreateEntryFactory(IEdmEntitySet entitySet)
         {

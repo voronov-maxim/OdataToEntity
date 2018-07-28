@@ -33,7 +33,7 @@ namespace OdataToEntity.Parsers
         {
             return skipToken == null ? Array.Empty<OeSkipTokenNameValue>() : ParseSkipToken(edmModel, uniqueOrderBy, skipToken);
         }
-        public static OePropertyAccessor[] GetAccessors(Expression source, OrderByClause orderByClause, Translators.OeGroupJoinExpressionBuilder groupJoinBuilder)
+        public static OePropertyAccessor[] GetAccessors(Expression source, OrderByClause orderByClause, Translators.OeJoinBuilder joinBuilder)
         {
             var accessors = new List<OePropertyAccessor>();
 
@@ -43,7 +43,7 @@ namespace OdataToEntity.Parsers
             while (orderByClause != null)
             {
                 var propertyNode = (SingleValuePropertyAccessNode)orderByClause.Expression;
-                Expression propertyExpression = groupJoinBuilder.GetGroupJoinPropertyExpression(source, instance, propertyNode);
+                Expression propertyExpression = joinBuilder.GetJoinPropertyExpression(source, instance, propertyNode);
                 accessors.Add(OePropertyAccessor.CreatePropertyAccessor(propertyNode.Property, propertyExpression, parameter));
                 orderByClause = orderByClause.ThenBy;
             }

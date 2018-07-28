@@ -80,9 +80,9 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
-        [Theory(Skip = "bug ef core 2.1")]
+        [Theory]
         [InlineData(0)]
-        //[InlineData(1)] zzz
+        [InlineData(1)]
         public async Task ApplyGropuByAggregateCompute(int pageSize)
         {
             var parameters = new QueryParameters<OrderItem, Object>()
@@ -230,7 +230,7 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
-        //[Theory]
+        [Theory]
         [InlineData(false)]
         [InlineData(true)]
         public async Task Compute(bool navigationNextLink)
@@ -435,7 +435,7 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
-        //[Theory(Skip = "alpha")]
+        [Theory]
         [InlineData(0, false)]
         [InlineData(1, false)]
         [InlineData(0, true)]
@@ -468,37 +468,6 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
-        public async Task ExpandOneFilter2(int pageSize, bool navigationNextLink)
-        {
-            IQueryable<OrderItem> orderItems = null;
-            var parameters = new QueryParameters<Order>()
-            {
-                RequestUri = "Orders?$expand=Items",
-                Expression = t => t.GroupJoin(orderItems,
-                    o => o.Id,
-                    i => i.OrderId,
-                    (o, i) => new { Order = o, Items = i.DefaultIfEmpty() })
-                    .SelectMany(z => z.Items, (o, i) => new { o.Order, Items = i })
-                    .GroupBy(a => a.Order, a => a.Items)
-                    .Select(a =>
-                    new Order()
-                    {
-                        AltCustomerCountry = a.Key.AltCustomerCountry,
-                        AltCustomerId = a.Key.AltCustomerId,
-                        CustomerCountry = a.Key.CustomerCountry,
-                        CustomerId = a.Key.CustomerId,
-                        Date = a.Key.Date,
-                        Id = a.Key.Id,
-                        Items = a.ToList(),
-                        Name = a.Key.Name,
-                        Status = a.Key.Status
-                    }),
-                NavigationNextLink = navigationNextLink,
-                PageSize = pageSize
-            };
-            await Fixture.Execute(parameters).ConfigureAwait(false);
-        }
-
         [Theory]
         [InlineData(0, false)]
         [InlineData(1, false)]

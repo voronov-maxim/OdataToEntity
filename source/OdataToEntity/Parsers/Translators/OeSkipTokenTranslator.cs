@@ -26,14 +26,14 @@ namespace OdataToEntity.Parsers.Translators
             public SingleValuePropertyAccessNode PropertyNode { get; }
         }
 
-        private readonly OeGroupJoinExpressionBuilder _groupJoinBuilder;
+        private readonly OeJoinBuilder _joinBuilder;
         private readonly bool _isDatabaseNullHighestValue;
         private readonly OeQueryNodeVisitor _visitor;
 
-        public OeSkipTokenTranslator(OeQueryNodeVisitor visitor, OeGroupJoinExpressionBuilder groupJoinBuilder, bool isDatabaseNullHighestValue)
+        public OeSkipTokenTranslator(OeQueryNodeVisitor visitor, OeJoinBuilder joinBuilder, bool isDatabaseNullHighestValue)
         {
             _visitor = visitor;
-            _groupJoinBuilder = groupJoinBuilder;
+            _joinBuilder = joinBuilder;
             _isDatabaseNullHighestValue = isDatabaseNullHighestValue;
         }
 
@@ -127,7 +127,7 @@ namespace OdataToEntity.Parsers.Translators
             {
                 OrderByClause orderBy = GetOrderBy(uniqueOrderBy, skipTokenNameValues[i].Name);
                 var propertyNode = (SingleValuePropertyAccessNode)orderBy.Expression;
-                MemberExpression propertyExpression = _groupJoinBuilder.GetGroupJoinPropertyExpression(source, _visitor.Parameter, propertyNode);
+                MemberExpression propertyExpression = _joinBuilder.GetJoinPropertyExpression(source, _visitor.Parameter, propertyNode);
 
                 ConstantExpression parameterExpression;
                 if (skipTokenNameValues[i].Value == null)

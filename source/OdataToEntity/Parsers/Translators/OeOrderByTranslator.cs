@@ -8,13 +8,13 @@ namespace OdataToEntity.Parsers.Translators
 {
     public static class OeOrderByTranslator
     {
-        public static Expression Build(OeGroupJoinExpressionBuilder groupJoinBuilder, Expression source, OrderByClause orderByClause)
+        public static Expression Build(OeJoinBuilder joinBuilder, Expression source, OrderByClause orderByClause)
         {
-            ParameterExpression parameterExpression = groupJoinBuilder.Visitor.Parameter;
+            ParameterExpression parameterExpression = joinBuilder.Visitor.Parameter;
             while (orderByClause != null)
             {
                 var propertyNode = (SingleValuePropertyAccessNode)orderByClause.Expression;
-                Expression keySelector = groupJoinBuilder.GetGroupJoinPropertyExpression(source, parameterExpression, propertyNode);
+                Expression keySelector = joinBuilder.GetJoinPropertyExpression(source, parameterExpression, propertyNode);
                 LambdaExpression lambda = Expression.Lambda(keySelector, parameterExpression);
 
                 MethodInfo orderByMethodInfo = GetOrderByMethodInfo(source, orderByClause.Direction, parameterExpression.Type, keySelector.Type);

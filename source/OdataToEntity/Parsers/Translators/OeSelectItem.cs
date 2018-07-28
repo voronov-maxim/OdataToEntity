@@ -73,12 +73,12 @@ namespace OdataToEntity.Parsers.Translators
                     return i;
             return -1;
         }
-        public IReadOnlyList<IEdmNavigationProperty> GetGroupJoinPath()
+        public IReadOnlyList<IEdmNavigationProperty> GetJoinPath()
         {
-            var groupJoinPaths = new List<IEdmNavigationProperty>();
+            var joinPath = new List<IEdmNavigationProperty>();
             for (OeSelectItem navigationItem = this; navigationItem.Parent != null; navigationItem = navigationItem.Parent)
-                groupJoinPaths.Insert(0, (IEdmNavigationProperty)navigationItem.EdmProperty);
-            return groupJoinPaths;
+                joinPath.Insert(0, (IEdmNavigationProperty)navigationItem.EdmProperty);
+            return joinPath;
         }
 
         public bool? CountOption { get; }
