@@ -343,7 +343,7 @@ namespace OdataToEntity.Parsers.Translators
                         source = Expression.Property(source, propertyInfo);
                         itemIndex = groupCount;
 
-                        for (;itemIndex > 7; itemIndex -= 7)
+                        for (; itemIndex > 7; itemIndex -= 7)
                         {
                             propertyInfo = source.Type.GetProperty("Rest");
                             source = Expression.Property(source, propertyInfo);

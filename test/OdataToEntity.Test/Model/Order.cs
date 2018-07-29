@@ -61,6 +61,7 @@ namespace OdataToEntity.Test.Model
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
         public ICollection<OrderItem> Items { get; set; }
+        public ICollection<ShippingAddress> ShippingAddresses { get; set; }
         public OrderStatus Status { get; set; }
 
         public override string ToString() => "Order: Id = " + Id.ToString();
@@ -78,6 +79,15 @@ namespace OdataToEntity.Test.Model
         public String Product { get; set; }
 
         public override string ToString() => "OrderItem: Id = " + Id.ToString();
+    }
+
+    public sealed class ShippingAddress
+    {
+        public String Address { get; set; }
+        [Key, Column(Order = 1)]
+        public int Id { get; set; }
+        [Key, Column(Order = 0)]
+        public int OrderId { get; set; }
     }
 
     public class ManyColumnsBase

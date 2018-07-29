@@ -27,35 +27,22 @@ namespace OdataToEntity.Writers
             private static Uri BuildNavigationNextPageLink(ODataResource entry, ExpandedNavigationSelectItem expandedNavigationSelectItem)
             {
                 var segment = (NavigationPropertySegment)expandedNavigationSelectItem.PathToNavigationProperty.LastSegment;
-                ResourceRangeVariableReferenceNode refNode = OeEdmClrHelper.CreateRangeVariableReferenceNode((IEdmEntitySet)segment.NavigationSource);
                 IEdmNavigationProperty navigationProperty = segment.NavigationProperty;
+                if (navigationProperty.IsPrincipal())
+                    navigationProperty = navigationProperty.Partner;
 
                 var keys = new List<KeyValuePair<IEdmStructuralProperty, Object>>();
-                if (navigationProperty.IsPrincipal())
-                {
-                    IEnumerator<IEdmStructuralProperty> dependentProperties = navigationProperty.Partner.DependentProperties().GetEnumerator();
-                    foreach (IEdmStructuralProperty key in navigationProperty.Partner.PrincipalProperties())
-                        foreach (ODataProperty property in entry.Properties)
-                            if (property.Name == key.Name)
-                            {
-                                dependentProperties.MoveNext();
-                                keys.Add(new KeyValuePair<IEdmStructuralProperty, Object>(dependentProperties.Current, property.Value));
-                                break;
-                            }
-                }
-                else
-                {
-                    IEnumerator<IEdmStructuralProperty> principalProperties = navigationProperty.PrincipalProperties().GetEnumerator();
-                    foreach (IEdmStructuralProperty key in navigationProperty.DependentProperties())
-                        foreach (ODataProperty property in entry.Properties)
-                            if (property.Name == key.Name)
-                            {
-                                principalProperties.MoveNext();
-                                keys.Add(new KeyValuePair<IEdmStructuralProperty, Object>(principalProperties.Current, property.Value));
-                                break;
-                            }
-                }
+                IEnumerator<IEdmStructuralProperty> dependentProperties = navigationProperty.DependentProperties().GetEnumerator();
+                foreach (IEdmStructuralProperty key in navigationProperty.PrincipalProperties())
+                    foreach (ODataProperty property in entry.Properties)
+                        if (property.Name == key.Name)
+                        {
+                            dependentProperties.MoveNext();
+                            keys.Add(new KeyValuePair<IEdmStructuralProperty, Object>(dependentProperties.Current, property.Value));
+                            break;
+                        }
 
+                ResourceRangeVariableReferenceNode refNode = OeEdmClrHelper.CreateRangeVariableReferenceNode((IEdmEntitySet)segment.NavigationSource);
                 BinaryOperatorNode filterExpression = OeGetParser.CreateFilterExpression(refNode, keys);
                 if (expandedNavigationSelectItem.FilterOption != null)
                     filterExpression = new BinaryOperatorNode(BinaryOperatorKind.And, filterExpression, expandedNavigationSelectItem.FilterOption.Expression);
