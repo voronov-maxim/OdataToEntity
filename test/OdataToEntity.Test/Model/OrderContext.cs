@@ -17,6 +17,7 @@ namespace OdataToEntity.Test.Model
         protected override void OnModelCreating(Microsoft.EntityFrameworkCore.ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Customer>().HasKey(c => new { c.Country, c.Id });
+            modelBuilder.Entity<ShippingAddress>().HasKey(s => new { s.OrderId, s.Id });
             base.OnModelCreating(modelBuilder);
         }
         public static String GenerateDatabaseName() => Guid.NewGuid().ToString();
@@ -55,5 +56,6 @@ namespace OdataToEntity.Test.Model
         public DbSet<ManyColumnsView> ManyColumnsView { get; set; }
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
+        public DbSet<ShippingAddress> ShippingAddresses { get; set; }
     }
 }

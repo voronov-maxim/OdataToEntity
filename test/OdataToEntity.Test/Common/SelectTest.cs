@@ -81,9 +81,9 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
-        [Theory(Skip = "bug ef core 2.1")]
+        [Theory]
         [InlineData(0)]
-        //[InlineData(1)] zzz
+        [InlineData(1)]
         public async Task ApplyGropuByAggregateCompute(int pageSize)
         {
             var parameters = new QueryParameters<OrderItem, Object>()
@@ -464,7 +464,7 @@ namespace OdataToEntity.Test
             var parameters = new QueryParameters<Order>()
             {
                 RequestUri = "Orders?$expand=*&$orderby=Id",
-                Expression = t => t.Include(o => o.AltCustomer).Include(o => o.Customer).Include(o => o.Items).OrderBy(o => o.Id),
+                Expression = t => t.Include(o => o.AltCustomer).Include(o => o.Customer).Include(o => o.Items).Include(o => o.ShippingAddresses).OrderBy(o => o.Id),
                 NavigationNextLink = navigationNextLink,
                 PageSize = pageSize
             };

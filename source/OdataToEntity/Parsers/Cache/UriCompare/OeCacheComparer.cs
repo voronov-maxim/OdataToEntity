@@ -78,7 +78,20 @@ namespace OdataToEntity.Cache.UriCompare
             if (node1 == null || node2 == null)
                 return false;
 
-            return EnumerableComparer.Compare(node1.Expressions, node2.Expressions, CompareAggregate);
+            return EnumerableComparer.Compare(node1.AggregateExpressions, node2.AggregateExpressions, CompareAggregate);
+        }
+        private bool CompareAggregate(AggregateExpressionBase expression1, AggregateExpressionBase expression2)
+        {
+            if (expression1.AggregateKind != expression2.AggregateKind)
+                return false;
+
+            if (expression1 is AggregateExpression aggregateExpression1 && expression2 is AggregateExpression aggregateExpression2)
+                return CompareAggregate(aggregateExpression1, aggregateExpression2);
+
+            if (expression1 is EntitySetAggregateExpression entitySetAggExpression1 && expression2 is EntitySetAggregateExpression entitySetAggExpression2)
+                return CompareAggregate(entitySetAggExpression1, entitySetAggExpression2);
+
+            throw new NotSupportedException("Unknown aggregate expression type " + expression1.GetType().Name);
         }
         private bool CompareAggregate(AggregateExpression expression1, AggregateExpression expression2)
         {
@@ -86,6 +99,13 @@ namespace OdataToEntity.Cache.UriCompare
                 expression1.Method == expression2.Method &&
                 expression1.TypeReference.IsEqual(expression2.TypeReference) &&
                 _queryNodeComparer.Compare(expression1.Expression, expression2.Expression);
+        }
+        private bool CompareAggregate(EntitySetAggregateExpression expression1, EntitySetAggregateExpression expression2)
+        {
+            return expression1.Alias == expression2.Alias &&
+                _queryNodeComparer.Compare(expression1.Expression, expression2.Expression) &&
+                EnumerableComparer.Compare(expression1.Children, expression2.Children, CompareAggregate);
+
         }
         private bool CompareApply(ApplyClause clause1, ApplyClause clause2)
         {
@@ -403,8 +423,13 @@ namespace OdataToEntity.Cache.UriCompare
                 }
                 else if (transformationNode is AggregateTransformationNode aggregateTransformationNode)
                 {
-                    foreach (AggregateExpression aggregate in aggregateTransformationNode.Expressions)
-                        hash = CombineHashCodes(hash, (int)aggregate.Method);
+                    foreach (AggregateExpressionBase aggregateBase in aggregateTransformationNode.AggregateExpressions)
+                        if (aggregateBase is AggregateExpression aggregate)
+                            hash = CombineHashCodes(hash, (int)aggregate.Method);
+                        else if (aggregateBase is EntitySetAggregateExpression entitySetAggregate)
+                            hash = CombineHashCodes(hash, entitySetAggregate.Alias.GetHashCode());
+                        else
+                            throw new NotSupportedException("Unknown aggregate expression type " + aggregateBase.GetType().Name);
                 }
                 else if (transformationNode is GroupByTransformationNode groupByTransformationNode)
                 {

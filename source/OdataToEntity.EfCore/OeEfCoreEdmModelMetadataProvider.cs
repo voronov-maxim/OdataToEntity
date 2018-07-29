@@ -110,10 +110,10 @@ namespace OdataToEntity.EfCore
         {
             foreach (IEntityType efEntityType in GetEntityTypes(propertyInfo))
             {
-                foreach (IKey key in efEntityType.GetKeys())
-                    for (int i = 0; i < key.Properties.Count; i++)
-                        if (key.Properties[i].Name == propertyInfo.Name)
-                            return i;
+                IKey key = efEntityType.FindPrimaryKey();
+                for (int i = 0; i < key.Properties.Count; i++)
+                    if (key.Properties[i].Name == propertyInfo.Name)
+                        return i;
 
                 foreach (IForeignKey fkey in efEntityType.GetForeignKeys())
                     for (int i = 0; i < fkey.Properties.Count; i++)
@@ -147,10 +147,13 @@ namespace OdataToEntity.EfCore
         public override bool IsKey(PropertyInfo propertyInfo)
         {
             foreach (IEntityType efEntityType in GetEntityTypes(propertyInfo))
-                foreach (IKey key in efEntityType.GetKeys())
-                    for (int i = 0; i < key.Properties.Count; i++)
-                        if (key.Properties[i].Name == propertyInfo.Name)
-                            return true;
+            {
+                IKey key = efEntityType.FindPrimaryKey();
+                for (int i = 0; i < key.Properties.Count; i++)
+                    if (key.Properties[i].Name == propertyInfo.Name)
+                        return true;
+            }
+
             return false;
         }
         public override bool IsNotMapped(PropertyInfo propertyInfo)

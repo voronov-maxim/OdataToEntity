@@ -129,7 +129,7 @@ namespace OdataToEntity.Parsers
                 var propertyExpression = (MemberExpression)visitor.TranslateNode(propertyNode);
                 if (propertyExpression == null)
                 {
-                    var tupleProperty = new OePropertyTranslator(source);
+                    var tupleProperty = new Translators.OePropertyTranslator(source);
                     propertyExpression = tupleProperty.Build(visitor.Parameter, propertyNode.Property);
                 }
 

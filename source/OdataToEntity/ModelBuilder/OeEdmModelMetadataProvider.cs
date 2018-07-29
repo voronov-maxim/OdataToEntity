@@ -71,7 +71,7 @@ namespace OdataToEntity.ModelBuilder
         }
         public PropertyInfo[] SortClrPropertyByOrder(PropertyInfo[] clrProperties)
         {
-            if (clrProperties.Length == 1)
+            if (clrProperties.Length < 2)
                 return clrProperties;
 
             Array.Sort(clrProperties, (x, y) => GetOrder(x).CompareTo(GetOrder(y)));

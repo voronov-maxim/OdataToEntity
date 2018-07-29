@@ -226,7 +226,7 @@ namespace OdataToEntity.Parsers
 
                     PropertyInfo property = _parameter.Type.GetProperty(propertySegment.Property.Name);
                     if (property == null)
-                        expression = new OePropertyTranslator(_source).Build(_parameter, propertySegment.Property);
+                        expression = new Translators.OePropertyTranslator(_source).Build(_parameter, propertySegment.Property);
                     else
                         expression = Expression.MakeMemberAccess(_parameter, property);
                 }

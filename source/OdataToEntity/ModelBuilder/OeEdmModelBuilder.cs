@@ -100,12 +100,16 @@ namespace OdataToEntity.ModelBuilder
                 {
                     EdmEntitySet principal = entitySets[fkeyInfo.PrincipalInfo.EdmType];
                     EdmEntitySet dependent = entitySets[fkeyInfo.DependentInfo.EdmType];
-                    dependent.AddNavigationTarget(fkeyInfo.EdmNavigationProperty, principal);
 
-                    if (fkeyInfo.EdmNavigationProperty.Partner != null)
-                        principal.AddNavigationTarget(fkeyInfo.EdmNavigationProperty.Partner, dependent);
+                    if (fkeyInfo.DependentNavigationProperty == null)
+                        principal.AddNavigationTarget(fkeyInfo.EdmNavigationProperty, dependent);
+                    else
+                    {
+                        dependent.AddNavigationTarget(fkeyInfo.EdmNavigationProperty, principal);
+                        if (fkeyInfo.EdmNavigationProperty.Partner != null)
+                            principal.AddNavigationTarget(fkeyInfo.EdmNavigationProperty.Partner, dependent);
+                    }
                 }
-
 
             foreach (OeOperationConfiguration operationConfiguration in _operationConfigurations)
             {
@@ -230,6 +234,23 @@ namespace OdataToEntity.ModelBuilder
             EdmEntityType edmPrincipal = fkeyInfo.PrincipalInfo.EdmType;
 
             EdmStructuralProperty[] dependentEdmProperties = CreateDependentEdmProperties(edmDependent, fkeyInfo.DependentStructuralProperties);
+
+            if (fkeyInfo.DependentNavigationProperty == null)
+            {
+                var edmPrincipalInfo2 = new EdmNavigationPropertyInfo()
+                {
+                    ContainsTarget = false,
+                    Name = fkeyInfo.PrincipalNavigationProperty.Name,
+                    DependentProperties = dependentEdmProperties,
+                    OnDelete = EdmOnDeleteAction.None,
+                    PrincipalProperties = edmPrincipal.DeclaredKey,
+                    Target = edmDependent,
+                    TargetMultiplicity = fkeyInfo.PrincipalMultiplicity
+                };
+                var zzz = edmPrincipal.AddUnidirectionalNavigation(edmPrincipalInfo2);
+                return zzz;
+            }
+
             var edmDependentInfo = new EdmNavigationPropertyInfo()
             {
                 ContainsTarget = false,

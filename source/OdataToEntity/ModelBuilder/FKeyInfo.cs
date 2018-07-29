@@ -24,7 +24,7 @@ namespace OdataToEntity.ModelBuilder
             _principalInfo = principalInfo;
 
             _dependentStructuralProperties = dependentStructuralProperties;
-            _dependentMultiplicity = GetEdmMultiplicity(dependentNavigationProperty.PropertyType, dependentStructuralProperties);
+            _dependentMultiplicity = GetEdmMultiplicity(dependentNavigationProperty?.PropertyType, dependentStructuralProperties);
 
             if (principalNavigationProperty == null)
                 _principalMultiplicity = EdmMultiplicity.Unknown;
@@ -49,6 +49,16 @@ namespace OdataToEntity.ModelBuilder
             PropertyInfo principalNavigationProperty = GetPrincipalNavigationProperty(metadataProvider, principalInfo, dependentInfo, dependentNavigationProperty);
             if (dependentStructuralProperties.Length == 0 && principalNavigationProperty != null)
                 return null;
+
+            if (dependentStructuralProperties.Length == 0)
+            {
+                PropertyInfo dependentProperty = principalInfo.ClrType.GetPropertyIgnoreCase(dependentInfo.ClrType.Name + "Id");
+                if (dependentProperty == null)
+                    throw new InvalidOperationException("not found dependent structural property " + dependentInfo.ClrType.Name + "Id for navigation property " + dependentNavigationProperty.Name);
+
+                principalNavigationProperty = GetPrincipalNavigationProperty(metadataProvider, dependentInfo, principalInfo, dependentNavigationProperty);
+                return new FKeyInfo(principalInfo, null, new[] { dependentProperty }, dependentInfo, dependentNavigationProperty);
+            }
 
             return new FKeyInfo(dependentInfo, dependentNavigationProperty, dependentStructuralProperties, principalInfo, principalNavigationProperty);
         }
@@ -81,7 +91,7 @@ namespace OdataToEntity.ModelBuilder
         }
         private static EdmMultiplicity GetEdmMultiplicity(Type propertyType, PropertyInfo[] dependentStructuralProperties)
         {
-            if (Parsers.OeExpressionHelper.GetCollectionItemType(propertyType) != null)
+            if (propertyType != null && Parsers.OeExpressionHelper.GetCollectionItemType(propertyType) != null)
                 return EdmMultiplicity.Many;
 
             if (dependentStructuralProperties.Length == 0)

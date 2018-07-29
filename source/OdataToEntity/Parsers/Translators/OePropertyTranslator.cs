@@ -1,19 +1,31 @@
 ﻿using Microsoft.OData.Edm;
-using OdataToEntity.ModelBuilder;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace OdataToEntity.Parsers
+namespace OdataToEntity.Parsers.Translators
 {
     public sealed class OePropertyTranslator : ExpressionVisitor
     {
-        private IEdmProperty _edmProperty;
+        private readonly struct PropertyDef
+        {
+            public PropertyDef(String namespaceName, String declaringTypeName, String propertyName)
+            {
+                NamespaceName = namespaceName;
+                DeclaringTypeName = declaringTypeName;
+                PropertyName = propertyName;
+            }
+
+            public String DeclaringTypeName { get; }
+            public String NamespaceName { get; }
+            public String PropertyName { get; }
+        }
+
         private List<Expression> _expressions;
         private PropertyInfo _foundProperty;
-        private NewExpression _newExpression;
+        private PropertyDef _propertyDef;
         private readonly Expression _source;
         private Type _tupleType;
 
@@ -22,39 +34,41 @@ namespace OdataToEntity.Parsers
             _source = source;
         }
 
+        private static bool Compare(MemberExpression propertyExpression, in PropertyDef propertyDef)
+        {
+            if (String.Compare(propertyExpression.Member.Name, propertyDef.PropertyName, StringComparison.OrdinalIgnoreCase) != 0)
+                return false;
+
+            return String.Compare(propertyExpression.Member.DeclaringType.Name, propertyDef.DeclaringTypeName, StringComparison.OrdinalIgnoreCase) == 0 &&
+                String.Compare(propertyExpression.Member.DeclaringType.Namespace, propertyDef.NamespaceName, StringComparison.OrdinalIgnoreCase) == 0;
+        }
+        public MemberExpression Build(Expression parameter, PropertyInfo propertyInfo)
+        {
+            var propertyDef = new PropertyDef(propertyInfo.DeclaringType.Namespace, propertyInfo.DeclaringType.Name, propertyInfo.Name);
+            return Build(parameter, propertyDef);
+        }
         public MemberExpression Build(Expression parameter, IEdmProperty edmProperty)
         {
-            MemberExpression propertyExpression = CreatePropertyExpression(parameter, edmProperty);
-            if (propertyExpression == null)
-            {
-                PropertyInfo property = _tupleType.GetPropertyIgnoreCase(edmProperty.Name);
-                propertyExpression = property == null ? null : Expression.Property(parameter, property);
-            }
-            return propertyExpression;
+            var schemaElement = (IEdmSchemaElement)edmProperty.DeclaringType;
+            var propertyDef = new PropertyDef(schemaElement.Namespace, schemaElement.Name, edmProperty.Name);
+            return Build(parameter, propertyDef);
         }
-        public MemberExpression CreatePropertyExpression(Expression parameter, IEdmProperty edmProperty)
+        private MemberExpression Build(Expression parameter, in PropertyDef propertyDef)
         {
-            _newExpression = null;
             _foundProperty = null;
-
             _tupleType = parameter.Type;
-            base.Visit(_source);
-            if (_newExpression == null)
-                return null;
-
-            if (_newExpression.Arguments[0].NodeType == ExpressionType.Parameter)
-            {
-                PropertyInfo property = _newExpression.Arguments[0].Type.GetPropertyIgnoreCase(edmProperty.Name);
-                if (property != null)
-                {
-                    MemberExpression item1 = Expression.Property(parameter, _newExpression.Type.GetProperty("Item1"));
-                    return Expression.Property(item1, property);
-                }
-            }
-
-            _edmProperty = edmProperty;
+            _propertyDef = propertyDef;
             _expressions = new List<Expression>() { parameter };
-            FindProperty(_newExpression.Arguments);
+
+            base.Visit(_source);
+            if (_foundProperty == null)
+            {
+                _foundProperty = GetPropertyInfo(parameter.Type, _propertyDef);
+                if (_foundProperty != null)
+                    return Expression.Property(parameter, _foundProperty);
+
+                return null;
+            }
 
             Expression propertyExpression = _expressions[0];
             for (int i = 0; i < _expressions.Count; i++)
@@ -75,62 +89,77 @@ namespace OdataToEntity.Parsers
             }
             return (MemberExpression)propertyExpression;
         }
-        private void FindProperty(ReadOnlyCollection<Expression> ctorArguments)
+        private bool FindProperty(Expression expression)
+        {
+            if (!OeExpressionHelper.IsPrimitiveType(expression.Type))
+                if (OeExpressionHelper.IsTupleType(expression.Type))
+                {
+                    var proeprtyTranslator = new OePropertyTranslator(_source);
+                    MemberExpression propertyExpression = proeprtyTranslator.Build(expression, _propertyDef);
+                    if (propertyExpression != null)
+                    {
+                        _foundProperty = (PropertyInfo)propertyExpression.Member;
+                        _expressions.AddRange(proeprtyTranslator._expressions);
+                        return true;
+                    }
+                }
+                else
+                {
+                    _foundProperty = GetPropertyInfo(expression.Type, _propertyDef);
+                    if (_foundProperty != null)
+                    {
+                        _expressions.Add(expression);
+                        return true;
+                    }
+                }
+
+            return false;
+        }
+        private bool FindProperty(ReadOnlyCollection<Expression> ctorArguments)
         {
             for (int i = 0; i < ctorArguments.Count; i++)
             {
                 if (ctorArguments[i] is MemberExpression propertyExpression)
                 {
-                    if (String.Compare(propertyExpression.Member.Name, _edmProperty.Name, StringComparison.OrdinalIgnoreCase) == 0 &&
-                        String.Compare(propertyExpression.Member.DeclaringType.FullName, _edmProperty.DeclaringType.FullTypeName(), StringComparison.OrdinalIgnoreCase) == 0)
+                    if (Compare(propertyExpression, _propertyDef))
                     {
                         _foundProperty = _expressions[_expressions.Count - 1].Type.GetProperties()[i];
-                        return;
+                        return true;
                     }
-                    else
-                    {
-                        var tupleVisitor = new OePropertyTranslator(_source);
-                        propertyExpression = tupleVisitor.CreatePropertyExpression(propertyExpression, _edmProperty);
-                        if (propertyExpression != null)
-                        {
-                            _foundProperty = (PropertyInfo)propertyExpression.Member;
-                            _expressions.AddRange(tupleVisitor._expressions);
-                            return;
-                        }
-                    }
+
+                    if (FindProperty(propertyExpression))
+                        return true;
                 }
-                else
+                else if (ctorArguments[i] is NewExpression newExpression)
                 {
-                    if (ctorArguments[i] is NewExpression newExpression)
-                    {
-                        _expressions.Add(newExpression);
-                        VisitNew(newExpression);
-                        if (_foundProperty != null)
-                            return;
-                        _expressions.RemoveAt(_expressions.Count - 1);
-                    }
+                    _expressions.Add(newExpression);
+                    if (FindProperty(newExpression.Arguments))
+                        return true;
+
+                    _expressions.RemoveAt(_expressions.Count - 1);
                 }
+                else if (ctorArguments[i] is ParameterExpression parameterExpression && FindProperty(parameterExpression))
+                    return true;
             }
+
+            return false;
+        }
+        private static PropertyInfo GetPropertyInfo(Type type, in PropertyDef propertyDef)
+        {
+            if (String.Compare(type.Name, propertyDef.DeclaringTypeName, StringComparison.OrdinalIgnoreCase) == 0 &&
+                String.Compare(type.Namespace, propertyDef.NamespaceName, StringComparison.OrdinalIgnoreCase) == 0)
+                return OeEdmClrHelper.GetPropertyIgnoreCase(type, propertyDef.PropertyName);
+
+            return null;
         }
         protected override Expression VisitNew(NewExpression node)
         {
-            if (_newExpression == null)
-            {
-                if (node.Type == _tupleType)
-                {
-                    _newExpression = node;
-                    return node;
-                }
-            }
-            else
-            {
-                if (_edmProperty != null)
-                {
-                    FindProperty(node.Arguments);
-                    if (_foundProperty != null)
-                        return node;
-                }
-            }
+            if (_foundProperty != null)
+                return node;
+
+            if (node.Type == _tupleType && FindProperty(node.Arguments))
+                return node;
+
             return base.VisitNew(node);
         }
     }

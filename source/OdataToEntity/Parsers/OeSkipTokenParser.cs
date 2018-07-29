@@ -36,7 +36,7 @@ namespace OdataToEntity.Parsers
         {
             var accessors = new List<OePropertyAccessor>();
 
-            var tupleProperty = new OePropertyTranslator(source);
+            var tupleProperty = new Translators.OePropertyTranslator(source);
             Type itemType = OeExpressionHelper.GetCollectionItemType(source.Type);
             ParameterExpression parameter = Expression.Parameter(typeof(Object));
             UnaryExpression instance = Expression.Convert(parameter, itemType);

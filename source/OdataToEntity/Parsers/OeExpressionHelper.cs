@@ -217,6 +217,17 @@ namespace OdataToEntity.Parsers
             Type type = expression.Type;
             return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>);
         }
+        public static bool IsPrimitiveType(Type clrType)
+        {
+            if (ModelBuilder.PrimitiveTypeHelper.GetPrimitiveType(clrType) != null || clrType.IsEnum)
+                return true;
+
+            Type underlyingType = Nullable.GetUnderlyingType(clrType);
+            if (underlyingType != null && (ModelBuilder.PrimitiveTypeHelper.GetPrimitiveType(underlyingType) != null || underlyingType.IsEnum))
+                return true;
+
+            return false;
+        }
         public static bool IsTupleType(Type type)
         {
             if (!type.IsGenericType)

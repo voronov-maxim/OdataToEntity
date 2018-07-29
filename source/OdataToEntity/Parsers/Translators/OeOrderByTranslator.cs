@@ -33,7 +33,7 @@ namespace OdataToEntity.Parsers
                 Expression keySelector = null;
                 if (!_isInsertedOrderByMethod)
                 {
-                    var tupleProperty = new OePropertyTranslator(source);
+                    var tupleProperty = new Translators.OePropertyTranslator(source);
                     _visitor.TuplePropertyByEdmProperty = tupleProperty.Build;
 
                     if (OeExpressionHelper.IsTupleType(_visitor.Parameter.Type))
