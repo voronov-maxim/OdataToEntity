@@ -47,11 +47,12 @@ namespace OdataToEntity.ModelBuilder
 
             PropertyInfo[] dependentStructuralProperties = GetDependentStructuralProperties(metadataProvider, dependentInfo, dependentNavigationProperty);
             PropertyInfo principalNavigationProperty = GetPrincipalNavigationProperty(metadataProvider, principalInfo, dependentInfo, dependentNavigationProperty);
-            if (dependentStructuralProperties.Length == 0 && principalNavigationProperty != null)
-                return null;
 
             if (dependentStructuralProperties.Length == 0)
             {
+                if (principalNavigationProperty != null)
+                    return null;
+
                 PropertyInfo dependentProperty = principalInfo.ClrType.GetPropertyIgnoreCase(dependentInfo.ClrType.Name + "Id");
                 if (dependentProperty == null)
                     throw new InvalidOperationException("not found dependent structural property " + dependentInfo.ClrType.Name + "Id for navigation property " + dependentNavigationProperty.Name);
