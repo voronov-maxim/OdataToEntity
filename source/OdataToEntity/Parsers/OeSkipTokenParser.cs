@@ -69,7 +69,7 @@ namespace OdataToEntity.Parsers
             else
             {
                 IEdmEntitySet entitySet = OeEdmClrHelper.GetEntitySet(edmModel, edmType);
-                ResourceRangeVariableReferenceNode source = OeGetParser.CreateRangeVariableReferenceNode(entitySet);
+                ResourceRangeVariableReferenceNode source = OeEdmClrHelper.CreateRangeVariableReferenceNode(entitySet);
                 foreach (IEdmStructuralProperty key in edmType.Key())
                     keys.Add(new SingleValuePropertyAccessNode(source, key));
             }

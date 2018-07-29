@@ -235,9 +235,10 @@ namespace OdataToEntity.ModelBuilder
 
             EdmStructuralProperty[] dependentEdmProperties = CreateDependentEdmProperties(edmDependent, fkeyInfo.DependentStructuralProperties);
 
+            EdmNavigationPropertyInfo edmPrincipalInfo;
             if (fkeyInfo.DependentNavigationProperty == null)
             {
-                var edmPrincipalInfo2 = new EdmNavigationPropertyInfo()
+                edmPrincipalInfo = new EdmNavigationPropertyInfo()
                 {
                     ContainsTarget = false,
                     Name = fkeyInfo.PrincipalNavigationProperty.Name,
@@ -247,8 +248,7 @@ namespace OdataToEntity.ModelBuilder
                     Target = edmDependent,
                     TargetMultiplicity = fkeyInfo.PrincipalMultiplicity
                 };
-                var zzz = edmPrincipal.AddUnidirectionalNavigation(edmPrincipalInfo2);
-                return zzz;
+                return edmPrincipal.AddUnidirectionalNavigation(edmPrincipalInfo);
             }
 
             var edmDependentInfo = new EdmNavigationPropertyInfo()
@@ -265,7 +265,7 @@ namespace OdataToEntity.ModelBuilder
             if (fkeyInfo.PrincipalNavigationProperty == null || fkeyInfo.PrincipalNavigationProperty == fkeyInfo.DependentNavigationProperty)
                 return edmDependent.AddUnidirectionalNavigation(edmDependentInfo);
 
-            var edmPrincipalInfo = new EdmNavigationPropertyInfo()
+            edmPrincipalInfo = new EdmNavigationPropertyInfo()
             {
                 ContainsTarget = false,
                 Name = fkeyInfo.PrincipalNavigationProperty.Name,

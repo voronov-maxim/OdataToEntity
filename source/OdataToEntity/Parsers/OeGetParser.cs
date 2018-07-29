@@ -24,7 +24,7 @@ namespace OdataToEntity
 
         private static FilterClause CreateFilterClause(IEdmEntitySet entitySet, IEnumerable<KeyValuePair<String, Object>> keys)
         {
-            ResourceRangeVariableReferenceNode refNode = CreateRangeVariableReferenceNode(entitySet);
+            ResourceRangeVariableReferenceNode refNode = OeEdmClrHelper.CreateRangeVariableReferenceNode(entitySet);
             var entityType = (IEdmEntityType)refNode.RangeVariable.TypeReference.Definition;
 
             var propertyValues = new List<KeyValuePair<IEdmStructuralProperty, Object>>();
@@ -108,12 +108,6 @@ namespace OdataToEntity
             bool isCountSegment = odataUri.Path.LastSegment is CountSegment;
             return new OeQueryContext(_edmModel, odataUri, entitySet, navigationSegments,
                 isCountSegment, pageSize, navigationNextLink, _dataAdapter.IsDatabaseNullHighestValue, metadataLevel, entitySetAdapter);
-        }
-        internal static ResourceRangeVariableReferenceNode CreateRangeVariableReferenceNode(IEdmEntitySet entitySet)
-        {
-            var entityTypeRef = (IEdmEntityTypeReference)((IEdmCollectionType)entitySet.Type).ElementType;
-            var range = new ResourceRangeVariable("", entityTypeRef, entitySet);
-            return new ResourceRangeVariableReferenceNode("", range);
         }
         public async Task ExecuteAsync(ODataUri odataUri, OeRequestHeaders headers, Stream stream, CancellationToken cancellationToken)
         {

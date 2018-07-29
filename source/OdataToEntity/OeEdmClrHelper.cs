@@ -1,5 +1,6 @@
 ﻿using Microsoft.OData;
 using Microsoft.OData.Edm;
+using Microsoft.OData.UriParser;
 using OdataToEntity.ModelBuilder;
 using System;
 using System.Collections;
@@ -53,6 +54,12 @@ namespace OdataToEntity
             }
 
             return new ODataPrimitiveValue(value);
+        }
+        public static ResourceRangeVariableReferenceNode CreateRangeVariableReferenceNode(IEdmEntitySet entitySet)
+        {
+            var entityTypeRef = (IEdmEntityTypeReference)((IEdmCollectionType)entitySet.Type).ElementType;
+            var rangeVariable = new ResourceRangeVariable("", entityTypeRef, entitySet);
+            return new ResourceRangeVariableReferenceNode("", rangeVariable);
         }
         public static Type GetClrType(this IEdmModel edmModel, IEdmType edmType)
         {

@@ -42,7 +42,7 @@ namespace OdataToEntity.Writers
                             break;
                         }
 
-                ResourceRangeVariableReferenceNode refNode = OeGetParser.CreateRangeVariableReferenceNode((IEdmEntitySet)segment.NavigationSource);
+                ResourceRangeVariableReferenceNode refNode = OeEdmClrHelper.CreateRangeVariableReferenceNode((IEdmEntitySet)segment.NavigationSource);
                 BinaryOperatorNode filterExpression = OeGetParser.CreateFilterExpression(refNode, keys);
                 if (expandedNavigationSelectItem.FilterOption != null)
                     filterExpression = new BinaryOperatorNode(BinaryOperatorKind.And, filterExpression, expandedNavigationSelectItem.FilterOption.Expression);
