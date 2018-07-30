@@ -36,11 +36,18 @@ namespace OdataToEntity.Parsers.Translators
 
         private static bool Compare(MemberExpression propertyExpression, in PropertyDef propertyDef)
         {
-            if (String.Compare(propertyExpression.Member.Name, propertyDef.PropertyName, StringComparison.OrdinalIgnoreCase) != 0)
-                return false;
+            Type declaringType = propertyExpression.Member.DeclaringType;
+            do
+            {
+                if (String.Compare(declaringType.Name, propertyDef.DeclaringTypeName, StringComparison.OrdinalIgnoreCase) == 0 &&
+                    String.Compare(declaringType.Namespace, propertyDef.NamespaceName, StringComparison.OrdinalIgnoreCase) == 0 &&
+                    String.Compare(propertyExpression.Member.Name, propertyDef.PropertyName, StringComparison.OrdinalIgnoreCase) == 0)
+                    return true;
 
-            return String.Compare(propertyExpression.Member.DeclaringType.Name, propertyDef.DeclaringTypeName, StringComparison.OrdinalIgnoreCase) == 0 &&
-                String.Compare(propertyExpression.Member.DeclaringType.Namespace, propertyDef.NamespaceName, StringComparison.OrdinalIgnoreCase) == 0;
+                declaringType = declaringType.BaseType;
+            }
+            while (declaringType != null);
+            return false;
         }
         public MemberExpression Build(Expression parameter, PropertyInfo propertyInfo)
         {
@@ -146,9 +153,15 @@ namespace OdataToEntity.Parsers.Translators
         }
         private static PropertyInfo GetPropertyInfo(Type type, in PropertyDef propertyDef)
         {
-            if (String.Compare(type.Name, propertyDef.DeclaringTypeName, StringComparison.OrdinalIgnoreCase) == 0 &&
-                String.Compare(type.Namespace, propertyDef.NamespaceName, StringComparison.OrdinalIgnoreCase) == 0)
-                return OeEdmClrHelper.GetPropertyIgnoreCase(type, propertyDef.PropertyName);
+            do
+            {
+                if (String.Compare(type.Name, propertyDef.DeclaringTypeName, StringComparison.OrdinalIgnoreCase) == 0 &&
+                    String.Compare(type.Namespace, propertyDef.NamespaceName, StringComparison.OrdinalIgnoreCase) == 0)
+                    return type.GetPropertyIgnoreCase(propertyDef.PropertyName);
+
+                type = type.BaseType;
+            }
+            while (type != null);
 
             return null;
         }

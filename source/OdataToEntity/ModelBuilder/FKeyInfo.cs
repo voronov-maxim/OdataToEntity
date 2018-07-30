@@ -1,7 +1,6 @@
 ﻿using Microsoft.OData.Edm;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 
 namespace OdataToEntity.ModelBuilder
@@ -53,7 +52,7 @@ namespace OdataToEntity.ModelBuilder
                 if (principalNavigationProperty != null)
                     return null;
 
-                PropertyInfo dependentProperty = principalInfo.ClrType.GetPropertyIgnoreCase(dependentInfo.ClrType.Name + "Id");
+                PropertyInfo dependentProperty = principalInfo.ClrType.GetPropertyIgnoreCase(dependentInfo.ClrType.Name + "id");
                 if (dependentProperty == null)
                     throw new InvalidOperationException("not found dependent structural property " + dependentInfo.ClrType.Name + "Id for navigation property " + dependentNavigationProperty.Name);
 
@@ -80,7 +79,7 @@ namespace OdataToEntity.ModelBuilder
 
                 if (dependentProperties.Count == 0)
                 {
-                    PropertyInfo clrProperty = dependentInfo.ClrType.GetPropertyIgnoreCase(dependentProperty.Name + "Id");
+                    PropertyInfo clrProperty = dependentInfo.ClrType.GetPropertyIgnoreCase(dependentProperty.Name + "id");
                     if (clrProperty != null)
                         dependentProperties.Add(clrProperty);
                 }
