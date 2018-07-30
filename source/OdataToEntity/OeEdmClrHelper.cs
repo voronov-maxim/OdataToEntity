@@ -135,6 +135,21 @@ namespace OdataToEntity
         {
             return declaringType.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase);
         }
+        public static PropertyInfo GetPropertyIgnoreCase(this Type declaringType, IEdmProperty edmProperty)
+        {
+            var schemaElement = (IEdmSchemaElement)edmProperty.DeclaringType;
+            do
+            {
+                if (String.Compare(declaringType.Name, schemaElement.Name, StringComparison.OrdinalIgnoreCase) == 0 &&
+                    String.Compare(declaringType.Namespace, schemaElement.Namespace, StringComparison.OrdinalIgnoreCase) == 0)
+                    return declaringType.GetPropertyIgnoreCase(edmProperty.Name);
+
+                declaringType = declaringType.BaseType;
+            }
+            while (declaringType != null);
+
+            return null;
+        }
         public static Object GetValue(IEdmModel edmModel, ODataEnumValue odataValue)
         {
             IEdmSchemaType schemaType = edmModel.FindType(odataValue.TypeName);

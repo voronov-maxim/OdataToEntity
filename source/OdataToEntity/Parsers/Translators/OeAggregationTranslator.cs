@@ -125,19 +125,24 @@ namespace OdataToEntity.Parsers.Translators
             }
 
             var visitor = CreateVisitor(lambdaParameter);
-            foreach (AggregateExpression aggExpression in transformation.Expressions)
+            foreach (AggregateExpressionBase aggExpressionBase in transformation.AggregateExpressions)
             {
-                LambdaExpression aggLambda = null;
-                if (aggExpression.Expression.Kind != QueryNodeKind.Count)
+                if (aggExpressionBase is AggregateExpression aggExpression)
                 {
-                    Expression e = visitor.TranslateNode(aggExpression.Expression);
-                    aggLambda = Expression.Lambda(e, lambdaParameter);
+                    LambdaExpression aggLambda = null;
+                    if (aggExpression.Expression.Kind != QueryNodeKind.Count)
+                    {
+                        Expression e = visitor.TranslateNode(aggExpression.Expression);
+                        aggLambda = Expression.Lambda(e, lambdaParameter);
+                    }
+
+                    MethodCallExpression aggCallExpression = AggCallExpression(aggExpression.Method, sourceParameter, aggLambda);
+                    expressions.Add(aggCallExpression);
+
+                    _aggProperties.Add(CreateEdmProperty(visitor.EdmModel, aggCallExpression.Type, aggExpression.Alias, false));
                 }
-
-                MethodCallExpression aggCallExpression = AggCallExpression(aggExpression.Method, sourceParameter, aggLambda);
-                expressions.Add(aggCallExpression);
-
-                _aggProperties.Add(CreateEdmProperty(visitor.EdmModel, aggCallExpression.Type, aggExpression.Alias, false));
+                else
+                    throw new NotSupportedException("Unknown aggregate expression type " + aggExpressionBase.GetType().Name);
             }
 
             NewExpression newExpression = OeExpressionHelper.CreateTupleExpression(expressions);

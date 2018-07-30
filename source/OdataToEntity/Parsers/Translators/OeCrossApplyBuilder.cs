@@ -57,8 +57,8 @@ namespace OdataToEntity.Parsers.Translators
                     IEdmStructuralProperty sourceKeyEdmProperty = sourceEnumerator.Current;
                     IEdmStructuralProperty subqueryKeyEdmProperty = subqueryEnumerator.Current;
 
-                    PropertyInfo sourceKeyClrProperty = OeEdmClrHelper.GetPropertyIgnoreCase(sourceParameter.Type, sourceKeyEdmProperty.Name);
-                    PropertyInfo subqueryKeyClrProperty = OeEdmClrHelper.GetPropertyIgnoreCase(subqueryParameter.Type, subqueryKeyEdmProperty.Name);
+                    PropertyInfo sourceKeyClrProperty = sourceParameter.Type.GetPropertyIgnoreCase(sourceKeyEdmProperty);
+                    PropertyInfo subqueryKeyClrProperty = subqueryParameter.Type.GetPropertyIgnoreCase(subqueryKeyEdmProperty);
 
                     Expression sourceKeyExpression = Expression.Property(sourceParameter, sourceKeyClrProperty);
                     Expression subqueryKeyExpression = Expression.Property(subqueryParameter, subqueryKeyClrProperty);

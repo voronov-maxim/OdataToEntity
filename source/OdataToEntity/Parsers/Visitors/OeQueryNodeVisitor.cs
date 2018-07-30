@@ -70,7 +70,7 @@ namespace OdataToEntity.Parsers
         private Expression GetPropertyExpression(SingleValuePropertyAccessNode nodeIn)
         {
             Expression e = TranslateNode(nodeIn.Source);
-            PropertyInfo property = OeEdmClrHelper.GetPropertyIgnoreCase(e.Type, nodeIn.Property.Name);
+            PropertyInfo property = OeEdmClrHelper.GetPropertyIgnoreCase(e.Type, nodeIn.Property);
             if (property == null)
             {
                 if (!OeExpressionHelper.IsTupleType(e.Type))

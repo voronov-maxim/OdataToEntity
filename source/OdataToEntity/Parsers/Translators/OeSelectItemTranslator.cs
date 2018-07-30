@@ -47,7 +47,7 @@ namespace OdataToEntity.Parsers.Translators
         private Expression GetInnerSource(OeSelectItem navigationItem, ExpandedNavigationSelectItem item)
         {
             Type clrEntityType =  OeEdmClrHelper.GetClrType(_visitor.EdmModel, navigationItem.EdmProperty.DeclaringType);
-            PropertyInfo navigationClrProperty = OeEdmClrHelper.GetPropertyIgnoreCase(clrEntityType, navigationItem.EdmProperty.Name);
+            PropertyInfo navigationClrProperty = OeEdmClrHelper.GetPropertyIgnoreCase(clrEntityType, navigationItem.EdmProperty);
 
             Type itemType = OeExpressionHelper.GetCollectionItemType(navigationClrProperty.PropertyType);
             if (itemType == null)
@@ -68,19 +68,19 @@ namespace OdataToEntity.Parsers.Translators
         }
         public override OeSelectItem Translate(ExpandedNavigationSelectItem item)
         {
-            var segment = (NavigationPropertySegment)item.PathToNavigationProperty.LastSegment;
-            if (_navigationNextLink && segment.NavigationProperty.Type is IEdmCollectionTypeReference)
+            if (_navigationNextLink && Cache.UriCompare.OeComparerExtension.GetNavigationNextLink(item))
                 return null;
 
             Type itemType;
-            OeSelectItem navigationItem = _navigationItem.FindChildrenNavigationItem(segment.NavigationProperty);
+            IEdmNavigationProperty navigationProperty = (((NavigationPropertySegment)item.PathToNavigationProperty.LastSegment).NavigationProperty);
+            OeSelectItem navigationItem = _navigationItem.FindChildrenNavigationItem(navigationProperty);
             if (navigationItem == null)
             {
                 navigationItem = CreateNavigationItem(item);
                 _navigationItem.AddNavigationItem(navigationItem);
 
                 Expression innerSource = GetInnerSource(navigationItem, item);
-                _source = _joinBuilder.Build(_source, innerSource, _navigationItem.GetJoinPath(), segment.NavigationProperty);
+                _source = _joinBuilder.Build(_source, innerSource, _navigationItem.GetJoinPath(), navigationProperty);
 
                 itemType = OeExpressionHelper.GetCollectionItemType(innerSource.Type);
             }

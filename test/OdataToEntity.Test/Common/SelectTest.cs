@@ -316,8 +316,8 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<Customer, Customer>()
             {
-                RequestUri = "Customers?$expand=AltOrders($expand=Items),Orders($expand=Items)&$orderby=Country,Id",
-                Expression = t => t.Include(c => c.AltOrders).Include(c => c.Orders).ThenInclude(o => o.Items.OrderBy(i => i.Id)).OrderBy(c => c.Country).ThenBy(c => c.Id),
+                RequestUri = "Customers?$expand=AltOrders($expand=Items,ShippingAddresses),Orders($expand=Items,ShippingAddresses)&$orderby=Country,Id",
+                Expression = t => t.Include(c => c.AltOrders).Include(c => c.Orders).ThenInclude(o => o.Items.OrderBy(i => i.Id)).Include(z => z.Orders).ThenInclude(z => z.ShippingAddresses).OrderBy(c => c.Country).ThenBy(c => c.Id),
                 NavigationNextLink = navigationNextLink,
                 PageSize = pageSize
             };
@@ -468,7 +468,7 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
-        [Theory(Skip = "beta")]
+        [Theory]
         [InlineData(0, false)]
         [InlineData(1, false)]
         [InlineData(0, true)]

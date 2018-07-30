@@ -251,7 +251,7 @@ namespace OdataToEntity.Parsers.Translators
             for (int i = 0; i < _navigationItem.SelectItems.Count; i++)
             {
                 IEdmProperty edmProperty = _navigationItem.SelectItems[i].EdmProperty;
-                PropertyInfo clrProperty = OeEdmClrHelper.GetPropertyIgnoreCase(_visitor.Parameter.Type, edmProperty.Name);
+                PropertyInfo clrProperty = OeEdmClrHelper.GetPropertyIgnoreCase(_visitor.Parameter.Type, edmProperty);
                 expressions.Add(Expression.MakeMemberAccess(_visitor.Parameter, clrProperty));
             }
             NewExpression newTupleExpression = OeExpressionHelper.CreateTupleExpression(expressions);
@@ -298,7 +298,7 @@ namespace OdataToEntity.Parsers.Translators
                         accessorExpression = OeExpressionHelper.GetPropertyExpressions(typedAccessorParameter)[i];
                     else
                     {
-                        PropertyInfo clrProperty = clrEntityType.GetPropertyIgnoreCase(selectItems[i].EdmProperty.Name);
+                        PropertyInfo clrProperty = clrEntityType.GetPropertyIgnoreCase(selectItems[i].EdmProperty);
                         if (clrProperty == null)
                         {
                             accessorExpression = new OePropertyTranslator(source).Build(typedAccessorParameter, selectItems[i].EdmProperty);
@@ -355,7 +355,7 @@ namespace OdataToEntity.Parsers.Translators
                             properties[j] = new ReplaceParameterVisitor(joins[i]).Visit(computeProperty.Expression);
                         else
                         {
-                            PropertyInfo property = OeEdmClrHelper.GetPropertyIgnoreCase(joins[i].Type, navigationItems[i].SelectItems[j].EdmProperty.Name);
+                            PropertyInfo property = OeEdmClrHelper.GetPropertyIgnoreCase(joins[i].Type, navigationItems[i].SelectItems[j].EdmProperty);
                             properties[j] = Expression.Property(joins[i], property);
                         }
                     Expression newTupleExpression = OeExpressionHelper.CreateTupleExpression(properties);

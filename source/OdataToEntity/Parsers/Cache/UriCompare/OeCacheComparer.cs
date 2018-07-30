@@ -155,6 +155,7 @@ namespace OdataToEntity.Cache.UriCompare
             OeQueryNodeComparer queryNodeComparer = navigationNextLink ? new OeQueryNodeComparer(default) : _queryNodeComparer;
             if (!queryNodeComparer.Compare(clause1.RangeVariable, clause2.RangeVariable))
                 return false;
+
             return queryNodeComparer.Compare(clause1.Expression, clause2.Expression);
         }
         private bool CompareGroupBy(GroupByTransformationNode transformation1, GroupByTransformationNode transformation2)
@@ -264,17 +265,18 @@ namespace OdataToEntity.Cache.UriCompare
                 if (expand1.NavigationSource != expand2.NavigationSource)
                     return false;
 
-                if (!CompareFilter(expand1.FilterOption, expand2.FilterOption, _navigationNextLink))
+                bool navigationNextLink = _navigationNextLink && expand1.GetNavigationNextLink();
+                if (!CompareFilter(expand1.FilterOption, expand2.FilterOption, navigationNextLink))
                     return false;
 
-                if (!CompareOrderBy(expand1.OrderByOption, expand2.OrderByOption, _navigationNextLink))
+                if (!CompareOrderBy(expand1.OrderByOption, expand2.OrderByOption, navigationNextLink))
                     return false;
 
                 if (!ODataPathComparer.Compare(expand1.PathToNavigationProperty, expand2.PathToNavigationProperty))
                     return false;
 
                 path = new ODataPath(path.Union(expand2.PathToNavigationProperty));
-                if (_navigationNextLink)
+                if (navigationNextLink)
                 {
                     if (expand1.SkipOption == null || expand2.SkipOption == null)
                         if (expand1.SkipOption != expand2.SkipOption)
@@ -284,7 +286,8 @@ namespace OdataToEntity.Cache.UriCompare
                         if (expand1.TopOption != expand2.TopOption)
                             return false;
 
-                    return CompareSelectAndExpand(expand1.SelectAndExpand, expand2.SelectAndExpand, path);
+                    var dummy = new Dictionary<ConstantNode, OeQueryCacheDbParameterDefinition>();
+                    return new OeCacheComparer(dummy, true).CompareSelectAndExpand(expand1.SelectAndExpand, expand2.SelectAndExpand, path);
                 }
 
                 return CompareSkip(expand1.SkipOption, expand2.SkipOption, path) &&
