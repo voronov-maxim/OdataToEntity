@@ -118,6 +118,7 @@ namespace OdataToEntity.Writers
                     ODataResource entry = CreateEntry(entryFactory, entryFactory.GetValue(value, out _));
                     _writer.WriteStart(entry);
 
+                    _firstCollectionEntryFactory = null;
                     foreach (OeEntryFactory navigationLink in entryFactory.NavigationLinks)
                         await WriteNavigationLink(dbEnumerator.CreateChild(navigationLink), navigationLink);
 
