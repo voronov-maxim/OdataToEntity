@@ -161,7 +161,7 @@ namespace OdataToEntity.Parsers.Translators
 
                 type = type.BaseType;
             }
-            while (type!= null);
+            while (type != null);
 
             return null;
         }
