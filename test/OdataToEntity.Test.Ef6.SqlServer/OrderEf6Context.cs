@@ -18,6 +18,13 @@ namespace OdataToEntity.Test.Ef6.SqlServer
             base.Configuration.LazyLoadingEnabled = false;
             base.Configuration.ProxyCreationEnabled = false;
             base.Configuration.UseDatabaseNullSemantics = useRelationalNulls;
+            base.Configuration.ValidateOnSaveEnabled = false;
+        }
+
+        protected override void OnModelCreating(DbModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Order>().HasMany(p => p.ShippingAddresses).WithRequired().HasForeignKey(s => s.OrderId);
+            base.OnModelCreating(modelBuilder);
         }
 
         public DbSet<Category> Categories { get; set; }
@@ -26,6 +33,7 @@ namespace OdataToEntity.Test.Ef6.SqlServer
         public DbSet<ManyColumnsView> ManyColumnsView { get; set; }
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
+        public DbSet<ShippingAddress> ShippingAddresses { get; set; }
 
         public static String GenerateDatabaseName() => "dummy";
         [Description("dbo.GetOrders")]

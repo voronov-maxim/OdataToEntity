@@ -153,6 +153,7 @@ namespace OdataToEntity.Ef6
             dbContext.Configuration.LazyLoadingEnabled = false;
             dbContext.Configuration.AutoDetectChangesEnabled = false;
             dbContext.Configuration.ProxyCreationEnabled = false;
+            dbContext.Configuration.ValidateOnSaveEnabled = false;
             return dbContext;
         }
         private static Db.OeEntitySetAdapterCollection CreateEntitySetAdapters()

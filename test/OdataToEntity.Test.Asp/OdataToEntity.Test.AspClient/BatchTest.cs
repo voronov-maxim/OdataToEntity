@@ -43,6 +43,7 @@ namespace OdataToEntity.Test.AspClient
             Assert.Equal(4, (await container.Customers.ToListAsync()).Count);
             Assert.Equal(3, (await container.Orders.ToListAsync()).Count);
             Assert.Equal(7, (await container.OrderItems.ToListAsync()).Count);
+            Assert.Equal(5, (await container.ShippingAddresses.ToListAsync()).Count);
 
             var category = await container.Categories.Where(t => t.Name == "jackets").SingleAsync();
             Assert.Equal("clothes", (await container.Categories.Where(t => t.Id == category.ParentId).SingleAsync()).Name);
@@ -229,6 +230,37 @@ namespace OdataToEntity.Test.AspClient
                 Product = "{ null }.Sum() == 0"
             };
 
+            var shippingAddress11 = new ShippingAddress()
+            {
+                Address = "Moscow 1",
+                Id = 1,
+                OrderId = -1
+            };
+            var shippingAddress12 = new ShippingAddress()
+            {
+                Address = "Moscow 2",
+                Id = 2,
+                OrderId = -1
+            };
+            var shippingAddress21 = new ShippingAddress()
+            {
+                Address = "London 1",
+                Id = 1,
+                OrderId = -2
+            };
+            var shippingAddress22 = new ShippingAddress()
+            {
+                Address = "London 2",
+                Id = 2,
+                OrderId = -2
+            };
+            var shippingAddress23 = new ShippingAddress()
+            {
+                Address = "London 3",
+                Id = 3,
+                OrderId = -2
+            };
+
             var manyColumns1 = new ManyColumns()
             {
                 Column01 = 1,
@@ -309,9 +341,11 @@ namespace OdataToEntity.Test.AspClient
             container.AddToCustomers(customer2);
             container.AddToCustomers(customer3);
             container.AddToCustomers(customer4);
+
             container.AddToOrders(order1);
             container.AddToOrders(order2);
             container.AddToOrders(order3);
+
             container.AddToOrderItems(orderItem11);
             container.AddToOrderItems(orderItem12);
             container.AddToOrderItems(orderItem13);
@@ -319,6 +353,12 @@ namespace OdataToEntity.Test.AspClient
             container.AddToOrderItems(orderItem22);
             container.AddToOrderItems(orderItem31);
             container.AddToOrderItems(orderItem32);
+
+            container.AddToShippingAddresses(shippingAddress11);
+            container.AddToShippingAddresses(shippingAddress12);
+            container.AddToShippingAddresses(shippingAddress21);
+            container.AddToShippingAddresses(shippingAddress22);
+            container.AddToShippingAddresses(shippingAddress23);
 
             container.AddToManyColumns(manyColumns1);
             container.AddToManyColumns(manyColumns2);
@@ -339,6 +379,7 @@ namespace OdataToEntity.Test.AspClient
             Assert.Equal(4, (await container.Customers.ToListAsync()).Count);
             Assert.Equal(2, (await container.Orders.ToListAsync()).Count);
             Assert.Equal(3, (await container.OrderItems.ToListAsync()).Count);
+            Assert.Equal(2, (await container.ShippingAddresses.ToListAsync()).Count);
 
             var order1 = await container.Orders.Expand(t => t.Items).Where(t => t.Name == "Order 1").SingleAsync();
             Assert.Equal("Product order 1 item 3", order1.Items.Single().Product);
@@ -372,6 +413,18 @@ namespace OdataToEntity.Test.AspClient
             var orderItem5 = new OrderItem() { Id = 5 };
             container.AttachTo("OrderItems", orderItem5);
             container.DeleteObject(orderItem5);
+
+            var shippingAddress21 = new ShippingAddress() { OrderId = 2, Id = 1 };
+            container.AttachTo("ShippingAddresses", shippingAddress21);
+            container.DeleteObject(shippingAddress21);
+
+            var shippingAddress22 = new ShippingAddress() { OrderId = 2, Id = 2 };
+            container.AttachTo("ShippingAddresses", shippingAddress22);
+            container.DeleteObject(shippingAddress22);
+
+            var shippingAddress23 = new ShippingAddress() { OrderId = 2, Id = 3 };
+            container.AttachTo("ShippingAddresses", shippingAddress23);
+            container.DeleteObject(shippingAddress23);
 
             var order2 = new Order() { Id = 2 };
             container.AttachTo("Orders", order2);

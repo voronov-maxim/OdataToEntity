@@ -44,6 +44,8 @@ namespace OdataToEntity.Test
             {
                 if (value is Decimal d)
                     value = Math.Round(d, 2);
+                else if (value is IReadOnlyCollection<Object> collection && collection.Count == 0)
+                    value = null;
                 serializer.Serialize(writer, value);
             }
         }

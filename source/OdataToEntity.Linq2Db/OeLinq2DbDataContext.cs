@@ -63,11 +63,15 @@ namespace OdataToEntity.Linq2Db
                     }
             return orderedTypes;
         }
-        private static List<PropertyInfo> GetDependentProperties(Type clrType, IEdmNavigationProperty navigationPropery)
+        private static List<PropertyInfo> GetDependentProperties(Type clrType, IEdmNavigationProperty navigationProperty)
         {
-            var clrProperties = new List<PropertyInfo>(1);
-            foreach (IEdmStructuralProperty edmProperty in navigationPropery.Partner.DependentProperties())
-                clrProperties.Add(clrType.GetProperty(edmProperty.Name));
+            var clrProperties = new List<PropertyInfo>();
+            if (navigationProperty.Partner == null)
+                foreach (EdmReferentialConstraintPropertyPair constraintPropertyPair in navigationProperty.ReferentialConstraint.PropertyPairs)
+                    clrProperties.Add(clrType.GetProperty(constraintPropertyPair.DependentProperty.Name));
+            else
+                foreach (IEdmStructuralProperty edmProperty in navigationProperty.Partner.DependentProperties())
+                    clrProperties.Add(clrType.GetProperty(edmProperty.Name));
             return clrProperties;
         }
         public OeLinq2DbTable<T> GetTable<T>() where T : class
@@ -89,22 +93,23 @@ namespace OdataToEntity.Linq2Db
         private static bool IsDependent(ClrTypeEdmSet clrTypeEdmSet, List<ClrTypeEdmSet> clrTypeEdmSetList, out PropertyInfo selfRefProperty)
         {
             selfRefProperty = null;
-
             foreach (IEdmNavigationPropertyBinding navigationBinding in clrTypeEdmSet.EdmEntitySet.NavigationPropertyBindings)
             {
-                if (!navigationBinding.NavigationProperty.IsPrincipal())
+                if (navigationBinding.NavigationProperty.IsPrincipal() || navigationBinding.NavigationProperty.Partner == null)
+                {
+                    foreach (ClrTypeEdmSet clrTypeEdmSet2 in clrTypeEdmSetList)
+                        if (clrTypeEdmSet2.EdmEntitySet == navigationBinding.Target && clrTypeEdmSet.EdmEntitySet != navigationBinding.Target)
+                            return false;
+                }
+                else
                 {
                     if (clrTypeEdmSet.EdmEntitySet == navigationBinding.Target)
                     {
                         IEdmStructuralProperty edmSelfRefProperty = navigationBinding.NavigationProperty.DependentProperties().Single();
                         selfRefProperty = clrTypeEdmSet.ClrType.GetProperty(edmSelfRefProperty.Name);
                     }
-                    continue;
                 }
 
-                foreach (ClrTypeEdmSet clrTypeEdmSet2 in clrTypeEdmSetList)
-                    if (clrTypeEdmSet2.EdmEntitySet == navigationBinding.Target && clrTypeEdmSet.EdmEntitySet != navigationBinding.Target)
-                        return false;
             }
             return true;
         }
@@ -137,7 +142,7 @@ namespace OdataToEntity.Linq2Db
                 return;
 
             foreach (IEdmNavigationPropertyBinding navigationBinding in clrTypeEdmSetList[lastIndex].EdmEntitySet.NavigationPropertyBindings)
-                if (navigationBinding.NavigationProperty.IsPrincipal())
+                if (navigationBinding.NavigationProperty.IsPrincipal() || navigationBinding.NavigationProperty.Partner == null)
                     for (int j = 0; j <= lastIndex; j++)
                         if (clrTypeEdmSetList[j].EdmEntitySet == navigationBinding.Target)
                         {
