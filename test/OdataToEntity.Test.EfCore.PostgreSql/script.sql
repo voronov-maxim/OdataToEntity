@@ -6,6 +6,7 @@ drop function if exists dbo."ScalarFunctionWithParameters"(id integer, name char
 drop function if exists dbo."TableFunction"();
 drop function if exists dbo."TableFunctionWithParameters"(id integer, name character varying(256), status integer);
 
+drop table if exists dbo."ShippingAddresses";
 drop table if exists dbo."OrderItems";
 drop table if exists dbo."Orders";
 drop table if exists dbo."Customers";
@@ -70,6 +71,14 @@ create table dbo."OrderItems"
     constraint "FK_OrderItem_Order" foreign key ("OrderId") references dbo."Orders"("Id")
 );
 
+create table dbo."ShippingAddresses"
+(
+	"OrderId" integer not null,
+	"Id" integer not null,
+	"Address" character varying(256) not null,
+	constraint "PK_ShippingAddresses" primary key ("OrderId", "Id")
+);
+
 create table dbo."ManyColumns"
 (
     "Column01" integer not null,
@@ -108,6 +117,7 @@ create table dbo."ManyColumns"
 create function dbo."ResetDb"()
     returns void
 as $$
+    delete from dbo."ShippingAddresses";
     delete from dbo."OrderItems";
     delete from dbo."Orders";
     delete from dbo."Customers";

@@ -285,8 +285,8 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<Order, Object>()
             {
-                RequestUri = "Orders?$expand=AltCustomer,Customer,Items&$select=AltCustomerCountry,AltCustomerId,CustomerCountry,CustomerId,Date,Id,Name,Status&$orderby=Id",
-                Expression = t => t.Select(o => new { o.AltCustomer, o.Customer, o.Items, o.AltCustomerCountry, o.AltCustomerId, o.CustomerCountry, o.CustomerId, o.Date, o.Id, o.Name, o.Status }).OrderBy(o => o.Id),
+                RequestUri = "Orders?$expand=AltCustomer,Customer,Items,ShippingAddresses&$select=AltCustomerCountry,AltCustomerId,CustomerCountry,CustomerId,Date,Id,Name,Status&$orderby=Id",
+                Expression = t => t.Select(o => new { o.AltCustomer, o.Customer, o.Items, o.AltCustomerCountry, o.AltCustomerId, o.CustomerCountry, o.CustomerId, o.Date, o.Id, o.Name, o.ShippingAddresses, o.Status }).OrderBy(o => o.Id),
                 NavigationNextLink = navigationNextLink,
                 PageSize = pageSize
             };
@@ -1167,8 +1167,8 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<Order, Object>()
             {
-                RequestUri = "Orders?$select=AltCustomer,AltCustomerCountry,AltCustomerId,Customer,CustomerCountry,CustomerId,Date,Id,Items,Name,Status&$orderby=Id",
-                Expression = t => t.Select(o => new { o.AltCustomer, o.AltCustomerCountry, o.AltCustomerId, o.Customer, o.CustomerCountry, o.CustomerId, o.Date, o.Id, o.Items, o.Name, o.Status }).OrderBy(o => o.Id),
+                RequestUri = "Orders?$select=AltCustomer,AltCustomerCountry,AltCustomerId,Customer,CustomerCountry,CustomerId,Date,Id,Items,Name,ShippingAddresses,Status&$orderby=Id",
+                Expression = t => t.Select(o => new { o.AltCustomer, o.AltCustomerCountry, o.AltCustomerId, o.Customer, o.CustomerCountry, o.CustomerId, o.Date, o.Id, o.Items, o.Name, o.ShippingAddresses, o.Status }).OrderBy(o => o.Id),
                 PageSize = pageSize
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);

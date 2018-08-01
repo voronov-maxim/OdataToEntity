@@ -1,6 +1,6 @@
 ﻿<Project>
   <PropertyGroup>
-    <AspNetCoreVersion>2.1.1</AspNetCoreVersion>
+    <AspNetCoreVersion>2.1.2</AspNetCoreVersion>
     <AspNetCoreMvcVersion>2.1.1</AspNetCoreMvcVersion>
     <CoreFxVersion>4.5.0</CoreFxVersion>
     <CSharpVersion>7.2</CSharpVersion>
@@ -12,7 +12,7 @@
     <NetCoreAppVersion>netcoreapp2.1</NetCoreAppVersion>
     <ODataLibVersion>7.5.0</ODataLibVersion>
     <OdataToEntityVersion>1.6.2</OdataToEntityVersion>
-    <SystemInteractiveAsyncVersion>3.1.1</SystemInteractiveAsyncVersion>
+    <SystemInteractiveAsyncVersion>3.2.0</SystemInteractiveAsyncVersion>
     <TestSdkVersion>15.8.0</TestSdkVersion>
     <Version>$(OdataToEntityVersion)</Version>
     <XunitVersion>2.4.0</XunitVersion>

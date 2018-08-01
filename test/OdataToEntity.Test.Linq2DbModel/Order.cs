@@ -25,11 +25,12 @@ namespace OdataToEntity.Test.Model
 	/// </summary>
 	public partial class OdataToEntityDB : LinqToDB.Data.DataConnection, IOeLinq2DbDataContext
     {
-        public ITable<Category>    Categories  { get { return this.GetTable<Category>(); } }
-        public ITable<Customer>    Customers   { get { return this.GetTable<Customer>(); } }
-        public ITable<ManyColumns> ManyColumns { get { return this.GetTable<ManyColumns>(); } }
-        public ITable<Order>       Orders      { get { return this.GetTable<Order>(); } }
-		public ITable<OrderItem>   OrderItems  { get { return this.GetTable<OrderItem>(); } }
+        public ITable<Category>        Categories        { get { return this.GetTable<Category>(); } }
+        public ITable<Customer>        Customers         { get { return this.GetTable<Customer>(); } }
+        public ITable<ManyColumns>     ManyColumns       { get { return this.GetTable<ManyColumns>(); } }
+        public ITable<Order>           Orders            { get { return this.GetTable<Order>(); } }
+		public ITable<OrderItem>       OrderItems        { get { return this.GetTable<OrderItem>(); } }
+        public ITable<ShippingAddress> ShippingAddresses { get { return this.GetTable<ShippingAddress>(); } }
 
         OeLinq2DbDataContext IOeLinq2DbDataContext.DataContext
         {
@@ -219,17 +220,23 @@ namespace OdataToEntity.Test.Model
 		[Association(ThisKey="Id", OtherKey="OrderId", CanBeNull=true, IsBackReference=true)]
 		public IEnumerable<OrderItem> Items { get; set; }
 
-		#endregion
-	}
+        /// <summary>
+        /// FK_ShippingAddresses_Order_BackReference
+        /// </summary>
+        [Association(ThisKey = "Id", OtherKey = "OrderId", CanBeNull = true, IsBackReference = true)]
+        public IEnumerable<ShippingAddress> ShippingAddresses { get; set; }
+
+        #endregion
+    }
 
     [Table(Schema="dbo", Name="OrderItems")]
 	public partial class OrderItem
 	{
-		[Column,        Nullable] public int?     Count   { get; set; } // int
-		[PrimaryKey, Identity   ] public int      Id      { get; set; } // int
-		[Column,     NotNull    ] public int      OrderId { get; set; } // int
-		[Column,        Nullable] public decimal? Price   { get; set; } // decimal(18, 0)
-		[Column,     NotNull    ] public string   Product { get; set; } // varchar(256)
+		[Column,     Nullable ] public int?     Count   { get; set; } // int
+		[PrimaryKey, Identity ] public int      Id      { get; set; } // int
+		[Column,     NotNull  ] public int      OrderId { get; set; } // int
+		[Column,     Nullable ] public decimal? Price   { get; set; } // decimal(18, 0)
+		[Column,     NotNull  ] public string   Product { get; set; } // varchar(256)
 
 		#region Associations
 
@@ -242,7 +249,16 @@ namespace OdataToEntity.Test.Model
 		#endregion
 	}
 
-	public static partial class TableExtensions
+    [Table(Schema = "dbo", Name = "ShippingAddresses")]
+    public sealed class ShippingAddress
+    {
+        [Column, NotNull              ] public string Address { get; set; } // varchar(256)
+        [Column, PrimaryKey(Order = 1)] public int    Id      { get; set; } // int
+        [Column, PrimaryKey(Order = 0)] public int    OrderId { get; set; } // int
+    }
+
+
+    public static partial class TableExtensions
 	{
 		public static Customer Find(this ITable<Customer> table, int Id)
 		{
