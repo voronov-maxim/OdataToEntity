@@ -58,9 +58,10 @@ namespace OdataToEntity.Test
 
         public static void Compare(IList fromDb, IList fromOe, IReadOnlyList<IncludeVisitor.Include> includes)
         {
+            var contractResolver = new TestContractResolver(includes);
             var settings = new JsonSerializerSettings()
             {
-                ContractResolver = new TestContractResolver(includes),
+                ContractResolver = contractResolver,
                 DateFormatString = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'ffffff",
                 DateTimeZoneHandling = DateTimeZoneHandling.Utc,
                 Formatting = Newtonsoft.Json.Formatting.Indented,
@@ -68,7 +69,7 @@ namespace OdataToEntity.Test
                 NullValueHandling = NullValueHandling.Ignore
             };
             String jsonDb = JsonConvert.SerializeObject(fromDb, settings);
-            //settings.ContractResolver = null;
+            contractResolver.DisableWhereOrder = true;
             String jsonOe = JsonConvert.SerializeObject(fromOe, settings);
 
             Assert.Equal(jsonDb, jsonOe);

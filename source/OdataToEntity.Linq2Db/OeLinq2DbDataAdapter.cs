@@ -118,7 +118,7 @@ namespace OdataToEntity.Linq2Db
         }
         public override Object CreateDataContext()
         {
-            return Db.FastActivator.CreateInstance<T>();
+            return Infrastructure.FastActivator.CreateInstance<T>();
         }
         private static Db.OeEntitySetAdapterCollection CreateEntitySetAdapters()
         {
@@ -155,7 +155,7 @@ namespace OdataToEntity.Linq2Db
             else
             {
                 expression = queryContext.CreateExpression(new OeConstantToVariableVisitor());
-                expression = OeQueryContext.TranslateSource(entitySet.Expression, expression);
+                expression = OeQueryContext.TranslateSource(EntitySetAdapters, dataContext, expression);
                 expression = new ParameterVisitor().Visit(expression);
 
                 if (queryContext.ODataUri.QueryCount.GetValueOrDefault())
@@ -179,7 +179,7 @@ namespace OdataToEntity.Linq2Db
             else
             {
                 expression = queryContext.CreateExpression(new OeConstantToVariableVisitor());
-                expression = OeQueryContext.TranslateSource(query.Expression, expression);
+                expression = OeQueryContext.TranslateSource(EntitySetAdapters, dataContext, expression);
                 expression = new ParameterVisitor().Visit(expression);
             }
             return query.Provider.Execute<TResult>(expression);
@@ -214,11 +214,11 @@ namespace OdataToEntity.Linq2Db
             }
 
             expression = new OeParameterToVariableVisitor().Translate(expression, parameterValues);
-            expression = OeQueryContext.TranslateSource(query.Expression, expression);
+            expression = OeQueryContext.TranslateSource(_entitySetAdapters, dbContext, expression);
 
             if (queryContext.ODataUri.QueryCount.GetValueOrDefault())
             {
-                countExpression = (MethodCallExpression)OeQueryContext.TranslateSource(query.Expression, countExpression);
+                countExpression = (MethodCallExpression)OeQueryContext.TranslateSource(_entitySetAdapters, dbContext, countExpression);
                 countExpression = (MethodCallExpression)new OeParameterToVariableVisitor().Translate(countExpression, parameterValues);
             }
             else

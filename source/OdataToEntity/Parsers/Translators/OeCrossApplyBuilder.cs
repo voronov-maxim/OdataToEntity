@@ -16,6 +16,7 @@ namespace OdataToEntity.Parsers.Translators
             Type outerType = OeExpressionHelper.GetCollectionItemType(outer.Type);
             var outerParameter = Expression.Parameter(outerType, outerType.Name);
             Expression subquery = CreateWhereExpression(outerParameter, inner, segment.NavigationProperty);
+            subquery = expressionBuilder.ApplyOrderBy(subquery, item.OrderByOption);
             subquery = expressionBuilder.ApplySkip(subquery, item.SkipOption, odataPath);
             subquery = expressionBuilder.ApplyTake(subquery, item.TopOption, odataPath);
 

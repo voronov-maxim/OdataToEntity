@@ -1,9 +1,7 @@
-﻿using Microsoft.OData;
-using Microsoft.OData.Edm;
+﻿using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -29,24 +27,9 @@ namespace OdataToEntity.Parsers.Translators
             _visitor = joinBuilder.Visitor;
         }
 
-        private OeSelectItem CreateNavigationItem(ExpandedNavigationSelectItem item)
-        {
-            var segment = (NavigationPropertySegment)item.PathToNavigationProperty.LastSegment;
-            IEdmNavigationProperty navigationProperty = segment.NavigationProperty;
-
-            var resourceInfo = new ODataNestedResourceInfo()
-            {
-                IsCollection = navigationProperty.Type.Definition is EdmCollectionType,
-                Name = navigationProperty.Name
-            };
-
-            var path = new ODataPath(_navigationItem.Path.Union(item.PathToNavigationProperty));
-            IEdmEntitySet entitySet = OeEdmClrHelper.GetEntitySet(_visitor.EdmModel, navigationProperty.ToEntityType());
-            return new OeSelectItem(_navigationItem, entitySet, path, navigationProperty, resourceInfo, item.CountOption, _skipToken);
-        }
         private Expression GetInnerSource(OeSelectItem navigationItem, ExpandedNavigationSelectItem item)
         {
-            Type clrEntityType =  OeEdmClrHelper.GetClrType(_visitor.EdmModel, navigationItem.EdmProperty.DeclaringType);
+            Type clrEntityType = _visitor.EdmModel.GetClrType(navigationItem.EdmProperty.DeclaringType);
             PropertyInfo navigationClrProperty = OeEdmClrHelper.GetPropertyIgnoreCase(clrEntityType, navigationItem.EdmProperty);
 
             Type itemType = OeExpressionHelper.GetCollectionItemType(navigationClrProperty.PropertyType);
@@ -76,7 +59,7 @@ namespace OdataToEntity.Parsers.Translators
             OeSelectItem navigationItem = _navigationItem.FindChildrenNavigationItem(navigationProperty);
             if (navigationItem == null)
             {
-                navigationItem = CreateNavigationItem(item);
+                navigationItem = new OeSelectItem(_navigationItem, item, _skipToken);
                 _navigationItem.AddNavigationItem(navigationItem);
 
                 Expression innerSource = GetInnerSource(navigationItem, item);
@@ -85,13 +68,10 @@ namespace OdataToEntity.Parsers.Translators
                 itemType = OeExpressionHelper.GetCollectionItemType(innerSource.Type);
             }
             else
-                itemType = OeEdmClrHelper.GetClrType(_visitor.EdmModel, navigationItem.EntitySet.EntityType());
+                itemType = _visitor.EdmModel.GetClrType(navigationItem.EntitySet.EntityType());
 
-            if (item.SelectAndExpand.SelectedItems.Any())
-            {
-                var selectTranslator = new OeSelectTranslator(_joinBuilder, navigationItem);
-                _source = selectTranslator.BuildSelect(item.SelectAndExpand, _source, _navigationNextLink, _skipToken);
-            }
+            var selectTranslator = new OeSelectTranslator(_joinBuilder, navigationItem);
+            _source = selectTranslator.BuildSelect(item.SelectAndExpand, _source, _navigationNextLink, _skipToken);
 
             return navigationItem;
         }
@@ -99,7 +79,10 @@ namespace OdataToEntity.Parsers.Translators
         {
             if (item.SelectedPath.LastSegment is NavigationPropertySegment navigationSegment)
             {
-                var navigationSelectItem = new ExpandedNavigationSelectItem(new ODataExpandPath(item.SelectedPath), navigationSegment.NavigationSource, new SelectExpandClause(null, true));
+                IEdmNavigationSource navigationSource = navigationSegment.NavigationSource;
+                if (navigationSource == null)
+                    navigationSource = OeEdmClrHelper.GetEntitySet(_visitor.EdmModel, navigationSegment.NavigationProperty.ToEntityType());
+                var navigationSelectItem = new ExpandedNavigationSelectItem(new ODataExpandPath(item.SelectedPath), navigationSource, new SelectExpandClause(null, true));
                 return Translate(navigationSelectItem);
             }
 

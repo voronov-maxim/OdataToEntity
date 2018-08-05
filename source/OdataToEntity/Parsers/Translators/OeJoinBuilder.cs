@@ -191,20 +191,14 @@ namespace OdataToEntity.Parsers.Translators
         }
         private static LambdaExpression GetGroupJoinResultSelector(Type outerType, Type innerType)
         {
-            var parameterExpressions = new ParameterExpression[]
+            var expressions = new ParameterExpression[]
             {
                 Expression.Parameter(outerType, "outer"),
                 Expression.Parameter(typeof(IEnumerable<>).MakeGenericType(innerType), "inner")
             };
 
-            var expressions = new Expression[]
-            {
-                parameterExpressions[0],
-                Expression.Call(OeMethodInfoHelper.GetDefaultIfEmptyMethodInfo(innerType), parameterExpressions[1])
-            };
-
             NewExpression newTupleExpression = OeExpressionHelper.CreateTupleExpression(expressions);
-            return Expression.Lambda(newTupleExpression, parameterExpressions);
+            return Expression.Lambda(newTupleExpression, expressions);
         }
         private static IReadOnlyList<IEdmNavigationProperty> GetJoinPath(SingleValuePropertyAccessNode propertyNode)
         {
@@ -235,7 +229,7 @@ namespace OdataToEntity.Parsers.Translators
             var replaceParameterVisitor = new ReplaceParameterVisitor(Visitor.Parameter, parameter);
             return (MemberExpression)replaceParameterVisitor.Visit(propertyExpression);
         }
-        private MemberExpression GetJoinPropertyExpression(Expression source, Expression parameter, IReadOnlyList<IEdmNavigationProperty> joinPath, IEdmProperty edmProperty)
+        internal MemberExpression GetJoinPropertyExpression(Expression source, Expression parameter, IReadOnlyList<IEdmNavigationProperty> joinPath, IEdmProperty edmProperty)
         {
             Expression propertyExpression = GetJoinPropertyExpression(parameter, joinPath);
             if (propertyExpression == null)
@@ -271,8 +265,10 @@ namespace OdataToEntity.Parsers.Translators
         private static LambdaExpression GetSelectManyCollectionSelector(LambdaExpression groupJoinResultSelect)
         {
             ParameterExpression parameter = Expression.Parameter(groupJoinResultSelect.ReturnType);
-            MemberExpression inner = Expression.Property(parameter, groupJoinResultSelect.ReturnType.GetProperties()[1]);
-            return Expression.Lambda(inner, parameter);
+            MemberExpression innerSource = Expression.Property(parameter, parameter.Type.GetProperty(nameof(Tuple<Object, Object>.Item2)));
+            Type innerType = OeExpressionHelper.GetCollectionItemType(innerSource.Type);
+            MethodCallExpression defaultIfEmptyCall = Expression.Call(OeMethodInfoHelper.GetDefaultIfEmptyMethodInfo(innerType), innerSource);
+            return Expression.Lambda(defaultIfEmptyCall, parameter);
         }
         private static LambdaExpression GetSelectManyResultSelector(LambdaExpression groupJoinResultSelect)
         {

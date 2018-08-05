@@ -115,8 +115,7 @@ namespace OdataToEntity.Parsers
             if (orderByClause == null)
                 return source;
 
-            ChangeParameterType(source);
-            return Translators.OeOrderByTranslator.Build(_joinBuilder, source, orderByClause);
+            return Translators.OeOrderByTranslator.Build(_joinBuilder, source, Visitor.Parameter, orderByClause);
         }
         public Expression ApplySelect(Expression source, OeQueryContext queryContext)
         {

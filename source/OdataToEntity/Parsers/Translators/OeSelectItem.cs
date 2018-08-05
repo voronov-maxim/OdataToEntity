@@ -1,8 +1,7 @@
-﻿using Microsoft.OData;
-using Microsoft.OData.Edm;
+﻿using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
+using System;
 using System.Collections.Generic;
-using System.Linq.Expressions;
 
 namespace OdataToEntity.Parsers.Translators
 {
@@ -11,21 +10,34 @@ namespace OdataToEntity.Parsers.Translators
         private readonly List<OeSelectItem> _navigationItems;
         private readonly List<OeSelectItem> _selectItems;
 
-        public OeSelectItem(IEdmProperty edmProperty, bool skipToken) : this(null, null, null, edmProperty, null, null, skipToken)
+        private OeSelectItem()
         {
-        }
-        public OeSelectItem(OeSelectItem parent, IEdmEntitySet entitySet, ODataPath path, IEdmProperty edmProperty, ODataNestedResourceInfo resource, bool? countOption, bool skipToken)
-        {
-            Parent = parent;
-            EntitySet = entitySet;
-            Path = path;
-            EdmProperty = edmProperty;
-            Resource = resource;
-            CountOption = countOption;
-            SkipToken = skipToken;
-
             _navigationItems = new List<OeSelectItem>();
             _selectItems = new List<OeSelectItem>();
+        }
+        public OeSelectItem(ODataPath path) : this()
+        {
+            EntitySet = GetEntitySet(path);
+            Path = path;
+        }
+        public OeSelectItem(IEdmProperty edmProperty, bool skipToken) : this()
+        {
+            EdmProperty = edmProperty;
+            SkipToken = skipToken;
+        }
+        public OeSelectItem(OeSelectItem parent, ExpandedNavigationSelectItem expandedNavigationSelectItem, bool skipToken) : this()
+        {
+            var segment = (NavigationPropertySegment)expandedNavigationSelectItem.PathToNavigationProperty.LastSegment;
+
+            var segments = new List<ODataPathSegment>(parent.Path);
+            segments.AddRange(expandedNavigationSelectItem.PathToNavigationProperty);
+
+            EdmProperty = segment.NavigationProperty;
+            EntitySet = (IEdmEntitySet)expandedNavigationSelectItem.NavigationSource;
+            ExpandedNavigationSelectItem = expandedNavigationSelectItem;
+            Parent = parent;
+            Path = new ODataPath(segments);
+            SkipToken = skipToken;
         }
 
         public void AddNavigationItem(OeSelectItem navigationItem)
@@ -80,17 +92,28 @@ namespace OdataToEntity.Parsers.Translators
                 joinPath.Insert(0, (IEdmNavigationProperty)navigationItem.EdmProperty);
             return joinPath;
         }
+        private static IEdmEntitySet GetEntitySet(ODataPath path)
+        {
+            if (path.LastSegment is EntitySetSegment entitySetSegment)
+                return entitySetSegment.EntitySet;
 
-        public bool? CountOption { get; }
+            if (path.LastSegment is NavigationPropertySegment navigationPropertySegment)
+                return (IEdmEntitySet)navigationPropertySegment.NavigationSource;
+
+            if (path.LastSegment is KeySegment keySegment)
+                return (IEdmEntitySet)keySegment.NavigationSource;
+
+            throw new InvalidOperationException("unknown segment type " + path.LastSegment.ToString());
+        }
+
         public IEdmProperty EdmProperty { get; }
         public IEdmEntitySet EntitySet { get; }
         public OeEntryFactory EntryFactory { get; set; }
+        public ExpandedNavigationSelectItem ExpandedNavigationSelectItem { get; }
         public bool HasNavigationItems => _navigationItems.Count > 0;
-        public bool HasSelectItems => _selectItems.Count > 0;
         public IReadOnlyList<OeSelectItem> NavigationItems => _navigationItems;
         public OeSelectItem Parent { get; }
         public ODataPath Path { get; }
-        public ODataNestedResourceInfo Resource { get; }
         public IReadOnlyList<OeSelectItem> SelectItems => _selectItems;
         public bool SkipToken { get; }
     }

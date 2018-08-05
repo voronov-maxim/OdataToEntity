@@ -114,7 +114,7 @@ namespace OdataToEntity.Test
                             Type entityType = node.Method.GetGenericArguments()[0];
                             MethodInfo method = node.Method.GetGenericMethodDefinition().MakeGenericMethod(entityType, visitor.Property.Type);
                             LambdaExpression lambda = Expression.Lambda(visitor.Property, visitor.Parameter);
-                            node = Expression.Call(null, method, new Expression[] { node.Arguments[0], lambda });
+                            node = Expression.Call(null, method, new Expression[] { expression, lambda });
                         }
                         else
                         {
@@ -122,7 +122,7 @@ namespace OdataToEntity.Test
                             Type previousPropertyType = node.Method.GetGenericArguments()[1];
                             MethodInfo method = node.Method.GetGenericMethodDefinition().MakeGenericMethod(entityType, previousPropertyType, visitor.Property.Type);
                             LambdaExpression lambda = Expression.Lambda(visitor.Property, visitor.Parameter);
-                            node = Expression.Call(null, method, new Expression[] { node.Arguments[0], lambda });
+                            node = Expression.Call(null, method, new Expression[] { expression, lambda });
                         }
                     }
 

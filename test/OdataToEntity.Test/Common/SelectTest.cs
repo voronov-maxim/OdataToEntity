@@ -316,8 +316,8 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<Customer, Customer>()
             {
-                RequestUri = "Customers?$expand=AltOrders($expand=Items,ShippingAddresses),Orders($expand=Items,ShippingAddresses)&$orderby=Country,Id",
-                Expression = t => t.Include(c => c.AltOrders).Include(c => c.Orders).ThenInclude(o => o.Items.OrderBy(i => i.Id)).Include(z => z.Orders).ThenInclude(z => z.ShippingAddresses).OrderBy(c => c.Country).ThenBy(c => c.Id),
+                RequestUri = "Customers?$expand=AltOrders($expand=Items($orderby=Price desc),ShippingAddresses($orderby=Id desc)),Orders($expand=Items($orderby=Price desc),ShippingAddresses($orderby=Id desc))&$orderby=Country,Id",
+                Expression = t => t.Include(c => c.AltOrders).Include(c => c.Orders).ThenInclude(o => o.Items.OrderByDescending(i => i.Price)).Include(c => c.Orders).ThenInclude(o => o.ShippingAddresses.OrderByDescending(s => s.Id)).OrderBy(c => c.Country).ThenBy(c => c.Id),
                 NavigationNextLink = navigationNextLink,
                 PageSize = pageSize
             };
@@ -364,7 +364,7 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<Customer, Customer>()
             {
-                RequestUri = "Customers?$orderby=Country,Id&$skip=1&$top=3&$expand=AltOrders($expand=Items($top=1)),Orders($expand=Items($top=1))",
+                RequestUri = "Customers?$orderby=Country,Id&$skip=1&$top=3&$expand=AltOrders($expand=Items($orderby=Id;$top=1)),Orders($expand=Items($top=1))",
                 Expression = t => t.OrderBy(c => c.Country).ThenBy(c => c.Id).Skip(1).Take(3).Include(c => c.AltOrders).Include(c => c.Orders).ThenInclude(o => o.Items.Take(1)),
                 NavigationNextLink = navigationNextLink,
                 PageSize = pageSize

@@ -31,7 +31,7 @@ namespace OdataToEntity.Parsers
                     return base.Visit(node.Arguments[0]);
 
                 var e = (MethodCallExpression)base.VisitMethodCall(node);
-                if ((e.Method.Name == nameof(Enumerable.Where) || e.Method.Name == nameof(Enumerable.SelectMany)))// && e.Method.GetGenericArguments()[0] == _sourceType)
+                if ((e.Method.Name == nameof(Enumerable.Where) || e.Method.Name == nameof(Enumerable.SelectMany)))
                     WhereExpression = e;
                 return e;
             }
@@ -130,15 +130,7 @@ namespace OdataToEntity.Parsers
             expression = expressionBuilder.ApplyNavigation(expression, ParseNavigationSegments);
             expression = expressionBuilder.ApplyFilter(expression, ODataUri.Filter);
             if (ODataUri.Apply == null)
-            {
-                if (ODataUri.OrderBy == null || PageSize == 0)
-                {
-                    expression = expressionBuilder.ApplyOrderBy(expression, ODataUri.OrderBy);
-                    expression = expressionBuilder.ApplySkip(expression, ODataUri.Skip, ODataUri.Path);
-                    expression = expressionBuilder.ApplyTake(expression, ODataUri.Top, ODataUri.Path);
-                }
                 expression = expressionBuilder.ApplySelect(expression, this);
-            }
             else
             {
                 expression = expressionBuilder.ApplySkipToken(expression, SkipTokenNameValues, ODataUri.OrderBy, IsDatabaseNullHighestValue);

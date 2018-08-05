@@ -12,11 +12,13 @@ namespace OdataToEntity.Test
     {
         private sealed class EmptyCollectionValueProvider : IValueProvider
         {
+            private readonly TestContractResolver _contractResolver;
             private readonly IValueProvider _defaultValueProvider;
             private readonly Func<IEnumerable, IList> _lambda;
 
-            public EmptyCollectionValueProvider(IValueProvider defaultValueProvider, Func<IEnumerable, IList> lambda)
+            public EmptyCollectionValueProvider(TestContractResolver contractResolver, IValueProvider defaultValueProvider, Func<IEnumerable, IList> lambda)
             {
+                _contractResolver = contractResolver;
                 _defaultValueProvider = defaultValueProvider;
                 _lambda = lambda;
             }
@@ -26,7 +28,7 @@ namespace OdataToEntity.Test
                 if (items == null)
                     return null;
 
-                if (_lambda == null)
+                if (_lambda == null || _contractResolver.DisableWhereOrder)
                     return items.GetEnumerator().MoveNext() ? items : null;
 
                 IList list = _lambda(items);
@@ -76,10 +78,6 @@ namespace OdataToEntity.Test
             dictionaryContract.ItemConverter = new FixDecimalValueConverter();
             return dictionaryContract;
         }
-        protected override IValueProvider CreateMemberValueProvider(MemberInfo member)
-        {
-            return base.CreateMemberValueProvider(member);
-        }
         protected override IList<JsonProperty> CreateProperties(Type type, MemberSerialization memberSerialization)
         {
             IList<JsonProperty> jproperties = base.CreateProperties(type, memberSerialization);
@@ -91,7 +89,7 @@ namespace OdataToEntity.Test
                     if (_includes.TryGetValue(clrProperty, out Func<IEnumerable, IList> lambda))
                     {
                         if (typeof(IEnumerable).IsAssignableFrom(clrProperty.PropertyType))
-                            jproperty.ValueProvider = new EmptyCollectionValueProvider(jproperty.ValueProvider, lambda);
+                            jproperty.ValueProvider = new EmptyCollectionValueProvider(this, jproperty.ValueProvider, lambda);
                     }
                     else
                     {
@@ -112,5 +110,7 @@ namespace OdataToEntity.Test
                 return false;
             return true;
         }
+
+        public bool DisableWhereOrder { get; set; }
     }
 }
