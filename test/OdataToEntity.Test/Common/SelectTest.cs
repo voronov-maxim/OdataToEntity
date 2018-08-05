@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using OdataToEntity.Test.Model;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
@@ -317,8 +316,8 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<Customer, Customer>()
             {
-                RequestUri = "Customers?$expand=AltOrders($expand=Items),Orders($expand=Items)&$orderby=Country,Id",
-                Expression = t => t.Include(c => c.AltOrders).Include(c => c.Orders).ThenInclude(o => o.Items.OrderBy(i => i.Id)).OrderBy(c => c.Country).ThenBy(c => c.Id),
+                RequestUri = "Customers?$expand=AltOrders($expand=Items($orderby=Price desc),ShippingAddresses($orderby=Id desc)),Orders($expand=Items($orderby=Price desc),ShippingAddresses($orderby=Id desc))&$orderby=Country,Id",
+                Expression = t => t.Include(c => c.AltOrders).Include(c => c.Orders).ThenInclude(o => o.Items.OrderByDescending(i => i.Price)).Include(c => c.Orders).ThenInclude(o => o.ShippingAddresses.OrderByDescending(s => s.Id)).OrderBy(c => c.Country).ThenBy(c => c.Id),
                 NavigationNextLink = navigationNextLink,
                 PageSize = pageSize
             };
@@ -365,7 +364,7 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<Customer, Customer>()
             {
-                RequestUri = "Customers?$orderby=Country,Id&$skip=1&$top=3&$expand=AltOrders($expand=Items($top=1)),Orders($expand=Items($top=1))",
+                RequestUri = "Customers?$orderby=Country,Id&$skip=1&$top=3&$expand=AltOrders($expand=Items($orderby=Id;$top=1)),Orders($expand=Items($top=1))",
                 Expression = t => t.OrderBy(c => c.Country).ThenBy(c => c.Id).Skip(1).Take(3).Include(c => c.AltOrders).Include(c => c.Orders).ThenInclude(o => o.Items.Take(1)),
                 NavigationNextLink = navigationNextLink,
                 PageSize = pageSize
@@ -446,9 +445,24 @@ namespace OdataToEntity.Test
             IQueryable<Customer> customers = null;
             var parameters = new QueryParameters<Order>()
             {
-                RequestUri = "Orders?$expand=Customer($filter=Sex eq OdataToEntity.Test.Model.Sex'Male')",
-                Expression = t => t.GroupJoin(customers, o => o.CustomerCountry, c => c.Country, (o, c) => new { order = o, customer = c })
-                    .SelectMany(z => z.customer.DefaultIfEmpty(), (o, c) => new { o.order, sex = c.Sex }).Select(a => a.order),
+                RequestUri = "Orders?$expand=AltCustomer($filter=Sex eq OdataToEntity.Test.Model.Sex'Male')",
+                Expression = t => t.GroupJoin(customers.Where(c => c.Sex == Sex.Male),
+                    o => new { Country = o.AltCustomerCountry, Id = o.AltCustomerId },
+                    c => new { c.Country, Id = (int?)c.Id },
+                    (o, c) => new { Order = o, Customer = c.DefaultIfEmpty() })
+                    .SelectMany(z => z.Customer, (o, c) => new { o.Order, Customer = c }).Select(a =>
+                    new Order()
+                    {
+                        AltCustomerCountry = a.Order.AltCustomerCountry,
+                        AltCustomerId = a.Order.AltCustomerId,
+                        Customer = a.Customer,
+                        CustomerCountry = a.Order.CustomerCountry,
+                        CustomerId = a.Order.CustomerId,
+                        Date = a.Order.Date,
+                        Id = a.Order.Id,
+                        Name = a.Order.Name,
+                        Status = a.Order.Status
+                    }),
                 NavigationNextLink = navigationNextLink,
                 PageSize = pageSize
             };

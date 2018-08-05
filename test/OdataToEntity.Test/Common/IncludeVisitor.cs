@@ -12,15 +12,13 @@ namespace OdataToEntity.Test
     {
         public readonly struct Include
         {
-            public Include(PropertyInfo property, Func<IEnumerable, IList> filter, bool isSelect)
+            public Include(PropertyInfo property, Func<IEnumerable, IList> filter)
             {
                 Property = property;
                 Filter = filter;
-                IsSelect = isSelect;
             }
 
             public Func<IEnumerable, IList> Filter { get; }
-            public bool IsSelect { get; }
             public PropertyInfo Property { get; }
         }
 
@@ -87,9 +85,11 @@ namespace OdataToEntity.Test
         }
 
         private readonly List<Include> _includes;
+        private readonly ModelBuilder.OeEdmModelMetadataProvider _metadataProvider;
 
-        public IncludeVisitor()
+        public IncludeVisitor(ModelBuilder.OeEdmModelMetadataProvider metadataProvider)
         {
+            _metadataProvider = metadataProvider;
             _includes = new List<Include>();
         }
 
@@ -114,7 +114,7 @@ namespace OdataToEntity.Test
                             Type entityType = node.Method.GetGenericArguments()[0];
                             MethodInfo method = node.Method.GetGenericMethodDefinition().MakeGenericMethod(entityType, visitor.Property.Type);
                             LambdaExpression lambda = Expression.Lambda(visitor.Property, visitor.Parameter);
-                            node = Expression.Call(null, method, new Expression[] { node.Arguments[0], lambda });
+                            node = Expression.Call(null, method, new Expression[] { expression, lambda });
                         }
                         else
                         {
@@ -122,27 +122,69 @@ namespace OdataToEntity.Test
                             Type previousPropertyType = node.Method.GetGenericArguments()[1];
                             MethodInfo method = node.Method.GetGenericMethodDefinition().MakeGenericMethod(entityType, previousPropertyType, visitor.Property.Type);
                             LambdaExpression lambda = Expression.Lambda(visitor.Property, visitor.Parameter);
-                            node = Expression.Call(null, method, new Expression[] { node.Arguments[0], lambda });
+                            node = Expression.Call(null, method, new Expression[] { expression, lambda });
                         }
                     }
 
-                    _includes.Add(new Include(visitor.Property.Member as PropertyInfo, visitor.Filter, false));
+                    _includes.Add(new Include(visitor.Property.Member as PropertyInfo, visitor.Filter));
+                    return node;
                 }
             }
             else if (node.Method.DeclaringType == typeof(Queryable) && node.Method.Name == nameof(Queryable.Select))
             {
                 var visitor = new NewVisitor();
                 visitor.Visit(node.Arguments[1]);
-                _includes.AddRange(visitor.SelectProperties.Select(p => new Include(p, null, true)));
+                _includes.AddRange(visitor.SelectProperties.Select(p => new Include(p, null)));
             }
-            else
+            else if (node.Method.DeclaringType == typeof(Queryable) && node.Method.Name == nameof(Queryable.GroupJoin))
             {
-                var arguments = new Expression[node.Arguments.Count];
-                node.Arguments.CopyTo(arguments, 0);
-                arguments[0] = expression;
-                node = Expression.Call(node.Object, node.Method, arguments);
+                Type outerType = node.Arguments[0].Type.GetGenericArguments()[0];
+                Type innerType = node.Arguments[1].Type.GetGenericArguments()[0];
+
+                List<PropertyInfo> navigationProperties = outerType.GetProperties().Where(p => p.PropertyType == innerType).ToList();
+                if (navigationProperties.Count == 0)
+                {
+                    Type collectionType = typeof(IEnumerable<>).MakeGenericType(innerType);
+                    PropertyInfo navigationProperty = outerType.GetProperties().Where(p => collectionType.IsAssignableFrom(p.PropertyType)).Single();
+                    _includes.Add(new Include(navigationProperty, null));
+                }
+                else if (navigationProperties.Count == 1)
+                {
+                    _includes.Add(new Include(navigationProperties[0], null));
+                }
+                else
+                {
+                    LambdaExpression outerKeySelector;
+                    if (node.Arguments[2] is UnaryExpression unaryExpression)
+                        outerKeySelector = (LambdaExpression)unaryExpression.Operand;
+                    else
+                        outerKeySelector = (LambdaExpression)node.Arguments[2];
+
+                    if (outerKeySelector.Body is MemberExpression propertyExpression)
+                    {
+                        PropertyInfo navigationProperty = _metadataProvider.GetForeignKey((PropertyInfo)propertyExpression.Member).Single();
+                        _includes.Add(new Include(navigationProperty, null));
+                    }
+                    else if (outerKeySelector.Body is NewExpression newExpression)
+                    {
+                        List<PropertyInfo> properties = newExpression.Arguments.Select(a => (PropertyInfo)((MemberExpression)a).Member).ToList();
+                        foreach (PropertyInfo navigationProperty in navigationProperties)
+                        {
+                            PropertyInfo[] structuralProperties = _metadataProvider.GetForeignKey(navigationProperty);
+                            if (!structuralProperties.Except(properties).Any())
+                            {
+                                _includes.Add(new Include(navigationProperty, null));
+                                break;
+                            }
+                        }
+                    }
+                }
             }
-            return node;
+
+            var arguments = new Expression[node.Arguments.Count];
+            node.Arguments.CopyTo(arguments, 0);
+            arguments[0] = expression;
+            return Expression.Call(node.Object, node.Method, arguments);
         }
 
         public IReadOnlyList<Include> Includes => _includes;
