@@ -233,8 +233,9 @@ namespace OdataToEntity.Parsers.Translators
 
                     OeEntryFactory entryFactory;
                     OePropertyAccessor[] accessors = GetAccessors(navigationProperties[i].Type, navigationItem.EntitySet, navigationItem.SelectItems, source);
+                    Func<Object, Object> linkAccessor = (Func<Object, Object>)Expression.Lambda(navigationProperties[i], parameter).Compile();
                     if (i == 0)
-                        entryFactory = OeEntryFactory.CreateEntryFactoryParent(navigationItem.EntitySet, accessors, nestedNavigationLinks);
+                        entryFactory = OeEntryFactory.CreateEntryFactoryParent(navigationItem.EntitySet, accessors, nestedNavigationLinks, linkAccessor);
                     else
                     {
                         var resourceInfo = new ODataNestedResourceInfo()
@@ -242,11 +243,9 @@ namespace OdataToEntity.Parsers.Translators
                             IsCollection = navigationItem.EdmProperty.Type.Definition is EdmCollectionType,
                             Name = navigationItem.EdmProperty.Name
                         };
-                        entryFactory = OeEntryFactory.CreateEntryFactoryNested(navigationItem.EntitySet, accessors, resourceInfo, nestedNavigationLinks);
+                        entryFactory = OeEntryFactory.CreateEntryFactoryNested(navigationItem.EntitySet, accessors, resourceInfo, nestedNavigationLinks, linkAccessor);
                         entryFactory.CountOption = navigationItem.ExpandedNavigationSelectItem.CountOption;
                     }
-
-                    entryFactory.LinkAccessor = (Func<Object, Object>)Expression.Lambda(navigationProperties[i], parameter).Compile();
                     navigationItem.EntryFactory = entryFactory;
                 }
             }

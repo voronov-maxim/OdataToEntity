@@ -56,23 +56,24 @@ namespace OdataToEntity.Db
         {
             return new OeDbEnumerator(this, entryFactory);
         }
-        private static bool IsEquals(Object value1, Object value2)
+        private static bool IsEquals(OeEntryFactory entryFactory, Object value1, Object value2)
         {
             if (Object.ReferenceEquals(value1, value2))
                 return true;
             if (value1 == null || value2 == null)
                 return false;
-            return value1.Equals(value2);
+
+            return entryFactory.EqualityComparer.Equals(value1, value2);
         }
         private bool IsSame(Object value)
         {
             Object nextValue = _entryFactory.GetValue(_buffer[_bufferPosition], out _);
-            if (IsEquals(value, nextValue))
+            if (IsEquals(_entryFactory, value, nextValue))
             {
                 if (value == null && _parentEntryFactory != null)
                 {
                     Object parentValue = _parentEntryFactory.GetValue(_buffer[_bufferPosition], out _);
-                    return IsEquals(_parentValue, parentValue);
+                    return IsEquals(_parentEntryFactory, _parentValue, parentValue);
                 }
 
                 return true;
@@ -109,7 +110,7 @@ namespace OdataToEntity.Db
                 return true;
 
             Object parentValue = _parentEntryFactory.GetValue(_buffer[_bufferPosition], out _);
-            return IsEquals(_parentValue, parentValue);
+            return IsEquals(_parentEntryFactory, _parentValue, parentValue);
         }
         private void SetEof()
         {

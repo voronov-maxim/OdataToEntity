@@ -93,7 +93,7 @@ namespace OdataToEntity.Writers
                     return true;
 
                 if (buffer == null)
-                    buffer = new HashSet<Object>();
+                    buffer = new HashSet<Object>(entryFactory.EqualityComparer);
                 return buffer.Add(value);
             }
             private static bool IsNullEntry(ODataResource entry)
