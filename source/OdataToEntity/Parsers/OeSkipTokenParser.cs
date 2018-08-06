@@ -43,8 +43,8 @@ namespace OdataToEntity.Parsers
             while (orderByClause != null)
             {
                 var propertyNode = (SingleValuePropertyAccessNode)orderByClause.Expression;
-                Expression propertyExpression = joinBuilder.GetJoinPropertyExpression(source, instance, propertyNode);
-                accessors.Add(OePropertyAccessor.CreatePropertyAccessor(propertyNode.Property, propertyExpression, parameter));
+                MemberExpression propertyExpression = joinBuilder.GetJoinPropertyExpression(source, instance, propertyNode);
+                accessors.Add(OePropertyAccessor.CreatePropertyAccessor(propertyNode.Property, propertyExpression, parameter, true));
                 orderByClause = orderByClause.ThenBy;
             }
 

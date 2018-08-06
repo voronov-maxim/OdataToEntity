@@ -153,9 +153,8 @@ namespace OdataToEntity.Test
         {
             return CreateEntity(resource, navigationProperties);
         }
-        public async Task FillNextLinkProperties(Uri baseUri, Object entity, CancellationToken token)
+        public async Task FillNextLinkProperties(OeParser parser, Object entity, CancellationToken token)
         {
-            var parser = new OeParser(baseUri, _dataAdapter, EdmModel);
             using (var response = new MemoryStream())
                 foreach (KeyValuePair<PropertyInfo, ODataResourceSetBase> propertyResourceSet in GetResourceSets(entity))
                 {

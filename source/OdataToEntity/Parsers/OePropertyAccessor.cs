@@ -11,18 +11,20 @@ namespace OdataToEntity.Parsers
     {
         private readonly Func<Object, Object> _accessor;
 
-        private OePropertyAccessor(IEdmProperty edmProperty, Func<Object, Object> accessor)
+        private OePropertyAccessor(IEdmProperty edmProperty, Func<Object, Object> accessor, MemberExpression propertyExpression, bool skipToken)
         {
             EdmProperty = edmProperty;
             _accessor = accessor;
+            PropertyExpression = propertyExpression;
+            SkipToken = skipToken;
             TypeAnnotation = edmProperty.DeclaringType == PrimitiveTypeHelper.TupleEdmType ? new ODataTypeAnnotation(edmProperty.Type.ShortQualifiedName()) : null;
         }
 
-        public static OePropertyAccessor CreatePropertyAccessor(IEdmProperty edmProperty, Expression expression, ParameterExpression parameter)
+        public static OePropertyAccessor CreatePropertyAccessor(IEdmProperty edmProperty, MemberExpression propertyExpression, ParameterExpression parameter, bool skipToken)
         {
-            UnaryExpression instance = Expression.Convert(expression, typeof(Object));
+            UnaryExpression instance = Expression.Convert(propertyExpression, typeof(Object));
             var func = (Func<Object, Object>)Expression.Lambda(instance, parameter).Compile();
-            return new OePropertyAccessor(edmProperty, func);
+            return new OePropertyAccessor(edmProperty, func, propertyExpression, skipToken);
         }
         public static OePropertyAccessor[] CreateFromTuple(Type tupleType, IReadOnlyList<IEdmProperty> edmProperties, int groupItemIndex)
         {
@@ -35,13 +37,13 @@ namespace OdataToEntity.Parsers
             {
                 IReadOnlyList<MemberExpression> groupExpressions = OeExpressionHelper.GetPropertyExpressions(itemExpressions[groupItemIndex]);
                 for (; aliasIndex < groupExpressions.Count; aliasIndex++)
-                    accessors[aliasIndex] = CreatePropertyAccessor(edmProperties[aliasIndex], groupExpressions[aliasIndex], parameter);
+                    accessors[aliasIndex] = CreatePropertyAccessor(edmProperties[aliasIndex], groupExpressions[aliasIndex], parameter, false);
             }
 
             for (int itemIndex = 0; itemIndex < itemExpressions.Count; itemIndex++)
                 if (itemIndex != groupItemIndex)
                 {
-                    accessors[aliasIndex] = CreatePropertyAccessor(edmProperties[aliasIndex], itemExpressions[itemIndex], parameter);
+                    accessors[aliasIndex] = CreatePropertyAccessor(edmProperties[aliasIndex], itemExpressions[itemIndex], parameter, false);
                     aliasIndex++;
                 }
             return accessors;
@@ -54,17 +56,7 @@ namespace OdataToEntity.Parsers
             foreach (IEdmStructuralProperty edmProperty in entitySet.EntityType().StructuralProperties())
             {
                 MemberExpression expression = Expression.Property(instance, clrType.GetProperty(edmProperty.Name));
-                propertyAccessors.Add(CreatePropertyAccessor(edmProperty, expression, parameter));
-            }
-            return propertyAccessors.ToArray();
-        }
-        public static OePropertyAccessor[] CreateFromExpression(Expression source, ParameterExpression parameter, IEdmEntitySetBase entitySet)
-        {
-            var propertyAccessors = new List<OePropertyAccessor>();
-            foreach (IEdmStructuralProperty edmProperty in entitySet.EntityType().StructuralProperties())
-            {
-                MemberExpression expression = Expression.Property(source, source.Type.GetProperty(edmProperty.Name));
-                propertyAccessors.Add(CreatePropertyAccessor(edmProperty, expression, parameter));
+                propertyAccessors.Add(CreatePropertyAccessor(edmProperty, expression, parameter, false));
             }
             return propertyAccessors.ToArray();
         }
@@ -74,6 +66,8 @@ namespace OdataToEntity.Parsers
         }
 
         public IEdmProperty EdmProperty { get; }
+        internal MemberExpression PropertyExpression { get; }
+        public bool SkipToken { get; }
         public ODataTypeAnnotation TypeAnnotation { get; }
     }
 }

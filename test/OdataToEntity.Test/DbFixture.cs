@@ -101,7 +101,7 @@ namespace OdataToEntity.Test
                 fromOe.AddRange(result);
 
                 foreach (Object entity in fromOe)
-                    await responseReader.FillNextLinkProperties(odataUri.ServiceRoot, entity, CancellationToken.None).ConfigureAwait(false);
+                    await responseReader.FillNextLinkProperties(parser, entity, CancellationToken.None).ConfigureAwait(false);
 
                 if (count < 0)
                     count = responseReader.ResourceSet.Count.GetValueOrDefault();

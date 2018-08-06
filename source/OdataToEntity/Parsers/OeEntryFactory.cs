@@ -3,65 +3,18 @@ using Microsoft.OData.Edm;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 
 namespace OdataToEntity.Parsers
 {
     public sealed class OeEntryFactory
     {
-        private sealed class EntryEqualityComparer : IEqualityComparer<Object>
-        {
-            private readonly OePropertyAccessor[] _keyAccessors;
-
-            public EntryEqualityComparer(OePropertyAccessor[] keyAccessors)
-            {
-                _keyAccessors = keyAccessors;
-            }
-
-            public new bool Equals(Object x, Object y)
-            {
-                if (Object.ReferenceEquals(x, y))
-                    return true;
-
-                if (x == null || y == null)
-                    return false;
-
-                foreach (OePropertyAccessor keyAccessor in _keyAccessors)
-                {
-                    var xkey = (IComparable)keyAccessor.GetValue(x);
-                    var ykey = (IComparable)keyAccessor.GetValue(y);
-
-                    if (!Object.ReferenceEquals(xkey, ykey))
-                    {
-                        if (xkey == null || ykey == null)
-                            return false;
-
-                        if (xkey.CompareTo(ykey) != 0)
-                            return false;
-                    }
-                }
-
-                return true;
-            }
-
-            public int GetHashCode(Object obj)
-            {
-                int hashCode = 0;
-                foreach (OePropertyAccessor keyAccessor in _keyAccessors)
-                {
-                    Object key = keyAccessor.GetValue(obj);
-                    if (key != null)
-                        hashCode = (hashCode << 5) + hashCode ^ key.GetHashCode();
-                }
-                return hashCode;
-            }
-        }
-
         private readonly String _typeName;
 
         private OeEntryFactory(IEdmEntitySet entitySet, OePropertyAccessor[] accessors)
         {
             EntitySet = entitySet;
-            Accessors = accessors;
+            Accessors = GetAccessorsWithoutSkiptoken(accessors);
 
             EntityType = entitySet.EntityType();
             NavigationLinks = Array.Empty<OeEntryFactory>();
@@ -73,7 +26,7 @@ namespace OdataToEntity.Parsers
         {
             NavigationLinks = navigationLinks ?? Array.Empty<OeEntryFactory>();
             LinkAccessor = linkAccessor;
-            EqualityComparer = CreateEqualityComparer(entitySet, accessors);
+            EqualityComparer = new Infrastructure.OeEntryEqualityComparer(GetKeyExpressions(entitySet, accessors));
         }
         private OeEntryFactory(IEdmEntitySet entitySet, OePropertyAccessor[] accessors, ODataNestedResourceInfo resourceInfo)
             : this(entitySet, accessors)
@@ -87,29 +40,9 @@ namespace OdataToEntity.Parsers
             ResourceInfo = resourceInfo;
             NavigationLinks = navigationLinks ?? Array.Empty<OeEntryFactory>();
             LinkAccessor = linkAccessor;
-            EqualityComparer = CreateEqualityComparer(entitySet, accessors);
+            EqualityComparer = new Infrastructure.OeEntryEqualityComparer(GetKeyExpressions(entitySet, accessors));
         }
 
-        private static EntryEqualityComparer CreateEqualityComparer(IEdmEntitySet entitySet, OePropertyAccessor[] accessors)
-        {
-            var keyAccessors = new List<OePropertyAccessor>();
-            foreach (IEdmStructuralProperty key in entitySet.EntityType().Key())
-            {
-                bool found = false;
-                foreach (OePropertyAccessor accessor in accessors)
-                    if (accessor.EdmProperty == key)
-                    {
-                        keyAccessors.Add(accessor);
-                        found = true;
-                        break;
-                    }
-
-                if (!found)
-                    throw new InvalidOperationException("Key property " + key.Name + " not found in accessors");
-            }
-
-            return new EntryEqualityComparer(keyAccessors.ToArray());
-        }
         public ODataResource CreateEntry(Object entity)
         {
             var odataProperties = new ODataProperty[Accessors.Length];
@@ -140,6 +73,42 @@ namespace OdataToEntity.Parsers
             IReadOnlyList<OeEntryFactory> navigationLinks, Func<Object, Object> linkAccessor)
         {
             return new OeEntryFactory(entitySet, accessors, resourceInfo, navigationLinks, linkAccessor);
+        }
+        private static OePropertyAccessor[] GetAccessorsWithoutSkiptoken(OePropertyAccessor[] accessors)
+        {
+            int skiptokenCount = 0;
+            for (int i = 0; i < accessors.Length; i++)
+                if (accessors[i].SkipToken)
+                    skiptokenCount++;
+
+            if (skiptokenCount == 0)
+                return accessors;
+
+            var accessorsWithoutSkiptoken = new OePropertyAccessor[accessors.Length - skiptokenCount];
+            int index = 0;
+            for (int i = 0; i < accessors.Length; i++)
+                if (!accessors[i].SkipToken)
+                    accessorsWithoutSkiptoken[index++] = accessors[i];
+            return accessorsWithoutSkiptoken;
+        }
+        private static List<MemberExpression> GetKeyExpressions(IEdmEntitySet entitySet, OePropertyAccessor[] accessors)
+        {
+            var propertyExpressions = new List<MemberExpression>();
+            foreach (IEdmStructuralProperty key in entitySet.EntityType().Key())
+            {
+                bool found = false;
+                foreach (OePropertyAccessor accessor in accessors)
+                    if (accessor.EdmProperty == key)
+                    {
+                        propertyExpressions.Add(accessor.PropertyExpression);
+                        found = true;
+                        break;
+                    }
+
+                if (!found)
+                    throw new InvalidOperationException("Key property " + key.Name + " not found in accessors");
+            }
+            return propertyExpressions;
         }
         public Object GetValue(Object value, out int? count)
         {
