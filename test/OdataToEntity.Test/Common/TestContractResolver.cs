@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -38,16 +39,38 @@ namespace OdataToEntity.Test
             public void SetValue(Object target, Object value) => throw new NotSupportedException();
         }
 
-        private sealed class FixDecimalValueConverter : JsonConverter
+        private sealed class DictionaryValueConverter : JsonConverter
         {
+            private readonly ModelBuilder.OeEdmModelMetadataProvider _metadataProvider;
+
+            public DictionaryValueConverter(ModelBuilder.OeEdmModelMetadataProvider metadataProvider)
+            {
+                _metadataProvider = metadataProvider;
+            }
+
             public override bool CanConvert(Type objectType) => true;
             public override Object ReadJson(JsonReader reader, Type ObjectType, Object existingValue, JsonSerializer serializer) => throw new NotSupportedException();
             public override void WriteJson(JsonWriter writer, Object value, JsonSerializer serializer)
             {
                 if (value is Decimal d)
                     value = Math.Round(d, 2);
-                else if (value is IReadOnlyCollection<Object> collection && collection.Count == 0)
-                    value = null;
+                else if (value is IReadOnlyCollection<Object> collection)
+                {
+                    if (collection.Count == 0)
+                        value = null;
+                    else
+                    {
+                        Type entityType = collection.First().GetType();
+                        Array items = Array.CreateInstance(entityType, collection.Count);
+                        int i = 0;
+                        foreach (Object item in collection)
+                            items.SetValue(item, i++);
+
+                        IComparer comparer = GetComparer(_metadataProvider, entityType);
+                        Array.Sort(items, comparer);
+                        value = items;
+                    }
+                }
                 serializer.Serialize(writer, value);
             }
         }
@@ -62,10 +85,14 @@ namespace OdataToEntity.Test
             public void SetValue(Object target, Object value) => throw new NotSupportedException();
         }
 
+        private static readonly ConcurrentDictionary<Type, IComparer> _entityComaprers = new ConcurrentDictionary<Type, IComparer>();
         private readonly Dictionary<PropertyInfo, Func<IEnumerable, IList>> _includes;
+        private readonly ModelBuilder.OeEdmModelMetadataProvider _metadataProvider;
 
-        public TestContractResolver(IReadOnlyList<IncludeVisitor.Include> includes)
+        public TestContractResolver(ModelBuilder.OeEdmModelMetadataProvider metadataProvider, IReadOnlyList<IncludeVisitor.Include> includes)
         {
+            _metadataProvider = metadataProvider;
+
             _includes = new Dictionary<PropertyInfo, Func<IEnumerable, IList>>();
             if (includes != null)
                 foreach (IncludeVisitor.Include include in includes)
@@ -75,7 +102,7 @@ namespace OdataToEntity.Test
         protected override JsonDictionaryContract CreateDictionaryContract(Type objectType)
         {
             JsonDictionaryContract dictionaryContract = base.CreateDictionaryContract(objectType);
-            dictionaryContract.ItemConverter = new FixDecimalValueConverter();
+            dictionaryContract.ItemConverter = new DictionaryValueConverter(_metadataProvider);
             return dictionaryContract;
         }
         protected override IList<JsonProperty> CreateProperties(Type type, MemberSerialization memberSerialization)
@@ -109,6 +136,15 @@ namespace OdataToEntity.Test
             if (type == typeof(String))
                 return false;
             return true;
+        }
+        private static IComparer GetComparer(ModelBuilder.OeEdmModelMetadataProvider metadataProvider, Type entityType)
+        {
+            if (_entityComaprers.TryGetValue(entityType, out IComparer comparer))
+                return comparer;
+
+            comparer = TestHelper.CreateEntryEqualityComparer(metadataProvider, entityType);
+            _entityComaprers.TryAdd(entityType, comparer);
+            return comparer;
         }
 
         public bool DisableWhereOrder { get; set; }

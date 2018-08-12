@@ -1,6 +1,5 @@
 ﻿using Microsoft.OData;
 using Microsoft.OData.Edm;
-using Microsoft.OData.UriParser;
 using OdataToEntity.Parsers;
 using System;
 using System.Collections.Generic;
@@ -149,7 +148,7 @@ namespace OdataToEntity.Ef6
         }
         public override Object CreateDataContext()
         {
-            T dbContext = Db.FastActivator.CreateInstance<T>();
+            T dbContext = Infrastructure.FastActivator.CreateInstance<T>();
             dbContext.Configuration.LazyLoadingEnabled = false;
             dbContext.Configuration.AutoDetectChangesEnabled = false;
             dbContext.Configuration.ProxyCreationEnabled = false;

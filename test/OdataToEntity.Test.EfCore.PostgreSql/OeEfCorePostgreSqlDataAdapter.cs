@@ -14,7 +14,7 @@ namespace OdataToEntity.EfCore
             {
             }
 
-            public override OeAsyncEnumerator ExecuteProcedure(object dataContext, string operationName, IReadOnlyList<KeyValuePair<string, object>> parameters, Type returnType)
+            public override OeAsyncEnumerator ExecuteProcedure(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
             {
                 return base.ExecuteFunction(dataContext, operationName, parameters, returnType);
             }

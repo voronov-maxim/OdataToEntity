@@ -1,7 +1,6 @@
 ﻿using Microsoft.OData;
 using Microsoft.OData.Edm;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 
@@ -110,33 +109,9 @@ namespace OdataToEntity.Parsers
             }
             return propertyExpressions;
         }
-        public Object GetValue(Object value, out int? count)
+        public Object GetValue(Object value)
         {
-            count = null;
-            if (LinkAccessor == null)
-                return value;
-
-            value = LinkAccessor(value);
-            if (CountOption.GetValueOrDefault())
-            {
-                if (value == null)
-                    count = 0;
-                else if (value is IReadOnlyCollection<Object>)
-                    count = (value as IReadOnlyCollection<Object>).Count;
-                else if (value is ICollection)
-                    count = (value as ICollection).Count;
-                else if (value is IEnumerable)
-                {
-                    var list = new List<Object>();
-                    foreach (Object item in value as IEnumerable)
-                        list.Add(item);
-                    count = list.Count;
-                    value = list;
-                }
-                else
-                    count = 1;
-            }
-            return value;
+            return LinkAccessor == null ? value : LinkAccessor(value);
         }
 
         public OePropertyAccessor[] Accessors { get; }

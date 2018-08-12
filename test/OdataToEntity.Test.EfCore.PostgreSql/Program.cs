@@ -8,7 +8,7 @@ namespace OdataToEntity.Test.EfCore.PostgreSql
     {
         static void Main(string[] args)
         {
-            new AC_RDBNull(new AC_RDBNull_DbFixtureInitDb()).Table(0).GetAwaiter().GetResult();
+            new AC_RDBNull(new AC_RDBNull_DbFixtureInitDb()).ExpandExpandSkipTop(0, false).GetAwaiter().GetResult();
         }
     }
 }

@@ -1,12 +1,27 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 
 namespace OdataToEntity.Infrastructure
 {
-    public readonly struct OeEntryEqualityComparer : IEqualityComparer<Object>
+    public readonly struct OeEntryEqualityComparer : IEqualityComparer<Object>, IComparer<Object>, IComparer
     {
+        private sealed class TypedEqualityComparer<T> : IEqualityComparer<T>, IComparer<T>
+        {
+            private readonly OeEntryEqualityComparer _entryEqualityComparer;
+
+            public TypedEqualityComparer(in OeEntryEqualityComparer entryEqualityComparer)
+            {
+                _entryEqualityComparer = entryEqualityComparer;
+            }
+
+            public int Compare(T x, T y) => _entryEqualityComparer.Compare(x, y);
+            public bool Equals(T x, T y) => _entryEqualityComparer.Equals(x, y);
+            public int GetHashCode(T obj) => _entryEqualityComparer.GetHashCode(obj);
+        }
+
         private readonly Func<Object, Object, int>[] _propertyComparers;
         private readonly Func<Object, int>[] _propertyGetHashCodes;
 
@@ -16,6 +31,18 @@ namespace OdataToEntity.Infrastructure
             _propertyGetHashCodes = CreatePropertyGetHashCodes(propertyExpressions);
         }
 
+        public int Compare(Object x, Object y)
+        {
+            Func<Object, Object, int>[] propertyComparers = _propertyComparers;
+            for (int i = 0; i < propertyComparers.Length; i++)
+            {
+                int compare = propertyComparers[i](x, y);
+                if (compare != 0)
+                    return compare;
+            }
+
+            return 0;
+        }
         private static Func<Object, Object, int> CreatePropertyComparer(MemberExpression property)
         {
             ParameterExpression xparameter = Expression.Parameter(typeof(Object));
@@ -53,12 +80,7 @@ namespace OdataToEntity.Infrastructure
         }
         public new bool Equals(Object x, Object y)
         {
-            Func<Object, Object, int>[] propertyComparers = _propertyComparers;
-            for (int i = 0; i < propertyComparers.Length; i++)
-                if (propertyComparers[i](x, y) != 0)
-                    return false;
-
-            return true;
+            return Compare(x, y) == 0;
         }
         public int GetHashCode(Object obj)
         {
@@ -67,6 +89,14 @@ namespace OdataToEntity.Infrastructure
             for (int i = 0; i < propertyGetHashCodes.Length; i++)
                 hashCode = (hashCode << 5) + hashCode ^ propertyGetHashCodes[i](obj);
             return hashCode;
+        }
+        public IComparer<T> GetTypedComparer<T>()
+        {
+            return new TypedEqualityComparer<T>(this);
+        }
+        public IEqualityComparer<T> GetTypedEqualityComparer<T>()
+        {
+            return new TypedEqualityComparer<T>(this);
         }
         private static MemberExpression ReplaceParameter(MemberExpression propertyExpression, ParameterExpression newParameter)
         {

@@ -75,8 +75,7 @@ namespace OdataToEntity.Parsers.Translators
         public Expression Build(Expression source, OeQueryContext queryContext)
         {
             bool isBuild = false;
-            bool skipTop = queryContext.ODataUri.Skip != null || queryContext.ODataUri.Top != null;
-            if (skipTop)
+            if (queryContext.ODataUri.Skip != null || queryContext.ODataUri.Top != null)
             {
                 isBuild = true;
                 source = BuildSkipTakeSource(source, queryContext, _navigationItem);
@@ -97,7 +96,7 @@ namespace OdataToEntity.Parsers.Translators
                 BuildCompute(queryContext.ODataUri.Compute);
             }
 
-            source = BuildOrderBy(source, queryContext.ODataUri.OrderBy, skipTop);
+            source = BuildOrderBy(source, queryContext.ODataUri.OrderBy);
 
             if (isBuild)
             {
@@ -117,10 +116,11 @@ namespace OdataToEntity.Parsers.Translators
                 _navigationItem.AddSelectItem(new OeSelectItem(new ComputeProperty(computeExpression.Alias, edmTypeReference, expression), false));
             }
         }
-        private Expression BuildOrderBy(Expression source, OrderByClause orderByClause, bool skipTop)
+        private Expression BuildOrderBy(Expression source, OrderByClause orderByClause)
         {
             _joinBuilder.Visitor.ChangeParameterType(source);
-            if (!skipTop)
+            if (!(source is MethodCallExpression callExpression &&
+                (callExpression.Method.Name == nameof(Enumerable.Skip) || callExpression.Method.Name == nameof(Enumerable.Take))))
                 source = OeOrderByTranslator.Build(_joinBuilder, source, _joinBuilder.Visitor.Parameter, orderByClause);
 
             List<OeSelectItem> navigationItems = FlattenNavigationItems(_navigationItem, false);

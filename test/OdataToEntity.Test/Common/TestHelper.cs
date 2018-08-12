@@ -56,9 +56,9 @@ namespace OdataToEntity.Test
             public IQueryable<T> Query => _query;
         }
 
-        public static void Compare(IList fromDb, IList fromOe, IReadOnlyList<IncludeVisitor.Include> includes)
+        public static void Compare(IList fromDb, IList fromOe, ModelBuilder.OeEdmModelMetadataProvider metadataProvider, IReadOnlyList<IncludeVisitor.Include> includes)
         {
-            var contractResolver = new TestContractResolver(includes);
+            var contractResolver = new TestContractResolver(metadataProvider, includes);
             var settings = new JsonSerializerSettings()
             {
                 ContractResolver = contractResolver,
@@ -74,20 +74,24 @@ namespace OdataToEntity.Test
 
             Assert.Equal(jsonDb, jsonOe);
         }
+        public static Infrastructure.OeEntryEqualityComparer CreateEntryEqualityComparer(ModelBuilder.OeEdmModelMetadataProvider metadataProvider, Type entityType)
+        {
+            return new Infrastructure.OeEntryEqualityComparer(GetKeyExpressions(metadataProvider, entityType));
+        }
         public static IList ExecuteDb<T, TResult>(Db.OeEntitySetAdapterCollection entitySetAdapters, DbContext dataContext, Expression<Func<IQueryable<T>, TResult>> expression)
         {
             var visitor = new QueryVisitor<T>(entitySetAdapters, dataContext);
             Expression call = visitor.Visit(expression.Body);
             return new[] { visitor.Query.Provider.Execute<TResult>(call) };
         }
-        public static IList ExecuteDb<T, TResult>(Db.OeEntitySetAdapterCollection entitySetAdapters, DbContext dataContext,
+        public static IList ExecuteDb<T, TResult>(Db.OeDataAdapter dataAdapter, DbContext dataContext,
             Expression<Func<IQueryable<T>, IQueryable<TResult>>> expression, out IReadOnlyList<IncludeVisitor.Include> includes)
         {
-            var visitor = new QueryVisitor<T>(entitySetAdapters, dataContext);
+            var visitor = new QueryVisitor<T>(dataAdapter.EntitySetAdapters, dataContext);
             Expression call = visitor.Visit(expression.Body);
 
             var metadataProvider = new OdataToEntity.EfCore.OeEfCoreEdmModelMetadataProvider(dataContext.Model);
-            var includeVisitor = new IncludeVisitor(metadataProvider);
+            var includeVisitor = new IncludeVisitor(metadataProvider, dataAdapter.IsDatabaseNullHighestValue);
             call = includeVisitor.Visit(call);
             includes = includeVisitor.Includes;
 
@@ -122,6 +126,30 @@ namespace OdataToEntity.Test
                 if (iface.IsGenericType && iface.GetGenericTypeDefinition() == typeof(IEnumerable<>))
                     return iface.GetGenericArguments()[0];
             return null;
+        }
+        private static MemberExpression[] GetKeyExpressions(ModelBuilder.OeEdmModelMetadataProvider metadataProvider, Type entityType)
+        {
+            var keyPropertyList = new List<PropertyInfo>();
+            foreach (PropertyInfo property in entityType.GetProperties())
+                if (metadataProvider.IsKey(property))
+                    keyPropertyList.Add(property);
+
+            if (keyPropertyList.Count == 0)
+            {
+                PropertyInfo keyProperty = entityType.GetPropertyIgnoreCase("Id");
+                if (keyProperty == null)
+                    throw new InvalidOperationException("Key not found in " + entityType.Name);
+
+                keyPropertyList.Add(keyProperty);
+            }
+            PropertyInfo[] keyProperties = keyPropertyList.ToArray();
+            metadataProvider.SortClrPropertyByOrder(keyProperties);
+
+            var keyExpressions = new MemberExpression[keyProperties.Length];
+            ParameterExpression parameter = Expression.Parameter(entityType);
+            for (int i = 0; i < keyProperties.Length; i++)
+                keyExpressions[i] = Expression.Property(parameter, keyProperties[i]);
+            return keyExpressions;
         }
         public static IList ToOpenType(IEnumerable entities)
         {

@@ -62,12 +62,15 @@ namespace OdataToEntity.Linq2Db
         }
         internal PropertyInfo[] GetPrimaryKey(Type entityType)
         {
-            var keys = new List<PropertyInfo>();
+            var keyList = new List<PropertyInfo>();
             PropertyInfo[] properties = entityType.GetProperties();
             foreach (PropertyInfo property in properties)
                 if (IsKey(property))
-                    keys.Add(property);
-            return SortClrPropertyByOrder(keys.ToArray());
+                    keyList.Add(property);
+
+            PropertyInfo[] keys = keyList.ToArray();
+            SortClrPropertyByOrder(keys);
+            return keys;
         }
         public override bool IsKey(PropertyInfo propertyInfo) => propertyInfo.GetCustomAttribute(typeof(PrimaryKeyAttribute)) != null;
         public override bool IsNotMapped(PropertyInfo propertyInfo)

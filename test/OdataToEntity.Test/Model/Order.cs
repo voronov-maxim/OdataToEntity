@@ -88,6 +88,8 @@ namespace OdataToEntity.Test.Model
         public int Id { get; set; }
         [Key, Column(Order = 0)]
         public int OrderId { get; set; }
+
+        public override string ToString() => "ShippingAddress: OrderId = " + OrderId.ToString() + ", Id = " + Id.ToString();
     }
 
     public class ManyColumnsBase

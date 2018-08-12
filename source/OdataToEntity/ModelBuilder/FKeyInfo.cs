@@ -87,7 +87,9 @@ namespace OdataToEntity.ModelBuilder
             else
                 dependentProperties.AddRange(fkey);
 
-            return metadataProvider.SortClrPropertyByOrder(dependentProperties.ToArray());
+            PropertyInfo[] dependentPropertyArray = dependentProperties.ToArray();
+            metadataProvider.SortClrPropertyByOrder(dependentPropertyArray);
+            return dependentPropertyArray;
         }
         private static EdmMultiplicity GetEdmMultiplicity(Type propertyType, PropertyInfo[] dependentStructuralProperties)
         {

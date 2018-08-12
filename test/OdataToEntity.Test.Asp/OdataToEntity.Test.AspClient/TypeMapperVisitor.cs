@@ -11,19 +11,24 @@ namespace OdataToEntity.Test.Model
 {
     internal sealed class TypeMapperVisitor : ExpressionVisitor
     {
-        private readonly IQueryable _query;
+        private readonly ODataClient.Default.Container _container;
         private readonly List<LambdaExpression> _navigationPropertyAccessors;
         private readonly Dictionary<ParameterExpression, ParameterExpression> _parameters;
-        private Expression _source;
 
-        public TypeMapperVisitor(IQueryable query)
+        public TypeMapperVisitor(ODataClient.Default.Container container)
         {
-            _query = query;
+            _container = container;
 
             _navigationPropertyAccessors = new List<LambdaExpression>();
             _parameters = new Dictionary<ParameterExpression, ParameterExpression>();
         }
 
+        private MethodInfo GetExpandMethodInfo<TElement, TTarget>(Expression<Func<TElement, TTarget>> navigationPropertyAccessor)
+        {
+            var dsq = (DataServiceQuery<TElement>)DbFixtureInitDb.GetQuerableOe(_container, navigationPropertyAccessor.Parameters[0].Type);
+            Func<Expression<Func<TElement, TTarget>>, DataServiceQuery<TElement>> expand = dsq.Expand;
+            return expand.GetMethodInfo();
+        }
         private MemberInfo Map(MemberInfo source)
         {
             if (source.DeclaringType == typeof(DateTime))
@@ -102,8 +107,19 @@ namespace OdataToEntity.Test.Model
         }
         protected override Expression VisitMember(MemberExpression node)
         {
-            Expression expression = base.Visit(node.Expression);
-            return Expression.MakeMemberAccess(expression, Map(node.Member));
+            if (node.Expression is ConstantExpression constantExpression && node.Type.IsGenericType && node.Type.GetGenericTypeDefinition() == typeof(IQueryable<>))
+            {
+                Type entityType = node.Type.GetGenericArguments()[0];
+                IQueryable source = DbFixtureInitDb.GetQuerableOe(_container, entityType);
+                return source.Expression;
+            }
+
+            return Expression.MakeMemberAccess(base.Visit(node.Expression), Map(node.Member));
+        }
+        protected override MemberAssignment VisitMemberAssignment(MemberAssignment node)
+        {
+            MemberInfo property = Map(node.Member);
+            return Expression.Bind(property, base.Visit(node.Expression));
         }
         protected override Expression VisitMethodCall(MethodCallExpression node)
         {
@@ -124,7 +140,7 @@ namespace OdataToEntity.Test.Model
                     var arg1 = (UnaryExpression)arguments[1];
 
                     _navigationPropertyAccessors.Add((LambdaExpression)arg1.Operand);
-                    MethodInfo expandMethod = GetExpandMethodInfo((dynamic)_query, (dynamic)arg1.Operand);
+                    MethodInfo expandMethod = GetExpandMethodInfo((dynamic)arg1.Operand);
                     Expression instance = Expression.Convert(arguments[0], dataServiceQueryType);
                     return Expression.Call(instance, expandMethod, arg1);
                 }
@@ -139,11 +155,6 @@ namespace OdataToEntity.Test.Model
             }
             return base.VisitMethodCall(node);
         }
-        private static MethodInfo GetExpandMethodInfo<TElement, TTarget>(DataServiceQuery<TElement> dsq, Expression<Func<TElement, TTarget>> navigationPropertyAccessor)
-        {
-            Func<Expression<Func<TElement, TTarget>>, DataServiceQuery<TElement>> expand = dsq.Expand;
-            return expand.GetMethodInfo();
-        }
         protected override Expression VisitNew(NewExpression node)
         {
             ReadOnlyCollection<Expression> arguments = base.Visit(node.Arguments);
@@ -152,10 +163,11 @@ namespace OdataToEntity.Test.Model
         }
         protected override Expression VisitParameter(ParameterExpression node)
         {
-            if (_source == null && typeof(IQueryable).IsAssignableFrom(node.Type))
+            if (typeof(IQueryable).IsAssignableFrom(node.Type))
             {
-                _source = _query.Expression;
-                return _source;
+                Type entityType = node.Type.GetGenericArguments()[0];
+                IQueryable source = DbFixtureInitDb.GetQuerableOe(_container, entityType);
+                return source.Expression;
             }
 
             if (_parameters.TryGetValue(node, out ParameterExpression parameter))

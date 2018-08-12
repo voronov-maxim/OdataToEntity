@@ -46,35 +46,30 @@ namespace OdataToEntity.AspNetCore
             }
         }
 
-        private readonly Db.OeAsyncEnumerator _asyncEnumerator;
-        private readonly OeEntryFactory _entryFactory;
+        private readonly Db.OeDbEnumerator _dbEnumerator;
+        private readonly IDisposable _dispose;
         private bool _isFirstMoveNext;
         private bool _isMoveNext;
         private readonly OeQueryContext _queryContext;
 
-        public OeEntityAsyncEnumerator(OeEntryFactory entryFactory, Db.OeAsyncEnumerator asyncEnumerator)
+        public OeEntityAsyncEnumerator(Db.OeAsyncEnumerator asyncEnumerator, OeEntryFactory entryFactory, OeQueryContext queryContext)
         {
-            _entryFactory = entryFactory;
-            _asyncEnumerator = asyncEnumerator;
-
+            _dispose = asyncEnumerator;
+            _dbEnumerator = new Db.OeDbEnumerator(asyncEnumerator, entryFactory);
+            _queryContext = queryContext;
             _isFirstMoveNext = true;
         }
-        public OeEntityAsyncEnumerator(OeEntryFactory entryFactory, Db.OeAsyncEnumerator asyncEnumerator, OeQueryContext queryContext)
-            : this(entryFactory, asyncEnumerator)
-        {
-            _queryContext = queryContext;
-        }
 
-        private static Object CreateEntity(OeEntryFactory entryFactory, Object value, Object entity, Type entityType)
+        private static async Task<Object> CreateEntity(Db.OeDbEnumerator dbEnumerator, Object value, Object entity, Type entityType)
         {
             if (OeExpressionHelper.IsTupleType(entity.GetType()))
             {
                 value = entity;
-                entity = CreateEntityFromTuple(entityType, entity, entryFactory.Accessors);
+                entity = CreateEntityFromTuple(entityType, entity, dbEnumerator.EntryFactory.Accessors);
             }
 
-            foreach (OeEntryFactory navigationLink in entryFactory.NavigationLinks)
-                SetNavigationProperty(navigationLink, value, entity);
+            foreach (OeEntryFactory navigationLink in dbEnumerator.EntryFactory.NavigationLinks)
+                await SetNavigationProperty(dbEnumerator.CreateChild(navigationLink), value, entity).ConfigureAwait(false);
 
             return entity;
         }
@@ -89,62 +84,62 @@ namespace OdataToEntity.AspNetCore
             }
             return entity;
         }
-        private static Object CreateNestedEntity(OeEntryFactory entryFactory, Object value, Type nestedEntityType)
+        private static async Task<Object> CreateNestedEntity(Db.OeDbEnumerator dbEnumerator, Object value, Type nestedEntityType)
         {
-            Object entity = entryFactory.GetValue(value, out _);
+            Object entity = dbEnumerator.Current;
             if (entity == null)
                 return null;
 
-            if (entryFactory.ResourceInfo.IsCollection.GetValueOrDefault())
+            if (dbEnumerator.EntryFactory.ResourceInfo.IsCollection.GetValueOrDefault())
             {
                 var entityList = new List<Object>();
-                foreach (Object item in (IEnumerable)entity)
-                    entityList.Add(CreateEntity(entryFactory, item, item, nestedEntityType));
+                do
+                {
+                    Object item = dbEnumerator.Current;
+                    if (item != null)
+                        entityList.Add(await CreateEntity(dbEnumerator, item, item, nestedEntityType).ConfigureAwait(false));
+                }
+                while (await dbEnumerator.MoveNextAsync().ConfigureAwait(false));
 
                 var entities = (Object[])Array.CreateInstance(nestedEntityType, entityList.Count);
                 entityList.CopyTo(entities);
                 return entities;
             }
 
-            if (Writers.OeGetWriter.IsNullNavigationValue(entity))
-                return null;
-
-            return CreateEntity(entryFactory, value, entity, nestedEntityType);
+            return await CreateEntity(dbEnumerator, value, entity, nestedEntityType).ConfigureAwait(false);
         }
-        private static T CreateRootEntity(OeEntryFactory entryFactory, Object value)
+        public void Dispose()
         {
-            Object entity = entryFactory.GetValue(value, out _);
-            return (T)CreateEntity(entryFactory, value, entity, typeof(T));
+            _dispose.Dispose();
         }
-        public void Dispose() => _asyncEnumerator.Dispose();
         public async Task<bool> MoveNext(CancellationToken cancellationToken)
         {
             if (_isFirstMoveNext)
             {
                 _isFirstMoveNext = false;
-                _isMoveNext = await _asyncEnumerator.MoveNextAsync().ConfigureAwait(false);
+                _isMoveNext = await _dbEnumerator.MoveNextAsync().ConfigureAwait(false);
             }
             if (!_isMoveNext)
                 return false;
 
-            Object value = _asyncEnumerator.Current;
-            T entity = CreateRootEntity(_entryFactory, value);
+            var entity = (T)await CreateEntity(_dbEnumerator, _dbEnumerator.Current, _dbEnumerator.Current, typeof(T)).ConfigureAwait(false);
+            Object buffer = _dbEnumerator.ClearBuffer();
 
-            _isMoveNext = await _asyncEnumerator.MoveNextAsync().ConfigureAwait(false);
+            _isMoveNext = await _dbEnumerator.MoveNextAsync().ConfigureAwait(false);
             if (!_isMoveNext && _queryContext.SkipTokenNameValues != null && _queryContext.SkipTokenAccessors != null)
-                SetOrderByProperties(_queryContext, entity, value);
+                SetOrderByProperties(_queryContext, entity, buffer);
 
             Current = entity;
             return true;
         }
-        private static void SetNavigationProperty(OeEntryFactory navigationLink, Object value, Object entity)
+        private static async Task SetNavigationProperty(Db.OeDbEnumerator dbEnumerator, Object value, Object entity)
         {
-            PropertyInfo propertyInfo = entity.GetType().GetProperty(navigationLink.ResourceInfo.Name);
+            PropertyInfo propertyInfo = entity.GetType().GetProperty(dbEnumerator.EntryFactory.ResourceInfo.Name);
             Type nestedEntityType = OeExpressionHelper.GetCollectionItemType(propertyInfo.PropertyType);
             if (nestedEntityType == null)
                 nestedEntityType = propertyInfo.PropertyType;
 
-            Object navigationValue = CreateNestedEntity(navigationLink, value, nestedEntityType);
+            Object navigationValue = await CreateNestedEntity(dbEnumerator, value, nestedEntityType).ConfigureAwait(false);
             propertyInfo.SetValue(entity, navigationValue);
         }
         private static void SetOrderByProperties(OeQueryContext queryContext, Object entity, Object value)

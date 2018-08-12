@@ -10,6 +10,22 @@ namespace OdataToEntity.Test
 {
     internal sealed class IncludeVisitor : ExpressionVisitor
     {
+        private class DatabaseNullHighestValueComparer<T> : IComparer<T>
+        {
+            public int Compare(T x, T y)
+            {
+                if (x == default || y == default)
+                {
+                    if (x == default && y == default)
+                        return 0;
+
+                    return x == default ? 1 : -1;
+                }
+
+                return Comparer<T>.Default.Compare(x, y);
+            }
+        }
+
         public readonly struct Include
         {
             public Include(PropertyInfo property, Func<IEnumerable, IList> filter)
@@ -46,8 +62,14 @@ namespace OdataToEntity.Test
         private sealed class PropertyVisitor : ExpressionVisitor
         {
             private Func<IEnumerable, IList> _filter;
+            private readonly bool _isDatabaseNullHighestValue;
             private ParameterExpression _parameter;
             private MemberExpression _property;
+
+            public PropertyVisitor(bool isDatabaseNullHighestValue)
+            {
+                _isDatabaseNullHighestValue = isDatabaseNullHighestValue;
+            }
 
             protected override Expression VisitMember(MemberExpression node)
             {
@@ -68,7 +90,22 @@ namespace OdataToEntity.Test
             {
                 ParameterExpression source = Expression.Parameter(typeof(IEnumerable));
                 UnaryExpression convert = Expression.Convert(source, node.Arguments[0].Type);
-                MethodCallExpression call = Expression.Call(null, node.Method, convert, node.Arguments[1]);
+
+                MethodCallExpression call = Expression.Call(node.Method, convert, node.Arguments[1]);
+                if (_isDatabaseNullHighestValue && (
+                    node.Method.Name == nameof(Enumerable.OrderBy) || node.Method.Name == nameof(Enumerable.OrderByDescending) ||
+                    node.Method.Name == nameof(Enumerable.ThenBy) || node.Method.Name == nameof(Enumerable.ThenByDescending)))
+                {
+                    Type keyType = ((LambdaExpression)node.Arguments[1]).ReturnType;
+
+                    Type sourceType = Parsers.OeExpressionHelper.GetCollectionItemType(node.Arguments[0].Type);
+                    MethodInfo method = typeof(Enumerable).GetMethods().Single(m => m.Name == node.Method.Name && m.GetParameters().Length == 3);
+                    MethodInfo sortMethod = method.GetGenericMethodDefinition().MakeGenericMethod(new Type[] { sourceType, keyType });
+
+                    Type comparerType = typeof(DatabaseNullHighestValueComparer<>).MakeGenericType(keyType);
+                    Object keyComparer = Activator.CreateInstance(comparerType);
+                    call = Expression.Call(sortMethod, convert, node.Arguments[1], Expression.Constant(keyComparer));
+                }
 
                 Type itemType = node.Arguments[0].Type.GetGenericArguments()[0];
                 Type listType = typeof(List<>).MakeGenericType(itemType);
@@ -85,11 +122,13 @@ namespace OdataToEntity.Test
         }
 
         private readonly List<Include> _includes;
+        private readonly bool _isDatabaseNullHighestValue;
         private readonly ModelBuilder.OeEdmModelMetadataProvider _metadataProvider;
 
-        public IncludeVisitor(ModelBuilder.OeEdmModelMetadataProvider metadataProvider)
+        public IncludeVisitor(ModelBuilder.OeEdmModelMetadataProvider metadataProvider, bool isDatabaseNullHighestValue)
         {
             _metadataProvider = metadataProvider;
+            _isDatabaseNullHighestValue = isDatabaseNullHighestValue;
             _includes = new List<Include>();
         }
 
@@ -102,7 +141,7 @@ namespace OdataToEntity.Test
                 if (node.Method.Name == nameof(EntityFrameworkQueryableExtensions.Include) ||
                     node.Method.Name == nameof(EntityFrameworkQueryableExtensions.ThenInclude))
                 {
-                    var visitor = new PropertyVisitor();
+                    var visitor = new PropertyVisitor(_isDatabaseNullHighestValue);
                     visitor.Visit(node.Arguments[1]);
 
                     if (visitor.Filter == null)

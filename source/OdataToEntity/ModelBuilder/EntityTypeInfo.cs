@@ -105,7 +105,7 @@ namespace OdataToEntity.ModelBuilder
             }
             else
             {
-                if (clrProperty.PropertyType == typeof(DateTime?) && enumTypes.ContainsKey(typeof(DateTime?))) //zzz
+                if (clrProperty.PropertyType == typeof(DateTime?) && enumTypes.ContainsKey(typeof(DateTime?)))
                 {
                     var edmType = enumTypes[typeof(DateTime?)];
                     typeRef = new EdmEnumTypeReference(edmType, true);

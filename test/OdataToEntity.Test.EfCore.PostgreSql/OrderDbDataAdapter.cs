@@ -8,6 +8,7 @@ namespace OdataToEntity.Test
         public OrderDbDataAdapter(bool allowCache, bool useRelationalNulls, String databaseName) :
             base(Model.OrderContextOptions.Create(useRelationalNulls, ""), new Cache.OeQueryCache(allowCache))
         {
+            base.IsDatabaseNullHighestValue = true;
         }
     }
 

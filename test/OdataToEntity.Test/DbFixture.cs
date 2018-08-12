@@ -41,7 +41,7 @@ namespace OdataToEntity.Test
                 fromDb = TestHelper.ExecuteDb(DbDataAdapter.EntitySetAdapters, dataContext, parameters.Expression);
 
             Console.WriteLine(parameters.RequestUri);
-            TestHelper.Compare(fromDb, fromOe, null);
+            TestHelper.Compare(fromDb, fromOe, DbDataAdapter.EntitySetAdapters.EdmModelMetadataProvider, null);
         }
         public virtual async Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
         {
@@ -49,10 +49,10 @@ namespace OdataToEntity.Test
             IList fromDb;
             IReadOnlyList<IncludeVisitor.Include> includes;
             using (var dataContext = (DbContext)DbDataAdapter.CreateDataContext())
-                fromDb = TestHelper.ExecuteDb(DbDataAdapter.EntitySetAdapters, dataContext, parameters.Expression, out includes);
+                fromDb = TestHelper.ExecuteDb(DbDataAdapter, dataContext, parameters.Expression, out includes);
 
             Console.WriteLine(parameters.RequestUri);
-            TestHelper.Compare(fromDb, fromOe, includes);
+            TestHelper.Compare(fromDb, fromOe, DbDataAdapter.EntitySetAdapters.EdmModelMetadataProvider, includes);
         }
         internal async Task ExecuteBatchAsync(String batchName)
         {

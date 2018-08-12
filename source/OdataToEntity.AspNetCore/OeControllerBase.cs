@@ -108,7 +108,8 @@ namespace OdataToEntity.AspNetCore
         }
         protected ODataResult<T> OData<T>(OeAsyncEnumerator asyncEnumerator)
         {
-            var entityAsyncEnumerator = new OeEntityAsyncEnumerator<T>(_queryContext.EntryFactory, asyncEnumerator, _queryContext);
+            var entityAsyncEnumerator = new OeEntityAsyncEnumerator<T>(asyncEnumerator, _queryContext.EntryFactory, _queryContext);
+            HttpContext.Response.RegisterForDispose(entityAsyncEnumerator);
             return new ODataResult<T>(_edmModel, _queryContext.ODataUri, entityAsyncEnumerator)
             {
                 Count = asyncEnumerator.Count,

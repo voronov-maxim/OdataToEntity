@@ -62,19 +62,13 @@ namespace OdataToEntity
                 ODataPathSegment previousSegment = null;
                 foreach (ODataPathSegment segment in odataUri.Path)
                 {
-                    if (segment is NavigationPropertySegment)
-                    {
-                        var navigationSegment = segment as NavigationPropertySegment;
-                        if (navigationSegment == odataUri.Path.LastSegment)
-                            navigationSegments.Add(new OeParseNavigationSegment(navigationSegment, null));
-                        else
-                            navigationSegments.Add(new OeParseNavigationSegment(navigationSegment, null));
-                    }
+                    if (segment is NavigationPropertySegment navigationSegment)
+                        navigationSegments.Add(new OeParseNavigationSegment(navigationSegment, null));
                     else if (segment is KeySegment)
                     {
                         IEdmEntitySet previousEntitySet;
                         var keySegment = segment as KeySegment;
-                        NavigationPropertySegment navigationSegment = null;
+                        navigationSegment = null;
                         if (previousSegment is EntitySetSegment)
                         {
                             var previousEntitySetSegment = previousSegment as EntitySetSegment;

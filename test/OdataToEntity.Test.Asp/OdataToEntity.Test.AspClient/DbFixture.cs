@@ -23,7 +23,6 @@ namespace OdataToEntity.Test
 
         private readonly bool _clear;
         private readonly Db.OeDataAdapter _dataAdapter;
-        private readonly Db.OeEntitySetAdapterCollection _entitySetAdapters;
         private readonly IEdmModel _edmModel;
 
         public DbFixtureInitDb(bool clear = false)
@@ -32,7 +31,6 @@ namespace OdataToEntity.Test
 
             _dataAdapter = new EfCore.OeEfCoreDataAdapter<OrderContext>();
             _edmModel = _dataAdapter.BuildEdmModel();
-            _entitySetAdapters = _dataAdapter.EntitySetAdapters;
         }
 
         public static Container CreateContainer(int maxPageSize)
@@ -60,9 +58,9 @@ namespace OdataToEntity.Test
             IList fromDb;
 
             using (var dataContext = new OrderContext(OrderContextOptions.Create(true, null)))
-                fromDb = TestHelper.ExecuteDb(_entitySetAdapters, dataContext, parameters.Expression);
+                fromDb = TestHelper.ExecuteDb(_dataAdapter.EntitySetAdapters, dataContext, parameters.Expression);
 
-            TestHelper.Compare(fromDb, fromOe, null);
+            TestHelper.Compare(fromDb, fromOe, _dataAdapter.EntitySetAdapters.EdmModelMetadataProvider, null);
         }
         public async virtual Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
         {
@@ -71,37 +69,37 @@ namespace OdataToEntity.Test
             {
                 fromOe = await ExecuteOe<T, TResult>(parameters.Expression, parameters.PageSize);
             }
-            catch (NotSupportedException)
+            catch (NotSupportedException e)
             {
                 if (parameters.RequestUri.Contains("$apply="))
                     throw;
 
                 fromOe = await ExecuteOeViaHttpClient(parameters);
                 Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine(parameters.RequestUri);
+                Console.WriteLine(e.Message);
                 Console.ResetColor();
             }
 
-            List<IncludeVisitor.Include> includes = GetIncludes(parameters.Expression);
+            List<IncludeVisitor.Include> includes = GetIncludes(_dataAdapter, parameters.Expression);
             if (typeof(TResult) == typeof(Object))
                 fromOe = TestHelper.ToOpenType(fromOe);
 
             IList fromDb;
             using (var dataContext = new OrderContext(OrderContextOptions.Create(true, null)))
             {
-                fromDb = TestHelper.ExecuteDb(_entitySetAdapters, dataContext, parameters.Expression, out IReadOnlyList<IncludeVisitor.Include> includesDb);
+                fromDb = TestHelper.ExecuteDb(_dataAdapter, dataContext, parameters.Expression, out IReadOnlyList<IncludeVisitor.Include> includesDb);
                 includes.AddRange(includesDb);
             }
 
-            TestHelper.Compare(fromDb, fromOe, includes);
+            TestHelper.Compare(fromDb, fromOe, _dataAdapter.EntitySetAdapters.EdmModelMetadataProvider, includes);
         }
         private async Task<IList> ExecuteOe<T, TResult>(LambdaExpression lambda, int maxPageSize)
         {
             Container container = CreateContainer(maxPageSize);
-            IQueryable query = GetQuerableOe<T>(container);
-            var visitor = new TypeMapperVisitor(query) { TypeMap = t => Type.GetType("ODataClient." + t.FullName) };
+            var visitor = new TypeMapperVisitor(container) { TypeMap = t => Type.GetType("ODataClient." + t.FullName) };
             var call = visitor.Visit(lambda.Body);
 
+            IQueryable query = GetQuerableOe(container, typeof(T));
             Type elementType;
             if (call.Type.GetTypeInfo().IsGenericType)
             {
@@ -169,10 +167,10 @@ namespace OdataToEntity.Test
             T value = query.Provider.Execute<T>(expression);
             return new T[] { value };
         }
-        private static List<IncludeVisitor.Include> GetIncludes(Expression expression)
+        private static List<IncludeVisitor.Include> GetIncludes(Db.OeDataAdapter dataAdapter, Expression expression)
         {
             var includes = new List<IncludeVisitor.Include>();
-            var includeVisitor = new IncludeVisitor();
+            var includeVisitor = new IncludeVisitor(dataAdapter.EntitySetAdapters.EdmModelMetadataProvider, dataAdapter.IsDatabaseNullHighestValue);
             includeVisitor.Visit(expression);
             foreach (IncludeVisitor.Include include in includeVisitor.Includes)
             {
@@ -186,6 +184,8 @@ namespace OdataToEntity.Test
                     declaringType = typeof(ODataClient.OdataToEntity.Test.Model.OrderItem);
                 else if (property.DeclaringType == typeof(Order))
                     declaringType = typeof(ODataClient.OdataToEntity.Test.Model.Order);
+                else if (property.DeclaringType == typeof(ShippingAddress))
+                    declaringType = typeof(ODataClient.OdataToEntity.Test.Model.ShippingAddress);
                 else
                     throw new InvalidOperationException("unknown type " + property.DeclaringType.FullName);
 
@@ -193,24 +193,39 @@ namespace OdataToEntity.Test
                 if (mapProperty == null)
                     throw new InvalidOperationException("unknown property " + property.ToString());
 
-                includes.Add(new IncludeVisitor.Include(mapProperty, null, false));
+                includes.Add(new IncludeVisitor.Include(mapProperty, null));
             }
             return includes;
         }
-        private IQueryable GetQuerableOe<T>(Container container)
+        internal static IQueryable GetQuerableOe(Container container, Type entityType)
         {
-            if (typeof(T) == typeof(Category))
+            if (entityType == typeof(Category))
                 return container.Categories;
-            if (typeof(T) == typeof(Customer))
+            if (entityType == typeof(Customer))
                 return container.Customers;
-            if (typeof(T) == typeof(OrderItem))
+            if (entityType == typeof(OrderItem))
                 return container.OrderItems;
-            if (typeof(T) == typeof(Order))
+            if (entityType == typeof(Order))
                 return container.Orders;
-            if (typeof(T) == typeof(ManyColumns))
+            if (entityType == typeof(ManyColumns))
                 return container.ManyColumns;
+            if (entityType == typeof(ShippingAddress))
+                return container.ShippingAddresses;
 
-            throw new InvalidOperationException("unknown type " + typeof(T).Name);
+            if (entityType == typeof(ODataClient.OdataToEntity.Test.Model.Category))
+                return container.Categories;
+            if (entityType == typeof(ODataClient.OdataToEntity.Test.Model.Customer))
+                return container.Customers;
+            if (entityType == typeof(ODataClient.OdataToEntity.Test.Model.OrderItem))
+                return container.OrderItems;
+            if (entityType == typeof(ODataClient.OdataToEntity.Test.Model.Order))
+                return container.Orders;
+            if (entityType == typeof(ODataClient.OdataToEntity.Test.Model.ManyColumns))
+                return container.ManyColumns;
+            if (entityType == typeof(ODataClient.OdataToEntity.Test.Model.ShippingAddress))
+                return container.ShippingAddresses;
+
+            throw new InvalidOperationException("unknown type " + entityType.Name);
         }
         public async Task Initalize()
         {

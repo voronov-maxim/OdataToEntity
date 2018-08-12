@@ -42,7 +42,13 @@ namespace OdataToEntity.Ef6
                                     matched = lambdaType.GetGenericTypeDefinition() == enumerableTypes[i - 1];
                                 }
                                 else
-                                    matched = querableParameters[i].ParameterType.GetGenericTypeDefinition() == enumerableTypes[i - 1];
+                                {
+                                    Type queryableParameter = querableParameters[i].ParameterType.GetGenericTypeDefinition();
+                                    if (queryableParameter == typeof(IEnumerable<>) && enumerableTypes[i - 1] == typeof(IQueryable<>))
+                                        matched = true;
+                                    else
+                                        matched = queryableParameter == enumerableTypes[i - 1];
+                                }
                             }
                             else
                                 matched = querableParameters[i].ParameterType == enumerableTypes[i - 1];
@@ -101,7 +107,8 @@ namespace OdataToEntity.Ef6
 
             if (arguments[0].Type.GetGenericTypeDefinition() == typeof(IGrouping<,>) ||
                 arguments[0].Type.GetGenericTypeDefinition() == typeof(ICollection<>) ||
-                arguments[0].Type.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+                arguments[0].Type.GetGenericTypeDefinition() == typeof(IEnumerable<>) ||
+                arguments[0].Type.GetGenericTypeDefinition() == typeof(IOrderedEnumerable<>))
                 return Expression.Call(base.Visit(node.Object), node.Method, arguments);
 
             MethodInfo querableMethodInfo = GetQuerableMethodInfo(node.Method, arguments);

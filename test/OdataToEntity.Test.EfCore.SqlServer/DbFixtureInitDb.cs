@@ -42,9 +42,8 @@ namespace OdataToEntity.Test
 
         public void Dispose()
         {
-            //zzz
-            //if (base.OeDataAdapter.QueryCache.AllowCache)
-            //    Xunit.Assert.InRange(_queryCount, _queryCount, base.OeDataAdapter.QueryCache.CacheCount);
+            if (base.OeDataAdapter.QueryCache.AllowCache)
+                Xunit.Assert.InRange(_queryCount, _queryCount, base.OeDataAdapter.QueryCache.CacheCount);
         }
     }
 
