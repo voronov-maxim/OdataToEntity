@@ -69,12 +69,14 @@ namespace OdataToEntity.AspNetCore
             var requestHeaders = (HttpRequestHeaders)httpContext.Request.Headers;
             OeRequestHeaders headers = GetRequestHeaders(requestHeaders, httpContext.Response, navigationNextLink, maxPageSize);
 
-            var parser = new OeParser(UriHelper.GetBaseUri(httpContext.Request), _dataAdapter, _edmModel);
+            String controllerName = base.ControllerContext.ActionDescriptor.ControllerName;
+            var parser = new OeParser(UriHelper.GetBaseUri(httpContext.Request, controllerName), _dataAdapter, _edmModel);
             await parser.ExecuteGetAsync(UriHelper.GetUri(httpContext.Request), headers, responseStream, httpContext.RequestAborted);
         }
         protected OeAsyncEnumerator GetAsyncEnumerator(HttpContext httpContext, Stream responseStream, bool navigationNextLink = false, int? maxPageSize = null)
         {
-            var odataParser = new ODataUriParser(_edmModel, UriHelper.GetBaseUri(httpContext.Request), UriHelper.GetUri(httpContext.Request));
+            String controllerName = base.ControllerContext.ActionDescriptor.ControllerName;
+            var odataParser = new ODataUriParser(_edmModel, UriHelper.GetBaseUri(httpContext.Request, controllerName), UriHelper.GetUri(httpContext.Request));
             odataParser.Resolver.EnableCaseInsensitive = true;
             ODataUri odataUri = odataParser.ParseUri();
 
