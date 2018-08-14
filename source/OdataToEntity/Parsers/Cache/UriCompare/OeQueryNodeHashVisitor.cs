@@ -58,6 +58,12 @@ namespace OdataToEntity.Cache.UriCompare
             var sourceNode = (CollectionNavigationNode)nodeIn.Source;
             return sourceNode.NavigationProperty.Name.GetHashCode();
         }
+        public override int Visit(InNode nodeIn)
+        {
+            var propertyNode = (SingleValuePropertyAccessNode)nodeIn.Left;
+            var constantNodes = (CollectionConstantNode)nodeIn.Right;
+            return CombineHashCodes(propertyNode.Property.Name.GetHashCode(), constantNodes.Collection.Count);
+        }
         public override int Visit(ResourceRangeVariableReferenceNode nodeIn)
         {
             return nodeIn.Name.GetHashCode();

@@ -268,6 +268,24 @@ namespace OdataToEntity.Parsers
             var typeArguments = new Type[] { OeExpressionHelper.GetCollectionItemType(property.Type) };
             return Expression.Call(typeof(Enumerable), nameof(Enumerable.Count), typeArguments, property);
         }
+        public override Expression Visit(InNode nodeIn)
+        {
+            var propertyExpression = (MemberExpression)Visit((SingleValuePropertyAccessNode)nodeIn.Left);
+            var constantNodes = (CollectionConstantNode)nodeIn.Right;
+
+            BinaryExpression inExpression = null;
+            for (int i = 0; i < constantNodes.Collection.Count; i++)
+            {
+                var constantExpression = (ConstantExpression)Visit(constantNodes.Collection[i]);
+                ConstantExpression coercedConstanExpression = OeExpressionHelper.ConstantChangeType(constantExpression, propertyExpression.Type);
+                if (coercedConstanExpression != constantExpression)
+                    ReplaceConstant(constantExpression, coercedConstanExpression);
+
+                BinaryExpression equalExpression = Expression.Equal(propertyExpression, coercedConstanExpression);
+                inExpression = inExpression == null ? equalExpression : Expression.OrElse(inExpression, equalExpression);
+            }
+            return inExpression;
+        }
         public override Expression Visit(ResourceRangeVariableReferenceNode nodeIn)
         {
             return Parameter;

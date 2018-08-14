@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using System;
 
 namespace OdataToEntity.Test.Model
@@ -9,6 +10,7 @@ namespace OdataToEntity.Test.Model
         {
             var optionsBuilder = new DbContextOptionsBuilder<OrderContext>();
             optionsBuilder.UseSqlServer(@"Server=.\sqlexpress;Initial Catalog=OdataToEntity;Trusted_Connection=Yes;", opt => opt.UseRelationalNulls(useRelationalNulls));
+                //.ConfigureWarnings(warnings => warnings.Throw(RelationalEventId.QueryClientEvaluationWarning));
             return optionsBuilder.Options;
         }
     }

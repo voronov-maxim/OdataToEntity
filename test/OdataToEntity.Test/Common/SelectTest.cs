@@ -775,6 +775,32 @@ namespace OdataToEntity.Test
         [Theory]
         [InlineData(0)]
         [InlineData(1)]
+        public async Task FilterIn(int pageSize)
+        {
+            var parameters = new QueryParameters<OrderItem>()
+            {
+                RequestUri = "OrderItems?$filter=Price in (1.1,1.2,1.3)&$orderby=Id",
+                Expression = t => t.Where(i => i.Price == 1.1m || i.Price == 1.2m || i.Price == 1.3m).OrderBy(i => i.Id),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters).ConfigureAwait(false);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task FilterInEnum(int pageSize)
+        {
+            var parameters = new QueryParameters<Customer>()
+            {
+                RequestUri = "Customers?$filter=Sex in ('Male','Female')&$orderby=Country,Id",
+                Expression = t => t.Where(c => c.Sex == Sex.Male || c.Sex == Sex.Female).OrderBy(c => c.Country).ThenBy(c => c.Id),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters).ConfigureAwait(false);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
         public async Task FilterInt(int pageSize)
         {
             var parameters = new QueryParameters<OrderItem>()

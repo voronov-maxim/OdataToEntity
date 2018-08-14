@@ -1,13 +1,27 @@
 ﻿using Microsoft.OData.Client;
 using ODataClient.Default;
 using System;
+using System.Collections;
+using System.Linq;
 using System.ServiceModel;
+using System.Threading.Tasks;
 
 namespace OdataToEntity.Test.WcfClient
 {
+    internal sealed class WcfDbFixtureInitDb : DbFixtureInitDb
+    {
+        protected override async Task<IList> ExecuteOeViaHttpClient<T, TResult>(QueryParameters<T, TResult> parameters)
+        {
+            WcfService.OdataWcfQuery result = await Program.Interceptor.Get(parameters.RequestUri);
+
+            var responseReader = new ResponseReader(base.EdmModel, base.DataAdapter);
+            return responseReader.Read<T>(result.Content).Cast<Object>().ToList();
+        }
+    }
+
     internal sealed class NC_PLNull : SelectTest
     {
-        public NC_PLNull() : base(new DbFixtureInitDb())
+        public NC_PLNull() : base(new WcfDbFixtureInitDb())
         {
         }
     }
@@ -21,13 +35,13 @@ namespace OdataToEntity.Test.WcfClient
 
     class Program
     {
-        private static readonly WcfClientInterceptor _interceptor = new WcfClientInterceptor(new NetTcpBinding(), RemoteAddress);
+        internal static readonly WcfClientInterceptor Interceptor = new WcfClientInterceptor(new NetTcpBinding(), RemoteAddress);
         public const String RemoteAddress = "net.tcp://localhost:5000/OdataWcfService";
 
         private static Container ContainerFactory()
         {
             var container = new Container(new Uri("http://dummy")) { MergeOption = MergeOption.OverwriteChanges };
-            _interceptor.AttachToContext(container);
+            Interceptor.AttachToContext(container);
             return container;
         }
 

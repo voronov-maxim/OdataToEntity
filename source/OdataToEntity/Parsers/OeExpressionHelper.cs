@@ -16,32 +16,39 @@ namespace OdataToEntity.Parsers
 
         public static ConstantExpression ConstantChangeType(ConstantExpression constantExpression, Type targetType)
         {
-            if (constantExpression.Value == null)
-                return constantExpression;
-            if (constantExpression.Type == targetType)
+            if (constantExpression.Value == null || constantExpression.Type == targetType)
                 return constantExpression;
 
             Object value;
-            if (constantExpression.Type == typeof(DateTimeOffset))
+            if (constantExpression.Type == typeof(DateTimeOffset) || constantExpression.Type == typeof(DateTimeOffset?))
             {
                 if (targetType == typeof(DateTimeOffset?))
                     return constantExpression;
-                if (targetType == typeof(DateTime))
-                    return Expression.Constant(((DateTimeOffset)constantExpression.Value).UtcDateTime);
+                if (targetType == typeof(DateTime) || targetType == typeof(DateTime?))
+                    return Expression.Constant(((DateTimeOffset)constantExpression.Value).UtcDateTime, targetType);
             }
             else if (constantExpression.Type == typeof(Date))
             {
                 if (targetType == typeof(Date?))
                     return constantExpression;
-                if (targetType == typeof(DateTime))
-                    return Expression.Constant((DateTime)(Date)constantExpression.Value);
+                if (targetType == typeof(DateTime) || targetType == typeof(Date?))
+                    return Expression.Constant((DateTime)(Date)constantExpression.Value, targetType);
             }
             else if (constantExpression.Type == typeof(ODataEnumValue))
             {
                 var enumValue = (ODataEnumValue)constantExpression.Value;
-                value = Enum.Parse(targetType, enumValue.Value);
-                return Expression.Constant(value);
+                if (targetType.IsEnum)
+                    value = Enum.Parse(targetType, enumValue.Value);
+                else
+                {
+                    Type underlyingType = Nullable.GetUnderlyingType(targetType);
+                    value = Enum.Parse(underlyingType, enumValue.Value);
+                }
+                return Expression.Constant(value, targetType);
             }
+
+            if (Nullable.GetUnderlyingType(targetType) == constantExpression.Type)
+                return Expression.Constant(constantExpression.Value, targetType);
 
             value = Convert.ChangeType(constantExpression.Value, targetType, CultureInfo.InvariantCulture);
             return Expression.Constant(value);

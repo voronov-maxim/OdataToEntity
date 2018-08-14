@@ -40,6 +40,8 @@ namespace OdataToEntity.Cache.UriCompare
                         return Visit((CountNode)node1, (CountNode)node2);
                     else
                         return Visit((CountVirtualPropertyNode)node1, (CountVirtualPropertyNode)node1);
+                case QueryNodeKind.In:
+                    return Visit((InNode)node1, (InNode)node2);
                 case QueryNodeKind.ResourceRangeVariableReference:
                     return Visit((ResourceRangeVariableReferenceNode)node1, (ResourceRangeVariableReferenceNode)node2);
                 case QueryNodeKind.SingleNavigationNode:
@@ -133,6 +135,24 @@ namespace OdataToEntity.Cache.UriCompare
         }
         private bool Visit(CountVirtualPropertyNode node1, CountVirtualPropertyNode node2)
         {
+            return true;
+        }
+        private bool Visit(InNode node1, InNode node2)
+        {
+            var propertyNode1 = (SingleValuePropertyAccessNode)node1.Left;
+            var propertyNode2 = (SingleValuePropertyAccessNode)node2.Left;
+            if (!Visit(propertyNode1, propertyNode2))
+                return false;
+
+            var constantNodes1 = (CollectionConstantNode)node1.Right;
+            var constantNodes2 = (CollectionConstantNode)node2.Right;
+            if (constantNodes1.Collection.Count != constantNodes2.Collection.Count)
+                return false;
+
+            for (int i = 0; i < constantNodes1.Collection.Count; i++)
+                if (!Visit(constantNodes1.Collection[i], constantNodes2.Collection[i]))
+                    return false;
+
             return true;
         }
         private bool Visit(ResourceRangeVariableReferenceNode node1, ResourceRangeVariableReferenceNode node2)

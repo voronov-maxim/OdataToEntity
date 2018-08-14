@@ -22,15 +22,13 @@ namespace OdataToEntity.Test
         private delegate Task<IList> ExecuteQueryFuncAsync<out T>(IQueryable query, Expression expression, IReadOnlyList<LambdaExpression> navigationPropertyAccessors);
 
         private readonly bool _clear;
-        private readonly Db.OeDataAdapter _dataAdapter;
-        private readonly IEdmModel _edmModel;
 
         public DbFixtureInitDb(bool clear = false)
         {
             _clear = clear;
 
-            _dataAdapter = new EfCore.OeEfCoreDataAdapter<OrderContext>();
-            _edmModel = _dataAdapter.BuildEdmModel();
+            DataAdapter = new EfCore.OeEfCoreDataAdapter<OrderContext>();
+            EdmModel = DataAdapter.BuildEdmModel();
         }
 
         public static Container CreateContainer(int maxPageSize)
@@ -58,9 +56,9 @@ namespace OdataToEntity.Test
             IList fromDb;
 
             using (var dataContext = new OrderContext(OrderContextOptions.Create(true, null)))
-                fromDb = TestHelper.ExecuteDb(_dataAdapter.EntitySetAdapters, dataContext, parameters.Expression);
+                fromDb = TestHelper.ExecuteDb(DataAdapter.EntitySetAdapters, dataContext, parameters.Expression);
 
-            TestHelper.Compare(fromDb, fromOe, _dataAdapter.EntitySetAdapters.EdmModelMetadataProvider, null);
+            TestHelper.Compare(fromDb, fromOe, DataAdapter.EntitySetAdapters.EdmModelMetadataProvider, null);
         }
         public async virtual Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
         {
@@ -80,18 +78,18 @@ namespace OdataToEntity.Test
                 Console.ResetColor();
             }
 
-            List<IncludeVisitor.Include> includes = GetIncludes(_dataAdapter, parameters.Expression);
+            List<IncludeVisitor.Include> includes = GetIncludes(DataAdapter, parameters.Expression);
             if (typeof(TResult) == typeof(Object))
                 fromOe = TestHelper.ToOpenType(fromOe);
 
             IList fromDb;
             using (var dataContext = new OrderContext(OrderContextOptions.Create(true, null)))
             {
-                fromDb = TestHelper.ExecuteDb(_dataAdapter, dataContext, parameters.Expression, out IReadOnlyList<IncludeVisitor.Include> includesDb);
+                fromDb = TestHelper.ExecuteDb(DataAdapter, dataContext, parameters.Expression, out IReadOnlyList<IncludeVisitor.Include> includesDb);
                 includes.AddRange(includesDb);
             }
 
-            TestHelper.Compare(fromDb, fromOe, _dataAdapter.EntitySetAdapters.EdmModelMetadataProvider, includes);
+            TestHelper.Compare(fromDb, fromOe, DataAdapter.EntitySetAdapters.EdmModelMetadataProvider, includes);
         }
         private async Task<IList> ExecuteOe<T, TResult>(LambdaExpression lambda, int maxPageSize)
         {
@@ -114,7 +112,7 @@ namespace OdataToEntity.Test
                 return CreateDelegate(elementType, func)(query, call);
             }
         }
-        private async Task<IList> ExecuteOeViaHttpClient<T, TResult>(QueryParameters<T, TResult> parameters)
+        protected virtual async Task<IList> ExecuteOeViaHttpClient<T, TResult>(QueryParameters<T, TResult> parameters)
         {
             Uri uri = CreateContainer(0).BaseUri;
             using (var client = new HttpClient())
@@ -126,7 +124,7 @@ namespace OdataToEntity.Test
                     {
                         using (Stream content = await httpResponseMessage.Content.ReadAsStreamAsync())
                         {
-                            var responseReader = new ResponseReader(_edmModel, _dataAdapter);
+                            var responseReader = new ResponseReader(EdmModel, DataAdapter);
                             return responseReader.Read<T>(content).Cast<Object>().ToList();
                         }
                     }
@@ -289,11 +287,9 @@ namespace OdataToEntity.Test
             Console.ResetColor();
         }
 
-        public static Func<Container> ContainerFactory
-        {
-            get;
-            set;
-        }
+        public static Func<Container> ContainerFactory { get; set; }
+        protected Db.OeDataAdapter DataAdapter { get; }
+        protected IEdmModel EdmModel { get; }
     }
 
     public sealed class ManyColumnsFixtureInitDb : DbFixtureInitDb

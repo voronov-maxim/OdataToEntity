@@ -24,6 +24,27 @@ namespace OdataToEntity.Test.WcfClient
             if (_channelFactory != null)
                 _channelFactory.Close();
         }
+        public async Task<OdataWcfQuery> Get(String query)
+        {
+            IOdataWcf client = null;
+            try
+            {
+                client = _channelFactory.CreateChannel();
+                return await client.Get(new OdataWcfQuery()
+                {
+                    Content = new MemoryStream(Encoding.UTF8.GetBytes(query)),
+                    ContentType = OeRequestHeaders.JsonDefault.ToString()
+                });
+            }
+            finally
+            {
+                if (client != null)
+                {
+                    var clientChannel = (IClientChannel)client;
+                    clientChannel.Close();
+                }
+            }
+        }
         protected internal async override Task<OdataWcfQuery> OnGetResponse(HttpWebRequestMessage requestMessage, Stream requestStream)
         {
             OdataWcfQuery response;
