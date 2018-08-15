@@ -115,7 +115,8 @@ namespace OdataToEntity.Parsers.Translators
             ParameterExpression lambdaParameter = sourceParameter;
 
             var expressions = new List<Expression>();
-            if (sourceType.GetGenericTypeDefinition() == typeof(IGrouping<,>))
+            bool isGroupBy = sourceType.GetGenericTypeDefinition() == typeof(IGrouping<,>);
+            if (isGroupBy)
             {
                 PropertyInfo keyProperty = sourceType.GetProperty(nameof(IGrouping<Object, Object>.Key));
                 MemberExpression key = Expression.Property(sourceParameter, keyProperty);
@@ -132,8 +133,14 @@ namespace OdataToEntity.Parsers.Translators
                     LambdaExpression aggLambda = null;
                     if (aggExpression.Expression.Kind != QueryNodeKind.Count)
                     {
-                        Expression e = visitor.TranslateNode(aggExpression.Expression);
-                        aggLambda = Expression.Lambda(e, lambdaParameter);
+                        Expression expression = visitor.TranslateNode(aggExpression.Expression);
+                        if (isGroupBy && expression is MemberExpression propertyExpression)
+                        {
+                            MemberExpression keyPropertyExpression = FindInGroupByKey(source, expressions[0], propertyExpression);
+                            if (keyPropertyExpression != null)
+                                expression = keyPropertyExpression;
+                        }
+                        aggLambda = Expression.Lambda(expression, lambdaParameter);
                     }
 
                     MethodCallExpression aggCallExpression = AggCallExpression(aggExpression.Method, sourceParameter, aggLambda);
@@ -311,6 +318,16 @@ namespace OdataToEntity.Parsers.Translators
         private OeQueryNodeVisitor CreateVisitor(ParameterExpression parameter)
         {
             return new OeQueryNodeVisitor(_visitor, parameter);
+        }
+        private static MemberExpression FindInGroupByKey(Expression source, Expression key, MemberExpression propertyExpression)
+        {
+            if (propertyExpression.Expression is MemberExpression)
+            {
+                var propertyTranslator = new OePropertyTranslator(source);
+                return propertyTranslator.Build(key, (PropertyInfo)propertyExpression.Member);
+            }
+
+            return null;
         }
         private static String GetAliasName(SingleValueNode singleValueNode)
         {

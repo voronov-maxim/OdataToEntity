@@ -15,12 +15,9 @@ namespace OdataToEntity.Parsers
             foreach (QueryNode node in nodeIn.Parameters)
                 expressions.Add(visitor.TranslateNode(node));
 
-            if (OeExpressionHelper.IsNullable(expressions[0]))
-            {
-                MethodInfo getValueOrDefault = expressions[0].Type.GetMethod("GetValueOrDefault", Type.EmptyTypes);
-                MethodCallExpression callExpression = Expression.Call(expressions[0], getValueOrDefault);
-                expressions[0] = callExpression;
-            }
+            Type underlyingType = Nullable.GetUnderlyingType(expressions[0].Type);
+            if (underlyingType != null)
+                expressions[0] = Expression.Convert(expressions[0], underlyingType);
 
             bool isProperty = false;
             string name;
@@ -137,7 +134,7 @@ namespace OdataToEntity.Parsers
         private static Expression ConcatFunction(List<Expression> expressions)
         {
             MethodInfo methodInfo = ((Func<String, String, String>)String.Concat).GetMethodInfo();
-            return Expression.Call(null, methodInfo, expressions[0], expressions[1]);
+            return Expression.Add(expressions[0], expressions[1], methodInfo);
         }
         private static Expression FloorFunction(List<Expression> expressions)
         {

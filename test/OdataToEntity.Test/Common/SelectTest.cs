@@ -1000,8 +1000,8 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<Customer>()
             {
-                RequestUri = "Customers?$filter=substring(Name, 1, 1) eq substring(Name, 4)",
-                Expression = t => t.Where(c => c.Name.Substring(1, 1) == c.Name.Substring(4)),
+                RequestUri = "Customers?$filter=substring(Name, 1, 1) eq substring(Name, 4, 1)",
+                Expression = t => t.Where(c => c.Name.Substring(1, 1) == c.Name.Substring(4, 1)),
                 PageSize = pageSize
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
