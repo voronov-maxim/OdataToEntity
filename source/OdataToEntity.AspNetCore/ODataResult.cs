@@ -148,7 +148,7 @@ namespace OdataToEntity.AspNetCore
                 Expression<Func<T, Object>> getValueLambda = Expression.Lambda<Func<T, Object>>(body, visitor.Parameter);
                 Object value = getValueLambda.Compile()(entity);
 
-                yield return new KeyValuePair<String, Object>(OeSkipTokenParser.GetPropertyName(propertyExpression), value);
+                yield return new KeyValuePair<String, Object>(OeSkipTokenParser.GetPropertyName((PropertyInfo)propertyExpression.Member), value);
 
                 orderByClause = orderByClause.ThenBy;
             }

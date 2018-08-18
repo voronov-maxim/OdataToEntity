@@ -122,7 +122,7 @@ namespace OdataToEntity.Parsers
             if (queryContext.ODataUri.Path.LastSegment is CountSegment)
                 return source;
 
-            var selectTranslator = new Translators.OeSelectTranslator(_joinBuilder, queryContext.ODataUri.Path);
+            var selectTranslator = new Translators.OeSelectTranslator(_joinBuilder, queryContext.ODataUri.Path, queryContext.MetadataLevel);
             source = selectTranslator.Build(source, queryContext);
             _entryFactory = selectTranslator.EntryFactory;
 

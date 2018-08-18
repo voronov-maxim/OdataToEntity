@@ -1227,6 +1227,22 @@ namespace OdataToEntity.Test
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
+        [InlineData(0, false)]
+        [InlineData(1, false)]
+        [InlineData(0, true)]
+        [InlineData(1, true)]
+        public async Task SelectNestedName(int pageSize, bool navigationNextLink)
+        {
+            var parameters = new QueryParameters<Order, Object>()
+            {
+                RequestUri = "Orders?$expand=Items($filter=OrderId eq 1;$select=Product)&$select=Name",
+                Expression = t => t.Include(o => o.Items).Select(o => new { o.Name, Items = o.Items.Where(i => i.OrderId == 1).Select(i => new { i.Product }) }),
+                NavigationNextLink = navigationNextLink,
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters).ConfigureAwait(false);
+        }
+        [Theory]
         [InlineData(0)]
         [InlineData(1)]
         public async Task Table(int pageSize)

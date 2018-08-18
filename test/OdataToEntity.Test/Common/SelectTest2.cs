@@ -12,7 +12,7 @@ namespace OdataToEntity.Test
 {
     public partial class SelectTest
     {
-        //[Fact]
+        [Fact]
         internal async Task CountExpandNested()
         {
             String request = "Orders?$expand=Items($count=true)&orderby=Id";

@@ -55,33 +55,62 @@ namespace OdataToEntity.Test
                 if (value is Decimal d)
                     value = Math.Round(d, 2);
                 else if (value is IReadOnlyCollection<Object> collection)
+                    value = FillArray(collection);
+                else if (value is IEnumerable enumerable && !(value is String))
                 {
-                    if (collection.Count == 0)
-                        value = null;
-                    else
-                    {
-                        Type entityType = collection.First().GetType();
-                        Array items = Array.CreateInstance(entityType, collection.Count);
-                        int i = 0;
-                        foreach (Object item in collection)
-                            items.SetValue(item, i++);
+                    var items = new List<Object>();
+                    foreach (Object item in enumerable)
+                        items.Add(item);
 
-                        IComparer comparer = GetComparer(_metadataProvider, entityType);
-                        Array.Sort(items, comparer);
-                        value = items;
-                    }
+                    value = FillArray(items);
                 }
                 serializer.Serialize(writer, value);
+
+                Array FillArray(IReadOnlyCollection<Object> collection)
+                {
+                    if (collection.Count == 0)
+                        return null;
+
+                    Type entityType = collection.First().GetType();
+                    Array items = Array.CreateInstance(entityType, collection.Count);
+                    int i = 0;
+                    foreach (Object item in collection)
+                        items.SetValue(item, i++);
+
+                    if (!entityType.Name.StartsWith("<>"))
+                    {
+                        IComparer comparer = GetComparer(_metadataProvider, entityType);
+                        Array.Sort(items, comparer);
+                    }
+                    return items;
+                }
             }
         }
 
-        private sealed class NullValueProvider : IValueProvider
+        private sealed class NullEntityValueProvider : IValueProvider
         {
-            public static NullValueProvider Instance = new NullValueProvider();
+            public static NullEntityValueProvider Instance = new NullEntityValueProvider();
 
-            private NullValueProvider() { }
+            private NullEntityValueProvider() { }
 
             public Object GetValue(Object target) => null;
+            public void SetValue(Object target, Object value) => throw new NotSupportedException();
+        }
+
+        private sealed class NullIdValueProvider : IValueProvider
+        {
+            private readonly PropertyInfo _propertyInfo;
+
+            public NullIdValueProvider(PropertyInfo propertyInfo)
+            {
+                _propertyInfo = propertyInfo;
+            }
+
+            public Object GetValue(Object target)
+            {
+                int id = (int)_propertyInfo.GetValue(target);
+                return id == 0 ? (Object)null : id;
+            }
             public void SetValue(Object target, Object value) => throw new NotSupportedException();
         }
 
@@ -121,7 +150,12 @@ namespace OdataToEntity.Test
                     else
                     {
                         if (IsEntity(clrProperty.PropertyType))
-                            jproperty.ValueProvider = NullValueProvider.Instance;
+                            jproperty.ValueProvider = NullEntityValueProvider.Instance;
+                        else
+                        {
+                            if (clrProperty.PropertyType == typeof(int) && clrProperty.Name.EndsWith("Id"))
+                                jproperty.ValueProvider = new NullIdValueProvider(clrProperty);
+                        }
                     }
                 }
 

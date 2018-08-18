@@ -42,14 +42,16 @@ namespace OdataToEntity.Parsers.Translators
             }
         }
 
+        private OeEntryFactory _entryFactory;
         private readonly OeJoinBuilder _joinBuilder;
+        private readonly OeMetadataLevel _metadataLevel;
         private readonly OeSelectItem _navigationItem;
         private readonly OeQueryNodeVisitor _visitor;
-        private OeEntryFactory _entryFactory;
 
-        public OeSelectTranslator(OeJoinBuilder joinBuilder, ODataPath path) :
+        public OeSelectTranslator(OeJoinBuilder joinBuilder, ODataPath path, OeMetadataLevel metadataLevel) :
             this(joinBuilder, new OeSelectItem(path))
         {
+            _metadataLevel = metadataLevel;
         }
         internal OeSelectTranslator(OeJoinBuilder joinBuilder, OeSelectItem navigationItem)
         {
@@ -58,9 +60,9 @@ namespace OdataToEntity.Parsers.Translators
             _visitor = joinBuilder.Visitor;
         }
 
-        private void AddKey(IEdmEntityType edmEntityType, bool skipToken)
+        private void AddKey(bool skipToken)
         {
-            foreach (IEdmStructuralProperty keyProperty in edmEntityType.Key())
+            foreach (IEdmStructuralProperty keyProperty in _navigationItem.EntitySet.EntityType().Key())
                 _navigationItem.AddSelectItem(new OeSelectItem(keyProperty, skipToken));
         }
         private static bool HasSelectItems(SelectExpandClause selectExpandClause)
@@ -85,9 +87,6 @@ namespace OdataToEntity.Parsers.Translators
             {
                 isBuild = true;
                 source = BuildSelect(queryContext.ODataUri.SelectAndExpand, source, queryContext.NavigationNextLink, false);
-
-                if (_navigationItem.SelectItems.Count > 0)
-                    AddKey(queryContext.EntitySet.EntityType(), queryContext.MetadataLevel != OeMetadataLevel.Full);
             }
 
             if (queryContext.ODataUri.Compute != null)
@@ -202,6 +201,9 @@ namespace OdataToEntity.Parsers.Translators
                         _navigationItem.AddSelectItem(selectItem);
                 }
             }
+
+            if (_navigationItem.SelectItems.Count > 0)
+                AddKey(_metadataLevel != OeMetadataLevel.Full);
 
             return source;
         }

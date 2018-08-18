@@ -176,14 +176,9 @@ namespace OdataToEntity.Parsers
             }
             return true;
         }
-        public static String GetPropertyName(Expression expression)
+        public static String GetPropertyName(PropertyInfo clrProperty)
         {
-            MemberExpression propertyExpression;
-            if (expression is UnaryExpression unaryExpression)
-                propertyExpression = (MemberExpression)unaryExpression.Operand;
-            else
-                propertyExpression = (MemberExpression)expression;
-            return propertyExpression.Member.DeclaringType.Name + "_" + propertyExpression.Member.Name;
+            return clrProperty.DeclaringType.Name + "_" + clrProperty.Name;
         }
         public static String GetPropertyName(IEdmProperty edmProperty)
         {

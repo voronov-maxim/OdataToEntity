@@ -135,7 +135,7 @@ namespace OdataToEntity.Parsers.Translators
                 else
                 {
                     parameterExpression = Expression.Constant(skipTokenNameValues[i].Value, propertyExpression.Type);
-                    _visitor.AddSkipTokenConstant(parameterExpression, OeSkipTokenParser.GetPropertyName(propertyExpression));
+                    _visitor.AddSkipTokenConstant(parameterExpression, OeSkipTokenParser.GetPropertyName((PropertyInfo)propertyExpression.Member));
                 }
 
                 orderProperties[i] = new OrderProperty(propertyNode, orderBy.Direction, propertyExpression, parameterExpression);

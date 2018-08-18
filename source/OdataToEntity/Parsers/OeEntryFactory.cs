@@ -8,11 +8,28 @@ namespace OdataToEntity.Parsers
 {
     public sealed class OeEntryFactory
     {
+        private sealed class AccessorByNameComparer : IComparer<OePropertyAccessor>
+        {
+            public static readonly AccessorByNameComparer Instance = new AccessorByNameComparer();
+
+            private AccessorByNameComparer()
+            {
+            }
+
+            public int Compare(OePropertyAccessor x, OePropertyAccessor y)
+            {
+                return String.CompareOrdinal(x.EdmProperty.Name, y.EdmProperty.Name);
+            }
+        }
+
+        private readonly OePropertyAccessor[] _allAccessors;
         private readonly String _typeName;
 
         private OeEntryFactory(IEdmEntitySet entitySet, OePropertyAccessor[] accessors)
         {
+            Array.Sort(accessors, AccessorByNameComparer.Instance);
             EntitySet = entitySet;
+            _allAccessors = accessors;
             Accessors = GetAccessorsWithoutSkiptoken(accessors);
 
             EntityType = entitySet.EntityType();
@@ -73,6 +90,25 @@ namespace OdataToEntity.Parsers
         {
             return new OeEntryFactory(entitySet, accessors, resourceInfo, navigationLinks, linkAccessor);
         }
+        public ref OePropertyAccessor GetAccessorByName(String propertyName)
+        {
+            int left = 0;
+            int right = _allAccessors.Length - 1;
+            while (left <= right)
+            {
+                int middle = left + ((right - left) >> 1);
+                int i = String.Compare(_allAccessors[middle].EdmProperty.Name, propertyName, StringComparison.OrdinalIgnoreCase);
+                if (i == 0)
+                    return ref _allAccessors[middle];
+
+                if (i < 0)
+                    left = middle + 1;
+                else
+                    right = middle - 1;
+            }
+
+            throw new InvalidOperationException("Proeprty " + propertyName + " not found in accessors");
+        }
         private static OePropertyAccessor[] GetAccessorsWithoutSkiptoken(OePropertyAccessor[] accessors)
         {
             int skiptokenCount = 0;
@@ -97,7 +133,7 @@ namespace OdataToEntity.Parsers
             {
                 bool found = false;
                 foreach (OePropertyAccessor accessor in accessors)
-                    if (accessor.EdmProperty == key)
+                    if (String.CompareOrdinal(accessor.EdmProperty.Name, key.Name) == 0)
                     {
                         propertyExpressions.Add(accessor.PropertyExpression);
                         found = true;
