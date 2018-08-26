@@ -126,7 +126,8 @@ namespace OdataToEntity.Test
 
                 if (navigationProperty.ResourceSet == null || (navigationProperty.ResourceSet.Count == null && navigationProperty.ResourceSet.NextPageLink == null))
                 {
-                    clrProperty.SetValue(entity, value);
+                    if (clrProperty.GetSetMethod() != null)
+                        clrProperty.SetValue(entity, value);
                     continue;
                 }
 

@@ -374,7 +374,7 @@ Accept: application/json;odata.metadata=minimal
 Accept-Charset: UTF-8
 User-Agent: Microsoft ADO.NET Data Services
 
-{"@odata.type":"#OdataToEntity.Test.Model.ShippingAddress","OrderId":-2,"Id":"1","Address":"London 1"}
+{"@odata.type":"#OdataToEntity.Test.Model.ShippingAddress","OrderId":-2,"Id":1,"Address":"London 1"}
 
 --changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
 Content-Type: application/http
@@ -389,7 +389,7 @@ Accept: application/json;odata.metadata=minimal
 Accept-Charset: UTF-8
 User-Agent: Microsoft ADO.NET Data Services
 
-{"@odata.type":"#OdataToEntity.Test.Model.ShippingAddress","OrderId":-2,"Id":"2","Address":"London 2"}
+{"@odata.type":"#OdataToEntity.Test.Model.ShippingAddress","OrderId":-2,"Id":2,"Address":"London 2"}
 
 --changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
 Content-Type: application/http
@@ -404,7 +404,82 @@ Accept: application/json;odata.metadata=minimal
 Accept-Charset: UTF-8
 User-Agent: Microsoft ADO.NET Data Services
 
-{"@odata.type":"#OdataToEntity.Test.Model.ShippingAddress","OrderId":-2,"Id":"3","Address":"London 3"}
+{"@odata.type":"#OdataToEntity.Test.Model.ShippingAddress","OrderId":-2,"Id":3,"Address":"London 3"}
+
+--changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
+Content-Type: application/http
+Content-Transfer-Encoding: binary
+Content-ID: 37
+
+POST http://dummy/CustomerShippingAddress HTTP/1.1
+OData-Version: 4.0
+OData-MaxVersion: 4.0
+Content-Type: application/json;odata.metadata=minimal
+Accept: application/json;odata.metadata=minimal
+Accept-Charset: UTF-8
+User-Agent: Microsoft ADO.NET Data Services
+
+{"@odata.type":"#OdataToEntity.Test.Model.CustomerShippingAddress","CustomerCountry":"EN","CustomerId":1,"ShippingAddressOrderId":-2,"ShippingAddressId":1}
+
+--changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
+Content-Type: application/http
+Content-Transfer-Encoding: binary
+Content-ID: 38
+
+POST http://dummy/CustomerShippingAddress HTTP/1.1
+OData-Version: 4.0
+OData-MaxVersion: 4.0
+Content-Type: application/json;odata.metadata=minimal
+Accept: application/json;odata.metadata=minimal
+Accept-Charset: UTF-8
+User-Agent: Microsoft ADO.NET Data Services
+
+{"@odata.type":"#OdataToEntity.Test.Model.CustomerShippingAddress","CustomerCountry":"EN","CustomerId":1,"ShippingAddressOrderId":-2,"ShippingAddressId":2}
+
+--changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
+Content-Type: application/http
+Content-Transfer-Encoding: binary
+Content-ID: 39
+
+POST http://dummy/CustomerShippingAddress HTTP/1.1
+OData-Version: 4.0
+OData-MaxVersion: 4.0
+Content-Type: application/json;odata.metadata=minimal
+Accept: application/json;odata.metadata=minimal
+Accept-Charset: UTF-8
+User-Agent: Microsoft ADO.NET Data Services
+
+{"@odata.type":"#OdataToEntity.Test.Model.CustomerShippingAddress","CustomerCountry":"EN","CustomerId":1,"ShippingAddressOrderId":-2,"ShippingAddressId":3}
+
+--changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
+Content-Type: application/http
+Content-Transfer-Encoding: binary
+Content-ID: 40
+
+POST http://dummy/CustomerShippingAddress HTTP/1.1
+OData-Version: 4.0
+OData-MaxVersion: 4.0
+Content-Type: application/json;odata.metadata=minimal
+Accept: application/json;odata.metadata=minimal
+Accept-Charset: UTF-8
+User-Agent: Microsoft ADO.NET Data Services
+
+{"@odata.type":"#OdataToEntity.Test.Model.CustomerShippingAddress","CustomerCountry":"RU","CustomerId":1,"ShippingAddressOrderId":-1,"ShippingAddressId":1}
+
+--changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
+Content-Type: application/http
+Content-Transfer-Encoding: binary
+Content-ID: 41
+
+POST http://dummy/CustomerShippingAddress HTTP/1.1
+OData-Version: 4.0
+OData-MaxVersion: 4.0
+Content-Type: application/json;odata.metadata=minimal
+Accept: application/json;odata.metadata=minimal
+Accept-Charset: UTF-8
+User-Agent: Microsoft ADO.NET Data Services
+
+{"@odata.type":"#OdataToEntity.Test.Model.CustomerShippingAddress","CustomerCountry":"RU","CustomerId":1,"ShippingAddressOrderId":-1,"ShippingAddressId":2}
 
 --changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6--
 --batch_6263d2a1-1ddc-4b02-a1c1-7031cfa93691--

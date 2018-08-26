@@ -50,6 +50,7 @@ namespace OdataToEntity.Test
                 Assert.Equal(2, orderContext.Orders.Count());
                 Assert.Equal(3, orderContext.OrderItems.Count());
                 Assert.Equal(2, orderContext.ShippingAddresses.Count());
+                Assert.Equal(2, orderContext.CustomerShippingAddress.Count());
 
                 var order1 = orderContext.Orders.Include(t => t.Items).Single(t => t.Name == "Order 1");
                 Assert.Equal("Product order 1 item 3", order1.Items.Single().Product);

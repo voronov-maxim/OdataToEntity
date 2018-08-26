@@ -25,7 +25,7 @@ namespace OdataToEntity.Parsers
         private readonly OePropertyAccessor[] _allAccessors;
         private readonly String _typeName;
 
-        private OeEntryFactory(IEdmEntitySet entitySet, OePropertyAccessor[] accessors)
+        private OeEntryFactory(IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors)
         {
             Array.Sort(accessors, AccessorByNameComparer.Instance);
             EntitySet = entitySet;
@@ -36,7 +36,7 @@ namespace OdataToEntity.Parsers
             NavigationLinks = Array.Empty<OeEntryFactory>();
             _typeName = EntityType.FullName();
         }
-        private OeEntryFactory(IEdmEntitySet entitySet, OePropertyAccessor[] accessors,
+        private OeEntryFactory(IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors,
             IReadOnlyList<OeEntryFactory> navigationLinks, Func<Object, Object> linkAccessor)
             : this(entitySet, accessors)
         {
@@ -44,12 +44,12 @@ namespace OdataToEntity.Parsers
             LinkAccessor = linkAccessor;
             EqualityComparer = new Infrastructure.OeEntryEqualityComparer(GetKeyExpressions(entitySet, accessors));
         }
-        private OeEntryFactory(IEdmEntitySet entitySet, OePropertyAccessor[] accessors, ODataNestedResourceInfo resourceInfo)
+        private OeEntryFactory(IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors, ODataNestedResourceInfo resourceInfo)
             : this(entitySet, accessors)
         {
             ResourceInfo = resourceInfo;
         }
-        private OeEntryFactory(IEdmEntitySet entitySet, OePropertyAccessor[] accessors, ODataNestedResourceInfo resourceInfo,
+        private OeEntryFactory(IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors, ODataNestedResourceInfo resourceInfo,
             IReadOnlyList<OeEntryFactory> navigationLinks, Func<Object, Object> linkAccessor)
             : this(entitySet, accessors)
         {
@@ -76,16 +76,16 @@ namespace OdataToEntity.Parsers
                 Properties = odataProperties
             };
         }
-        public static OeEntryFactory CreateEntryFactory(IEdmEntitySet entitySet, OePropertyAccessor[] accessors)
+        public static OeEntryFactory CreateEntryFactory(IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors)
         {
             return new OeEntryFactory(entitySet, accessors);
         }
-        public static OeEntryFactory CreateEntryFactoryParent(IEdmEntitySet entitySet, OePropertyAccessor[] accessors,
+        public static OeEntryFactory CreateEntryFactoryParent(IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors,
             IReadOnlyList<OeEntryFactory> navigationLinks, Func<Object, Object> linkAccessor)
         {
             return new OeEntryFactory(entitySet, accessors, navigationLinks, linkAccessor);
         }
-        public static OeEntryFactory CreateEntryFactoryNested(IEdmEntitySet entitySet, OePropertyAccessor[] accessors, ODataNestedResourceInfo resourceInfo,
+        public static OeEntryFactory CreateEntryFactoryNested(IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors, ODataNestedResourceInfo resourceInfo,
             IReadOnlyList<OeEntryFactory> navigationLinks, Func<Object, Object> linkAccessor)
         {
             return new OeEntryFactory(entitySet, accessors, resourceInfo, navigationLinks, linkAccessor);
@@ -126,7 +126,7 @@ namespace OdataToEntity.Parsers
                     accessorsWithoutSkiptoken[index++] = accessors[i];
             return accessorsWithoutSkiptoken;
         }
-        private static List<MemberExpression> GetKeyExpressions(IEdmEntitySet entitySet, OePropertyAccessor[] accessors)
+        private static List<MemberExpression> GetKeyExpressions(IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors)
         {
             var propertyExpressions = new List<MemberExpression>();
             foreach (IEdmStructuralProperty key in entitySet.EntityType().Key())
@@ -152,7 +152,7 @@ namespace OdataToEntity.Parsers
 
         public OePropertyAccessor[] Accessors { get; }
         public bool? CountOption { get; set; }
-        public IEdmEntitySet EntitySet { get; }
+        public IEdmEntitySetBase EntitySet { get; }
         public IEdmEntityType EntityType { get; }
         public IEqualityComparer<Object> EqualityComparer { get; }
         public Func<Object, Object> LinkAccessor { get; }

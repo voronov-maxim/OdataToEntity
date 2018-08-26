@@ -1,6 +1,5 @@
 ﻿using OdataToEntity.Parsers;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Reflection;
@@ -67,7 +66,9 @@ namespace OdataToEntity.ModelBuilder
         }
         public virtual bool IsRequired(PropertyInfo propertyInfo)
         {
-            return !PrimitiveTypeHelper.IsNullable(propertyInfo.PropertyType) || propertyInfo.GetCustomAttribute(typeof(RequiredAttribute)) != null;
+            return !PrimitiveTypeHelper.IsNullable(propertyInfo.PropertyType) ||
+                propertyInfo.GetCustomAttribute(typeof(RequiredAttribute)) != null ||
+                IsKey(propertyInfo);
         }
         public void SortClrPropertyByOrder(PropertyInfo[] clrProperties)
         {

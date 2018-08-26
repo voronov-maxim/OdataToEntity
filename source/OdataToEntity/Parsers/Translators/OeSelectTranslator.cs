@@ -314,7 +314,7 @@ namespace OdataToEntity.Parsers.Translators
             while (stack.Count > 0);
             return navigationItems;
         }
-        private static OePropertyAccessor[] GetAccessors(Type clrEntityType, IEdmEntitySet entitySet, IReadOnlyList<OeSelectItem> selectItems, Expression source)
+        private static OePropertyAccessor[] GetAccessors(Type clrEntityType, IEdmEntitySetBase entitySet, IReadOnlyList<OeSelectItem> selectItems, Expression source)
         {
             if (selectItems.Count == 0)
                 return OePropertyAccessor.CreateFromType(clrEntityType, entitySet);

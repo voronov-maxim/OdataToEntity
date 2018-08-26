@@ -34,7 +34,38 @@ namespace OdataToEntity.Parsers.Translators
             _joinPaths = new List<IEdmNavigationProperty[]>();
         }
 
+        private void AddJoinPath(IReadOnlyList<IEdmNavigationProperty> joinPath, IEdmNavigationProperty navigationProperty)
+        {
+            var newJoinPath = new IEdmNavigationProperty[joinPath.Count + 1];
+            for (int i = 0; i < newJoinPath.Length - 1; i++)
+                newJoinPath[i] = joinPath[i];
+            newJoinPath[newJoinPath.Length - 1] = navigationProperty;
+            _joinPaths.Add(newJoinPath);
+        }
         public MethodCallExpression Build(Expression outerSource, Expression innerSource, IReadOnlyList<IEdmNavigationProperty> joinPath, IEdmNavigationProperty navigationProperty)
+        {
+            if (navigationProperty.ContainsTarget)
+            {
+                ModelBuilder.ManyToManyJoinDescription joinDescription = Visitor.EdmModel.GetManyToManyJoinClassType(navigationProperty);
+                Expression joinSource = Expression.Constant(null, typeof(IEnumerable<>).MakeGenericType(joinDescription.JoinClassType));
+                outerSource = Build(outerSource, joinSource, joinPath, joinDescription.JoinNavigationProperty, false);
+                AddJoinPath(joinPath, joinDescription.JoinNavigationProperty);
+
+                var fixedJoinPath = new IEdmNavigationProperty[joinPath.Count + 1];
+                for (int i = 0; i < joinPath.Count; i++)
+                    fixedJoinPath[i] = joinPath[i];
+                fixedJoinPath[fixedJoinPath.Length - 1] = joinDescription.JoinNavigationProperty;
+
+                outerSource = Build(outerSource, innerSource, fixedJoinPath, joinDescription.TargetNavigationProperty, true);
+                _joinPaths.RemoveAt(_joinPaths.Count - 1);
+            }
+            else
+                outerSource = Build(outerSource, innerSource, joinPath, navigationProperty, false);
+
+            AddJoinPath(joinPath, navigationProperty);
+            return (MethodCallExpression)outerSource;
+        }
+        private MethodCallExpression Build(Expression outerSource, Expression innerSource, IReadOnlyList<IEdmNavigationProperty> joinPath, IEdmNavigationProperty navigationProperty, bool manyToMany)
         {
             Type outerType = OeExpressionHelper.GetCollectionItemType(outerSource.Type);
             Type innerType = OeExpressionHelper.GetCollectionItemType(innerSource.Type);
@@ -54,7 +85,7 @@ namespace OdataToEntity.Parsers.Translators
                 }
             }
 
-            LambdaExpression groupJoinResultSelect = GetGroupJoinResultSelector(outerType, innerType);
+            LambdaExpression groupJoinResultSelect = GetGroupJoinResultSelector(outerType, innerType, manyToMany);
 
             MethodInfo groupJoinMethodInfo = OeMethodInfoHelper.GetGroupJoinMethodInfo(outerType, innerType, groupJoinOuterKeySelector.ReturnType, groupJoinResultSelect.ReturnType);
             MethodCallExpression groupJoinCall = Expression.Call(groupJoinMethodInfo, outerSource, innerSource, groupJoinOuterKeySelector, groupJoinInnerKeySelector, groupJoinResultSelect);
@@ -63,15 +94,7 @@ namespace OdataToEntity.Parsers.Translators
             LambdaExpression selectManyResultSelector = GetSelectManyResultSelector(groupJoinResultSelect);
 
             MethodInfo selectManyMethodInfo = OeMethodInfoHelper.GetSelectManyMethodInfo(groupJoinResultSelect.ReturnType, innerType, selectManyResultSelector.ReturnType);
-            outerSource = Expression.Call(selectManyMethodInfo, groupJoinCall, selectManySource, selectManyResultSelector);
-
-            var newJoinPath = new IEdmNavigationProperty[joinPath.Count + 1];
-            for (int i = 0; i < newJoinPath.Length - 1; i++)
-                newJoinPath[i] = joinPath[i];
-            newJoinPath[newJoinPath.Length - 1] = navigationProperty;
-            _joinPaths.Add(newJoinPath);
-
-            return (MethodCallExpression)outerSource;
+            return Expression.Call(selectManyMethodInfo, groupJoinCall, selectManySource, selectManyResultSelector);
         }
         private static Expression CoerceExpression(Expression ethalon, Expression coercion)
         {
@@ -119,6 +142,29 @@ namespace OdataToEntity.Parsers.Translators
                     return i;
 
             return -1;
+        }
+        private static IReadOnlyList<IEdmNavigationProperty> GetFixedManyToManyPath(IEdmModel edmModel, IReadOnlyList<IEdmNavigationProperty> joinPath)
+        {
+            List<IEdmNavigationProperty> fixedJoinPath = null;
+            for (int i = 0; i < joinPath.Count; i++)
+                if (joinPath[i].ContainsTarget)
+                {
+                    fixedJoinPath = new List<IEdmNavigationProperty>(joinPath.Count + 1);
+                    break;
+                }
+            if (fixedJoinPath == null)
+                return joinPath;
+
+            for (int i = 0; i < joinPath.Count; i++)
+                if (joinPath[i].ContainsTarget)
+                {
+                    ModelBuilder.ManyToManyJoinDescription joinDescription = edmModel.GetManyToManyJoinClassType(joinPath[i]);
+                    fixedJoinPath.Add(joinDescription.JoinNavigationProperty);
+                    fixedJoinPath.Add(joinDescription.TargetNavigationProperty);
+                }
+                else
+                    fixedJoinPath.Add(joinPath[i]);
+            return fixedJoinPath;
         }
         private static LambdaExpression GetGroupJoinInnerKeySelector(Type innerType, IEdmNavigationProperty edmNavigationProperty)
         {
@@ -189,16 +235,33 @@ namespace OdataToEntity.Parsers.Translators
             Expression keySelector = GetGroupJoinKeySelector(instance, structuralProperties);
             return Expression.Lambda(keySelector, outerParameter);
         }
-        private static LambdaExpression GetGroupJoinResultSelector(Type outerType, Type innerType)
+        private static LambdaExpression GetGroupJoinResultSelector(Type outerType, Type innerType, bool manyToMany)
         {
-            var expressions = new ParameterExpression[]
+            var parameterExpressions = new ParameterExpression[]
             {
                 Expression.Parameter(outerType, "outer"),
                 Expression.Parameter(typeof(IEnumerable<>).MakeGenericType(innerType), "inner")
             };
 
+            Expression[] expressions;
+            if (manyToMany)
+            {
+                IReadOnlyList<MemberExpression> propertyExpressions = OeExpressionHelper.GetPropertyExpressions(parameterExpressions[0]);
+                var outerExpressions = new Expression[propertyExpressions.Count - 1];
+                for (int i = 0; i < outerExpressions.Length; i++)
+                    outerExpressions[i] = propertyExpressions[i];
+
+                expressions = new Expression[]
+                {
+                    OeExpressionHelper.CreateTupleExpression(outerExpressions),
+                    parameterExpressions[1]
+                };
+            }
+            else
+                expressions = parameterExpressions;
+
             NewExpression newTupleExpression = OeExpressionHelper.CreateTupleExpression(expressions);
-            return Expression.Lambda(newTupleExpression, expressions);
+            return Expression.Lambda(newTupleExpression, parameterExpressions);
         }
         private static IReadOnlyList<IEdmNavigationProperty> GetJoinPath(SingleValuePropertyAccessNode propertyNode)
         {

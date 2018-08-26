@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
 
 namespace OdataToEntity.Test.Model
 {
@@ -24,6 +25,7 @@ namespace OdataToEntity.Test.Model
         public ICollection<Order> AltOrders { get; set; }
         [Key, Column(Order = 0), Required]
         public String Country { get; set; }
+        public ICollection<CustomerShippingAddress> CustomerShippingAddresses { get; set; }
         [Key, Column(Order = 1)]
         public int Id { get; set; }
         [Required]
@@ -31,6 +33,8 @@ namespace OdataToEntity.Test.Model
         [InverseProperty(nameof(Order.Customer))]
         public ICollection<Order> Orders { get; set; }
         public Sex? Sex { get; set; }
+        [NotMapped]
+        public IEnumerable<ShippingAddress> ShippingAddresses { get; set; }
 
         public override string ToString() => "Customer: " + "Country = " + Country + ", Id = " + Id.ToString();
     }
@@ -51,10 +55,8 @@ namespace OdataToEntity.Test.Model
         public Customer AltCustomer { get; set; }
         [ForeignKey("CustomerCountry,CustomerId")]
         public Customer Customer { get; set; }
-        //[ForeignKey(nameof(Customer)), Column(Order = 0)]
         [Required]
         public String CustomerCountry { get; set; }
-        //[ForeignKey(nameof(Customer)), Column(Order = 1)]
         public int CustomerId { get; set; }
 
         public DateTimeOffset? Date { get; set; }
@@ -84,12 +86,31 @@ namespace OdataToEntity.Test.Model
     public sealed class ShippingAddress
     {
         public String Address { get; set; }
+        [NotMapped]
+        public IEnumerable<Customer> Customers { get; set; }
+        public ICollection<CustomerShippingAddress> CustomerShippingAddresses { get; set; }
         [Key, Column(Order = 1)]
         public int Id { get; set; }
         [Key, Column(Order = 0)]
         public int OrderId { get; set; }
 
         public override string ToString() => "ShippingAddress: OrderId = " + OrderId.ToString() + ", Id = " + Id.ToString();
+    }
+
+    public sealed class CustomerShippingAddress
+    {
+        [ForeignKey("CustomerCountry,CustomerId")]
+        public Customer Customer { get; set; }
+        [Key, Column(Order = 0)]
+        public String CustomerCountry { get; set; }
+        [Key, Column(Order = 1)]
+        public int CustomerId { get; set; }
+        [ForeignKey("ShippingAddressOrderId,ShippingAddressId")]
+        public ShippingAddress ShippingAddress { get; set; }
+        [Key, Column(Order = 2)]
+        public int ShippingAddressOrderId { get; set; }
+        [Key, Column(Order = 3)]
+        public int ShippingAddressId { get; set; }
     }
 
     public class ManyColumnsBase

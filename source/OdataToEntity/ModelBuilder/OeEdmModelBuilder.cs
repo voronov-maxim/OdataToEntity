@@ -95,7 +95,9 @@ namespace OdataToEntity.ModelBuilder
                     }
             }
 
+            var manyToManyBuilder = new ManyToManyBuilder(edmModel, _metadataProvider, entityTypeInfos);
             foreach (EntityTypeInfo typeInfo in entityTypeInfos.Values)
+            {
                 foreach (FKeyInfo fkeyInfo in typeInfo.NavigationClrProperties)
                 {
                     EdmEntitySet principal = entitySets[fkeyInfo.PrincipalInfo.EdmType];
@@ -110,6 +112,9 @@ namespace OdataToEntity.ModelBuilder
                             principal.AddNavigationTarget(fkeyInfo.EdmNavigationProperty.Partner, dependent);
                     }
                 }
+
+                manyToManyBuilder.Build(typeInfo);
+            }
 
             foreach (OeOperationConfiguration operationConfiguration in _operationConfigurations)
             {

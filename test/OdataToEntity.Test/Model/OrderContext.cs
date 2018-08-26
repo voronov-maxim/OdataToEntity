@@ -18,6 +18,7 @@ namespace OdataToEntity.Test.Model
         {
             modelBuilder.Entity<Customer>().HasKey(c => new { c.Country, c.Id });
             modelBuilder.Entity<ShippingAddress>().HasKey(s => new { s.OrderId, s.Id });
+            modelBuilder.Entity<CustomerShippingAddress>().HasKey(t => new { t.CustomerCountry, t.CustomerId, t.ShippingAddressOrderId, t.ShippingAddressId });
             base.OnModelCreating(modelBuilder);
         }
         public static String GenerateDatabaseName() => Guid.NewGuid().ToString();
@@ -52,6 +53,7 @@ namespace OdataToEntity.Test.Model
 
         public DbSet<Category> Categories { get; set; }
         public DbSet<Customer> Customers { get; set; }
+        public DbSet<CustomerShippingAddress> CustomerShippingAddress { get; set; }
         public DbSet<ManyColumns> ManyColumns { get; set; }
         public DbSet<ManyColumnsView> ManyColumnsView { get; set; }
         public DbSet<Order> Orders { get; set; }

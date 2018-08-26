@@ -73,7 +73,7 @@ namespace OdataToEntity
             if (edmType is IEdmCollectionType collectionType)
                 return edmModel.GetClrType(collectionType.ElementType.Definition);
 
-            throw new InvalidOperationException("Add OeClrTypeAnnotation for " + edmType.FullTypeName());
+            throw new InvalidOperationException("Add type annotation for " + edmType.FullTypeName());
         }
         public static Object GetClrValue(Type clrType, Object edmValue)
         {
@@ -118,10 +118,13 @@ namespace OdataToEntity
         }
         public static IEdmEntitySet GetEntitySet(IEdmModel edmModel, Type clrType)
         {
-            String fullName = clrType.FullName;
             foreach (IEdmEntitySet element in edmModel.EntityContainer.EntitySets())
-                if (String.CompareOrdinal(element.EntityType().FullTypeName(), fullName) == 0)
+            {
+                IEdmEntityType edmType = element.EntityType();
+                if (String.Compare(edmType.Name, clrType.Name, StringComparison.OrdinalIgnoreCase) == 0 &&
+                    String.Compare(edmType.Namespace, clrType.Namespace, StringComparison.OrdinalIgnoreCase) == 0)
                     return element;
+            }
             return null;
         }
         public static IEdmEntitySet GetEntitySet(IEdmModel edmModel, IEdmType edmType)
@@ -134,6 +137,14 @@ namespace OdataToEntity
         public static PropertyInfo GetPropertyIgnoreCase(this Type declaringType, String propertyName)
         {
             return declaringType.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase);
+        }
+        internal static ManyToManyJoinDescription GetManyToManyJoinClassType(this IEdmModel edmModel, IEdmNavigationProperty navigationProperty)
+        {
+            ManyToManyJoinDescription joinDescription = edmModel.GetAnnotationValue<ManyToManyJoinDescription>(navigationProperty);
+            if (joinDescription != null)
+                return joinDescription;
+
+            throw new InvalidOperationException("Add many-to-many annotation for navigation property " + navigationProperty.Name);
         }
         public static PropertyInfo GetPropertyIgnoreCase(this Type declaringType, IEdmProperty edmProperty)
         {
@@ -215,6 +226,10 @@ namespace OdataToEntity
         public static void SetIsDbFunction(this IEdmModel edmModel, IEdmOperation edmOperation, bool isDbFunction)
         {
             edmModel.SetAnnotationValue(edmOperation, new OeValueAnnotation<bool>(isDbFunction));
+        }
+        internal static void SetManyToManyJoinDescription(this IEdmModel edmModel, IEdmNavigationProperty navigationProperty, ManyToManyJoinDescription joinDescription)
+        {
+            edmModel.SetAnnotationValue(navigationProperty, joinDescription);
         }
     }
 }

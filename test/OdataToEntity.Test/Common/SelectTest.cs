@@ -275,6 +275,17 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
+        public async Task ExpandManyToMany(int pageSize, bool navigationNextLink)
+        {
+            var parameters = new QueryParameters<Customer>()
+            {
+                RequestUri = "Customers?$expand=ShippingAddresses",
+                Expression = t => t.Include(o => o.CustomerShippingAddresses).ThenInclude(csa => csa.ShippingAddress),
+                NavigationNextLink = navigationNextLink,
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters).ConfigureAwait(false);
+        }
         [Theory]
         [InlineData(0, false)]
         [InlineData(1, false)]

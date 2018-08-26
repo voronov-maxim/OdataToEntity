@@ -33,7 +33,7 @@ namespace OdataToEntity.Parsers.Translators
             segments.AddRange(expandedNavigationSelectItem.PathToNavigationProperty);
 
             EdmProperty = segment.NavigationProperty;
-            EntitySet = (IEdmEntitySet)expandedNavigationSelectItem.NavigationSource;
+            EntitySet = (IEdmEntitySetBase)expandedNavigationSelectItem.NavigationSource;
             ExpandedNavigationSelectItem = expandedNavigationSelectItem;
             Parent = parent;
             Path = new ODataPath(segments);
@@ -107,7 +107,7 @@ namespace OdataToEntity.Parsers.Translators
         }
 
         public IEdmProperty EdmProperty { get; }
-        public IEdmEntitySet EntitySet { get; }
+        public IEdmEntitySetBase EntitySet { get; }
         public OeEntryFactory EntryFactory { get; set; }
         public ExpandedNavigationSelectItem ExpandedNavigationSelectItem { get; }
         public bool HasNavigationItems => _navigationItems.Count > 0;

@@ -65,7 +65,7 @@ namespace OdataToEntity.EfCore
                     if (fkey.PrincipalEntityType == efEntityType && fkey.PrincipalEntityType != fkey.DeclaringEntityType)
                         continue;
 
-                    if (fkey.DependentToPrincipal.Name == propertyInfo.Name)
+                    if (fkey.DependentToPrincipal != null && fkey.DependentToPrincipal.Name == propertyInfo.Name)
                     {
                         var propertyInfos = new PropertyInfo[fkey.Properties.Count];
                         for (int i = 0; i < fkey.Properties.Count; i++)
@@ -79,7 +79,7 @@ namespace OdataToEntity.EfCore
                     }
 
                     for (int i = 0; i < fkey.Properties.Count; i++)
-                        if (fkey.Properties[i].Name == propertyInfo.Name)
+                        if (fkey.Properties[i].Name == propertyInfo.Name && fkey.DependentToPrincipal != null)
                             return new PropertyInfo[] { propertyInfo.DeclaringType.GetPropertyIgnoreCase(fkey.DependentToPrincipal.Name) };
                 }
 
@@ -90,7 +90,7 @@ namespace OdataToEntity.EfCore
             foreach (IEntityType efEntityType in GetEntityTypes(propertyInfo))
             {
                 foreach (IForeignKey fkey in efEntityType.GetForeignKeys())
-                    if (fkey.DependentToPrincipal.Name == propertyInfo.Name)
+                    if (fkey.DependentToPrincipal != null && fkey.DependentToPrincipal.Name == propertyInfo.Name)
                     {
                         INavigation inverseProperty = fkey.DependentToPrincipal.FindInverse();
                         return inverseProperty?.DeclaringEntityType.ClrType.GetPropertyIgnoreCase(inverseProperty.Name);
@@ -165,7 +165,7 @@ namespace OdataToEntity.EfCore
                         return false;
 
                 foreach (IForeignKey fkey in efEntityType.GetForeignKeys())
-                    if (fkey.DependentToPrincipal.Name == propertyInfo.Name)
+                    if (fkey.DependentToPrincipal != null && fkey.DependentToPrincipal.Name == propertyInfo.Name)
                         return false;
 
                 foreach (IForeignKey fkey in efEntityType.GetReferencingForeignKeys())
@@ -184,7 +184,7 @@ namespace OdataToEntity.EfCore
                         return !efProperty.IsNullable;
 
                 foreach (IForeignKey fkey in efEntityType.GetForeignKeys())
-                    if (fkey.DependentToPrincipal.Name == propertyInfo.Name)
+                    if (fkey.DependentToPrincipal != null && fkey.DependentToPrincipal.Name == propertyInfo.Name)
                         return fkey.IsRequired;
 
                 foreach (IForeignKey fkey in efEntityType.GetReferencingForeignKeys())

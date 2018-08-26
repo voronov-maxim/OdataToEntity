@@ -1,16 +1,12 @@
-﻿using System;
-
-namespace OdataToEntity.ModelBuilder
+﻿namespace OdataToEntity.ModelBuilder
 {
     public sealed class OeValueAnnotation<T>
     {
-        private readonly T _value;
-
         public OeValueAnnotation(T value)
         {
-            _value = value;
+            Value = value;
         }
 
-        public T Value => _value;
+        public T Value { get; }
     }
 }
