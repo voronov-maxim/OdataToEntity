@@ -18,7 +18,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <DefineConstants>IGNORE_AC_PLNull;IGNORE_AC_RDBNull;IGNORE_NC_RDBNull</DefineConstants>
+    <DefineConstants>IGNORE_AC_PLNull;IGNORE_AC_RDBNull;IGNORE_NC_RDBNull,SQLITE</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -29,7 +29,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$(EfCoreVersion)" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="$(EfCoreVersion)" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="$(EfCoreVersion)" />
     <PackageReference Include="Microsoft.OData.Core" Version="$(ODataLibVersion)" />
     <PackageReference Include="Microsoft.OData.Edm" Version="$(ODataLibVersion)" />
     <PackageReference Include="Newtonsoft.Json" Version="$(JsonNetVersion)" />

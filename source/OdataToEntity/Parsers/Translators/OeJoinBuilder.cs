@@ -143,29 +143,6 @@ namespace OdataToEntity.Parsers.Translators
 
             return -1;
         }
-        private static IReadOnlyList<IEdmNavigationProperty> GetFixedManyToManyPath(IEdmModel edmModel, IReadOnlyList<IEdmNavigationProperty> joinPath)
-        {
-            List<IEdmNavigationProperty> fixedJoinPath = null;
-            for (int i = 0; i < joinPath.Count; i++)
-                if (joinPath[i].ContainsTarget)
-                {
-                    fixedJoinPath = new List<IEdmNavigationProperty>(joinPath.Count + 1);
-                    break;
-                }
-            if (fixedJoinPath == null)
-                return joinPath;
-
-            for (int i = 0; i < joinPath.Count; i++)
-                if (joinPath[i].ContainsTarget)
-                {
-                    ModelBuilder.ManyToManyJoinDescription joinDescription = edmModel.GetManyToManyJoinClassType(joinPath[i]);
-                    fixedJoinPath.Add(joinDescription.JoinNavigationProperty);
-                    fixedJoinPath.Add(joinDescription.TargetNavigationProperty);
-                }
-                else
-                    fixedJoinPath.Add(joinPath[i]);
-            return fixedJoinPath;
-        }
         private static LambdaExpression GetGroupJoinInnerKeySelector(Type innerType, IEdmNavigationProperty edmNavigationProperty)
         {
             IEnumerable<IEdmStructuralProperty> structuralProperties;

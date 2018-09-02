@@ -55,11 +55,11 @@ namespace OdataToEntity
 
             return new ODataPrimitiveValue(value);
         }
-        public static ResourceRangeVariableReferenceNode CreateRangeVariableReferenceNode(IEdmEntitySet entitySet)
+        public static ResourceRangeVariableReferenceNode CreateRangeVariableReferenceNode(IEdmEntitySetBase entitySet, String name = null)
         {
             var entityTypeRef = (IEdmEntityTypeReference)((IEdmCollectionType)entitySet.Type).ElementType;
-            var rangeVariable = new ResourceRangeVariable("", entityTypeRef, entitySet);
-            return new ResourceRangeVariableReferenceNode("", rangeVariable);
+            var rangeVariable = new ResourceRangeVariable(name ?? "$it", entityTypeRef, entitySet);
+            return new ResourceRangeVariableReferenceNode(name ?? "$it", rangeVariable);
         }
         public static Type GetClrType(this IEdmModel edmModel, IEdmType edmType)
         {

@@ -9,6 +9,11 @@ namespace OdataToEntity.Test
 {
     public abstract partial class SelectTest
     {
+#if SQLITE
+        private const string SkipTest = "Sqlite";
+#else
+private const string SkipTest = null;
+#endif
         private readonly DbFixtureInitDb _fixture;
 
         protected SelectTest(DbFixtureInitDb fixture)
@@ -80,7 +85,7 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
-        [Theory]
+        [Theory(Skip = SkipTest)]
         [InlineData(0)]
         [InlineData(1)]
         public async Task ApplyGropuByAggregateCompute(int pageSize)
@@ -275,12 +280,30 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
+        [Theory]
+        [InlineData(0, false)]
+        [InlineData(1, false)]
+        [InlineData(0, true)]
+        [InlineData(1, true)]
         public async Task ExpandManyToMany(int pageSize, bool navigationNextLink)
         {
-            var parameters = new QueryParameters<Customer>()
+            var parameters = new QueryParameters<Customer, Object>()
             {
-                RequestUri = "Customers?$expand=ShippingAddresses",
-                Expression = t => t.Include(o => o.CustomerShippingAddresses).ThenInclude(csa => csa.ShippingAddress),
+                RequestUri = "Customers?$expand=AltOrders,ShippingAddresses,Orders&$orderby=Country,Id",
+                Expression = t => t.Include(c => c.AltOrders).Include(c => c.ShippingAddresses).Include(c => c.Orders).Include(c => c.CustomerShippingAddresses)
+                .ThenInclude(csa => csa.ShippingAddress)
+                .OrderBy(c => c.Country).ThenBy(c => c.Id)
+                .Select(c => new Customer()
+                {
+                    Address = c.Address,
+                    AltOrders = c.AltOrders,
+                    Country = c.Country,
+                    Id = c.Id,
+                    Name = c.Name,
+                    Sex = c.Sex,
+                    Orders = c.Orders,
+                    ShippingAddresses = c.CustomerShippingAddresses.Select(csa => csa.ShippingAddress)
+                }),
                 NavigationNextLink = navigationNextLink,
                 PageSize = pageSize
             };
@@ -366,7 +389,7 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
-        [Theory]
+        [Theory(Skip = SkipTest)]
         [InlineData(0, false)]
         [InlineData(1, false)]
         [InlineData(0, true)]

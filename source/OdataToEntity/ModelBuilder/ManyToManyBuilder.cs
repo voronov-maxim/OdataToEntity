@@ -20,24 +20,24 @@ namespace OdataToEntity.ModelBuilder
 
         public void Build(EntityTypeInfo typeInfo)
         {
-            (PropertyInfo Many, PropertyInfo Join) manyToManyInfo = GetManyToManyInfo(_metadataProvider, typeInfo.ClrType);
-            if (manyToManyInfo.Many == null)
+            (PropertyInfo many, PropertyInfo join) = GetManyToManyInfo(_metadataProvider, typeInfo.ClrType);
+            if (many == null)
                 return;
 
-            IEdmNavigationProperty joinNavigationProperty = GetJoinNavigationProperty(typeInfo, manyToManyInfo.Join.DeclaringType);
+            IEdmNavigationProperty joinNavigationProperty = GetJoinNavigationProperty(typeInfo, join.DeclaringType);
             if (joinNavigationProperty == null)
                 return;
 
-            IEdmNavigationProperty targetNavigationProperty = GetTargetNavigationProperty(_entityTypeInfos[manyToManyInfo.Join.DeclaringType], manyToManyInfo.Join.PropertyType);
+            IEdmNavigationProperty targetNavigationProperty = GetTargetNavigationProperty(_entityTypeInfos[join.DeclaringType], join.PropertyType);
             if (targetNavigationProperty == null)
                 return;
 
-            EntityTypeInfo principalInfo = _entityTypeInfos[manyToManyInfo.Join.PropertyType];
-            EntityTypeInfo dependentInfo = _entityTypeInfos[manyToManyInfo.Many.DeclaringType];
+            EntityTypeInfo principalInfo = _entityTypeInfos[join.PropertyType];
+            EntityTypeInfo dependentInfo = _entityTypeInfos[many.DeclaringType];
             var edmDependentInfo = new EdmNavigationPropertyInfo()
             {
                 ContainsTarget = true,
-                Name = manyToManyInfo.Many.Name,
+                Name = many.Name,
                 OnDelete = EdmOnDeleteAction.None,
                 PrincipalProperties = principalInfo.EdmType.DeclaredKey,
                 Target = principalInfo.EdmType,
@@ -45,7 +45,7 @@ namespace OdataToEntity.ModelBuilder
             };
             EdmNavigationProperty edmManyToManyProperty = dependentInfo.EdmType.AddUnidirectionalNavigation(edmDependentInfo);
 
-            var manyToManyJoinDescription = new ManyToManyJoinDescription(manyToManyInfo.Join.DeclaringType, joinNavigationProperty, targetNavigationProperty);
+            var manyToManyJoinDescription = new ManyToManyJoinDescription(join.DeclaringType, joinNavigationProperty, targetNavigationProperty);
             _edmModel.SetAnnotationValue(edmManyToManyProperty, manyToManyJoinDescription);
         }
         private static IEdmNavigationProperty GetJoinNavigationProperty(EntityTypeInfo typeInfo, Type joinClassType)

@@ -36,12 +36,12 @@ namespace OdataToEntity
 
             return new FilterClause(CreateFilterExpression(refNode, propertyValues), refNode.RangeVariable);
         }
-        internal static BinaryOperatorNode CreateFilterExpression(ResourceRangeVariableReferenceNode referenceNode, IEnumerable<KeyValuePair<IEdmStructuralProperty, Object>> keys)
+        internal static BinaryOperatorNode CreateFilterExpression(SingleValueNode singleValueNode, IEnumerable<KeyValuePair<IEdmStructuralProperty, Object>> keys)
         {
             BinaryOperatorNode compositeNode = null;
             foreach (KeyValuePair<IEdmStructuralProperty, Object> keyValue in keys)
             {
-                var left = new SingleValuePropertyAccessNode(referenceNode, keyValue.Key);
+                var left = new SingleValuePropertyAccessNode(singleValueNode, keyValue.Key);
                 var right = new ConstantNode(keyValue.Value, ODataUriUtils.ConvertToUriLiteral(keyValue.Value, ODataVersion.V4));
                 var node = new BinaryOperatorNode(BinaryOperatorKind.Equal, left, right);
 

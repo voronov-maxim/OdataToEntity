@@ -30,10 +30,9 @@ namespace OdataToEntity.Test
                     return null;
 
                 if (_lambda == null || _contractResolver.DisableWhereOrder)
-                    return items.GetEnumerator().MoveNext() ? items : null;
+                    return items;
 
-                IList list = _lambda(items);
-                return list.Count == 0 ? null : list;
+                return _lambda(items);
             }
 
             public void SetValue(Object target, Object value) => throw new NotSupportedException();

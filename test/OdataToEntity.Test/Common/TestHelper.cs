@@ -68,9 +68,11 @@ namespace OdataToEntity.Test
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
                 NullValueHandling = NullValueHandling.Ignore
             };
-            String jsonDb = JsonConvert.SerializeObject(fromDb, settings);
+
+            String jsonDb = RemoveEmptyArrays(JsonConvert.SerializeObject(fromDb, settings));
             contractResolver.DisableWhereOrder = true;
-            String jsonOe = JsonConvert.SerializeObject(fromOe, settings);
+            settings.ReferenceLoopHandling = ReferenceLoopHandling.Error;
+            String jsonOe = RemoveEmptyArrays(JsonConvert.SerializeObject(fromOe, settings));
 
             Assert.Equal(jsonDb, jsonOe);
         }
@@ -150,6 +152,25 @@ namespace OdataToEntity.Test
             for (int i = 0; i < keyProperties.Length; i++)
                 keyExpressions[i] = Expression.Property(parameter, keyProperties[i]);
             return keyExpressions;
+        }
+        private static String RemoveEmptyArrays(String json)
+        {
+            String[] lines = json.Split(Environment.NewLine);
+            for (int i = 1; i < lines.Length; i++)
+                if (lines[i].EndsWith(": []"))
+                {
+                    if (lines[i - 1].EndsWith(','))
+                        lines[i - 1] = lines[i - 1].Remove(lines[i - 1].Length - 1, 1);
+                    lines[i] = null;
+                }
+                else if (lines[i].EndsWith(": [],"))
+                    lines[i] = null;
+
+            var stringBuilder = new StringBuilder(json.Length);
+            for (int i = 0; i < lines.Length; i++)
+                if (lines[i] != null)
+                    stringBuilder.AppendLine(lines[i]);
+            return stringBuilder.ToString();
         }
         public static IList ToOpenType(IEnumerable entities)
         {

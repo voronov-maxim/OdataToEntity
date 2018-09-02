@@ -15,6 +15,10 @@ namespace OdataToEntity.Test
             if (_initialized)
                 return;
 
+            var dbContext = (Model.OrderContext)base.DbDataAdapter.CreateDataContext();
+            dbContext.Database.EnsureCreated();
+            base.DbDataAdapter.CloseDataContext(dbContext);
+
             _initialized = true;
             await base.ExecuteBatchAsync("Add");
         }
@@ -32,6 +36,10 @@ namespace OdataToEntity.Test
         {
             if (_initialized)
                 return;
+
+            var dbContext = (Model.OrderContext)base.DbDataAdapter.CreateDataContext();
+            dbContext.Database.EnsureCreated();
+            base.DbDataAdapter.CloseDataContext(dbContext);
 
             _initialized = true;
             await base.ExecuteBatchAsync("ManyColumns");

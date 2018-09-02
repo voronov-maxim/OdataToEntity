@@ -1,16 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
-using Microsoft.EntityFrameworkCore.InMemory.Query.Internal;
-using Microsoft.EntityFrameworkCore.Metadata;
+﻿using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace OdataToEntity.Test.Model
 {
@@ -18,14 +14,6 @@ namespace OdataToEntity.Test.Model
     {
         private sealed class PatcherVisitor : ExpressionVisitor
         {
-            public static String Substring(String source, int startIndex, int length)
-            {
-                if (source.Length - (startIndex + length) < 0)
-                    return source.Substring(startIndex);
-
-                return source.Substring(startIndex, length);
-            }
-
             protected override Expression VisitExtension(Expression node)
             {
                 return node;
@@ -43,34 +31,13 @@ namespace OdataToEntity.Test.Model
 
                 return base.VisitMember(node);
             }
-            protected override Expression VisitMethodCall(MethodCallExpression node)
-            {
-                if (node.Method.Name == nameof(String.Substring))
-                {
-                    var substringFunc = (Func<String, int, int, String>)Substring;
-                    return Expression.Call(substringFunc.Method, node.Object, node.Arguments[0], node.Arguments[1]);
-                }
-
-                return base.VisitMethodCall(node);
-            }
         }
 
-        private sealed class ZInMemoryQueryModelVisitor : InMemoryQueryModelVisitor
+        private sealed class ZQueryModelVisitor : RelationalQueryModelVisitor
         {
-            public ZInMemoryQueryModelVisitor(EntityQueryModelVisitorDependencies dependencies, QueryCompilationContext queryCompilationContext)
-                : base(dependencies, queryCompilationContext)
+            public ZQueryModelVisitor(EntityQueryModelVisitorDependencies dependencies, RelationalQueryModelVisitorDependencies relationalDependencies, RelationalQueryCompilationContext queryCompilationContext, RelationalQueryModelVisitor parentQueryModelVisitor)
+                : base(dependencies, relationalDependencies, queryCompilationContext, parentQueryModelVisitor)
             {
-            }
-
-            public override void VisitOrdering(Ordering ordering, QueryModel queryModel, OrderByClause orderByClause, int index)
-            {
-                if (ordering.Expression.NodeType == ExpressionType.Convert)
-                {
-                    var convertExpression = ordering.Expression as UnaryExpression;
-                    if (convertExpression.Type != convertExpression.Operand.Type)
-                        ordering.Expression = Expression.Convert(convertExpression.Operand, convertExpression.Operand.Type);
-                }
-                base.VisitOrdering(ordering, queryModel, orderByClause, index);
             }
 
             public override void VisitWhereClause(WhereClause whereClause, QueryModel queryModel, int index)
@@ -81,55 +48,50 @@ namespace OdataToEntity.Test.Model
             }
         }
 
-        private sealed class ZInMemoryQueryModelVisitorFactory : InMemoryQueryModelVisitorFactory
+        private sealed class ZQueryModelVisitorFactory : RelationalQueryModelVisitorFactory
         {
-            public ZInMemoryQueryModelVisitorFactory(EntityQueryModelVisitorDependencies dependencies) : base(dependencies)
+            public ZQueryModelVisitorFactory(EntityQueryModelVisitorDependencies dependencies, RelationalQueryModelVisitorDependencies relationalDependencies) :
+                base(dependencies, relationalDependencies)
             {
             }
 
             public override EntityQueryModelVisitor Create(QueryCompilationContext queryCompilationContext, EntityQueryModelVisitor parentEntityQueryModelVisitor)
             {
-                return new ZInMemoryQueryModelVisitor(base.Dependencies, queryCompilationContext);
+                return new ZQueryModelVisitor(base.Dependencies, base.RelationalDependencies,
+                    (RelationalQueryCompilationContext)queryCompilationContext, (RelationalQueryModelVisitor)parentEntityQueryModelVisitor);
             }
         }
 
-        private sealed class ZStateManager : StateManager
-        {
-            public ZStateManager(StateManagerDependencies dependencies) : base(dependencies)
-            {
-
-            }
-            protected override async Task<int> SaveChangesAsync(IReadOnlyList<InternalEntityEntry> entriesToSave, CancellationToken cancellationToken = default)
-            {
-                UpdateTemporaryKey(entriesToSave);
-                int count = await base.SaveChangesAsync(entriesToSave, cancellationToken).ConfigureAwait(false);
-                return count;
-            }
-            internal static void UpdateTemporaryKey(IReadOnlyList<InternalEntityEntry> entries)
-            {
-                foreach (InternalEntityEntry entry in entries)
-                    foreach (IKey key in entry.EntityType.GetKeys())
-                        foreach (IProperty property in key.Properties)
-                            if (entry.HasTemporaryValue(property))
-                            {
-                                int id = (int)entry.GetCurrentValue(property);
-                                entry.SetProperty(property, -id, false);
-                            }
-            }
-
-        }
+        private static readonly ConcurrentDictionary<string, SqliteConnection> _connections = new ConcurrentDictionary<String, SqliteConnection>();
+        //private static readonly LoggerFactory MyLoggerFactory = new LoggerFactory(new[] {new ConsoleLoggerProvider((category, level)
+        //    => true, true) });
 
         public static DbContextOptions Create(bool useRelationalNulls, String databaseName)
         {
             var optionsBuilder = new DbContextOptionsBuilder<OrderContext>();
-            optionsBuilder.UseInMemoryDatabase(databaseName);
-            optionsBuilder.ReplaceService<IStateManager, ZStateManager>();
-            optionsBuilder.ReplaceService<IEntityQueryModelVisitorFactory, ZInMemoryQueryModelVisitorFactory>();
+            optionsBuilder.UseSqlite(GetConnection(databaseName));
+            optionsBuilder.ReplaceService<IEntityQueryModelVisitorFactory, ZQueryModelVisitorFactory>();
+            //optionsBuilder.UseLoggerFactory(MyLoggerFactory);
             return optionsBuilder.Options;
         }
         public static DbContextOptions CreateClientEvaluationWarning(bool useRelationalNulls, String databaseName)
         {
             return Create(useRelationalNulls, databaseName);
+        }
+        private static SqliteConnection GetConnection(String databaseName)
+        {
+            if (!_connections.TryGetValue(databaseName, out SqliteConnection connection))
+            {
+                connection = new SqliteConnection("DataSource=:memory:");
+                connection.Open();
+                if (!_connections.TryAdd(databaseName, connection))
+                {
+                    connection.Dispose();
+                    return GetConnection(databaseName);
+                }
+            }
+
+            return connection;
         }
     }
 }

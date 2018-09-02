@@ -144,25 +144,27 @@ namespace OdataToEntity.Test
                     var visitor = new PropertyVisitor(_isDatabaseNullHighestValue);
                     visitor.Visit(node.Arguments[1]);
 
+                    if (_metadataProvider.IsNotMapped((PropertyInfo)visitor.Property.Member))
+                    {
+                        _includes.Add(new Include(visitor.Property.Member as PropertyInfo, visitor.Filter));
+                        return node.Arguments[0];
+                    }
+
                     if (visitor.Filter == null)
                         node = Expression.Call(null, node.Method, new Expression[] { expression, node.Arguments[1] });
                     else
                     {
+                        Type entityType = node.Method.GetGenericArguments()[0];
+                        MethodInfo method;
                         if (node.Method.Name == nameof(EntityFrameworkQueryableExtensions.Include))
-                        {
-                            Type entityType = node.Method.GetGenericArguments()[0];
-                            MethodInfo method = node.Method.GetGenericMethodDefinition().MakeGenericMethod(entityType, visitor.Property.Type);
-                            LambdaExpression lambda = Expression.Lambda(visitor.Property, visitor.Parameter);
-                            node = Expression.Call(null, method, new Expression[] { expression, lambda });
-                        }
+                            method = node.Method.GetGenericMethodDefinition().MakeGenericMethod(entityType, visitor.Property.Type);
                         else
                         {
-                            Type entityType = node.Method.GetGenericArguments()[0];
                             Type previousPropertyType = node.Method.GetGenericArguments()[1];
-                            MethodInfo method = node.Method.GetGenericMethodDefinition().MakeGenericMethod(entityType, previousPropertyType, visitor.Property.Type);
-                            LambdaExpression lambda = Expression.Lambda(visitor.Property, visitor.Parameter);
-                            node = Expression.Call(null, method, new Expression[] { expression, lambda });
+                            method = node.Method.GetGenericMethodDefinition().MakeGenericMethod(entityType, previousPropertyType, visitor.Property.Type);
                         }
+                        LambdaExpression lambda = Expression.Lambda(visitor.Property, visitor.Parameter);
+                        node = Expression.Call(null, method, new Expression[] { expression, lambda });
                     }
 
                     _includes.Add(new Include(visitor.Property.Member as PropertyInfo, visitor.Filter));

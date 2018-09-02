@@ -4,6 +4,7 @@ using Microsoft.OData.UriParser;
 using OdataToEntity.Parsers;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -22,32 +23,51 @@ namespace OdataToEntity.Writers
                 _writer = writer;
             }
 
-            private static Uri BuildNavigationNextPageLink(OeEntryFactory entryFactory, ExpandedNavigationSelectItem expandedNavigationSelectItem, Object value)
+            private static Uri BuildNavigationNextPageLink(IEdmModel edmModel, OeEntryFactory entryFactory, ExpandedNavigationSelectItem expandedNavigationSelectItem, Object value)
             {
+                SingleValueNode filterExpression;
+                ResourceRangeVariableReferenceNode refNode;
+
                 var segment = (NavigationPropertySegment)expandedNavigationSelectItem.PathToNavigationProperty.LastSegment;
                 IEdmNavigationProperty navigationProperty = segment.NavigationProperty;
-                if (navigationProperty.IsPrincipal())
-                    navigationProperty = navigationProperty.Partner;
-
-                var keys = new List<KeyValuePair<IEdmStructuralProperty, Object>>();
-                IEnumerator<IEdmStructuralProperty> dependentProperties = navigationProperty.DependentProperties().GetEnumerator();
-                foreach (IEdmStructuralProperty key in navigationProperty.PrincipalProperties())
+                if (navigationProperty.ContainsTarget)
                 {
-                    dependentProperties.MoveNext();
-                    Object keyValue = entryFactory.GetAccessorByName(key.Name).GetValue(value);
-                    keys.Add(new KeyValuePair<IEdmStructuralProperty, Object>(dependentProperties.Current, keyValue));
+                    ModelBuilder.ManyToManyJoinDescription joinDescription = edmModel.GetManyToManyJoinClassType(navigationProperty);
+                    navigationProperty = joinDescription.JoinNavigationProperty.Partner;
+
+                    IEdmEntityType joinEdmEntityType = joinDescription.TargetNavigationProperty.DeclaringEntityType();
+                    IEdmEntitySet joinNavigationSource = OeEdmClrHelper.GetEntitySet(edmModel, joinEdmEntityType);
+                    ResourceRangeVariableReferenceNode joinRefNode = OeEdmClrHelper.CreateRangeVariableReferenceNode(joinNavigationSource, "d");
+
+                    IEdmEntityType targetEdmEntityType = joinDescription.TargetNavigationProperty.ToEntityType();
+                    IEdmEntitySet targetNavigationSource = OeEdmClrHelper.GetEntitySet(edmModel, targetEdmEntityType);
+                    ResourceRangeVariableReferenceNode targetRefNode = OeEdmClrHelper.CreateRangeVariableReferenceNode(targetNavigationSource);
+
+                    var anyNode = new AnyNode(new Collection<RangeVariable>() { joinRefNode.RangeVariable, targetRefNode.RangeVariable }, joinRefNode.RangeVariable)
+                    {
+                        Source = new CollectionNavigationNode(targetRefNode, joinDescription.TargetNavigationProperty.Partner, null),
+                        Body = OeGetParser.CreateFilterExpression(joinRefNode, GetKeys(navigationProperty))
+                    };
+
+                    refNode = targetRefNode;
+                    filterExpression = anyNode;
+                }
+                else
+                {
+                    if (navigationProperty.IsPrincipal())
+                        navigationProperty = navigationProperty.Partner;
+
+                    refNode = OeEdmClrHelper.CreateRangeVariableReferenceNode((IEdmEntitySetBase)segment.NavigationSource);
+                    filterExpression = OeGetParser.CreateFilterExpression(refNode, GetKeys(navigationProperty));
                 }
 
-                ResourceRangeVariableReferenceNode refNode = OeEdmClrHelper.CreateRangeVariableReferenceNode((IEdmEntitySet)segment.NavigationSource);
-                BinaryOperatorNode filterExpression = OeGetParser.CreateFilterExpression(refNode, keys);
                 if (expandedNavigationSelectItem.FilterOption != null)
                     filterExpression = new BinaryOperatorNode(BinaryOperatorKind.And, filterExpression, expandedNavigationSelectItem.FilterOption.Expression);
 
-                var segments = new ODataPathSegment[] { new EntitySetSegment((IEdmEntitySet)refNode.NavigationSource) };
-
+                var pathSegments = new ODataPathSegment[] { new EntitySetSegment((IEdmEntitySet)refNode.NavigationSource) };
                 var odataUri = new ODataUri()
                 {
-                    Path = new ODataPath(segments),
+                    Path = new ODataPath(pathSegments),
                     Filter = new FilterClause(filterExpression, refNode.RangeVariable),
                     OrderBy = expandedNavigationSelectItem.OrderByOption,
                     SelectAndExpand = expandedNavigationSelectItem.SelectAndExpand,
@@ -57,6 +77,19 @@ namespace OdataToEntity.Writers
                 };
 
                 return odataUri.BuildUri(ODataUrlKeyDelimiter.Parentheses);
+
+                List<KeyValuePair<IEdmStructuralProperty, Object>> GetKeys(IEdmNavigationProperty edmNavigationProperty)
+                {
+                    var keys = new List<KeyValuePair<IEdmStructuralProperty, Object>>();
+                    IEnumerator<IEdmStructuralProperty> dependentProperties = edmNavigationProperty.DependentProperties().GetEnumerator();
+                    foreach (IEdmStructuralProperty key in edmNavigationProperty.PrincipalProperties())
+                    {
+                        dependentProperties.MoveNext();
+                        Object keyValue = entryFactory.GetAccessorByName(key.Name).GetValue(value);
+                        keys.Add(new KeyValuePair<IEdmStructuralProperty, Object>(dependentProperties.Current, keyValue));
+                    }
+                    return keys;
+                }
             }
             private static Uri BuildNextPageLink(OeQueryContext queryContext, Object value)
             {
@@ -164,7 +197,7 @@ namespace OdataToEntity.Writers
 
                 _writer.WriteStart(resourceInfo);
 
-                var resourceSet = new ODataResourceSet() { NextPageLink = BuildNavigationNextPageLink(entryFactory, item, value) };
+                var resourceSet = new ODataResourceSet() { NextPageLink = BuildNavigationNextPageLink(_queryContext.EdmModel, entryFactory, item, value) };
                 _writer.WriteStart(resourceSet);
                 _writer.WriteEnd();
 
