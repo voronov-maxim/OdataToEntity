@@ -302,7 +302,7 @@ private const string SkipTest = null;
                     Name = c.Name,
                     Sex = c.Sex,
                     Orders = c.Orders,
-                    ShippingAddresses = c.CustomerShippingAddresses.Select(csa => csa.ShippingAddress)
+                    ShippingAddresses = c.CustomerShippingAddresses.Select(csa => csa.ShippingAddress).ToList()
                 }),
                 NavigationNextLink = navigationNextLink,
                 PageSize = pageSize

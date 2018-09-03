@@ -34,7 +34,7 @@ namespace OdataToEntity.Test.Model
         public ICollection<Order> Orders { get; set; }
         public Sex? Sex { get; set; }
         [NotMapped]
-        public IEnumerable<ShippingAddress> ShippingAddresses { get; set; }
+        public ICollection<ShippingAddress> ShippingAddresses { get; set; }
 
         public override string ToString() => "Customer: " + "Country = " + Country + ", Id = " + Id.ToString();
     }
@@ -87,7 +87,7 @@ namespace OdataToEntity.Test.Model
     {
         public String Address { get; set; }
         [NotMapped]
-        public IEnumerable<Customer> Customers { get; set; }
+        public ICollection<Customer> Customers { get; set; }
         public ICollection<CustomerShippingAddress> CustomerShippingAddresses { get; set; }
         [Key, Column(Order = 1)]
         public int Id { get; set; }

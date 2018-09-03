@@ -146,6 +146,47 @@ For use pooling (*DbContextPool*) in Entity Framework Core create instance *OeEf
 //Create adapter data access, where OrderContext your DbContext
 var dataAdapter = new OeEfCoreDataAdapter<Model.OrderContext>(Model.OrderContext.CreateOptions());
 ```
+### Many-to-many relationships (without CLR class for join table) ###
+```c#
+    public sealed class Customer
+    {
+        [Key, Column(Order = 0), Required]
+        public String Country { get; set; }
+        [Key, Column(Order = 1)]
+        public int Id { get; set; }
+        public ICollection<CustomerShippingAddress> CustomerShippingAddresses { get; set; }
+        [NotMapped]
+        public ICollection<ShippingAddress> ShippingAddresses { get; set; }
+    }
+
+    public sealed class CustomerShippingAddress
+    {
+        [ForeignKey("CustomerCountry,CustomerId")]
+        public Customer Customer { get; set; }
+        [Key, Column(Order = 0)]
+        public String CustomerCountry { get; set; }
+        [Key, Column(Order = 1)]
+        public int CustomerId { get; set; }
+        [ForeignKey("ShippingAddressOrderId,ShippingAddressId")]
+        public ShippingAddress ShippingAddress { get; set; }
+        [Key, Column(Order = 2)]
+        public int ShippingAddressOrderId { get; set; }
+        [Key, Column(Order = 3)]
+        public int ShippingAddressId { get; set; }
+    }
+
+    public sealed class ShippingAddress
+    {
+        [Key, Column(Order = 0)]
+        public int OrderId { get; set; }
+        [Key, Column(Order = 1)]
+        public int Id { get; set; }
+        [NotMapped]
+        public ICollection<Customer> Customers { get; set; }
+        public ICollection<CustomerShippingAddress> CustomerShippingAddresses { get; set; }
+    }
+```
+Many-to-Many properties *ShippingAddresses* and *Customers* must be marked *NotMappedAttribute*, join class *CustomerShippingAddress* must be exactly two navigation properties.
 
 ### Project structure ###
 Library *source/OdataEntity*.  
