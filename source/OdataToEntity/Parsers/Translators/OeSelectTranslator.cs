@@ -319,32 +319,15 @@ namespace OdataToEntity.Parsers.Translators
             if (selectItems.Count == 0)
                 return OePropertyAccessor.CreateFromType(clrEntityType, entitySet);
 
-            var accessorList = new List<OePropertyAccessor>(selectItems.Count);
+            var accessors = new OePropertyAccessor[selectItems.Count];
 
-            ParameterExpression accessorParameter = Expression.Parameter(typeof(Object));
-            UnaryExpression typedAccessorParameter = Expression.Convert(accessorParameter, clrEntityType);
+            ParameterExpression parameter = Expression.Parameter(typeof(Object));
+            UnaryExpression typedAccessorParameter = Expression.Convert(parameter, clrEntityType);
+            IReadOnlyList<MemberExpression> propertyExpressions = OeExpressionHelper.GetPropertyExpressions(typedAccessorParameter);
             for (int i = 0; i < selectItems.Count; i++)
-            {
-                IEdmProperty edmProperty = selectItems[i].EdmProperty;
-                MemberExpression propertyExpression;
-                if (edmProperty is ComputeProperty computeProperty)
-                    propertyExpression = OeExpressionHelper.GetPropertyExpressions(typedAccessorParameter)[i];
-                else
-                {
-                    PropertyInfo clrProperty = clrEntityType.GetPropertyIgnoreCase(edmProperty);
-                    if (clrProperty == null)
-                    {
-                        propertyExpression = new OePropertyTranslator(source).Build(typedAccessorParameter, edmProperty);
-                        if (propertyExpression == null)
-                            throw new InvalidOperationException("Property " + edmProperty.Name + " not found");
-                    }
-                    else
-                        propertyExpression = Expression.Property(typedAccessorParameter, clrProperty);
-                }
-                accessorList.Add(OePropertyAccessor.CreatePropertyAccessor(edmProperty, propertyExpression, accessorParameter, selectItems[i].SkipToken));
-            }
+                accessors[i] = OePropertyAccessor.CreatePropertyAccessor(selectItems[i].EdmProperty, propertyExpressions[i], parameter, selectItems[i].SkipToken);
 
-            return accessorList.ToArray();
+            return accessors;
         }
         private static OeEntryFactory[] GetNestedNavigationLinks(OeSelectItem navigationItem)
         {

@@ -2,6 +2,7 @@
 using LinqToDB.Data;
 using LinqToDB.Linq;
 using LinqToDB.Mapping;
+using OdataToEntity.ModelBuilder;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,12 +24,13 @@ namespace OdataToEntity.Linq2Db
             public IReadOnlyList<String> UpdatedPropertyNames { get; }
         }
 
+        public abstract bool IsKey(PropertyInfo propertyInfo);
         public abstract int SaveDeleted(DataConnection dc);
         public abstract int SaveInserted(DataConnection dc);
         public abstract int SaveUpdated(DataConnection dc);
-        public abstract void UpdateIdentities(PropertyInfo fkeyProperty, IDictionary<Object, Object> identities);
+        public abstract void UpdateIdentities(PropertyInfo fkeyProperty, IReadOnlyDictionary<Object, Object> identities);
 
-        public abstract IDictionary<Object, Object> Identities { get; }
+        public abstract IReadOnlyDictionary<Object, Object> Identities { get; }
         public PropertyInfo SelfRefProperty { get; set; }
     }
 
@@ -37,14 +39,9 @@ namespace OdataToEntity.Linq2Db
         private readonly List<T> _deleted;
         private readonly Dictionary<Object, Object> _identities;
         private readonly List<T> _inserted;
-        private static readonly PropertyInfo[] _primaryKey;
+        private static readonly PropertyInfo[] _primaryKey = new OeLinq2DbEdmModelMetadataProvider().GetPrimaryKey(typeof(T));
         private readonly List<UpdatableEntity<T>> _updated;
 
-        static OeLinq2DbTable()
-        {
-            var provider = new OeLinq2DbEdmModelMetadataProvider();
-            _primaryKey = provider.GetPrimaryKey(typeof(T));
-        }
         public OeLinq2DbTable()
         {
             _deleted = new List<T>();
@@ -68,6 +65,10 @@ namespace OdataToEntity.Linq2Db
         public void Insert(T entity)
         {
             _inserted.Add(entity);
+        }
+        public override bool IsKey(PropertyInfo propertyInfo)
+        {
+            return Array.IndexOf(_primaryKey, propertyInfo) != -1;
         }
         private static void OrderBy(PropertyInfo selfRefProperty, PropertyInfo keyProperty, List<T> items)
         {
@@ -184,7 +185,7 @@ namespace OdataToEntity.Linq2Db
                     base.SelfRefProperty.SetValue(_inserted[i], newIdentity);
             }
         }
-        public override void UpdateIdentities(PropertyInfo fkeyProperty, IDictionary<Object, Object> identities)
+        public override void UpdateIdentities(PropertyInfo fkeyProperty, IReadOnlyDictionary<Object, Object> identities)
         {
             foreach (T entity in Inserted)
             {
@@ -195,7 +196,7 @@ namespace OdataToEntity.Linq2Db
         }
 
         public IReadOnlyList<T> Deleted => _deleted;
-        public override IDictionary<Object, Object> Identities => _identities;
+        public override IReadOnlyDictionary<Object, Object> Identities => _identities;
         public IReadOnlyList<T> Inserted => _inserted;
         public IReadOnlyList<UpdatableEntity<T>> Updated => _updated;
     }

@@ -21,7 +21,7 @@ namespace OdataToEntity.ModelBuilder
         public void Build(EntityTypeInfo typeInfo)
         {
             (PropertyInfo many, PropertyInfo join) = GetManyToManyInfo(_metadataProvider, typeInfo.ClrType);
-            if (many == null)
+            if (many == null || many.DeclaringType != typeInfo.ClrType)
                 return;
 
             IEdmNavigationProperty joinNavigationProperty = GetJoinNavigationProperty(typeInfo, join.DeclaringType);
@@ -77,7 +77,7 @@ namespace OdataToEntity.ModelBuilder
                         if (!metadataProvider.IsNotMapped(propertyInfo2))
                         {
                             Type itemType2 = Parsers.OeExpressionHelper.GetCollectionItemType(propertyInfo2.PropertyType);
-                            PropertyInfo partnerProperty = GetPartnerProperty(itemType, itemType2);
+                            PropertyInfo partnerProperty = GetPartnerProperty(metadataProvider, itemType, itemType2);
                             if (partnerProperty != null && itemType == partnerProperty.PropertyType)
                                 return (propertyInfo, partnerProperty);
                         }
@@ -85,7 +85,7 @@ namespace OdataToEntity.ModelBuilder
 
             return default;
         }
-        private static PropertyInfo GetPartnerProperty(Type itemType, Type itemType2)
+        private static PropertyInfo GetPartnerProperty(OeEdmModelMetadataProvider metadataProvider, Type itemType, Type itemType2)
         {
             PropertyInfo partnerProperty = null;
             PropertyInfo otherSideProperty = null;
@@ -96,10 +96,23 @@ namespace OdataToEntity.ModelBuilder
 
                 if (propertyInfo.PropertyType == itemType)
                 {
-                    if (partnerProperty != null)
-                        return null;
+                    if (partnerProperty == null)
+                        partnerProperty = propertyInfo;
+                    else
+                    {
+                        if (otherSideProperty != null)
+                            return null;
 
-                    partnerProperty = propertyInfo;
+                        if (metadataProvider.GetInverseProperty(partnerProperty) == null)
+                            otherSideProperty = propertyInfo;
+                        else if (metadataProvider.GetInverseProperty(propertyInfo) == null)
+                        {
+                            otherSideProperty = partnerProperty;
+                            partnerProperty = propertyInfo;
+                        }
+                        else
+                            return null;
+                    }
                 }
                 else
                 {

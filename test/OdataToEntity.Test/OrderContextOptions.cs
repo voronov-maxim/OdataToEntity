@@ -62,7 +62,7 @@ namespace OdataToEntity.Test.Model
             }
         }
 
-        private static readonly ConcurrentDictionary<string, SqliteConnection> _connections = new ConcurrentDictionary<String, SqliteConnection>();
+        private static readonly ConcurrentDictionary<String, SqliteConnection> _connections = new ConcurrentDictionary<String, SqliteConnection>();
         //private static readonly LoggerFactory MyLoggerFactory = new LoggerFactory(new[] {new ConsoleLoggerProvider((category, level)
         //    => true, true) });
 

@@ -33,6 +33,9 @@ namespace OdataToEntity.Infrastructure
 
         public int Compare(Object x, Object y)
         {
+            if (Object.ReferenceEquals(x, y))
+                return 0;
+
             Func<Object, Object, int>[] propertyComparers = _propertyComparers;
             for (int i = 0; i < propertyComparers.Length; i++)
             {

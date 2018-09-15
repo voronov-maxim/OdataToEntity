@@ -25,12 +25,13 @@ namespace OdataToEntity.Test.Model
 	/// </summary>
 	public partial class OdataToEntityDB : LinqToDB.Data.DataConnection, IOeLinq2DbDataContext
     {
-        public ITable<Category>        Categories        { get { return this.GetTable<Category>(); } }
-        public ITable<Customer>        Customers         { get { return this.GetTable<Customer>(); } }
-        public ITable<ManyColumns>     ManyColumns       { get { return this.GetTable<ManyColumns>(); } }
-        public ITable<Order>           Orders            { get { return this.GetTable<Order>(); } }
-		public ITable<OrderItem>       OrderItems        { get { return this.GetTable<OrderItem>(); } }
-        public ITable<ShippingAddress> ShippingAddresses { get { return this.GetTable<ShippingAddress>(); } }
+        public ITable<Category>                Categories              { get { return this.GetTable<Category>(); } }
+        public ITable<Customer>                Customers               { get { return this.GetTable<Customer>(); } }
+        public ITable<ManyColumns>             ManyColumns             { get { return this.GetTable<ManyColumns>(); } }
+        public ITable<Order>                   Orders                  { get { return this.GetTable<Order>(); } }
+		public ITable<OrderItem>               OrderItems              { get { return this.GetTable<OrderItem>(); } }
+        public ITable<ShippingAddress>         ShippingAddresses       { get { return this.GetTable<ShippingAddress>(); } }
+        public ITable<CustomerShippingAddress> CustomerShippingAddress { get { return this.GetTable<CustomerShippingAddress>(); } }
 
         OeLinq2DbDataContext IOeLinq2DbDataContext.DataContext
         {
@@ -129,19 +130,16 @@ namespace OdataToEntity.Test.Model
 		[Column,     Nullable ] public Sex?   Sex     { get; set; } // int
 
 		#region Associations
-
-		/// <summary>
-		/// FK_Orders_AltCustomers_BackReference
-		/// </summary>
 		[Association(ThisKey="Country,Id", OtherKey="AltCustomerCountry,AltCustomerId", CanBeNull=true, IsBackReference=true)]
 		public IEnumerable<Order> AltOrders { get; set; }
 
-		/// <summary>
-		/// FK_Orders_Customers_BackReference
-		/// </summary>
 		[Association(ThisKey="Country,Id", OtherKey="CustomerCountry,CustomerId", CanBeNull=true, IsBackReference=true)]
 		public IEnumerable<Order> Orders { get; set; }
 
+		[Association(ThisKey="Country,Id", OtherKey="CustomerCountry,CustomerId", CanBeNull=true, IsBackReference=true)]
+        public ICollection<CustomerShippingAddress> CustomerShippingAddresses { get; set; }
+
+        public ICollection<ShippingAddress> ShippingAddresses { get; set; }
 		#endregion
 	}
 
@@ -255,8 +253,31 @@ namespace OdataToEntity.Test.Model
         [Column, NotNull              ] public string Address { get; set; } // varchar(256)
         [Column, PrimaryKey(Order = 1)] public int    Id      { get; set; } // int
         [Column, PrimaryKey(Order = 0)] public int    OrderId { get; set; } // int
+
+		#region Associations
+		[Association(ThisKey="OrderId,Id", OtherKey="ShippingAddressOrderId,ShippingAddressId", CanBeNull=true, IsBackReference=true)]
+        public ICollection<CustomerShippingAddress> CustomerShippingAddresses { get; set; }
+
+        public ICollection<Customer> Customers { get; set; }
+		#endregion
     }
 
+    [Table(Schema = "dbo", Name = "CustomerShippingAddress")]
+    public sealed class CustomerShippingAddress
+    {
+        [Column, PrimaryKey(Order = 0)] public String CustomerCountry        { get; set; }
+        [Column, PrimaryKey(Order = 1)] public int    CustomerId             { get; set; }
+        [Column, PrimaryKey(Order = 2)] public int    ShippingAddressOrderId { get; set; }
+        [Column, PrimaryKey(Order = 3)] public int    ShippingAddressId      { get; set; }
+
+		#region Associations
+		[Association(ThisKey="CustomerCountry,CustomerId", OtherKey="Country,Id", CanBeNull=false, KeyName="FK_CustomerShippingAddress_Customers", BackReferenceName="CustomerShippingAddresses")]
+        public Customer Customer { get; set; }
+
+        [Association(ThisKey="ShippingAddressOrderId,ShippingAddressId", OtherKey="OrderId,Id", CanBeNull=false, KeyName="FK_CustomerShippingAddress_ShippingAddresses", BackReferenceName="CustomerShippingAddresses")]
+        public ShippingAddress ShippingAddress { get; set; }
+		#endregion
+    }
 
     public static partial class TableExtensions
 	{

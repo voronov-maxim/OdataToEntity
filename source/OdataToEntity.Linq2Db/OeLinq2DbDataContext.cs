@@ -11,11 +11,7 @@ namespace OdataToEntity.Linq2Db
 {
     public interface IOeLinq2DbDataContext
     {
-        OeLinq2DbDataContext DataContext
-        {
-            get;
-            set;
-        }
+        OeLinq2DbDataContext DataContext { get; set; }
     }
 
     public sealed class OeLinq2DbDataContext
@@ -73,6 +69,30 @@ namespace OdataToEntity.Linq2Db
                 foreach (IEdmStructuralProperty edmProperty in navigationProperty.Partner.DependentProperties())
                     clrProperties.Add(clrType.GetProperty(edmProperty.Name));
             return clrProperties;
+        }
+        private static List<PropertyInfo> GetDependentProperties(PropertyInfo propertyInfo, List<ClrTypeEdmSet> clrTypeEdmSetList, int lastIndex)
+        {
+            var dependentProperties = new List<PropertyInfo>();
+
+            for (int i = 0; i < lastIndex; i++)
+                foreach (IEdmNavigationPropertyBinding navigationBinding in clrTypeEdmSetList[i].EdmEntitySet.NavigationPropertyBindings)
+                {
+                    IEdmReferentialConstraint referentialConstraint = navigationBinding.NavigationProperty.ReferentialConstraint;
+                    if (referentialConstraint != null)
+                        foreach (EdmReferentialConstraintPropertyPair propertyPair in referentialConstraint.PropertyPairs)
+                        {
+                            var schemaElement = (IEdmSchemaElement)propertyPair.PrincipalProperty.DeclaringType;
+                            if (propertyInfo.Name == propertyPair.PrincipalProperty.Name &&
+                                propertyInfo.DeclaringType.Name == schemaElement.Name &&
+                                propertyInfo.DeclaringType.Namespace == schemaElement.Namespace)
+                            {
+                                dependentProperties.Add(clrTypeEdmSetList[i].ClrType.GetProperty(propertyPair.DependentProperty.Name));
+                                break;
+                            }
+                        }
+                }
+
+            return dependentProperties;
         }
         public OeLinq2DbTable<T> GetTable<T>() where T : class
         {
@@ -147,7 +167,13 @@ namespace OdataToEntity.Linq2Db
                         if (clrTypeEdmSetList[j].EdmEntitySet == navigationBinding.Target)
                         {
                             List<PropertyInfo> dependentProperties = GetDependentProperties(clrTypeEdmSetList[j].ClrType, navigationBinding.NavigationProperty);
-                            GetTable(clrTypeEdmSetList[j].ClrType).UpdateIdentities(dependentProperties[0], table.Identities);
+                            OeLinq2DbTable targetTable = GetTable(clrTypeEdmSetList[j].ClrType);
+                            targetTable.UpdateIdentities(dependentProperties[0], table.Identities);
+
+                            if (targetTable.IsKey(dependentProperties[0]))
+                                foreach (PropertyInfo dependentProperty in GetDependentProperties(dependentProperties[0], clrTypeEdmSetList, j))
+                                    GetTable(dependentProperty.DeclaringType).UpdateIdentities(dependentProperty, table.Identities);
+
                             break;
                         }
         }
