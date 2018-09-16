@@ -4,6 +4,7 @@ using GraphQL.Types;
 using GraphQL.Utilities;
 using GraphQLParser;
 using GraphQLParser.AST;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OData.Edm;
 using OdataToEntity.EfCore;
 using OdataToEntity.GraphQL;
@@ -19,9 +20,15 @@ namespace OdataToEntity.Test.GraphQL
     {
         static async Task Main(string[] args)
         {
-            var dataAdapter = new OrderDbDataAdapter(false, false, "test");
-            IEdmModel edmModel = dataAdapter.BuildEdmModel();
-            await InitializeAsync(dataAdapter, edmModel);
+            var context = new StarWars.StarWarsContext("test");
+            context.Database.EnsureCreated();
+
+            var droids = context.Droid.Include(h => h.CharacterToCharacter).ToArray();
+            var humans = context.Human.Include(h => h.CharacterToCharacter).ToArray();
+            var heroes = context.Hero.Include(h => h.CharacterToCharacter).ThenInclude(cc => cc.FriendTo).ToArray();
+
+            var dataAdapter = new StarWars.StarWarsDataAdapter(false, "test");
+            IEdmModel edmModel = dataAdapter.BuildEdmModelFromEfCoreModel();
 
             var schemaBuilder = new OeSchemaBuilder(dataAdapter, edmModel, new ModelBuilder.OeEdmModelMetadataProvider());
 
@@ -31,26 +38,28 @@ namespace OdataToEntity.Test.GraphQL
 
             Object dataContext = dataAdapter.CreateDataContext();
 
+            var query = @"
+                query HeroNameAndFriendsQuery {
+                  hero {
+                    id
+                    name
+                    friends {
+                      name
+                    }
+                  }
+                }
+            ";
+
             var result = await new DocumentExecuter().ExecuteAsync(options =>
             {
                 options.UserContext = dataContext;
                 options.Schema = schema;
-                //options.Query = "query { orders { name customer (address: \"RU\") { name } } }";
-                options.Query = "query { orders (id: 1) { items (orderId: 1) { product } } }";
+                options.Query = query;
             }).ConfigureAwait(false);
 
             dataAdapter.CloseDataContext(dataContext);
 
             var json = new DocumentWriter(indent: true).Write(result);
-        }
-        private static async Task InitializeAsync(Db.OeDataAdapter dataAdapter, IEdmModel edmModel)
-        {
-            var parser = new OeParser(new Uri("http://dummy/"), dataAdapter, edmModel);
-            String fileName = Directory.EnumerateFiles(".", "Add.batch", SearchOption.AllDirectories).First();
-            byte[] bytes = File.ReadAllBytes(fileName);
-            var responseStream = new MemoryStream();
-
-            await parser.ExecuteBatchAsync(new MemoryStream(bytes), responseStream, CancellationToken.None).ConfigureAwait(false);
         }
         private static void Test()
         {

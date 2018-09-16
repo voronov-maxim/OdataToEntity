@@ -11,8 +11,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OdataToEntity.EfCore", "..\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OdataToEntity.Test.GraphQL", "..\test\OdataToEntity.Test.GraphQL\OdataToEntity.Test.GraphQL.csproj", "{50900FBD-167B-43F4-9AF4-F556D884720F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OdataToEntity.AspNetCore", "..\source\OdataToEntity.AspNetCore\OdataToEntity.AspNetCore.csproj", "{33BAD57A-4139-40A0-A410-CE8002487C4C}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -35,10 +33,6 @@ Global
 		{50900FBD-167B-43F4-9AF4-F556D884720F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{50900FBD-167B-43F4-9AF4-F556D884720F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{50900FBD-167B-43F4-9AF4-F556D884720F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{33BAD57A-4139-40A0-A410-CE8002487C4C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{33BAD57A-4139-40A0-A410-CE8002487C4C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{33BAD57A-4139-40A0-A410-CE8002487C4C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{33BAD57A-4139-40A0-A410-CE8002487C4C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

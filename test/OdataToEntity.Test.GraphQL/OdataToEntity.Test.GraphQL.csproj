@@ -4,26 +4,15 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>$(NetCoreAppVersion)</TargetFramework>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <LangVersion>$(CSharpVersion)</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\OdataToEntity.Test\OrderContextOptions.cs" Link="OrderContextOptions.cs" />
-    <Compile Include="..\OdataToEntity.Test\OrderDbDataAdapter.cs" Link="OrderDbDataAdapter.cs" />
-    <Compile Include="..\OdataToEntity.Test\Model\*.cs" Link="Model\%(FileName).cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="..\OdataToEntity.Test\Batches\*.*" Link="Batches\%(FileName)%(Extension)">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-  
-  <ItemGroup>
-    <PackageReference Include="GraphQL" Version="0.17.3" />
+    <PackageReference Include="GraphQL" Version="2.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$(EfCoreVersion)" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="$(EfCoreVersion)" />
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.4.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="$(EfCoreVersion)" />
   </ItemGroup>
 
   <ItemGroup>

@@ -21,6 +21,9 @@ namespace OdataToEntity.GraphQL
 
             public Object Resolve(ResolveFieldContext context)
             {
+                if (context.Source is IDictionary<String, Object> dictionary)
+                    return dictionary[_propertyInfo.Name];
+
                 return _propertyInfo.GetValue(context.Source);
             }
         }

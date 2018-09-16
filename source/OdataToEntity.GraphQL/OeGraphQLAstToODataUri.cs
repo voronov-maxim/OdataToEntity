@@ -84,7 +84,7 @@ namespace OdataToEntity.GraphQL
                         SelectExpandClause childSelectExpand = BuildSelectExpandClause(parentEntitySet, fieldSelection.SelectionSet);
 
                         var navigationProperty = (IEdmNavigationProperty)edmProperty;
-                        IEdmEntitySet navigationSource = OeEdmClrHelper.GetEntitySet(_edmModel, navigationProperty.Type.Definition);
+                        IEdmEntitySet navigationSource = OeEdmClrHelper.GetEntitySet(_edmModel, navigationProperty.ToEntityType());
                         var expandPath = new ODataExpandPath(new NavigationPropertySegment(navigationProperty, navigationSource));
 
                         FilterClause filterOption = null;

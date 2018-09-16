@@ -31,13 +31,10 @@ namespace OdataToEntity.GraphQL
             var entityFields = new List<FieldType>(_dataAdapter.EntitySetAdapters.Count);
             foreach (Db.OeEntitySetAdapter entitySetAdapter in _dataAdapter.EntitySetAdapters)
             {
-                Type entitySetResolverType = typeof(OeEntitySetResolver<>).MakeGenericType(entitySetAdapter.EntityType);
-                var entitySetResolver = (IFieldResolver)entitySetResolverType.GetConstructors()[0].Invoke(new Object[] { _dataAdapter, _edmModel});
-
                 FieldType entityField = new FieldType()
                 {
                     Name = entitySetAdapter.EntitySetName,
-                    Resolver = entitySetResolver,
+                    Resolver = new OeEntitySetResolver(_dataAdapter, _edmModel),
                     ResolvedType = _graphTypeBuilder.CreateListGraphType(entitySetAdapter.EntityType)
                 };
 
