@@ -155,11 +155,11 @@ namespace OdataToEntity.Test
         }
         private static String RemoveEmptyArrays(String json)
         {
-            String[] lines = json.Split(Environment.NewLine);
+            String[] lines = json.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
             for (int i = 1; i < lines.Length; i++)
                 if (lines[i].EndsWith(": []"))
                 {
-                    if (lines[i - 1].EndsWith(','))
+                    if (lines[i - 1].EndsWith(","))
                         lines[i - 1] = lines[i - 1].Remove(lines[i - 1].Length - 1, 1);
                     lines[i] = null;
                 }

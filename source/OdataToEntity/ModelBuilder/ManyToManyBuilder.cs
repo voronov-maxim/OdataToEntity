@@ -20,33 +20,35 @@ namespace OdataToEntity.ModelBuilder
 
         public void Build(EntityTypeInfo typeInfo)
         {
-            (PropertyInfo many, PropertyInfo join) = GetManyToManyInfo(_metadataProvider, typeInfo.ClrType);
-            if (many == null || many.DeclaringType != typeInfo.ClrType)
-                return;
-
-            IEdmNavigationProperty joinNavigationProperty = GetJoinNavigationProperty(typeInfo, join.DeclaringType);
-            if (joinNavigationProperty == null)
-                return;
-
-            IEdmNavigationProperty targetNavigationProperty = GetTargetNavigationProperty(_entityTypeInfos[join.DeclaringType], join.PropertyType);
-            if (targetNavigationProperty == null)
-                return;
-
-            EntityTypeInfo principalInfo = _entityTypeInfos[join.PropertyType];
-            EntityTypeInfo dependentInfo = _entityTypeInfos[many.DeclaringType];
-            var edmDependentInfo = new EdmNavigationPropertyInfo()
+            foreach ((PropertyInfo many, PropertyInfo join) in GetManyToManyInfo(_metadataProvider, typeInfo.ClrType))
             {
-                ContainsTarget = true,
-                Name = many.Name,
-                OnDelete = EdmOnDeleteAction.None,
-                PrincipalProperties = principalInfo.EdmType.DeclaredKey,
-                Target = principalInfo.EdmType,
-                TargetMultiplicity = EdmMultiplicity.Many
-            };
-            EdmNavigationProperty edmManyToManyProperty = dependentInfo.EdmType.AddUnidirectionalNavigation(edmDependentInfo);
+                if (many == null || many.DeclaringType != typeInfo.ClrType)
+                    continue;
 
-            var manyToManyJoinDescription = new ManyToManyJoinDescription(join.DeclaringType, joinNavigationProperty, targetNavigationProperty);
-            _edmModel.SetAnnotationValue(edmManyToManyProperty, manyToManyJoinDescription);
+                IEdmNavigationProperty joinNavigationProperty = GetJoinNavigationProperty(typeInfo, join.DeclaringType);
+                if (joinNavigationProperty == null)
+                    continue;
+
+                var targetNavigationProperty = (IEdmNavigationProperty)_entityTypeInfos[join.DeclaringType].EdmType.FindProperty(join.Name);
+                if (targetNavigationProperty == null)
+                    continue;
+
+                EntityTypeInfo principalInfo = _entityTypeInfos[join.PropertyType];
+                EntityTypeInfo dependentInfo = _entityTypeInfos[many.DeclaringType];
+                var edmDependentInfo = new EdmNavigationPropertyInfo()
+                {
+                    ContainsTarget = true,
+                    Name = many.Name,
+                    OnDelete = EdmOnDeleteAction.None,
+                    PrincipalProperties = principalInfo.EdmType.DeclaredKey,
+                    Target = principalInfo.EdmType,
+                    TargetMultiplicity = EdmMultiplicity.Many
+                };
+                EdmNavigationProperty edmManyToManyProperty = dependentInfo.EdmType.AddUnidirectionalNavigation(edmDependentInfo);
+
+                var manyToManyJoinDescription = new ManyToManyJoinDescription(join.DeclaringType, joinNavigationProperty, targetNavigationProperty);
+                _edmModel.SetAnnotationValue(edmManyToManyProperty, manyToManyJoinDescription);
+            }
         }
         private static IEdmNavigationProperty GetJoinNavigationProperty(EntityTypeInfo typeInfo, Type joinClassType)
         {
@@ -61,7 +63,7 @@ namespace OdataToEntity.ModelBuilder
 
             return null;
         }
-        private static (PropertyInfo Many, PropertyInfo Join) GetManyToManyInfo(OeEdmModelMetadataProvider metadataProvider, Type entityType)
+        private static IEnumerable<(PropertyInfo Many, PropertyInfo Join)> GetManyToManyInfo(OeEdmModelMetadataProvider metadataProvider, Type entityType)
         {
             var collectionProperties = new List<PropertyInfo>();
             foreach (PropertyInfo propertyInfo in entityType.GetProperties())
@@ -79,11 +81,12 @@ namespace OdataToEntity.ModelBuilder
                             Type itemType2 = Parsers.OeExpressionHelper.GetCollectionItemType(propertyInfo2.PropertyType);
                             PropertyInfo partnerProperty = GetPartnerProperty(metadataProvider, itemType, itemType2);
                             if (partnerProperty != null && itemType == partnerProperty.PropertyType)
-                                return (propertyInfo, partnerProperty);
+                            {
+                                yield return (propertyInfo, partnerProperty);
+                                break;
+                            }
                         }
                 }
-
-            return default;
         }
         private static PropertyInfo GetPartnerProperty(OeEdmModelMetadataProvider metadataProvider, Type itemType, Type itemType2)
         {
@@ -129,16 +132,6 @@ namespace OdataToEntity.ModelBuilder
             }
 
             return partnerProperty;
-        }
-        private static IEdmNavigationProperty GetTargetNavigationProperty(EntityTypeInfo typeInfo, Type targetType)
-        {
-            foreach (PropertyInfo propertyInfo in typeInfo.ClrType.GetProperties())
-                if (propertyInfo.PropertyType == targetType)
-                    foreach (IEdmNavigationProperty edmNavigationProperty in typeInfo.EdmType.NavigationProperties())
-                        if (String.CompareOrdinal(edmNavigationProperty.Name, propertyInfo.Name) == 0)
-                            return edmNavigationProperty;
-
-            return null;
         }
     }
 }
