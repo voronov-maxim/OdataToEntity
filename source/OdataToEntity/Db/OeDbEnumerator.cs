@@ -84,6 +84,7 @@ namespace OdataToEntity.Db
 
             if (_uniqueConstraint != null)
             {
+                _uniqueConstraint.Clear();
                 Object value = Current;
                 if (value != null)
                     _uniqueConstraint.Add(value);

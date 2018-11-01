@@ -10,11 +10,11 @@
     <JsonNetVersion>10.0.3</JsonNetVersion>
     <NetStandardVersion>netstandard2.0</NetStandardVersion>
     <NetCoreAppVersion>netcoreapp2.1</NetCoreAppVersion>
-    <ODataLibVersion>7.5.0</ODataLibVersion>
-    <OdataToEntityVersion>2.0.0</OdataToEntityVersion>
+    <ODataLibVersion>7.5.1</ODataLibVersion>
+    <OdataToEntityVersion>2.0.1</OdataToEntityVersion>
     <SystemInteractiveAsyncVersion>3.2.0</SystemInteractiveAsyncVersion>
-    <TestSdkVersion>15.8.0</TestSdkVersion>
+    <TestSdkVersion>15.9.0</TestSdkVersion>
     <Version>$(OdataToEntityVersion)</Version>
-    <XunitVersion>2.4.0</XunitVersion>
+    <XunitVersion>2.4.1</XunitVersion>
   </PropertyGroup>
 </Project>

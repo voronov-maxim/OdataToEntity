@@ -150,13 +150,8 @@ namespace OdataToEntity.Parsers.Translators
                 structuralProperties = edmNavigationProperty.Partner.DependentProperties();
             else
             {
-                if (edmNavigationProperty.Partner == null)
-                {
-                    var structuralPropertyList = new List<IEdmStructuralProperty>();
-                    foreach (EdmReferentialConstraintPropertyPair constraintPropertyPair in edmNavigationProperty.ReferentialConstraint.PropertyPairs)
-                        structuralPropertyList.Add(constraintPropertyPair.DependentProperty);
-                    structuralProperties = structuralPropertyList;
-                }
+                if (edmNavigationProperty.Type.IsCollection())
+                    structuralProperties = edmNavigationProperty.DependentProperties();
                 else
                     structuralProperties = edmNavigationProperty.PrincipalProperties();
             }
@@ -193,13 +188,8 @@ namespace OdataToEntity.Parsers.Translators
                 structuralProperties = edmNavigationProperty.Partner.PrincipalProperties();
             else
             {
-                if (edmNavigationProperty.Partner == null)
-                {
-                    var structuralPropertyList = new List<IEdmStructuralProperty>();
-                    foreach (EdmReferentialConstraintPropertyPair constraintPropertyPair in edmNavigationProperty.ReferentialConstraint.PropertyPairs)
-                        structuralPropertyList.Add(constraintPropertyPair.PrincipalProperty);
-                    structuralProperties = structuralPropertyList;
-                }
+                if (edmNavigationProperty.Type.IsCollection())
+                    structuralProperties = edmNavigationProperty.PrincipalProperties();
                 else
                     structuralProperties = edmNavigationProperty.DependentProperties();
             }
