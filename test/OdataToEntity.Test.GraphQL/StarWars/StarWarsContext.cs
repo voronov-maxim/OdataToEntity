@@ -45,19 +45,29 @@ namespace OdataToEntity.Test.GraphQL.StarWars
                 .HasValue<Droid>(2);
 
             modelBuilder.Entity<CharacterToCharacter>().HasKey(t => new { t.CharacterId, t.FriendId });
+            modelBuilder.Entity<CharacterToEpisode>().HasKey(t => new { t.CharacterId, t.EpisodeId });
+
+            modelBuilder.Entity<Actor>().HasData(
+                new Actor() { Id = 1, Name = "Mark Hamill", Birhday = new DateTime(1951, 09, 25) },
+                new Actor() { Id = 2, Name = "David Prowse", Birhday = new DateTime(1935, 07, 01) },
+                new Actor() { Id = 3, Name = "Kenny Baker", Birhday = new DateTime(1934, 08, 24) },
+                new Actor() { Id = 4, Name = "Anthony Daniels", Birhday = new DateTime(1946, 02, 21) }
+                );
 
             modelBuilder.Entity<Human>().HasData(
                 new Human
                 {
                     Id = "1",
                     Name = "Luke",
-                    HomePlanet = "Tatooine"
+                    HomePlanet = "Tatooine",
+                    ActorId = 1
                 },
                 new Human
                 {
                     Id = "2",
                     Name = "Vader",
-                    HomePlanet = "Tatooine"
+                    HomePlanet = "Tatooine",
+                    ActorId = 2
                 });
 
             modelBuilder.Entity<Droid>().HasData(
@@ -65,14 +75,22 @@ namespace OdataToEntity.Test.GraphQL.StarWars
                 {
                     Id = "3",
                     Name = "R2-D2",
-                    PrimaryFunction = "Astromech"
+                    PrimaryFunction = "Astromech",
+                    ActorId = 3
                 },
                 new Droid
                 {
                     Id = "4",
                     Name = "C-3PO",
-                    PrimaryFunction = "Protocol"
+                    PrimaryFunction = "Protocol",
+                    ActorId = 4
                 });
+
+            modelBuilder.Entity<EpisodeEnum>().HasData(
+                new EpisodeEnum() { Description = "Released in 1977", Name = "NEWHOPE", Value = StarWars.Episodes.NEWHOPE },
+                new EpisodeEnum() { Description = "Released in 1980", Name = "EMPIRE", Value = StarWars.Episodes.EMPIRE },
+                new EpisodeEnum() { Description = "Released in 1983", Name = "JEDI", Value = StarWars.Episodes.JEDI }
+                );
 
             modelBuilder.Entity<CharacterToCharacter>().HasData(
                 new CharacterToCharacter() { CharacterId = "1", FriendId = "3" },
@@ -81,10 +99,31 @@ namespace OdataToEntity.Test.GraphQL.StarWars
                 new CharacterToCharacter() { CharacterId = "3", FriendId = "1" },
                 new CharacterToCharacter() { CharacterId = "3", FriendId = "4" }
                 );
+
+            modelBuilder.Entity<CharacterToEpisode>().HasData(
+                new CharacterToEpisode() { CharacterId = "1", EpisodeId = StarWars.Episodes.NEWHOPE },
+                new CharacterToEpisode() { CharacterId = "1", EpisodeId = StarWars.Episodes.EMPIRE },
+                new CharacterToEpisode() { CharacterId = "1", EpisodeId = StarWars.Episodes.JEDI },
+
+                new CharacterToEpisode() { CharacterId = "2", EpisodeId = StarWars.Episodes.NEWHOPE },
+                new CharacterToEpisode() { CharacterId = "2", EpisodeId = StarWars.Episodes.EMPIRE },
+                new CharacterToEpisode() { CharacterId = "2", EpisodeId = StarWars.Episodes.JEDI },
+
+                new CharacterToEpisode() { CharacterId = "3", EpisodeId = StarWars.Episodes.NEWHOPE },
+                new CharacterToEpisode() { CharacterId = "3", EpisodeId = StarWars.Episodes.EMPIRE },
+                new CharacterToEpisode() { CharacterId = "3", EpisodeId = StarWars.Episodes.JEDI },
+
+                new CharacterToEpisode() { CharacterId = "4", EpisodeId = StarWars.Episodes.NEWHOPE },
+                new CharacterToEpisode() { CharacterId = "4", EpisodeId = StarWars.Episodes.EMPIRE },
+                new CharacterToEpisode() { CharacterId = "4", EpisodeId = StarWars.Episodes.JEDI }
+                );
         }
 
-        public DbSet<Hero> Hero { get; set; }
+        public DbSet<Actor> Actors { get; set; }
         public DbSet<Droid> Droid { get; set; }
+        public DbSet<EpisodeEnum> Episodes { get; set; }
+        public DbSet<Hero> Hero { get; set; }
+        public DbSet<CharacterToEpisode> HeroToEpisode { get; set; }
         public DbSet<CharacterToCharacter> HeroToHero { get; set; }
         public DbSet<Human> Human { get; set; }
     }

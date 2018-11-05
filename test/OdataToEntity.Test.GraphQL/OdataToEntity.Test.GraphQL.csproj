@@ -9,10 +9,17 @@
     <LangVersion>$(CSharpVersion)</LangVersion>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <StartupObject>OdataToEntity.Test.GraphQL.Program</StartupObject>
+  </PropertyGroup>
+  
   <ItemGroup>
-    <PackageReference Include="GraphQL" Version="2.0.0" />
+    <PackageReference Include="GraphQL" Version="2.3.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$(EfCoreVersion)" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="$(EfCoreVersion)" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />
+    <PackageReference Include="xunit" Version="$(XunitVersion)" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="$(XunitVersion)" />
   </ItemGroup>
 
   <ItemGroup>

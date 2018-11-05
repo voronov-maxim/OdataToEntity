@@ -1,5 +1,4 @@
-﻿using GraphQL.Language.AST;
-using GraphQL.Types;
+﻿using GraphQL.Types;
 using GraphQLParser;
 using GraphQLParser.AST;
 using Microsoft.OData;
@@ -13,13 +12,13 @@ namespace OdataToEntity.GraphQL
 {
     public readonly struct OeGraphQLAstToODataUri
     {
+        private readonly ResolveFieldContext _context;
         private readonly IEdmModel _edmModel;
-        private readonly ISchema _schema;
 
-        public OeGraphQLAstToODataUri(IEdmModel edmModel, ISchema schema)
+        public OeGraphQLAstToODataUri(IEdmModel edmModel, ResolveFieldContext context)
         {
             _edmModel = edmModel;
-            _schema = schema;
+            _context = context;
         }
 
         private FilterClause BuildFilterClause(IEdmEntitySet entitySet, GraphQLFieldSelection selection)
@@ -120,6 +119,11 @@ namespace OdataToEntity.GraphQL
 
                 return ODataUriUtils.ConvertFromUriLiteral(scalarValue.Value, ODataVersion.V4, _edmModel, typeReference);
             }
+            else if (graphValue is GraphQLVariable variable)
+            {
+                Type clrType = OeEdmClrHelper.GetClrType(_edmModel, typeReference.Definition);
+                return _context.GetArgument(clrType, variable.Name.Value);
+            }
 
             throw new NotSupportedException("argument " + graphValue.GetType().Name + " not supported");
         }
@@ -130,7 +134,7 @@ namespace OdataToEntity.GraphQL
         }
         private IEdmEntitySet GetEntitySet(GraphQLFieldSelection selection)
         {
-            var listGraphType = (ListGraphType)_schema.Query.Fields.Single(f => f.Name == selection.Name.Value).ResolvedType;
+            var listGraphType = (ListGraphType)Schema.Query.Fields.Single(f => f.Name == selection.Name.Value).ResolvedType;
             Type entityType = listGraphType.ResolvedType.GetType().GetGenericArguments()[0];
 
             return OeEdmClrHelper.GetEntitySet(_edmModel, entityType);
@@ -154,6 +158,8 @@ namespace OdataToEntity.GraphQL
                 Filter = BuildFilterClause(entitySet, selection)
             };
         }
+
+        private ISchema Schema => _context.Schema;
     }
 }
 

@@ -1,12 +1,9 @@
-﻿using GraphQL.Language.AST;
-using GraphQL.Resolvers;
+﻿using GraphQL.Resolvers;
 using GraphQL.Types;
 using Microsoft.OData;
 using Microsoft.OData.Edm;
-using Microsoft.OData.UriParser;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 
 namespace OdataToEntity.GraphQL
@@ -25,8 +22,9 @@ namespace OdataToEntity.GraphQL
         {
             var results = new List<Dictionary<String, Object>>();
 
-            var translator = new OeGraphQLAstToODataUri(_edmModel, context.Schema);
+            var translator = new OeGraphQLAstToODataUri(_edmModel, context);
             ODataUri odataUri = translator.Translate(context.Document.OriginalQuery);
+            //var zzz = Uri.UnescapeDataString(odataUri.BuildUri(ODataUrlKeyDelimiter.Parentheses).OriginalString);
 
             var parser = new OeGetParser(_dataAdapter, _edmModel);
             Parsers.OeQueryContext queryContext = parser.CreateQueryContext(odataUri, 0, false, OeMetadataLevel.Minimal);
