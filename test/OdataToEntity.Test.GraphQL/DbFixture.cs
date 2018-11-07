@@ -17,32 +17,19 @@ namespace OdataToEntity.Test.GraphQL
     {
         protected DbFixture(Db.OeDataAdapter dataAdapter)
         {
-            IEdmModel edmModel = dataAdapter.BuildEdmModelFromEfCoreModel();
-            var schemaBuilder = new OeSchemaBuilder(dataAdapter, edmModel, new ModelBuilder.OeEdmModelMetadataProvider());
-
             DataAdapter = dataAdapter;
-            Schema = schemaBuilder.Build();
+            EdmModel = dataAdapter.BuildEdmModelFromEfCoreModel();
+            Schema = new OeSchemaBuilder(dataAdapter, EdmModel).Build();
         }
 
         public Task<String> Execute(String query)
         {
             return Execute(query, null);
         }
-        public async Task<string> Execute(String query, Inputs inputs)
+        public async Task<String> Execute(String query, Inputs inputs)
         {
-            Object dataContext = DataAdapter.CreateDataContext();
-
-            var result = await new DocumentExecuter().ExecuteAsync(options =>
-            {
-                options.Inputs = inputs;
-                options.Query = query;
-                options.Schema = Schema;
-                options.UserContext = dataContext;
-            }).ConfigureAwait(false);
-
-            DataAdapter.CloseDataContext(dataContext);
-
-            return new DocumentWriter(true).Write(result);
+            var parser = new OeGraphqlParser(DataAdapter, EdmModel);
+            return new DocumentWriter(true).Write(await parser.Execute(query, inputs));
         }
         public static String GetCsdlSchema(IEdmModel edmModel)
         {
@@ -59,6 +46,7 @@ namespace OdataToEntity.Test.GraphQL
         }
 
         protected Db.OeDataAdapter DataAdapter { get; }
+        protected IEdmModel EdmModel { get; }
         protected Schema Schema { get; }
     }
 }

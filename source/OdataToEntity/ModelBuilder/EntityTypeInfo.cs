@@ -112,7 +112,9 @@ namespace OdataToEntity.ModelBuilder
                 }
             }
 
-            var edmProperty = new EdmStructuralProperty(_edmType, clrProperty.Name, typeRef);
+            EdmStructuralProperty edmProperty = clrProperty is OeShadowPropertyInfo ?
+                new OeEdmStructuralProperty(_edmType, clrProperty.Name, typeRef) :
+                new EdmStructuralProperty(_edmType, clrProperty.Name, typeRef);
             _edmType.AddProperty(edmProperty);
             if (_metadataProvider.IsKey(clrProperty))
                 _keyProperties.Add(new KeyValuePair<PropertyInfo, EdmStructuralProperty>(clrProperty, edmProperty));

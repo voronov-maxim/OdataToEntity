@@ -100,7 +100,7 @@ namespace OdataToEntity.Parsers.Translators
         {
             if (ethalon is NewExpression outerNewExpression)
                 return CoerceTupleType(outerNewExpression, (NewExpression)coercion);
-            return Expression.Convert(coercion, coercion.Type);
+            return Expression.Convert(coercion, ethalon.Type);
         }
         private static NewExpression CoerceTupleType(NewExpression ethalon, NewExpression coercion)
         {

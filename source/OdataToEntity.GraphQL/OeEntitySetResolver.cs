@@ -22,9 +22,8 @@ namespace OdataToEntity.GraphQL
         {
             var results = new List<Dictionary<String, Object>>();
 
-            var translator = new OeGraphQLAstToODataUri(_edmModel, context);
+            var translator = new OeGraphqlAstToODataUri(_edmModel, context);
             ODataUri odataUri = translator.Translate(context.Document.OriginalQuery);
-            //var zzz = Uri.UnescapeDataString(odataUri.BuildUri(ODataUrlKeyDelimiter.Parentheses).OriginalString);
 
             var parser = new OeGetParser(_dataAdapter, _edmModel);
             Parsers.OeQueryContext queryContext = parser.CreateQueryContext(odataUri, 0, false, OeMetadataLevel.Minimal);
@@ -37,8 +36,7 @@ namespace OdataToEntity.GraphQL
 
             return results;
         }
-
-        object IFieldResolver.Resolve(ResolveFieldContext context)
+        Object IFieldResolver.Resolve(ResolveFieldContext context)
         {
             return Resolve(context);
         }

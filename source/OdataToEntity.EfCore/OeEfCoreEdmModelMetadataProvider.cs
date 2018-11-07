@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using OdataToEntity.ModelBuilder;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Reflection;
 
@@ -11,34 +10,6 @@ namespace OdataToEntity.EfCore
 {
     public sealed class OeEfCoreEdmModelMetadataProvider : OeEdmModelMetadataProvider
     {
-        private sealed class ShadowPropertyInfo : PropertyInfo
-        {
-            public ShadowPropertyInfo(Type declaringType, Type propertyType, String name)
-            {
-                DeclaringType = declaringType;
-                PropertyType = propertyType;
-                Name = name;
-            }
-
-            public override PropertyAttributes Attributes => throw new NotImplementedException();
-            public override bool CanRead => throw new NotImplementedException();
-            public override bool CanWrite => throw new NotImplementedException();
-            public override Type DeclaringType { get; }
-            public override string Name { get; }
-            public override Type PropertyType { get; }
-            public override Type ReflectedType => throw new NotImplementedException();
-
-            public override MethodInfo[] GetAccessors(bool nonPublic) => throw new NotImplementedException();
-            public override Object[] GetCustomAttributes(bool inherit) => throw new NotImplementedException();
-            public override Object[] GetCustomAttributes(Type attributeType, bool inherit) => throw new NotImplementedException();
-            public override MethodInfo GetGetMethod(bool nonPublic) => throw new NotImplementedException();
-            public override ParameterInfo[] GetIndexParameters() => throw new NotImplementedException();
-            public override MethodInfo GetSetMethod(bool nonPublic) => throw new NotImplementedException();
-            public override Object GetValue(Object obj, BindingFlags invokeAttr, Binder binder, Object[] index, CultureInfo culture) => throw new NotImplementedException();
-            public override bool IsDefined(Type attributeType, bool inherit) => throw new NotImplementedException();
-            public override void SetValue(Object obj, Object value, BindingFlags invokeAttr, Binder binder, Object[] index, CultureInfo culture) => throw new NotImplementedException();
-        }
-
         private readonly IModel _efModel;
         private readonly Dictionary<Type, IEntityType> _entityTypes;
 
@@ -72,7 +43,7 @@ namespace OdataToEntity.EfCore
                         {
                             IProperty efProperty = fkey.Properties[i];
                             propertyInfos[i] = efProperty.IsShadowProperty ?
-                                new ShadowPropertyInfo(efProperty.DeclaringType.ClrType, efProperty.ClrType, efProperty.Name) :
+                                new OeShadowPropertyInfo(efProperty.DeclaringType.ClrType, efProperty.ClrType, efProperty.Name) :
                                 propertyInfo.DeclaringType.GetPropertyIgnoreCase(efProperty.Name);
                         }
                         return propertyInfos;
@@ -135,7 +106,7 @@ namespace OdataToEntity.EfCore
                     {
                         if (clrPropertyList == null)
                             clrPropertyList = new List<PropertyInfo>(clrProperties);
-                        clrPropertyList.Add(new ShadowPropertyInfo(efProperty.DeclaringType.ClrType, efProperty.ClrType, efProperty.Name));
+                        clrPropertyList.Add(new OeShadowPropertyInfo(efProperty.DeclaringType.ClrType, efProperty.ClrType, efProperty.Name));
                     }
 
                 if (clrPropertyList != null)

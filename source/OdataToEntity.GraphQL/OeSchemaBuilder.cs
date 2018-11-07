@@ -1,7 +1,5 @@
-﻿using GraphQL.Resolvers;
-using GraphQL.Types;
+﻿using GraphQL.Types;
 using Microsoft.OData.Edm;
-using System;
 using System.Collections.Generic;
 
 namespace OdataToEntity.GraphQL
@@ -12,11 +10,11 @@ namespace OdataToEntity.GraphQL
         private readonly IEdmModel _edmModel;
         private readonly OeGraphTypeBuilder _graphTypeBuilder;
 
-        public OeSchemaBuilder(Db.OeDataAdapter dataAdapter, IEdmModel edmModel, ModelBuilder.OeEdmModelMetadataProvider modelMetadataProvider)
+        public OeSchemaBuilder(Db.OeDataAdapter dataAdapter, IEdmModel edmModel)
         {
             _dataAdapter = dataAdapter;
             _edmModel = edmModel;
-            _graphTypeBuilder = new OeGraphTypeBuilder(modelMetadataProvider);
+            _graphTypeBuilder = new OeGraphTypeBuilder(edmModel);
         }
 
         public Schema Build()

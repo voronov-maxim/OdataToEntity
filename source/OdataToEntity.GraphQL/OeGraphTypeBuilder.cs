@@ -1,6 +1,7 @@
 ﻿using GraphQL;
 using GraphQL.Resolvers;
 using GraphQL.Types;
+using Microsoft.OData.Edm;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,12 +29,12 @@ namespace OdataToEntity.GraphQL
             }
         }
 
-        private readonly ModelBuilder.OeEdmModelMetadataProvider _modelMetadataProvider;
+        private readonly IEdmModel _edmModel;
         private readonly Dictionary<Type, IGraphType> _clrTypeToObjectGraphType;
 
-        public OeGraphTypeBuilder(ModelBuilder.OeEdmModelMetadataProvider modelMetadataProvider)
+        public OeGraphTypeBuilder(IEdmModel edmModel)
         {
-            _modelMetadataProvider = modelMetadataProvider;
+            _edmModel = edmModel;
             _clrTypeToObjectGraphType = new Dictionary<Type, IGraphType>();
         }
 
@@ -59,7 +60,7 @@ namespace OdataToEntity.GraphQL
                         queryArguments = CreateQueryArguments(itemType, true);
                     }
 
-                    if (!_modelMetadataProvider.IsRequired(propertyInfo))
+                    if (IsRequired(propertyInfo))
                         resolvedType = new NonNullGraphType(resolvedType);
 
                     var entityFieldType = new FieldType()
@@ -91,7 +92,7 @@ namespace OdataToEntity.GraphQL
                     IGraphType resolvedType = fieldType.ResolvedType;
                     if (resolvedType is NonNullGraphType nonNullGraphType)
                         resolvedType = nonNullGraphType.ResolvedType;
-                    queryArgument = new QueryArgument(resolvedType.GetType()) { ResolvedType = resolvedType }; //zzz remove from next release GraphQL
+                    queryArgument = new QueryArgument(resolvedType.GetType()) { ResolvedType = resolvedType };
                 }
                 else
                 {
@@ -114,6 +115,7 @@ namespace OdataToEntity.GraphQL
             Type objectGraphTypeType = typeof(ObjectGraphType<>).MakeGenericType(entityType);
             objectGraphType = (IObjectGraphType)Activator.CreateInstance(objectGraphTypeType);
             objectGraphType.Name = NameFirstCharLower(entityType.Name);
+            objectGraphType.IsTypeOf = t => t is IDictionary<String, Object>;
 
             foreach (PropertyInfo propertyInfo in entityType.GetProperties())
                 if (propertyInfo.PropertyType.IsValueType || propertyInfo.PropertyType == typeof(String))
@@ -129,7 +131,7 @@ namespace OdataToEntity.GraphQL
         private FieldType CreateStructuralFieldType(PropertyInfo propertyInfo)
         {
             Type graphType;
-            bool isNullable = !_modelMetadataProvider.IsRequired(propertyInfo);
+            bool isNullable = !IsRequired(propertyInfo);
             Type enumType = propertyInfo.PropertyType;
             if (enumType.IsEnum || ((enumType = Nullable.GetUnderlyingType(enumType)) != null && enumType.IsEnum))
             {
@@ -139,13 +141,15 @@ namespace OdataToEntity.GraphQL
             }
             else
             {
-                if (_modelMetadataProvider.IsKey(propertyInfo))
+                if (IsKey(propertyInfo))
                     graphType = typeof(IdGraphType);
                 else
+                {
                     if (propertyInfo.PropertyType == typeof(DateTimeOffset) || propertyInfo.PropertyType == typeof(DateTimeOffset?))
-                    graphType = typeof(DateTime).GetGraphTypeFromType(isNullable);
-                else
-                    graphType = propertyInfo.PropertyType.GetGraphTypeFromType(isNullable);
+                        graphType = typeof(DateTime).GetGraphTypeFromType(isNullable);
+                    else
+                        graphType = propertyInfo.PropertyType.GetGraphTypeFromType(isNullable);
+                }
             }
 
             var fieldType = new FieldType()
@@ -160,6 +164,20 @@ namespace OdataToEntity.GraphQL
         private Type GetEntityTypeFromResolvedType(IGraphType resolvedType)
         {
             return resolvedType.GetType().GetGenericArguments()[0];
+        }
+        private bool IsKey(PropertyInfo propertyInfo)
+        {
+            IEdmEntitySet entitySet = OeEdmClrHelper.GetEntitySet(_edmModel, propertyInfo.DeclaringType);
+            foreach (IEdmStructuralProperty key in entitySet.EntityType().Key())
+                if (String.Compare(key.Name, propertyInfo.Name, StringComparison.OrdinalIgnoreCase) == 0)
+                    return true;
+            return false;
+        }
+        private bool IsRequired(PropertyInfo propertyInfo)
+        {
+            IEdmEntitySet entitySet = OeEdmClrHelper.GetEntitySet(_edmModel, propertyInfo.DeclaringType);
+            IEdmProperty edmProperty = entitySet.EntityType().FindProperty(propertyInfo.Name);
+            return !edmProperty.Type.IsNullable;
         }
         private static String NameFirstCharLower(String name)
         {

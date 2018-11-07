@@ -4,6 +4,7 @@ using OdataToEntity.ModelBuilder;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace OdataToEntity.Parsers
 {
@@ -55,8 +56,17 @@ namespace OdataToEntity.Parsers
             var propertyAccessors = new List<OePropertyAccessor>();
             foreach (IEdmStructuralProperty edmProperty in entitySet.EntityType().StructuralProperties())
             {
-                MemberExpression expression = Expression.Property(instance, clrType.GetProperty(edmProperty.Name));
-                propertyAccessors.Add(CreatePropertyAccessor(edmProperty, expression, parameter, false));
+                PropertyInfo propertyInfo = clrType.GetProperty(edmProperty.Name);
+                if (propertyInfo == null)
+                {
+                    if (!(edmProperty is OeEdmStructuralProperty))
+                        throw new InvalidOperationException("Property " + edmProperty.Name + " not found in clr type " + clrType.Name);
+                }
+                else
+                {
+                    MemberExpression expression = Expression.Property(instance, propertyInfo);
+                    propertyAccessors.Add(CreatePropertyAccessor(edmProperty, expression, parameter, false));
+                }
             }
             return propertyAccessors.ToArray();
         }

@@ -1,6 +1,5 @@
 ﻿using GraphQL;
 using System;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -16,7 +15,7 @@ namespace OdataToEntity.Test.GraphQL
         [Fact]
         public async Task can_query_for_droids()
         {
-            var query = @"
+            String query = @"
                {
                   droid(id: ""4"") {
                     name
@@ -30,7 +29,7 @@ namespace OdataToEntity.Test.GraphQL
         [Fact]
         public async Task can_query_for_friends_of_humans()
         {
-            var query = @"
+            String query = @"
                {
                   human(id: ""1"") {
                     name
@@ -50,7 +49,7 @@ namespace OdataToEntity.Test.GraphQL
         [Fact]
         public async Task can_query_for_humans()
         {
-            var query = @"
+            String query = @"
                {
                   human(id: ""1"") {
                     name
@@ -65,7 +64,7 @@ namespace OdataToEntity.Test.GraphQL
         [Fact]
         public async Task can_query_for_the_id_and_friends_of_r2()
         {
-            var query = @"
+            String query = @"
                 query HeroNameAndFriendsQuery {
                   hero {
                     id
@@ -83,9 +82,10 @@ namespace OdataToEntity.Test.GraphQL
         [Fact]
         public async Task can_query_without_query_name()
         {
-            var query = @"
+            String query = @"
                {
                   hero {
+                    id
                     name
                   }
                }
@@ -97,8 +97,8 @@ namespace OdataToEntity.Test.GraphQL
         [Fact]
         public async Task create_generic_query_that_fetches_luke()
         {
-            var query = @"
-                query humanQuery($id: String!) {
+            String query = @"
+                query humanQuery($id: ID) {
                   human(id: $id) {
                     name
                   }
@@ -110,11 +110,49 @@ namespace OdataToEntity.Test.GraphQL
             TestResults.Assert(result);
         }
         [Fact]
+        public async Task filter_not_required_single_navigation_property()
+        {
+            String query = @"
+               {
+                  hero {
+                    id
+                    name
+                    voice(birthday: ""1951-09-25"") {
+                        name
+                        birthday
+                    }
+                  }
+               }
+            ";
+
+            String result = await Fixture.Execute(query);
+            TestResults.Assert(result);
+        }
+        [Fact]
+        public async Task filter_required_single_navigation_property()
+        {
+            String query = @"
+               {
+                  hero {
+                    name
+                    actor(birthday: ""1951-09-25"") {
+                        name
+                        birthday
+                    }
+                  }
+               }
+            ";
+
+            String result = await Fixture.Execute(query);
+            TestResults.Assert(result);
+        }
+        [Fact]
         public async Task identifies_r2_as_the_hero()
         {
-            var query = @"
+            String query = @"
                 query HeroNameQuery {
                   hero {
+                    id
                     name
                   }
                 }

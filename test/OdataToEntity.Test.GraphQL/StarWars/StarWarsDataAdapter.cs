@@ -13,7 +13,7 @@ namespace OdataToEntity.Test.GraphQL.StarWars
             _databaseName = databaseName;
         }
 
-        public override object CreateDataContext()
+        public override Object CreateDataContext()
         {
             return new StarWarsContext(_databaseName);
         }

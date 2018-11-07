@@ -21,6 +21,9 @@ namespace OdataToEntity.Test.GraphQL.StarWars
 
         public Actor Actor { get; set; }
         public int ActorId { get; set; }
+
+        public Actor Voice { get; set; }
+        public int? VoiceId { get; set; }
     }
 
     public sealed class Human : Hero
@@ -70,6 +73,6 @@ namespace OdataToEntity.Test.GraphQL.StarWars
     {
         public int Id { get; set; }
         public String Name { get; set; }
-        public DateTime Birhday { get; set; }
+        public DateTime Birthday { get; set; }
     }
 }

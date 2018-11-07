@@ -10,12 +10,32 @@ using System.Linq;
 
 namespace OdataToEntity.GraphQL
 {
-    public readonly struct OeGraphQLAstToODataUri
+    public readonly struct OeGraphqlAstToODataUri
     {
+        private sealed class ChangeNavigationPathVisitor : QueryNodeVisitor<SingleValueNode>
+        {
+            private readonly SingleNavigationNode _singleNavigationNode;
+
+            public ChangeNavigationPathVisitor(SingleResourceNode parent, IEdmNavigationProperty navigationProperty)
+            {
+                _singleNavigationNode = new SingleNavigationNode(parent, navigationProperty, null);
+            }
+
+            public override SingleValueNode Visit(BinaryOperatorNode nodeIn)
+            {
+                SingleValueNode left = Visit((SingleValuePropertyAccessNode)nodeIn.Left);
+                return new BinaryOperatorNode(nodeIn.OperatorKind, left, nodeIn.Right);
+            }
+            public override SingleValueNode Visit(SingleValuePropertyAccessNode nodeIn)
+            {
+                return new SingleValuePropertyAccessNode(_singleNavigationNode, nodeIn.Property);
+            }
+        }
+
         private readonly ResolveFieldContext _context;
         private readonly IEdmModel _edmModel;
 
-        public OeGraphQLAstToODataUri(IEdmModel edmModel, ResolveFieldContext context)
+        public OeGraphqlAstToODataUri(IEdmModel edmModel, ResolveFieldContext context)
         {
             _edmModel = edmModel;
             _context = context;
@@ -46,18 +66,6 @@ namespace OdataToEntity.GraphQL
                 var node = new BinaryOperatorNode(BinaryOperatorKind.Equal, left, right);
                 compositeNode = ComposeExpression(compositeNode, node);
             }
-
-            //foreach (ASTNode astNode in selection.SelectionSet.Selections)
-            //    if (astNode is GraphQLFieldSelection fieldSelection && fieldSelection.SelectionSet != null)
-            //    {
-            //        var navigationProperty = (IEdmNavigationProperty)FindEdmProperty(entityType, fieldSelection.Name.Value);
-            //        if (navigationProperty.Type is IEdmCollectionTypeReference)
-            //            continue;
-
-            //        var parentSource = new SingleNavigationNode(source, navigationProperty, null);
-            //        BinaryOperatorNode node = BuildFilterExpression(parentSource, fieldSelection);
-            //        compositeNode = ComposeExpression(compositeNode, node);
-            //    }
 
             return compositeNode;
         }
@@ -108,7 +116,11 @@ namespace OdataToEntity.GraphQL
         }
         private static IEdmProperty FindEdmProperty(IEdmStructuredType edmType, String name)
         {
-            return edmType.Properties().Single(p => String.Compare(p.Name, name, StringComparison.OrdinalIgnoreCase) == 0);
+            foreach (IEdmProperty edmProperty in edmType.Properties())
+                if (String.Compare(edmProperty.Name, name, StringComparison.OrdinalIgnoreCase) == 0)
+                    return edmProperty;
+
+            throw new InvalidOperationException("Property " + name + " not found in edm type " + edmType.FullTypeName());
         }
         private Object GetArgumentValue(IEdmTypeReference typeReference, GraphQLValue graphValue)
         {
@@ -125,7 +137,7 @@ namespace OdataToEntity.GraphQL
                 return _context.GetArgument(clrType, variable.Name.Value);
             }
 
-            throw new NotSupportedException("argument " + graphValue.GetType().Name + " not supported");
+            throw new NotSupportedException("Argument " + graphValue.GetType().Name + " not supported");
         }
         private static GraphQLFieldSelection GetSelection(GraphQLDocument document)
         {
@@ -134,15 +146,76 @@ namespace OdataToEntity.GraphQL
         }
         private IEdmEntitySet GetEntitySet(GraphQLFieldSelection selection)
         {
-            var listGraphType = (ListGraphType)Schema.Query.Fields.Single(f => f.Name == selection.Name.Value).ResolvedType;
-            Type entityType = listGraphType.ResolvedType.GetType().GetGenericArguments()[0];
+            foreach (FieldType fieldType in _context.Schema.Query.Fields)
+                if (String.Compare(fieldType.Name, selection.Name.Value, StringComparison.OrdinalIgnoreCase) == 0)
+                {
+                    var listGraphType = (ListGraphType)fieldType.ResolvedType;
+                    Type entityType = listGraphType.ResolvedType.GetType().GetGenericArguments()[0];
 
-            return OeEdmClrHelper.GetEntitySet(_edmModel, entityType);
+                    return OeEdmClrHelper.GetEntitySet(_edmModel, entityType);
+                }
+
+            throw new InvalidOperationException("Field name " + selection.Name.Value + " not found in schema query");
         }
         private static ResourceRangeVariable GetResorceVariable(IEdmEntitySet entitySet)
         {
             var entityTypeRef = (IEdmEntityTypeReference)((IEdmCollectionType)entitySet.Type).ElementType;
             return new ResourceRangeVariable("", entityTypeRef, entitySet);
+        }
+        private static SelectExpandClause LiftRequiredSingleNavigationPropertyFilter(IEdmEntitySet entitySet,
+            SelectExpandClause selectExpandClause, ref FilterClause filter)
+        {
+            bool changed = false;
+
+            var selectedItems = selectExpandClause.SelectedItems.ToList();
+            for (int i = 0; i < selectedItems.Count; i++)
+                if (selectedItems[i] is ExpandedNavigationSelectItem expandedNavigation)
+                {
+                    FilterClause childFilter = expandedNavigation.FilterOption;
+                    SelectExpandClause childSelectExpand = LiftRequiredSingleNavigationPropertyFilter(
+                        (IEdmEntitySet)expandedNavigation.NavigationSource, expandedNavigation.SelectAndExpand, ref childFilter);
+                    if (childSelectExpand != expandedNavigation.SelectAndExpand)
+                    {
+                        changed = true;
+                        selectedItems[i] = new ExpandedNavigationSelectItem(
+                            expandedNavigation.PathToNavigationProperty,
+                            expandedNavigation.NavigationSource,
+                            childSelectExpand,
+                            childFilter,
+                            null, null, null, null, null, null);
+                    }
+
+                    foreach (ODataPathSegment pathSegment in expandedNavigation.PathToNavigationProperty)
+                        if (pathSegment is NavigationPropertySegment navigationPropertySegment)
+                        {
+                            IEdmTypeReference edmTypeRef = navigationPropertySegment.NavigationProperty.Type;
+                            if (childFilter != null && !edmTypeRef.IsNullable && !edmTypeRef.IsCollection())
+                            {
+                                changed = true;
+                                filter = MergeFilterClause(entitySet, navigationPropertySegment.NavigationProperty, childFilter, filter);
+
+                                selectedItems[i] = new ExpandedNavigationSelectItem(
+                                    expandedNavigation.PathToNavigationProperty,
+                                    expandedNavigation.NavigationSource,
+                                    childSelectExpand);
+                                break;
+                            }
+                        }
+                }
+
+            return changed ? new SelectExpandClause(selectedItems, selectExpandClause.AllSelected) : selectExpandClause;
+        }
+        private static FilterClause MergeFilterClause(IEdmEntitySet entitySet, IEdmNavigationProperty navigationProperty, FilterClause source, FilterClause target)
+        {
+            ResourceRangeVariable resourceVariable = GetResorceVariable(entitySet);
+            ResourceRangeVariableReferenceNode resourceNode = new ResourceRangeVariableReferenceNode("", resourceVariable);
+            ChangeNavigationPathVisitor visitor = new ChangeNavigationPathVisitor(resourceNode, navigationProperty);
+            SingleValueNode expression = visitor.Visit((BinaryOperatorNode)source.Expression);
+
+            if (target != null)
+                expression = new BinaryOperatorNode(BinaryOperatorKind.And, target.Expression, expression);
+
+            return new FilterClause(expression, resourceVariable);
         }
         public ODataUri Translate(String query)
         {
@@ -151,15 +224,17 @@ namespace OdataToEntity.GraphQL
 
             GraphQLFieldSelection selection = GetSelection(document);
             IEdmEntitySet entitySet = GetEntitySet(selection);
+            SelectExpandClause selectExpandClause = BuildSelectExpandClause(entitySet, selection.SelectionSet);
+            FilterClause filterClause = BuildFilterClause(entitySet, selection);
+            selectExpandClause = LiftRequiredSingleNavigationPropertyFilter(entitySet, selectExpandClause, ref filterClause);
+
             return new ODataUri()
             {
                 Path = new ODataPath(new EntitySetSegment(entitySet)),
-                SelectAndExpand = BuildSelectExpandClause(entitySet, selection.SelectionSet),
-                Filter = BuildFilterClause(entitySet, selection)
+                SelectAndExpand = selectExpandClause,
+                Filter = filterClause
             };
         }
-
-        private ISchema Schema => _context.Schema;
     }
 }
 
