@@ -2,8 +2,28 @@
   <Import Project="..\..\build\dependencies.props" />
 
   <PropertyGroup>
-    <TargetFrameworks>$(NetStandardVersion)</TargetFrameworks>
+    <Description>Translate and execute GraphQL query via OData</Description>
+    <Authors>Maxim Voronov</Authors>
+    <TargetFrameworks>$(NetStandardVersion);$(FrameworkVersion)</TargetFrameworks>
+    <AssemblyName>OdataToEntity.GraphQL</AssemblyName>
+    <AssemblyVersion>$(OdataToEntityVersion)</AssemblyVersion>
+    <Title>Translate GraphQL to OData</Title>
     <LangVersion>$(CSharpVersion)</LangVersion>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <AssemblyCopyright>MIT</AssemblyCopyright>
+    <AssemblyDescription>$(Description)</AssemblyDescription>
+    <AssemblyTitle>$(Title)</AssemblyTitle>
+    <AssemblyVersion>$(OdataToEntityVersion)</AssemblyVersion>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageId>OdataToEntity.GraphQL</PackageId>
+    <PackageTags>graphql;odata;odatatoentity</PackageTags>
+    <PackageProjectUrl>https://github.com/voronov-maxim/OdataToEntity</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/voronov-maxim/OdataToEntity/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageVersion>$(OdataToEntityVersion)</PackageVersion>
   </PropertyGroup>
 
   <ItemGroup>

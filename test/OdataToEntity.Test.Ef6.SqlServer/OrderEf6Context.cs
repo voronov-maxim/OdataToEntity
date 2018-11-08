@@ -3,10 +3,11 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.Entity;
+using System.Data.Entity.ModelConfiguration.Conventions;
 
 namespace OdataToEntity.Test.Ef6.SqlServer
 {
-    public sealed class OrderEf6Context  : DbContext
+    public sealed class OrderEf6Context : DbContext
     {
         static OrderEf6Context()
         {
@@ -23,12 +24,16 @@ namespace OdataToEntity.Test.Ef6.SqlServer
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
+            modelBuilder.Conventions.Remove<PluralizingTableNameConvention>();
+
             modelBuilder.Entity<Order>().HasMany(p => p.ShippingAddresses).WithRequired().HasForeignKey(s => s.OrderId);
+            modelBuilder.Entity<Customer>().HasMany(p => p.CustomerShippingAddresses).WithRequired().HasForeignKey(s => new { s.CustomerCountry, s.CustomerId });
             base.OnModelCreating(modelBuilder);
         }
 
         public DbSet<Category> Categories { get; set; }
         public DbSet<Customer> Customers { get; set; }
+        public DbSet<CustomerShippingAddress> CustomerShippingAddress { get; set; }
         public DbSet<ManyColumns> ManyColumns { get; set; }
         public DbSet<ManyColumnsView> ManyColumnsView { get; set; }
         public DbSet<Order> Orders { get; set; }

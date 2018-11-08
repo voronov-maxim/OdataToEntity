@@ -18,6 +18,7 @@ namespace OdataToEntity.Test.Model
         public DateTime? DateTime { get; set; }
     }
 
+    [Table("Customers", Schema = "dbo")]
     public sealed class Customer
     {
         public String Address { get; set; }
@@ -49,6 +50,7 @@ namespace OdataToEntity.Test.Model
         public String Name { get; set; }
     }
 
+    [Table("Orders", Schema = "dbo")]
     public sealed class Order : OrderBase
     {
         [ForeignKey("AltCustomerCountry,AltCustomerId")]
@@ -69,6 +71,7 @@ namespace OdataToEntity.Test.Model
         public override string ToString() => "Order: Id = " + Id.ToString();
     }
 
+    [Table("OrderItems", Schema = "dbo")]
     public sealed class OrderItem
     {
         public int? Count { get; set; }
@@ -83,6 +86,7 @@ namespace OdataToEntity.Test.Model
         public override string ToString() => "OrderItem: Id = " + Id.ToString();
     }
 
+    [Table("ShippingAddresses", Schema = "dbo")]
     public sealed class ShippingAddress
     {
         public String Address { get; set; }
