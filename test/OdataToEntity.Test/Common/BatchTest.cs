@@ -21,6 +21,7 @@ namespace OdataToEntity.Test
                 Assert.Equal(3, orderContext.Orders.Count());
                 Assert.Equal(7, orderContext.OrderItems.Count());
                 Assert.Equal(5, orderContext.ShippingAddresses.Count());
+                Assert.Equal(5, orderContext.CustomerShippingAddress.Count());
 
                 var category = orderContext.Categories.Single(t => t.Name == "jackets");
                 Assert.Equal("clothes", orderContext.Categories.Single(t => t.Id == category.ParentId).Name);

@@ -6,6 +6,7 @@ drop function if exists dbo."ScalarFunctionWithParameters"(id integer, name char
 drop function if exists dbo."TableFunction"();
 drop function if exists dbo."TableFunctionWithParameters"(id integer, name character varying(256), status integer);
 
+drop table if exists dbo."CustomerShippingAddress";
 drop table if exists dbo."ShippingAddresses";
 drop table if exists dbo."OrderItems";
 drop table if exists dbo."Orders";
@@ -73,10 +74,22 @@ create table dbo."OrderItems"
 
 create table dbo."ShippingAddresses"
 (
-	"OrderId" integer not null,
-	"Id" integer not null,
-	"Address" character varying(256) not null,
-	constraint "PK_ShippingAddresses" primary key ("OrderId", "Id")
+    "OrderId" integer not null,
+    "Id" integer not null,
+    "Address" character varying(256) not null,
+    constraint "PK_ShippingAddresses" primary key ("OrderId", "Id"),
+    constraint "FK_ShippingAddresses_Order" foreign key ("OrderId") references dbo."Orders"("Id")
+);
+
+create table dbo."CustomerShippingAddress"
+(
+    "CustomerCountry" character(2) not null,
+    "CustomerId" integer not null,
+    "ShippingAddressOrderId" integer not null,
+    "ShippingAddressId" integer not null,
+    constraint "PK_CustomerShippingAddress" primary key ("CustomerCountry", "CustomerId", "ShippingAddressOrderId", "ShippingAddressId"),
+    constraint "FK_CustomerShippingAddress_Customer" foreign key ("CustomerCountry", "CustomerId") references dbo."Customers"("Country", "Id"),
+    constraint "FK_CustomerShippingAddress_ShippingAddresses" foreign key ("ShippingAddressOrderId", "ShippingAddressId") references dbo."ShippingAddresses"("OrderId", "Id")
 );
 
 create table dbo."ManyColumns"
@@ -117,6 +130,7 @@ create table dbo."ManyColumns"
 create function dbo."ResetDb"()
     returns void
 as $$
+    delete from dbo."CustomerShippingAddress";
     delete from dbo."ShippingAddresses";
     delete from dbo."OrderItems";
     delete from dbo."Orders";

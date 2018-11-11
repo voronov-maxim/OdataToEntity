@@ -184,6 +184,8 @@ namespace OdataToEntity.Test
                     declaringType = typeof(ODataClient.OdataToEntity.Test.Model.Order);
                 else if (property.DeclaringType == typeof(ShippingAddress))
                     declaringType = typeof(ODataClient.OdataToEntity.Test.Model.ShippingAddress);
+                else if (property.DeclaringType == typeof(CustomerShippingAddress))
+                    declaringType = typeof(ODataClient.OdataToEntity.Test.Model.CustomerShippingAddress);
                 else
                     throw new InvalidOperationException("unknown type " + property.DeclaringType.FullName);
 
@@ -209,6 +211,8 @@ namespace OdataToEntity.Test
                 return container.ManyColumns;
             if (entityType == typeof(ShippingAddress))
                 return container.ShippingAddresses;
+            if (entityType == typeof(CustomerShippingAddress))
+                return container.CustomerShippingAddress;
 
             if (entityType == typeof(ODataClient.OdataToEntity.Test.Model.Category))
                 return container.Categories;
@@ -222,6 +226,8 @@ namespace OdataToEntity.Test
                 return container.ManyColumns;
             if (entityType == typeof(ODataClient.OdataToEntity.Test.Model.ShippingAddress))
                 return container.ShippingAddresses;
+            if (entityType == typeof(ODataClient.OdataToEntity.Test.Model.CustomerShippingAddress))
+                return container.CustomerShippingAddress;
 
             throw new InvalidOperationException("unknown type " + entityType.Name);
         }
