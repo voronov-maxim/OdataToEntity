@@ -1,26 +1,10 @@
 ﻿extern alias lq2db;
-using OdataToEntity.EfCore;
 using OdataToEntity.Linq2Db;
 using System;
 using OdataToEntityDB = lq2db::OdataToEntity.Test.Model.OdataToEntityDB;
 
-namespace OdataToEntity.Test
+namespace OdataToEntity.Test.Model
 {
-    public sealed class OrderDbDataAdapter : OeEfCoreDataAdapter<Model.OrderContext>
-    {
-        private readonly bool _useRelationalNulls;
-
-        public OrderDbDataAdapter(bool allowCache, bool useRelationalNulls, String databaseName) : base(new Cache.OeQueryCache(allowCache))
-        {
-            _useRelationalNulls = useRelationalNulls;
-        }
-
-        public override Object CreateDataContext()
-        {
-            return new Model.OrderContext(Model.OrderContextOptions.Create(_useRelationalNulls, null));
-        }
-    }
-
     public sealed class OrderOeDataAdapter : OeLinq2DbDataAdapter<OdataToEntityDB>
     {
         public OrderOeDataAdapter(bool allowCache, bool useRelationalNulls, String databaseName) : base(new Cache.OeQueryCache(allowCache))
@@ -31,6 +15,10 @@ namespace OdataToEntity.Test
         {
             LinqToDB.Common.Configuration.Linq.AllowMultipleQuery = true;
             return new OdataToEntityDB();
+        }
+        public ModelBuilder.OeEdmModelMetadataProvider CreateMetadataProvider()
+        {
+            return new OeLinq2DbEdmModelMetadataProvider();
         }
 
         public new Cache.OeQueryCache QueryCache => base.QueryCache;

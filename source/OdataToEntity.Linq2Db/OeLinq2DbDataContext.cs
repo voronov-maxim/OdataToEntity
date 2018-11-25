@@ -39,11 +39,12 @@ namespace OdataToEntity.Linq2Db
         {
             var clrTypeEdmSetList = new List<ClrTypeEdmSet>();
             foreach (Type entityType in _tables.Keys)
-            {
-                OeEntitySetAdapter entitSetAdapter = entitySetAdapters.FindByClrType(entityType);
-                IEdmEntitySet entitySet = edmModel.FindDeclaredEntitySet(entitSetAdapter.EntitySetName);
-                clrTypeEdmSetList.Add(new ClrTypeEdmSet(entityType, entitySet));
-            }
+                foreach (OeEntitySetAdapter entitySetAdapter in entitySetAdapters)
+                    if (entitySetAdapter.EntityType == entityType)
+                    {
+                        IEdmEntitySet entitySet = edmModel.FindDeclaredEntitySet(entitySetAdapter.EntitySetName);
+                        clrTypeEdmSetList.Add(new ClrTypeEdmSet(entityType, entitySet));
+                    }
 
             var orderedTypes = new List<ClrTypeEdmSet>();
             while (clrTypeEdmSetList.Count > 0)

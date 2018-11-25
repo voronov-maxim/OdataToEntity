@@ -28,7 +28,9 @@ namespace OdataToEntity.Test
             _clear = clear;
 
             DataAdapter = new EfCore.OeEfCoreDataAdapter<OrderContext>();
-            EdmModel = DataAdapter.BuildEdmModel();
+            MetadataProvider = new ModelBuilder.OeEdmModelMetadataProvider();
+            var modelBuilder = new ModelBuilder.OeEdmModelBuilder(DataAdapter, MetadataProvider);
+            EdmModel = modelBuilder.BuildEdmModel();
         }
 
         public static Container CreateContainer(int maxPageSize)
@@ -58,7 +60,7 @@ namespace OdataToEntity.Test
             using (var dataContext = new OrderContext(OrderContextOptions.Create(true, null)))
                 fromDb = TestHelper.ExecuteDb(DataAdapter.EntitySetAdapters, dataContext, parameters.Expression);
 
-            TestHelper.Compare(fromDb, fromOe, DataAdapter.EntitySetAdapters.EdmModelMetadataProvider, null);
+            TestHelper.Compare(fromDb, fromOe, MetadataProvider, null);
         }
         public async virtual Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
         {
@@ -78,7 +80,7 @@ namespace OdataToEntity.Test
                 Console.ResetColor();
             }
 
-            List<IncludeVisitor.Include> includes = GetIncludes(DataAdapter, parameters.Expression);
+            List<IncludeVisitor.Include> includes = GetIncludes(parameters.Expression);
             if (typeof(TResult) == typeof(Object))
                 fromOe = TestHelper.ToOpenType(fromOe);
 
@@ -89,7 +91,7 @@ namespace OdataToEntity.Test
                 includes.AddRange(includesDb);
             }
 
-            TestHelper.Compare(fromDb, fromOe, DataAdapter.EntitySetAdapters.EdmModelMetadataProvider, includes);
+            TestHelper.Compare(fromDb, fromOe, MetadataProvider, includes);
         }
         private async Task<IList> ExecuteOe<T, TResult>(LambdaExpression lambda, int maxPageSize)
         {
@@ -165,10 +167,10 @@ namespace OdataToEntity.Test
             T value = query.Provider.Execute<T>(expression);
             return new T[] { value };
         }
-        private static List<IncludeVisitor.Include> GetIncludes(Db.OeDataAdapter dataAdapter, Expression expression)
+        private List<IncludeVisitor.Include> GetIncludes(Expression expression)
         {
             var includes = new List<IncludeVisitor.Include>();
-            var includeVisitor = new IncludeVisitor(dataAdapter.EntitySetAdapters.EdmModelMetadataProvider, dataAdapter.IsDatabaseNullHighestValue);
+            var includeVisitor = new IncludeVisitor(MetadataProvider, DataAdapter.IsDatabaseNullHighestValue);
             includeVisitor.Visit(expression);
             foreach (IncludeVisitor.Include include in includeVisitor.Includes)
             {
@@ -296,6 +298,7 @@ namespace OdataToEntity.Test
         public static Func<Container> ContainerFactory { get; set; }
         protected Db.OeDataAdapter DataAdapter { get; }
         protected IEdmModel EdmModel { get; }
+        protected ModelBuilder.OeEdmModelMetadataProvider MetadataProvider { get; }
     }
 
     public sealed class ManyColumnsFixtureInitDb : DbFixtureInitDb

@@ -50,7 +50,7 @@ namespace OdataToEntity.Parsers
 
             return accessors.ToArray();
         }
-        private static List<SingleValuePropertyAccessNode> GetOrderByProperties(IEdmModel edmModel, IEdmEntityType edmType, OrderByClause orderByClause, ApplyClause applyClause)
+        private static List<SingleValuePropertyAccessNode> GetOrderByProperties(IEdmModel edmModel, IEdmEntitySet entitySet, OrderByClause orderByClause, ApplyClause applyClause)
         {
             var keys = new List<SingleValuePropertyAccessNode>();
             GroupByTransformationNode groupByNode;
@@ -64,9 +64,8 @@ namespace OdataToEntity.Parsers
             }
             else
             {
-                IEdmEntitySet entitySet = OeEdmClrHelper.GetEntitySet(edmModel, edmType);
                 ResourceRangeVariableReferenceNode source = OeEdmClrHelper.CreateRangeVariableReferenceNode(entitySet);
-                foreach (IEdmStructuralProperty key in edmType.Key())
+                foreach (IEdmStructuralProperty key in entitySet.EntityType().Key())
                     keys.Add(new SingleValuePropertyAccessNode(source, key));
             }
 
@@ -82,12 +81,12 @@ namespace OdataToEntity.Parsers
             }
             return keys;
         }
-        internal static OrderByClause GetUniqueOrderBy(IEdmModel edmModel, IEdmEntityType edmType, OrderByClause orderByClause, ApplyClause applyClause)
+        internal static OrderByClause GetUniqueOrderBy(IEdmModel edmModel, IEdmEntitySet entitySet, OrderByClause orderByClause, ApplyClause applyClause)
         {
-            if (orderByClause != null && applyClause == null && GetIsKey(edmType, GetEdmProperies(orderByClause)))
+            if (orderByClause != null && applyClause == null && GetIsKey(entitySet.EntityType(), GetEdmProperies(orderByClause)))
                 return orderByClause;
 
-            List<SingleValuePropertyAccessNode> orderByProperties = GetOrderByProperties(edmModel, edmType, orderByClause, applyClause);
+            List<SingleValuePropertyAccessNode> orderByProperties = GetOrderByProperties(edmModel, entitySet, orderByClause, applyClause);
             if (orderByProperties.Count == 0)
                 return orderByClause ?? throw new InvalidOperationException("orderByClause must not null");
 

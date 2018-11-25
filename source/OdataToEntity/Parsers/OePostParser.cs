@@ -22,18 +22,22 @@ namespace OdataToEntity
             _edmModel = edmModel;
         }
 
-        public OeQueryContext CreateQueryContext(ODataUri odataUri, OeMetadataLevel metadataLevel, Type returnClrType)
+        public OeQueryContext CreateQueryContext(ODataUri odataUri, OeMetadataLevel metadataLevel)
         {
-            String entitySetName = _dataAdapter.EntitySetAdapters.FindByClrType(returnClrType).EntitySetName;
-            IEdmEntitySet entitySet = _edmModel.FindDeclaredEntitySet(entitySetName);
-            OePropertyAccessor[] accessors = OePropertyAccessor.CreateFromType(returnClrType, entitySet);
+            var importSegment = (OperationImportSegment)odataUri.Path.FirstSegment;
+            IEdmEntitySet entitySet = GetEntitySet(importSegment.OperationImports.Single());
+            if (entitySet == null)
+                throw new InvalidOperationException("Must set IEdmOperationImport.EntitySet property valid IEdmPathExpression");
 
-            Db.OeEntitySetAdapter entitySetAdapter = _dataAdapter.EntitySetAdapters.FindByEntitySetName(entitySet.Name);
-            return new OeQueryContext(_edmModel, odataUri, entitySet, null, false, 0, false,
+            Type clrType = _edmModel.GetClrType(entitySet.EntityType());
+            OePropertyAccessor[] accessors = OePropertyAccessor.CreateFromType(clrType, entitySet);
+
+            Db.OeEntitySetAdapter entitySetAdapter = _dataAdapter.EntitySetAdapters.FindByEntitySet(entitySet);
+            return new OeQueryContext(_edmModel, odataUri, null, false, 0, false,
                 _dataAdapter.IsDatabaseNullHighestValue, metadataLevel, entitySetAdapter)
-                {
-                    EntryFactory = OeEntryFactory.CreateEntryFactory(entitySet, accessors),
-                };
+            {
+                EntryFactory = OeEntryFactory.CreateEntryFactory(entitySet, accessors),
+            };
         }
         public async Task ExecuteAsync(ODataUri odataUri, Stream requestStream, OeRequestHeaders headers, Stream responseStream, CancellationToken cancellationToken)
         {
@@ -41,9 +45,9 @@ namespace OdataToEntity
             try
             {
                 dataContext = _dataAdapter.CreateDataContext();
-                using (Db.OeAsyncEnumerator asyncEnumerator = GetAsyncEnumerator(odataUri, requestStream, headers, dataContext, out Type returnClrType))
+                using (Db.OeAsyncEnumerator asyncEnumerator = GetAsyncEnumerator(odataUri, requestStream, headers, dataContext, out bool isScalar))
                 {
-                    if (returnClrType == null || returnClrType.IsPrimitive || returnClrType == typeof(String))
+                    if (isScalar)
                     {
                         if (await asyncEnumerator.MoveNextAsync().ConfigureAwait(false) && asyncEnumerator.Current != null)
                         {
@@ -56,7 +60,7 @@ namespace OdataToEntity
                     }
                     else
                     {
-                        OeQueryContext queryContext = CreateQueryContext(odataUri, headers.MetadataLevel, returnClrType);
+                        OeQueryContext queryContext = CreateQueryContext(odataUri, headers.MetadataLevel);
                         await Writers.OeGetWriter.SerializeAsync(queryContext, asyncEnumerator, headers.ContentType, responseStream).ConfigureAwait(false);
                     }
                 }
@@ -113,26 +117,39 @@ namespace OdataToEntity
                 }
             }
         }
-        public Db.OeAsyncEnumerator GetAsyncEnumerator(ODataUri odataUri, Stream requestStream, OeRequestHeaders headers, Object dataContext, out Type returnClrType)
+        public Db.OeAsyncEnumerator GetAsyncEnumerator(ODataUri odataUri, Stream requestStream, OeRequestHeaders headers, Object dataContext, out bool isScalar)
         {
+            isScalar = true;
             var importSegment = (OperationImportSegment)odataUri.Path.LastSegment;
-
             List<KeyValuePair<String, Object>> parameters = GetParameters(importSegment, requestStream, headers.ContentType);
-            IEdmOperationImport operationImport = importSegment.OperationImports.Single();
 
-            returnClrType = null;
-            if (operationImport.Operation.ReturnType != null)
+            IEdmOperationImport operationImport = importSegment.OperationImports.Single();
+            IEdmEntitySet entitySet = GetEntitySet(operationImport);
+            if (entitySet == null)
             {
-                IEdmTypeReference returnEdmTypeReference = operationImport.Operation.ReturnType;
-                if (returnEdmTypeReference is IEdmCollectionTypeReference)
-                    returnEdmTypeReference = (returnEdmTypeReference.Definition as IEdmCollectionType).ElementType;
-                returnClrType = OeEdmClrHelper.GetClrType(_edmModel, returnEdmTypeReference.Definition);
+                if (operationImport.Operation.ReturnType == null)
+                    return _dataAdapter.OperationAdapter.ExecuteProcedureNonQuery(dataContext, operationImport.Name, parameters);
+
+                Type returnType = _edmModel.GetClrType(operationImport.Operation.ReturnType.Definition);
+                if (_edmModel.IsDbFunction(operationImport.Operation))
+                    return _dataAdapter.OperationAdapter.ExecuteFunctionScalar(dataContext, operationImport.Name, parameters, returnType);
+                else
+                    return _dataAdapter.OperationAdapter.ExecuteProcedureScalar(dataContext, operationImport.Name, parameters, returnType);
             }
 
+            isScalar = false;
+            Db.OeEntitySetAdapter entitySetAdapter = _dataAdapter.EntitySetAdapters.FindByEntitySet(entitySet);
             if (_edmModel.IsDbFunction(operationImport.Operation))
-                return _dataAdapter.OperationAdapter.ExecuteFunction(dataContext, operationImport.Name, parameters, returnClrType);
+                return _dataAdapter.OperationAdapter.ExecuteFunctionReader(dataContext, operationImport.Name, parameters, entitySetAdapter);
             else
-                return _dataAdapter.OperationAdapter.ExecuteProcedure(dataContext, operationImport.Name, parameters, returnClrType);
+                return _dataAdapter.OperationAdapter.ExecuteProcedureReader(dataContext, operationImport.Name, parameters, entitySetAdapter);
+        }
+        private IEdmEntitySet GetEntitySet(IEdmOperationImport operationImport)
+        {
+            if (operationImport.EntitySet is IEdmPathExpression path)
+                return _edmModel.FindDeclaredEntitySet(String.Join(".", path.PathSegments));
+
+            return null;
         }
         private List<KeyValuePair<String, Object>> GetParameters(OperationImportSegment importSegment, Stream requestStream, String contentType)
         {

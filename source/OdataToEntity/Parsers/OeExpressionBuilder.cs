@@ -10,7 +10,7 @@ namespace OdataToEntity.Parsers
 {
     public sealed class OeExpressionBuilder
     {
-        private OeEntryFactory _entryFactory;
+        private Func<IEdmEntitySet, Type, OeEntryFactory> _entryFactoryFactory;
         private readonly Translators.OeJoinBuilder _joinBuilder;
 
         public OeExpressionBuilder(Translators.OeJoinBuilder joinBuilder)
@@ -31,7 +31,7 @@ namespace OdataToEntity.Parsers
 
             var aggTranslator = new Translators.OeAggregationTranslator(Visitor);
             Expression aggExpression = aggTranslator.Build(source, applyClause);
-            _entryFactory = aggTranslator.EntryFactory;
+            _entryFactoryFactory = aggTranslator.CreateEntryFactory;
 
             ChangeParameterType(aggExpression);
             Visitor.TuplePropertyByAliasName = aggTranslator.GetTuplePropertyByAliasName;
@@ -57,7 +57,7 @@ namespace OdataToEntity.Parsers
             MethodInfo whereMethodInfo = OeMethodInfoHelper.GetWhereMethodInfo(ParameterType);
             return Expression.Call(whereMethodInfo, source, lambda);
         }
-        public Expression ApplyNavigation(Expression source, IEnumerable<OeParseNavigationSegment> parseNavigationSegments)
+        public Expression ApplyNavigation(Expression source, IReadOnlyList<OeParseNavigationSegment> parseNavigationSegments)
         {
             if (parseNavigationSegments == null)
                 return source;
@@ -68,7 +68,7 @@ namespace OdataToEntity.Parsers
                 Type selectType;
                 ParameterExpression parameter;
                 Expression e;
-                if (parseNavigationSegment.NavigationSegment == null) //EntitySetSegment
+                if (parseNavigationSegment.NavigationSegment == null) //EntitySetSegment, KeySegment
                 {
                     parameter = Visitor.Parameter;
                     e = source;
@@ -124,7 +124,7 @@ namespace OdataToEntity.Parsers
 
             var selectTranslator = new Translators.OeSelectTranslator(_joinBuilder, queryContext.ODataUri.Path, queryContext.MetadataLevel);
             source = selectTranslator.Build(source, queryContext);
-            _entryFactory = selectTranslator.EntryFactory;
+            _entryFactoryFactory = selectTranslator.CreateEntryFactory;
 
             ChangeParameterType(source);
             return source;
@@ -168,8 +168,8 @@ namespace OdataToEntity.Parsers
         }
         public OeEntryFactory CreateEntryFactory(IEdmEntitySet entitySet)
         {
-            if (_entryFactory != null)
-                return _entryFactory;
+            if (_entryFactoryFactory != null)
+                return _entryFactoryFactory(entitySet, ParameterType);
 
             OePropertyAccessor[] accessors = OePropertyAccessor.CreateFromType(ParameterType, entitySet);
             return OeEntryFactory.CreateEntryFactory(entitySet, accessors);

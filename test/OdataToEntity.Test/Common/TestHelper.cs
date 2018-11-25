@@ -34,7 +34,7 @@ namespace OdataToEntity.Test
             {
                 if (node.Type.IsGenericType && node.Type.GetGenericTypeDefinition() == typeof(IQueryable<>))
                 {
-                    Db.OeEntitySetAdapter entitySetAdapter = _entitySetAdapters.FindByClrType(node.Type.GetGenericArguments()[0]);
+                    Db.OeEntitySetAdapter entitySetAdapter = FindEntitySetAdapterByClrType(_entitySetAdapters, node.Type.GetGenericArguments()[0]);
                     IQueryable query = entitySetAdapter.GetEntitySet(_dataContext);
                     if (_query == null && entitySetAdapter.EntityType == typeof(T))
                         _query = (IQueryable<T>)query;
@@ -103,13 +103,37 @@ namespace OdataToEntity.Test
 
             return fromDb;
         }
+        public static Db.OeEntitySetAdapter FindEntitySetAdapterByClrType(Db.OeEntitySetAdapterCollection entitySetAdapters, Type entityType)
+        {
+            foreach (Db.OeEntitySetAdapter entitySetAdapter in entitySetAdapters)
+                if (entitySetAdapter.EntityType == entityType)
+                    return entitySetAdapter;
+
+            throw new InvalidOperationException("EntitySetAdapter not found for type " + entityType.FullName);
+        }
+        public static Db.OeEntitySetAdapter FindEntitySetAdapterByName(Db.OeEntitySetAdapterCollection entitySetAdapters, String entitySetName)
+        {
+            foreach (Db.OeEntitySetAdapter entitySetAdapter in entitySetAdapters)
+                if (String.Compare(entitySetAdapter.EntitySetName, entitySetName, StringComparison.OrdinalIgnoreCase) == 0)
+                    return entitySetAdapter;
+
+            throw new InvalidOperationException("EntitySetAdapter not found for name " + entitySetName);
+        }
+        public static Db.OeEntitySetAdapter FindEntitySetAdapterByTypeName(Db.OeEntitySetAdapterCollection entitySetAdapters, String typeName)
+        {
+            foreach (Db.OeEntitySetAdapter entitySetAdapter in entitySetAdapters)
+                if (String.Compare(entitySetAdapter.EntityType.FullName, typeName, StringComparison.OrdinalIgnoreCase) == 0)
+                    return entitySetAdapter;
+
+            throw new InvalidOperationException("EntitySetAdapter not found for type name " + typeName);
+        }
         public static String GetCsdlSchema(IEdmModel edmModel)
         {
             using (var stream = new MemoryStream())
             {
-                using (XmlWriter xmlWriter = XmlWriter.Create(stream, new XmlWriterSettings() { Indent = true }))
+                using (XmlWriter xmlWriter = XmlWriter.Create(stream, new XmlWriterSettings() { Indent = true, Encoding = new UTF8Encoding(false) }))
                 {
-                    if (!CsdlWriter.TryWriteCsdl(edmModel, xmlWriter, CsdlTarget.OData, out IEnumerable<EdmError> errors))
+                    if (!CsdlWriter.TryWriteCsdl(edmModel, xmlWriter, CsdlTarget.OData, out _))
                         return null;
                 }
 

@@ -9,7 +9,7 @@ using System.Reflection;
 
 namespace OdataToEntity.Parsers.Translators
 {
-    public sealed class OeSelectTranslator
+    public readonly struct OeSelectTranslator
     {
         private sealed class ComputeProperty : IEdmProperty
         {
@@ -42,7 +42,6 @@ namespace OdataToEntity.Parsers.Translators
             }
         }
 
-        private OeEntryFactory _entryFactory;
         private readonly OeJoinBuilder _joinBuilder;
         private readonly OeMetadataLevel _metadataLevel;
         private readonly OeSelectItem _navigationItem;
@@ -58,6 +57,7 @@ namespace OdataToEntity.Parsers.Translators
             _joinBuilder = joinBuilder;
             _navigationItem = navigationItem;
             _visitor = joinBuilder.Visitor;
+            _metadataLevel = OeMetadataLevel.None;
         }
 
         private void AddKey(bool skipToken)
@@ -101,7 +101,6 @@ namespace OdataToEntity.Parsers.Translators
             {
                 source = SelectStructuralProperties(source, _navigationItem);
                 source = CreateSelectExpression(source, _joinBuilder);
-                _entryFactory = CreateEntryFactory(_navigationItem, source);
             }
 
             return source;
@@ -219,10 +218,14 @@ namespace OdataToEntity.Parsers.Translators
             source = expressionBuilder.ApplySkip(source, queryContext.ODataUri.Skip, queryContext.ODataUri.Path);
             return expressionBuilder.ApplyTake(source, queryContext.ODataUri.Top, queryContext.ODataUri.Path);
         }
-        private static OeEntryFactory CreateEntryFactory(OeSelectItem root, Expression source)
+        public OeEntryFactory CreateEntryFactory(IEdmEntitySet entitySet, Type clrType)
+        {
+            return CreateEntryFactory(_navigationItem, clrType);
+        }
+        private static OeEntryFactory CreateEntryFactory(OeSelectItem root, Type clrType)
         {
             ParameterExpression parameter = Expression.Parameter(typeof(Object));
-            UnaryExpression typedParameter = Expression.Convert(parameter, OeExpressionHelper.GetCollectionItemType(source.Type));
+            UnaryExpression typedParameter = Expression.Convert(parameter, clrType);
 
             if (root.HasNavigationItems)
             {
@@ -234,7 +237,7 @@ namespace OdataToEntity.Parsers.Translators
                     OeEntryFactory[] nestedNavigationLinks = GetNestedNavigationLinks(navigationItem);
 
                     OeEntryFactory entryFactory;
-                    OePropertyAccessor[] accessors = GetAccessors(navigationProperties[i].Type, navigationItem.EntitySet, navigationItem.SelectItems, source);
+                    OePropertyAccessor[] accessors = GetAccessors(navigationProperties[i].Type, navigationItem.EntitySet, navigationItem.SelectItems);
                     Func<Object, Object> linkAccessor = (Func<Object, Object>)Expression.Lambda(navigationProperties[i], parameter).Compile();
                     if (i == 0)
                         entryFactory = OeEntryFactory.CreateEntryFactoryParent(navigationItem.EntitySet, accessors, nestedNavigationLinks, linkAccessor);
@@ -314,7 +317,7 @@ namespace OdataToEntity.Parsers.Translators
             while (stack.Count > 0);
             return navigationItems;
         }
-        private static OePropertyAccessor[] GetAccessors(Type clrEntityType, IEdmEntitySetBase entitySet, IReadOnlyList<OeSelectItem> selectItems, Expression source)
+        private static OePropertyAccessor[] GetAccessors(Type clrEntityType, IEdmEntitySetBase entitySet, IReadOnlyList<OeSelectItem> selectItems)
         {
             if (selectItems.Count == 0)
                 return OePropertyAccessor.CreateFromType(clrEntityType, entitySet);
@@ -394,7 +397,5 @@ namespace OdataToEntity.Parsers.Translators
 
             return source;
         }
-
-        public OeEntryFactory EntryFactory => _entryFactory;
     }
 }

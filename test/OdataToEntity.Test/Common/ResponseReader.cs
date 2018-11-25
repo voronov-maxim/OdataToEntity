@@ -115,7 +115,7 @@ namespace OdataToEntity.Test
         }
         protected Object CreateEntity(ODataResource resource, IReadOnlyList<NavigationProperty> navigationProperties)
         {
-            Db.OeEntitySetAdapter entitySetAdapter = EntitySetAdapters.FindByTypeName(resource.TypeName);
+            Db.OeEntitySetAdapter entitySetAdapter = TestHelper.FindEntitySetAdapterByTypeName(EntitySetAdapters, resource.TypeName);
             Object entity = OeEdmClrHelper.CreateEntity(entitySetAdapter.EntityType, resource);
             Dictionary<PropertyInfo, ODataResourceSetBase> propertyInfos = null;
 
@@ -207,12 +207,12 @@ namespace OdataToEntity.Test
         {
             String entitySetName = GetEntitSetName(response);
             response.Position = 0;
-            Db.OeEntitySetAdapter entitySetMetaAdatpter = EntitySetAdapters.FindByEntitySetName(entitySetName);
+            Db.OeEntitySetAdapter entitySetMetaAdatpter = TestHelper.FindEntitySetAdapterByName(EntitySetAdapters, entitySetName);
             return ReadImpl(response, entitySetMetaAdatpter);
         }
         public IEnumerable<T> Read<T>(Stream response)
         {
-            Db.OeEntitySetAdapter entitySetMetaAdatpter = EntitySetAdapters.FindByClrType(typeof(T));
+            Db.OeEntitySetAdapter entitySetMetaAdatpter = TestHelper.FindEntitySetAdapterByClrType(EntitySetAdapters, typeof(T));
             return ReadImpl(response, entitySetMetaAdatpter).Cast<T>();
         }
         protected IEnumerable ReadImpl(Stream response, Db.OeEntitySetAdapter entitySetMetaAdatpter)

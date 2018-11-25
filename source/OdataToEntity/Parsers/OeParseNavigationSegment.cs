@@ -1,4 +1,6 @@
-﻿using Microsoft.OData.UriParser;
+﻿using Microsoft.OData.Edm;
+using Microsoft.OData.UriParser;
+using System.Collections.Generic;
 
 namespace OdataToEntity.Parsers
 {
@@ -8,6 +10,16 @@ namespace OdataToEntity.Parsers
         {
             NavigationSegment = navigationSegment;
             Filter = filter;
+        }
+
+        public static IEdmEntitySet GetEntitySet(IReadOnlyList<OeParseNavigationSegment> navigationSegments)
+        {
+            if (navigationSegments != null)
+                for (int i = navigationSegments.Count - 1; i >= 0; i--)
+                    if (navigationSegments[i].NavigationSegment != null)
+                        return (IEdmEntitySet)navigationSegments[i].NavigationSegment.NavigationSource;
+
+            return null;
         }
 
         public FilterClause Filter { get; }

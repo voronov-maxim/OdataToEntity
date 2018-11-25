@@ -1,13 +1,15 @@
 ﻿using Microsoft.OData.Edm;
-using OdataToEntity.Db;
 using OdataToEntity.Ef6;
 using OdataToEntity.EfCore;
-using OdataToEntity.ModelBuilder;
-using OdataToEntity.Test.Ef6.SqlServer;
 using OdataToEntity.Test.Model;
 using System;
+using System.Collections.Generic;
 using System.Data.Entity;
+using System.IO;
 using System.Linq;
+using System.Text;
+using System.Xml;
+using System.Xml.Linq;
 using Xunit;
 
 namespace OdataToEntity.Test
@@ -25,29 +27,30 @@ namespace OdataToEntity.Test
             }
         }
 
-        private static EdmModel BuildEdmModelFromEf6Model(OeDataAdapter dataAdapter)
+        private static String FixNamesInSchema(String schema)
         {
-            using (var context = (DbContext)dataAdapter.CreateDataContext())
+            Type efCore = typeof(OrderContext);
+            Type ef6 = typeof(Ef6.SqlServer.OrderEf6Context);
+
+            XDocument xdoc = XDocument.Parse(schema);
+            List<XElement> xschemas = xdoc.Root.Descendants().Where(x => x.Name.LocalName == "Schema").ToList();
+
+            foreach (XElement xelement in xschemas[1].Elements())
             {
-                var metadataProvider = new OeEf6EdmModelMetadataProvider(context);
-                var modelBuilder = new OeEdmModelBuilder(metadataProvider);
-                modelBuilder.AddEntitySetRange(dataAdapter.EntitySetAdapters.GetEntitySetNamesEntityTypes());
-                FixOperations(dataAdapter, modelBuilder);
-                return modelBuilder.BuildEdmModel();
+                XAttribute xattribute = xelement.Attribute("Name");
+                xattribute.SetValue(xattribute.Value.Replace(ef6.Name, efCore.Name));
+                xschemas[0].Add(xelement);
             }
-        }
-        private static void FixOperations(OeDataAdapter dataAdapter, OeEdmModelBuilder modelBuilder)
-        {
-            OeOperationConfiguration[] operations = dataAdapter.OperationAdapter.GetOperations();
-            if (operations != null)
-                foreach (OeOperationConfiguration operation in operations)
-                {
-                    String methodInfoName = nameof(OrderContext) + "." + operation.MethodInfoName.Split('.').Last();
-                    var fixOperation = new OeOperationConfiguration(operation.Name, typeof(OrderContext).Namespace, methodInfoName, operation.ReturnType, operation.IsDbFunction);
-                    foreach (OeOperationParameterConfiguration parameter in operation.Parameters)
-                        fixOperation.AddParameter(parameter.Name, parameter.ClrType);
-                    modelBuilder.AddOperation(fixOperation);
-                }
+            xschemas[1].Remove();
+
+            using (var stream = new MemoryStream())
+            using (var xwriter = XmlWriter.Create(stream, new XmlWriterSettings() { Indent = true, Encoding = new UTF8Encoding(false) }))
+            {
+                xdoc.WriteTo(xwriter);
+                xwriter.Flush();
+                String fixSchema = Encoding.UTF8.GetString(stream.ToArray());
+                return fixSchema.Replace(ef6.FullName, efCore.FullName);
+            }
         }
         [Fact]
         public void FluentApi()
@@ -55,12 +58,17 @@ namespace OdataToEntity.Test
             var ethalonDataAdapter = new OeEfCoreDataAdapter<OrderContext>();
             EdmModel ethalonEdmModel = ethalonDataAdapter.BuildEdmModel();
             String ethalonSchema = TestHelper.GetCsdlSchema(ethalonEdmModel);
+            if (ethalonSchema == null)
+                throw new InvalidOperationException("Invalid ethalon schema");
 
             var testDataAdapter = new OrderOeDataAdapter(false, false, null);
-            EdmModel testEdmModel = BuildEdmModelFromEf6Model(testDataAdapter);
+            EdmModel testEdmModel = testDataAdapter.BuildEdmModelFromEf6Model();
             String testSchema = TestHelper.GetCsdlSchema(testEdmModel);
+            if (testSchema == null)
+                throw new InvalidOperationException("Invalid test schema");
 
-            Assert.Equal(ethalonSchema, testSchema);
+            String fixTestSchema = FixNamesInSchema(testSchema);
+            Assert.Equal(ethalonSchema, fixTestSchema);
         }
         [Fact]
         public void MissingDependentNavigationProperty()

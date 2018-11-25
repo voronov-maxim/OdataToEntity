@@ -20,9 +20,10 @@ namespace OdataToEntity.Db
         public abstract TResult ExecuteScalar<TResult>(Object dataContext, OeQueryContext queryContext);
         public abstract Task<int> SaveChangesAsync(IEdmModel edmModel, Object dataContext, CancellationToken cancellationToken);
 
-        protected Cache.OeQueryCache QueryCache { get; }
+        public abstract Type DataContextType { get; }
         public abstract OeEntitySetAdapterCollection EntitySetAdapters { get; }
         public bool IsDatabaseNullHighestValue { get; set; }
         public OeOperationAdapter OperationAdapter { get; }
+        protected Cache.OeQueryCache QueryCache { get; }
     }
 }

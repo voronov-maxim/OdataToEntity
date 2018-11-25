@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OdataToEntity.AspNetCore;
 using OdataToEntity.EfCore;
+using OdataToEntity.Test.Model;
 
 namespace OdataToEntity.Test.AspMvcServer
 {

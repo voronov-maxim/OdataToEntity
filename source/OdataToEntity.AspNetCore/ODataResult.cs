@@ -88,12 +88,14 @@ namespace OdataToEntity.AspNetCore
         private readonly IAsyncEnumerator<T> _entities;
         private OeMetadataLevel _metadataLevel;
         private readonly ODataUri _odataUri;
+        private readonly IEdmEntitySetBase _resultEntitySet;
         private readonly HashSet<Object> _stack;
 
-        public ODataResult(IEdmModel edmModel, ODataUri odataUri, IAsyncEnumerator<T> entities)
+        public ODataResult(IEdmModel edmModel, ODataUri odataUri, IEdmEntitySetBase resultEntitySet, IAsyncEnumerator<T> entities)
         {
             _odataUri = odataUri;
             _edmModel = edmModel;
+            _resultEntitySet = resultEntitySet;
             _entities = entities;
 
             _stack = new HashSet<Object>();
@@ -131,9 +133,8 @@ namespace OdataToEntity.AspNetCore
             {
                 ODataUtils.SetHeadersForPayload(messageWriter, ODataPayloadKind.ResourceSet);
 
-                IEdmEntitySet edmEntitySet = OeEdmClrHelper.GetEntitySet(_edmModel, typeof(T));
-                IEdmEntityType edmEntityType = edmEntitySet.EntityType();
-                ODataWriter writer = messageWriter.CreateODataResourceSetWriter(edmEntitySet, edmEntityType);
+                IEdmEntityType entityType = _resultEntitySet.EntityType();
+                ODataWriter writer = messageWriter.CreateODataResourceSetWriter(_resultEntitySet, entityType);
                 await SerializeAsync(writer);
             }
         }

@@ -11,6 +11,7 @@ using OdataToEntity.Parsers;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -44,10 +45,10 @@ namespace OdataToEntity.AspNetCore
             Object dataContext = _dataAdapter.CreateDataContext();
 
             var parser = new OePostParser(_dataAdapter, _edmModel);
-            OeAsyncEnumerator asyncEnumerator = parser.GetAsyncEnumerator(odataUri, requestStream, headers, dataContext, out Type returnClrType);
+            OeAsyncEnumerator asyncEnumerator = parser.GetAsyncEnumerator(odataUri, requestStream, headers, dataContext, out bool isScalar);
 
-            if (returnClrType != null && !(returnClrType.IsPrimitive || returnClrType == typeof(String)))
-                _queryContext = parser.CreateQueryContext(odataUri, headers.MetadataLevel, returnClrType);
+            if (!isScalar)
+                _queryContext = parser.CreateQueryContext(odataUri, headers.MetadataLevel);
 
             return asyncEnumerator;
         }
@@ -112,7 +113,7 @@ namespace OdataToEntity.AspNetCore
         {
             var entityAsyncEnumerator = new OeEntityAsyncEnumerator<T>(asyncEnumerator, _queryContext.EntryFactory, _queryContext);
             HttpContext.Response.RegisterForDispose(entityAsyncEnumerator);
-            return new ODataResult<T>(_edmModel, _queryContext.ODataUri, entityAsyncEnumerator)
+            return new ODataResult<T>(_edmModel, _queryContext.ODataUri, _queryContext.EntryFactory.EntitySet, entityAsyncEnumerator)
             {
                 Count = asyncEnumerator.Count,
                 PageSize = _queryContext.PageSize

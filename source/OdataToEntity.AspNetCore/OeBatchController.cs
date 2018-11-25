@@ -49,7 +49,7 @@ namespace OdataToEntity.AspNetCore
 
                 foreach (OeOperationMessage operation in batchMessage.Changeset)
                 {
-                    OeEntitySetAdapter entitySetAdapter = DataAdapter.EntitySetAdapters.FindByEntitySetName(operation.EntitySet.Name);
+                    OeEntitySetAdapter entitySetAdapter = EdmModel.GetEntitySetAdapter(operation.EntitySet);
                     String path = basePath + "/" + entitySetAdapter.EntitySetName;
 
                     List<ActionDescriptor> candidates = OeRouter.SelectCandidates(actionDescriptors.Items, base.RouteData.Values, path, operation.Method);

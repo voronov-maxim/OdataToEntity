@@ -14,9 +14,17 @@ namespace OdataToEntity.EfCore
             {
             }
 
-            public override OeAsyncEnumerator ExecuteProcedure(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
+            public override OeAsyncEnumerator ExecuteProcedureNonQuery(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters)
             {
-                return base.ExecuteFunction(dataContext, operationName, parameters, returnType);
+                return base.ExecuteFunctionNonQuery(dataContext, operationName, parameters);
+            }
+            public override OeAsyncEnumerator ExecuteProcedureReader(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters, OeEntitySetAdapter entitySetAdapter)
+            {
+                return base.ExecuteFunctionReader(dataContext, operationName, parameters, entitySetAdapter);
+            }
+            public override OeAsyncEnumerator ExecuteProcedureScalar(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
+            {
+                return base.ExecuteFunctionScalar(dataContext, operationName, parameters, returnType);
             }
         }
 

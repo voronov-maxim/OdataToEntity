@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using OdataToEntity.EfCore;
 using System;
 
 namespace OdataToEntity.Test.Model
@@ -21,4 +22,18 @@ namespace OdataToEntity.Test.Model
         }
     }
 
+    public sealed class OrderDbDataAdapter : OeEfCoreDataAdapter<OrderContext>
+    {
+        private readonly bool _useRelationalNulls;
+
+        public OrderDbDataAdapter(bool allowCache, bool useRelationalNulls, String databaseName) : base(new Cache.OeQueryCache(allowCache))
+        {
+            _useRelationalNulls = useRelationalNulls;
+        }
+
+        public override Object CreateDataContext()
+        {
+            return new OrderContext(OrderContextOptions.Create(_useRelationalNulls, null));
+        }
+    }
 }

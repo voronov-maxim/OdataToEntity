@@ -7,17 +7,8 @@ namespace OdataToEntity
     {
         public static EdmModel BuildEdmModel(this Db.OeDataAdapter dataAdapter)
         {
-            var modelBuilder = new OeEdmModelBuilder(dataAdapter.EntitySetAdapters.EdmModelMetadataProvider);
-            modelBuilder.AddEntitySetRange(dataAdapter.EntitySetAdapters.GetEntitySetNamesEntityTypes());
-            BuildOperations(dataAdapter, modelBuilder);
+            var modelBuilder = new OeEdmModelBuilder(dataAdapter, new OeEdmModelMetadataProvider());
             return modelBuilder.BuildEdmModel();
-        }
-        public static void BuildOperations(Db.OeDataAdapter dataAdapter, OeEdmModelBuilder modelBuilder)
-        {
-            OeOperationConfiguration[] operations = dataAdapter.OperationAdapter.GetOperations();
-            if (operations != null)
-                foreach (OeOperationConfiguration operation in operations)
-                    modelBuilder.AddOperation(operation);
         }
     }
 }

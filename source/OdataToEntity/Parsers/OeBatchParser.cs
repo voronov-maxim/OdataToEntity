@@ -23,7 +23,7 @@ namespace OdataToEntity.Parsers
 
         private void AddToEntitySet(Object dataContext, in OeOperationMessage operation)
         {
-            Db.OeEntitySetAdapter entitySetAdapter = _dataAdapter.EntitySetAdapters.FindByEntitySetName(operation.EntitySet.Name);
+            Db.OeEntitySetAdapter entitySetAdapter = _dataAdapter.EntitySetAdapters.FindByEntitySet(operation.EntitySet);
             switch (operation.Method)
             {
                 case ODataConstants.MethodDelete:

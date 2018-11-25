@@ -7,7 +7,7 @@ namespace OdataToEntity.Test.WcfService
 {
     public sealed class OrderServiceBehaviorAttribute : OdataWcfServiceBehaviorAttribute
     {
-        public OrderServiceBehaviorAttribute() : base(typeof(OrderOeDataAdapter))
+        public OrderServiceBehaviorAttribute() : base(typeof(Model.OrderOeDataAdapter))
         {
         }
 

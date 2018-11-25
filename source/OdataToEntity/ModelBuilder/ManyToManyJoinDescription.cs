@@ -3,7 +3,7 @@ using System;
 
 namespace OdataToEntity.ModelBuilder
 {
-    internal sealed class ManyToManyJoinDescription
+    public sealed class ManyToManyJoinDescription
     {
         public ManyToManyJoinDescription(Type joinClassType, IEdmNavigationProperty joinNavigationProperty, IEdmNavigationProperty targetNavigationProperty)
         {

@@ -32,15 +32,13 @@ namespace OdataToEntity.Writers
                 IEdmNavigationProperty navigationProperty = segment.NavigationProperty;
                 if (navigationProperty.ContainsTarget)
                 {
-                    ModelBuilder.ManyToManyJoinDescription joinDescription = edmModel.GetManyToManyJoinClassType(navigationProperty);
+                    ModelBuilder.ManyToManyJoinDescription joinDescription = edmModel.GetManyToManyJoinDescription(navigationProperty);
                     navigationProperty = joinDescription.JoinNavigationProperty.Partner;
 
-                    IEdmEntityType joinEdmEntityType = joinDescription.TargetNavigationProperty.DeclaringEntityType();
-                    IEdmEntitySet joinNavigationSource = OeEdmClrHelper.GetEntitySet(edmModel, joinEdmEntityType);
+                    IEdmEntitySet joinNavigationSource = OeEdmClrHelper.GetEntitySet(edmModel, joinDescription.JoinNavigationProperty);
                     ResourceRangeVariableReferenceNode joinRefNode = OeEdmClrHelper.CreateRangeVariableReferenceNode(joinNavigationSource, "d");
 
-                    IEdmEntityType targetEdmEntityType = joinDescription.TargetNavigationProperty.ToEntityType();
-                    IEdmEntitySet targetNavigationSource = OeEdmClrHelper.GetEntitySet(edmModel, targetEdmEntityType);
+                    IEdmEntitySet targetNavigationSource = OeEdmClrHelper.GetEntitySet(edmModel, joinDescription.TargetNavigationProperty);
                     ResourceRangeVariableReferenceNode targetRefNode = OeEdmClrHelper.CreateRangeVariableReferenceNode(targetNavigationSource);
 
                     var anyNode = new AnyNode(new Collection<RangeVariable>() { joinRefNode.RangeVariable, targetRefNode.RangeVariable }, joinRefNode.RangeVariable)
@@ -109,6 +107,17 @@ namespace OdataToEntity.Writers
                     entry.Id = OeUriHelper.ComputeId(_queryContext.ODataUri.ServiceRoot, entryFactory.EntitySet, entry);
                 return entry;
             }
+            private static IEnumerable<ExpandedNavigationSelectItem> GetExpandedNavigationSelectItems(SelectExpandClause selectAndExpand)
+            {
+                foreach (SelectItem selectItem in selectAndExpand.SelectedItems)
+                    if (selectItem is ExpandedNavigationSelectItem item)
+                    {
+                        var segment = (NavigationPropertySegment)item.PathToNavigationProperty.LastSegment;
+                        IEdmNavigationProperty navigationEdmProperty = segment.NavigationProperty;
+                        if (navigationEdmProperty.Type.Definition is IEdmCollectionType)
+                            yield return item;
+                    }
+            }
             public async Task SerializeAsync(OeEntryFactory entryFactory, Db.OeAsyncEnumerator asyncEnumerator, OeQueryContext queryContext)
             {
                 var resourceSet = new ODataResourceSet() { Count = asyncEnumerator.Count };
@@ -155,7 +164,7 @@ namespace OdataToEntity.Writers
                     await WriteNavigationLink(dbEnumerator.CreateChild(entryFactory.NavigationLinks[i])).ConfigureAwait(false);
 
                 if (navigationNextLink)
-                    foreach (ExpandedNavigationSelectItem item in _queryContext.GetExpandedNavigationSelectItems())
+                    foreach (ExpandedNavigationSelectItem item in GetExpandedNavigationSelectItems(_queryContext.ODataUri.SelectAndExpand))
                         WriteNavigationNextLink(entryFactory, item, value);
 
                 _writer.WriteEnd();

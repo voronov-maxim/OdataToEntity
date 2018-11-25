@@ -11,7 +11,7 @@ namespace OdataToEntity.Cache
         public OeCacheContext(OeQueryContext queryContext)
         {
             ODataUri = queryContext.ODataUri;
-            EntitySet = queryContext.EntitySet;
+            EntitySet = queryContext.GetEntitySet();
             ParseNavigationSegments = queryContext.ParseNavigationSegments;
             MetadataLevel = queryContext.MetadataLevel;
             NavigationNextLink = queryContext.NavigationNextLink;

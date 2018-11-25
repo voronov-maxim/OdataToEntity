@@ -36,10 +36,11 @@ namespace OdataToEntity.EfCore
             private Func<Object[]> _valueBufferArrayInit;
             private IForeignKey _selfReferenceKey;
 
-            public DbSetAdapterImpl(Func<T, DbSet<TEntity>> getEntitySet, String entitySetName)
+            public DbSetAdapterImpl(Func<T, DbSet<TEntity>> getEntitySet, String entitySetName, String dataContextFullName)
             {
                 _getEntitySet = getEntitySet;
                 EntitySetName = entitySetName;
+                EntitySetFullName = dataContextFullName + "." + entitySetName;
             }
 
             public override void AddEntity(Object dataContext, ODataResourceBase entry)
@@ -110,7 +111,10 @@ namespace OdataToEntity.EfCore
                 DbSet<TEntity> dbSet = _getEntitySet((T)dataContext);
                 return dbSet.FromSql(sql, parameters);
             }
-            public override IQueryable GetEntitySet(Object dataContext) => _getEntitySet((T)dataContext);
+            public override IQueryable GetEntitySet(Object dataContext)
+            {
+                return _getEntitySet((T)dataContext);
+            }
             private InternalEntityEntry GetEntityEntry(T context, ODataResourceBase entity)
             {
                 Initialize(context);
@@ -173,6 +177,7 @@ namespace OdataToEntity.EfCore
             }
 
             public override Type EntityType => typeof(TEntity);
+            public override String EntitySetFullName { get; }
             public override String EntitySetName { get; }
         }
 
@@ -229,7 +234,7 @@ namespace OdataToEntity.EfCore
                     entitySetAdapters.Add(CreateEntitySetAdapter(property, dbSetType));
             }
 
-            return new Db.OeEntitySetAdapterCollection(entitySetAdapters.ToArray(), new ModelBuilder.OeEdmModelMetadataProvider());
+            return new Db.OeEntitySetAdapterCollection(entitySetAdapters.ToArray());
         }
         private static Db.OeEntitySetAdapter CreateEntitySetAdapter(PropertyInfo property, Type dbSetType)
         {
@@ -241,7 +246,7 @@ namespace OdataToEntity.EfCore
         private static Db.OeEntitySetAdapter CreateDbSetInvoker<TEntity>(PropertyInfo property) where TEntity : class
         {
             var getDbSet = (Func<T, DbSet<TEntity>>)property.GetGetMethod().CreateDelegate(typeof(Func<T, DbSet<TEntity>>));
-            return new DbSetAdapterImpl<TEntity>(getDbSet, property.Name);
+            return new DbSetAdapterImpl<TEntity>(getDbSet, property.Name, typeof(T).FullName);
         }
         public override Db.OeAsyncEnumerator ExecuteEnumerator(Object dataContext, OeQueryContext queryContext, CancellationToken cancellationToken)
         {
@@ -253,7 +258,7 @@ namespace OdataToEntity.EfCore
             {
                 Expression expression = queryContext.CreateExpression(new OeConstantToVariableVisitor());
                 IQueryable entitySet = queryContext.EntitySetAdapter.GetEntitySet(dataContext);
-                IQueryable query = entitySet.Provider.CreateQuery(OeQueryContext.TranslateSource(EntitySetAdapters, dataContext, expression));
+                IQueryable query = entitySet.Provider.CreateQuery(queryContext.TranslateSource(dataContext, expression));
                 asyncEnumerable = ((IQueryable<Object>)query).AsAsyncEnumerable();
 
                 if (queryContext.ODataUri.QueryCount.GetValueOrDefault())
@@ -276,7 +281,7 @@ namespace OdataToEntity.EfCore
 
             IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dataContext);
             Expression expression = queryContext.CreateExpression(new OeConstantToVariableVisitor());
-            return query.Provider.Execute<TResult>(OeQueryContext.TranslateSource(EntitySetAdapters, dataContext, expression));
+            return query.Provider.Execute<TResult>(queryContext.TranslateSource(dataContext, expression));
         }
         private static IAsyncEnumerable<TResult> GetFromCache<TResult>(OeQueryContext queryContext, T dbContext, Cache.OeQueryCache queryCache,
             out MethodCallExpression countExpression)
@@ -292,7 +297,7 @@ namespace OdataToEntity.EfCore
             {
                 var parameterVisitor = new OeConstantToParameterVisitor();
                 Expression expression = queryContext.CreateExpression(parameterVisitor);
-                expression = OeQueryContext.TranslateSource(_entitySetAdapters, dbContext, expression);
+                expression = queryContext.TranslateSource(dbContext, expression);
 
                 queryExecutor = dbContext.CreateAsyncQueryExecutor<TResult>(expression);
                 countExpression = OeQueryContext.CreateCountExpression(expression);
@@ -316,7 +321,7 @@ namespace OdataToEntity.EfCore
 
             if (queryContext.ODataUri.QueryCount.GetValueOrDefault())
             {
-                countExpression = (MethodCallExpression)OeQueryContext.TranslateSource(_entitySetAdapters, dbContext, countExpression);
+                countExpression = (MethodCallExpression)queryContext.TranslateSource(dbContext, countExpression);
                 countExpression = (MethodCallExpression)new OeParameterToVariableVisitor().Translate(countExpression, parameterValues);
             }
             else
@@ -330,6 +335,7 @@ namespace OdataToEntity.EfCore
             return dbContext.SaveChangesAsync(cancellationToken);
         }
 
+        public override Type DataContextType => typeof(T);
         public sealed override Db.OeEntitySetAdapterCollection EntitySetAdapters => _entitySetAdapters;
     }
 }

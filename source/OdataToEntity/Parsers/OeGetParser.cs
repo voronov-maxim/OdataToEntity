@@ -64,10 +64,9 @@ namespace OdataToEntity
                 {
                     if (segment is NavigationPropertySegment navigationSegment)
                         navigationSegments.Add(new OeParseNavigationSegment(navigationSegment, null));
-                    else if (segment is KeySegment)
+                    else if (segment is KeySegment keySegment)
                     {
                         IEdmEntitySet previousEntitySet;
-                        var keySegment = segment as KeySegment;
                         navigationSegment = null;
                         if (previousSegment is EntitySetSegment)
                         {
@@ -89,18 +88,17 @@ namespace OdataToEntity
                 }
             }
 
+            var entitySetSegment = (EntitySetSegment)odataUri.Path.FirstSegment;
             if (pageSize > 0)
             {
                 odataUri.Top = pageSize;
-                IEdmEntityType edmEntityType = GetEntityType(odataUri.Path, navigationSegments);
-                odataUri.OrderBy = OeSkipTokenParser.GetUniqueOrderBy(_edmModel, edmEntityType, odataUri.OrderBy, odataUri.Apply);
+                IEdmEntitySet resultEntitySet = OeParseNavigationSegment.GetEntitySet(navigationSegments) ?? entitySetSegment.EntitySet;
+                odataUri.OrderBy = OeSkipTokenParser.GetUniqueOrderBy(_edmModel, resultEntitySet, odataUri.OrderBy, odataUri.Apply);
             }
 
-            var entitySetSegment = (EntitySetSegment)odataUri.Path.FirstSegment;
-            IEdmEntitySet entitySet = entitySetSegment.EntitySet;
-            Db.OeEntitySetAdapter entitySetAdapter = _dataAdapter.EntitySetAdapters.FindByEntitySetName(entitySet.Name);
+            Db.OeEntitySetAdapter entitySetAdapter = _dataAdapter.EntitySetAdapters.FindByEntitySet(entitySetSegment.EntitySet);
             bool isCountSegment = odataUri.Path.LastSegment is CountSegment;
-            return new OeQueryContext(_edmModel, odataUri, entitySet, navigationSegments,
+            return new OeQueryContext(_edmModel, odataUri, navigationSegments,
                 isCountSegment, pageSize, navigationNextLink, _dataAdapter.IsDatabaseNullHighestValue, metadataLevel, entitySetAdapter);
         }
         public async Task ExecuteAsync(ODataUri odataUri, OeRequestHeaders headers, Stream stream, CancellationToken cancellationToken)
@@ -128,19 +126,6 @@ namespace OdataToEntity
                 if (dataContext != null)
                     _dataAdapter.CloseDataContext(dataContext);
             }
-        }
-        private static IEdmEntityType GetEntityType(ODataPath odataPath, IReadOnlyList<OeParseNavigationSegment> navigationSegments)
-        {
-            var entitySetSegment = (EntitySetSegment)odataPath.FirstSegment;
-            IEdmEntityType entityType = entitySetSegment.EntitySet.EntityType();
-            if (navigationSegments != null)
-                for (int i = navigationSegments.Count - 1; i >= 0; i--)
-                    if (navigationSegments[i].NavigationSegment != null)
-                    {
-                        entityType = navigationSegments[i].NavigationSegment.NavigationSource.EntityType();
-                        break;
-                    }
-            return entityType;
         }
     }
 }

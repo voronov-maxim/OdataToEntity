@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -23,10 +24,11 @@ namespace OdataToEntity.Test
             _useRelationalNulls = useRelationalNulls;
 
             _databaseName = Model.OrderContext.GenerateDatabaseName();
-            DbDataAdapter = new OrderDbDataAdapter(allowCache, useRelationalNulls, _databaseName);
-            OeDataAdapter = new OrderOeDataAdapter(allowCache, useRelationalNulls, _databaseName);
+            DbDataAdapter = new Model.OrderDbDataAdapter(allowCache, useRelationalNulls, _databaseName);
+            OeDataAdapter = new Model.OrderOeDataAdapter(allowCache, useRelationalNulls, _databaseName);
 
-            EdmModel = OeDataAdapter.BuildEdmModel();
+            MetadataProvider = OeDataAdapter.CreateMetadataProvider();
+            EdmModel = new ModelBuilder.OeEdmModelBuilder(OeDataAdapter, MetadataProvider).BuildEdmModel();
         }
 
         public Model.OrderContext CreateContext()
@@ -41,7 +43,7 @@ namespace OdataToEntity.Test
                 fromDb = TestHelper.ExecuteDb(DbDataAdapter.EntitySetAdapters, dataContext, parameters.Expression);
 
             Console.WriteLine(parameters.RequestUri);
-            TestHelper.Compare(fromDb, fromOe, DbDataAdapter.EntitySetAdapters.EdmModelMetadataProvider, null);
+            TestHelper.Compare(fromDb, fromOe, MetadataProvider, null);
         }
         public virtual async Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
         {
@@ -51,8 +53,20 @@ namespace OdataToEntity.Test
             using (var dataContext = (DbContext)DbDataAdapter.CreateDataContext())
                 fromDb = TestHelper.ExecuteDb(DbDataAdapter, dataContext, parameters.Expression, out includes);
 
+            //fix null navigation property Order where aggregate Order(Name)
+            if (typeof(TResult) == typeof(Object))
+                foreach (SortedDictionary<String, Object> item in fromOe)
+                    foreach (KeyValuePair<String, Object> keyValue in item.Where(i => i.Value == null).ToList())
+                    {
+                        PropertyInfo navigationProperty = typeof(T).GetProperty(keyValue.Key);
+                        if (navigationProperty != null &&
+                            TestContractResolver.IsEntity(navigationProperty.PropertyType) &&
+                            !includes.Any(i => i.Property == navigationProperty))
+                            item.Remove(keyValue.Key);
+                    }
+
             Console.WriteLine(parameters.RequestUri);
-            TestHelper.Compare(fromDb, fromOe, DbDataAdapter.EntitySetAdapters.EdmModelMetadataProvider, includes);
+            TestHelper.Compare(fromDb, fromOe, MetadataProvider, includes);
         }
         internal async Task ExecuteBatchAsync(String batchName)
         {
@@ -124,8 +138,9 @@ namespace OdataToEntity.Test
             return odataParser.ParseUri();
         }
 
-        internal OrderDbDataAdapter DbDataAdapter { get; }
+        internal Model.OrderDbDataAdapter DbDataAdapter { get; }
         internal EdmModel EdmModel { get; }
-        internal OrderOeDataAdapter OeDataAdapter { get; }
+        internal ModelBuilder.OeEdmModelMetadataProvider MetadataProvider { get; }
+        internal Model.OrderOeDataAdapter OeDataAdapter { get; }
     }
 }

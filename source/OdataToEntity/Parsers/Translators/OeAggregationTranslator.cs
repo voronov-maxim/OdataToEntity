@@ -11,7 +11,7 @@ using System.Reflection;
 
 namespace OdataToEntity.Parsers.Translators
 {
-    public sealed class OeAggregationTranslator
+    public readonly struct OeAggregationTranslator
     {
         private readonly struct ComputeAliasNameResolver
         {
@@ -50,7 +50,6 @@ namespace OdataToEntity.Parsers.Translators
         }
 
         private readonly List<AggProperty> _aggProperties;
-        private OeEntryFactory _entryFactory;
         private readonly OeQueryNodeVisitor _visitor;
 
         public OeAggregationTranslator(OeQueryNodeVisitor visitor)
@@ -275,7 +274,6 @@ namespace OdataToEntity.Parsers.Translators
                     throw new NotSupportedException();
             }
 
-            _entryFactory = CreateEntryFactory(_visitor.EdmModel, source, _visitor.Parameter.Type, _aggProperties);
             return source;
         }
         private static MethodCallExpression CountDistinctExpression(ParameterExpression sourceParameter, LambdaExpression lambda)
@@ -299,18 +297,15 @@ namespace OdataToEntity.Parsers.Translators
         {
             return new AggProperty(name, model.GetEdmTypeReference(clrType), isGroup);
         }
-        private static OeEntryFactory CreateEntryFactory(IEdmModel edmModel, Expression source, Type entityType, List<AggProperty> _aggProperties)
+        public OeEntryFactory CreateEntryFactory(IEdmEntitySet entitySet, Type clrType)
         {
-            IEdmEntitySet entitySet = OeEdmClrHelper.GetEntitySet(edmModel, entityType);
-
             OePropertyAccessor[] accessors;
             if (_aggProperties.Count == 0)
-                accessors = OePropertyAccessor.CreateFromType(entityType, entitySet);
+                accessors = OePropertyAccessor.CreateFromType(clrType, entitySet);
             else
             {
-                Type sourceItemType = OeExpressionHelper.GetCollectionItemType(source.Type);
                 int groupIndex = _aggProperties.FindIndex(a => a.IsGroup);
-                accessors = OePropertyAccessor.CreateFromTuple(sourceItemType, _aggProperties, groupIndex);
+                accessors = OePropertyAccessor.CreateFromTuple(clrType, _aggProperties, groupIndex);
             }
 
             return OeEntryFactory.CreateEntryFactory(entitySet, accessors);
@@ -381,7 +376,5 @@ namespace OdataToEntity.Parsers.Translators
             }
             return null;
         }
-
-        public OeEntryFactory EntryFactory => _entryFactory;
     }
 }

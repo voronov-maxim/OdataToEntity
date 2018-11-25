@@ -94,4 +94,12 @@ namespace OdataToEntity.Test.Model
             return connection;
         }
     }
+
+    public sealed class OrderDbDataAdapter : EfCore.OeEfCoreDataAdapter<OrderContext>
+    {
+        public OrderDbDataAdapter(bool allowCache, bool useRelationalNulls, String databaseName) :
+            base(OrderContextOptions.Create(useRelationalNulls, databaseName), new Cache.OeQueryCache(allowCache))
+        {
+        }
+    }
 }

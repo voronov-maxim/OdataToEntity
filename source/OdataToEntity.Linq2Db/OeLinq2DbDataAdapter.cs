@@ -60,13 +60,13 @@ namespace OdataToEntity.Linq2Db
 
         private sealed class TableAdapterImpl<TEntity> : Db.OeEntitySetAdapter where TEntity : class
         {
-            private readonly String _entitySetName;
             private readonly Func<T, ITable<TEntity>> _getEntitySet;
 
-            public TableAdapterImpl(Func<T, ITable<TEntity>> getEntitySet, String entitySetName)
+            public TableAdapterImpl(Func<T, ITable<TEntity>> getEntitySet, String entitySetName, String dataContextFullName)
             {
                 _getEntitySet = getEntitySet;
-                _entitySetName = entitySetName;
+                EntitySetName = entitySetName;
+                EntitySetFullName = dataContextFullName + "." + entitySetName;
             }
 
             public override void AddEntity(Object dataContext, ODataResourceBase entry)
@@ -98,7 +98,8 @@ namespace OdataToEntity.Linq2Db
             }
 
             public override Type EntityType => typeof(TEntity);
-            public override String EntitySetName => _entitySetName;
+            public override String EntitySetFullName { get; }
+            public override String EntitySetName { get; }
         }
 
         private readonly static Db.OeEntitySetAdapterCollection _entitySetAdapters = CreateEntitySetAdapters();
@@ -131,7 +132,7 @@ namespace OdataToEntity.Linq2Db
                 if (entitySetType != null)
                     entitySetAdapters.Add(CreateEntitySetAdapter(property, entitySetType));
             }
-            return new Db.OeEntitySetAdapterCollection(entitySetAdapters.ToArray(), new OeLinq2DbEdmModelMetadataProvider());
+            return new Db.OeEntitySetAdapterCollection(entitySetAdapters.ToArray());
         }
         private static Db.OeEntitySetAdapter CreateEntitySetAdapter(PropertyInfo property, Type entitySetType)
         {
@@ -143,7 +144,7 @@ namespace OdataToEntity.Linq2Db
         private static Db.OeEntitySetAdapter CreateEntitySetInvoker<TEntity>(PropertyInfo property) where TEntity : class
         {
             var getEntitySet = (Func<T, ITable<TEntity>>)property.GetGetMethod().CreateDelegate(typeof(Func<T, ITable<TEntity>>));
-            return new TableAdapterImpl<TEntity>(getEntitySet, property.Name);
+            return new TableAdapterImpl<TEntity>(getEntitySet, property.Name, typeof(T).FullName);
         }
         public override Db.OeAsyncEnumerator ExecuteEnumerator(Object dataContext, OeQueryContext queryContext, CancellationToken cancellationToken)
         {
@@ -155,7 +156,7 @@ namespace OdataToEntity.Linq2Db
             else
             {
                 expression = queryContext.CreateExpression(new OeConstantToVariableVisitor());
-                expression = OeQueryContext.TranslateSource(EntitySetAdapters, dataContext, expression);
+                expression = queryContext.TranslateSource(dataContext, expression);
                 expression = new ParameterVisitor().Visit(expression);
 
                 if (queryContext.ODataUri.QueryCount.GetValueOrDefault())
@@ -179,7 +180,7 @@ namespace OdataToEntity.Linq2Db
             else
             {
                 expression = queryContext.CreateExpression(new OeConstantToVariableVisitor());
-                expression = OeQueryContext.TranslateSource(EntitySetAdapters, dataContext, expression);
+                expression = queryContext.TranslateSource(dataContext, expression);
                 expression = new ParameterVisitor().Visit(expression);
             }
             return query.Provider.Execute<TResult>(expression);
@@ -214,11 +215,11 @@ namespace OdataToEntity.Linq2Db
             }
 
             expression = new OeParameterToVariableVisitor().Translate(expression, parameterValues);
-            expression = OeQueryContext.TranslateSource(_entitySetAdapters, dbContext, expression);
+            expression = queryContext.TranslateSource(dbContext, expression);
 
             if (queryContext.ODataUri.QueryCount.GetValueOrDefault())
             {
-                countExpression = (MethodCallExpression)OeQueryContext.TranslateSource(_entitySetAdapters, dbContext, countExpression);
+                countExpression = (MethodCallExpression)queryContext.TranslateSource(dbContext, countExpression);
                 countExpression = (MethodCallExpression)new OeParameterToVariableVisitor().Translate(countExpression, parameterValues);
             }
             else
@@ -250,6 +251,7 @@ namespace OdataToEntity.Linq2Db
             return Task.FromResult(count);
         }
 
+        public override Type DataContextType => typeof(T);
         public override Db.OeEntitySetAdapterCollection EntitySetAdapters => _entitySetAdapters;
     }
 }

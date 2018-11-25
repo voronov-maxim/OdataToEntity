@@ -10,10 +10,7 @@ namespace OdataToEntity.Ef6
         {
             using (var context = (DbContext)dataAdapter.CreateDataContext())
             {
-                var metadataProvider = new OeEf6EdmModelMetadataProvider(context);
-                var modelBuilder = new OeEdmModelBuilder(metadataProvider);
-                modelBuilder.AddEntitySetRange(dataAdapter.EntitySetAdapters.GetEntitySetNamesEntityTypes());
-                OeDataAdapterExtension.BuildOperations(dataAdapter, modelBuilder);
+                var modelBuilder = new OeEdmModelBuilder(dataAdapter, new OeEf6EdmModelMetadataProvider(context));
                 return modelBuilder.BuildEdmModel();
             }
         }

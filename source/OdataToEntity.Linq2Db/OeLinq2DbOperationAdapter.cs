@@ -23,7 +23,7 @@ namespace OdataToEntity.Linq2Db
             dataConnection.Execute(sql, GetDataParameters(parameters));
             return OeAsyncEnumerator.Empty;
         }
-        protected override OeAsyncEnumerator ExecuteReader(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
+        protected override OeAsyncEnumerator ExecuteReader(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, OeEntitySetAdapter entitySetAdapter)
         {
             Func<DataConnection, String, DataParameter[], IEnumerable<Object>> queryMethod;
             if (sql.StartsWith("select "))
@@ -31,7 +31,7 @@ namespace OdataToEntity.Linq2Db
             else
                 queryMethod = DataConnectionExtensions.QueryProc<Object>;
 
-            MethodInfo queryMethodInfo = queryMethod.GetMethodInfo().GetGenericMethodDefinition().MakeGenericMethod(new Type[] { returnType });
+            MethodInfo queryMethodInfo = queryMethod.GetMethodInfo().GetGenericMethodDefinition().MakeGenericMethod(new Type[] { entitySetAdapter.EntityType });
             Type queryMethodType = typeof(Func<DataConnection, String, DataParameter[], IEnumerable<Object>>);
             var queryFunc = (Func<DataConnection, String, DataParameter[], IEnumerable<Object>>)Delegate.CreateDelegate(queryMethodType, queryMethodInfo);
 

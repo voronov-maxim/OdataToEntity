@@ -1,6 +1,6 @@
 ﻿using Microsoft.OData.UriParser;
+using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace OdataToEntity.Cache.UriCompare
 {
@@ -37,6 +37,10 @@ namespace OdataToEntity.Cache.UriCompare
             }
             return true;
         }
+        private bool KeyCompare(KeyValuePair<String, Object> key1, KeyValuePair<String, Object> key2)
+        {
+            return String.Compare(key1.Key, key2.Key, StringComparison.OrdinalIgnoreCase) == 0;
+        }
         public override bool Translate(CountSegment segment)
         {
             return GetNextSegment() is CountSegment;
@@ -47,8 +51,10 @@ namespace OdataToEntity.Cache.UriCompare
         }
         public override bool Translate(KeySegment segment)
         {
-            return GetNextSegment() is KeySegment keySegment && keySegment.Keys.SequenceEqual(segment.Keys) &&
-                keySegment.EdmType == segment.EdmType && keySegment.NavigationSource == segment.NavigationSource;
+            if (GetNextSegment() is KeySegment keySegment && keySegment.EdmType == segment.EdmType && keySegment.NavigationSource == segment.NavigationSource)
+                return EnumerableComparer.Compare(keySegment.Keys, segment.Keys, KeyCompare);
+
+            return false;
         }
         public override bool Translate(NavigationPropertySegment segment)
         {

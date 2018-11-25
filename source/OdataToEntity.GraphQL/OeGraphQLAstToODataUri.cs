@@ -83,22 +83,24 @@ namespace OdataToEntity.GraphQL
                     }
                     else
                     {
-                        IEdmType edmType = edmProperty.Type.Definition;
-                        if (edmType is IEdmCollectionType collectionType)
-                            edmType = collectionType.ElementType.Definition;
-
-                        IEdmEntitySet parentEntitySet = OeEdmClrHelper.GetEntitySet(_edmModel, edmType);
-                        SelectExpandClause childSelectExpand = BuildSelectExpandClause(parentEntitySet, fieldSelection.SelectionSet);
-
                         var navigationProperty = (IEdmNavigationProperty)edmProperty;
-                        IEdmEntitySet navigationSource = OeEdmClrHelper.GetEntitySet(_edmModel, navigationProperty.ToEntityType());
-                        var expandPath = new ODataExpandPath(new NavigationPropertySegment(navigationProperty, navigationSource));
+                        IEdmEntitySet parentEntitySet;
+                        if (navigationProperty.ContainsTarget)
+                        {
+                            ModelBuilder.ManyToManyJoinDescription joinDescription = _edmModel.GetManyToManyJoinDescription(navigationProperty);
+                            parentEntitySet = OeEdmClrHelper.GetEntitySet(_edmModel, joinDescription.TargetNavigationProperty);
+                        }
+                        else
+                            parentEntitySet = OeEdmClrHelper.GetEntitySet(_edmModel, navigationProperty);
+
+                        var expandPath = new ODataExpandPath(new NavigationPropertySegment(navigationProperty, parentEntitySet));
 
                         FilterClause filterOption = null;
                         if (fieldSelection.Arguments.Any())
                             filterOption = BuildFilterClause(parentEntitySet, fieldSelection);
 
-                        var expandedSelectItem = new ExpandedNavigationSelectItem(expandPath, navigationSource, childSelectExpand, filterOption, null, null, null, null, null, null);
+                        SelectExpandClause childSelectExpand = BuildSelectExpandClause(parentEntitySet, fieldSelection.SelectionSet);
+                        var expandedSelectItem = new ExpandedNavigationSelectItem(expandPath, parentEntitySet, childSelectExpand, filterOption, null, null, null, null, null, null);
                         selectItems.Add(expandedSelectItem);
                     }
                 }
@@ -133,7 +135,7 @@ namespace OdataToEntity.GraphQL
             }
             else if (graphValue is GraphQLVariable variable)
             {
-                Type clrType = OeEdmClrHelper.GetClrType(_edmModel, typeReference.Definition);
+                Type clrType = _edmModel.GetClrType(typeReference.Definition);
                 return _context.GetArgument(clrType, variable.Name.Value);
             }
 
@@ -148,14 +150,17 @@ namespace OdataToEntity.GraphQL
         {
             foreach (FieldType fieldType in _context.Schema.Query.Fields)
                 if (String.Compare(fieldType.Name, selection.Name.Value, StringComparison.OrdinalIgnoreCase) == 0)
-                {
-                    var listGraphType = (ListGraphType)fieldType.ResolvedType;
-                    Type entityType = listGraphType.ResolvedType.GetType().GetGenericArguments()[0];
-
-                    return OeEdmClrHelper.GetEntitySet(_edmModel, entityType);
-                }
+                    return GetEntitySetByName(_edmModel, fieldType.Name);
 
             throw new InvalidOperationException("Field name " + selection.Name.Value + " not found in schema query");
+        }
+        private static IEdmEntitySet GetEntitySetByName(IEdmModel edmModel, String name)
+        {
+            foreach (IEdmEntitySet entitySet in edmModel.EntityContainer.EntitySets())
+                if (String.Compare(entitySet.Name, name, StringComparison.OrdinalIgnoreCase) == 0)
+                    return entitySet;
+
+            throw new InvalidOperationException("EntitySet " + name + " not found");
         }
         private static ResourceRangeVariable GetResorceVariable(IEdmEntitySet entitySet)
         {

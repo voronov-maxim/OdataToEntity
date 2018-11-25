@@ -9,13 +9,6 @@ namespace OdataToEntity.Ef6
 {
     public sealed class EnumerableToQuerableVisitor : ExpressionVisitor
     {
-        private readonly Type _elementType;
-
-        public EnumerableToQuerableVisitor(Type elementType)
-        {
-            _elementType = elementType;
-        }
-
         private static MethodInfo GetQuerableMethodInfo(MethodInfo enumerableMethodInfo, ReadOnlyCollection<Expression> arguments)
         {
             var enumerableTypes = new Type[arguments.Count - 1];
@@ -72,12 +65,8 @@ namespace OdataToEntity.Ef6
 
         protected override Expression VisitConstant(ConstantExpression node)
         {
-            if (node.Type.IsGenericType)
-            {
-                Type[] args = node.Type.GetGenericArguments();
-                if (args.Length == 1 && args[0] == _elementType)
-                    return Expression.Constant(null, typeof(IQueryable<>).MakeGenericType(_elementType));
-            }
+            if (node.Value is Parsers.OeEnumerableStub enumerableStub)
+                return Expression.Constant(enumerableStub, typeof(IQueryable<>).MakeGenericType(enumerableStub.ElementType));
             return base.VisitConstant(node);
         }
         protected override Expression VisitLambda<T>(Expression<T> node)

@@ -25,10 +25,11 @@ namespace OdataToEntity.Ef6
             private bool _isInitialized;
             private bool _isSelfReference;
 
-            public DbSetAdapterImpl(Func<T, IDbSet<TEntity>> getEntitySet, String entitySetName)
+            public DbSetAdapterImpl(Func<T, IDbSet<TEntity>> getEntitySet, String entitySetName, String dataContextFullName)
             {
                 _getEntitySet = getEntitySet;
                 EntitySetName = entitySetName;
+                EntitySetFullName = dataContextFullName + "." + entitySetName;
             }
 
             public override void AddEntity(Object dataContext, ODataResourceBase entry)
@@ -125,6 +126,7 @@ namespace OdataToEntity.Ef6
             }
 
             public override Type EntityType => typeof(TEntity);
+            public override String EntitySetFullName { get; }
             public override String EntitySetName { get; }
         }
 
@@ -164,7 +166,7 @@ namespace OdataToEntity.Ef6
                 if (dbSetType != null)
                     entitySetAdapters.Add(CreateEntitySetAdapter(property, dbSetType));
             }
-            return new Db.OeEntitySetAdapterCollection(entitySetAdapters.ToArray(), new ModelBuilder.OeEdmModelMetadataProvider());
+            return new Db.OeEntitySetAdapterCollection(entitySetAdapters.ToArray());
         }
         private static Db.OeEntitySetAdapter CreateEntitySetAdapter(PropertyInfo property, Type dbSetType)
         {
@@ -176,7 +178,7 @@ namespace OdataToEntity.Ef6
         private static Db.OeEntitySetAdapter CreateDbSetInvoker<TEntity>(PropertyInfo property) where TEntity : class
         {
             var getDbSet = (Func<T, IDbSet<TEntity>>)Delegate.CreateDelegate(typeof(Func<T, IDbSet<TEntity>>), property.GetGetMethod());
-            return new DbSetAdapterImpl<TEntity>(getDbSet, property.Name);
+            return new DbSetAdapterImpl<TEntity>(getDbSet, property.Name, typeof(T).FullName);
         }
         public override Db.OeAsyncEnumerator ExecuteEnumerator(Object dataContext, OeQueryContext queryContext, CancellationToken cancellationToken)
         {
@@ -188,8 +190,8 @@ namespace OdataToEntity.Ef6
             else
             {
                 expression = queryContext.CreateExpression(new OeConstantToVariableVisitor());
-                expression = new EnumerableToQuerableVisitor(queryContext.EntitySetAdapter.EntityType).Visit(expression);
-                expression = OeQueryContext.TranslateSource(EntitySetAdapters, dataContext, expression);
+                expression = new EnumerableToQuerableVisitor().Visit(expression);
+                expression = queryContext.TranslateSource(dataContext, expression);
 
                 if (queryContext.ODataUri.QueryCount.GetValueOrDefault())
                     countExpression = OeQueryContext.CreateCountExpression(expression);
@@ -213,7 +215,7 @@ namespace OdataToEntity.Ef6
             else
                 expression = queryContext.CreateExpression(new OeConstantToVariableVisitor());
             IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dataContext);
-            return query.Provider.Execute<TResult>(OeQueryContext.TranslateSource(EntitySetAdapters, dataContext, expression));
+            return query.Provider.Execute<TResult>(queryContext.TranslateSource(dataContext, expression));
         }
         private static Expression GetFromCache(OeQueryContext queryContext, T dbContext, Cache.OeQueryCache queryCache,
             out MethodCallExpression countExpression)
@@ -228,7 +230,7 @@ namespace OdataToEntity.Ef6
             {
                 var parameterVisitor = new OeConstantToParameterVisitor();
                 expression = queryContext.CreateExpression(parameterVisitor);
-                expression = new EnumerableToQuerableVisitor(queryContext.EntitySetAdapter.EntityType).Visit(expression);
+                expression = new EnumerableToQuerableVisitor().Visit(expression);
 
                 countExpression = OeQueryContext.CreateCountExpression(expression);
                 queryCache.AddQuery(queryContext.CreateCacheContext(parameterVisitor.ConstantToParameterMapper), expression, countExpression,
@@ -245,11 +247,11 @@ namespace OdataToEntity.Ef6
             }
 
             expression = new OeParameterToVariableVisitor().Translate(expression, parameterValues);
-            expression = OeQueryContext.TranslateSource(_entitySetAdapters, dbContext, expression);
+            expression = queryContext.TranslateSource(dbContext, expression);
 
             if (queryContext.ODataUri.QueryCount.GetValueOrDefault())
             {
-                countExpression = (MethodCallExpression)OeQueryContext.TranslateSource(_entitySetAdapters, dbContext, countExpression);
+                countExpression = (MethodCallExpression)queryContext.TranslateSource(dbContext, countExpression);
                 countExpression = (MethodCallExpression)new OeParameterToVariableVisitor().Translate(countExpression, parameterValues);
             }
             else
@@ -262,6 +264,7 @@ namespace OdataToEntity.Ef6
             return ((T)dataContext).SaveChangesAsync(cancellationToken);
         }
 
+        public override Type DataContextType => typeof(T);
         public override Db.OeEntitySetAdapterCollection EntitySetAdapters => _entitySetAdapters;
     }
 }

@@ -167,16 +167,16 @@ namespace OdataToEntity.GraphQL
         }
         private bool IsKey(PropertyInfo propertyInfo)
         {
-            IEdmEntitySet entitySet = OeEdmClrHelper.GetEntitySet(_edmModel, propertyInfo.DeclaringType);
-            foreach (IEdmStructuralProperty key in entitySet.EntityType().Key())
+            var entityType = (IEdmEntityType)_edmModel.FindDeclaredType(propertyInfo.DeclaringType.FullName);
+            foreach (IEdmStructuralProperty key in entityType.Key())
                 if (String.Compare(key.Name, propertyInfo.Name, StringComparison.OrdinalIgnoreCase) == 0)
                     return true;
             return false;
         }
         private bool IsRequired(PropertyInfo propertyInfo)
         {
-            IEdmEntitySet entitySet = OeEdmClrHelper.GetEntitySet(_edmModel, propertyInfo.DeclaringType);
-            IEdmProperty edmProperty = entitySet.EntityType().FindProperty(propertyInfo.Name);
+            var entityType = (IEdmEntityType)_edmModel.FindDeclaredType(propertyInfo.DeclaringType.FullName);
+            IEdmProperty edmProperty = entityType.FindProperty(propertyInfo.Name);
             return !edmProperty.Type.IsNullable;
         }
         private static String NameFirstCharLower(String name)

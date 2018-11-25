@@ -11,10 +11,7 @@ namespace OdataToEntity.EfCore
             var context = (DbContext)dataAdapter.CreateDataContext();
             try
             {
-                var metadataProvider = new OeEfCoreEdmModelMetadataProvider(context.Model);
-                var modelBuilder = new OeEdmModelBuilder(metadataProvider);
-                modelBuilder.AddEntitySetRange(dataAdapter.EntitySetAdapters.GetEntitySetNamesEntityTypes());
-                OeDataAdapterExtension.BuildOperations(dataAdapter, modelBuilder);
+                var modelBuilder = new OeEdmModelBuilder(dataAdapter, new OeEfCoreEdmModelMetadataProvider(context.Model));
                 return modelBuilder.BuildEdmModel();
             }
             finally

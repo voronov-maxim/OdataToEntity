@@ -1,6 +1,6 @@
 ﻿using Microsoft.OData;
+using Microsoft.OData.Edm;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 
@@ -15,47 +15,23 @@ namespace OdataToEntity.Db
 
         public abstract Type EntityType { get; }
         public abstract String EntitySetName { get; }
+        public abstract String EntitySetFullName { get; }
     }
 
     public sealed class OeEntitySetAdapterCollection : ReadOnlyCollection<OeEntitySetAdapter>
     {
-        public OeEntitySetAdapterCollection(OeEntitySetAdapter[] entitySetAdapters,
-            ModelBuilder.OeEdmModelMetadataProvider metadataProvider) : base(entitySetAdapters)
+        public OeEntitySetAdapterCollection(OeEntitySetAdapter[] entitySetAdapters) : base(entitySetAdapters)
         {
-            EdmModelMetadataProvider = metadataProvider;
         }
 
-        public OeEntitySetAdapter FindByClrType(Type entityType)
+        public OeEntitySetAdapter FindByEntitySet(IEdmEntitySet entitySet)
         {
             var entitySetAdapters = (OeEntitySetAdapter[])base.Items;
             foreach (OeEntitySetAdapter entitySetAdapter in entitySetAdapters)
-                if (entitySetAdapter.EntityType == entityType)
+                if (String.Compare(entitySetAdapter.EntitySetName, entitySet.Name, StringComparison.OrdinalIgnoreCase) == 0)
                     return entitySetAdapter;
-            return null;
-        }
-        public OeEntitySetAdapter FindByEntitySetName(String entitySetName)
-        {
-            var entitySetAdapters = (OeEntitySetAdapter[])base.Items;
-            foreach (OeEntitySetAdapter entitySetAdapter in entitySetAdapters)
-                if (entitySetAdapter.EntitySetName == entitySetName)
-                    return entitySetAdapter;
-            return null;
-        }
-        public OeEntitySetAdapter FindByTypeName(String typeName)
-        {
-            var entitySetAdapters = (OeEntitySetAdapter[])base.Items;
-            foreach (OeEntitySetAdapter entitySetAdapter in entitySetAdapters)
-                if (entitySetAdapter.EntityType.FullName == typeName)
-                    return entitySetAdapter;
-            return null;
-        }
-        public IEnumerable<KeyValuePair<String, Type>> GetEntitySetNamesEntityTypes()
-        {
-            var entitySetAdapters = (OeEntitySetAdapter[])base.Items;
-            foreach (OeEntitySetAdapter entitySetAdapter in entitySetAdapters)
-                yield return new KeyValuePair<string, Type>(entitySetAdapter.EntitySetName, entitySetAdapter.EntityType);
-        }
 
-        public ModelBuilder.OeEdmModelMetadataProvider EdmModelMetadataProvider { get; }
+            return null;
+        }
     }
 }

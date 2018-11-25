@@ -61,20 +61,6 @@ namespace OdataToEntity
             var rangeVariable = new ResourceRangeVariable(name ?? "$it", entityTypeRef, entitySet);
             return new ResourceRangeVariableReferenceNode(name ?? "$it", rangeVariable);
         }
-        public static Type GetClrType(this IEdmModel edmModel, IEdmType edmType)
-        {
-            if (edmType.TypeKind == EdmTypeKind.Primitive)
-                return PrimitiveTypeHelper.GetClrType((edmType as IEdmPrimitiveType).PrimitiveKind);
-
-            OeValueAnnotation<Type> clrTypeAnnotation = edmModel.GetAnnotationValue<OeValueAnnotation<Type>>(edmType);
-            if (clrTypeAnnotation != null)
-                return clrTypeAnnotation.Value;
-
-            if (edmType is IEdmCollectionType collectionType)
-                return edmModel.GetClrType(collectionType.ElementType.Definition);
-
-            throw new InvalidOperationException("Add type annotation for " + edmType.FullTypeName());
-        }
         public static Object GetClrValue(Type clrType, Object edmValue)
         {
             if (edmValue is ODataEnumValue enumValue)
@@ -116,35 +102,18 @@ namespace OdataToEntity
 
             return edmTypeRef;
         }
-        public static IEdmEntitySet GetEntitySet(IEdmModel edmModel, Type clrType)
+        public static IEdmEntitySet GetEntitySet(IEdmModel edmModel, IEdmNavigationProperty navigationProperty)
         {
-            foreach (IEdmEntitySet element in edmModel.EntityContainer.EntitySets())
-            {
-                IEdmEntityType edmType = element.EntityType();
-                if (String.Compare(edmType.Name, clrType.Name, StringComparison.OrdinalIgnoreCase) == 0 &&
-                    String.Compare(edmType.Namespace, clrType.Namespace, StringComparison.OrdinalIgnoreCase) == 0)
-                    return element;
-            }
-            return null;
-        }
-        public static IEdmEntitySet GetEntitySet(IEdmModel edmModel, IEdmType edmType)
-        {
-            foreach (IEdmEntitySet element in edmModel.EntityContainer.EntitySets())
-                if (element.EntityType() == edmType)
-                    return element;
-            return null;
+            foreach (IEdmEntitySet entitySet in edmModel.EntityContainer.EntitySets())
+                foreach (IEdmNavigationPropertyBinding binding in entitySet.NavigationPropertyBindings)
+                    if (binding.NavigationProperty == navigationProperty)
+                        return (IEdmEntitySet)binding.Target;
+
+            throw new InvalidOperationException("EntitySet for navigation property " + navigationProperty.Name + " not found");
         }
         public static PropertyInfo GetPropertyIgnoreCase(this Type declaringType, String propertyName)
         {
             return declaringType.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase);
-        }
-        internal static ManyToManyJoinDescription GetManyToManyJoinClassType(this IEdmModel edmModel, IEdmNavigationProperty navigationProperty)
-        {
-            ManyToManyJoinDescription joinDescription = edmModel.GetAnnotationValue<ManyToManyJoinDescription>(navigationProperty);
-            if (joinDescription != null)
-                return joinDescription;
-
-            throw new InvalidOperationException("Add many-to-many annotation for navigation property " + navigationProperty.Name);
         }
         public static PropertyInfo GetPropertyIgnoreCase(this Type declaringType, IEdmProperty edmProperty)
         {
@@ -213,23 +182,6 @@ namespace OdataToEntity
                 return GetValue(edmModel, resourceValue);
 
             return odataValue;
-        }
-        public static bool IsDbFunction(this IEdmModel edmModel, IEdmOperation edmOperation)
-        {
-            OeValueAnnotation<bool> valueAnnotation = edmModel.GetAnnotationValue<OeValueAnnotation<bool>>(edmOperation);
-            return valueAnnotation.Value;
-        }
-        public static void SetClrType(this IEdmModel edmModel, IEdmType edmType, Type clrType)
-        {
-            edmModel.SetAnnotationValue(edmType, new OeValueAnnotation<Type>(clrType));
-        }
-        public static void SetIsDbFunction(this IEdmModel edmModel, IEdmOperation edmOperation, bool isDbFunction)
-        {
-            edmModel.SetAnnotationValue(edmOperation, new OeValueAnnotation<bool>(isDbFunction));
-        }
-        internal static void SetManyToManyJoinDescription(this IEdmModel edmModel, IEdmNavigationProperty navigationProperty, ManyToManyJoinDescription joinDescription)
-        {
-            edmModel.SetAnnotationValue(navigationProperty, joinDescription);
         }
     }
 }

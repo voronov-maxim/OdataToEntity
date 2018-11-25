@@ -1,7 +1,6 @@
 ﻿using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using System;
-using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -39,11 +38,19 @@ namespace OdataToEntity.Parsers.Translators
             var visitor = new OeQueryNodeVisitor(_visitor, Expression.Parameter(itemType));
             var expressionBuilder = new OeExpressionBuilder(_joinBuilder, visitor);
 
-            Expression innerSource = Expression.Constant(null, typeof(IEnumerable<>).MakeGenericType(itemType));
+            var navigationEdmProperty = (IEdmNavigationProperty)navigationItem.EdmProperty;
+            if (navigationEdmProperty.ContainsTarget)
+            {
+                ModelBuilder.ManyToManyJoinDescription joinDescription = _visitor.EdmModel.GetManyToManyJoinDescription(navigationEdmProperty);
+                navigationEdmProperty = joinDescription.TargetNavigationProperty;
+            }
+            IEdmEntitySet innerEntitySet = OeEdmClrHelper.GetEntitySet(_visitor.EdmModel, navigationEdmProperty);
+            Expression innerSource = OeEnumerableStub.CreateEnumerableStubExpression(itemType, innerEntitySet);
+
             innerSource = expressionBuilder.ApplyFilter(innerSource, item.FilterOption);
             if (item.SkipOption != null || item.TopOption != null)
             {
-                Expression source = Expression.Constant(null, typeof(IEnumerable<>).MakeGenericType(navigationClrProperty.DeclaringType));
+                Expression source = OeEnumerableStub.CreateEnumerableStubExpression(navigationClrProperty.DeclaringType, (IEdmEntitySet)_navigationItem.EntitySet);
                 innerSource = OeCrossApplyBuilder.Build(source, innerSource, item, navigationItem.Path, expressionBuilder);
             }
 
@@ -81,7 +88,8 @@ namespace OdataToEntity.Parsers.Translators
             {
                 IEdmNavigationSource navigationSource = navigationSegment.NavigationSource;
                 if (navigationSource == null)
-                    navigationSource = OeEdmClrHelper.GetEntitySet(_visitor.EdmModel, navigationSegment.NavigationProperty.ToEntityType());
+                    navigationSource = OeEdmClrHelper.GetEntitySet(_visitor.EdmModel, navigationSegment.NavigationProperty);
+
                 var navigationSelectItem = new ExpandedNavigationSelectItem(new ODataExpandPath(item.SelectedPath), navigationSource, new SelectExpandClause(null, true));
                 return Translate(navigationSelectItem);
             }
