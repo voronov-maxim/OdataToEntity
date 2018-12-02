@@ -40,6 +40,18 @@ var dataAdapter = new OeEf6DataAdapter<OrderEf6Context>();
 //Build OData Edm Model
 EdmModel edmModel = dataAdapter.BuildEdmModelFromEf6Model();
 ```
+Build from multiple data contexts
+```c#
+//Create referenced data adapter
+var refDataAdapter = new OeEfCoreDataAdapter<Model.Order2Context>();
+//Build referenced Edm Model
+EdmModel refModel = refDataAdapter.BuildEdmModel();
+
+//Create root data adapter
+var rootDataAdapter = new OeEfCoreDataAdapter<Model.OrderContext>();
+//Build root Edm Model
+EdmModel rootModel = rootDataAdapter.BuildEdmModel(refModel);
+```
 
 ### Sample OData query ###
 By default used cached queries parsed to expression tree, which on existing tests allows you to increase the performance up to three times. For disable this feature, you need pass in base constructor *OeDataAdapter* parameter *new OeQueryCache(false)*. The query is parameterized (i.e. constant expressions are replaced with variables) except null value, therefore for best performance must use database null semantics. For Ef Core method *UseRelationalNulls* class *RelationalDbContextOptionsBuilder<TBuilder, TExtension>*, for Ef6 property *UseDatabaseNullSemantics* class *DbContextConfiguration*.
@@ -47,7 +59,7 @@ By default used cached queries parsed to expression tree, which on existing test
 //Create adapter data access, where OrderContext your DbContext
 var dataAdapter = new OeEfCoreDataAdapter<Model.OrderContext>();
 //Create query parser
-var parser = new OeParser(new Uri("http://dummy"), dataAdapter, dataAdapter.BuildEdmModel());
+var parser = new OeParser(new Uri("http://dummy"), dataAdapter.BuildEdmModel());
 //Query
 var uri = new Uri("http://dummy/Orders?$select=Name");
 //The result of the query
@@ -84,7 +96,7 @@ User-Agent: Microsoft ADO.NET Data Services
 //Create adapter data access, where OrderContext your DbContext
 var dataAdapter = new OeEfCoreDataAdapter<Model.OrderContext>();
 //Create query parser
-var parser = new OeParser(new Uri("http://dummy"), dataAdapter, dataAdapter.BuildEdmModel());
+var parser = new OeParser(new Uri("http://dummy"), dataAdapter.BuildEdmModel());
 //Serialized entities in JSON UTF8 format
 var request = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(batch));
 //The result of the query
@@ -98,7 +110,7 @@ await parser.ExecuteBatchAsync(request, response, CancellationToken.None);
 //Create adapter data access, where OrderContext your DbContext
 var dataAdapter = new OeEfCoreDataAdapter<Model.OrderContext>();
 //Create query parser
-var parser = new OeParser(new Uri("http://dummy"), dataAdapter, dataAdapter.BuildEdmModel());
+var parser = new OeParser(new Uri("http://dummy"), dataAdapter.BuildEdmModel());
 //The result of the stored procedure
 var response = new MemoryStream();
 //Execute sored procedure
@@ -116,7 +128,7 @@ var dataAdapter = new OeEfCoreDataAdapter<Model.OrderContext>(contextOptions)
   IsDatabaseNullHighestValue = true //PostgreSql
 };
 //Create query parser
-var parser = new OeParser(new Uri("http://dummy"), dataAdapter, dataAdapter.BuildEdmModel());
+var parser = new OeParser(new Uri("http://dummy"), dataAdapter.BuildEdmModel());
 //Query
 var uri = new Uri("http://dummy/Orders?$select=Name&$orderby=Date");
 //Set max page size

@@ -4,16 +4,15 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OData.Edm;
-using OdataToEntity.Db;
 using System;
 
 namespace OdataToEntity.AspNetCore
 {
     public static class OeMiddlewareExtension
     {
-        public static IServiceCollection AddOdataToEntity(this IServiceCollection services, Db.OeDataAdapter dataAdapter, IEdmModel edmModel)
+        public static IServiceCollection AddOdataToEntity(this IServiceCollection services, IEdmModel edmModel)
         {
-            return services.AddSingleton(edmModel).AddSingleton(dataAdapter).AddSingleton<OeRouter>();
+            return services.AddSingleton(edmModel).AddSingleton<OeRouter>();
         }
         public static IRouteBuilder AddOdataToEntityRoute(this IRouteBuilder routeBuilder)
         {
@@ -22,7 +21,7 @@ namespace OdataToEntity.AspNetCore
             routeBuilder.Routes.Add(router);
             return routeBuilder;
         }
-        public static IApplicationBuilder UseOdataToEntityMiddleware(this IApplicationBuilder app, PathString pathMatch, OeDataAdapter dataAdapater, IEdmModel edmModel)
+        public static IApplicationBuilder UseOdataToEntityMiddleware(this IApplicationBuilder app, PathString pathMatch, IEdmModel edmModel)
         {
             if (app == null)
                 throw new ArgumentNullException("app");
@@ -30,7 +29,7 @@ namespace OdataToEntity.AspNetCore
                 throw new ArgumentException("The path must not end with a '/'", "pathMatch");
 
             IApplicationBuilder applicationBuilder = app.New();
-            applicationBuilder.UseMiddleware<OeMiddleware>(pathMatch, dataAdapater, edmModel);
+            applicationBuilder.UseMiddleware<OeMiddleware>(pathMatch, edmModel);
             RequestDelegate branch = applicationBuilder.Build();
             MapOptions options = new MapOptions
             {

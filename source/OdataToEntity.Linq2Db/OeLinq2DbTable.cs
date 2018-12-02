@@ -31,7 +31,6 @@ namespace OdataToEntity.Linq2Db
         public abstract void UpdateIdentities(PropertyInfo fkeyProperty, IReadOnlyDictionary<Object, Object> identities);
 
         public abstract IReadOnlyDictionary<Object, Object> Identities { get; }
-        public PropertyInfo SelfRefProperty { get; set; }
     }
 
     public sealed class OeLinq2DbTable<T> : OeLinq2DbTable where T : class
@@ -106,7 +105,7 @@ namespace OdataToEntity.Linq2Db
         }
         public override int SaveDeleted(DataConnection dc)
         {
-            if (base.SelfRefProperty == null)
+            if (SelfRefProperty == null)
             {
                 foreach (T entity in Deleted)
                     dc.Delete(entity);
@@ -114,7 +113,7 @@ namespace OdataToEntity.Linq2Db
             }
 
             List<PropertyInfo> identityProperties = GetDatabaseGenerated();
-            OrderBy(base.SelfRefProperty, identityProperties[0], _deleted);
+            OrderBy(SelfRefProperty, identityProperties[0], _deleted);
             for (int i = _deleted.Count - 1; i >= 0; i--)
                 dc.Delete(_deleted[i]);
             return Deleted.Count;
@@ -129,7 +128,7 @@ namespace OdataToEntity.Linq2Db
                 return Inserted.Count;
             }
 
-            OrderBy(base.SelfRefProperty, identityProperties[0], _inserted);
+            OrderBy(SelfRefProperty, identityProperties[0], _inserted);
             for (int i = 0; i < _inserted.Count; i++)
             {
                 T entity = _inserted[i];
@@ -139,7 +138,7 @@ namespace OdataToEntity.Linq2Db
                 identityProperties[0].SetValue(entity, identity);
                 _identities.Add(old, identity);
 
-                if (base.SelfRefProperty != null)
+                if (SelfRefProperty != null)
                     UpdateParentIdentity(old, identity, i);
             }
             return Inserted.Count;
@@ -180,9 +179,9 @@ namespace OdataToEntity.Linq2Db
 
             for (int i = entityIndex + 1; i < _inserted.Count; i++)
             {
-                Object parentIdentity = base.SelfRefProperty.GetValue(_inserted[i]);
+                Object parentIdentity = SelfRefProperty.GetValue(_inserted[i]);
                 if (oldIdentity.Equals(parentIdentity))
-                    base.SelfRefProperty.SetValue(_inserted[i], newIdentity);
+                    SelfRefProperty.SetValue(_inserted[i], newIdentity);
             }
         }
         public override void UpdateIdentities(PropertyInfo fkeyProperty, IReadOnlyDictionary<Object, Object> identities)
@@ -198,6 +197,7 @@ namespace OdataToEntity.Linq2Db
         public IReadOnlyList<T> Deleted => _deleted;
         public override IReadOnlyDictionary<Object, Object> Identities => _identities;
         public IReadOnlyList<T> Inserted => _inserted;
+        public static PropertyInfo SelfRefProperty { get; set; }
         public IReadOnlyList<UpdatableEntity<T>> Updated => _updated;
     }
 }

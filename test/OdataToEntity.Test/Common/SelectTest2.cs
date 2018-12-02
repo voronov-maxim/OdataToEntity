@@ -1,4 +1,5 @@
 ﻿using Microsoft.OData;
+using Microsoft.OData.Edm;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -18,7 +19,8 @@ namespace OdataToEntity.Test
             String request = "Orders?$expand=Items($count=true)&orderby=Id";
 
             ODataUri odataUri = Fixture.ParseUri(request);
-            var parser = new OeParser(odataUri.ServiceRoot, Fixture.OeDataAdapter, Fixture.EdmModel);
+            IEdmModel edmModel = Fixture.EdmModel.GetEdmModel(odataUri.Path);
+            var parser = new OeParser(odataUri.ServiceRoot, edmModel);
             var uri = new Uri(odataUri.ServiceRoot, request);
 
             var response = new MemoryStream();
@@ -26,7 +28,7 @@ namespace OdataToEntity.Test
             response.Position = 0;
 
             var actualCounts = new List<long>();
-            var reader = new ResponseReader(Fixture.EdmModel, Fixture.OeDataAdapter);
+            var reader = new ResponseReader(edmModel);
             foreach (dynamic order in reader.Read(response))
             {
                 var navigationProperty = (IEnumerable)order.Items;
@@ -45,13 +47,14 @@ namespace OdataToEntity.Test
             String request = "Orders?&$count=true&$top=1";
 
             ODataUri odataUri = Fixture.ParseUri(request);
-            var parser = new OeParser(odataUri.ServiceRoot, Fixture.OeDataAdapter, Fixture.EdmModel);
+            IEdmModel edmModel = Fixture.EdmModel.GetEdmModel(odataUri.Path);
+            var parser = new OeParser(odataUri.ServiceRoot, edmModel);
 
             var response = new MemoryStream();
             await parser.ExecuteQueryAsync(odataUri, OeRequestHeaders.JsonDefault, response, CancellationToken.None).ConfigureAwait(false);
             response.Position = 0;
 
-            var reader = new ResponseReader(Fixture.EdmModel, Fixture.OeDataAdapter);
+            var reader = new ResponseReader(edmModel);
             reader.Read(response).Cast<Object>().Single();
 
             int? expectedCount;
@@ -66,13 +69,14 @@ namespace OdataToEntity.Test
             String request = "OrderItems?$filter=OrderId eq 1&$count=true&$top=1";
 
             ODataUri odataUri = Fixture.ParseUri(request);
-            var parser = new OeParser(odataUri.ServiceRoot, Fixture.OeDataAdapter, Fixture.EdmModel);
+            IEdmModel edmModel = Fixture.EdmModel.GetEdmModel(odataUri.Path);
+            var parser = new OeParser(odataUri.ServiceRoot, edmModel);
 
             var response = new MemoryStream();
             await parser.ExecuteQueryAsync(odataUri, OeRequestHeaders.JsonDefault, response, CancellationToken.None).ConfigureAwait(false);
             response.Position = 0;
 
-            var reader = new ResponseReader(Fixture.EdmModel, Fixture.OeDataAdapter);
+            var reader = new ResponseReader(edmModel);
             reader.Read(response).Cast<Object>().Single();
 
             int? expectedCount;
@@ -87,7 +91,8 @@ namespace OdataToEntity.Test
             String request = "Orders?$expand=Items($filter=Count gt 0 or Count eq null;$orderby=Id;$count=true)&$orderby=Id&$count=true";
 
             ODataUri odataUri = Fixture.ParseUri(request);
-            var parser = new OeParser(odataUri.ServiceRoot, Fixture.OeDataAdapter, Fixture.EdmModel);
+            IEdmModel edmModel = Fixture.EdmModel.GetEdmModel(odataUri.Path);
+            var parser = new OeParser(odataUri.ServiceRoot, edmModel);
             var requestUri = new Uri(odataUri.ServiceRoot, request);
             Uri uri = requestUri;
             OeRequestHeaders requestHeaders = OeRequestHeaders.JsonDefault.SetMaxPageSize(1).SetNavigationNextLink(true);
@@ -100,12 +105,12 @@ namespace OdataToEntity.Test
                 await parser.ExecuteGetAsync(uri, requestHeaders, response, CancellationToken.None).ConfigureAwait(false);
                 response.Position = 0;
 
-                var reader = new ResponseReader(Fixture.EdmModel, Fixture.OeDataAdapter);
+                var reader = new ResponseReader(edmModel);
                 List<Object> result = reader.Read(response).Cast<Object>().ToList();
                 Assert.InRange(result.Count, 0, requestHeaders.MaxPageSize);
                 fromOe.AddRange(result);
 
-                var navigationPropertyParser = new OeParser(odataUri.ServiceRoot, Fixture.OeDataAdapter, Fixture.EdmModel);
+                var navigationPropertyParser = new OeParser(odataUri.ServiceRoot, edmModel);
                 foreach (dynamic order in result)
                 {
                     var navigationProperty = (IEnumerable)order.Items;
@@ -115,7 +120,7 @@ namespace OdataToEntity.Test
                     await navigationPropertyParser.ExecuteGetAsync(resourceSet.NextPageLink, OeRequestHeaders.JsonDefault, navigationPropertyResponse, CancellationToken.None).ConfigureAwait(false);
                     navigationPropertyResponse.Position = 0;
 
-                    var navigationPropertyReader = new ResponseReader(Fixture.EdmModel, Fixture.OeDataAdapter);
+                    var navigationPropertyReader = new ResponseReader(edmModel);
                     foreach (dynamic orderItem in navigationPropertyReader.Read(navigationPropertyResponse))
                         order.Items.Add(orderItem);
 
@@ -132,11 +137,11 @@ namespace OdataToEntity.Test
             Assert.Equal(count, fromOe.Count);
 
             var exprectedResponse = new MemoryStream();
-            var expectedParser = new OeParser(odataUri.ServiceRoot, Fixture.OeDataAdapter, Fixture.EdmModel);
+            var expectedParser = new OeParser(odataUri.ServiceRoot, edmModel);
             await expectedParser.ExecuteGetAsync(requestUri, OeRequestHeaders.JsonDefault, exprectedResponse, CancellationToken.None).ConfigureAwait(false);
             exprectedResponse.Position = 0;
 
-            var exprectedReader = new ResponseReader(Fixture.EdmModel, Fixture.OeDataAdapter);
+            var exprectedReader = new ResponseReader(edmModel);
             List<Object> expectedResult = exprectedReader.Read(exprectedResponse).Cast<Object>().ToList();
 
             TestHelper.Compare(expectedResult, fromOe, Fixture.MetadataProvider, null);
@@ -147,7 +152,8 @@ namespace OdataToEntity.Test
             String request = "OrderItems?$orderby=Id&$count=true";
 
             ODataUri odataUri = Fixture.ParseUri(request);
-            var parser = new OeParser(odataUri.ServiceRoot, Fixture.OeDataAdapter, Fixture.EdmModel);
+            IEdmModel edmModel = Fixture.EdmModel.GetEdmModel(odataUri.Path);
+            var parser = new OeParser(odataUri.ServiceRoot, edmModel);
             var uri = new Uri(odataUri.ServiceRoot, request);
             OeRequestHeaders requestHeaders = OeRequestHeaders.JsonDefault.SetMaxPageSize(2);
 
@@ -157,7 +163,7 @@ namespace OdataToEntity.Test
             {
                 var response = new MemoryStream();
                 await parser.ExecuteGetAsync(uri, requestHeaders, response, CancellationToken.None).ConfigureAwait(false);
-                var reader = new ResponseReader(Fixture.EdmModel, Fixture.OeDataAdapter);
+                var reader = new ResponseReader(edmModel);
                 response.Position = 0;
 
                 List<Object> result = reader.Read(response).Cast<Object>().ToList();

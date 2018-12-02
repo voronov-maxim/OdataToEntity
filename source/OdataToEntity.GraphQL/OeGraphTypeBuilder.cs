@@ -51,12 +51,17 @@ namespace OdataToEntity.GraphQL
                     Type itemType = Parsers.OeExpressionHelper.GetCollectionItemType(propertyInfo.PropertyType);
                     if (itemType == null)
                     {
-                        resolvedType = _clrTypeToObjectGraphType[propertyInfo.PropertyType];
+                        if (!_clrTypeToObjectGraphType.TryGetValue(propertyInfo.PropertyType, out resolvedType))
+                            continue;
+
                         queryArguments = CreateQueryArguments(propertyInfo.PropertyType, true);
                     }
                     else
                     {
-                        resolvedType = new ListGraphType(_clrTypeToObjectGraphType[itemType]);
+                        if (!_clrTypeToObjectGraphType.TryGetValue(itemType, out resolvedType))
+                            continue;
+
+                        resolvedType = new ListGraphType(resolvedType);
                         queryArguments = CreateQueryArguments(itemType, true);
                     }
 
@@ -81,30 +86,33 @@ namespace OdataToEntity.GraphQL
             if (onlyStructural)
                 properties = properties.Where(p => p.PropertyType.IsValueType || p.PropertyType == typeof(String)).ToArray();
 
-            var queryArguments = new QueryArgument[properties.Length];
+            var queryArguments = new List<QueryArgument>(properties.Length);
             for (int i = 0; i < properties.Length; i++)
             {
                 QueryArgument queryArgument;
                 var entityGraphType = (IObjectGraphType)_clrTypeToObjectGraphType[entityType];
-                FieldType fieldType = entityGraphType.Fields.Single(f => f.Name == properties[i].Name);
-                if (fieldType.Type == null)
+                FieldType fieldType = entityGraphType.Fields.SingleOrDefault(f => f.Name == properties[i].Name);
+                if (fieldType != null)
                 {
-                    IGraphType resolvedType = fieldType.ResolvedType;
-                    if (resolvedType is NonNullGraphType nonNullGraphType)
-                        resolvedType = nonNullGraphType.ResolvedType;
-                    queryArgument = new QueryArgument(resolvedType.GetType()) { ResolvedType = resolvedType };
-                }
-                else
-                {
-                    if (fieldType.Type.IsGenericType && typeof(NonNullGraphType).IsAssignableFrom(fieldType.Type))
-                        queryArgument = new QueryArgument(fieldType.Type.GetGenericArguments()[0]);
+                    if (fieldType.Type == null)
+                    {
+                        IGraphType resolvedType = fieldType.ResolvedType;
+                        if (resolvedType is NonNullGraphType nonNullGraphType)
+                            resolvedType = nonNullGraphType.ResolvedType;
+                        queryArgument = new QueryArgument(resolvedType.GetType()) { ResolvedType = resolvedType };
+                    }
                     else
-                        queryArgument = new QueryArgument(fieldType.Type);
+                    {
+                        if (fieldType.Type.IsGenericType && typeof(NonNullGraphType).IsAssignableFrom(fieldType.Type))
+                            queryArgument = new QueryArgument(fieldType.Type.GetGenericArguments()[0]);
+                        else
+                            queryArgument = new QueryArgument(fieldType.Type);
+                    }
+                    queryArgument.Name = NameFirstCharLower(properties[i].Name);
+                    queryArguments.Add(queryArgument);
                 }
-                queryArgument.Name = NameFirstCharLower(properties[i].Name);
-                queryArguments[i] = queryArgument;
             }
-            return queryArguments;
+            return queryArguments.ToArray();
         }
         private IObjectGraphType CreateGraphType(Type entityType)
         {
@@ -116,12 +124,21 @@ namespace OdataToEntity.GraphQL
             objectGraphType = (IObjectGraphType)Activator.CreateInstance(objectGraphTypeType);
             objectGraphType.Name = NameFirstCharLower(entityType.Name);
             objectGraphType.IsTypeOf = t => t is IDictionary<String, Object>;
+            _clrTypeToObjectGraphType.Add(entityType, objectGraphType);
 
             foreach (PropertyInfo propertyInfo in entityType.GetProperties())
                 if (propertyInfo.PropertyType.IsValueType || propertyInfo.PropertyType == typeof(String))
                     objectGraphType.AddField(CreateStructuralFieldType(propertyInfo));
+                else
+                {
+                    Type navigationType = Parsers.OeExpressionHelper.GetCollectionItemType(propertyInfo.PropertyType);
+                    if (navigationType == null)
+                        navigationType = propertyInfo.PropertyType;
 
-            _clrTypeToObjectGraphType.Add(entityType, objectGraphType);
+                    if (!_clrTypeToObjectGraphType.ContainsKey(navigationType) && GetEntityTypeByName(navigationType.FullName, false) != null)
+                        CreateGraphType(navigationType);
+                }
+
             return objectGraphType;
         }
         public ListGraphType CreateListGraphType(Type entityType)
@@ -161,13 +178,32 @@ namespace OdataToEntity.GraphQL
 
             return fieldType;
         }
+        private IEdmEntityType GetEntityTypeByName(String fullName, bool throwException = true)
+        {
+            var entityType = (IEdmEntityType)_edmModel.FindDeclaredType(fullName);
+            if (entityType != null)
+                return entityType;
+
+            foreach (IEdmModel refModel in _edmModel.ReferencedModels)
+                if (refModel.EntityContainer != null)
+                {
+                    entityType = (IEdmEntityType)refModel.FindDeclaredType(fullName);
+                    if (entityType != null)
+                        return entityType;
+                }
+
+            if (throwException)
+                throw new InvalidOperationException("Entity type " + fullName + " not found in EdmModel");
+
+            return null;
+        }
         private Type GetEntityTypeFromResolvedType(IGraphType resolvedType)
         {
             return resolvedType.GetType().GetGenericArguments()[0];
         }
         private bool IsKey(PropertyInfo propertyInfo)
         {
-            var entityType = (IEdmEntityType)_edmModel.FindDeclaredType(propertyInfo.DeclaringType.FullName);
+            var entityType = GetEntityTypeByName(propertyInfo.DeclaringType.FullName);
             foreach (IEdmStructuralProperty key in entityType.Key())
                 if (String.Compare(key.Name, propertyInfo.Name, StringComparison.OrdinalIgnoreCase) == 0)
                     return true;
@@ -175,7 +211,7 @@ namespace OdataToEntity.GraphQL
         }
         private bool IsRequired(PropertyInfo propertyInfo)
         {
-            var entityType = (IEdmEntityType)_edmModel.FindDeclaredType(propertyInfo.DeclaringType.FullName);
+            var entityType = GetEntityTypeByName(propertyInfo.DeclaringType.FullName);
             IEdmProperty edmProperty = entityType.FindProperty(propertyInfo.Name);
             return !edmProperty.Type.IsNullable;
         }

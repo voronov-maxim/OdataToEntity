@@ -1234,6 +1234,16 @@ private const string SkipTest = null;
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
+        [Fact]
+        public async Task ReferencedModels()
+        {
+            var parameters = new QueryParameters<Order>()
+            {
+                RequestUri = "Orders2",
+                Expression = t => t
+            };
+            await Fixture.Execute(parameters).ConfigureAwait(false);
+        }
         [Theory]
         [InlineData(0)]
         [InlineData(1)]

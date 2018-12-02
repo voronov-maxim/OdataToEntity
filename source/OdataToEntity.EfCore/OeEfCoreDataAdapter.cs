@@ -9,7 +9,6 @@ using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.OData;
-using Microsoft.OData.Edm;
 using OdataToEntity.Parsers;
 using System;
 using System.Collections.Generic;
@@ -36,11 +35,10 @@ namespace OdataToEntity.EfCore
             private Func<Object[]> _valueBufferArrayInit;
             private IForeignKey _selfReferenceKey;
 
-            public DbSetAdapterImpl(Func<T, DbSet<TEntity>> getEntitySet, String entitySetName, String dataContextFullName)
+            public DbSetAdapterImpl(Func<T, DbSet<TEntity>> getEntitySet, String entitySetName)
             {
                 _getEntitySet = getEntitySet;
                 EntitySetName = entitySetName;
-                EntitySetFullName = dataContextFullName + "." + entitySetName;
             }
 
             public override void AddEntity(Object dataContext, ODataResourceBase entry)
@@ -177,7 +175,6 @@ namespace OdataToEntity.EfCore
             }
 
             public override Type EntityType => typeof(TEntity);
-            public override String EntitySetFullName { get; }
             public override String EntitySetName { get; }
         }
 
@@ -246,7 +243,7 @@ namespace OdataToEntity.EfCore
         private static Db.OeEntitySetAdapter CreateDbSetInvoker<TEntity>(PropertyInfo property) where TEntity : class
         {
             var getDbSet = (Func<T, DbSet<TEntity>>)property.GetGetMethod().CreateDelegate(typeof(Func<T, DbSet<TEntity>>));
-            return new DbSetAdapterImpl<TEntity>(getDbSet, property.Name, typeof(T).FullName);
+            return new DbSetAdapterImpl<TEntity>(getDbSet, property.Name);
         }
         public override Db.OeAsyncEnumerator ExecuteEnumerator(Object dataContext, OeQueryContext queryContext, CancellationToken cancellationToken)
         {
@@ -329,7 +326,7 @@ namespace OdataToEntity.EfCore
 
             return queryExecutor(efQueryContext);
         }
-        public override Task<int> SaveChangesAsync(IEdmModel edmModel, Object dataContext, CancellationToken cancellationToken)
+        public override Task<int> SaveChangesAsync(Object dataContext, CancellationToken cancellationToken)
         {
             var dbContext = (T)dataContext;
             return dbContext.SaveChangesAsync(cancellationToken);

@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.OData.UriParser;
+using Newtonsoft.Json;
 using OdataToEntity.Test.Model;
 using System;
 using System.Collections.Generic;
@@ -13,12 +14,12 @@ namespace OdataToEntity.Test
 {
     public sealed class ProcedureTest
     {
-        private static async Task<T[]> Execute<T>(String request, Object requestData, Func<OrderContext, IEnumerable<T>> fromDbFunc)
+        private static async Task<Object[]> Execute<T>(String request, Object requestData, Func<OrderContext, IEnumerable<T>> fromDbFunc)
         {
             var fixture = new NC_RDBNull_DbFixtureInitDb();
             await fixture.Initalize();
 
-            var parser = new OeParser(new Uri("http://dummy/"), fixture.OeDataAdapter, fixture.EdmModel);
+            var parser = new OeParser(new Uri("http://dummy/"), fixture.EdmModel);
             var responseStream = new MemoryStream();
 
             var requestUri = new Uri(@"http://dummy/" + request);
@@ -31,22 +32,23 @@ namespace OdataToEntity.Test
                 await parser.ExecutePostAsync(requestUri, OeRequestHeaders.JsonDefault, requestStream, responseStream, CancellationToken.None);
             }
 
-            var reader = new ResponseReader(fixture.EdmModel, fixture.DbDataAdapter);
+            ODataPath path = OeParser.ParsePath(fixture.EdmModel, new Uri("http://dummy/"), requestUri);
+            var reader = new ResponseReader(fixture.EdmModel.GetEdmModel(path));
             responseStream.Position = 0;
-            T[] fromOe;
+            Object[] fromOe;
             if (typeof(T) == typeof(int))
             {
                 String count = new StreamReader(responseStream).ReadToEnd();
-                fromOe = count == "" ? null : new T[] { (T)(Object)int.Parse(count) };
+                fromOe = count == "" ? null : new Object[] { int.Parse(count) };
             }
             else
-                fromOe = reader.Read<T>(responseStream).ToArray();
+                fromOe = reader.Read(responseStream).Cast<Object>().ToArray();
 
             if (fromDbFunc == null)
                 return fromOe;
 
             T[] fromDb;
-            using (var orderContext = (OrderContext)fixture.DbDataAdapter.CreateDataContext())
+            using (OrderContext orderContext = fixture.CreateContext())
                 fromDb = fromDbFunc(orderContext).ToArray();
 
             var settings = new JsonSerializerSettings()
@@ -93,7 +95,7 @@ namespace OdataToEntity.Test
         [Fact]
         public async Task GetOrders_status_get()
         {
-            String request = "dbo.GetOrders(name=null,id=null,status=OdataToEntity.Test.Model.OrderStatus'Processing')";
+            String request = "dbo.GetOrders(name=null,id=null,status='Processing')";
             await Execute<Order>(request, null, c => c.GetOrders(null, null,  OrderStatus.Processing));
         }
         [Fact]
@@ -110,7 +112,7 @@ namespace OdataToEntity.Test
             await Execute<int>(request, null, null);
 
             var fixture = new NC_RDBNull_DbFixtureInitDb();
-            using (var orderContext = (OrderContext)fixture.DbDataAdapter.CreateDataContext())
+            using (OrderContext orderContext = fixture.CreateContext())
             {
                 int count = orderContext.Categories.Count() +
                     orderContext.Customers.Count() +
@@ -126,7 +128,7 @@ namespace OdataToEntity.Test
             await Execute<int>(request, "", null);
 
             var fixture = new NC_RDBNull_DbFixtureInitDb();
-            using (var orderContext = (OrderContext)fixture.DbDataAdapter.CreateDataContext())
+            using (OrderContext orderContext = fixture.CreateContext())
             {
                 int count = orderContext.Categories.Count() +
                     orderContext.Customers.Count() +
@@ -139,26 +141,26 @@ namespace OdataToEntity.Test
         public async Task ScalarFunction_get()
         {
             String request = "dbo.ScalarFunction";
-            int[] result = await Execute<int>(request, null, null);
+            Object[] result = await Execute<int>(request, null, null);
 
             var fixture = new NC_RDBNull_DbFixtureInitDb();
-            using (var orderContext = (OrderContext)fixture.DbDataAdapter.CreateDataContext())
+            using (OrderContext orderContext = fixture.CreateContext())
             {
                 int count = orderContext.ScalarFunction();
-                Assert.Equal(count, result[0]);
+                Assert.Equal(count, (int)result[0]);
             }
         }
         [Fact]
         public async Task ScalarFunctionWithParameters_get()
         {
             String request = "dbo.ScalarFunctionWithParameters(name='Order 1',id=1,status=null)";
-            int[] result = await Execute<int>(request, null, null);
+            Object[] result = await Execute<int>(request, null, null);
 
             var fixture = new NC_RDBNull_DbFixtureInitDb();
-            using (var orderContext = (OrderContext)fixture.DbDataAdapter.CreateDataContext())
+            using (OrderContext orderContext = fixture.CreateContext())
             {
                 int count = orderContext.ScalarFunctionWithParameters(1, "Order 1", null);
-                Assert.Equal(count, result[0]);
+                Assert.Equal(count, (int)result[0]);
             }
         }
         [Fact]
@@ -166,13 +168,13 @@ namespace OdataToEntity.Test
         {
             String request = "dbo.ScalarFunctionWithParameters";
             var requestData = new { id = (int?)1, name = "Order 1", status = (OrderStatus?)null };
-            int[] result = await Execute<int>(request, requestData, null);
+            Object[] result = await Execute<int>(request, requestData, null);
 
             var fixture = new NC_RDBNull_DbFixtureInitDb();
-            using (var orderContext = (OrderContext)fixture.DbDataAdapter.CreateDataContext())
+            using (OrderContext orderContext = fixture.CreateContext())
             {
                 int count = orderContext.ScalarFunctionWithParameters(1, "Order 1", null);
-                Assert.Equal(count, result[0]);
+                Assert.Equal(count, (int)result[0]);
             }
         }
         [Fact]

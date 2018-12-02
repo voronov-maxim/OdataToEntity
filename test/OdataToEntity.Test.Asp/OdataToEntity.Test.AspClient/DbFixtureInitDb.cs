@@ -1,5 +1,6 @@
 ﻿using Microsoft.OData.Client;
 using Microsoft.OData.Edm;
+using Microsoft.OData.UriParser;
 using ODataClient.Default;
 using OdataToEntity.Test.Model;
 using System;
@@ -126,7 +127,8 @@ namespace OdataToEntity.Test
                     {
                         using (Stream content = await httpResponseMessage.Content.ReadAsStreamAsync())
                         {
-                            var responseReader = new ResponseReader(EdmModel, DataAdapter);
+                            ODataPath path = OeParser.ParsePath(EdmModel, client.BaseAddress, new Uri(client.BaseAddress, parameters.RequestUri));
+                            var responseReader = new ResponseReader(EdmModel.GetEdmModel(path));
                             return responseReader.Read<T>(content).Cast<Object>().ToList();
                         }
                     }

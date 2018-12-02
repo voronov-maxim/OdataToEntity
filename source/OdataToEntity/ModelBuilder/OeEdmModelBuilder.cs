@@ -57,14 +57,26 @@ namespace OdataToEntity.ModelBuilder
 
             return edmAction;
         }
-        public EdmModel BuildEdmModel()
+        public EdmModel BuildEdmModel(params IEdmModel[] refModels)
         {
             AddOperations();
 
             Dictionary<Type, EntityTypeInfo> entityTypeInfos = BuildEntityTypes();
+            foreach (IEdmModel refModel in refModels)
+                if (refModel.EntityContainer != null)
+                    foreach (IEdmSchemaElement schemaElement in refModel.SchemaElements)
+                    {
+                        if (schemaElement is EdmEntityType entityType)
+                        {
+                            Type clrType = refModel.GetClrType(entityType);
+                            if (clrType != null)
+                                entityTypeInfos[clrType] = new EntityTypeInfo(_metadataProvider, clrType, entityType, true);
+                        }
+                    }
 
             foreach (EntityTypeInfo typeInfo in entityTypeInfos.Values)
-                typeInfo.BuildProperties(entityTypeInfos, _enumTypes, _complexTypes);
+                if (!typeInfo.IsRefModel)
+                    typeInfo.BuildProperties(entityTypeInfos, _enumTypes, _complexTypes);
 
             foreach (EntityTypeInfo typeInfo in entityTypeInfos.Values)
                 foreach (FKeyInfo fkeyInfo in typeInfo.NavigationClrProperties)
@@ -118,7 +130,8 @@ namespace OdataToEntity.ModelBuilder
                     }
                 }
 
-                manyToManyBuilder.Build(typeInfo);
+                if (!typeInfo.IsRefModel)
+                    manyToManyBuilder.Build(typeInfo);
             }
 
             foreach (OeOperationConfiguration operationConfiguration in _operationConfigurations)
@@ -150,6 +163,9 @@ namespace OdataToEntity.ModelBuilder
             }
 
             edmModel.AddElement(container);
+            _dataAdapter.SetEdmModel(edmModel);
+            foreach (IEdmModel refModel in refModels)
+                edmModel.AddReferencedModel(refModel);
             return edmModel;
         }
         private Dictionary<Type, EntityTypeInfo> BuildEntityTypes()
@@ -173,7 +189,7 @@ namespace OdataToEntity.ModelBuilder
                     else
                     {
                         edmType = new EdmEntityType(baseClrType.Namespace, baseClrType.Name, edmType, baseClrType.IsAbstract, false);
-                        entityTypeInfo = new EntityTypeInfo(_metadataProvider, baseClrType, edmType);
+                        entityTypeInfo = new EntityTypeInfo(_metadataProvider, baseClrType, edmType, false);
                         entityTypeInfos.Add(baseClrType, entityTypeInfo);
                     }
             }

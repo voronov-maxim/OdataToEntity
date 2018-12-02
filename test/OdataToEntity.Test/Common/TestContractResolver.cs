@@ -114,17 +114,17 @@ namespace OdataToEntity.Test
         }
 
         private static readonly ConcurrentDictionary<Type, IComparer> _entityComaprers = new ConcurrentDictionary<Type, IComparer>();
-        private readonly Dictionary<PropertyInfo, Func<IEnumerable, IList>> _includes;
+        private readonly Dictionary<String, Func<IEnumerable, IList>> _includes;
         private readonly ModelBuilder.OeEdmModelMetadataProvider _metadataProvider;
 
         public TestContractResolver(ModelBuilder.OeEdmModelMetadataProvider metadataProvider, IReadOnlyList<IncludeVisitor.Include> includes)
         {
             _metadataProvider = metadataProvider;
 
-            _includes = new Dictionary<PropertyInfo, Func<IEnumerable, IList>>();
+            _includes = new Dictionary<String, Func<IEnumerable, IList>>();
             if (includes != null)
                 foreach (IncludeVisitor.Include include in includes)
-                    _includes[include.Property] = include.Filter;
+                    _includes[include.Property.DeclaringType.FullName + "." + include.Property.Name] = include.Filter;
         }
 
         protected override JsonDictionaryContract CreateDictionaryContract(Type objectType)
@@ -140,8 +140,9 @@ namespace OdataToEntity.Test
                 foreach (JsonProperty jproperty in jproperties)
                 {
                     PropertyInfo clrProperty = type.GetProperty(jproperty.PropertyName);
+                    String propertyFullName = clrProperty.DeclaringType.FullName + "." + clrProperty.Name;
 
-                    if (_includes.TryGetValue(clrProperty, out Func<IEnumerable, IList> lambda))
+                    if (_includes.TryGetValue(propertyFullName, out Func<IEnumerable, IList> lambda))
                     {
                         if (typeof(IEnumerable).IsAssignableFrom(clrProperty.PropertyType))
                             jproperty.ValueProvider = new EmptyCollectionValueProvider(this, jproperty.ValueProvider, lambda);

@@ -40,13 +40,13 @@ namespace OdataToEntity.Test
         [Fact]
         public void FluentApi()
         {
-            var ethalonDataAdapter = new OrderDbDataAdapter(false, false, null);
+            var ethalonDataAdapter = new OrderDataAdapter(false, false, null);
             EdmModel ethalonEdmModel = ethalonDataAdapter.BuildEdmModel();
             String ethalonSchema = TestHelper.GetCsdlSchema(ethalonEdmModel);
             if (ethalonSchema == null)
                 throw new InvalidOperationException("Invalid ethalon schema");
 
-            var testDataAdapter = new OrderDbDataAdapter(false, false, null);
+            var testDataAdapter = new OrderDataAdapter(false, false, null);
             EdmModel testEdmModel = testDataAdapter.BuildEdmModelFromEfCoreModel();
             String testSchema = TestHelper.GetCsdlSchema(testEdmModel);
             if (testSchema == null)

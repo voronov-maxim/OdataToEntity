@@ -1,6 +1,7 @@
 ﻿using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
+using Microsoft.OData.Edm;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
 using System;
@@ -66,9 +67,19 @@ namespace OdataToEntity.Test.Model
         //private static readonly LoggerFactory MyLoggerFactory = new LoggerFactory(new[] {new ConsoleLoggerProvider((category, level)
         //    => true, true) });
 
+        public static EdmModel BuildEdmModel(Db.OeDataAdapter dataAdapter, ModelBuilder.OeEdmModelMetadataProvider metadataProvider)
+        {
+            var order2DataAdapter = new Order2DataAdapter(false, true, "test2");
+            var refModel = new ModelBuilder.OeEdmModelBuilder(dataAdapter, metadataProvider).BuildEdmModel();
+            return order2DataAdapter.BuildEdmModel(refModel);
+        }
         public static DbContextOptions Create(bool useRelationalNulls, String databaseName)
         {
-            var optionsBuilder = new DbContextOptionsBuilder<OrderContext>();
+            return Create<OrderContext>(useRelationalNulls, databaseName);
+        }
+        public static DbContextOptions Create<T>(bool useRelationalNulls, String databaseName) where T : DbContext
+        {
+            var optionsBuilder = new DbContextOptionsBuilder<T>();
             optionsBuilder.UseSqlite(GetConnection(databaseName));
             optionsBuilder.ReplaceService<IEntityQueryModelVisitorFactory, ZQueryModelVisitorFactory>();
             //optionsBuilder.UseLoggerFactory(MyLoggerFactory);
@@ -92,14 +103,6 @@ namespace OdataToEntity.Test.Model
             }
 
             return connection;
-        }
-    }
-
-    public sealed class OrderDbDataAdapter : EfCore.OeEfCoreDataAdapter<OrderContext>
-    {
-        public OrderDbDataAdapter(bool allowCache, bool useRelationalNulls, String databaseName) :
-            base(OrderContextOptions.Create(useRelationalNulls, databaseName), new Cache.OeQueryCache(allowCache))
-        {
         }
     }
 }

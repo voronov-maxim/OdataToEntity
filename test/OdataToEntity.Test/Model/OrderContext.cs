@@ -60,4 +60,31 @@ namespace OdataToEntity.Test.Model
         public DbSet<OrderItem> OrderItems { get; set; }
         public DbSet<ShippingAddress> ShippingAddresses { get; set; }
     }
+
+    public sealed class Order2Context : DbContext
+    {
+        public Order2Context(DbContextOptions options) : base(options)
+        {
+            base.ChangeTracker.AutoDetectChangesEnabled = false;
+            base.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+        }
+
+        protected override void OnModelCreating(Microsoft.EntityFrameworkCore.ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Customer>().HasKey(c => new { c.Country, c.Id });
+            modelBuilder.Entity<ShippingAddress>().HasKey(s => new { s.OrderId, s.Id });
+            modelBuilder.Entity<CustomerShippingAddress>().HasKey(t => new { t.CustomerCountry, t.CustomerId, t.ShippingAddressOrderId, t.ShippingAddressId });
+
+            modelBuilder.Entity<Order>().HasData(
+                new Order() { Id = 1, Name = "Order from Order2 context", CustomerCountry = "AL", CustomerId = 42, Status = OrderStatus.Cancelled }
+                );
+
+            modelBuilder.Entity<Customer>().HasData(
+                new Customer() { Id = 42, Country = "AL", Name = "Dua Lipa" }
+                );
+        }
+
+        public DbSet<Order> Orders2 { get; set; }
+        public DbSet<Customer> Customer2 { get; set; }
+    }
 }

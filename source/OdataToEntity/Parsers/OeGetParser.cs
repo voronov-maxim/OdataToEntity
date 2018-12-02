@@ -13,12 +13,10 @@ namespace OdataToEntity
 {
     public readonly struct OeGetParser
     {
-        private readonly Db.OeDataAdapter _dataAdapter;
         private readonly IEdmModel _edmModel;
 
-        public OeGetParser(Db.OeDataAdapter dataAdapter, IEdmModel model)
+        public OeGetParser(IEdmModel model)
         {
-            _dataAdapter = dataAdapter;
             _edmModel = model;
         }
 
@@ -96,35 +94,36 @@ namespace OdataToEntity
                 odataUri.OrderBy = OeSkipTokenParser.GetUniqueOrderBy(_edmModel, resultEntitySet, odataUri.OrderBy, odataUri.Apply);
             }
 
-            Db.OeEntitySetAdapter entitySetAdapter = _dataAdapter.EntitySetAdapters.FindByEntitySet(entitySetSegment.EntitySet);
+            Db.OeEntitySetAdapter entitySetAdapter = _edmModel.GetEntitySetAdapter(entitySetSegment.EntitySet);
             bool isCountSegment = odataUri.Path.LastSegment is CountSegment;
-            return new OeQueryContext(_edmModel, odataUri, navigationSegments,
-                isCountSegment, pageSize, navigationNextLink, _dataAdapter.IsDatabaseNullHighestValue, metadataLevel, entitySetAdapter);
+            return new OeQueryContext(_edmModel, odataUri, navigationSegments, isCountSegment, pageSize, navigationNextLink, metadataLevel, entitySetAdapter);
         }
         public async Task ExecuteAsync(ODataUri odataUri, OeRequestHeaders headers, Stream stream, CancellationToken cancellationToken)
         {
+            OeQueryContext queryContext = CreateQueryContext(odataUri, headers.MaxPageSize, headers.NavigationNextLink, headers.MetadataLevel);
+            Db.OeDataAdapter dataAdapter = _edmModel.GetDataAdapter(queryContext.EdmModel.EntityContainer);
+
             Object dataContext = null;
             try
             {
-                dataContext = _dataAdapter.CreateDataContext();
-                OeQueryContext queryContext = CreateQueryContext(odataUri, headers.MaxPageSize, headers.NavigationNextLink, headers.MetadataLevel);
+                dataContext = dataAdapter.CreateDataContext();
                 if (queryContext.IsCountSegment)
                 {
                     headers.ResponseContentType = OeRequestHeaders.TextDefault.ContentType;
-                    int count = _dataAdapter.ExecuteScalar<int>(dataContext, queryContext);
+                    int count = dataAdapter.ExecuteScalar<int>(dataContext, queryContext);
                     byte[] buffer = System.Text.Encoding.UTF8.GetBytes(count.ToString(CultureInfo.InvariantCulture));
                     stream.Write(buffer, 0, buffer.Length);
                 }
                 else
                 {
-                    using (Db.OeAsyncEnumerator asyncEnumerator = _dataAdapter.ExecuteEnumerator(dataContext, queryContext, cancellationToken))
+                    using (Db.OeAsyncEnumerator asyncEnumerator = dataAdapter.ExecuteEnumerator(dataContext, queryContext, cancellationToken))
                         await Writers.OeGetWriter.SerializeAsync(queryContext, asyncEnumerator, headers.ContentType, stream).ConfigureAwait(false);
                 }
             }
             finally
             {
                 if (dataContext != null)
-                    _dataAdapter.CloseDataContext(dataContext);
+                    dataAdapter.CloseDataContext(dataContext);
             }
         }
     }

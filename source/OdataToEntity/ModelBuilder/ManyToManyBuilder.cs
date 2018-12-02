@@ -35,6 +35,7 @@ namespace OdataToEntity.ModelBuilder
 
                 EntityTypeInfo principalInfo = _entityTypeInfos[join.PropertyType];
                 EntityTypeInfo dependentInfo = _entityTypeInfos[many.DeclaringType];
+
                 var edmDependentInfo = new EdmNavigationPropertyInfo()
                 {
                     ContainsTarget = true,

@@ -29,7 +29,7 @@ namespace OdataToEntity.AspServer
         {
             services.AddMvcCore();
 
-            _dataAdapter = new OrderOeDataAdapter(true, true, null);
+            _dataAdapter = new OrderDataAdapter(true, true, null);
             services.AddSingleton(typeof(Db.OeDataAdapter), _dataAdapter);
         }
 
@@ -39,7 +39,7 @@ namespace OdataToEntity.AspServer
             loggerFactory.AddConsole(Configuration.GetSection("Logging"));
             loggerFactory.AddDebug();
 
-            app.UseOdataToEntityMiddleware("/api", _dataAdapter, _dataAdapter.BuildEdmModelFromEfCoreModel());
+            app.UseOdataToEntityMiddleware("/api", _dataAdapter.BuildEdmModelFromEfCoreModel());
             app.UseMvcWithDefaultRoute();
         }
     }

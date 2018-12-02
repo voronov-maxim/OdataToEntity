@@ -6,13 +6,11 @@ namespace OdataToEntity.GraphQL
 {
     public readonly struct OeSchemaBuilder
     {
-        private readonly Db.OeDataAdapter _dataAdapter;
         private readonly IEdmModel _edmModel;
         private readonly OeGraphTypeBuilder _graphTypeBuilder;
 
-        public OeSchemaBuilder(Db.OeDataAdapter dataAdapter, IEdmModel edmModel)
+        public OeSchemaBuilder(IEdmModel edmModel)
         {
-            _dataAdapter = dataAdapter;
             _edmModel = edmModel;
             _graphTypeBuilder = new OeGraphTypeBuilder(edmModel);
         }
@@ -24,20 +22,29 @@ namespace OdataToEntity.GraphQL
                 Query = CreateQuery()
             };
         }
-        private ObjectGraphType CreateQuery()
+        private static List<FieldType> CreateEntityFields(IEdmModel edmModel, OeGraphTypeBuilder graphTypeBuilder)
         {
-            var entityFields = new List<FieldType>(_dataAdapter.EntitySetAdapters.Count);
-            foreach (Db.OeEntitySetAdapter entitySetAdapter in _dataAdapter.EntitySetAdapters)
+            Db.OeDataAdapter dataAdapter = edmModel.GetDataAdapter(edmModel.EntityContainer);
+            var entityFields = new List<FieldType>(dataAdapter.EntitySetAdapters.Count);
+            foreach (Db.OeEntitySetAdapter entitySetAdapter in dataAdapter.EntitySetAdapters)
             {
                 FieldType entityField = new FieldType()
                 {
                     Name = entitySetAdapter.EntitySetName,
-                    Resolver = new OeEntitySetResolver(_dataAdapter, _edmModel),
-                    ResolvedType = _graphTypeBuilder.CreateListGraphType(entitySetAdapter.EntityType)
+                    Resolver = new OeEntitySetResolver(edmModel),
+                    ResolvedType = graphTypeBuilder.CreateListGraphType(entitySetAdapter.EntityType)
                 };
 
                 entityFields.Add(entityField);
             }
+            return entityFields;
+        }
+        private ObjectGraphType CreateQuery()
+        {
+            var entityFields = new List<FieldType>(CreateEntityFields(_edmModel, _graphTypeBuilder));
+            foreach (IEdmModel refModel in _edmModel.ReferencedModels)
+                if (refModel.EntityContainer != null)
+                    entityFields.AddRange(CreateEntityFields(refModel, _graphTypeBuilder));
 
             var query = new ObjectGraphType();
             foreach (FieldType entityField in entityFields)

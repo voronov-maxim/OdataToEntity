@@ -14,7 +14,7 @@ namespace OdataToEntity.Test.WcfClient
         {
             WcfService.OdataWcfQuery result = await Program.Interceptor.Get(parameters.RequestUri);
 
-            var responseReader = new ResponseReader(base.EdmModel, base.DataAdapter);
+            var responseReader = new ResponseReader(base.EdmModel);
             return responseReader.Read<T>(result.Content).Cast<Object>().ToList();
         }
     }

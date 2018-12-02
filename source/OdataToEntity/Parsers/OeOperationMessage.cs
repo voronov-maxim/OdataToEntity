@@ -48,8 +48,9 @@ namespace OdataToEntity.Parsers
         }
         private static ODataResource ReadEntityFromStream(IEdmModel edmModel, Uri baseUri, Stream content, Uri requestUrl, String contentType, out IEdmEntitySet entitySet)
         {
-            var parser = new ODataUriParser(edmModel, baseUri, requestUrl);
-            IEdmEntityTypeReference entityTypeRef = GetEdmEntityTypeRef(parser.ParsePath(), out entitySet);
+            ODataUri odataUri = OeParser.ParseUri(edmModel, baseUri, requestUrl);
+            IEdmEntityTypeReference entityTypeRef = GetEdmEntityTypeRef(odataUri.Path, out entitySet);
+            edmModel = edmModel.GetEdmModel(entitySet);
 
             ODataResource entry = null;
             IODataRequestMessage requestMessage = new OeInMemoryMessage(content, contentType);
@@ -68,8 +69,7 @@ namespace OdataToEntity.Parsers
         }
         private static ODataResource ReadEntityFromUrl(IEdmModel edmModel, Uri baseUri, Uri requestUrl, out IEdmEntitySet entitySet)
         {
-            var parser = new ODataUriParser(edmModel, baseUri, requestUrl);
-            ODataPath path = parser.ParsePath();
+            ODataPath path = OeParser.ParsePath(edmModel, baseUri, requestUrl);
             var keySegment = (KeySegment)path.LastSegment;
             entitySet = (IEdmEntitySet)keySegment.NavigationSource;
 

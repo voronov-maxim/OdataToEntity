@@ -10,7 +10,8 @@ namespace OdataToEntity.Test
         private bool _initialized;
         private int _queryCount;
 
-        protected DbFixtureInitDb(bool allowCache, bool useRelationalNulls) : base(allowCache, useRelationalNulls)
+        protected DbFixtureInitDb(bool allowCache, bool useRelationalNulls)
+            : base(allowCache, useRelationalNulls)
         {
         }
 
@@ -20,7 +21,7 @@ namespace OdataToEntity.Test
                 return;
 
             _initialized = true;
-            var parser = new OeParser(new Uri("http://dummy/"), base.OeDataAdapter, base.EdmModel);
+            var parser = new OeParser(new Uri("http://dummy/"), base.EdmModel);
             await parser.ExecuteOperationAsync(base.ParseUri("ResetDb"), OeRequestHeaders.JsonDefault, null, new MemoryStream(), CancellationToken.None);
             await base.ExecuteBatchAsync("Add");
         }
@@ -42,8 +43,9 @@ namespace OdataToEntity.Test
 
         public void Dispose()
         {
-            if (base.OeDataAdapter.QueryCache.AllowCache)
-                Xunit.Assert.InRange(_queryCount, _queryCount, base.OeDataAdapter.QueryCache.CacheCount);
+            int queryCount = TestHelper.GetQueryCacheCount(base.EdmModel);
+            if (queryCount != -1)
+                Xunit.Assert.InRange(_queryCount, _queryCount, queryCount);
         }
     }
 
@@ -62,7 +64,7 @@ namespace OdataToEntity.Test
                 return;
 
             _initialized = true;
-            var parser = new OeParser(new Uri("http://dummy/"), base.OeDataAdapter, base.EdmModel);
+            var parser = new OeParser(new Uri("http://dummy/"), base.EdmModel);
             await parser.ExecuteOperationAsync(base.ParseUri("ResetManyColumns"), OeRequestHeaders.JsonDefault, null, new MemoryStream(), CancellationToken.None);
             await base.ExecuteBatchAsync("ManyColumns");
         }
@@ -84,8 +86,9 @@ namespace OdataToEntity.Test
 
         public void Dispose()
         {
-            if (base.OeDataAdapter.QueryCache.AllowCache)
-                Xunit.Assert.InRange(_queryCount, _queryCount, base.OeDataAdapter.QueryCache.CacheCount);
+            int queryCount = TestHelper.GetQueryCacheCount(base.EdmModel);
+            if (queryCount != -1)
+                Xunit.Assert.InRange(_queryCount, _queryCount, queryCount);
         }
     }
 }

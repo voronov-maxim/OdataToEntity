@@ -16,10 +16,10 @@ namespace OdataToEntity
         private readonly IEdmModel _edmModel;
         private readonly Db.OeDataAdapter _dataAdapter;
 
-        public OePostParser(Db.OeDataAdapter dataAdapter, IEdmModel edmModel)
+        public OePostParser(IEdmModel edmModel)
         {
-            _dataAdapter = dataAdapter;
             _edmModel = edmModel;
+            _dataAdapter = edmModel.GetDataAdapter(edmModel.EntityContainer);
         }
 
         public OeQueryContext CreateQueryContext(ODataUri odataUri, OeMetadataLevel metadataLevel)
@@ -33,8 +33,7 @@ namespace OdataToEntity
             OePropertyAccessor[] accessors = OePropertyAccessor.CreateFromType(clrType, entitySet);
 
             Db.OeEntitySetAdapter entitySetAdapter = _dataAdapter.EntitySetAdapters.FindByEntitySet(entitySet);
-            return new OeQueryContext(_edmModel, odataUri, null, false, 0, false,
-                _dataAdapter.IsDatabaseNullHighestValue, metadataLevel, entitySetAdapter)
+            return new OeQueryContext(_edmModel, odataUri, null, false, 0, false, metadataLevel, entitySetAdapter)
             {
                 EntryFactory = OeEntryFactory.CreateEntryFactory(entitySet, accessors),
             };

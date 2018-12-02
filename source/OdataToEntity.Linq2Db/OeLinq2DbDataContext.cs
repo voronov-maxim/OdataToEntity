@@ -1,5 +1,4 @@
-﻿using LinqToDB;
-using LinqToDB.Data;
+﻿using LinqToDB.Data;
 using Microsoft.OData.Edm;
 using OdataToEntity.Db;
 using System;
@@ -16,50 +15,29 @@ namespace OdataToEntity.Linq2Db
 
     public sealed class OeLinq2DbDataContext
     {
-        private readonly struct ClrTypeEdmSet
+        private readonly struct ClrTableTypeEdmSet
         {
-            public ClrTypeEdmSet(Type clrType, IEdmEntitySet edmSet)
+            public ClrTableTypeEdmSet(Type clrTableType, IEdmEntitySet edmSet)
             {
-                ClrType = clrType;
+                ClrTableType = clrTableType;
                 EdmEntitySet = edmSet;
             }
 
-            public Type ClrType { get; }
+            public Type ClrTableType { get; }
             public IEdmEntitySet EdmEntitySet { get; }
         }
 
+        private static ClrTableTypeEdmSet[] _orderedTableTypes;
         private readonly Dictionary<Type, OeLinq2DbTable> _tables;
 
-        public OeLinq2DbDataContext()
+        public OeLinq2DbDataContext(IEdmModel edmModel, OeEntitySetAdapterCollection entitySetAdapters)
         {
-            _tables = new Dictionary<Type, OeLinq2DbTable>();
+            if (_orderedTableTypes == null)
+                _orderedTableTypes = GetOrderedTableTypes(edmModel, entitySetAdapters);
+
+            _tables = new Dictionary<Type, OeLinq2DbTable>(_orderedTableTypes.Length);
         }
 
-        private List<ClrTypeEdmSet> GetClrTypeEdmSetList(IEdmModel edmModel, OeEntitySetAdapterCollection entitySetAdapters)
-        {
-            var clrTypeEdmSetList = new List<ClrTypeEdmSet>();
-            foreach (Type entityType in _tables.Keys)
-                foreach (OeEntitySetAdapter entitySetAdapter in entitySetAdapters)
-                    if (entitySetAdapter.EntityType == entityType)
-                    {
-                        IEdmEntitySet entitySet = edmModel.FindDeclaredEntitySet(entitySetAdapter.EntitySetName);
-                        clrTypeEdmSetList.Add(new ClrTypeEdmSet(entityType, entitySet));
-                    }
-
-            var orderedTypes = new List<ClrTypeEdmSet>();
-            while (clrTypeEdmSetList.Count > 0)
-                for (int i = 0; i < clrTypeEdmSetList.Count; i++)
-                    if (IsDependent(clrTypeEdmSetList[i], clrTypeEdmSetList, out PropertyInfo selfRefProperty))
-                    {
-                        if (selfRefProperty != null)
-                            _tables[selfRefProperty.DeclaringType].SelfRefProperty = selfRefProperty;
-
-                        orderedTypes.Add(clrTypeEdmSetList[i]);
-                        clrTypeEdmSetList.RemoveAt(i);
-                        break;
-                    }
-            return orderedTypes;
-        }
         private static List<PropertyInfo> GetDependentProperties(Type clrType, IEdmNavigationProperty navigationProperty)
         {
             var clrProperties = new List<PropertyInfo>();
@@ -71,12 +49,12 @@ namespace OdataToEntity.Linq2Db
                     clrProperties.Add(clrType.GetProperty(edmProperty.Name));
             return clrProperties;
         }
-        private static List<PropertyInfo> GetDependentProperties(PropertyInfo propertyInfo, List<ClrTypeEdmSet> clrTypeEdmSetList, int lastIndex)
+        private static List<PropertyInfo> GetDependentProperties(PropertyInfo propertyInfo, ClrTableTypeEdmSet[] clrTypeEdmSets, int lastIndex)
         {
             var dependentProperties = new List<PropertyInfo>();
 
             for (int i = 0; i < lastIndex; i++)
-                foreach (IEdmNavigationPropertyBinding navigationBinding in clrTypeEdmSetList[i].EdmEntitySet.NavigationPropertyBindings)
+                foreach (IEdmNavigationPropertyBinding navigationBinding in clrTypeEdmSets[i].EdmEntitySet.NavigationPropertyBindings)
                 {
                     IEdmReferentialConstraint referentialConstraint = navigationBinding.NavigationProperty.ReferentialConstraint;
                     if (referentialConstraint != null)
@@ -87,7 +65,7 @@ namespace OdataToEntity.Linq2Db
                                 propertyInfo.DeclaringType.Name == schemaElement.Name &&
                                 propertyInfo.DeclaringType.Namespace == schemaElement.Namespace)
                             {
-                                dependentProperties.Add(clrTypeEdmSetList[i].ClrType.GetProperty(propertyPair.DependentProperty.Name));
+                                dependentProperties.Add(clrTypeEdmSets[i].ClrTableType.GetProperty(propertyPair.DependentProperty.Name));
                                 break;
                             }
                         }
@@ -95,7 +73,38 @@ namespace OdataToEntity.Linq2Db
 
             return dependentProperties;
         }
-        public OeLinq2DbTable<T> GetTable<T>() where T : class
+        private static ClrTableTypeEdmSet[] GetOrderedTableTypes(IEdmModel edmModel, OeEntitySetAdapterCollection entitySetAdapters)
+        {
+            var clrTypeEdmSetList = new List<ClrTableTypeEdmSet>();
+            foreach (OeEntitySetAdapter entitySetAdapter in entitySetAdapters)
+            {
+                IEdmEntitySet entitySet = OeEdmClrHelper.GetEntitySet(edmModel, entitySetAdapter.EntitySetName);
+                clrTypeEdmSetList.Add(new ClrTableTypeEdmSet(entitySetAdapter.EntityType, entitySet));
+            }
+
+            var orderedTableTypeList = new List<ClrTableTypeEdmSet>();
+            while (clrTypeEdmSetList.Count > 0)
+                for (int i = 0; i < clrTypeEdmSetList.Count; i++)
+                    if (IsDependent(clrTypeEdmSetList[i], clrTypeEdmSetList, out PropertyInfo selfRefProperty))
+                    {
+                        Type linq2DbTableType = typeof(OeLinq2DbTable<>).MakeGenericType(clrTypeEdmSetList[i].ClrTableType);
+                        if (selfRefProperty != null)
+                            linq2DbTableType.GetProperty(nameof(OeLinq2DbTable<Object>.SelfRefProperty)).SetValue(null, selfRefProperty);
+
+                        orderedTableTypeList.Add(clrTypeEdmSetList[i]);
+                        clrTypeEdmSetList.RemoveAt(i);
+                        break;
+                    }
+            return orderedTableTypeList.ToArray();
+        }
+        public OeLinq2DbTable GetTable(Type entityType)
+        {
+            if (_tables.TryGetValue(entityType, out OeLinq2DbTable table))
+                return table;
+
+            return null;
+        }
+        internal OeLinq2DbTable<T> GetTable<T>() where T : class
         {
             if (_tables.TryGetValue(typeof(T), out OeLinq2DbTable value))
                 return (OeLinq2DbTable<T>)value;
@@ -104,21 +113,14 @@ namespace OdataToEntity.Linq2Db
             _tables.Add(typeof(T), table);
             return table;
         }
-        public OeLinq2DbTable GetTable(Type entityType)
-        {
-            if (_tables.TryGetValue(entityType, out OeLinq2DbTable table))
-                return table;
-
-            throw new InvalidOperationException("Table entity type " + entityType.FullName + " not found");
-        }
-        private static bool IsDependent(ClrTypeEdmSet clrTypeEdmSet, List<ClrTypeEdmSet> clrTypeEdmSetList, out PropertyInfo selfRefProperty)
+        private static bool IsDependent(ClrTableTypeEdmSet clrTypeEdmSet, List<ClrTableTypeEdmSet> clrTypeEdmSetList, out PropertyInfo selfRefProperty)
         {
             selfRefProperty = null;
             foreach (IEdmNavigationPropertyBinding navigationBinding in clrTypeEdmSet.EdmEntitySet.NavigationPropertyBindings)
             {
                 if (navigationBinding.NavigationProperty.IsPrincipal() || navigationBinding.NavigationProperty.Partner == null)
                 {
-                    foreach (ClrTypeEdmSet clrTypeEdmSet2 in clrTypeEdmSetList)
+                    foreach (ClrTableTypeEdmSet clrTypeEdmSet2 in clrTypeEdmSetList)
                         if (clrTypeEdmSet2.EdmEntitySet == navigationBinding.Target && clrTypeEdmSet.EdmEntitySet != navigationBinding.Target)
                             return false;
                 }
@@ -127,52 +129,54 @@ namespace OdataToEntity.Linq2Db
                     if (clrTypeEdmSet.EdmEntitySet == navigationBinding.Target)
                     {
                         IEdmStructuralProperty edmSelfRefProperty = navigationBinding.NavigationProperty.DependentProperties().Single();
-                        selfRefProperty = clrTypeEdmSet.ClrType.GetProperty(edmSelfRefProperty.Name);
+                        selfRefProperty = clrTypeEdmSet.ClrTableType.GetProperty(edmSelfRefProperty.Name);
                     }
                 }
 
             }
             return true;
         }
-        public int SaveChanges(IEdmModel edmModel, OeEntitySetAdapterCollection entitySetAdapters, DataConnection dataConnection)
+        public int SaveChanges(DataConnection dataConnection)
         {
-            List<ClrTypeEdmSet> clrTypeEdmSetList = GetClrTypeEdmSetList(edmModel, entitySetAdapters);
             int count = 0;
 
-            for (int i = clrTypeEdmSetList.Count - 1; i >= 0; i--)
+            for (int i = _orderedTableTypes.Length - 1; i >= 0; i--)
             {
-                OeLinq2DbTable table = GetTable(clrTypeEdmSetList[i].ClrType);
+                OeLinq2DbTable table = GetTable(_orderedTableTypes[i].ClrTableType);
+                if (table != null)
+                {
+                    count += table.SaveInserted(dataConnection);
+                    UpdateIdentities(table, i);
 
-                count += table.SaveInserted(dataConnection);
-                UpdateIdentities(table, clrTypeEdmSetList, i);
-
-                count += table.SaveUpdated(dataConnection);
+                    count += table.SaveUpdated(dataConnection);
+                }
             }
 
-            for (int i = 0; i < clrTypeEdmSetList.Count; i++)
+            for (int i = 0; i < _orderedTableTypes.Length; i++)
             {
-                OeLinq2DbTable table = GetTable(clrTypeEdmSetList[i].ClrType);
-                count += table.SaveDeleted(dataConnection);
+                OeLinq2DbTable table = GetTable(_orderedTableTypes[i].ClrTableType);
+                if (table != null)
+                    count += table.SaveDeleted(dataConnection);
             }
 
             return count;
         }
-        private void UpdateIdentities(OeLinq2DbTable table, List<ClrTypeEdmSet> clrTypeEdmSetList, int lastIndex)
+        private void UpdateIdentities(OeLinq2DbTable table, int lastIndex)
         {
             if (table.Identities.Count == 0)
                 return;
 
-            foreach (IEdmNavigationPropertyBinding navigationBinding in clrTypeEdmSetList[lastIndex].EdmEntitySet.NavigationPropertyBindings)
+            foreach (IEdmNavigationPropertyBinding navigationBinding in _orderedTableTypes[lastIndex].EdmEntitySet.NavigationPropertyBindings)
                 if (navigationBinding.NavigationProperty.IsPrincipal() || navigationBinding.NavigationProperty.Partner == null)
                     for (int j = 0; j <= lastIndex; j++)
-                        if (clrTypeEdmSetList[j].EdmEntitySet == navigationBinding.Target)
+                        if (_orderedTableTypes[j].EdmEntitySet == navigationBinding.Target)
                         {
-                            List<PropertyInfo> dependentProperties = GetDependentProperties(clrTypeEdmSetList[j].ClrType, navigationBinding.NavigationProperty);
-                            OeLinq2DbTable targetTable = GetTable(clrTypeEdmSetList[j].ClrType);
+                            List<PropertyInfo> dependentProperties = GetDependentProperties(_orderedTableTypes[j].ClrTableType, navigationBinding.NavigationProperty);
+                            OeLinq2DbTable targetTable = GetTable(_orderedTableTypes[j].ClrTableType);
                             targetTable.UpdateIdentities(dependentProperties[0], table.Identities);
 
                             if (targetTable.IsKey(dependentProperties[0]))
-                                foreach (PropertyInfo dependentProperty in GetDependentProperties(dependentProperties[0], clrTypeEdmSetList, j))
+                                foreach (PropertyInfo dependentProperty in GetDependentProperties(dependentProperties[0], _orderedTableTypes, j))
                                     GetTable(dependentProperty.DeclaringType).UpdateIdentities(dependentProperty, table.Identities);
 
                             break;

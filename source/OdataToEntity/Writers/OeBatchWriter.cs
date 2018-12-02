@@ -59,7 +59,7 @@ namespace OdataToEntity.Writers
         private void WriteEntity(IEdmEntitySet entitySet, ODataResource entry, Stream stream)
         {
             IODataResponseMessage responseMessage = new OeInMemoryMessage(stream, null);
-            using (ODataMessageWriter messageWriter = new ODataMessageWriter(responseMessage, _settings, _model))
+            using (ODataMessageWriter messageWriter = new ODataMessageWriter(responseMessage, _settings, _model.GetEdmModel(entitySet)))
             {
                 ODataUtils.SetHeadersForPayload(messageWriter, ODataPayloadKind.Resource);
                 ODataWriter writer = messageWriter.CreateODataResourceWriter(entitySet, entitySet.EntityType());

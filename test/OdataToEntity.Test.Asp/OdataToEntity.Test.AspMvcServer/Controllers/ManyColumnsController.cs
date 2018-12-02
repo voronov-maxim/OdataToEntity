@@ -9,8 +9,8 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
     [Route("api/[controller]")]
     public sealed class ManyColumnsController : OeControllerBase
     {
-        public ManyColumnsController(Db.OeDataAdapter dataAdapter, IEdmModel edmModel)
-            : base(dataAdapter, edmModel)
+        public ManyColumnsController(IEdmModel edmModel)
+            : base(edmModel)
         {
         }
 

@@ -27,9 +27,6 @@ namespace OdataToEntity.Cache.UriCompare
         }
         public bool Compare(OeCacheContext cacheContext1, OeCacheContext cacheContext2)
         {
-            if (cacheContext1.EntitySet != cacheContext2.EntitySet)
-                return false;
-
             if (cacheContext1.NavigationNextLink != cacheContext2.NavigationNextLink)
                 return false;
 

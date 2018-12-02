@@ -29,6 +29,7 @@
 
   <ItemGroup>
     <Compile Include="..\..\OdataToEntity.Test\Common\IncludeVisitor.cs" Link="Common\IncludeVisitor.cs" />
+    <Compile Include="..\..\OdataToEntity.Test\Common\ITestDbDataAdapter.cs" Link="Common\ITestDbDataAdapter.cs" />
     <Compile Include="..\..\OdataToEntity.Test\Common\ManyColumnsTest.cs" Link="Common\ManyColumnsTest.cs" />
     <Compile Include="..\..\OdataToEntity.Test\Common\QueryParameters.cs" Link="Common\QueryParameters.cs" />
     <Compile Include="..\..\OdataToEntity.Test\Common\ResponseReader.cs" Link="Common\ResponseReader.cs" />
@@ -37,6 +38,7 @@
     <Compile Include="..\..\OdataToEntity.Test\Common\TestContractResolver.cs" Link="Common\TestContractResolver.cs" />
     <Compile Include="..\..\OdataToEntity.Test\Model\*.cs" Link="Model\%(Filename).cs" />
     <Compile Include="..\..\OdataToEntity.Test.EfCore.SqlServer\OrderContextOptions.cs" Link="OrderContextOptions.cs" />
+    <Compile Include="..\..\OdataToEntity.Test.EfCore.SqlServer\OrderDataAdapter.cs" Link="OrderDataAdapter.cs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -10,8 +10,8 @@ namespace OdataToEntity.Test
 {
     public sealed class OpenTypeResponseReader : ResponseReader
     {
-        public OpenTypeResponseReader(IEdmModel edmModel, Db.OeDataAdapter dataAdapter)
-            : base(edmModel, dataAdapter)
+        public OpenTypeResponseReader(IEdmModel edmModel)
+            : base(edmModel)
         {
         }
 

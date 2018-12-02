@@ -11,18 +11,21 @@ namespace OdataToEntity.Test.GraphQL.StarWars
         //    => true, true) });
         private static readonly ConcurrentDictionary<String, SqliteConnection> _connections = new ConcurrentDictionary<String, SqliteConnection>();
 
-        private static DbContextOptions Create(String databaseName)
-        {
-            var optionsBuilder = new DbContextOptionsBuilder<StarWarsContext>();
-            optionsBuilder.UseSqlite(GetConnection(databaseName));
-            //optionsBuilder.UseLoggerFactory(LoggerFactory);
-            return optionsBuilder.Options;
-        }
-
         public StarWarsContext(String databaseName) : base(Create(databaseName))
         {
         }
 
+        private static DbContextOptions Create(String databaseName)
+        {
+            return Create<StarWarsContext>(databaseName);
+        }
+        internal static DbContextOptions Create<T>(String databaseName) where T : DbContext
+        {
+            var optionsBuilder = new DbContextOptionsBuilder<T>();
+            optionsBuilder.UseSqlite(GetConnection(databaseName));
+            //optionsBuilder.UseLoggerFactory(LoggerFactory);
+            return optionsBuilder.Options;
+        }
         private static SqliteConnection GetConnection(String databaseName)
         {
             if (!_connections.TryGetValue(databaseName, out SqliteConnection connection))

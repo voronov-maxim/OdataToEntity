@@ -28,8 +28,8 @@ namespace OdataToEntity.Test.AspMvcServer
         {
             services.AddMvcCore();
 
-            var dataAdapter = new OrderOeDataAdapter(true, true, null);
-            services.AddOdataToEntity(dataAdapter, dataAdapter.BuildEdmModelFromEfCoreModel());
+            var dataAdapter = new OrderDataAdapter(true, true, null);
+            services.AddOdataToEntity(dataAdapter.BuildEdmModelFromEfCoreModel());
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

@@ -24,8 +24,7 @@ namespace OdataToEntity.Writers
             var builder = new StringBuilder(uri.IsAbsoluteUri ? uri.AbsoluteUri : uri.OriginalString);
             builder.Append('(');
 
-            IEnumerable<IEdmStructuralProperty> keyProperties = entitySet.EntityType().Key();
-            using (IEnumerator<IEdmStructuralProperty> enumerator = keyProperties.GetEnumerator())
+            using (IEnumerator<IEdmStructuralProperty> enumerator = entitySet.EntityType().Key().GetEnumerator())
             {
                 if (!enumerator.MoveNext())
                     return null;

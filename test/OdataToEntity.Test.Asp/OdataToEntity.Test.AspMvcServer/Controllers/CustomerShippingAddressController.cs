@@ -9,8 +9,8 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
     [Route("api/[controller]")]
     public sealed class CustomerShippingAddressController : OeControllerBase
     {
-        public CustomerShippingAddressController(Db.OeDataAdapter dataAdapter, IEdmModel edmModel)
-                : base(dataAdapter, edmModel)
+        public CustomerShippingAddressController(IEdmModel edmModel)
+                : base(edmModel)
         {
         }
 

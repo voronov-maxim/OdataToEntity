@@ -70,8 +70,7 @@ namespace OdataToEntity.Parsers
 
         internal OeQueryContext(IEdmModel edmModel, ODataUri odataUri,
             IReadOnlyList<OeParseNavigationSegment> parseNavigationSegments,
-            bool isCountSegment, int pageSize, bool navigationNextLink, bool isDatabaseNullHighestValue,
-            OeMetadataLevel metadataLevel, Db.OeEntitySetAdapter entitySetAdapter)
+            bool isCountSegment, int pageSize, bool navigationNextLink, OeMetadataLevel metadataLevel, Db.OeEntitySetAdapter entitySetAdapter)
         {
             EntitySetAdapter = entitySetAdapter;
             EdmModel = edmModel;
@@ -80,7 +79,6 @@ namespace OdataToEntity.Parsers
             IsCountSegment = isCountSegment;
             PageSize = pageSize;
             NavigationNextLink = navigationNextLink;
-            IsDatabaseNullHighestValue = isDatabaseNullHighestValue;
             MetadataLevel = metadataLevel;
 
             var visitor = new OeQueryNodeVisitor(edmModel, Expression.Parameter(entitySetAdapter.EntityType));
@@ -113,7 +111,9 @@ namespace OdataToEntity.Parsers
         }
         private OeEntryFactory CreateEntryFactory(OeExpressionBuilder expressionBuilder)
         {
-            IEdmEntitySet entitySet = OeParseNavigationSegment.GetEntitySet(ParseNavigationSegments) ?? GetEntitySet();
+            IEdmEntitySet entitySet = OeParseNavigationSegment.GetEntitySet(ParseNavigationSegments);
+            if (entitySet == null)
+                entitySet = OeEdmClrHelper.GetEntitySet(EdmModel, EntitySetAdapter.EntitySetName);
             return expressionBuilder.CreateEntryFactory(entitySet);
         }
         public Expression CreateExpression(OeConstantToVariableVisitor constantToVariableVisitor)
@@ -121,7 +121,8 @@ namespace OdataToEntity.Parsers
             Expression expression;
             var expressionBuilder = new OeExpressionBuilder(JoinBuilder);
 
-            expression = OeEnumerableStub.CreateEnumerableStubExpression(EntitySetAdapter.EntityType, GetEntitySet());
+            IEdmEntitySet entitySet = OeEdmClrHelper.GetEntitySet(EdmModel, EntitySetAdapter.EntitySetName);
+            expression = OeEnumerableStub.CreateEnumerableStubExpression(EntitySetAdapter.EntityType, entitySet);
             expression = expressionBuilder.ApplyNavigation(expression, ParseNavigationSegments);
             expression = expressionBuilder.ApplyFilter(expression, ODataUri.Filter);
             if (ODataUri.Apply == null)
@@ -144,10 +145,6 @@ namespace OdataToEntity.Parsers
 
             return constantToVariableVisitor.Translate(expression, expressionBuilder.Constants);
         }
-        public IEdmEntitySet GetEntitySet()
-        {
-            return EdmModel.FindDeclaredEntitySet(EntitySetAdapter.EntitySetFullName);
-        }
         public Expression TranslateSource(Object dataContext, Expression expression)
         {
             return new SourceVisitor(EdmModel, dataContext).Visit(expression);
@@ -158,7 +155,7 @@ namespace OdataToEntity.Parsers
         public OeEntryFactory EntryFactory { get; set; }
         public Translators.OeJoinBuilder JoinBuilder { get; }
         public bool IsCountSegment { get; }
-        public bool IsDatabaseNullHighestValue { get; }
+        public bool IsDatabaseNullHighestValue => EdmModel.GetDataAdapter(EdmModel.EntityContainer).IsDatabaseNullHighestValue;
         public OeMetadataLevel MetadataLevel { get; }
         public bool NavigationNextLink { get; }
         public ODataUri ODataUri { get; }

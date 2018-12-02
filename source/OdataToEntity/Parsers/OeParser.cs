@@ -1,25 +1,90 @@
-﻿using Microsoft.OData.Edm;
+﻿using Microsoft.OData;
+using Microsoft.OData.Edm;
+using Microsoft.OData.UriParser;
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.IO;
-using System.Text;
-using Microsoft.OData;
-using Microsoft.OData.UriParser;
 
 namespace OdataToEntity
 {
     public readonly struct OeParser
     {
+        private sealed class RefModelUriResolver : ODataUriResolver
+        {
+            public RefModelUriResolver()
+            {
+                EnableCaseInsensitive = true;
+            }
+
+            public override IEdmNavigationSource ResolveNavigationSource(IEdmModel model, String identifier)
+            {
+                return OeEdmClrHelper.GetEntitySet(model, identifier);
+            }
+            public override IEnumerable<IEdmOperationImport> ResolveOperationImports(IEdmModel model, String identifier)
+            {
+                IEnumerable<IEdmOperationImport> operationImports = model.FindDeclaredOperationImports(identifier);
+                if (operationImports != null && operationImports.Any())
+                    return operationImports;
+
+                foreach (IEdmEntityContainerElement element in model.EntityContainer.Elements)
+                    if (element is IEdmOperationImport operationImport &&
+                        String.Compare(operationImport.Name, identifier, StringComparison.OrdinalIgnoreCase) == 0)
+                        return new[] { operationImport };
+
+                foreach (IEdmModel refModel in model.ReferencedModels)
+                    if (refModel.EntityContainer != null)
+                    {
+                        operationImports = ResolveOperationImports(refModel, identifier);
+                        if (operationImports != null && operationImports.Any())
+                            return operationImports;
+                    }
+
+                return null;
+            }
+        }
+
+        private sealed class ServiceProvider : IServiceProvider
+        {
+            private static readonly ODataUriParserSettings _uriParserSettings = new ODataUriParserSettings();
+            private static readonly UriPathParser _uriPathParser = new UriPathParser(_uriParserSettings);
+            private static readonly ODataSimplifiedOptions _simplifiedOptions = new ODataSimplifiedOptions();
+            private static readonly ODataUriResolver _uriResolver = new RefModelUriResolver();
+            public static readonly ServiceProvider Instance = new ServiceProvider();
+
+            private ServiceProvider()
+            {
+            }
+
+            public Object GetService(Type serviceType)
+            {
+                if (serviceType == typeof(ODataUriResolver))
+                    return _uriResolver;
+                if (serviceType == typeof(ODataSimplifiedOptions))
+                    return _simplifiedOptions;
+                if (serviceType == typeof(ODataUriParserSettings))
+                    return _uriParserSettings;
+                if (serviceType == typeof(UriPathParser))
+                    return _uriPathParser;
+
+                throw new InvalidOperationException("ServiceProvider not found type " + serviceType.FullName);
+            }
+        }
+
         private readonly Uri _baseUri;
-        private readonly Db.OeDataAdapter _dataAdapter;
         private readonly IEdmModel _edmModel;
 
-        public OeParser(Uri baseUri, Db.OeDataAdapter dataAdapter, IEdmModel edmModel)
+        public OeParser(Uri baseUri, IEdmModel edmModel)
         {
             _baseUri = baseUri;
-            _dataAdapter = dataAdapter;
             _edmModel = edmModel;
+        }
+        [Obsolete("Use OeParser(Uri, IEdmModel)", true)]
+        public OeParser(Uri baseUri, Db.OeDataAdapter dataAdapter, IEdmModel edmModel) : this(baseUri, edmModel)
+        {
         }
 
         public async Task<String> ExecuteBatchAsync(Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
@@ -31,15 +96,12 @@ namespace OdataToEntity
         }
         public async Task ExecuteBatchAsync(Stream requestStream, Stream responseStream, String contentType, CancellationToken cancellationToken)
         {
-            var paser = new Parsers.OeBatchParser(_baseUri, _dataAdapter, _edmModel);
+            var paser = new Parsers.OeBatchParser(_baseUri, _edmModel);
             await paser.ExecuteAsync(requestStream, responseStream, contentType, cancellationToken).ConfigureAwait(false);
         }
         public async Task ExecuteGetAsync(Uri requestUri, OeRequestHeaders headers, Stream responseStream, CancellationToken cancellationToken)
         {
-            var odataParser = new ODataUriParser(_edmModel, _baseUri, requestUri);
-            odataParser.Resolver.EnableCaseInsensitive = true;
-            ODataUri odataUri = odataParser.ParseUri();
-
+            ODataUri odataUri = ParseUri(_edmModel, _baseUri, requestUri);
             if (odataUri.Path.LastSegment is OperationImportSegment)
                 await ExecuteOperationAsync(odataUri, headers, null, responseStream, cancellationToken).ConfigureAwait(false);
             else
@@ -47,27 +109,24 @@ namespace OdataToEntity
         }
         public async Task ExecuteQueryAsync(ODataUri odataUri, OeRequestHeaders headers, Stream responseStream, CancellationToken cancellationToken)
         {
-            var parser = new OeGetParser(_dataAdapter, _edmModel);
+            var parser = new OeGetParser(_edmModel.GetEdmModel(odataUri.Path));
             await parser.ExecuteAsync(odataUri, headers, responseStream, cancellationToken).ConfigureAwait(false);
         }
         public async Task ExecuteOperationAsync(ODataUri odataUri, OeRequestHeaders headers, Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
         {
-            var parser = new OePostParser(_dataAdapter, _edmModel);
+            var parser = new OePostParser(_edmModel.GetEdmModel(odataUri.Path));
             await parser.ExecuteAsync(odataUri, requestStream, headers, responseStream, cancellationToken).ConfigureAwait(false);
         }
         public async Task ExecutePostAsync(Uri requestUri, OeRequestHeaders headers, Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
         {
-            var odataParser = new ODataUriParser(_edmModel, _baseUri, requestUri);
-            odataParser.Resolver.EnableCaseInsensitive = true;
-            ODataUri odataUri = odataParser.ParseUri();
-
+            ODataUri odataUri = OeParser.ParseUri(_edmModel, _baseUri, requestUri);
             if (odataUri.Path.LastSegment.Identifier == "$batch")
                 await ExecuteBatchAsync(responseStream, responseStream, headers.ContentType, cancellationToken).ConfigureAwait(false);
             else
                 if (odataUri.Path.LastSegment is OperationImportSegment)
-                    await ExecuteOperationAsync(odataUri, headers, requestStream, responseStream, cancellationToken).ConfigureAwait(false);
-                else
-                    await ExecuteQueryAsync(odataUri, headers, responseStream, cancellationToken).ConfigureAwait(false);
+                await ExecuteOperationAsync(odataUri, headers, requestStream, responseStream, cancellationToken).ConfigureAwait(false);
+            else
+                await ExecuteQueryAsync(odataUri, headers, responseStream, cancellationToken).ConfigureAwait(false);
         }
         private static String GetConentType(Stream stream, out ArraySegment<byte> readedBytes)
         {
@@ -100,6 +159,41 @@ namespace OdataToEntity
             }
 
             throw new InvalidDataException("is not batch stream");
+        }
+        public static ODataPath ParsePath(IEdmModel model, Uri serviceRoot, Uri uri)
+        {
+            var uriParser = new ODataUriParser(model, serviceRoot, uri, ServiceProvider.Instance);
+            return uriParser.ParsePath();
+        }
+        public static ODataUri ParseUri(IEdmModel model, Uri serviceRoot, Uri uri)
+        {
+            var uriParser = new ODataUriParser(model, serviceRoot, uri, ServiceProvider.Instance);
+            ODataPath path = uriParser.ParsePath();
+            IEdmModel refModel = model.GetEdmModel(path);
+            if (refModel == model)
+                return ParseUri(uriParser, path, serviceRoot);
+
+            uriParser = new ODataUriParser(refModel, serviceRoot, uri, ServiceProvider.Instance);
+            return ParseUri(uriParser, path, serviceRoot);
+        }
+        private static ODataUri ParseUri(ODataUriParser parser, ODataPath path, Uri serviceRoot)
+        {
+            return new ODataUri()
+            {
+                Apply = parser.ParseApply(),
+                Compute = parser.ParseCompute(),
+                DeltaToken = parser.ParseDeltaToken(),
+                Filter = parser.ParseFilter(),
+                OrderBy = parser.ParseOrderBy(),
+                Path = path,
+                QueryCount = parser.ParseCount(),
+                Search = parser.ParseSearch(),
+                SelectAndExpand = parser.ParseSelectAndExpand(),
+                ServiceRoot = serviceRoot,
+                Skip = parser.ParseSkip(),
+                SkipToken = parser.ParseSkipToken(),
+                Top = parser.ParseTop()
+            };
         }
     }
 }

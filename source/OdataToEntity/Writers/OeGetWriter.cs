@@ -233,7 +233,7 @@ namespace OdataToEntity.Writers
                 BaseUri = queryContext.ODataUri.ServiceRoot,
                 EnableMessageStreamDisposal = false,
                 ODataUri = queryContext.ODataUri,
-                Validations = ValidationKinds.ThrowIfTypeConflictsWithMetadata | ValidationKinds.ThrowOnDuplicatePropertyNames,
+                Validations = ValidationKinds.ThrowOnDuplicatePropertyNames,
                 Version = ODataVersion.V4
             };
 

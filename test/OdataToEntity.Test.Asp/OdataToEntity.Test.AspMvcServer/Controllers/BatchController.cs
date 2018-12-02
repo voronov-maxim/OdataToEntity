@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.OData;
 using OdataToEntity.AspNetCore;
+using System;
 using System.Threading.Tasks;
 
 namespace OdataToEntity.Test.AspMvcServer.Controllers
@@ -15,7 +16,7 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
         protected override void OnBeforeInvokeController(OeDataContext dataContext, ODataResource entry)
         {
         }
-        protected override Task<int> SaveChangesAsync(object dataContext)
+        protected override Task<int> SaveChangesAsync(Object dataContext)
         {
             return base.SaveChangesAsync(dataContext);
         }

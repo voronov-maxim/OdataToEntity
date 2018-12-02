@@ -6,12 +6,10 @@ using Microsoft.OData;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using OdataToEntity.Db;
-using OdataToEntity.ModelBuilder;
 using OdataToEntity.Parsers;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -20,14 +18,13 @@ namespace OdataToEntity.AspNetCore
     [OeFilter]
     public abstract class OeControllerBase : ControllerBase, IDisposable
     {
-        private readonly OeDataAdapter _dataAdapter;
+        private OeDataAdapter _dataAdapter;
         private Object _dataContext;
         private readonly IEdmModel _edmModel;
         private OeQueryContext _queryContext;
 
-        protected OeControllerBase(OeDataAdapter dataAdapter, IEdmModel edmModel)
+        protected OeControllerBase(IEdmModel edmModel)
         {
-            _dataAdapter = dataAdapter;
             _edmModel = edmModel;
         }
 
@@ -42,11 +39,11 @@ namespace OdataToEntity.AspNetCore
         }
         private OeAsyncEnumerator Execute(ODataUri odataUri, Stream requestStream, OeRequestHeaders headers, CancellationToken cancellationToken)
         {
+            IEdmModel refModel = _edmModel.GetEdmModel(odataUri.Path);
             Object dataContext = _dataAdapter.CreateDataContext();
 
-            var parser = new OePostParser(_dataAdapter, _edmModel);
+            var parser = new OePostParser(refModel);
             OeAsyncEnumerator asyncEnumerator = parser.GetAsyncEnumerator(odataUri, requestStream, headers, dataContext, out bool isScalar);
-
             if (!isScalar)
                 _queryContext = parser.CreateQueryContext(odataUri, headers.MetadataLevel);
 
@@ -71,15 +68,15 @@ namespace OdataToEntity.AspNetCore
             OeRequestHeaders headers = GetRequestHeaders(requestHeaders, httpContext.Response, navigationNextLink, maxPageSize);
 
             String controllerName = base.ControllerContext.ActionDescriptor.ControllerName;
-            var parser = new OeParser(UriHelper.GetBaseUri(httpContext.Request, controllerName), _dataAdapter, _edmModel);
+            var parser = new OeParser(UriHelper.GetBaseUri(httpContext.Request, controllerName), _edmModel);
             await parser.ExecuteGetAsync(UriHelper.GetUri(httpContext.Request), headers, responseStream, httpContext.RequestAborted);
         }
         protected OeAsyncEnumerator GetAsyncEnumerator(HttpContext httpContext, Stream responseStream, bool navigationNextLink = false, int? maxPageSize = null)
         {
             String controllerName = base.ControllerContext.ActionDescriptor.ControllerName;
-            var odataParser = new ODataUriParser(_edmModel, UriHelper.GetBaseUri(httpContext.Request, controllerName), UriHelper.GetUri(httpContext.Request));
-            odataParser.Resolver.EnableCaseInsensitive = true;
-            ODataUri odataUri = odataParser.ParseUri();
+            ODataUri odataUri = OeParser.ParseUri(_edmModel, UriHelper.GetBaseUri(httpContext.Request, controllerName), UriHelper.GetUri(httpContext.Request));
+            IEdmModel refModel = _edmModel.GetEdmModel(odataUri.Path);
+            _dataAdapter = refModel.GetDataAdapter(refModel.EntityContainer);
 
             var requestHeaders = (HttpRequestHeaders)httpContext.Request.Headers;
             OeRequestHeaders headers = GetRequestHeaders(requestHeaders, httpContext.Response, navigationNextLink, maxPageSize);
@@ -87,7 +84,7 @@ namespace OdataToEntity.AspNetCore
             if (odataUri.Path.LastSegment is OperationImportSegment)
                 return Execute(odataUri, httpContext.Request.Body, headers, httpContext.RequestAborted);
 
-            var getParser = new OeGetParser(_dataAdapter, _edmModel);
+            var getParser = new OeGetParser(refModel);
             _queryContext = getParser.CreateQueryContext(odataUri, headers.MaxPageSize, headers.NavigationNextLink, headers.MetadataLevel);
             return Execute(headers, responseStream, httpContext.RequestAborted);
         }

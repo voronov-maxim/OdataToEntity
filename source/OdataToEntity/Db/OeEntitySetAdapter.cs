@@ -15,7 +15,6 @@ namespace OdataToEntity.Db
 
         public abstract Type EntityType { get; }
         public abstract String EntitySetName { get; }
-        public abstract String EntitySetFullName { get; }
     }
 
     public sealed class OeEntitySetAdapterCollection : ReadOnlyCollection<OeEntitySetAdapter>

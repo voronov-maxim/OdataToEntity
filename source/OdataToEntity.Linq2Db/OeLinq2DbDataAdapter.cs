@@ -19,7 +19,7 @@ namespace OdataToEntity.Linq2Db
         public static int DatePart(Sql.DateParts part, DateTimeOffset date) => 0;
     }
 
-    public class OeLinq2DbDataAdapter<T> : Db.OeDataAdapter where T : DataConnection
+    public class OeLinq2DbDataAdapter<T> : Db.OeDataAdapter where T : DataConnection, IOeLinq2DbDataContext
     {
         private sealed class ParameterVisitor : ExpressionVisitor
         {
@@ -62,11 +62,10 @@ namespace OdataToEntity.Linq2Db
         {
             private readonly Func<T, ITable<TEntity>> _getEntitySet;
 
-            public TableAdapterImpl(Func<T, ITable<TEntity>> getEntitySet, String entitySetName, String dataContextFullName)
+            public TableAdapterImpl(Func<T, ITable<TEntity>> getEntitySet, String entitySetName)
             {
                 _getEntitySet = getEntitySet;
                 EntitySetName = entitySetName;
-                EntitySetFullName = dataContextFullName + "." + entitySetName;
             }
 
             public override void AddEntity(Object dataContext, ODataResourceBase entry)
@@ -82,11 +81,7 @@ namespace OdataToEntity.Linq2Db
             private static OeLinq2DbTable<TEntity> GetTable(Object dataContext)
             {
                 if (dataContext is IOeLinq2DbDataContext dc)
-                {
-                    if (dc.DataContext == null)
-                        dc.DataContext = new OeLinq2DbDataContext();
-                    return dc.DataContext.GetTable<TEntity>();
-                }
+                    return (OeLinq2DbTable<TEntity>)dc.DataContext.GetTable<TEntity>();
 
                 throw new InvalidOperationException(dataContext.GetType().ToString() + "must implement " + nameof(IOeLinq2DbDataContext));
             }
@@ -98,10 +93,10 @@ namespace OdataToEntity.Linq2Db
             }
 
             public override Type EntityType => typeof(TEntity);
-            public override String EntitySetFullName { get; }
             public override String EntitySetName { get; }
         }
 
+        private IEdmModel _edmModel;
         private readonly static Db.OeEntitySetAdapterCollection _entitySetAdapters = CreateEntitySetAdapters();
 
         public OeLinq2DbDataAdapter() : this(null)
@@ -119,7 +114,9 @@ namespace OdataToEntity.Linq2Db
         }
         public override Object CreateDataContext()
         {
-            return Infrastructure.FastActivator.CreateInstance<T>();
+            var dataContext = Infrastructure.FastActivator.CreateInstance<T>();
+            dataContext.DataContext = new OeLinq2DbDataContext(_edmModel, _entitySetAdapters);
+            return dataContext;
         }
         private static Db.OeEntitySetAdapterCollection CreateEntitySetAdapters()
         {
@@ -144,7 +141,7 @@ namespace OdataToEntity.Linq2Db
         private static Db.OeEntitySetAdapter CreateEntitySetInvoker<TEntity>(PropertyInfo property) where TEntity : class
         {
             var getEntitySet = (Func<T, ITable<TEntity>>)property.GetGetMethod().CreateDelegate(typeof(Func<T, ITable<TEntity>>));
-            return new TableAdapterImpl<TEntity>(getEntitySet, property.Name, typeof(T).FullName);
+            return new TableAdapterImpl<TEntity>(getEntitySet, property.Name);
         }
         public override Db.OeAsyncEnumerator ExecuteEnumerator(Object dataContext, OeQueryContext queryContext, CancellationToken cancellationToken)
         {
@@ -243,12 +240,15 @@ namespace OdataToEntity.Linq2Db
                 LinqToDB.Linq.Expressions.MapMember(propertyInfo, lambda);
             }
         }
-        public override Task<int> SaveChangesAsync(IEdmModel edmModel, Object dataContext, CancellationToken cancellationToken)
+        public override Task<int> SaveChangesAsync(Object dataContext, CancellationToken cancellationToken)
         {
-            var dataConnection = (DataConnection)dataContext;
-            OeLinq2DbDataContext dc = ((IOeLinq2DbDataContext)dataConnection).DataContext;
-            int count = dc.SaveChanges(edmModel, EntitySetAdapters, dataConnection);
+            var dataConnection = (T)dataContext;
+            int count = dataConnection.DataContext.SaveChanges(dataConnection);
             return Task.FromResult(count);
+        }
+        protected override void SetEdmModel(IEdmModel edmModel)
+        {
+            _edmModel = edmModel;
         }
 
         public override Type DataContextType => typeof(T);

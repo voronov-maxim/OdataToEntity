@@ -9,17 +9,16 @@ namespace OdataToEntity.ModelBuilder
 {
     internal sealed class EntityTypeInfo
     {
-        private readonly Type _clrType;
-        private readonly EdmEntityType _edmType;
         private readonly List<KeyValuePair<PropertyInfo, EdmStructuralProperty>> _keyProperties;
         private readonly OeEdmModelMetadataProvider _metadataProvider;
         private readonly List<FKeyInfo> _navigationClrProperties;
 
-        public EntityTypeInfo(OeEdmModelMetadataProvider metadataProvider, Type clrType, EdmEntityType edmType)
+        public EntityTypeInfo(OeEdmModelMetadataProvider metadataProvider, Type clrType, EdmEntityType edmType, bool isRefModel)
         {
             _metadataProvider = metadataProvider;
-            _clrType = clrType;
-            _edmType = edmType;
+            ClrType = clrType;
+            EdmType = edmType;
+            IsRefModel = isRefModel;
 
             _keyProperties = new List<KeyValuePair<PropertyInfo, EdmStructuralProperty>>(1);
             _navigationClrProperties = new List<FKeyInfo>();
@@ -29,31 +28,31 @@ namespace OdataToEntity.ModelBuilder
         {
             if (_keyProperties.Count == 0)
             {
-                PropertyInfo key = _clrType.GetPropertyIgnoreCase("id");
+                PropertyInfo key = ClrType.GetPropertyIgnoreCase("id");
                 if (key != null)
                 {
-                    var edmProperty = (EdmStructuralProperty)_edmType.Properties().Single(p => p.Name == key.Name);
+                    var edmProperty = (EdmStructuralProperty)EdmType.Properties().Single(p => p.Name == key.Name);
                     _keyProperties.Add(new KeyValuePair<PropertyInfo, EdmStructuralProperty>(key, edmProperty));
                 }
                 else
                 {
-                    key = _clrType.GetPropertyIgnoreCase(_clrType.Name + "id");
+                    key = ClrType.GetPropertyIgnoreCase(ClrType.Name + "id");
                     if (key == null)
                     {
-                        if (EdmType.Key().Any() || _clrType.IsAbstract)
+                        if (EdmType.Key().Any() || ClrType.IsAbstract)
                             return;
 
                         throw new InvalidOperationException("Key property not matching");
                     }
 
-                    var edmProperty = (EdmStructuralProperty)_edmType.Properties().Single(p => p.Name == key.Name);
+                    var edmProperty = (EdmStructuralProperty)EdmType.Properties().Single(p => p.Name == key.Name);
                     _keyProperties.Add(new KeyValuePair<PropertyInfo, EdmStructuralProperty>(key, edmProperty));
                 }
             }
 
             if (_keyProperties.Count == 1)
             {
-                _edmType.AddKeys(_keyProperties[0].Value);
+                EdmType.AddKeys(_keyProperties[0].Value);
                 return;
             }
 
@@ -63,13 +62,13 @@ namespace OdataToEntity.ModelBuilder
                 int order = _metadataProvider.GetOrder(_keyProperties[i].Key);
                 if (order == -1)
                 {
-                    _edmType.AddKeys(_keyProperties.Select(p => p.Value));
+                    EdmType.AddKeys(_keyProperties.Select(p => p.Value));
                     return;
                 }
 
                 keys[i] = new ValueTuple<EdmStructuralProperty, int>(_keyProperties[i].Value, order);
             }
-            _edmType.AddKeys(keys.OrderBy(p => p.Item2).Select(p => p.Item1));
+            EdmType.AddKeys(keys.OrderBy(p => p.Item2).Select(p => p.Item1));
         }
         private void BuildProperty(Dictionary<Type, EntityTypeInfo> entityTypes,
             Dictionary<Type, EdmEnumType> enumTypes, Dictionary<Type, EdmComplexType> complexTypes, PropertyInfo clrProperty)
@@ -113,16 +112,16 @@ namespace OdataToEntity.ModelBuilder
             }
 
             EdmStructuralProperty edmProperty = clrProperty is OeShadowPropertyInfo ?
-                new OeEdmStructuralProperty(_edmType, clrProperty.Name, typeRef) :
-                new EdmStructuralProperty(_edmType, clrProperty.Name, typeRef);
-            _edmType.AddProperty(edmProperty);
+                new OeEdmStructuralProperty(EdmType, clrProperty.Name, typeRef) :
+                new EdmStructuralProperty(EdmType, clrProperty.Name, typeRef);
+            EdmType.AddProperty(edmProperty);
             if (_metadataProvider.IsKey(clrProperty))
                 _keyProperties.Add(new KeyValuePair<PropertyInfo, EdmStructuralProperty>(clrProperty, edmProperty));
         }
         public void BuildProperties(Dictionary<Type, EntityTypeInfo> entityTypes,
             Dictionary<Type, EdmEnumType> enumTypes, Dictionary<Type, EdmComplexType> complexTypes)
         {
-            foreach (PropertyInfo clrProperty in _metadataProvider.GetProperties(_clrType))
+            foreach (PropertyInfo clrProperty in _metadataProvider.GetProperties(ClrType))
                 if (!_metadataProvider.IsNotMapped(clrProperty))
                     BuildProperty(entityTypes, enumTypes, complexTypes, clrProperty);
             AddKeys();
@@ -140,11 +139,12 @@ namespace OdataToEntity.ModelBuilder
         }
         public override String ToString()
         {
-            return _clrType.FullName;
+            return ClrType.FullName;
         }
 
-        public Type ClrType => _clrType;
-        public EdmEntityType EdmType => _edmType;
+        public Type ClrType { get; }
+        public EdmEntityType EdmType { get; }
+        public bool IsRefModel { get; }
         public IReadOnlyList<FKeyInfo> NavigationClrProperties => _navigationClrProperties;
     }
 }

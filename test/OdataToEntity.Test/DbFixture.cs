@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.OData;
 using Microsoft.OData.Edm;
-using Microsoft.OData.UriParser;
+using OdataToEntity.Test.Model;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -19,28 +19,58 @@ namespace OdataToEntity.Test
         private readonly String _databaseName;
         private readonly bool _useRelationalNulls;
 
-        public DbFixture(bool allowCache, bool useRelationalNulls)
+        protected DbFixture(bool allowCache, bool useRelationalNulls)
+            : this(allowCache, useRelationalNulls, OrderContext.GenerateDatabaseName())
+        {
+        }
+        private DbFixture(bool allowCache, bool useRelationalNulls, String databaseName)
+            : this(useRelationalNulls, databaseName, new OrderDataAdapter(allowCache, useRelationalNulls, databaseName))
+        {
+        }
+        private DbFixture(bool useRelationalNulls, String databaseName, Db.OeDataAdapter dataAdapter)
+            : this(useRelationalNulls, databaseName, dataAdapter, OrderDataAdapter.CreateMetadataProvider(useRelationalNulls, databaseName))
+        {
+
+        }
+        private DbFixture(bool useRelationalNulls, String databaseName, Db.OeDataAdapter dataAdapter, ModelBuilder.OeEdmModelMetadataProvider metadataProvider)
+            : this(useRelationalNulls, databaseName, OrderContextOptions.BuildEdmModel(dataAdapter, metadataProvider), metadataProvider)
+        {
+        }
+        private DbFixture(bool useRelationalNulls, String databaseName, EdmModel edmModel, ModelBuilder.OeEdmModelMetadataProvider metadataProvider)
         {
             _useRelationalNulls = useRelationalNulls;
-
-            _databaseName = Model.OrderContext.GenerateDatabaseName();
-            DbDataAdapter = new Model.OrderDbDataAdapter(allowCache, useRelationalNulls, _databaseName);
-            OeDataAdapter = new Model.OrderOeDataAdapter(allowCache, useRelationalNulls, _databaseName);
-
-            MetadataProvider = OeDataAdapter.CreateMetadataProvider();
-            EdmModel = new ModelBuilder.OeEdmModelBuilder(OeDataAdapter, MetadataProvider).BuildEdmModel();
+            _databaseName = databaseName;
+            EdmModel = edmModel;
+            MetadataProvider = metadataProvider;
         }
 
-        public Model.OrderContext CreateContext()
+        public OrderContext CreateContext()
         {
-            return new Model.OrderContext(Model.OrderContextOptions.Create(_useRelationalNulls, _databaseName));
+            return new OrderContext(OrderContextOptions.Create(_useRelationalNulls, _databaseName));
+        }
+        protected static void EnsureCreated(IEdmModel edmModel)
+        {
+            Db.OeDataAdapter dataAdapter = edmModel.GetDataAdapter(edmModel.EntityContainer);
+            var dbContext = (DbContext)dataAdapter.CreateDataContext();
+            dbContext.Database.EnsureCreated();
+            dataAdapter.CloseDataContext(dbContext);
+
+            foreach (IEdmModel refModel in edmModel.ReferencedModels)
+                if (refModel.EntityContainer != null)
+                    EnsureCreated(refModel);
         }
         public virtual async Task Execute<T, TResult>(QueryParametersScalar<T, TResult> parameters)
         {
             IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri, false, 0).ConfigureAwait(false);
+
+            ODataUri odataUri = ParseUri(parameters.RequestUri);
+            IEdmModel edmModel = EdmModel.GetEdmModel(odataUri.Path);
+            Db.OeDataAdapter oeDataAdapter = edmModel.GetDataAdapter(edmModel.EntityContainer);
+            Db.OeDataAdapter dbDataAdapter = ((ITestDbDataAdapter)oeDataAdapter).DbDataAdapter;
+
             IList fromDb;
-            using (var dataContext = (DbContext)DbDataAdapter.CreateDataContext())
-                fromDb = TestHelper.ExecuteDb(DbDataAdapter.EntitySetAdapters, dataContext, parameters.Expression);
+            using (var dataContext = (DbContext)dbDataAdapter.CreateDataContext())
+                fromDb = TestHelper.ExecuteDb(dbDataAdapter.EntitySetAdapters, dataContext, parameters.Expression);
 
             Console.WriteLine(parameters.RequestUri);
             TestHelper.Compare(fromDb, fromOe, MetadataProvider, null);
@@ -48,10 +78,16 @@ namespace OdataToEntity.Test
         public virtual async Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
         {
             IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri, parameters.NavigationNextLink, parameters.PageSize).ConfigureAwait(false);
+
+            ODataUri odataUri = ParseUri(parameters.RequestUri);
+            IEdmModel edmModel = EdmModel.GetEdmModel(odataUri.Path);
+            Db.OeDataAdapter oeDataAdapter = edmModel.GetDataAdapter(edmModel.EntityContainer);
+            Db.OeDataAdapter dbDataAdapter = ((ITestDbDataAdapter)oeDataAdapter).DbDataAdapter;
+
             IList fromDb;
             IReadOnlyList<IncludeVisitor.Include> includes;
-            using (var dataContext = (DbContext)DbDataAdapter.CreateDataContext())
-                fromDb = TestHelper.ExecuteDb(DbDataAdapter, dataContext, parameters.Expression, out includes);
+            using (var dataContext = (DbContext)dbDataAdapter.CreateDataContext())
+                fromDb = TestHelper.ExecuteDb(dbDataAdapter, dataContext, parameters.Expression, out includes);
 
             //fix null navigation property Order where aggregate Order(Name)
             if (typeof(TResult) == typeof(Object))
@@ -70,7 +106,7 @@ namespace OdataToEntity.Test
         }
         internal async Task ExecuteBatchAsync(String batchName)
         {
-            var parser = new OeParser(new Uri("http://dummy/"), OeDataAdapter, EdmModel);
+            var parser = new OeParser(new Uri("http://dummy/"), EdmModel);
             String fileName = Directory.EnumerateFiles(".", batchName + ".batch", SearchOption.AllDirectories).First();
             byte[] bytes = File.ReadAllBytes(fileName);
             var responseStream = new MemoryStream();
@@ -80,7 +116,7 @@ namespace OdataToEntity.Test
         public async Task<IList> ExecuteOe<TResult>(String requestUri, bool navigationNextLink, int pageSize)
         {
             ODataUri odataUri = ParseUri(requestUri);
-            var parser = new OeParser(odataUri.ServiceRoot, OeDataAdapter, EdmModel);
+            var parser = new OeParser(odataUri.ServiceRoot, EdmModel);
             var uri = new Uri(odataUri.ServiceRoot, requestUri);
             OeRequestHeaders requestHeaders = OeRequestHeaders.JsonDefault.SetMaxPageSize(pageSize).SetNavigationNextLink(navigationNextLink);
 
@@ -101,13 +137,13 @@ namespace OdataToEntity.Test
                 }
                 else if (typeof(TResult) == typeof(Object))
                 {
-                    responseReader = new OpenTypeResponseReader(EdmModel, DbDataAdapter);
+                    responseReader = new OpenTypeResponseReader(EdmModel.GetEdmModel(odataUri.Path));
                     result = responseReader.Read(response).Cast<Object>().ToList();
                 }
                 else
                 {
-                    responseReader = new ResponseReader(EdmModel, DbDataAdapter);
-                    result = responseReader.Read<TResult>(response).Cast<Object>().ToList();
+                    responseReader = new ResponseReader(EdmModel.GetEdmModel(odataUri.Path));
+                    result = responseReader.Read(response).Cast<Object>().ToList();
                 }
 
                 if (pageSize > 0)
@@ -133,14 +169,10 @@ namespace OdataToEntity.Test
         public ODataUri ParseUri(String requestRelativeUri)
         {
             var baseUri = new Uri("http://dummy/");
-            var odataParser = new ODataUriParser(EdmModel, baseUri, new Uri(baseUri, requestRelativeUri));
-            odataParser.Resolver.EnableCaseInsensitive = true;
-            return odataParser.ParseUri();
+            return OeParser.ParseUri(EdmModel, baseUri, new Uri(baseUri, requestRelativeUri));
         }
 
-        internal Model.OrderDbDataAdapter DbDataAdapter { get; }
         internal EdmModel EdmModel { get; }
         internal ModelBuilder.OeEdmModelMetadataProvider MetadataProvider { get; }
-        internal Model.OrderOeDataAdapter OeDataAdapter { get; }
     }
 }

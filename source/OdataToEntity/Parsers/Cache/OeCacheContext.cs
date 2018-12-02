@@ -11,7 +11,6 @@ namespace OdataToEntity.Cache
         public OeCacheContext(OeQueryContext queryContext)
         {
             ODataUri = queryContext.ODataUri;
-            EntitySet = queryContext.GetEntitySet();
             ParseNavigationSegments = queryContext.ParseNavigationSegments;
             MetadataLevel = queryContext.MetadataLevel;
             NavigationNextLink = queryContext.NavigationNextLink;
@@ -25,7 +24,6 @@ namespace OdataToEntity.Cache
 
 
         public IReadOnlyDictionary<ConstantNode, OeQueryCacheDbParameterDefinition> ConstantToParameterMapper { get; }
-        public IEdmEntitySet EntitySet { get; }
         public OeMetadataLevel MetadataLevel { get; }
         public bool NavigationNextLink { get; }
         public ODataUri ODataUri { get; }

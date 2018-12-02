@@ -175,7 +175,7 @@ namespace OdataToEntity.Test
             SelectTestDefinition[] requestMethodNames = SelectTestDefinition.GetSelectTestDefinitions();
 
             var fixture = new NC_RDBNull_DbFixtureInitDb();
-            var parser = new OeGetParser(fixture.OeDataAdapter, fixture.EdmModel);
+            var parser = new OeGetParser(fixture.EdmModel);
             for (int i = 0; i < requestMethodNames.Length; i++)
             {
                 OeQueryContext queryContext = parser.CreateQueryContext(fixture.ParseUri(requestMethodNames[i].Request), 0, false, OeMetadataLevel.Minimal);
@@ -196,7 +196,7 @@ namespace OdataToEntity.Test
             requestMethodNames = requestMethodNames.Where(t => t.MethodName == "FilterEnum" || t.MethodName == "FilterEnumNull").ToArray();
 
             var fixture = new NC_RDBNull_DbFixtureInitDb();
-            var parser = new OeGetParser(fixture.OeDataAdapter, fixture.EdmModel);
+            var parser = new OeGetParser(fixture.EdmModel);
             for (int i = 0; i < requestMethodNames.Length; i++)
             {
                 OeQueryContext queryContext1 = parser.CreateQueryContext(fixture.ParseUri(requestMethodNames[i].Request), 0, false, OeMetadataLevel.Minimal);

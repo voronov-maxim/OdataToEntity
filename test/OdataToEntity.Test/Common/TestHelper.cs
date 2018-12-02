@@ -106,7 +106,7 @@ namespace OdataToEntity.Test
         public static Db.OeEntitySetAdapter FindEntitySetAdapterByClrType(Db.OeEntitySetAdapterCollection entitySetAdapters, Type entityType)
         {
             foreach (Db.OeEntitySetAdapter entitySetAdapter in entitySetAdapters)
-                if (entitySetAdapter.EntityType == entityType)
+                if (entitySetAdapter.EntityType.FullName == entityType.FullName) //linq2db test use different data context
                     return entitySetAdapter;
 
             throw new InvalidOperationException("EntitySetAdapter not found for type " + entityType.FullName);
@@ -176,6 +176,23 @@ namespace OdataToEntity.Test
             for (int i = 0; i < keyProperties.Length; i++)
                 keyExpressions[i] = Expression.Property(parameter, keyProperties[i]);
             return keyExpressions;
+        }
+        public static Cache.OeQueryCache GetQueryCache(Db.OeDataAdapter dataAdapter)
+        {
+            PropertyInfo propertyInfo = typeof(Db.OeDataAdapter).GetProperty("QueryCache", BindingFlags.Instance | BindingFlags.NonPublic);
+            return (Cache.OeQueryCache)propertyInfo.GetValue(dataAdapter);
+        }
+        public static int GetQueryCacheCount(IEdmModel edmModel)
+        {
+            Db.OeDataAdapter dataAdapter = edmModel.GetDataAdapter(edmModel.EntityContainer);
+            Cache.OeQueryCache queryCache = GetQueryCache(dataAdapter);
+            int count = queryCache.CacheCount;
+
+            foreach (IEdmModel refModel in edmModel.ReferencedModels)
+                if (refModel.EntityContainer != null)
+                    count += GetQueryCacheCount(refModel);
+
+            return queryCache.AllowCache ? count : -1;
         }
         private static String RemoveEmptyArrays(String json)
         {

@@ -84,13 +84,11 @@ namespace OdataToEntity.Test
             public ODataResourceSetBase ResourceSet { get; set; }
         }
 
-        private readonly Db.OeDataAdapter _dataAdapter;
         private static readonly Dictionary<PropertyInfo, ODataResourceSetBase> EmptyNavigationPropertyEntities = new Dictionary<PropertyInfo, ODataResourceSetBase>();
 
-        public ResponseReader(IEdmModel edmModel, Db.OeDataAdapter dataAdapter)
+        public ResponseReader(IEdmModel edmModel)
         {
             EdmModel = edmModel;
-            _dataAdapter = dataAdapter;
 
             NavigationProperties = new Dictionary<IEnumerable, ODataResourceSetBase>();
             NavigationPropertyEntities = new Dictionary<Object, Dictionary<PropertyInfo, ODataResourceSetBase>>();
@@ -163,7 +161,7 @@ namespace OdataToEntity.Test
                     await parser.ExecuteGetAsync(propertyResourceSet.Value.NextPageLink, OeRequestHeaders.JsonDefault, response, token).ConfigureAwait(false);
                     response.Position = 0;
 
-                    var navigationPropertyReader = new ResponseReader(EdmModel, _dataAdapter);
+                    var navigationPropertyReader = new ResponseReader(EdmModel);
                     AddItems(entity, propertyResourceSet.Key, navigationPropertyReader.Read(response));
                 }
         }
@@ -225,7 +223,7 @@ namespace OdataToEntity.Test
             var settings = new ODataMessageReaderSettings() { EnableMessageStreamDisposal = false, Validations = ValidationKinds.None };
             var messageReader = new ODataMessageReader(responseMessage, settings, EdmModel);
 
-            IEdmEntitySet entitySet = EdmModel.EntityContainer.FindEntitySet(entitySetMetaAdatpter.EntitySetName);
+            IEdmEntitySet entitySet = OeEdmClrHelper.GetEntitySet(EdmModel, entitySetMetaAdatpter.EntitySetName);
             ODataReader reader = messageReader.CreateODataResourceSetReader(entitySet, entitySet.EntityType());
 
             var stack = new Stack<StackItem>();
@@ -263,7 +261,7 @@ namespace OdataToEntity.Test
         }
 
         protected IEdmModel EdmModel { get; }
-        protected Db.OeEntitySetAdapterCollection EntitySetAdapters => _dataAdapter.EntitySetAdapters;
+        protected Db.OeEntitySetAdapterCollection EntitySetAdapters => EdmModel.GetDataAdapter(EdmModel.EntityContainer).EntitySetAdapters;
         protected Dictionary<IEnumerable, ODataResourceSetBase> NavigationProperties { get; }
         public Dictionary<Object, Dictionary<PropertyInfo, ODataResourceSetBase>> NavigationPropertyEntities { get; }
         public ODataResourceSetBase ResourceSet { get; protected set; }

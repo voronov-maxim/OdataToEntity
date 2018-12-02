@@ -150,17 +150,9 @@ namespace OdataToEntity.GraphQL
         {
             foreach (FieldType fieldType in _context.Schema.Query.Fields)
                 if (String.Compare(fieldType.Name, selection.Name.Value, StringComparison.OrdinalIgnoreCase) == 0)
-                    return GetEntitySetByName(_edmModel, fieldType.Name);
+                    return OeEdmClrHelper.GetEntitySet(_edmModel, fieldType.Name);
 
             throw new InvalidOperationException("Field name " + selection.Name.Value + " not found in schema query");
-        }
-        private static IEdmEntitySet GetEntitySetByName(IEdmModel edmModel, String name)
-        {
-            foreach (IEdmEntitySet entitySet in edmModel.EntityContainer.EntitySets())
-                if (String.Compare(entitySet.Name, name, StringComparison.OrdinalIgnoreCase) == 0)
-                    return entitySet;
-
-            throw new InvalidOperationException("EntitySet " + name + " not found");
         }
         private static ResourceRangeVariable GetResorceVariable(IEdmEntitySet entitySet)
         {

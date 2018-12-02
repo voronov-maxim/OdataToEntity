@@ -12,18 +12,16 @@ namespace OdataToEntity.Parsers
     {
         private readonly Uri _baseUri;
         private readonly IEdmModel _model;
-        private readonly Db.OeDataAdapter _dataAdapter;
 
-        public OeBatchParser(Uri baseUri, Db.OeDataAdapter dataAdapter, IEdmModel model)
+        public OeBatchParser(Uri baseUri, IEdmModel model)
         {
             _baseUri = baseUri;
-            _dataAdapter = dataAdapter;
             _model = model;
         }
 
         private void AddToEntitySet(Object dataContext, in OeOperationMessage operation)
         {
-            Db.OeEntitySetAdapter entitySetAdapter = _dataAdapter.EntitySetAdapters.FindByEntitySet(operation.EntitySet);
+            Db.OeEntitySetAdapter entitySetAdapter = _model.GetEntitySetAdapter(operation.EntitySet);
             switch (operation.Method)
             {
                 case ODataConstants.MethodDelete:
@@ -52,33 +50,41 @@ namespace OdataToEntity.Parsers
         }
         private async Task ExecuteChangeset(IReadOnlyList<OeOperationMessage> changeset, CancellationToken cancellationToken)
         {
+            Db.OeDataAdapter dataAdapter = null;
             Object dataContext = null;
             try
             {
-                dataContext = _dataAdapter.CreateDataContext();
                 foreach (OeOperationMessage operation in changeset)
+                {
+                    if (dataContext == null)
+                    {
+                        dataAdapter = _model.GetDataAdapter(operation.EntitySet.Container);
+                        dataContext = dataAdapter.CreateDataContext();
+                    }
                     AddToEntitySet(dataContext, operation);
-                await _dataAdapter.SaveChangesAsync(_model, dataContext, cancellationToken).ConfigureAwait(false);
+                }
+                await dataAdapter.SaveChangesAsync(dataContext, cancellationToken).ConfigureAwait(false);
             }
             finally
             {
                 if (dataContext != null)
-                    _dataAdapter.CloseDataContext(dataContext);
+                    dataAdapter.CloseDataContext(dataContext);
             }
         }
         private async Task ExecuteOperation(OeOperationMessage operation, CancellationToken cancellationToken)
         {
+            Db.OeDataAdapter dataAdapter = _model.GetDataAdapter(operation.EntitySet.Container);
             Object dataContext = null;
             try
             {
-                dataContext = _dataAdapter.CreateDataContext();
+                dataContext = dataAdapter.CreateDataContext();
                 AddToEntitySet(dataContext, operation);
-                await _dataAdapter.SaveChangesAsync(_model, dataContext, cancellationToken).ConfigureAwait(false);
+                await dataAdapter.SaveChangesAsync(dataContext, cancellationToken).ConfigureAwait(false);
             }
             finally
             {
                 if (dataContext != null)
-                    _dataAdapter.CloseDataContext(dataContext);
+                    dataAdapter.CloseDataContext(dataContext);
             }
         }
     }

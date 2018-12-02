@@ -19,7 +19,6 @@ namespace OdataToEntity.AspNetCore
 {
     public class OeBatchController : ControllerBase
     {
-        private OeDataAdapter _dataAdapter;
         private IEdmModel _edmModel;
 
         [HttpPost]
@@ -42,14 +41,21 @@ namespace OdataToEntity.AspNetCore
             Uri baseUri = UriHelper.GetBaseUri(base.Request);
 
             OeBatchMessage batchMessage = OeBatchMessage.CreateBatchMessage(EdmModel, baseUri, base.HttpContext.Request.Body, base.HttpContext.Request.ContentType);
+            OeDataAdapter dataAdapter = null;
             Object dataContext = null;
             try
             {
-                dataContext = DataAdapter.CreateDataContext();
-
+                IEdmModel refModel = null;
                 foreach (OeOperationMessage operation in batchMessage.Changeset)
                 {
-                    OeEntitySetAdapter entitySetAdapter = EdmModel.GetEntitySetAdapter(operation.EntitySet);
+                    if (dataContext == null)
+                    {
+                        refModel = EdmModel.GetEdmModel(operation.EntitySet.Container);
+                        dataAdapter = refModel.GetDataAdapter(operation.EntitySet.Container);
+                        dataContext = dataAdapter.CreateDataContext();
+                    }
+
+                    OeEntitySetAdapter entitySetAdapter = refModel.GetEntitySetAdapter(operation.EntitySet);
                     String path = basePath + "/" + entitySetAdapter.EntitySetName;
 
                     List<ActionDescriptor> candidates = OeRouter.SelectCandidates(actionDescriptors.Items, base.RouteData.Values, path, operation.Method);
@@ -75,7 +81,7 @@ namespace OdataToEntity.AspNetCore
                     var modelState = new OeFilterAttribute.BatchModelStateDictionary()
                     {
                         Entity = entity,
-                        DataContext = new OeDataContext(entitySetAdapter, EdmModel, dataContext, operation)
+                        DataContext = new OeDataContext(entitySetAdapter, refModel, dataContext, operation)
                     };
                     OnBeforeInvokeController(modelState.DataContext, operation.Entry);
 
@@ -89,7 +95,7 @@ namespace OdataToEntity.AspNetCore
             finally
             {
                 if (dataContext != null)
-                    DataAdapter.CloseDataContext(dataContext);
+                    dataAdapter.CloseDataContext(dataContext);
             }
 
             base.HttpContext.Response.ContentType = base.HttpContext.Request.ContentType;
@@ -99,33 +105,24 @@ namespace OdataToEntity.AspNetCore
         protected virtual void OnBeforeInvokeController(OeDataContext dataContext, ODataResource entry)
         {
         }
-        private T GetService<T>() => (T)base.HttpContext.RequestServices.GetService(typeof(T));
+        private T GetService<T>()
+        {
+            return (T)base.HttpContext.RequestServices.GetService(typeof(T));
+        }
         protected virtual async Task<int> SaveChangesAsync(Object dataContext)
         {
-            return await DataAdapter.SaveChangesAsync(EdmModel, dataContext, CancellationToken.None).ConfigureAwait(false);
+            OeDataAdapter dataAdapter = EdmModel.GetDataAdapter(dataContext.GetType());
+            return await dataAdapter.SaveChangesAsync(dataContext, CancellationToken.None).ConfigureAwait(false);
         }
         protected async Task SaveWithoutController()
         {
             base.HttpContext.Response.ContentType = base.HttpContext.Request.ContentType;
 
-            var parser = new OeBatchParser(UriHelper.GetBaseUri(base.Request), DataAdapter, EdmModel);
+            var parser = new OeBatchParser(UriHelper.GetBaseUri(base.Request), EdmModel);
             await parser.ExecuteAsync(base.HttpContext.Request.Body, base.HttpContext.Response.Body,
                 base.HttpContext.Request.ContentType, CancellationToken.None).ConfigureAwait(false);
         }
 
-        protected OeDataAdapter DataAdapter
-        {
-            get
-            {
-                OeDataAdapter dataAdapter = Volatile.Read(ref _dataAdapter);
-                if (dataAdapter == null)
-                {
-                    dataAdapter = GetService<OeDataAdapter>();
-                    Interlocked.CompareExchange(ref _dataAdapter, dataAdapter, null);
-                }
-                return dataAdapter;
-            }
-        }
         protected IEdmModel EdmModel
         {
             get

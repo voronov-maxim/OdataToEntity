@@ -17,16 +17,14 @@ namespace OdataToEntity.AspNetCore
     public sealed class OeMiddleware
     {
         private readonly PathString _apiPath;
-        private readonly OeDataAdapter _dataAdapter;
         private readonly IEdmModel _edmModel;
         private readonly RequestDelegate _next;
 
-        public OeMiddleware(RequestDelegate next, PathString apiPath, OeDataAdapter dataAdapter, IEdmModel edmModel)
+        public OeMiddleware(RequestDelegate next, PathString apiPath, IEdmModel edmModel)
         {
             _next = next;
             _apiPath = apiPath;
 
-            _dataAdapter = dataAdapter;
             _edmModel = edmModel;
         }
 
@@ -55,13 +53,13 @@ namespace OdataToEntity.AspNetCore
             ((IDictionary<String, StringValues>)requestHeaders).TryGetValue("Prefer", out StringValues preferHeader);
             OeRequestHeaders headers = OeRequestHeaders.Parse(requestHeaders.HeaderAccept, preferHeader);
 
-            var parser = new OeParser(UriHelper.GetBaseUri(httpContext.Request), _dataAdapter, _edmModel);
+            var parser = new OeParser(UriHelper.GetBaseUri(httpContext.Request), _edmModel);
             await parser.ExecuteGetAsync(UriHelper.GetUri(httpContext.Request), new OeHttpRequestHeaders(headers, httpContext.Response), httpContext.Response.Body, CancellationToken.None);
         }
         private async Task InvokeBatch(HttpContext httpContext)
         {
             httpContext.Response.ContentType = httpContext.Request.ContentType;
-            var parser = new OeParser(UriHelper.GetBaseUri(httpContext.Request), _dataAdapter, _edmModel);
+            var parser = new OeParser(UriHelper.GetBaseUri(httpContext.Request), _edmModel);
             await parser.ExecuteBatchAsync(httpContext.Request.Body, httpContext.Response.Body,
                 httpContext.Request.ContentType, CancellationToken.None);
         }

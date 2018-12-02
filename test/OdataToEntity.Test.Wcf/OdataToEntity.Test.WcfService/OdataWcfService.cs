@@ -23,7 +23,7 @@ namespace OdataToEntity.Test.WcfService
         {
             OeRequestHeaders headers = OeRequestHeaders.Parse(request.ContentType, request.Prefer);
             headers.ResponseContentType = headers.ContentType;
-            var parser = new OeParser(_baseUri, DataAdapter, _edmModel);
+            var parser = new OeParser(_baseUri, _edmModel);
 
             String query = new StreamReader(request.Content).ReadToEnd();
             var uri = new Uri(_baseUri, new Uri(query, UriKind.Relative));
@@ -39,7 +39,7 @@ namespace OdataToEntity.Test.WcfService
         }
         public async Task<OdataWcfQuery> Post(OdataWcfQuery request)
         {
-            var parser = new OeParser(_baseUri, _dataAdapter, _edmModel);
+            var parser = new OeParser(_baseUri, _edmModel);
             var responseStream = new MemoryStream();
             await parser.ExecuteBatchAsync(request.Content, responseStream, request.ContentType, CancellationToken.None);
             responseStream.Position = 0;

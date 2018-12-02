@@ -10,12 +10,10 @@ namespace OdataToEntity.GraphQL
 {
     public sealed class OeEntitySetResolver : IFieldResolver<IEnumerable<Dictionary<String, Object>>>
     {
-        private readonly Db.OeDataAdapter _dataAdapter;
         private readonly IEdmModel _edmModel;
 
-        public OeEntitySetResolver(Db.OeDataAdapter dataAdapter, IEdmModel edmModel)
+        public OeEntitySetResolver(IEdmModel edmModel)
         {
-            _dataAdapter = dataAdapter;
             _edmModel = edmModel;
         }
         public IEnumerable<Dictionary<String, Object>> Resolve(ResolveFieldContext context)
@@ -24,14 +22,25 @@ namespace OdataToEntity.GraphQL
 
             var translator = new OeGraphqlAstToODataUri(_edmModel, context);
             ODataUri odataUri = translator.Translate(context.Document.OriginalQuery);
+            IEdmModel refModel = _edmModel.GetEdmModel(odataUri.Path);
+            Db.OeDataAdapter dataAdapter = refModel.GetDataAdapter(refModel.EntityContainer);
+            context.UserContext = dataAdapter.CreateDataContext();
 
-            var parser = new OeGetParser(_dataAdapter, _edmModel);
-            Parsers.OeQueryContext queryContext = parser.CreateQueryContext(odataUri, 0, false, OeMetadataLevel.Minimal);
-            Db.OeAsyncEnumerator asyncEnumerator = _dataAdapter.ExecuteEnumerator(context.UserContext, queryContext, CancellationToken.None);
-            using (var entityAsyncEnumerator = new OeGraphqlAsyncEnumerator(asyncEnumerator, queryContext.EntryFactory, queryContext))
+            try
             {
-                while (entityAsyncEnumerator.MoveNext().GetAwaiter().GetResult())
-                    results.Add(entityAsyncEnumerator.Current);
+                var parser = new OeGetParser(refModel);
+                Parsers.OeQueryContext queryContext = parser.CreateQueryContext(odataUri, 0, false, OeMetadataLevel.Minimal);
+                Db.OeAsyncEnumerator asyncEnumerator = dataAdapter.ExecuteEnumerator(context.UserContext, queryContext, CancellationToken.None);
+                using (var entityAsyncEnumerator = new OeGraphqlAsyncEnumerator(asyncEnumerator, queryContext.EntryFactory, queryContext))
+                {
+                    while (entityAsyncEnumerator.MoveNext().GetAwaiter().GetResult())
+                        results.Add(entityAsyncEnumerator.Current);
+                }
+            }
+            finally
+            {
+                if (context.UserContext != null)
+                    dataAdapter.CloseDataContext(context.UserContext);
             }
 
             return results;

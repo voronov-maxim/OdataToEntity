@@ -54,4 +54,32 @@ namespace OdataToEntity.Test.Ef6.SqlServer
         [DbFunction(".", "TableFunctionWithParameters")]
         public IEnumerable<Order> TableFunctionWithParameters(int? id, String name, OrderStatus? status) => throw new NotImplementedException();
     }
+
+    public sealed class Order2Ef6Context : DbContext
+    {
+        static Order2Ef6Context()
+        {
+            Database.SetInitializer<Order2Ef6Context>(null);
+        }
+        public Order2Ef6Context(bool useRelationalNulls) : base(@"Server=.\sqlexpress;Initial Catalog=OdataToEntity;Trusted_Connection=Yes;")
+        {
+            base.Configuration.AutoDetectChangesEnabled = false;
+            base.Configuration.LazyLoadingEnabled = false;
+            base.Configuration.ProxyCreationEnabled = false;
+            base.Configuration.UseDatabaseNullSemantics = useRelationalNulls;
+            base.Configuration.ValidateOnSaveEnabled = false;
+        }
+
+        protected override void OnModelCreating(DbModelBuilder modelBuilder)
+        {
+            modelBuilder.Conventions.Remove<PluralizingTableNameConvention>();
+
+            modelBuilder.Entity<Order>().HasMany(p => p.ShippingAddresses).WithRequired().HasForeignKey(s => s.OrderId);
+            modelBuilder.Entity<Customer>().HasMany(p => p.CustomerShippingAddresses).WithRequired().HasForeignKey(s => new { s.CustomerCountry, s.CustomerId });
+            base.OnModelCreating(modelBuilder);
+        }
+
+        public DbSet<Customer> Customers2 { get; set; }
+        public DbSet<Order> Orders2 { get; set; }
+    }
 }

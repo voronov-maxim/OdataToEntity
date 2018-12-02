@@ -41,12 +41,11 @@
   <ItemGroup>
     <Compile Include="..\..\OdataToEntity.Test.Asp\OdataToEntity.Test.AspClient\BatchTest.cs" Link="BatchTest.cs" />
     <Compile Include="..\..\OdataToEntity.Test.Asp\OdataToEntity.Test.AspClient\Connected Services\ODataClient\ODataClient.cs" Link="ODataClient.cs" />
-    <Compile Include="..\..\OdataToEntity.Test.Asp\OdataToEntity.Test.AspClient\DbFixture.cs" Link="DbFixture.cs" />
+    <Compile Include="..\..\OdataToEntity.Test.Asp\OdataToEntity.Test.AspClient\DbFixtureInitDb.cs" Link="DbFixtureInitDb.cs" />
     <Compile Include="..\..\OdataToEntity.Test.Asp\OdataToEntity.Test.AspClient\DbFunctionAttribute.cs" Link="DbFunctionAttribute.cs" />
     <Compile Include="..\..\OdataToEntity.Test.Asp\OdataToEntity.Test.AspClient\FactAttribute.cs" Link="FactAttribute.cs" />
     <Compile Include="..\..\OdataToEntity.Test.Asp\OdataToEntity.Test.AspClient\ProcedureTest.cs" Link="ProcedureTest.cs" />
     <Compile Include="..\..\OdataToEntity.Test.Asp\OdataToEntity.Test.AspClient\TypeMapperVisitor.cs" Link="TypeMapperVisitor.cs" />
-    <Compile Include="..\..\OdataToEntity.Test.EfCore.SqlServer\OrderContextOptions.cs" Link="OrderContextOptions.cs" />
     <Compile Include="..\..\OdataToEntity.Test\Common\IncludeVisitor.cs" Link="Common\IncludeVisitor.cs" />
     <Compile Include="..\..\OdataToEntity.Test\Common\QueryParameters.cs" Link="Common\QueryParameters.cs" />
     <Compile Include="..\..\OdataToEntity.Test\Common\ResponseReader.cs" Link="Common\ResponseReader.cs" />

@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Routing.Template;
 using Microsoft.OData.Edm;
-using OdataToEntity.Db;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,16 +19,14 @@ namespace OdataToEntity.AspNetCore
     {
         private readonly ActionDescriptorCollection _actionDescriptors;
         private readonly IActionInvokerFactory _actionInvokerFactory;
-        private readonly OeDataAdapter _dataAdapter;
         private readonly IEdmModel _edmModel;
 
         public OeRouter(IActionInvokerFactory actionInvokerFactory, IActionDescriptorCollectionProvider actionDescriptorCollectionProvider,
-            IEdmModel edmModel, OeDataAdapter dataAdapter, IUrlHelperFactory urlHelperFactory)
+            IEdmModel edmModel, IUrlHelperFactory urlHelperFactory)
         {
             _actionInvokerFactory = actionInvokerFactory;
             _actionDescriptors = actionDescriptorCollectionProvider.ActionDescriptors;
             _edmModel = edmModel;
-            _dataAdapter = dataAdapter;
         }
 
         private static bool ActionConstaint(ActionDescriptor actionDescriptor, String httpMethod)

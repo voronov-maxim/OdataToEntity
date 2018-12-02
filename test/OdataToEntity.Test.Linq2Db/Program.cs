@@ -16,7 +16,7 @@ namespace OdataToEntity.Test.Linq2Db
         static void Main(string[] args)
         {
             //EfCore.SqlServer.PerformanceCacheTest.RunTest(100);
-            //new AC_RDBNull(new AC_RDBNull_DbFixtureInitDb()).Table(0).GetAwaiter().GetResult();
+            new AC_RDBNull(new AC_RDBNull_DbFixtureInitDb()).ReferencedModels().GetAwaiter().GetResult();
         }
     }
 }

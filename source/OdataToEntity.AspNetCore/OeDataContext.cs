@@ -44,7 +44,7 @@ namespace OdataToEntity.AspNetCore
         }
         private ODataResource CreateEntry(Object entity)
         {
-            IEdmEntitySet entitySet = EdmModel.FindDeclaredEntitySet(_entitySetAdapter.EntitySetName);
+            IEdmEntitySet entitySet = OeEdmClrHelper.GetEntitySet(EdmModel, _entitySetAdapter.EntitySetName);
             PropertyInfo[] structuralProperties = entitySet.EntityType().StructuralProperties().Select(p => _entitySetAdapter.EntityType.GetProperty(p.Name)).ToArray();
             return CreateEntry(entity, structuralProperties);
         }

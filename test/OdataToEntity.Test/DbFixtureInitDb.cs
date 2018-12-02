@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using Microsoft.OData.Edm;
+using System.Threading.Tasks;
 
 namespace OdataToEntity.Test
 {
@@ -6,7 +7,8 @@ namespace OdataToEntity.Test
     {
         private bool _initialized;
 
-        protected DbFixtureInitDb(bool allowCache, bool useRelationalNulls) : base(allowCache, useRelationalNulls)
+        protected DbFixtureInitDb(bool allowCache, bool useRelationalNulls)
+            : base(allowCache, useRelationalNulls)
         {
         }
 
@@ -15,11 +17,8 @@ namespace OdataToEntity.Test
             if (_initialized)
                 return;
 
-            var dbContext = (Model.OrderContext)base.DbDataAdapter.CreateDataContext();
-            dbContext.Database.EnsureCreated();
-            base.DbDataAdapter.CloseDataContext(dbContext);
-
             _initialized = true;
+            EnsureCreated(base.EdmModel);
             await base.ExecuteBatchAsync("Add");
         }
     }
@@ -28,20 +27,22 @@ namespace OdataToEntity.Test
     {
         private bool _initialized;
 
-        protected ManyColumnsFixtureInitDb(bool allowCache, bool useRelationalNulls) : base(allowCache, useRelationalNulls)
+        protected ManyColumnsFixtureInitDb(bool allowCache, bool useRelationalNulls)
+            : base(allowCache, useRelationalNulls)
         {
         }
 
+        private static EdmModel BuildEdmModel(Db.OeDataAdapter dataAdapter, ModelBuilder.OeEdmModelMetadataProvider metadataProvider)
+        {
+            return new ModelBuilder.OeEdmModelBuilder(dataAdapter, metadataProvider).BuildEdmModel();
+        }
         public async override Task Initalize()
         {
             if (_initialized)
                 return;
 
-            var dbContext = (Model.OrderContext)base.DbDataAdapter.CreateDataContext();
-            dbContext.Database.EnsureCreated();
-            base.DbDataAdapter.CloseDataContext(dbContext);
-
             _initialized = true;
+            EnsureCreated(base.EdmModel);
             await base.ExecuteBatchAsync("ManyColumns");
         }
     }

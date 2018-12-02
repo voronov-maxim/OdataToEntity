@@ -25,11 +25,10 @@ namespace OdataToEntity.Ef6
             private bool _isInitialized;
             private bool _isSelfReference;
 
-            public DbSetAdapterImpl(Func<T, IDbSet<TEntity>> getEntitySet, String entitySetName, String dataContextFullName)
+            public DbSetAdapterImpl(Func<T, IDbSet<TEntity>> getEntitySet, String entitySetName)
             {
                 _getEntitySet = getEntitySet;
                 EntitySetName = entitySetName;
-                EntitySetFullName = dataContextFullName + "." + entitySetName;
             }
 
             public override void AddEntity(Object dataContext, ODataResourceBase entry)
@@ -126,7 +125,6 @@ namespace OdataToEntity.Ef6
             }
 
             public override Type EntityType => typeof(TEntity);
-            public override String EntitySetFullName { get; }
             public override String EntitySetName { get; }
         }
 
@@ -178,7 +176,7 @@ namespace OdataToEntity.Ef6
         private static Db.OeEntitySetAdapter CreateDbSetInvoker<TEntity>(PropertyInfo property) where TEntity : class
         {
             var getDbSet = (Func<T, IDbSet<TEntity>>)Delegate.CreateDelegate(typeof(Func<T, IDbSet<TEntity>>), property.GetGetMethod());
-            return new DbSetAdapterImpl<TEntity>(getDbSet, property.Name, typeof(T).FullName);
+            return new DbSetAdapterImpl<TEntity>(getDbSet, property.Name);
         }
         public override Db.OeAsyncEnumerator ExecuteEnumerator(Object dataContext, OeQueryContext queryContext, CancellationToken cancellationToken)
         {
@@ -259,7 +257,7 @@ namespace OdataToEntity.Ef6
 
             return expression;
         }
-        public override Task<int> SaveChangesAsync(IEdmModel edmModel, Object dataContext, CancellationToken cancellationToken)
+        public override Task<int> SaveChangesAsync(Object dataContext, CancellationToken cancellationToken)
         {
             return ((T)dataContext).SaveChangesAsync(cancellationToken);
         }

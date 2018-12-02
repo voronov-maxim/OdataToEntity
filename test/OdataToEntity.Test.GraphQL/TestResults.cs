@@ -194,6 +194,17 @@ namespace OdataToEntity.Test.GraphQL
       }
     ]
 }";
+        public static readonly String referenced_models = @"
+{
+    orders2: [
+      {
+        name: 'Order from Order2 context',
+        customer: {
+          name: 'Dua Lipa'
+        }
+      }
+    ]
+}";
 
         public static void Assert(String result, [CallerMemberName] String memberName = "")
         {

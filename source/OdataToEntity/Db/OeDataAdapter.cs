@@ -18,7 +18,8 @@ namespace OdataToEntity.Db
         public abstract Object CreateDataContext();
         public abstract OeAsyncEnumerator ExecuteEnumerator(Object dataContext, OeQueryContext queryContext, CancellationToken cancellationToken);
         public abstract TResult ExecuteScalar<TResult>(Object dataContext, OeQueryContext queryContext);
-        public abstract Task<int> SaveChangesAsync(IEdmModel edmModel, Object dataContext, CancellationToken cancellationToken);
+        public abstract Task<int> SaveChangesAsync(Object dataContext, CancellationToken cancellationToken);
+        protected internal virtual void SetEdmModel(IEdmModel edmModel) { }
 
         public abstract Type DataContextType { get; }
         public abstract OeEntitySetAdapterCollection EntitySetAdapters { get; }

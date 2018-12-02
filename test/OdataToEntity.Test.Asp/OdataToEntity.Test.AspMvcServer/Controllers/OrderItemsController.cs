@@ -9,8 +9,8 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
     [Route("api/[controller]")]
     public sealed class OrderItemsController : OeControllerBase
     {
-        public OrderItemsController(Db.OeDataAdapter dataAdapter, IEdmModel edmModel)
-            : base(dataAdapter, edmModel)
+        public OrderItemsController(IEdmModel edmModel)
+            : base(edmModel)
         {
         }
 

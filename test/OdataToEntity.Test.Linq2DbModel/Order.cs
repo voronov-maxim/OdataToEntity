@@ -314,4 +314,21 @@ namespace OdataToEntity.Test.Model
         Male,
         Female
     }
+
+    public class Order2Connection : LinqToDB.Data.DataConnection, IOeLinq2DbDataContext
+    {
+        public ITable<Customer> Customers2 { get { return this.GetTable<Customer>(); } }
+        public ITable<Order>    Orders2    { get { return this.GetTable<Order>(); } }
+
+		public Order2Connection()
+			: base("SqlServer", @"Server=.\sqlexpress;Initial Catalog=OdataToEntity;Trusted_Connection=Yes;")
+		{
+		}
+
+        OeLinq2DbDataContext IOeLinq2DbDataContext.DataContext
+        {
+            get;
+            set;
+        }
+    }
 }

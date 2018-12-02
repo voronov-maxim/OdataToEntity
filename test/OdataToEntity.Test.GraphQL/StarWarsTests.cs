@@ -162,6 +162,26 @@ namespace OdataToEntity.Test.GraphQL
             TestResults.Assert(result);
         }
 
+        [Fact]
+        public async Task referenced_models()
+        {
+            await can_query_for_droids();
+
+            String query = @"
+               {
+                  orders2 {
+                    name
+                    customer {
+                        name
+                    }
+                  }
+               }
+            ";
+
+            String result = await Fixture.Execute(query);
+            TestResults.Assert(result);
+        }
+
         private StarWarsFixture Fixture { get; }
     }
 }

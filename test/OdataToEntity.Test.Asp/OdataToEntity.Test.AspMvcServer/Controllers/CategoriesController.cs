@@ -10,8 +10,8 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
     [Route("api/[controller]")]
     public sealed class CategoriesController : OeControllerBase
     {
-        public CategoriesController(Db.OeDataAdapter dataAdapter, IEdmModel edmModel)
-            : base(dataAdapter, edmModel)
+        public CategoriesController(IEdmModel edmModel)
+            : base(edmModel)
         {
         }
 

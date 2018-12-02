@@ -1,4 +1,5 @@
-﻿using Microsoft.OData.Edm;
+﻿using Microsoft.OData;
+using Microsoft.OData.Edm;
 using OdataToEntity.ModelBuilder;
 using System;
 
@@ -20,13 +21,37 @@ namespace OdataToEntity
 
             throw new InvalidOperationException("Add type annotation for " + edmType.FullTypeName());
         }
-        public static Db.OeDataAdapter GetDataAdapter(this IEdmModel edmModel, EdmEntityContainer entityContainer)
+        public static Db.OeDataAdapter GetDataAdapter(this IEdmModel edmModel, Type dataContextType)
         {
-            return edmModel.GetAnnotationValue<Db.OeDataAdapter>(entityContainer);
+            Db.OeDataAdapter dataAdapter = edmModel.GetAnnotationValue<Db.OeDataAdapter>(edmModel.EntityContainer);
+            if (dataAdapter.DataContextType == dataContextType)
+                return dataAdapter;
+
+            foreach (IEdmModel refModel in edmModel.ReferencedModels)
+                if (refModel.EntityContainer != null)
+                {
+                    dataAdapter = refModel.GetDataAdapter(dataContextType);
+                    if (dataAdapter != null)
+                        return dataAdapter;
+                }
+
+            throw new InvalidOperationException("OeDataAdapter not found for data context type " + dataContextType.FullName);
+        }
+        public static Db.OeDataAdapter GetDataAdapter(this IEdmModel edmModel, IEdmEntityContainer entityContainer)
+        {
+            Db.OeDataAdapter dataAdapter = edmModel.GetAnnotationValue<Db.OeDataAdapter>(entityContainer);
+            if (dataAdapter == null)
+                dataAdapter = edmModel.GetEdmModel(entityContainer).GetAnnotationValue<Db.OeDataAdapter>(entityContainer);
+
+            return dataAdapter;
         }
         public static Db.OeEntitySetAdapter GetEntitySetAdapter(this IEdmModel edmModel, IEdmEntitySet entitySet)
         {
-            return edmModel.GetAnnotationValue<Db.OeEntitySetAdapter>(entitySet);
+            Db.OeEntitySetAdapter entitySetAdapter = edmModel.GetAnnotationValue<Db.OeEntitySetAdapter>(entitySet);
+            if (entitySetAdapter == null)
+                entitySetAdapter = edmModel.GetEdmModel(entitySet).GetAnnotationValue<Db.OeEntitySetAdapter>(entitySet);
+
+            return entitySetAdapter;
         }
         public static ManyToManyJoinDescription GetManyToManyJoinDescription(this IEdmModel edmModel, IEdmNavigationProperty navigationProperty)
         {

@@ -17,26 +17,49 @@ namespace OdataToEntity.Test.GraphQL
 
         private static async Task Test()
         {
-            using (var context = new StarWars.StarWarsContext("test"))
-                context.Database.EnsureCreated();
+            using (var starWarsContext = new StarWars.StarWarsContext("StarWars"))
+                starWarsContext.Database.EnsureCreated();
 
-            String query = @"
+            using (var order2Context = new Model.Order2Context(StarWars.StarWarsContext.Create<Model.Order2Context>("Order2")))
+                order2Context.Database.EnsureCreated();
+
+            String starWarsQuery = @"
                {
                   droid(id: ""4"") {
                     name
                   }
                }
             ";
+            String order2Query = @"
+               {
+                  orders2 {
+                    name
+                    customer {
+                        name
+                    }
+                  }
+               }
+            ";
 
-            OeEfCoreDataAdapter<StarWars.StarWarsContext> dataAdapter = new StarWars.StarWarsDataAdapter(false, "test");
-            IEdmModel edmModel = dataAdapter.BuildEdmModelFromEfCoreModel();
-            var parser = new OeGraphqlParser(dataAdapter, edmModel);
+            var order2DataAdapter2 = new Model.Order2DataAdapter(false, "Order2");
+            EdmModel refModel = order2DataAdapter2.BuildEdmModelFromEfCoreModel();
 
-            String odataUri = Uri.UnescapeDataString(parser.GetOdataUri(query).OriginalString);
-            Console.WriteLine(odataUri);
+            var starWarsDataAdapter1 = new StarWars.StarWarsDataAdapter(false, "StarWars");
+            EdmModel rootModel = starWarsDataAdapter1.BuildEdmModelFromEfCoreModel(refModel);
 
-            String json = new DocumentWriter(true).Write(await parser.Execute(query));
-            Console.WriteLine(json);
+            var parser = new OeGraphqlParser(rootModel);
+
+            String starWarsOdataUri = Uri.UnescapeDataString(parser.GetOdataUri(starWarsQuery).OriginalString);
+            Console.WriteLine(starWarsOdataUri);
+
+            String starWarsJson = new DocumentWriter(true).Write(await parser.Execute(starWarsQuery));
+            Console.WriteLine(starWarsJson);
+
+            String order2OdataUri = Uri.UnescapeDataString(parser.GetOdataUri(order2Query).OriginalString);
+            Console.WriteLine(order2OdataUri);
+
+            String order2Json = new DocumentWriter(true).Write(await parser.Execute(order2Query));
+            Console.WriteLine(order2Json);
         }
     }
 }

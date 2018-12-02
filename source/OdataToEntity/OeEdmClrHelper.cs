@@ -5,6 +5,7 @@ using OdataToEntity.ModelBuilder;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 
 namespace OdataToEntity
@@ -78,6 +79,34 @@ namespace OdataToEntity
 
             return edmValue;
         }
+        public static IEdmModel GetEdmModel(this IEdmModel edmModel, IEdmEntityContainer entityContainer)
+        {
+            if (edmModel.EntityContainer == entityContainer)
+                return edmModel;
+
+            foreach (IEdmModel refModel in edmModel.ReferencedModels)
+                if (refModel.EntityContainer == entityContainer)
+                    return refModel;
+
+            throw new InvalidOperationException("EdmModel not found for EdmEntityContainer " + entityContainer.Name);
+        }
+        public static IEdmModel GetEdmModel(this IEdmModel edmModel, IEdmEntitySet entitySet)
+        {
+            return edmModel.GetEdmModel(entitySet.Container);
+        }
+        public static IEdmModel GetEdmModel(this IEdmModel edmModel, ODataPath path)
+        {
+            if (path.FirstSegment is EntitySetSegment entitySetSegment)
+                return edmModel.GetEdmModel(entitySetSegment.EntitySet);
+
+            if (path.FirstSegment is OperationImportSegment importSegment)
+            {
+                IEdmOperationImport operationImport = importSegment.OperationImports.Single();
+                return edmModel.GetEdmModel(operationImport.Container);
+            }
+
+            throw new InvalidOperationException("Not supported segmet type " + path.FirstSegment.GetType().FullName);
+        }
         public static IEdmTypeReference GetEdmTypeReference(this IEdmModel edmModel, Type clrType)
         {
             IEdmTypeReference edmTypeRef;
@@ -109,7 +138,36 @@ namespace OdataToEntity
                     if (binding.NavigationProperty == navigationProperty)
                         return (IEdmEntitySet)binding.Target;
 
+            foreach (IEdmModel refModel in edmModel.ReferencedModels)
+                if (refModel.EntityContainer != null)
+                {
+                    IEdmEntitySet entitySet = GetEntitySet(refModel, navigationProperty);
+                    if (entitySet != null)
+                        return entitySet;
+                }
+
             throw new InvalidOperationException("EntitySet for navigation property " + navigationProperty.Name + " not found");
+        }
+        public static IEdmEntitySet GetEntitySet(IEdmModel edmModel, String entitySetName)
+        {
+            IEdmEntitySet entitySet = edmModel.EntityContainer.FindEntitySet(entitySetName);
+            if (entitySet != null)
+                return entitySet;
+
+            foreach (IEdmEntityContainerElement element in edmModel.EntityContainer.Elements)
+                if (element is IEdmEntitySet edmEntitySet &&
+                    String.Compare(edmEntitySet.Name, entitySetName, StringComparison.OrdinalIgnoreCase) == 0)
+                    return edmEntitySet;
+
+            foreach (IEdmModel refModel in edmModel.ReferencedModels)
+                if (refModel.EntityContainer != null)
+                {
+                    entitySet = GetEntitySet(refModel, entitySetName);
+                    if (entitySet != null)
+                        return entitySet;
+                }
+
+            return null;
         }
         public static PropertyInfo GetPropertyIgnoreCase(this Type declaringType, String propertyName)
         {

@@ -17,7 +17,7 @@ namespace OdataToEntity.Test.EfCore.SqlServer
             SelectTestDefinition[] testDefinitions = SelectTestDefinition.GetSelectTestDefinitions();
 
             //warming-up
-            var dataAdapter = new OrderDbDataAdapter(false, false, null);
+            var dataAdapter = new OrderDataAdapter(false, false, null);
             var dbContext = (DbContext)dataAdapter.CreateDataContext();
             foreach (SelectTestDefinition testDefinition in testDefinitions)
                 testDefinition.ExecutorDb(dataAdapter, dbContext);
@@ -30,7 +30,7 @@ namespace OdataToEntity.Test.EfCore.SqlServer
         private static void PerformanceCacheDbTest(SelectTestDefinition[] testDefinitions, int testCount)
         {
             var pool = new DbContextPool<OrderContext>(OrderContextOptions.Create(true, null));
-            var dataAdapter = new OrderDbDataAdapter(false, false, null);
+            var dataAdapter = new OrderDataAdapter(false, false, null);
 
             GC.Collect();
             GC.WaitForPendingFinalizers();
@@ -52,7 +52,7 @@ namespace OdataToEntity.Test.EfCore.SqlServer
         {
             var dataAdapter = new OeEfCoreDataAdapter<OrderContext>(OrderContextOptions.Create(true, null), new Cache.OeQueryCache(allowCache));
             IEdmModel edmModel = dataAdapter.BuildEdmModel();
-            var parser = new OeParser(new Uri("http://dummy"), dataAdapter, edmModel);
+            var parser = new OeParser(new Uri("http://dummy"), edmModel);
 
             GC.Collect();
             GC.WaitForPendingFinalizers();
