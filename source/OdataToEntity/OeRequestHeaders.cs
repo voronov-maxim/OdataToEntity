@@ -12,12 +12,6 @@ namespace OdataToEntity
 
     public class OeRequestHeaders
     {
-        private readonly String _charset;
-        private readonly String _contentType;
-        private readonly OeMetadataLevel _metadataLevel;
-        private readonly String _mimeType;
-        private readonly bool _streaming;
-
         public static readonly OeRequestHeaders JsonDefault = new OeRequestHeaders("application/json", OeMetadataLevel.Minimal, true, "utf-8");
         public static readonly OeRequestHeaders TextDefault = new OeRequestHeaders("text/plain", OeMetadataLevel.Minimal, true, "utf-8");
 
@@ -28,12 +22,12 @@ namespace OdataToEntity
         }
         protected OeRequestHeaders(String mimeType, OeMetadataLevel metadataLevel, bool streaming, String charset)
         {
-            _mimeType = mimeType;
-            _metadataLevel = metadataLevel;
-            _streaming = streaming;
-            _charset = charset;
+            MimeType = mimeType;
+            MetadataLevel = metadataLevel;
+            Streaming = streaming;
+            Charset = charset;
 
-            _contentType = GetContentType(mimeType, metadataLevel, streaming, charset);
+            ContentType = GetContentType(mimeType, metadataLevel, streaming, charset);
         }
 
         private static String GetContentType(String mimeType, OeMetadataLevel metadataLevel, bool streaming, String charset)
@@ -125,7 +119,7 @@ namespace OdataToEntity
             if (String.IsNullOrEmpty(preferHeader))
                 return requestHeaders;
 
-            var message = new OeInMemoryMessage(null, null);
+            var message = new Infrastructure.OeInMemoryMessage(null, null);
             message.SetHeader("Prefer", preferHeader);
             ODataPreferenceHeader preferenceHeader = message.PreferHeader();
             if (preferenceHeader.MaxPageSize == null)
@@ -153,13 +147,13 @@ namespace OdataToEntity
             return requestHeaders;
         }
 
-        public String Charset => _charset;
-        public String ContentType => _contentType;
-        public OeMetadataLevel MetadataLevel => _metadataLevel;
-        public string MimeType => _mimeType;
+        public String Charset { get; }
+        public String ContentType { get; }
+        public OeMetadataLevel MetadataLevel { get; }
+        public string MimeType { get; }
         public int MaxPageSize { get; private set; }
         public bool NavigationNextLink { get; private set; }
         public virtual string ResponseContentType { get; set; }
-        public bool Streaming => _streaming;
+        public bool Streaming { get; }
     }
 }

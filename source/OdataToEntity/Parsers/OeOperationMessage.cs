@@ -53,7 +53,7 @@ namespace OdataToEntity.Parsers
             edmModel = edmModel.GetEdmModel(entitySet);
 
             ODataResource entry = null;
-            IODataRequestMessage requestMessage = new OeInMemoryMessage(content, contentType);
+            IODataRequestMessage requestMessage = new Infrastructure.OeInMemoryMessage(content, contentType);
             var settings = new ODataMessageReaderSettings { EnableMessageStreamDisposal = false };
             using (var messageReader = new ODataMessageReader(requestMessage, settings, edmModel))
             {

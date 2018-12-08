@@ -1,21 +1,23 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.OData.Edm;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using OdataToEntity.AspNetCore;
 using System.Threading.Tasks;
 
 namespace OdataToEntity.Test.AspMvcServer.Controllers
 {
     [Route("api/[controller]")]
-    public class ManyColumnsViewController : OeControllerBase
+    public class ManyColumnsViewController
     {
-        public ManyColumnsViewController(IEdmModel edmModel)
-            : base(edmModel)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+
+        public ManyColumnsViewController(IHttpContextAccessor httpContextAccessor)
         {
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task Get()
         {
-            await base.Get(base.HttpContext, base.HttpContext.Response.Body, false, 10);
+            await OeAspQueryParser.Get(_httpContextAccessor.HttpContext, false, 10);
         }
     }
 }

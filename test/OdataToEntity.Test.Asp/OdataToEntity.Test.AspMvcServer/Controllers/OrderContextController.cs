@@ -1,60 +1,68 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.OData.Edm;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using OdataToEntity.AspNetCore;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace OdataToEntity.Test.AspMvcServer.Controllers
 {
     [Route("api")]
-    public sealed class OrderContextController : OeControllerBase
+    public sealed class OrderContextController
     {
-        public OrderContextController(IEdmModel edmModel)
-                : base(edmModel)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+
+        public OrderContextController(IHttpContextAccessor httpContextAccessor)
         {
+            _httpContextAccessor = httpContextAccessor;
         }
 
         [HttpGet("dbo.GetOrders")]
         public ODataResult<Model.Order> GetOrders()
         {
-            Db.OeAsyncEnumerator asyncEnumerator = base.GetAsyncEnumerator(base.HttpContext, base.HttpContext.Response.Body);
-            return base.OData<Model.Order>(asyncEnumerator);
+            var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
+            IAsyncEnumerable<Model.Order> orders = parser.ExecuteReader<Model.Order>();
+            return parser.OData(orders);
         }
         [HttpGet("dbo.ScalarFunction")]
         public async Task<IActionResult> ScalarFunction()
         {
-            Db.OeAsyncEnumerator asyncEnumerator = base.GetAsyncEnumerator(base.HttpContext, base.HttpContext.Response.Body);
-            return await base.ODataScalar(asyncEnumerator);
+            var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
+            int? result = await parser.ExecuteScalar<int>();
+            return parser.OData(result);
         }
         [HttpPost("ResetDb")]
-        public async Task<IActionResult> ResetDb()
+        public async Task ResetDb()
         {
-            Db.OeAsyncEnumerator asyncEnumerator = base.GetAsyncEnumerator(base.HttpContext, base.HttpContext.Response.Body);
-            return await base.ODataScalar(asyncEnumerator);
+            var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
+            await parser.ExecuteScalar<int>();
         }
         [HttpPost("ResetManyColumns")]
-        public async Task<IActionResult> ResetManyColumns()
+        public async Task ResetManyColumns()
         {
-            Db.OeAsyncEnumerator asyncEnumerator = base.GetAsyncEnumerator(base.HttpContext, base.HttpContext.Response.Body);
-            return await base.ODataScalar(asyncEnumerator);
+            var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
+            await parser.ExecuteScalar<int>();
         }
         [HttpGet("dbo.ScalarFunctionWithParameters/{id},{name},{status}")]
         public async Task<IActionResult> ScalarFunctionWithParameters(String id, String name, String status)
         {
-            Db.OeAsyncEnumerator asyncEnumerator = base.GetAsyncEnumerator(base.HttpContext, base.HttpContext.Response.Body);
-            return await base.ODataScalar(asyncEnumerator);
+            var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
+            int? result = await parser.ExecuteScalar<int>();
+            return parser.OData(result);
         }
         [HttpGet("TableFunction")]
         public ODataResult<Model.Order> TableFunction()
         {
-            Db.OeAsyncEnumerator asyncEnumerator = base.GetAsyncEnumerator(base.HttpContext, base.HttpContext.Response.Body);
-            return base.OData<Model.Order>(asyncEnumerator);
+            var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
+            IAsyncEnumerable<Model.Order> orders = parser.ExecuteReader<Model.Order>();
+            return parser.OData(orders);
         }
         [HttpGet("TableFunctionWithParameters/{id},{name},{status}")]
         public ODataResult<Model.Order> TableFunctionWithParameters(String id, String name, String status)
         {
-            Db.OeAsyncEnumerator asyncEnumerator = base.GetAsyncEnumerator(base.HttpContext, base.HttpContext.Response.Body);
-            return base.OData<Model.Order>(asyncEnumerator);
+            var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
+            IAsyncEnumerable<Model.Order> orders = parser.ExecuteReader<Model.Order>();
+            return parser.OData(orders);
         }
     }
 }

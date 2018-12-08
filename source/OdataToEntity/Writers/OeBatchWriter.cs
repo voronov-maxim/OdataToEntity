@@ -28,7 +28,7 @@ namespace OdataToEntity.Writers
 
         public void Write(Stream stream, in OeBatchMessage batchMessage)
         {
-            IODataResponseMessage responseMessage = new OeInMemoryMessage(stream, batchMessage.ContentType);
+            IODataResponseMessage responseMessage = new Infrastructure.OeInMemoryMessage(stream, batchMessage.ContentType);
             var settings = new ODataMessageWriterSettings()
             {
                 Version = ODataVersion.V4,
@@ -58,7 +58,7 @@ namespace OdataToEntity.Writers
         }
         private void WriteEntity(IEdmEntitySet entitySet, ODataResource entry, Stream stream)
         {
-            IODataResponseMessage responseMessage = new OeInMemoryMessage(stream, null);
+            IODataResponseMessage responseMessage = new Infrastructure.OeInMemoryMessage(stream, null);
             using (ODataMessageWriter messageWriter = new ODataMessageWriter(responseMessage, _settings, _model.GetEdmModel(entitySet)))
             {
                 ODataUtils.SetHeadersForPayload(messageWriter, ODataPayloadKind.Resource);

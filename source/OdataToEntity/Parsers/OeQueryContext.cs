@@ -48,19 +48,29 @@ namespace OdataToEntity.Parsers
         {
             private readonly Object _dataContext;
             private readonly IEdmModel _edmModel;
+            private readonly Func<IEdmEntitySet, IQueryable> _queryableSource;
 
-            public SourceVisitor(IEdmModel edmModel, Object dataContext)
+            public SourceVisitor(IEdmModel edmModel, Object dataContext, Func<IEdmEntitySet, IQueryable> queryableSource)
             {
                 _edmModel = edmModel;
                 _dataContext = dataContext;
+                _queryableSource = queryableSource;
             }
 
             protected override Expression VisitConstant(ConstantExpression node)
             {
                 if (node.Value is OeEnumerableStub enumerableStub)
                 {
-                    Db.OeEntitySetAdapter entitySetAdapter = _edmModel.GetEntitySetAdapter(enumerableStub.EntitySet);
-                    IQueryable query = entitySetAdapter.GetEntitySet(_dataContext);
+                    IQueryable query = null;
+                    if (_queryableSource != null)
+                        query = _queryableSource(enumerableStub.EntitySet);
+
+                    if (query == null)
+                    { 
+                        Db.OeEntitySetAdapter entitySetAdapter = _edmModel.GetEntitySetAdapter(enumerableStub.EntitySet);
+                        query = entitySetAdapter.GetEntitySet(_dataContext);
+                    }
+
                     return Expression.Constant(query);
                 }
 
@@ -147,7 +157,7 @@ namespace OdataToEntity.Parsers
         }
         public Expression TranslateSource(Object dataContext, Expression expression)
         {
-            return new SourceVisitor(EdmModel, dataContext).Visit(expression);
+            return new SourceVisitor(EdmModel, dataContext, QueryableSource).Visit(expression);
         }
 
         public IEdmModel EdmModel { get; }
@@ -161,6 +171,7 @@ namespace OdataToEntity.Parsers
         public ODataUri ODataUri { get; }
         public int PageSize { get; }
         public IReadOnlyList<OeParseNavigationSegment> ParseNavigationSegments { get; }
+        public Func<IEdmEntitySet, IQueryable> QueryableSource { get; set; }
         public OePropertyAccessor[] SkipTokenAccessors { get; set; }
         public OeSkipTokenNameValue[] SkipTokenNameValues { get; }
     }

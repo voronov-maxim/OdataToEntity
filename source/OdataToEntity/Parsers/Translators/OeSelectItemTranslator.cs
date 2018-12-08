@@ -29,7 +29,7 @@ namespace OdataToEntity.Parsers.Translators
         private Expression GetInnerSource(OeSelectItem navigationItem, ExpandedNavigationSelectItem item)
         {
             Type clrEntityType = _visitor.EdmModel.GetClrType(navigationItem.EdmProperty.DeclaringType);
-            PropertyInfo navigationClrProperty = OeEdmClrHelper.GetPropertyIgnoreCase(clrEntityType, navigationItem.EdmProperty);
+            PropertyInfo navigationClrProperty = clrEntityType.GetPropertyIgnoreCase(navigationItem.EdmProperty);
 
             Type itemType = OeExpressionHelper.GetCollectionItemType(navigationClrProperty.PropertyType);
             if (itemType == null)

@@ -70,7 +70,7 @@ namespace OdataToEntity.Parsers
         private Expression GetPropertyExpression(SingleValuePropertyAccessNode nodeIn)
         {
             Expression e = TranslateNode(nodeIn.Source);
-            PropertyInfo property = OeEdmClrHelper.GetPropertyIgnoreCase(e.Type, nodeIn.Property);
+            PropertyInfo property = e.Type.GetPropertyIgnoreCase(nodeIn.Property);
             if (property == null)
             {
                 if (!OeExpressionHelper.IsTupleType(e.Type))
@@ -222,7 +222,7 @@ namespace OdataToEntity.Parsers
         public override Expression Visit(CollectionNavigationNode nodeIn)
         {
             Expression source = TranslateNode(nodeIn.Source);
-            PropertyInfo propertyInfo = source.Type.GetProperty(nodeIn.NavigationProperty.Name);
+            PropertyInfo propertyInfo = source.Type.GetPropertyIgnoreCase(nodeIn.NavigationProperty);
             return Expression.Property(source, propertyInfo);
         }
         public override Expression Visit(ConstantNode nodeIn)
@@ -264,7 +264,8 @@ namespace OdataToEntity.Parsers
         public override Expression Visit(CountNode nodeIn)
         {
             var navigation = (CollectionNavigationNode)nodeIn.Source;
-            MemberExpression property = Expression.Property(Parameter, navigation.NavigationProperty.Name);
+            PropertyInfo propertyInfo = Parameter.Type.GetPropertyIgnoreCase(navigation.NavigationProperty);
+            MemberExpression property = Expression.Property(Parameter, propertyInfo);
             var typeArguments = new Type[] { OeExpressionHelper.GetCollectionItemType(property.Type) };
             return Expression.Call(typeof(Enumerable), nameof(Enumerable.Count), typeArguments, property);
         }
@@ -302,7 +303,7 @@ namespace OdataToEntity.Parsers
             else
                 source = Parameter;
 
-            PropertyInfo propertyInfo = source.Type.GetProperty(nodeIn.NavigationProperty.Name);
+            PropertyInfo propertyInfo = source.Type.GetPropertyIgnoreCase(nodeIn.NavigationProperty);
             if (propertyInfo == null)
                 return null;
 

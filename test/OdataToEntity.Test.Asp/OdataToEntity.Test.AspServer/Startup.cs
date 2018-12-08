@@ -11,8 +11,6 @@ namespace OdataToEntity.AspServer
 {
     public class Startup
     {
-        private Db.OeDataAdapter _dataAdapter;
-
         public Startup(IHostingEnvironment env)
         {
             var builder = new ConfigurationBuilder()
@@ -28,18 +26,19 @@ namespace OdataToEntity.AspServer
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvcCore();
-
-            _dataAdapter = new OrderDataAdapter(true, true, null);
-            services.AddSingleton(typeof(Db.OeDataAdapter), _dataAdapter);
+            services.AddLogging(loggingBuilder =>
+            {
+                loggingBuilder.AddConsole();
+                loggingBuilder.AddDebug();
+                loggingBuilder.AddConfiguration(Configuration.GetSection("Logging"));
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
-            loggerFactory.AddConsole(Configuration.GetSection("Logging"));
-            loggerFactory.AddDebug();
-
-            app.UseOdataToEntityMiddleware("/api", _dataAdapter.BuildEdmModelFromEfCoreModel());
+            var dataAdapter = new OrderDataAdapter(true, true, null);
+            app.UseOdataToEntityMiddleware("/api", dataAdapter.BuildEdmModelFromEfCoreModel());
             app.UseMvcWithDefaultRoute();
         }
     }

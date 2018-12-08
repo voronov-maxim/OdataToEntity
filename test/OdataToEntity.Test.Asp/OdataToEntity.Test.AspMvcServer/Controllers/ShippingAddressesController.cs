@@ -1,5 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.OData.Edm;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using OdataToEntity.AspNetCore;
 using System;
 using System.Collections.Generic;
@@ -7,11 +7,13 @@ using System.Collections.Generic;
 namespace OdataToEntity.Test.AspMvcServer.Controllers
 {
     [Route("api/[controller]")]
-    public sealed class ShippingAddressesController : OeControllerBase
+    public sealed class ShippingAddressesController
     {
-        public ShippingAddressesController(IEdmModel edmModel)
-            : base(edmModel)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+
+        public ShippingAddressesController(IHttpContextAccessor httpContextAccessor)
         {
+            _httpContextAccessor = httpContextAccessor;
         }
 
         [HttpDelete]
@@ -22,20 +24,23 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
         [HttpGet]
         public ODataResult<Model.ShippingAddress> Get()
         {
-            Db.OeAsyncEnumerator asyncEnumerator = base.GetAsyncEnumerator(base.HttpContext, base.HttpContext.Response.Body);
-            return base.OData<Model.ShippingAddress>(asyncEnumerator);
+            var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
+            IAsyncEnumerable<Model.ShippingAddress> shippingAddresses = parser.ExecuteReader<Model.ShippingAddress>();
+            return parser.OData(shippingAddresses);
         }
         [HttpGet("{id}")]
         public ODataResult<Model.ShippingAddress> Get(int id)
         {
-            Db.OeAsyncEnumerator asyncEnumerator = base.GetAsyncEnumerator(base.HttpContext, base.HttpContext.Response.Body);
-            return base.OData<Model.ShippingAddress>(asyncEnumerator);
+            var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
+            IAsyncEnumerable<Model.ShippingAddress> shippingAddresses = parser.ExecuteReader<Model.ShippingAddress>();
+            return parser.OData(shippingAddresses);
         }
         [HttpGet("{id}/Order/Customer")]
         public ODataResult<Model.Customer> OrderCustomer(int id)
         {
-            Db.OeAsyncEnumerator asyncEnumerator = base.GetAsyncEnumerator(base.HttpContext, base.HttpContext.Response.Body);
-            return base.OData<Model.Customer>(asyncEnumerator);
+            var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
+            IAsyncEnumerable<Model.Customer> customers = parser.ExecuteReader<Model.Customer>();
+            return parser.OData(customers);
         }
         [HttpPatch]
         public void Patch(OeDataContext dataContext, IDictionary<String, Object> shippingAddressProperties)

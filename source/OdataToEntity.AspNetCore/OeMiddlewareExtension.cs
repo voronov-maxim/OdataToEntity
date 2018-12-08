@@ -10,9 +10,11 @@ namespace OdataToEntity.AspNetCore
 {
     public static class OeMiddlewareExtension
     {
-        public static IServiceCollection AddOdataToEntity(this IServiceCollection services, IEdmModel edmModel)
+        public static IServiceCollection AddOdataToEntityMvc(this IServiceCollection services, IEdmModel edmModel)
         {
-            return services.AddSingleton(edmModel).AddSingleton<OeRouter>();
+            services.AddSingleton(edmModel).AddSingleton<OeRouter>().AddHttpContextAccessor();
+            services.AddMvcCore(o => o.Conventions.Add(new OeBatchFilterConvention()));
+            return services;
         }
         public static IRouteBuilder AddOdataToEntityRoute(this IRouteBuilder routeBuilder)
         {

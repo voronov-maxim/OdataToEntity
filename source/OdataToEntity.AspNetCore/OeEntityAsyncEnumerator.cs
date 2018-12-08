@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace OdataToEntity.AspNetCore
 {
-    public sealed class OeEntityAsyncEnumerator<T> : IAsyncEnumerator<T>
+    public sealed class OeEntityAsyncEnumerator<T> : IAsyncEnumerator<T>, IAsyncEnumerable<T>
     {
         private sealed class SetPropertyValueVisitor : ExpressionVisitor
         {
@@ -45,6 +45,7 @@ namespace OdataToEntity.AspNetCore
             }
         }
 
+        private T _current;
         private readonly Db.OeDbEnumerator _dbEnumerator;
         private readonly IDisposable _dispose;
         private bool _isFirstMoveNext;
@@ -111,7 +112,14 @@ namespace OdataToEntity.AspNetCore
         {
             _dispose.Dispose();
         }
-        public async Task<bool> MoveNext(CancellationToken cancellationToken)
+        IAsyncEnumerator<T> IAsyncEnumerable<T>.GetEnumerator()
+        {
+            if (_isFirstMoveNext)
+                return this;
+
+            throw new InvalidOperationException("Already iterated");
+        }
+        async Task<bool> IAsyncEnumerator<T>.MoveNext(CancellationToken cancellationToken)
         {
             if (_isFirstMoveNext)
             {
@@ -128,7 +136,7 @@ namespace OdataToEntity.AspNetCore
             if (!_isMoveNext && _queryContext.SkipTokenNameValues != null && _queryContext.SkipTokenAccessors != null)
                 SetOrderByProperties(_queryContext, entity, buffer);
 
-            Current = entity;
+            _current = entity;
             return true;
         }
         private static async Task SetNavigationProperty(Db.OeDbEnumerator dbEnumerator, Object value, Object entity)
@@ -158,6 +166,6 @@ namespace OdataToEntity.AspNetCore
             }
         }
 
-        public T Current { get; private set; }
+        T IAsyncEnumerator<T>.Current => _current;
     }
 }

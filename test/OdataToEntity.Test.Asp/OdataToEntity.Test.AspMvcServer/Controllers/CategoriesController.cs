@@ -1,18 +1,19 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.OData.Edm;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using OdataToEntity.AspNetCore;
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace OdataToEntity.Test.AspMvcServer.Controllers
 {
     [Route("api/[controller]")]
-    public sealed class CategoriesController : OeControllerBase
+    public sealed class CategoriesController
     {
-        public CategoriesController(IEdmModel edmModel)
-            : base(edmModel)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+
+        public CategoriesController(IHttpContextAccessor httpContextAccessor)
         {
+            _httpContextAccessor = httpContextAccessor;
         }
 
         [HttpDelete]
@@ -23,14 +24,16 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
         [HttpGet]
         public ODataResult<Model.Category> Get()
         {
-            Db.OeAsyncEnumerator asyncEnumerator = base.GetAsyncEnumerator(base.HttpContext, base.HttpContext.Response.Body);
-            return base.OData<Model.Category>(asyncEnumerator);
+            var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
+            IAsyncEnumerable<Model.Category> categories = parser.ExecuteReader<Model.Category>();
+            return parser.OData(categories);
         }
         [HttpGet("{id}")]
         public ODataResult<Model.Category> Get(int id)
         {
-            Db.OeAsyncEnumerator asyncEnumerator = base.GetAsyncEnumerator(base.HttpContext, base.HttpContext.Response.Body);
-            return base.OData<Model.Category>(asyncEnumerator);
+            var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
+            IAsyncEnumerable<Model.Category> categories = parser.ExecuteReader<Model.Category>();
+            return parser.OData(categories);
         }
         [HttpPatch]
         public void Patch(OeDataContext dataContext, IDictionary<String, Object> categoryProperties)

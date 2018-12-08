@@ -4,7 +4,6 @@ using Microsoft.Extensions.Primitives;
 using Microsoft.OData.Edm;
 using Microsoft.OData.Edm.Csdl;
 using Microsoft.OData.Edm.Validation;
-using OdataToEntity.Db;
 using System;
 using System.Collections.Generic;
 using System.IO;

@@ -14,79 +14,24 @@ namespace OdataToEntity.AspNetCore
 {
     public sealed class ODataResult<T> : IActionResult
     {
-        private readonly struct EntityPropertiesInfo
+        private readonly struct ClrPropertiesInfo
         {
-            public EntityPropertiesInfo(IEdmEntityType edmEntityType, PropertyInfo[] structurals, PropertyInfo[] navigations)
+            public ClrPropertiesInfo(PropertyInfo parentPropertyInfo, PropertyInfo[] structurals, ClrPropertiesInfo[] navigations)
             {
-                EdmEntityType = edmEntityType;
+                ParentPropertyInfo = parentPropertyInfo;
                 Structurals = structurals;
                 Navigations = navigations;
+                IsCollection = parentPropertyInfo == null ? false : OeExpressionHelper.GetCollectionItemType(parentPropertyInfo.PropertyType) != null;
             }
 
-            public IEdmEntityType EdmEntityType { get; }
-            public PropertyInfo[] Navigations { get; }
+            public bool IsCollection { get; }
+            public ClrPropertiesInfo[] Navigations { get; }
+            public PropertyInfo ParentPropertyInfo { get; }
             public PropertyInfo[] Structurals { get; }
-        }
-
-        private sealed class SelectProperyHandler : SelectItemHandler
-        {
-            private readonly IEdmStructuredType _edmStructuredType;
-
-            public SelectProperyHandler(IEdmStructuredType edmStructuredType)
-            {
-                _edmStructuredType = edmStructuredType;
-
-                NavigationProperties = new List<IEdmNavigationProperty>();
-                StructuralProperties = new List<IEdmStructuralProperty>();
-            }
-            public override void Handle(ExpandedNavigationSelectItem item)
-            {
-                var navigationSegment = (NavigationPropertySegment)item.PathToNavigationProperty.LastSegment;
-                if (IsPropertyDefineInType(navigationSegment.NavigationProperty))
-                {
-                    if (!NavigationProperties.Contains(navigationSegment.NavigationProperty))
-                        NavigationProperties.Add(navigationSegment.NavigationProperty);
-                }
-                else
-                    Handle(item.SelectAndExpand);
-            }
-            public override void Handle(PathSelectItem item)
-            {
-                if (item.SelectedPath.LastSegment is NavigationPropertySegment navigationSegment)
-                {
-                    if (IsPropertyDefineInType(navigationSegment.NavigationProperty) &&
-                        !NavigationProperties.Contains(navigationSegment.NavigationProperty))
-                        NavigationProperties.Add(navigationSegment.NavigationProperty);
-                }
-                else if (item.SelectedPath.LastSegment is PropertySegment propertySegment)
-                {
-                    if (IsPropertyDefineInType(propertySegment.Property))
-                        StructuralProperties.Add(propertySegment.Property);
-                }
-                else
-                    throw new InvalidOperationException(item.SelectedPath.LastSegment.GetType().Name + " not supported");
-            }
-            public void Handle(SelectExpandClause selectAndExpand)
-            {
-                foreach (SelectItem selectItem in selectAndExpand.SelectedItems)
-                    selectItem.HandleWith(this);
-            }
-            private bool IsPropertyDefineInType(IEdmProperty edmProperty)
-            {
-                IEdmStructuredType edmType;
-                for (edmType = _edmStructuredType; edmType != null && edmType != edmProperty.DeclaringType; edmType = edmType.BaseType)
-                {
-                }
-                return edmType != null;
-            }
-
-            public List<IEdmNavigationProperty> NavigationProperties { get; }
-            public List<IEdmStructuralProperty> StructuralProperties { get; }
         }
 
         private readonly IEdmModel _edmModel;
         private readonly IAsyncEnumerator<T> _entities;
-        private OeMetadataLevel _metadataLevel;
         private readonly ODataUri _odataUri;
         private readonly IEdmEntitySetBase _resultEntitySet;
         private readonly HashSet<Object> _stack;
@@ -124,18 +69,86 @@ namespace OdataToEntity.AspNetCore
             };
 
             var requestHeaders = OeRequestHeaders.Parse(context.HttpContext.Request.Headers["Accept"], context.HttpContext.Request.Headers["Prefer"]);
-            _metadataLevel = requestHeaders.MetadataLevel;
             if (requestHeaders.MaxPageSize > 0 && PageSize == 0)
                 PageSize = requestHeaders.MaxPageSize;
 
-            IODataResponseMessage responseMessage = new OeInMemoryMessage(context.HttpContext.Response.Body, context.HttpContext.Request.ContentType);
+            IODataResponseMessage responseMessage = new Infrastructure.OeInMemoryMessage(context.HttpContext.Response.Body, context.HttpContext.Request.ContentType);
             using (ODataMessageWriter messageWriter = new ODataMessageWriter(responseMessage, settings, _edmModel))
             {
                 ODataUtils.SetHeadersForPayload(messageWriter, ODataPayloadKind.ResourceSet);
 
                 IEdmEntityType entityType = _resultEntitySet.EntityType();
                 ODataWriter writer = messageWriter.CreateODataResourceSetWriter(_resultEntitySet, entityType);
-                await SerializeAsync(writer);
+                await SerializeAsync(writer, requestHeaders.MetadataLevel);
+            }
+        }
+        private static ClrPropertiesInfo GetClrPropertiesInfo(IEdmModel edmModel, SelectExpandClause selectAndExpand,
+            OeMetadataLevel metadataLevel, Type clrType, PropertyInfo parentPropertyInfo)
+        {
+            IEnumerable<IEdmStructuralProperty> edmStructuralProperties;
+            ClrPropertiesInfo[] clrPropertiesInfos = Array.Empty<ClrPropertiesInfo>();
+
+            var edmEntityType = (IEdmEntityType)edmModel.FindDeclaredType(clrType.FullName);
+            if (selectAndExpand == null)
+                edmStructuralProperties = edmEntityType.StructuralProperties();
+            else
+            {
+                var structuralPropertyList = new List<IEdmStructuralProperty>();
+                var clrPropertiesInfoList = new List<ClrPropertiesInfo>();
+
+                foreach (SelectItem selectItem in selectAndExpand.SelectedItems)
+                    if (selectItem is ExpandedNavigationSelectItem expandedNavigationSelectItem)
+                    {
+                        if (expandedNavigationSelectItem.PathToNavigationProperty.Count > 1)
+                            throw new InvalidOperationException("Complex navigation property not supported");
+
+                        var navigationSegment = (NavigationPropertySegment)expandedNavigationSelectItem.PathToNavigationProperty.FirstSegment;
+                        AddNavigationProperty(navigationSegment, expandedNavigationSelectItem.SelectAndExpand, clrPropertiesInfoList);
+                    }
+                    else if (selectItem is PathSelectItem pathSelectItem)
+                    {
+                        if (pathSelectItem.SelectedPath.Count > 1)
+                            throw new InvalidOperationException("Complex structural property not supported");
+
+                        if (pathSelectItem.SelectedPath.FirstSegment is NavigationPropertySegment navigationSegment)
+                            AddNavigationProperty(navigationSegment, null, clrPropertiesInfoList);
+                        else
+                        {
+                            var propertySegment = (PropertySegment)pathSelectItem.SelectedPath.FirstSegment;
+                            structuralPropertyList.Add(propertySegment.Property);
+                        }
+                    }
+
+                if (metadataLevel == OeMetadataLevel.Full)
+                    foreach (IEdmStructuralProperty keyProperty in edmEntityType.Key())
+                        if (!structuralPropertyList.Contains(keyProperty))
+                            structuralPropertyList.Add(keyProperty);
+
+                if (selectAndExpand.AllSelected)
+                    edmStructuralProperties = edmEntityType.StructuralProperties();
+                else
+                    edmStructuralProperties = structuralPropertyList.ToArray();
+                clrPropertiesInfos = clrPropertiesInfoList.Count == 0 ? Array.Empty<ClrPropertiesInfo>() : clrPropertiesInfoList.ToArray();
+            }
+
+            var clrStructuralProperties = new List<PropertyInfo>();
+            foreach (IEdmProperty edmProperty in edmStructuralProperties)
+                clrStructuralProperties.Add(clrType.GetProperty(edmProperty.Name));
+
+            return new ClrPropertiesInfo(parentPropertyInfo, clrStructuralProperties.ToArray(), clrPropertiesInfos);
+
+            void AddNavigationProperty(NavigationPropertySegment navigationSegment, SelectExpandClause selectExpandClause, List<ClrPropertiesInfo> clrPropertiesInfoList)
+            {
+                PropertyInfo navigationPropertyInfo = clrType.GetPropertyIgnoreCase(navigationSegment.NavigationProperty);
+                Type itemType = OeExpressionHelper.GetCollectionItemType(navigationPropertyInfo.PropertyType);
+                if (itemType == null)
+                    itemType = navigationPropertyInfo.PropertyType;
+
+                foreach (ClrPropertiesInfo clrPropertiesInfo in clrPropertiesInfoList)
+                    if (clrPropertiesInfo.ParentPropertyInfo == navigationPropertyInfo)
+                        return;
+
+                clrPropertiesInfoList.Add(GetClrPropertiesInfo(edmModel, selectExpandClause, metadataLevel, itemType, navigationPropertyInfo));
             }
         }
         private IEnumerable<KeyValuePair<String, Object>> GetKeys(T entity)
@@ -155,69 +168,20 @@ namespace OdataToEntity.AspNetCore
             }
             while (orderByClause != null);
         }
-        private EntityPropertiesInfo GetProperties(Object entity)
+        private async Task SerializeAsync(ODataWriter writer, OeMetadataLevel metadataLevel)
         {
-            Type clrEntityType = entity.GetType();
-            var edmEntityType = (IEdmEntityType)_edmModel.FindDeclaredType(clrEntityType.FullName);
+            ClrPropertiesInfo clrPropertiesInfo = GetClrPropertiesInfo(_edmModel, _odataUri.SelectAndExpand, metadataLevel, typeof(T), null);
 
-            IEnumerable<IEdmStructuralProperty> structuralProperties;
-            IEnumerable<IEdmNavigationProperty> navigationProperties;
-            if (_odataUri.SelectAndExpand == null)
-            {
-                structuralProperties = edmEntityType.StructuralProperties();
-                navigationProperties = Array.Empty<IEdmNavigationProperty>();
-            }
-            else
-            {
-                var handler = new SelectProperyHandler(edmEntityType);
-                handler.Handle(_odataUri.SelectAndExpand);
-
-                if (handler.StructuralProperties.Count == 0 && handler.NavigationProperties.Count == 0)
-                {
-                    structuralProperties = edmEntityType.StructuralProperties();
-                    navigationProperties = edmEntityType.NavigationProperties();
-                }
-                else
-                {
-                    if (handler.StructuralProperties.Count == 0)
-                        structuralProperties = edmEntityType.StructuralProperties();
-                    else
-                    {
-                        if (_metadataLevel == OeMetadataLevel.Full)
-                            foreach (IEdmStructuralProperty keyProperty in edmEntityType.Key())
-                                if (!handler.StructuralProperties.Contains(keyProperty))
-                                    handler.StructuralProperties.Add(keyProperty);
-
-                        structuralProperties = handler.StructuralProperties;
-                    }
-
-                    navigationProperties = handler.NavigationProperties;
-                }
-            }
-
-            return new EntityPropertiesInfo(edmEntityType, GetProperties(structuralProperties), GetProperties(navigationProperties));
-
-            PropertyInfo[] GetProperties(IEnumerable<IEdmProperty> edmProperties)
-            {
-                var clrProperties = new List<PropertyInfo>();
-                foreach (IEdmProperty edmProperty in edmProperties)
-                    clrProperties.Add(clrEntityType.GetProperty(edmProperty.Name));
-                return clrProperties.ToArray();
-            }
-        }
-        private async Task SerializeAsync(ODataWriter writer)
-        {
             var resourceSet = new ODataResourceSet() { Count = Count };
             writer.WriteStart(resourceSet);
 
             int count = 0;
             T entity = default;
-            EntityPropertiesInfo entityPropertiesInfo = default;
             while (await _entities.MoveNext())
             {
                 entity = _entities.Current;
                 _stack.Add(entity);
-                WriteEntry(writer, entity, ref entityPropertiesInfo);
+                WriteEntry(writer, entity, clrPropertiesInfo);
                 _stack.Remove(entity);
                 count++;
             }
@@ -227,36 +191,32 @@ namespace OdataToEntity.AspNetCore
 
             writer.WriteEnd();
         }
-        private void WriteEntry(ODataWriter writer, Object entity, ref EntityPropertiesInfo entityPropertiesInfo)
+        private void WriteEntry(ODataWriter writer, Object entity, in ClrPropertiesInfo clrPropertiesInfo)
         {
-            if (entityPropertiesInfo.EdmEntityType == null)
-                entityPropertiesInfo = GetProperties(entity);
-
-            ODataResource entry = OeDataContext.CreateEntry(entity, entityPropertiesInfo.Structurals);
+            ODataResource entry = OeDataContext.CreateEntry(entity, clrPropertiesInfo.Structurals);
             writer.WriteStart(entry);
 
-            foreach (PropertyInfo navigationProperty in entityPropertiesInfo.Navigations)
-                WriteNavigationProperty(writer, entity, navigationProperty);
+            foreach (ClrPropertiesInfo navigationPropertiesInfo in clrPropertiesInfo.Navigations)
+                WriteNavigationProperty(writer, entity, navigationPropertiesInfo);
 
             writer.WriteEnd();
         }
-        private void WriteNavigationProperty(ODataWriter writer, Object value, PropertyInfo navigationProperty)
+        private void WriteNavigationProperty(ODataWriter writer, Object value, in ClrPropertiesInfo navigationPropertiesInfo)
         {
-            Object navigationValue = navigationProperty.GetValue(value);
+            Object navigationValue = navigationPropertiesInfo.ParentPropertyInfo.GetValue(value);
             if (!_stack.Add(navigationValue))
                 return;
 
-            bool isCollection = OeExpressionHelper.GetCollectionItemType(navigationProperty.PropertyType) != null;
             var resourceInfo = new ODataNestedResourceInfo()
             {
-                IsCollection = isCollection,
-                Name = navigationProperty.Name
+                IsCollection = navigationPropertiesInfo.IsCollection,
+                Name = navigationPropertiesInfo.ParentPropertyInfo.Name
             };
             writer.WriteStart(resourceInfo);
 
             if (navigationValue == null)
             {
-                if (isCollection)
+                if (navigationPropertiesInfo.IsCollection)
                     writer.WriteStart(new ODataResourceSet());
                 else
                     writer.WriteStart((ODataResource)null);
@@ -264,16 +224,15 @@ namespace OdataToEntity.AspNetCore
             }
             else
             {
-                var entityPropertiesInfo = default(EntityPropertiesInfo);
-                if (isCollection)
+                if (navigationPropertiesInfo.IsCollection)
                 {
                     writer.WriteStart(new ODataResourceSet());
                     foreach (Object entity in (IEnumerable)navigationValue)
-                        WriteEntry(writer, entity, ref entityPropertiesInfo);
+                        WriteEntry(writer, entity, navigationPropertiesInfo);
                     writer.WriteEnd();
                 }
                 else
-                    WriteEntry(writer, navigationValue, ref entityPropertiesInfo);
+                    WriteEntry(writer, navigationValue, navigationPropertiesInfo);
             }
 
             writer.WriteEnd();

@@ -145,7 +145,7 @@ namespace OdataToEntity.Parsers
         {
             using (var stream = new MemoryStream())
             {
-                IODataRequestMessage requestMessage = new OeInMemoryMessage(stream, null);
+                IODataRequestMessage requestMessage = new Infrastructure.OeInMemoryMessage(stream, null);
                 using (ODataMessageWriter messageWriter = new ODataMessageWriter(requestMessage, WriterSettings, model))
                 {
                     ODataParameterWriter writer = messageWriter.CreateODataParameterWriter(null);
@@ -196,7 +196,7 @@ namespace OdataToEntity.Parsers
             var skipTokenNameValues = new OeSkipTokenNameValue[keys.Length];
             using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(skipToken)))
             {
-                IODataRequestMessage requestMessage = new OeInMemoryMessage(stream, null);
+                IODataRequestMessage requestMessage = new Infrastructure.OeInMemoryMessage(stream, null);
                 using (ODataMessageReader messageReader = new ODataMessageReader(requestMessage, ReaderSettings, model))
                 {
                     var operation = new EdmAction("", "", null);

@@ -21,7 +21,7 @@ namespace OdataToEntity.AspNetCore
         public OeDataContext(OeEntitySetAdapter entitySetAdapter, IEdmModel edmModel, Object dataContext, in OeOperationMessage operation)
         {
             _entitySetAdapter = entitySetAdapter;
-            DataContext = dataContext;
+            DbContext = dataContext;
             EdmModel = edmModel;
             _operation = operation;
         }
@@ -71,22 +71,22 @@ namespace OdataToEntity.AspNetCore
             {
                 case ODataConstants.MethodDelete:
                     entry = CreateEntry(entity);
-                    _entitySetAdapter.RemoveEntity(DataContext, entry);
+                    _entitySetAdapter.RemoveEntity(DbContext, entry);
                     break;
                 case ODataConstants.MethodPatch:
                     entry = CreateEntry((IDictionary<String, Object>)entity);
-                    _entitySetAdapter.AttachEntity(DataContext, entry);
+                    _entitySetAdapter.AttachEntity(DbContext, entry);
                     break;
                 case ODataConstants.MethodPost:
                     entry = CreateEntry(entity);
-                    _entitySetAdapter.AddEntity(DataContext, entry);
+                    _entitySetAdapter.AddEntity(DbContext, entry);
                     break;
                 default:
                     throw new NotImplementedException(_operation.Method);
             }
         }
 
-        public Object DataContext { get; }
+        public Object DbContext { get; }
         public IEdmModel EdmModel { get; }
         public String HttpMethod => _operation.Method;
     }

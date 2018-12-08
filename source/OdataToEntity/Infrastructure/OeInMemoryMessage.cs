@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace OdataToEntity
+namespace OdataToEntity.Infrastructure
 {
     public sealed class OeInMemoryMessage : IODataRequestMessage, IODataResponseMessage
     {

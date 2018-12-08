@@ -109,12 +109,12 @@ namespace OdataToEntity
         }
         public async Task ExecuteQueryAsync(ODataUri odataUri, OeRequestHeaders headers, Stream responseStream, CancellationToken cancellationToken)
         {
-            var parser = new OeGetParser(_edmModel.GetEdmModel(odataUri.Path));
+            var parser = new Parsers.OeGetParser(_edmModel.GetEdmModel(odataUri.Path));
             await parser.ExecuteAsync(odataUri, headers, responseStream, cancellationToken).ConfigureAwait(false);
         }
         public async Task ExecuteOperationAsync(ODataUri odataUri, OeRequestHeaders headers, Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
         {
-            var parser = new OePostParser(_edmModel.GetEdmModel(odataUri.Path));
+            var parser = new Parsers.OePostParser(_edmModel.GetEdmModel(odataUri.Path));
             await parser.ExecuteAsync(odataUri, requestStream, headers, responseStream, cancellationToken).ConfigureAwait(false);
         }
         public async Task ExecutePostAsync(Uri requestUri, OeRequestHeaders headers, Stream requestStream, Stream responseStream, CancellationToken cancellationToken)

@@ -1,5 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.OData.Edm;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using OdataToEntity.AspNetCore;
 using System;
 using System.Collections.Generic;
@@ -7,11 +7,13 @@ using System.Collections.Generic;
 namespace OdataToEntity.Test.AspMvcServer.Controllers
 {
     [Route("api/[controller]")]
-    public sealed class ManyColumnsController : OeControllerBase
+    public sealed class ManyColumnsController
     {
-        public ManyColumnsController(IEdmModel edmModel)
-            : base(edmModel)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+
+        public ManyColumnsController(IHttpContextAccessor httpContextAccessor)
         {
+            _httpContextAccessor = httpContextAccessor;
         }
 
         [HttpDelete]
@@ -22,14 +24,16 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
         [HttpGet]
         public ODataResult<Model.ManyColumns> Get()
         {
-            Db.OeAsyncEnumerator asyncEnumerator = base.GetAsyncEnumerator(base.HttpContext, base.HttpContext.Response.Body);
-            return base.OData<Model.ManyColumns>(asyncEnumerator);
+            var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
+            IAsyncEnumerable<Model.ManyColumns> manyColumns = parser.ExecuteReader<Model.ManyColumns>();
+            return parser.OData(manyColumns);
         }
         [HttpGet("{id}")]
         public ODataResult<Model.ManyColumns> Get(int id)
         {
-            Db.OeAsyncEnumerator asyncEnumerator = base.GetAsyncEnumerator(base.HttpContext, base.HttpContext.Response.Body);
-            return base.OData<Model.ManyColumns>(asyncEnumerator);
+            var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
+            IAsyncEnumerable<Model.ManyColumns> manyColumns = parser.ExecuteReader<Model.ManyColumns>();
+            return parser.OData(manyColumns);
         }
         [HttpPatch]
         public void Patch(OeDataContext dataContext, IDictionary<String, Object> manyColumnsProperties)

@@ -22,7 +22,10 @@ namespace OdataToEntity.AspNetCore
         private IEdmModel _edmModel;
 
         [HttpPost]
-        public Task Batch() => BatchCore();
+        public Task Batch()
+        {
+            return BatchCore();
+        }
         [HttpPost]
         protected virtual async Task BatchCore()
         {
@@ -78,7 +81,7 @@ namespace OdataToEntity.AspNetCore
                     else
                         entity = OeEdmClrHelper.CreateEntity(entitySetAdapter.EntityType, operation.Entry);
 
-                    var modelState = new OeFilterAttribute.BatchModelStateDictionary()
+                    var modelState = new OeBatchFilterAttributeAttribute.BatchModelStateDictionary()
                     {
                         Entity = entity,
                         DataContext = new OeDataContext(entitySetAdapter, refModel, dataContext, operation)

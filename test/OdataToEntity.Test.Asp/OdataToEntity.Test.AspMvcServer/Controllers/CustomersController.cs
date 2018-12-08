@@ -1,5 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.OData.Edm;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using OdataToEntity.AspNetCore;
 using System;
 using System.Collections.Generic;
@@ -7,11 +7,13 @@ using System.Collections.Generic;
 namespace OdataToEntity.Test.AspMvcServer.Controllers
 {
     [Route("api/[controller]")]
-    public sealed class CustomersController : OeControllerBase
+    public sealed class CustomersController
     {
-        public CustomersController(IEdmModel edmModel)
-                : base(edmModel)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+
+        public CustomersController(IHttpContextAccessor httpContextAccessor)
         {
+            _httpContextAccessor = httpContextAccessor;
         }
 
         [HttpDelete]
@@ -22,14 +24,16 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
         [HttpGet]
         public ODataResult<Model.Customer> Get()
         {
-            Db.OeAsyncEnumerator asyncEnumerator = base.GetAsyncEnumerator(base.HttpContext, base.HttpContext.Response.Body);
-            return base.OData<Model.Customer>(asyncEnumerator);
+            var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
+            IAsyncEnumerable<Model.Customer> customers = parser.ExecuteReader<Model.Customer>();
+            return parser.OData(customers);
         }
         [HttpGet("{country},{id}")]
         public ODataResult<Model.Customer> Get(String country, String id)
         {
-            Db.OeAsyncEnumerator asyncEnumerator = base.GetAsyncEnumerator(base.HttpContext, base.HttpContext.Response.Body);
-            return base.OData<Model.Customer>(asyncEnumerator);
+            var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
+            IAsyncEnumerable<Model.Customer> customers = parser.ExecuteReader<Model.Customer>();
+            return parser.OData(customers);
         }
         [HttpPatch]
         public void Patch(OeDataContext dataContext, IDictionary<String, Object> customerProperties)

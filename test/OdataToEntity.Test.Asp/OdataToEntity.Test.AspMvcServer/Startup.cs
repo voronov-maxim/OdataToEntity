@@ -26,18 +26,20 @@ namespace OdataToEntity.Test.AspMvcServer
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvcCore();
-
             var dataAdapter = new OrderDataAdapter(true, true, null);
-            services.AddOdataToEntity(dataAdapter.BuildEdmModelFromEfCoreModel());
+            services.AddOdataToEntityMvc(dataAdapter.BuildEdmModelFromEfCoreModel());
+
+            services.AddLogging(loggingBuilder =>
+            {
+                loggingBuilder.AddConsole();
+                loggingBuilder.AddDebug();
+                loggingBuilder.AddConfiguration(Configuration.GetSection("Logging"));
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
-            loggerFactory.AddConsole(Configuration.GetSection("Logging"));
-            loggerFactory.AddDebug();
-
             app.UseMvc(routes => routes.AddOdataToEntityRoute());
         }
     }

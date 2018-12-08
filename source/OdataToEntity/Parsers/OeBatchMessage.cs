@@ -23,7 +23,7 @@ namespace OdataToEntity.Parsers
 
         public static OeBatchMessage CreateBatchMessage(IEdmModel edmModel, Uri baseUri, Stream requestStream, String contentType)
         {
-            IODataRequestMessage requestMessage = new OeInMemoryMessage(requestStream, contentType);
+            IODataRequestMessage requestMessage = new Infrastructure.OeInMemoryMessage(requestStream, contentType);
             var settings = new ODataMessageReaderSettings() { EnableMessageStreamDisposal = false };
             using (var messageReader = new ODataMessageReader(requestMessage, settings))
             {

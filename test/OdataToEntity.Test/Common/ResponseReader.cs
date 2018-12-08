@@ -219,7 +219,7 @@ namespace OdataToEntity.Test
             NavigationProperties.Clear();
             NavigationPropertyEntities.Clear();
 
-            IODataResponseMessage responseMessage = new OeInMemoryMessage(response, null);
+            IODataResponseMessage responseMessage = new Infrastructure.OeInMemoryMessage(response, null);
             var settings = new ODataMessageReaderSettings() { EnableMessageStreamDisposal = false, Validations = ValidationKinds.None };
             var messageReader = new ODataMessageReader(responseMessage, settings, EdmModel);
 

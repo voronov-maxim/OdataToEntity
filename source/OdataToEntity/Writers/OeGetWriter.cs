@@ -237,7 +237,7 @@ namespace OdataToEntity.Writers
                 Version = ODataVersion.V4
             };
 
-            IODataResponseMessage responseMessage = new OeInMemoryMessage(stream, contentType);
+            IODataResponseMessage responseMessage = new Infrastructure.OeInMemoryMessage(stream, contentType);
             using (ODataMessageWriter messageWriter = new ODataMessageWriter(responseMessage, settings, queryContext.EdmModel))
             {
                 ODataUtils.SetHeadersForPayload(messageWriter, ODataPayloadKind.ResourceSet);

@@ -9,7 +9,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace OdataToEntity
+namespace OdataToEntity.Parsers
 {
     public readonly struct OePostParser
     {
@@ -75,7 +75,7 @@ namespace OdataToEntity
             if (!operation.Parameters.Any())
                 return;
 
-            IODataRequestMessage requestMessage = new OeInMemoryMessage(requestStream, contentType);
+            IODataRequestMessage requestMessage = new Infrastructure.OeInMemoryMessage(requestStream, contentType);
             var settings = new ODataMessageReaderSettings() { EnableMessageStreamDisposal = false };
             using (var messageReader = new ODataMessageReader(requestMessage, settings, _edmModel))
             {
