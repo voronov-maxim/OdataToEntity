@@ -1,7 +1,6 @@
 # OdataToEntity #
 [Wiki](https://github.com/voronov-maxim/OdataToEntity/wiki)  
-
-[![Travis](https://img.shields.io/travis/voronov-maxim/OdataToEntity.svg)](https://travis-ci.org/voronov-maxim/OdataToEntity)
+<!---[![Travis](https://img.shields.io/travis/voronov-maxim/OdataToEntity.svg)](https://travis-ci.org/voronov-maxim/OdataToEntity)-->
 
 OData .net core
 
@@ -69,16 +68,3 @@ var response = new MemoryStream();
 //Execute query
 await parser.ExecuteGetAsync(uri, OeRequestHeaders.JsonDefault, response, CancellationToken.None);
 ```
-
-### Project structure ###
-Library *source/OdataEntity*.  
-Data context adapter Entity Framework Core - *source\OdataToEntity.EfCore*.  
-Data context adapter Entity Framework 6.2 - *source\OdataToEntity.Ef6*.  
-Data context adapter Linq2Db - *source\OdataToEntity.Linq2Db*.  
-Routing, middleware, controller base class - *source\OdataToEntity.AspNetCore*.  
-Client Microsoft.OData.Client - *test\OdataToEntity.Test.Asp\OdataToEntity.Test.AspClient*.  
-Server Asp .net core - *test\OdataToEntity.Test.Asp\OdataToEntity.Test.AspServer*.  
-Server Asp mvc .net core - *test\OdataToEntity.Test.Asp\OdataToEntity.Test.AspMvcServer*.  
-
-Script create Sql Server database - *\test\OdataToEntity.Test.EfCore.SqlServer\script.sql*.  
-Script create PostgreSql database - *\test\OdataToEntity.Test.EfCore.PostgreSql\script.sql*.  
