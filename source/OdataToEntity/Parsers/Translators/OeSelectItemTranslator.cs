@@ -61,7 +61,6 @@ namespace OdataToEntity.Parsers.Translators
             if (_navigationNextLink && Cache.UriCompare.OeComparerExtension.GetNavigationNextLink(item))
                 return null;
 
-            Type itemType;
             IEdmNavigationProperty navigationProperty = (((NavigationPropertySegment)item.PathToNavigationProperty.LastSegment).NavigationProperty);
             OeSelectItem navigationItem = _navigationItem.FindChildrenNavigationItem(navigationProperty);
             if (navigationItem == null)
@@ -71,11 +70,7 @@ namespace OdataToEntity.Parsers.Translators
 
                 Expression innerSource = GetInnerSource(navigationItem, item);
                 _source = _joinBuilder.Build(_source, innerSource, _navigationItem.GetJoinPath(), navigationProperty);
-
-                itemType = OeExpressionHelper.GetCollectionItemType(innerSource.Type);
             }
-            else
-                itemType = _visitor.EdmModel.GetClrType(navigationItem.EntitySet.EntityType());
 
             var selectTranslator = new OeSelectTranslator(_joinBuilder, navigationItem);
             _source = selectTranslator.BuildSelect(item.SelectAndExpand, _source, _navigationNextLink, _skipToken);

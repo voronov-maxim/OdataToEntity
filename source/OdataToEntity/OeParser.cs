@@ -121,7 +121,7 @@ namespace OdataToEntity
         {
             ODataUri odataUri = OeParser.ParseUri(_edmModel, _baseUri, requestUri);
             if (odataUri.Path.LastSegment.Identifier == "$batch")
-                await ExecuteBatchAsync(responseStream, responseStream, headers.ContentType, cancellationToken).ConfigureAwait(false);
+                await ExecuteBatchAsync(requestStream, responseStream, headers.ContentType, cancellationToken).ConfigureAwait(false);
             else
                 if (odataUri.Path.LastSegment is OperationImportSegment)
                 await ExecuteOperationAsync(odataUri, headers, requestStream, responseStream, cancellationToken).ConfigureAwait(false);

@@ -29,11 +29,7 @@ namespace OdataToEntity
 
             foreach (IEdmModel refModel in edmModel.ReferencedModels)
                 if (refModel.EntityContainer != null)
-                {
-                    dataAdapter = refModel.GetDataAdapter(dataContextType);
-                    if (dataAdapter != null)
-                        return dataAdapter;
-                }
+                    return refModel.GetDataAdapter(dataContextType);
 
             throw new InvalidOperationException("OeDataAdapter not found for data context type " + dataContextType.FullName);
         }

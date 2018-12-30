@@ -245,6 +245,11 @@ namespace OdataToEntity.EfCore
             var getDbSet = (Func<T, DbSet<TEntity>>)property.GetGetMethod().CreateDelegate(typeof(Func<T, DbSet<TEntity>>));
             return new DbSetAdapterImpl<TEntity>(getDbSet, property.Name);
         }
+        public void DisposeDataContextPool()
+        {
+            if (_dbContextPool != null)
+                _dbContextPool.Dispose();
+        }
         public override Db.OeAsyncEnumerator ExecuteEnumerator(Object dataContext, OeQueryContext queryContext, CancellationToken cancellationToken)
         {
             IAsyncEnumerable<Object> asyncEnumerable;

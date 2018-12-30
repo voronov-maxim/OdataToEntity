@@ -157,6 +157,11 @@ namespace OdataToEntity.Test.Model
     {
     }
 
+    [Table("ManyColumns", Schema = "dbo")]
+    public sealed class ManyColumns2 : ManyColumnsBase
+    {
+    }
+
     public sealed class ManyColumnsView : ManyColumnsBase
     {
     }

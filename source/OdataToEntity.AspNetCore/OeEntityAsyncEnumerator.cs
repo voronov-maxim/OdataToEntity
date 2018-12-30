@@ -92,18 +92,15 @@ namespace OdataToEntity.AspNetCore
 
             if (dbEnumerator.EntryFactory.ResourceInfo.IsCollection.GetValueOrDefault())
             {
-                var entityList = new List<Object>();
+                Infrastructure.IGenericListWrapper listWrapper = Infrastructure.GenericListWrapper.Create(nestedEntityType);
                 do
                 {
                     Object item = dbEnumerator.Current;
                     if (item != null)
-                        entityList.Add(await CreateEntity(dbEnumerator, item, item, nestedEntityType).ConfigureAwait(false));
+                        listWrapper.Add(await CreateEntity(dbEnumerator, item, item, nestedEntityType).ConfigureAwait(false));
                 }
                 while (await dbEnumerator.MoveNextAsync().ConfigureAwait(false));
-
-                var entities = (Object[])Array.CreateInstance(nestedEntityType, entityList.Count);
-                entityList.CopyTo(entities);
-                return entities;
+                return listWrapper.List;
             }
 
             return await CreateEntity(dbEnumerator, value, entity, nestedEntityType).ConfigureAwait(false);

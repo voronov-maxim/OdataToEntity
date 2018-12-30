@@ -35,12 +35,14 @@ namespace OdataToEntity.Writers
                 EnableMessageStreamDisposal = false,
                 MessageQuotas = new ODataMessageQuotas()
             };
-            var messageWriter = new ODataMessageWriter(responseMessage, settings);
-            ODataBatchWriter writer = messageWriter.CreateODataBatchWriter();
+            using (var messageWriter = new ODataMessageWriter(responseMessage, settings))
+            {
+                ODataBatchWriter writer = messageWriter.CreateODataBatchWriter();
 
-            writer.WriteStartBatch();
-            WriteBatch(writer, batchMessage);
-            writer.WriteEndBatch();
+                writer.WriteStartBatch();
+                WriteBatch(writer, batchMessage);
+                writer.WriteEndBatch();
+            }
         }
         private void WriteBatch(ODataBatchWriter writer, in OeBatchMessage batchMessage)
         {

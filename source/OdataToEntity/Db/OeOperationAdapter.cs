@@ -103,9 +103,6 @@ namespace OdataToEntity.Db
         protected virtual OeOperationConfiguration[] GetOperationsCore(Type dataContextType)
         {
             MethodInfo[] methodInfos = GetMethodInfos();
-            if (methodInfos == null)
-                return Array.Empty<OeOperationConfiguration>();
-
             var operations = new OeOperationConfiguration[methodInfos.Length];
             for (int i = 0; i < methodInfos.Length; i++)
                 operations[i] = GetOperationConfiguration(methodInfos[i]);

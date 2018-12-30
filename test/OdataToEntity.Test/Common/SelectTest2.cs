@@ -55,7 +55,7 @@ namespace OdataToEntity.Test
             response.Position = 0;
 
             var reader = new ResponseReader(edmModel);
-            reader.Read(response).Cast<Object>().Single();
+            Assert.Single(reader.Read(response).Cast<Object>());
 
             int? expectedCount;
             using (var dbContext = Fixture.CreateContext())
@@ -77,7 +77,7 @@ namespace OdataToEntity.Test
             response.Position = 0;
 
             var reader = new ResponseReader(edmModel);
-            reader.Read(response).Cast<Object>().Single();
+            Assert.Single(reader.Read(response).Cast<Object>());
 
             int? expectedCount;
             using (var dbContext = Fixture.CreateContext())

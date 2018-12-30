@@ -221,41 +221,42 @@ namespace OdataToEntity.Test
 
             IODataResponseMessage responseMessage = new Infrastructure.OeInMemoryMessage(response, null);
             var settings = new ODataMessageReaderSettings() { EnableMessageStreamDisposal = false, Validations = ValidationKinds.None };
-            var messageReader = new ODataMessageReader(responseMessage, settings, EdmModel);
-
-            IEdmEntitySet entitySet = OeEdmClrHelper.GetEntitySet(EdmModel, entitySetMetaAdatpter.EntitySetName);
-            ODataReader reader = messageReader.CreateODataResourceSetReader(entitySet, entitySet.EntityType());
-
-            var stack = new Stack<StackItem>();
-            while (reader.Read())
+            using (var messageReader = new ODataMessageReader(responseMessage, settings, EdmModel))
             {
-                switch (reader.State)
-                {
-                    case ODataReaderState.ResourceSetStart:
-                        if (stack.Count == 0)
-                            ResourceSet = (ODataResourceSetBase)reader.Item;
-                        else
-                            stack.Peek().ResourceSet = (ODataResourceSetBase)reader.Item;
-                        break;
-                    case ODataReaderState.ResourceStart:
-                        stack.Push(new StackItem((ODataResource)reader.Item));
-                        break;
-                    case ODataReaderState.ResourceEnd:
-                        StackItem stackItem = stack.Pop();
+                IEdmEntitySet entitySet = OeEdmClrHelper.GetEntitySet(EdmModel, entitySetMetaAdatpter.EntitySetName);
+                ODataReader reader = messageReader.CreateODataResourceSetReader(entitySet, entitySet.EntityType());
 
-                        if (reader.Item != null)
+                var stack = new Stack<StackItem>();
+                while (reader.Read())
+                {
+                    switch (reader.State)
+                    {
+                        case ODataReaderState.ResourceSetStart:
                             if (stack.Count == 0)
-                                yield return CreateRootEntity((ODataResource)stackItem.Item, stackItem.NavigationProperties, entitySetMetaAdatpter.EntityType);
+                                ResourceSet = (ODataResourceSetBase)reader.Item;
                             else
-                                stack.Peek().AddEntry(CreateEntity((ODataResource)stackItem.Item, stackItem.NavigationProperties));
-                        break;
-                    case ODataReaderState.NestedResourceInfoStart:
-                        stack.Push(new StackItem((ODataNestedResourceInfo)reader.Item));
-                        break;
-                    case ODataReaderState.NestedResourceInfoEnd:
-                        StackItem item = stack.Pop();
-                        stack.Peek().AddLink((ODataNestedResourceInfo)item.Item, item.Value, item.ResourceSet);
-                        break;
+                                stack.Peek().ResourceSet = (ODataResourceSetBase)reader.Item;
+                            break;
+                        case ODataReaderState.ResourceStart:
+                            stack.Push(new StackItem((ODataResource)reader.Item));
+                            break;
+                        case ODataReaderState.ResourceEnd:
+                            StackItem stackItem = stack.Pop();
+
+                            if (reader.Item != null)
+                                if (stack.Count == 0)
+                                    yield return CreateRootEntity((ODataResource)stackItem.Item, stackItem.NavigationProperties, entitySetMetaAdatpter.EntityType);
+                                else
+                                    stack.Peek().AddEntry(CreateEntity((ODataResource)stackItem.Item, stackItem.NavigationProperties));
+                            break;
+                        case ODataReaderState.NestedResourceInfoStart:
+                            stack.Push(new StackItem((ODataNestedResourceInfo)reader.Item));
+                            break;
+                        case ODataReaderState.NestedResourceInfoEnd:
+                            StackItem item = stack.Pop();
+                            stack.Peek().AddLink((ODataNestedResourceInfo)item.Item, item.Value, item.ResourceSet);
+                            break;
+                    }
                 }
             }
         }

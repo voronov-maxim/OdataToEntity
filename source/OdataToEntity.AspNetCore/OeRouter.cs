@@ -22,7 +22,7 @@ namespace OdataToEntity.AspNetCore
         private readonly IEdmModel _edmModel;
 
         public OeRouter(IActionInvokerFactory actionInvokerFactory, IActionDescriptorCollectionProvider actionDescriptorCollectionProvider,
-            IEdmModel edmModel, IUrlHelperFactory urlHelperFactory)
+            IEdmModel edmModel)
         {
             _actionInvokerFactory = actionInvokerFactory;
             _actionDescriptors = actionDescriptorCollectionProvider.ActionDescriptors;

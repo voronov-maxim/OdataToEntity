@@ -196,9 +196,8 @@ namespace OdataToEntity
         }
         public static Object GetValue(IEdmModel edmModel, ODataCollectionValue odataValue)
         {
-            var collection = odataValue as ODataCollectionValue;
             IList list = null;
-            foreach (Object odataItem in collection.Items)
+            foreach (Object odataItem in odataValue.Items)
             {
                 Object listItem = GetValue(edmModel, odataItem);
                 if (list == null)
@@ -212,10 +211,9 @@ namespace OdataToEntity
         }
         public static Object GetValue(IEdmModel edmModel, ODataResource odataValue)
         {
-            var resource = odataValue as ODataResource;
-            Type clrType = edmModel.GetClrType(edmModel.FindType(resource.TypeName));
+            Type clrType = edmModel.GetClrType(edmModel.FindType(odataValue.TypeName));
             Object instance = Activator.CreateInstance(clrType);
-            foreach (ODataProperty edmProperty in resource.Properties)
+            foreach (ODataProperty edmProperty in odataValue.Properties)
             {
                 PropertyInfo clrProperty = clrType.GetProperty(edmProperty.Name);
                 if (clrProperty.PropertyType == typeof(DateTime) || clrProperty.PropertyType == typeof(DateTime?))

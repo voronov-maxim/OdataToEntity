@@ -119,9 +119,8 @@ namespace OdataToEntity.GraphQL
             if (_clrTypeToObjectGraphType.TryGetValue(entityType, out IGraphType graphType))
                 return (IObjectGraphType)graphType;
 
-            var objectGraphType = (IObjectGraphType)graphType;
             Type objectGraphTypeType = typeof(ObjectGraphType<>).MakeGenericType(entityType);
-            objectGraphType = (IObjectGraphType)Activator.CreateInstance(objectGraphTypeType);
+            var objectGraphType = (IObjectGraphType)Activator.CreateInstance(objectGraphTypeType);
             objectGraphType.Name = NameFirstCharLower(entityType.Name);
             objectGraphType.IsTypeOf = t => t is IDictionary<String, Object>;
             _clrTypeToObjectGraphType.Add(entityType, objectGraphType);

@@ -183,8 +183,6 @@ namespace OdataToEntity.Cache.UriCompare
                 return false;
             if (node1.TargetMultiplicity != node2.TargetMultiplicity)
                 return false;
-            if (node1.TypeReference != node2.TypeReference)
-                return false;
 
             return Compare(node1.Source, node2.Source);
         }

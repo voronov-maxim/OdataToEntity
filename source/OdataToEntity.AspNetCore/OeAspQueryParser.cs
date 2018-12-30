@@ -134,7 +134,7 @@ namespace OdataToEntity.AspNetCore
         }
         public ODataResult<T> OData<T>(IEnumerable<T> asyncEnumerable)
         {
-            return OData(new OeAsyncEnumeratorAdapter<T>(asyncEnumerable));
+            return OData(asyncEnumerable.ToAsyncEnumerable());
         }
         public IActionResult OData<T>(T? value) where T : struct
         {

@@ -77,8 +77,6 @@ namespace OdataToEntity.Parsers.Translators
             else
                 compare = Expression.MakeBinary(binaryType, propertyExpression, parameterExpression);
 
-            propertyExpression = orderProperty.PropertyExpression;
-            parameterExpression = orderProperty.ParameterExpression;
             if (orderProperty.PropertyNode.TypeReference.IsNullable)
             {
                 if (GetDatabaseNullHighestValueDirection(orderProperty.Direction, isDatabaseNullHighestValue) == OrderByDirection.Descending)

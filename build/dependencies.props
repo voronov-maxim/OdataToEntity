@@ -10,7 +10,7 @@
     <JsonNetVersion>10.0.3</JsonNetVersion>
     <NetStandardVersion>netstandard2.0</NetStandardVersion>
     <NetCoreAppVersion>netcoreapp2.2</NetCoreAppVersion>
-    <ODataLibVersion>7.5.2</ODataLibVersion>
+    <ODataLibVersion>7.5.3</ODataLibVersion>
     <OdataToEntityVersion>2.2.0</OdataToEntityVersion>
     <SystemInteractiveAsyncVersion>3.2.0</SystemInteractiveAsyncVersion>
     <TestSdkVersion>15.9.0</TestSdkVersion>

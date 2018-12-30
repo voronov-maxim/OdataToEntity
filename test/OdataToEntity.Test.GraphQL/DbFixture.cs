@@ -13,7 +13,7 @@ using System.Xml;
 
 namespace OdataToEntity.Test.GraphQL
 {
-    public abstract class DbFixture
+    public abstract class DbFixture:  IDisposable
     {
         private readonly OeGraphqlParser _graphqlParser;
 
@@ -26,6 +26,10 @@ namespace OdataToEntity.Test.GraphQL
             _graphqlParser = new OeGraphqlParser(EdmModel);
         }
 
+        public void Dispose()
+        {
+            Schema.Dispose();
+        }
         public Task<String> Execute(String query)
         {
             return Execute(query, null);

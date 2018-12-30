@@ -79,11 +79,16 @@ namespace OdataToEntity.Test.Model
                 new Order() { Id = 1, Name = "Order from Order2 context", CustomerCountry = "AL", CustomerId = 42, Status = OrderStatus.Cancelled }
                 );
 
+            modelBuilder.Entity<ManyColumns2>().HasData(
+                new ManyColumns2() { Column01 = 123456 }
+                );
+
             modelBuilder.Entity<Customer>().HasData(
                 new Customer() { Id = 42, Country = "AL", Name = "Dua Lipa" }
                 );
         }
 
+        public DbSet<ManyColumns2> ManyColumns2 { get; set; }
         public DbSet<Order> Orders2 { get; set; }
         public DbSet<Customer> Customer2 { get; set; }
     }

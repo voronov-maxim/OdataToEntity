@@ -122,10 +122,8 @@ namespace OdataToEntity.Test
                         testMethod = i => methodCall(i, 0, false);
                     }
                 }
-                else if (factAttribute is FactAttribute)
-                    testMethod = (Func<SelectTest, Task>)methodInfo.CreateDelegate(typeof(Func<SelectTest, Task>));
                 else
-                    continue;
+                    testMethod = (Func<SelectTest, Task>)methodInfo.CreateDelegate(typeof(Func<SelectTest, Task>));
 
                 int count = fixture.SelectTestDefinitions.Count;
                 testMethod(selectTest).GetAwaiter().GetResult();
@@ -142,7 +140,7 @@ namespace OdataToEntity.Test
 
         public Func<Db.OeDataAdapter, DbContext, IList> ExecutorDb { get; }
         public String MethodName { get; set; }
-        public String Request {get;}
+        public String Request { get; }
 
         public override String ToString() => Request;
     }
@@ -151,8 +149,7 @@ namespace OdataToEntity.Test
     {
         private sealed class FakeReadOnlyDictionary<TKey, TValue> : Dictionary<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>
         {
-            TValue IReadOnlyDictionary<TKey, TValue>.this[TKey key]
-            {
+            TValue IReadOnlyDictionary<TKey, TValue>.this[TKey key] {
                 get
                 {
                     if (base.TryGetValue(key, out TValue value))

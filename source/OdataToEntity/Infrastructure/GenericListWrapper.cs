@@ -1,46 +1,55 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace OdataToEntity.Infrastructure
 {
-    internal abstract class GenericListWrapper
+    public interface IGenericListWrapper
     {
-        private sealed class ListWrapper<T> : GenericListWrapper
-        {
-            private readonly List<T> _list;
+        void Add(Object item);
 
-            public ListWrapper()
+        IList List { get; }
+    }
+
+    public static class GenericListWrapper
+    {
+        private static ConcurrentDictionary<Type, Func<int, IGenericListWrapper>> _createFuncs = new ConcurrentDictionary<Type, Func<int, IGenericListWrapper>>();
+
+        public static IGenericListWrapper Create(Type itemType, int capacity = 4)
+        {
+            if (!_createFuncs.TryGetValue(itemType, out Func<int, IGenericListWrapper> createFunc))
             {
-                _list = new List<T>();
+                Type listWrapperType = typeof(GenericListWrapper<>).MakeGenericType(itemType);
+                MethodInfo ctorMethodInfo = listWrapperType.GetMethod(nameof(GenericListWrapper<Object>.Create));
+                createFunc = (Func<int, IGenericListWrapper>)ctorMethodInfo.CreateDelegate(typeof(Func<int, IGenericListWrapper>));
+                _createFuncs.TryAdd(itemType, createFunc);
             }
 
-            public override bool Add(Object item)
-            {
-                var typedItem = (T)item;
-                if (_list.Contains(typedItem))
-                {
-                    _list.Add(typedItem);
-                    return true;
-                }
-
-                return false;
-            }
-
-            public override IList List => _list;
+            return createFunc(capacity);
         }
+    }
 
-        private GenericListWrapper()
+    public readonly struct GenericListWrapper<T> : IGenericListWrapper
+    {
+        private readonly List<T> _list;
+
+        public GenericListWrapper(int capacity)
         {
+            _list = new List<T>(capacity);
         }
 
-        public static GenericListWrapper Create(Type itemType)
+        public void Add(Object item)
         {
-            Type listWrapperType = typeof(ListWrapper<>).MakeGenericType(itemType);
-            return (GenericListWrapper)Activator.CreateInstance(listWrapperType);
+            _list.Add((T)item);
         }
-        public abstract bool Add(Object item);
+        public static IGenericListWrapper Create(int capacity)
+        {
+            return new GenericListWrapper<T>(capacity);
+        }
 
-        public abstract IList List { get; }
+        public IList List => _list;
+
     }
 }
