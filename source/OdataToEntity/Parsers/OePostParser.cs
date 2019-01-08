@@ -27,7 +27,7 @@ namespace OdataToEntity.Parsers
             var importSegment = (OperationImportSegment)odataUri.Path.FirstSegment;
             IEdmEntitySet entitySet = GetEntitySet(importSegment.OperationImports.Single());
             if (entitySet == null)
-                throw new InvalidOperationException("Must set IEdmOperationImport.EntitySet property valid IEdmPathExpression");
+                return null;
 
             Type clrType = _edmModel.GetClrType(entitySet.EntityType());
             OePropertyAccessor[] accessors = OePropertyAccessor.CreateFromType(clrType, entitySet);
@@ -60,7 +60,10 @@ namespace OdataToEntity.Parsers
                     else
                     {
                         OeQueryContext queryContext = CreateQueryContext(odataUri, headers.MetadataLevel);
-                        await Writers.OeGetWriter.SerializeAsync(queryContext, asyncEnumerator, headers.ContentType, responseStream).ConfigureAwait(false);
+                        if (queryContext == null)
+                            await WriteCollectionAsync(_edmModel, odataUri, asyncEnumerator, responseStream).ConfigureAwait(false);
+                        else
+                            await Writers.OeGetWriter.SerializeAsync(queryContext, asyncEnumerator, headers.ContentType, responseStream).ConfigureAwait(false);
                     }
                 }
             }
@@ -120,7 +123,7 @@ namespace OdataToEntity.Parsers
         {
             isScalar = true;
             var importSegment = (OperationImportSegment)odataUri.Path.LastSegment;
-            List<KeyValuePair<String, Object>> parameters = GetParameters(importSegment, requestStream, headers.ContentType);
+            List<KeyValuePair<String, Object>> parameters = GetParameters(importSegment, odataUri.ParameterAliasNodes, requestStream, headers.ContentType);
 
             IEdmOperationImport operationImport = importSegment.OperationImports.Single();
             IEdmEntitySet entitySet = GetEntitySet(operationImport);
@@ -130,10 +133,16 @@ namespace OdataToEntity.Parsers
                     return _dataAdapter.OperationAdapter.ExecuteProcedureNonQuery(dataContext, operationImport.Name, parameters);
 
                 Type returnType = _edmModel.GetClrType(operationImport.Operation.ReturnType.Definition);
+                if (operationImport.Operation.ReturnType.IsCollection())
+                {
+                    isScalar = false;
+                    returnType = typeof(IEnumerable<>).MakeGenericType(returnType);
+                }
+
                 if (_edmModel.IsDbFunction(operationImport.Operation))
-                    return _dataAdapter.OperationAdapter.ExecuteFunctionScalar(dataContext, operationImport.Name, parameters, returnType);
+                    return _dataAdapter.OperationAdapter.ExecuteFunctionPrimitive(dataContext, operationImport.Name, parameters, returnType);
                 else
-                    return _dataAdapter.OperationAdapter.ExecuteProcedureScalar(dataContext, operationImport.Name, parameters, returnType);
+                    return _dataAdapter.OperationAdapter.ExecuteProcedurePrimitive(dataContext, operationImport.Name, parameters, returnType);
             }
 
             isScalar = false;
@@ -150,7 +159,7 @@ namespace OdataToEntity.Parsers
 
             return null;
         }
-        private List<KeyValuePair<String, Object>> GetParameters(OperationImportSegment importSegment, Stream requestStream, String contentType)
+        private List<KeyValuePair<String, Object>> GetParameters(OperationImportSegment importSegment, IDictionary<string, SingleValueNode> parameterAliasNodes, Stream requestStream, String contentType)
         {
             var parameters = new List<KeyValuePair<String, Object>>();
 
@@ -159,6 +168,12 @@ namespace OdataToEntity.Parsers
                 Object value;
                 if (segmentParameter.Value is ConstantNode constantNode)
                     value = OeEdmClrHelper.GetValue(_edmModel, constantNode.Value);
+                else if (segmentParameter.Value is ParameterAliasNode parameterAliasNode)
+                {
+                    value = ((ConstantNode)parameterAliasNodes[parameterAliasNode.Alias]).Value;
+                    if (value is ODataCollectionValue collectionValue)
+                        value = collectionValue.Items;
+                }
                 else
                     value = OeEdmClrHelper.GetValue(_edmModel, segmentParameter.Value);
                 parameters.Add(new KeyValuePair<String, Object>(segmentParameter.Name, value));
@@ -220,6 +235,32 @@ namespace OdataToEntity.Parsers
                     items.Add((ODataResource)reader.Item);
 
             return new ODataCollectionValue() { Items = items };
+        }
+        public static async Task WriteCollectionAsync(IEdmModel model, ODataUri odataUri, Db.OeAsyncEnumerator asyncEnumerator, Stream responseStream)
+        {
+            var importSegment = (OperationImportSegment)odataUri.Path.LastSegment;
+            IEdmOperationImport operationImport = importSegment.OperationImports.Single();
+            Type returnType = model.GetClrType(operationImport.Operation.ReturnType.Definition);
+
+            IODataRequestMessage requestMessage = new Infrastructure.OeInMemoryMessage(responseStream, null);
+            using (ODataMessageWriter messageWriter = new ODataMessageWriter(requestMessage,
+                new ODataMessageWriterSettings() { EnableMessageStreamDisposal = false, ODataUri = odataUri }, model))
+            {
+                IEdmTypeReference typeRef = OeEdmClrHelper.GetEdmTypeReference(model, returnType);
+                ODataCollectionWriter writer = messageWriter.CreateODataCollectionWriter(typeRef);
+                writer.WriteStart(new ODataCollectionStart());
+
+                while (await asyncEnumerator.MoveNextAsync().ConfigureAwait(false))
+                {
+                    Object value = asyncEnumerator.Current;
+                    if (value != null && value.GetType().IsEnum)
+                        value = value.ToString();
+
+                    writer.WriteItem(value);
+                }
+
+                writer.WriteEnd();
+            }
         }
     }
 }

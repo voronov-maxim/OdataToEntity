@@ -166,6 +166,12 @@ namespace OdataToEntity.Test.Model
     {
     }
 
+    public sealed class CustomerOrdersCount
+    {
+        public String CustomerName { get; set; }
+        public int OrderCount { get; set; }
+    }
+
     public enum OrderStatus
     {
         Unknown,

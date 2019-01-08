@@ -23,6 +23,28 @@ namespace OdataToEntity.EfCore
             _entitySetAdapters = entitySetAdapters;
         }
 
+        private IRelationalCommand CreateCommand(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, out Dictionary<String, Object> parameterValues)
+        {
+            var dbContext = (DbContext)dataContext;
+            var commandBuilderFactory = dbContext.GetService<IRelationalCommandBuilderFactory>();
+            IRelationalCommandBuilder commandBuilder = commandBuilderFactory.Create();
+            commandBuilder.Append(sql);
+
+            var parameterNameGenerator = dbContext.GetService<IParameterNameGeneratorFactory>().Create();
+            var sqlHelper = dbContext.GetService<ISqlGenerationHelper>();
+
+            parameterValues = new Dictionary<String, Object>(parameters.Count);
+            for (int i = 0; i < parameters.Count; i++)
+            {
+                String invariantName = parameterNameGenerator.GenerateNext();
+                String name = sqlHelper.GenerateParameterName(invariantName);
+
+                commandBuilder.AddParameter(invariantName, name);
+                parameterValues.Add(invariantName, GetParameterCore(parameters[i], name, i));
+            }
+
+            return commandBuilder.Build();
+        }
         protected override OeAsyncEnumerator ExecuteNonQuery(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters)
         {
             ((DbContext)dataContext).Database.ExecuteSqlCommand(sql, GetParameterValues(parameters));
@@ -34,32 +56,24 @@ namespace OdataToEntity.EfCore
             var query = (IQueryable<Object>)fromSql.FromSql((DbContext)dataContext, sql, GetParameterValues(parameters));
             return new OeAsyncEnumeratorAdapter(query, CancellationToken.None);
         }
-        protected override OeAsyncEnumerator ExecuteScalar(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
+        protected override OeAsyncEnumerator ExecutePrimitive(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
         {
             var dbContext = (DbContext)dataContext;
             var connection = dbContext.GetService<IRelationalConnection>();
-            var commandBuilderFactory = dbContext.GetService<IRelationalCommandBuilderFactory>();
-            IRelationalCommandBuilder commandBuilder = commandBuilderFactory.Create();
-            commandBuilder.Append(sql);
+            IRelationalCommand command = CreateCommand(dataContext, sql, parameters, out Dictionary<String, Object> parameterValues);
 
-            var parameterNameGenerator = dbContext.GetService<IParameterNameGeneratorFactory>().Create();
-            var sqlHelper = dbContext.GetService<ISqlGenerationHelper>();
-
-            var parameterValues = new Dictionary<String, Object>(parameters.Count);
-            for (int i = 0; i < parameters.Count; i++)
+            if (Parsers.OeExpressionHelper.GetCollectionItemType(returnType) == null)
             {
-                String invariantName = parameterNameGenerator.GenerateNext();
-                String name = sqlHelper.GenerateParameterName(invariantName);
-
-                commandBuilder.AddParameter(invariantName, name);
-                parameterValues.Add(invariantName, parameters[i].Value);
+                Task<Object> scalarTask = command.ExecuteScalarAsync(connection, parameterValues);
+                return new OeScalarAsyncEnumeratorAdapter(scalarTask, CancellationToken.None);
             }
 
-            IRelationalCommand command = commandBuilder.Build();
-            Task<Object> scalarTask = command.ExecuteScalarAsync(connection, parameterValues);
-            return new OeScalarAsyncEnumeratorAdapter(scalarTask, CancellationToken.None);
+            return new OeEfCoreDataReaderAsyncEnumerator(command.ExecuteReader(connection, parameterValues), CancellationToken.None);
         }
-        protected override String GetDefaultSchema(Object dataContext) => ((Model)((DbContext)dataContext).Model).Relational().DefaultSchema;
+        protected override String GetDefaultSchema(Object dataContext)
+        {
+            return ((Model)((DbContext)dataContext).Model).Relational().DefaultSchema;
+        }
         protected override OeOperationConfiguration GetOperationConfiguration(MethodInfo methodInfo)
         {
             var dbFunction = (DbFunctionAttribute)methodInfo.GetCustomAttribute(typeof(DbFunctionAttribute));

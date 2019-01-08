@@ -106,6 +106,11 @@ namespace OdataToEntity.Linq2Db
             : base(queryCache, new OeLinq2DbOperationAdapter(typeof(T)))
         {
         }
+        public OeLinq2DbDataAdapter(Cache.OeQueryCache queryCache, Db.OeOperationAdapter operationAdapter)
+            : base(queryCache, operationAdapter)
+        {
+
+        }
 
         public override void CloseDataContext(Object dataContext)
         {

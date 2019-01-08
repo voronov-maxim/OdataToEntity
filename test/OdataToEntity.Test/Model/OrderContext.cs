@@ -48,6 +48,8 @@ namespace OdataToEntity.Test.Model
         public int ScalarFunctionWithParameters(int? id, String name, OrderStatus? status) => Orders.Where(o => o.Id == id || o.Name.Contains(name) || o.Status == status).Count();
         [Description("TableFunction()")]
         public IEnumerable<Order> TableFunction() => Orders;
+        [Description("TableFunctionWithCollectionParameter()")]
+        public IEnumerable<String> TableFunctionWithCollectionParameter(IEnumerable<String> string_list) => string_list;
         [Description("TableFunctionWithParameters()")]
         public IEnumerable<Order> TableFunctionWithParameters(int? id, String name, OrderStatus? status) => Orders.Where(o => (o.Id == id) || EF.Functions.Like(o.Name, "%" + name + "%") || (o.Status == status));
 
@@ -74,6 +76,8 @@ namespace OdataToEntity.Test.Model
             modelBuilder.Entity<Customer>().HasKey(c => new { c.Country, c.Id });
             modelBuilder.Entity<ShippingAddress>().HasKey(s => new { s.OrderId, s.Id });
             modelBuilder.Entity<CustomerShippingAddress>().HasKey(t => new { t.CustomerCountry, t.CustomerId, t.ShippingAddressOrderId, t.ShippingAddressId });
+
+            modelBuilder.Query<CustomerOrdersCount>();
 
             modelBuilder.Entity<Order>().HasData(
                 new Order() { Id = 1, Name = "Order from Order2 context", CustomerCountry = "AL", CustomerId = 42, Status = OrderStatus.Cancelled }

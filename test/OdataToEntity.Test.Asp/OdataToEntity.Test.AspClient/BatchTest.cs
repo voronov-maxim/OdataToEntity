@@ -1,5 +1,4 @@
 ﻿using Microsoft.OData.Client;
-using ODataClient.Default;
 using ODataClient.OdataToEntity.Test.Model;
 using System;
 using System.Collections.Generic;

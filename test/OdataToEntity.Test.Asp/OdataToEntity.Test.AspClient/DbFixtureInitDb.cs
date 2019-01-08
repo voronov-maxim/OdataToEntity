@@ -1,7 +1,6 @@
 ﻿using Microsoft.OData.Client;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
-using ODataClient.Default;
 using OdataToEntity.Test.Model;
 using System;
 using System.Collections;
@@ -34,9 +33,9 @@ namespace OdataToEntity.Test
             EdmModel = modelBuilder.BuildEdmModel();
         }
 
-        public static Container CreateContainer(int maxPageSize)
+        public static ODataClient.OdataToEntity.Test.Model.Container CreateContainer(int maxPageSize)
         {
-            Container container = ContainerFactory();
+            ODataClient.OdataToEntity.Test.Model.Container container = ContainerFactory();
             if (maxPageSize > 0)
                 container.BuildingRequest += (s, e) => { e.Headers.Add("Prefer", "odata.maxpagesize=" + maxPageSize.ToString(CultureInfo.InvariantCulture)); };
             return container;
@@ -96,7 +95,7 @@ namespace OdataToEntity.Test
         }
         private async Task<IList> ExecuteOe<T, TResult>(LambdaExpression lambda, int maxPageSize)
         {
-            Container container = CreateContainer(maxPageSize);
+            ODataClient.OdataToEntity.Test.Model.Container container = CreateContainer(maxPageSize);
             var visitor = new TypeMapperVisitor(container) { TypeMap = t => Type.GetType("ODataClient." + t.FullName) };
             var call = visitor.Visit(lambda.Body);
 
@@ -201,7 +200,7 @@ namespace OdataToEntity.Test
             }
             return includes;
         }
-        internal static IQueryable GetQuerableOe(Container container, Type entityType)
+        internal static IQueryable GetQuerableOe(ODataClient.OdataToEntity.Test.Model.Container container, Type entityType)
         {
             if (entityType == typeof(Category))
                 return container.Categories;
@@ -237,7 +236,7 @@ namespace OdataToEntity.Test
         }
         public async Task Initalize()
         {
-            Container container = CreateContainer(0);
+            ODataClient.OdataToEntity.Test.Model.Container container = CreateContainer(0);
             await container.ResetDb().ExecuteAsync();
             await container.ResetManyColumns().ExecuteAsync();
 
@@ -275,6 +274,9 @@ namespace OdataToEntity.Test
                 else
                     continue;
 
+                //if (methodInfo.Name != "GetOrders_status_get")
+                //    continue;
+
                 Console.WriteLine(methodInfo.Name);
                 try
                 {
@@ -297,7 +299,7 @@ namespace OdataToEntity.Test
             Console.ResetColor();
         }
 
-        public static Func<Container> ContainerFactory { get; set; }
+        public static Func<ODataClient.OdataToEntity.Test.Model.Container> ContainerFactory { get; set; }
         protected Db.OeDataAdapter DataAdapter { get; }
         protected IEdmModel EdmModel { get; }
         protected ModelBuilder.OeEdmModelMetadataProvider MetadataProvider { get; }

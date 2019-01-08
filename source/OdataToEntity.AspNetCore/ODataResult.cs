@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace OdataToEntity.AspNetCore
 {
-    public sealed class ODataResult<T> : IActionResult
+    public class ODataResult<T> : IActionResult
     {
         private readonly struct ClrPropertiesInfo
         {
@@ -36,6 +36,9 @@ namespace OdataToEntity.AspNetCore
         private readonly IEdmEntitySetBase _resultEntitySet;
         private readonly HashSet<Object> _stack;
 
+        protected ODataResult()
+        {
+        }
         public ODataResult(IEdmModel edmModel, ODataUri odataUri, IEdmEntitySetBase resultEntitySet, IAsyncEnumerator<T> entities)
         {
             _odataUri = odataUri;
@@ -57,7 +60,7 @@ namespace OdataToEntity.AspNetCore
 
             return nextOdataUri.BuildUri(ODataUrlKeyDelimiter.Parentheses);
         }
-        public async Task ExecuteResultAsync(ActionContext context)
+        public virtual async Task ExecuteResultAsync(ActionContext context)
         {
             var settings = new ODataMessageWriterSettings()
             {

@@ -20,7 +20,7 @@
     },
     "GeneratedFileNamePrefix": "ODataClient",
     "UseNameSpacePrefix": true,
-    "NamespacePrefix": "ODataClient",
+    "NamespacePrefix": "ODataClient.OdataToEntity.Test.Model",
     "UseDataServiceCollection": false
   }
 }

@@ -23,6 +23,7 @@ namespace OdataToEntity.AspNetCore
         private readonly IEdmModel _edmModel;
         private readonly HttpContext _httpContext;
         private OeQueryContext _queryContext;
+        private ODataUri _odataUri;
 
         public OeAspQueryParser(HttpContext httpContext)
         {
@@ -53,6 +54,8 @@ namespace OdataToEntity.AspNetCore
         }
         private OeAsyncEnumerator ExecutePost(IEdmModel refModel, ODataUri odataUri, OeRequestHeaders headers, CancellationToken cancellationToken, Stream requestStream)
         {
+            _odataUri = odataUri;
+
             var parser = new OePostParser(refModel);
             OeAsyncEnumerator asyncEnumerator = parser.GetAsyncEnumerator(odataUri, requestStream, headers, _dataContext, out bool isScalar);
             if (!isScalar)
@@ -63,7 +66,10 @@ namespace OdataToEntity.AspNetCore
         public IAsyncEnumerable<T> ExecuteReader<T>(IQueryable source = null, bool navigationNextLink = false, int? maxPageSize = null)
         {
             OeAsyncEnumerator asyncEnumerator = GetAsyncEnumerator(source, navigationNextLink, maxPageSize);
-            return new OeEntityAsyncEnumerator<T>(asyncEnumerator, _queryContext.EntryFactory, _queryContext);
+            if (OeExpressionHelper.IsPrimitiveType(typeof(T)))
+                return new OePrimitiveAsyncEnumerator<T>(asyncEnumerator);
+            else
+                return new OeEntityAsyncEnumerator<T>(asyncEnumerator, _queryContext.EntryFactory, _queryContext);
         }
         public async Task<T?> ExecuteScalar<T>(IQueryable source = null) where T : struct
         {
@@ -126,6 +132,9 @@ namespace OdataToEntity.AspNetCore
         {
             IAsyncEnumerator<T> asyncEnumerator = asyncEnumerable.GetEnumerator();
             _httpContext.Response.RegisterForDispose(asyncEnumerator);
+            if (OeExpressionHelper.IsPrimitiveType(typeof(T)))
+                return new ODataPrimitiveResult<T>(_edmModel, _odataUri, asyncEnumerator);
+
             return new ODataResult<T>(_edmModel, _queryContext.ODataUri, _queryContext.EntryFactory.EntitySet, asyncEnumerator)
             {
                 Count = (asyncEnumerator as OeAsyncEnumerator)?.Count,

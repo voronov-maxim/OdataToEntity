@@ -168,32 +168,13 @@ namespace OdataToEntity
         public static ODataUri ParseUri(IEdmModel model, Uri serviceRoot, Uri uri)
         {
             var uriParser = new ODataUriParser(model, serviceRoot, uri, ServiceProvider.Instance);
-            ODataPath path = uriParser.ParsePath();
-            IEdmModel refModel = model.GetEdmModel(path);
+            ODataUri odataUri = uriParser.ParseUri();
+            IEdmModel refModel = model.GetEdmModel(odataUri.Path);
             if (refModel == model)
-                return ParseUri(uriParser, path, serviceRoot);
+                return odataUri;
 
             uriParser = new ODataUriParser(refModel, serviceRoot, uri, ServiceProvider.Instance);
-            return ParseUri(uriParser, path, serviceRoot);
-        }
-        private static ODataUri ParseUri(ODataUriParser parser, ODataPath path, Uri serviceRoot)
-        {
-            return new ODataUri()
-            {
-                Apply = parser.ParseApply(),
-                Compute = parser.ParseCompute(),
-                DeltaToken = parser.ParseDeltaToken(),
-                Filter = parser.ParseFilter(),
-                OrderBy = parser.ParseOrderBy(),
-                Path = path,
-                QueryCount = parser.ParseCount(),
-                Search = parser.ParseSearch(),
-                SelectAndExpand = parser.ParseSelectAndExpand(),
-                ServiceRoot = serviceRoot,
-                Skip = parser.ParseSkip(),
-                SkipToken = parser.ParseSkipToken(),
-                Top = parser.ParseTop()
-            };
+            return uriParser.ParseUri();
         }
     }
 }

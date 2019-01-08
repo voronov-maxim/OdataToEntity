@@ -4,6 +4,7 @@ drop function if exists dbo."GetOrders"(id integer, name character varying(256),
 drop function if exists dbo."ScalarFunction"();
 drop function if exists dbo."ScalarFunctionWithParameters"(id integer, name character varying(256), status integer);
 drop function if exists dbo."TableFunction"();
+drop function if exists dbo."TableFunctionWithCollectionParameter"(items dbo.string_list[]);
 drop function if exists dbo."TableFunctionWithParameters"(id integer, name character varying(256), status integer);
 
 drop table if exists dbo."CustomerShippingAddress";
@@ -18,9 +19,13 @@ drop sequence if exists dbo."Categories_Id_seq";
 drop sequence if exists dbo."Orders_Id_seq";
 drop sequence if exists dbo."OrderItems_Id_seq";
 
+drop type if exists dbo."string_list";
+
 drop schema if exists dbo;
 
 create schema dbo;
+
+create type dbo."string_list" as (item character varying(256));
 
 create sequence dbo."Categories_Id_seq";
 create sequence dbo."Orders_Id_seq";
@@ -200,6 +205,12 @@ create function dbo."TableFunction"()
     returns setof dbo."Orders"
 as $$
     select * from dbo."Orders"
+$$ language sql;
+
+create function dbo."TableFunctionWithCollectionParameter"(items dbo.string_list[])
+    returns setof character varying(256)
+as $$
+    select * from unnest(items)
 $$ language sql;
 
 create function dbo."TableFunctionWithParameters"(id integer, name character varying(256), status integer)

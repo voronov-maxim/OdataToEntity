@@ -41,6 +41,13 @@ namespace OdataToEntity.Test
                 String count = new StreamReader(responseStream).ReadToEnd();
                 fromOe = count == "" ? null : new Object[] { int.Parse(count) };
             }
+            else if (typeof(T) == typeof(String))
+            {
+                String json = new StreamReader(responseStream).ReadToEnd();
+                var jobject = (Newtonsoft.Json.Linq.JObject)JsonConvert.DeserializeObject(json);
+                var jarray = (Newtonsoft.Json.Linq.JArray)jobject["value"];
+                fromOe = jarray.Select(j => (String)j).ToArray();
+            }
             else
                 fromOe = reader.Read(responseStream).Cast<Object>().ToArray();
 
@@ -96,7 +103,7 @@ namespace OdataToEntity.Test
         public async Task GetOrders_status_get()
         {
             String request = "dbo.GetOrders(name=null,id=null,status='Processing')";
-            await Execute<Order>(request, null, c => c.GetOrders(null, null,  OrderStatus.Processing));
+            await Execute<Order>(request, null, c => c.GetOrders(null, null, OrderStatus.Processing));
         }
         [Fact]
         public async Task GetOrders_status_post()
@@ -182,6 +189,12 @@ namespace OdataToEntity.Test
         {
             String request = "TableFunction";
             await Execute(request, null, c => c.TableFunction());
+        }
+        [Fact]
+        public async Task TableFunctionWithCollectionParameter_get()
+        {
+            String request = "TableFunctionWithCollectionParameter(string_list=['Foo','Bar','Baz'])";
+            await Execute(request, null, c => c.TableFunctionWithCollectionParameter(new[] { "Foo", "Bar", "Baz" }));
         }
         [Fact]
         public async Task TableFunctionWithParameters_get()

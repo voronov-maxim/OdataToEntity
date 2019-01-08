@@ -19,7 +19,7 @@
     <AssemblyTitle>$(Title)</AssemblyTitle>
     <AssemblyVersion>$(OdataToEntityVersion)</AssemblyVersion>
   </PropertyGroup>
-  
+
   <PropertyGroup>
     <PackageId>OdataToEntity.EfCore</PackageId>
     <PackageTags>odata;data;services;odatatoentity;ef;entity framework core;entity;core</PackageTags>
@@ -35,6 +35,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$(EfCoreVersion)" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="$(EfCoreVersion)" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="$(EfCoreVersion)" />
   </ItemGroup>
 
 </Project>

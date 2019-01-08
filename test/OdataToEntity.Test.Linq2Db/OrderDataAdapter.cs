@@ -8,7 +8,7 @@ using Order2Connection = lq2db::OdataToEntity.Test.Model.Order2Connection;
 
 namespace OdataToEntity.Test.Model
 {
-    public sealed class OrderDataAdapter : OeLinq2DbDataAdapter<OdataToEntityDB>, ITestDbDataAdapter
+    public sealed class OrderDataAdapter : OeLinq2DbSqlServerDataAdapter<OdataToEntityDB>, ITestDbDataAdapter
     {
         private sealed class OrderDbDataAdapter : OeEfCoreDataAdapter<OrderContext>
         {
@@ -41,7 +41,7 @@ namespace OdataToEntity.Test.Model
         Db.OeDataAdapter ITestDbDataAdapter.DbDataAdapter => _dbDataAdapter;
     }
 
-    public sealed class Order2DataAdapter : OeLinq2DbDataAdapter<Order2Connection>, ITestDbDataAdapter
+    public sealed class Order2DataAdapter : OeLinq2DbSqlServerDataAdapter<Order2Connection>, ITestDbDataAdapter
     {
         private sealed class Order2DbDataAdapter : OeEfCoreDataAdapter<Order2Context>
         {

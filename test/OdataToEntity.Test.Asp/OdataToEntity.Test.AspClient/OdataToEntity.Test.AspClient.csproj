@@ -37,6 +37,7 @@
     <Compile Include="..\..\OdataToEntity.Test\Common\TestHelper.cs" Link="Common\TestHelper.cs" />
     <Compile Include="..\..\OdataToEntity.Test\Common\TestContractResolver.cs" Link="Common\TestContractResolver.cs" />
     <Compile Include="..\..\OdataToEntity.Test\Model\*.cs" Link="Model\%(Filename).cs" />
+    <Compile Include="..\..\OdataToEntity.Test.EfCore.SqlServer\OeEfCoreSqlServerDataAdapter.cs" Link="OeEfCoreSqlServerDataAdapter.cs" />
     <Compile Include="..\..\OdataToEntity.Test.EfCore.SqlServer\OrderContextOptions.cs" Link="OrderContextOptions.cs" />
     <Compile Include="..\..\OdataToEntity.Test.EfCore.SqlServer\OrderDataAdapter.cs" Link="OrderDataAdapter.cs" />
   </ItemGroup>

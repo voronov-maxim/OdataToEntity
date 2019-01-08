@@ -64,5 +64,12 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
             IAsyncEnumerable<Model.Order> orders = parser.ExecuteReader<Model.Order>();
             return parser.OData(orders);
         }
+        [HttpGet("TableFunctionWithCollectionParameter")]
+        public ODataResult<String> TableFunctionWithCollectionParameter()
+        {
+            var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
+            IAsyncEnumerable<String> items = parser.ExecuteReader<String>();
+            return parser.OData(items);
+        }
     }
 }

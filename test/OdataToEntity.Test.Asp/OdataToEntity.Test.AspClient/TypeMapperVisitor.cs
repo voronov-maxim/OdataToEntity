@@ -11,11 +11,11 @@ namespace OdataToEntity.Test.Model
 {
     internal sealed class TypeMapperVisitor : ExpressionVisitor
     {
-        private readonly ODataClient.Default.Container _container;
+        private readonly ODataClient.OdataToEntity.Test.Model.Container _container;
         private readonly List<LambdaExpression> _navigationPropertyAccessors;
         private readonly Dictionary<ParameterExpression, ParameterExpression> _parameters;
 
-        public TypeMapperVisitor(ODataClient.Default.Container container)
+        public TypeMapperVisitor(ODataClient.OdataToEntity.Test.Model.Container container)
         {
             _container = container;
 

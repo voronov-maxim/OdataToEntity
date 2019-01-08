@@ -50,6 +50,5 @@ namespace OdataToEntity.Infrastructure
         }
 
         public IList List => _list;
-
     }
 }

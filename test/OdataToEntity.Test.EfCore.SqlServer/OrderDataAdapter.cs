@@ -3,7 +3,7 @@ using System;
 
 namespace OdataToEntity.Test.Model
 {
-    public sealed class OrderDataAdapter : OeEfCoreDataAdapter<OrderContext>, ITestDbDataAdapter
+    public sealed class OrderDataAdapter : OeEfCoreSqlServerDataAdapter<OrderContext>, ITestDbDataAdapter
     {
         private readonly bool _useRelationalNulls;
 
@@ -25,7 +25,7 @@ namespace OdataToEntity.Test.Model
         Db.OeDataAdapter ITestDbDataAdapter.DbDataAdapter => this;
     }
 
-    public sealed class Order2DataAdapter : OeEfCoreDataAdapter<Order2Context>, ITestDbDataAdapter
+    public sealed class Order2DataAdapter : OeEfCoreSqlServerDataAdapter<Order2Context>, ITestDbDataAdapter
     {
         public Order2DataAdapter(bool allowCache, bool useRelationalNulls, String databaseName) :
             base(OrderContextOptions.Create<Order2Context>(useRelationalNulls, databaseName), new Cache.OeQueryCache(allowCache))

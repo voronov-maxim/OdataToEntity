@@ -87,6 +87,8 @@ namespace OdataToEntity.Test.Model
         public int ScalarFunctionWithParameters(int? id, String name, OrderStatus? status) => Orders.Where(o => o.Id == id || o.Name.Contains(name) || o.Status == status).Count();
         [Sql.Function("TableFunction")]
         public IEnumerable<Order> TableFunction() => Orders;
+        [Sql.Function("TableFunctionWithCollectionParameter")]
+        public IEnumerable<String> TableFunctionWithCollectionParameter(IEnumerable<String> string_list) => string_list;
         [Sql.Function("TableFunctionWithParameters")]
         public IEnumerable<Order> TableFunctionWithParameters(int? id, String name, OrderStatus? status) => Orders.Where(o => (o.Id == id) || o.Name.Contains(name) || (o.Status == status));
     }

@@ -1,5 +1,4 @@
-﻿using ODataClient.Default;
-using ODataClient.OdataToEntity.Test.Model;
+﻿using ODataClient.OdataToEntity.Test.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -73,6 +72,15 @@ namespace OdataToEntity.Test.AspClient
             var expected = Execute(c => c.TableFunction());
 
             Assert.Equal(expected.Length, orders.Length);
+        }
+        [Fact]
+        public async Task TableFunctionWithCollectionParameter_get()
+        {
+            Container container = DbFixtureInitDb.CreateContainer(0);
+            String[] items = await container.TableFunctionWithCollectionParameter(new[] { "Foo", "Bar", "Baz" }).ToArrayAsync();
+            var expected = Execute(c => c.TableFunctionWithCollectionParameter(new[] { "Foo", "Bar", "Baz" }));
+
+            Assert.Equal(expected.Length, items.Length);
         }
         [Fact]
         public async Task TableFunctionWithParameters_get()

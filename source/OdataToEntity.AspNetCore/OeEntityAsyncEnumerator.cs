@@ -45,16 +45,16 @@ namespace OdataToEntity.AspNetCore
             }
         }
 
+        private readonly IDisposable _asyncEnumerator;
         private T _current;
         private readonly Db.OeDbEnumerator _dbEnumerator;
-        private readonly IDisposable _dispose;
         private bool _isFirstMoveNext;
         private bool _isMoveNext;
         private readonly OeQueryContext _queryContext;
 
         public OeEntityAsyncEnumerator(Db.OeAsyncEnumerator asyncEnumerator, OeEntryFactory entryFactory, OeQueryContext queryContext)
         {
-            _dispose = asyncEnumerator;
+            _asyncEnumerator = asyncEnumerator;
             _dbEnumerator = new Db.OeDbEnumerator(asyncEnumerator, entryFactory);
             _queryContext = queryContext;
             _isFirstMoveNext = true;
@@ -107,7 +107,7 @@ namespace OdataToEntity.AspNetCore
         }
         public void Dispose()
         {
-            _dispose.Dispose();
+            _asyncEnumerator.Dispose();
         }
         IAsyncEnumerator<T> IAsyncEnumerable<T>.GetEnumerator()
         {

@@ -19,6 +19,8 @@ namespace OdataToEntity.Test.Model
         }
         public static DbContextOptions Create<T>(bool useRelationalNulls, String databaseName) where T : DbContext
         {
+            Npgsql.NpgsqlConnection.GlobalTypeMapper.MapComposite<OdataToEntity.EfCore.StringList>("dbo.string_list");
+
             var optionsBuilder = new DbContextOptionsBuilder<T>();
             optionsBuilder.UseNpgsql(@"Host=localhost;Port=5432;Database=OdataToEntity;Pooling=true", opt => opt.UseRelationalNulls(useRelationalNulls));
             return optionsBuilder.Options;

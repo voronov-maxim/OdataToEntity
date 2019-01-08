@@ -5,7 +5,7 @@ using System;
 
 namespace OdataToEntity.Test.Model
 {
-    public sealed class OrderDataAdapter : OeEf6DataAdapter<OrderEf6Context>, ITestDbDataAdapter
+    public sealed class OrderDataAdapter : OeEf6SqlServerDataAdapter<OrderEf6Context>, ITestDbDataAdapter
     {
         private sealed class OrderDbDataAdapter : OeEfCoreDataAdapter<OrderContext>
         {
@@ -44,7 +44,7 @@ namespace OdataToEntity.Test.Model
         Db.OeDataAdapter ITestDbDataAdapter.DbDataAdapter => _dbDataAdapter;
     }
 
-    public sealed class Order2DataAdapter : OeEf6DataAdapter<Order2Ef6Context>, ITestDbDataAdapter
+    public sealed class Order2DataAdapter : OeEf6SqlServerDataAdapter<Order2Ef6Context>, ITestDbDataAdapter
     {
         private sealed class Order2DbDataAdapter : OeEfCoreDataAdapter<Order2Context>
         {

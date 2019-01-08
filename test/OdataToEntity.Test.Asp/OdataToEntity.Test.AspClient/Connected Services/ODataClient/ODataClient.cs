@@ -8,9 +8,581 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-// Generation date: 01.08.2018 22:38:46
+// Generation date: 08.01.2019 18:33:01
 namespace ODataClient.OdataToEntity.Test.Model
 {
+    /// <summary>
+    /// There are no comments for OrderContext in the schema.
+    /// </summary>
+    public partial class Container : global::Microsoft.OData.Client.DataServiceContext
+    {
+        /// <summary>
+        /// Initialize a new OrderContext object.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public Container(global::System.Uri serviceRoot) : 
+                base(serviceRoot, global::Microsoft.OData.Client.ODataProtocolVersion.V4)
+        {
+            this.ResolveName = new global::System.Func<global::System.Type, string>(this.ResolveNameFromType);
+            this.ResolveType = new global::System.Func<string, global::System.Type>(this.ResolveTypeFromName);
+            this.OnContextCreated();
+            this.Format.LoadServiceModel = GeneratedEdmModel.GetInstance;
+            this.Format.UseJson();
+        }
+        partial void OnContextCreated();
+        /// <summary>
+        /// Since the namespace configured for this service reference
+        /// in Visual Studio is different from the one indicated in the
+        /// server schema, use type-mappers to map between the two.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        protected global::System.Type ResolveTypeFromName(string typeName)
+        {
+            global::System.Type resolvedType = this.DefaultResolveType(typeName, "OdataToEntity.Test.Model", "ODataClient.OdataToEntity.Test.Model");
+            if ((resolvedType != null))
+            {
+                return resolvedType;
+            }
+            return null;
+        }
+        /// <summary>
+        /// Since the namespace configured for this service reference
+        /// in Visual Studio is different from the one indicated in the
+        /// server schema, use type-mappers to map between the two.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        protected string ResolveNameFromType(global::System.Type clientType)
+        {
+            if (clientType.Namespace.Equals("ODataClient.OdataToEntity.Test.Model", global::System.StringComparison.Ordinal))
+            {
+                return string.Concat("OdataToEntity.Test.Model.", clientType.Name);
+            }
+            return clientType.FullName;
+        }
+        /// <summary>
+        /// There are no comments for Categories in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public global::Microsoft.OData.Client.DataServiceQuery<Category> Categories
+        {
+            get
+            {
+                if ((this._Categories == null))
+                {
+                    this._Categories = base.CreateQuery<Category>("Categories");
+                }
+                return this._Categories;
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private global::Microsoft.OData.Client.DataServiceQuery<Category> _Categories;
+        /// <summary>
+        /// There are no comments for Customers in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public global::Microsoft.OData.Client.DataServiceQuery<Customer> Customers
+        {
+            get
+            {
+                if ((this._Customers == null))
+                {
+                    this._Customers = base.CreateQuery<Customer>("Customers");
+                }
+                return this._Customers;
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private global::Microsoft.OData.Client.DataServiceQuery<Customer> _Customers;
+        /// <summary>
+        /// There are no comments for CustomerShippingAddress in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public global::Microsoft.OData.Client.DataServiceQuery<CustomerShippingAddress> CustomerShippingAddress
+        {
+            get
+            {
+                if ((this._CustomerShippingAddress == null))
+                {
+                    this._CustomerShippingAddress = base.CreateQuery<CustomerShippingAddress>("CustomerShippingAddress");
+                }
+                return this._CustomerShippingAddress;
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private global::Microsoft.OData.Client.DataServiceQuery<CustomerShippingAddress> _CustomerShippingAddress;
+        /// <summary>
+        /// There are no comments for ManyColumns in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public global::Microsoft.OData.Client.DataServiceQuery<ManyColumns> ManyColumns
+        {
+            get
+            {
+                if ((this._ManyColumns == null))
+                {
+                    this._ManyColumns = base.CreateQuery<ManyColumns>("ManyColumns");
+                }
+                return this._ManyColumns;
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private global::Microsoft.OData.Client.DataServiceQuery<ManyColumns> _ManyColumns;
+        /// <summary>
+        /// There are no comments for ManyColumnsView in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public global::Microsoft.OData.Client.DataServiceQuery<ManyColumnsView> ManyColumnsView
+        {
+            get
+            {
+                if ((this._ManyColumnsView == null))
+                {
+                    this._ManyColumnsView = base.CreateQuery<ManyColumnsView>("ManyColumnsView");
+                }
+                return this._ManyColumnsView;
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private global::Microsoft.OData.Client.DataServiceQuery<ManyColumnsView> _ManyColumnsView;
+        /// <summary>
+        /// There are no comments for Orders in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public global::Microsoft.OData.Client.DataServiceQuery<Order> Orders
+        {
+            get
+            {
+                if ((this._Orders == null))
+                {
+                    this._Orders = base.CreateQuery<Order>("Orders");
+                }
+                return this._Orders;
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private global::Microsoft.OData.Client.DataServiceQuery<Order> _Orders;
+        /// <summary>
+        /// There are no comments for OrderItems in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public global::Microsoft.OData.Client.DataServiceQuery<OrderItem> OrderItems
+        {
+            get
+            {
+                if ((this._OrderItems == null))
+                {
+                    this._OrderItems = base.CreateQuery<OrderItem>("OrderItems");
+                }
+                return this._OrderItems;
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private global::Microsoft.OData.Client.DataServiceQuery<OrderItem> _OrderItems;
+        /// <summary>
+        /// There are no comments for ShippingAddresses in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public global::Microsoft.OData.Client.DataServiceQuery<ShippingAddress> ShippingAddresses
+        {
+            get
+            {
+                if ((this._ShippingAddresses == null))
+                {
+                    this._ShippingAddresses = base.CreateQuery<ShippingAddress>("ShippingAddresses");
+                }
+                return this._ShippingAddresses;
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private global::Microsoft.OData.Client.DataServiceQuery<ShippingAddress> _ShippingAddresses;
+        /// <summary>
+        /// There are no comments for Categories in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public void AddToCategories(Category category)
+        {
+            base.AddObject("Categories", category);
+        }
+        /// <summary>
+        /// There are no comments for Customers in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public void AddToCustomers(Customer customer)
+        {
+            base.AddObject("Customers", customer);
+        }
+        /// <summary>
+        /// There are no comments for CustomerShippingAddress in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public void AddToCustomerShippingAddress(CustomerShippingAddress customerShippingAddress)
+        {
+            base.AddObject("CustomerShippingAddress", customerShippingAddress);
+        }
+        /// <summary>
+        /// There are no comments for ManyColumns in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public void AddToManyColumns(ManyColumns manyColumns)
+        {
+            base.AddObject("ManyColumns", manyColumns);
+        }
+        /// <summary>
+        /// There are no comments for ManyColumnsView in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public void AddToManyColumnsView(ManyColumnsView manyColumnsView)
+        {
+            base.AddObject("ManyColumnsView", manyColumnsView);
+        }
+        /// <summary>
+        /// There are no comments for Orders in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public void AddToOrders(Order order)
+        {
+            base.AddObject("Orders", order);
+        }
+        /// <summary>
+        /// There are no comments for OrderItems in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public void AddToOrderItems(OrderItem orderItem)
+        {
+            base.AddObject("OrderItems", orderItem);
+        }
+        /// <summary>
+        /// There are no comments for ShippingAddresses in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public void AddToShippingAddresses(ShippingAddress shippingAddress)
+        {
+            base.AddObject("ShippingAddresses", shippingAddress);
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private abstract class GeneratedEdmModel
+        {
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+            private static global::Microsoft.OData.Edm.IEdmModel ParsedModel = LoadModelFromString();
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+            private const string Edmx = @"<edmx:Edmx Version=""4.0"" xmlns:edmx=""http://docs.oasis-open.org/odata/ns/edmx"">
+  <edmx:DataServices>
+    <Schema Namespace=""OdataToEntity.Test.Model"" xmlns=""http://docs.oasis-open.org/odata/ns/edm"">
+      <EnumType Name=""Sex"">
+        <Member Name=""Male"" Value=""0"" />
+        <Member Name=""Female"" Value=""1"" />
+      </EnumType>
+      <EnumType Name=""OrderStatus"">
+        <Member Name=""Unknown"" Value=""0"" />
+        <Member Name=""Processing"" Value=""1"" />
+        <Member Name=""Shipped"" Value=""2"" />
+        <Member Name=""Delivering"" Value=""3"" />
+        <Member Name=""Cancelled"" Value=""4"" />
+      </EnumType>
+      <EntityType Name=""Category"">
+        <Key>
+          <PropertyRef Name=""Id"" />
+        </Key>
+        <Property Name=""Id"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Name"" Type=""Edm.String"" Nullable=""false"" />
+        <Property Name=""ParentId"" Type=""Edm.Int32"" />
+        <Property Name=""DateTime"" Type=""Edm.DateTimeOffset"" />
+        <NavigationProperty Name=""Parent"" Type=""OdataToEntity.Test.Model.Category"" Partner=""Children"">
+          <ReferentialConstraint Property=""ParentId"" ReferencedProperty=""Id"" />
+        </NavigationProperty>
+        <NavigationProperty Name=""Children"" Type=""Collection(OdataToEntity.Test.Model.Category)"" Partner=""Parent"" />
+      </EntityType>
+      <EntityType Name=""Customer"">
+        <Key>
+          <PropertyRef Name=""Country"" />
+          <PropertyRef Name=""Id"" />
+        </Key>
+        <Property Name=""Address"" Type=""Edm.String"" />
+        <Property Name=""Country"" Type=""Edm.String"" Nullable=""false"" />
+        <Property Name=""Id"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Name"" Type=""Edm.String"" Nullable=""false"" />
+        <Property Name=""Sex"" Type=""OdataToEntity.Test.Model.Sex"" />
+        <NavigationProperty Name=""CustomerShippingAddresses"" Type=""Collection(OdataToEntity.Test.Model.CustomerShippingAddress)"" Partner=""Customer"" />
+        <NavigationProperty Name=""AltOrders"" Type=""Collection(OdataToEntity.Test.Model.Order)"" Partner=""AltCustomer"" />
+        <NavigationProperty Name=""Orders"" Type=""Collection(OdataToEntity.Test.Model.Order)"" Partner=""Customer"" />
+        <NavigationProperty Name=""ShippingAddresses"" Type=""Collection(OdataToEntity.Test.Model.ShippingAddress)"" ContainsTarget=""true"" />
+      </EntityType>
+      <EntityType Name=""CustomerShippingAddress"">
+        <Key>
+          <PropertyRef Name=""CustomerCountry"" />
+          <PropertyRef Name=""CustomerId"" />
+          <PropertyRef Name=""ShippingAddressOrderId"" />
+          <PropertyRef Name=""ShippingAddressId"" />
+        </Key>
+        <Property Name=""CustomerCountry"" Type=""Edm.String"" Nullable=""false"" />
+        <Property Name=""CustomerId"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""ShippingAddressOrderId"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""ShippingAddressId"" Type=""Edm.Int32"" Nullable=""false"" />
+        <NavigationProperty Name=""Customer"" Type=""OdataToEntity.Test.Model.Customer"" Partner=""CustomerShippingAddresses"">
+          <ReferentialConstraint Property=""CustomerCountry"" ReferencedProperty=""Country"" />
+          <ReferentialConstraint Property=""CustomerId"" ReferencedProperty=""Id"" />
+        </NavigationProperty>
+        <NavigationProperty Name=""ShippingAddress"" Type=""OdataToEntity.Test.Model.ShippingAddress"" Nullable=""false"" Partner=""CustomerShippingAddresses"">
+          <ReferentialConstraint Property=""ShippingAddressOrderId"" ReferencedProperty=""OrderId"" />
+          <ReferentialConstraint Property=""ShippingAddressId"" ReferencedProperty=""Id"" />
+        </NavigationProperty>
+      </EntityType>
+      <EntityType Name=""ManyColumnsBase"">
+        <Key>
+          <PropertyRef Name=""Column01"" />
+        </Key>
+        <Property Name=""Column01"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column02"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column03"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column04"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column05"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column06"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column07"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column08"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column09"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column10"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column11"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column12"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column13"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column14"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column15"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column16"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column17"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column18"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column19"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column20"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column21"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column22"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column23"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column24"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column25"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column26"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column27"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column28"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column29"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Column30"" Type=""Edm.Int32"" Nullable=""false"" />
+      </EntityType>
+      <EntityType Name=""ManyColumns"" BaseType=""OdataToEntity.Test.Model.ManyColumnsBase"" />
+      <EntityType Name=""ManyColumnsView"" BaseType=""OdataToEntity.Test.Model.ManyColumnsBase"" />
+      <EntityType Name=""OrderBase"" Abstract=""true"">
+        <Property Name=""AltCustomerCountry"" Type=""Edm.String"" />
+        <Property Name=""AltCustomerId"" Type=""Edm.Int32"" />
+        <Property Name=""Name"" Type=""Edm.String"" Nullable=""false"" />
+      </EntityType>
+      <EntityType Name=""Order"" BaseType=""OdataToEntity.Test.Model.OrderBase"">
+        <Key>
+          <PropertyRef Name=""Id"" />
+        </Key>
+        <Property Name=""CustomerCountry"" Type=""Edm.String"" Nullable=""false"" />
+        <Property Name=""CustomerId"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Date"" Type=""Edm.DateTimeOffset"" />
+        <Property Name=""Id"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Status"" Type=""OdataToEntity.Test.Model.OrderStatus"" Nullable=""false"" />
+        <NavigationProperty Name=""AltCustomer"" Type=""OdataToEntity.Test.Model.Customer"" Partner=""AltOrders"">
+          <ReferentialConstraint Property=""AltCustomerCountry"" ReferencedProperty=""Country"" />
+          <ReferentialConstraint Property=""AltCustomerId"" ReferencedProperty=""Id"" />
+        </NavigationProperty>
+        <NavigationProperty Name=""Customer"" Type=""OdataToEntity.Test.Model.Customer"" Partner=""Orders"">
+          <ReferentialConstraint Property=""CustomerCountry"" ReferencedProperty=""Country"" />
+          <ReferentialConstraint Property=""CustomerId"" ReferencedProperty=""Id"" />
+        </NavigationProperty>
+        <NavigationProperty Name=""ShippingAddresses"" Type=""Collection(OdataToEntity.Test.Model.ShippingAddress)"">
+          <ReferentialConstraint Property=""OrderId"" ReferencedProperty=""Id"" />
+        </NavigationProperty>
+        <NavigationProperty Name=""Items"" Type=""Collection(OdataToEntity.Test.Model.OrderItem)"" Partner=""Order"" />
+      </EntityType>
+      <EntityType Name=""OrderItem"">
+        <Key>
+          <PropertyRef Name=""Id"" />
+        </Key>
+        <Property Name=""Count"" Type=""Edm.Int32"" />
+        <Property Name=""Id"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""OrderId"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""Price"" Type=""Edm.Decimal"" />
+        <Property Name=""Product"" Type=""Edm.String"" Nullable=""false"" />
+        <NavigationProperty Name=""Order"" Type=""OdataToEntity.Test.Model.Order"" Nullable=""false"" Partner=""Items"">
+          <ReferentialConstraint Property=""OrderId"" ReferencedProperty=""Id"" />
+        </NavigationProperty>
+      </EntityType>
+      <EntityType Name=""ShippingAddress"">
+        <Key>
+          <PropertyRef Name=""OrderId"" />
+          <PropertyRef Name=""Id"" />
+        </Key>
+        <Property Name=""Address"" Type=""Edm.String"" />
+        <Property Name=""Id"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""OrderId"" Type=""Edm.Int32"" Nullable=""false"" />
+        <NavigationProperty Name=""CustomerShippingAddresses"" Type=""Collection(OdataToEntity.Test.Model.CustomerShippingAddress)"" Partner=""ShippingAddress"" />
+        <NavigationProperty Name=""Customers"" Type=""Collection(OdataToEntity.Test.Model.Customer)"" ContainsTarget=""true"" />
+      </EntityType>
+      <Function Name=""OrderContext.GenerateDatabaseName"">
+        <ReturnType Type=""Collection(Edm.String)"" Nullable=""false"" />
+      </Function>
+      <Function Name=""OrderContext.GetOrders"">
+        <Parameter Name=""id"" Type=""Edm.Int32"" />
+        <Parameter Name=""name"" Type=""Edm.String"" />
+        <Parameter Name=""status"" Type=""OdataToEntity.Test.Model.OrderStatus"" />
+        <ReturnType Type=""Collection(OdataToEntity.Test.Model.Order)"" />
+      </Function>
+      <Action Name=""OrderContext.ResetDb"" />
+      <Action Name=""OrderContext.ResetManyColumns"" />
+      <Function Name=""OrderContext.ScalarFunction"">
+        <ReturnType Type=""Edm.Int32"" Nullable=""false"" />
+      </Function>
+      <Function Name=""OrderContext.ScalarFunctionWithParameters"">
+        <Parameter Name=""id"" Type=""Edm.Int32"" />
+        <Parameter Name=""name"" Type=""Edm.String"" />
+        <Parameter Name=""status"" Type=""OdataToEntity.Test.Model.OrderStatus"" />
+        <ReturnType Type=""Edm.Int32"" Nullable=""false"" />
+      </Function>
+      <Function Name=""OrderContext.TableFunction"">
+        <ReturnType Type=""Collection(OdataToEntity.Test.Model.Order)"" />
+      </Function>
+      <Function Name=""OrderContext.TableFunctionWithCollectionParameter"">
+        <Parameter Name=""string_list"" Type=""Collection(Edm.String)"" />
+        <ReturnType Type=""Collection(Edm.String)"" />
+      </Function>
+      <Function Name=""OrderContext.TableFunctionWithParameters"">
+        <Parameter Name=""id"" Type=""Edm.Int32"" />
+        <Parameter Name=""name"" Type=""Edm.String"" />
+        <Parameter Name=""status"" Type=""OdataToEntity.Test.Model.OrderStatus"" />
+        <ReturnType Type=""Collection(OdataToEntity.Test.Model.Order)"" />
+      </Function>
+      <EntityContainer Name=""OrderContext"">
+        <EntitySet Name=""Categories"" EntityType=""OdataToEntity.Test.Model.Category"">
+          <NavigationPropertyBinding Path=""Children"" Target=""Categories"" />
+          <NavigationPropertyBinding Path=""Parent"" Target=""Categories"" />
+        </EntitySet>
+        <EntitySet Name=""Customers"" EntityType=""OdataToEntity.Test.Model.Customer"">
+          <NavigationPropertyBinding Path=""AltOrders"" Target=""Orders"" />
+          <NavigationPropertyBinding Path=""CustomerShippingAddresses"" Target=""CustomerShippingAddress"" />
+          <NavigationPropertyBinding Path=""Orders"" Target=""Orders"" />
+        </EntitySet>
+        <EntitySet Name=""CustomerShippingAddress"" EntityType=""OdataToEntity.Test.Model.CustomerShippingAddress"">
+          <NavigationPropertyBinding Path=""Customer"" Target=""Customers"" />
+          <NavigationPropertyBinding Path=""ShippingAddress"" Target=""ShippingAddresses"" />
+        </EntitySet>
+        <EntitySet Name=""ManyColumns"" EntityType=""OdataToEntity.Test.Model.ManyColumns"" />
+        <EntitySet Name=""ManyColumnsView"" EntityType=""OdataToEntity.Test.Model.ManyColumnsView"" />
+        <EntitySet Name=""Orders"" EntityType=""OdataToEntity.Test.Model.Order"">
+          <NavigationPropertyBinding Path=""AltCustomer"" Target=""Customers"" />
+          <NavigationPropertyBinding Path=""Customer"" Target=""Customers"" />
+          <NavigationPropertyBinding Path=""Items"" Target=""OrderItems"" />
+          <NavigationPropertyBinding Path=""ShippingAddresses"" Target=""ShippingAddresses"" />
+        </EntitySet>
+        <EntitySet Name=""OrderItems"" EntityType=""OdataToEntity.Test.Model.OrderItem"">
+          <NavigationPropertyBinding Path=""Order"" Target=""Orders"" />
+        </EntitySet>
+        <EntitySet Name=""ShippingAddresses"" EntityType=""OdataToEntity.Test.Model.ShippingAddress"">
+          <NavigationPropertyBinding Path=""CustomerShippingAddresses"" Target=""CustomerShippingAddress"" />
+        </EntitySet>
+        <FunctionImport Name=""GenerateDatabaseName"" Function=""OdataToEntity.Test.Model.OrderContext.GenerateDatabaseName"" />
+        <FunctionImport Name=""dbo.GetOrders"" Function=""OdataToEntity.Test.Model.OrderContext.GetOrders"" EntitySet=""OdataToEntity.Test.Model.OrderContext/Orders"" />
+        <ActionImport Name=""ResetDb"" Action=""OdataToEntity.Test.Model.OrderContext.ResetDb"" />
+        <ActionImport Name=""ResetManyColumns"" Action=""OdataToEntity.Test.Model.OrderContext.ResetManyColumns"" />
+        <FunctionImport Name=""dbo.ScalarFunction"" Function=""OdataToEntity.Test.Model.OrderContext.ScalarFunction"" />
+        <FunctionImport Name=""dbo.ScalarFunctionWithParameters"" Function=""OdataToEntity.Test.Model.OrderContext.ScalarFunctionWithParameters"" />
+        <FunctionImport Name=""TableFunction"" Function=""OdataToEntity.Test.Model.OrderContext.TableFunction"" EntitySet=""OdataToEntity.Test.Model.OrderContext/Orders"" />
+        <FunctionImport Name=""TableFunctionWithCollectionParameter"" Function=""OdataToEntity.Test.Model.OrderContext.TableFunctionWithCollectionParameter"" />
+        <FunctionImport Name=""TableFunctionWithParameters"" Function=""OdataToEntity.Test.Model.OrderContext.TableFunctionWithParameters"" EntitySet=""OdataToEntity.Test.Model.OrderContext/Orders"" />
+      </EntityContainer>
+    </Schema>
+  </edmx:DataServices>
+</edmx:Edmx>";
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+            public static global::Microsoft.OData.Edm.IEdmModel GetInstance()
+            {
+                return ParsedModel;
+            }
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+            private static global::Microsoft.OData.Edm.IEdmModel LoadModelFromString()
+            {
+                global::System.Xml.XmlReader reader = CreateXmlReader(Edmx);
+                try
+                {
+                    return global::Microsoft.OData.Edm.Csdl.CsdlReader.Parse(reader);
+                }
+                finally
+                {
+                    ((global::System.IDisposable)(reader)).Dispose();
+                }
+            }
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+            private static global::System.Xml.XmlReader CreateXmlReader(string edmxToParse)
+            {
+                return global::System.Xml.XmlReader.Create(new global::System.IO.StringReader(edmxToParse));
+            }
+        }
+        /// <summary>
+        /// There are no comments for GenerateDatabaseName in the schema.
+        /// </summary>
+        public global::Microsoft.OData.Client.DataServiceQuery<string> GenerateDatabaseName()
+        {
+            return this.CreateFunctionQuery<string>("", "GenerateDatabaseName", false);
+        }
+        /// <summary>
+        /// There are no comments for dbo.GetOrders in the schema.
+        /// </summary>
+        public global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Order> GetOrders(global::System.Nullable<int> id, string name, global::System.Nullable<global::ODataClient.OdataToEntity.Test.Model.OrderStatus> status)
+        {
+            return this.CreateFunctionQuery<global::ODataClient.OdataToEntity.Test.Model.Order>("", "dbo.GetOrders", false, new global::Microsoft.OData.Client.UriOperationParameter("id", id),
+                    new global::Microsoft.OData.Client.UriOperationParameter("name", name),
+                    new global::Microsoft.OData.Client.UriOperationParameter("status", status));
+        }
+        /// <summary>
+        /// There are no comments for dbo.ScalarFunction in the schema.
+        /// </summary>
+        public global::Microsoft.OData.Client.DataServiceQuerySingle<int> ScalarFunction()
+        {
+            return this.CreateFunctionQuerySingle<int>("", "dbo.ScalarFunction", false);
+        }
+        /// <summary>
+        /// There are no comments for dbo.ScalarFunctionWithParameters in the schema.
+        /// </summary>
+        public global::Microsoft.OData.Client.DataServiceQuerySingle<int> ScalarFunctionWithParameters(global::System.Nullable<int> id, string name, global::System.Nullable<global::ODataClient.OdataToEntity.Test.Model.OrderStatus> status)
+        {
+            return this.CreateFunctionQuerySingle<int>("", "dbo.ScalarFunctionWithParameters", false, new global::Microsoft.OData.Client.UriOperationParameter("id", id),
+                    new global::Microsoft.OData.Client.UriOperationParameter("name", name),
+                    new global::Microsoft.OData.Client.UriOperationParameter("status", status));
+        }
+        /// <summary>
+        /// There are no comments for TableFunction in the schema.
+        /// </summary>
+        public global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Order> TableFunction()
+        {
+            return this.CreateFunctionQuery<global::ODataClient.OdataToEntity.Test.Model.Order>("", "TableFunction", false);
+        }
+        /// <summary>
+        /// There are no comments for TableFunctionWithCollectionParameter in the schema.
+        /// </summary>
+        public global::Microsoft.OData.Client.DataServiceQuery<string> TableFunctionWithCollectionParameter(global::System.Collections.Generic.ICollection<string> string_list)
+        {
+            return this.CreateFunctionQuery<string>("", "TableFunctionWithCollectionParameter", false, new global::Microsoft.OData.Client.UriOperationParameter("string_list", string_list));
+        }
+        /// <summary>
+        /// There are no comments for TableFunctionWithParameters in the schema.
+        /// </summary>
+        public global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Order> TableFunctionWithParameters(global::System.Nullable<int> id, string name, global::System.Nullable<global::ODataClient.OdataToEntity.Test.Model.OrderStatus> status)
+        {
+            return this.CreateFunctionQuery<global::ODataClient.OdataToEntity.Test.Model.Order>("", "TableFunctionWithParameters", false, new global::Microsoft.OData.Client.UriOperationParameter("id", id),
+                    new global::Microsoft.OData.Client.UriOperationParameter("name", name),
+                    new global::Microsoft.OData.Client.UriOperationParameter("status", status));
+        }
+        /// <summary>
+        /// There are no comments for ResetDb in the schema.
+        /// </summary>
+        public global::Microsoft.OData.Client.DataServiceActionQuery ResetDb()
+        {
+            return new global::Microsoft.OData.Client.DataServiceActionQuery(this, this.BaseUri.OriginalString.Trim('/') + "/ResetDb");
+        }
+        /// <summary>
+        /// There are no comments for ResetManyColumns in the schema.
+        /// </summary>
+        public global::Microsoft.OData.Client.DataServiceActionQuery ResetManyColumns()
+        {
+            return new global::Microsoft.OData.Client.DataServiceActionQuery(this, this.BaseUri.OriginalString.Trim('/') + "/ResetManyColumns");
+        }
+    }
     /// <summary>
     /// There are no comments for CategorySingle in the schema.
     /// </summary>
@@ -2892,580 +3464,6 @@ namespace ODataClient.OdataToEntity.Test.Model
                 { "Id", id }
             };
             return new global::ODataClient.OdataToEntity.Test.Model.ShippingAddressSingle(source.Context, source.GetKeyPath(global::Microsoft.OData.Client.Serializer.GetKeyString(source.Context, keys)));
-        }
-    }
-}
-namespace ODataClient.Default
-{
-    /// <summary>
-    /// There are no comments for Container in the schema.
-    /// </summary>
-    public partial class Container : global::Microsoft.OData.Client.DataServiceContext
-    {
-        /// <summary>
-        /// Initialize a new Container object.
-        /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        public Container(global::System.Uri serviceRoot) : 
-                base(serviceRoot, global::Microsoft.OData.Client.ODataProtocolVersion.V4)
-        {
-            this.ResolveName = new global::System.Func<global::System.Type, string>(this.ResolveNameFromType);
-            this.ResolveType = new global::System.Func<string, global::System.Type>(this.ResolveTypeFromName);
-            this.OnContextCreated();
-            this.Format.LoadServiceModel = GeneratedEdmModel.GetInstance;
-            this.Format.UseJson();
-        }
-        partial void OnContextCreated();
-        /// <summary>
-        /// Since the namespace configured for this service reference
-        /// in Visual Studio is different from the one indicated in the
-        /// server schema, use type-mappers to map between the two.
-        /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        protected global::System.Type ResolveTypeFromName(string typeName)
-        {
-            global::System.Type resolvedType = this.DefaultResolveType(typeName, "OdataToEntity.Test.Model", "ODataClient.OdataToEntity.Test.Model");
-            if ((resolvedType != null))
-            {
-                return resolvedType;
-            }
-            resolvedType = this.DefaultResolveType(typeName, "Default", "ODataClient.Default");
-            if ((resolvedType != null))
-            {
-                return resolvedType;
-            }
-            return null;
-        }
-        /// <summary>
-        /// Since the namespace configured for this service reference
-        /// in Visual Studio is different from the one indicated in the
-        /// server schema, use type-mappers to map between the two.
-        /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        protected string ResolveNameFromType(global::System.Type clientType)
-        {
-            if (clientType.Namespace.Equals("ODataClient.OdataToEntity.Test.Model", global::System.StringComparison.Ordinal))
-            {
-                return string.Concat("OdataToEntity.Test.Model.", clientType.Name);
-            }
-            if (clientType.Namespace.Equals("ODataClient.Default", global::System.StringComparison.Ordinal))
-            {
-                return string.Concat("Default.", clientType.Name);
-            }
-            return clientType.FullName;
-        }
-        /// <summary>
-        /// There are no comments for Categories in the schema.
-        /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        public global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Category> Categories
-        {
-            get
-            {
-                if ((this._Categories == null))
-                {
-                    this._Categories = base.CreateQuery<global::ODataClient.OdataToEntity.Test.Model.Category>("Categories");
-                }
-                return this._Categories;
-            }
-        }
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        private global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Category> _Categories;
-        /// <summary>
-        /// There are no comments for Customers in the schema.
-        /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        public global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Customer> Customers
-        {
-            get
-            {
-                if ((this._Customers == null))
-                {
-                    this._Customers = base.CreateQuery<global::ODataClient.OdataToEntity.Test.Model.Customer>("Customers");
-                }
-                return this._Customers;
-            }
-        }
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        private global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Customer> _Customers;
-        /// <summary>
-        /// There are no comments for CustomerShippingAddress in the schema.
-        /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        public global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.CustomerShippingAddress> CustomerShippingAddress
-        {
-            get
-            {
-                if ((this._CustomerShippingAddress == null))
-                {
-                    this._CustomerShippingAddress = base.CreateQuery<global::ODataClient.OdataToEntity.Test.Model.CustomerShippingAddress>("CustomerShippingAddress");
-                }
-                return this._CustomerShippingAddress;
-            }
-        }
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        private global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.CustomerShippingAddress> _CustomerShippingAddress;
-        /// <summary>
-        /// There are no comments for ManyColumns in the schema.
-        /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        public global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.ManyColumns> ManyColumns
-        {
-            get
-            {
-                if ((this._ManyColumns == null))
-                {
-                    this._ManyColumns = base.CreateQuery<global::ODataClient.OdataToEntity.Test.Model.ManyColumns>("ManyColumns");
-                }
-                return this._ManyColumns;
-            }
-        }
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        private global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.ManyColumns> _ManyColumns;
-        /// <summary>
-        /// There are no comments for ManyColumnsView in the schema.
-        /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        public global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.ManyColumnsView> ManyColumnsView
-        {
-            get
-            {
-                if ((this._ManyColumnsView == null))
-                {
-                    this._ManyColumnsView = base.CreateQuery<global::ODataClient.OdataToEntity.Test.Model.ManyColumnsView>("ManyColumnsView");
-                }
-                return this._ManyColumnsView;
-            }
-        }
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        private global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.ManyColumnsView> _ManyColumnsView;
-        /// <summary>
-        /// There are no comments for Orders in the schema.
-        /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        public global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Order> Orders
-        {
-            get
-            {
-                if ((this._Orders == null))
-                {
-                    this._Orders = base.CreateQuery<global::ODataClient.OdataToEntity.Test.Model.Order>("Orders");
-                }
-                return this._Orders;
-            }
-        }
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        private global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Order> _Orders;
-        /// <summary>
-        /// There are no comments for OrderItems in the schema.
-        /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        public global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.OrderItem> OrderItems
-        {
-            get
-            {
-                if ((this._OrderItems == null))
-                {
-                    this._OrderItems = base.CreateQuery<global::ODataClient.OdataToEntity.Test.Model.OrderItem>("OrderItems");
-                }
-                return this._OrderItems;
-            }
-        }
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        private global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.OrderItem> _OrderItems;
-        /// <summary>
-        /// There are no comments for ShippingAddresses in the schema.
-        /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        public global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.ShippingAddress> ShippingAddresses
-        {
-            get
-            {
-                if ((this._ShippingAddresses == null))
-                {
-                    this._ShippingAddresses = base.CreateQuery<global::ODataClient.OdataToEntity.Test.Model.ShippingAddress>("ShippingAddresses");
-                }
-                return this._ShippingAddresses;
-            }
-        }
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        private global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.ShippingAddress> _ShippingAddresses;
-        /// <summary>
-        /// There are no comments for Categories in the schema.
-        /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        public void AddToCategories(global::ODataClient.OdataToEntity.Test.Model.Category category)
-        {
-            base.AddObject("Categories", category);
-        }
-        /// <summary>
-        /// There are no comments for Customers in the schema.
-        /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        public void AddToCustomers(global::ODataClient.OdataToEntity.Test.Model.Customer customer)
-        {
-            base.AddObject("Customers", customer);
-        }
-        /// <summary>
-        /// There are no comments for CustomerShippingAddress in the schema.
-        /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        public void AddToCustomerShippingAddress(global::ODataClient.OdataToEntity.Test.Model.CustomerShippingAddress customerShippingAddress)
-        {
-            base.AddObject("CustomerShippingAddress", customerShippingAddress);
-        }
-        /// <summary>
-        /// There are no comments for ManyColumns in the schema.
-        /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        public void AddToManyColumns(global::ODataClient.OdataToEntity.Test.Model.ManyColumns manyColumns)
-        {
-            base.AddObject("ManyColumns", manyColumns);
-        }
-        /// <summary>
-        /// There are no comments for ManyColumnsView in the schema.
-        /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        public void AddToManyColumnsView(global::ODataClient.OdataToEntity.Test.Model.ManyColumnsView manyColumnsView)
-        {
-            base.AddObject("ManyColumnsView", manyColumnsView);
-        }
-        /// <summary>
-        /// There are no comments for Orders in the schema.
-        /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        public void AddToOrders(global::ODataClient.OdataToEntity.Test.Model.Order order)
-        {
-            base.AddObject("Orders", order);
-        }
-        /// <summary>
-        /// There are no comments for OrderItems in the schema.
-        /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        public void AddToOrderItems(global::ODataClient.OdataToEntity.Test.Model.OrderItem orderItem)
-        {
-            base.AddObject("OrderItems", orderItem);
-        }
-        /// <summary>
-        /// There are no comments for ShippingAddresses in the schema.
-        /// </summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        public void AddToShippingAddresses(global::ODataClient.OdataToEntity.Test.Model.ShippingAddress shippingAddress)
-        {
-            base.AddObject("ShippingAddresses", shippingAddress);
-        }
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        private abstract class GeneratedEdmModel
-        {
-            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-            private static global::Microsoft.OData.Edm.IEdmModel ParsedModel = LoadModelFromString();
-            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-            private const string Edmx = @"<edmx:Edmx Version=""4.0"" xmlns:edmx=""http://docs.oasis-open.org/odata/ns/edmx"">
-  <edmx:DataServices>
-    <Schema Namespace=""OdataToEntity.Test.Model"" xmlns=""http://docs.oasis-open.org/odata/ns/edm"">
-      <EnumType Name=""Sex"">
-        <Member Name=""Male"" Value=""0"" />
-        <Member Name=""Female"" Value=""1"" />
-      </EnumType>
-      <EnumType Name=""OrderStatus"">
-        <Member Name=""Unknown"" Value=""0"" />
-        <Member Name=""Processing"" Value=""1"" />
-        <Member Name=""Shipped"" Value=""2"" />
-        <Member Name=""Delivering"" Value=""3"" />
-        <Member Name=""Cancelled"" Value=""4"" />
-      </EnumType>
-      <EntityType Name=""Category"">
-        <Key>
-          <PropertyRef Name=""Id"" />
-        </Key>
-        <Property Name=""Id"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Name"" Type=""Edm.String"" Nullable=""false"" />
-        <Property Name=""ParentId"" Type=""Edm.Int32"" />
-        <Property Name=""DateTime"" Type=""Edm.DateTimeOffset"" />
-        <NavigationProperty Name=""Parent"" Type=""OdataToEntity.Test.Model.Category"" Partner=""Children"">
-          <ReferentialConstraint Property=""ParentId"" ReferencedProperty=""Id"" />
-        </NavigationProperty>
-        <NavigationProperty Name=""Children"" Type=""Collection(OdataToEntity.Test.Model.Category)"" Partner=""Parent"" />
-      </EntityType>
-      <EntityType Name=""Customer"">
-        <Key>
-          <PropertyRef Name=""Country"" />
-          <PropertyRef Name=""Id"" />
-        </Key>
-        <Property Name=""Address"" Type=""Edm.String"" />
-        <Property Name=""Country"" Type=""Edm.String"" Nullable=""false"" />
-        <Property Name=""Id"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Name"" Type=""Edm.String"" Nullable=""false"" />
-        <Property Name=""Sex"" Type=""OdataToEntity.Test.Model.Sex"" />
-        <NavigationProperty Name=""CustomerShippingAddresses"" Type=""Collection(OdataToEntity.Test.Model.CustomerShippingAddress)"" Partner=""Customer"" />
-        <NavigationProperty Name=""AltOrders"" Type=""Collection(OdataToEntity.Test.Model.Order)"" Partner=""AltCustomer"" />
-        <NavigationProperty Name=""Orders"" Type=""Collection(OdataToEntity.Test.Model.Order)"" Partner=""Customer"" />
-        <NavigationProperty Name=""ShippingAddresses"" Type=""Collection(OdataToEntity.Test.Model.ShippingAddress)"" ContainsTarget=""true"" />
-      </EntityType>
-      <EntityType Name=""CustomerShippingAddress"">
-        <Key>
-          <PropertyRef Name=""CustomerCountry"" />
-          <PropertyRef Name=""CustomerId"" />
-          <PropertyRef Name=""ShippingAddressOrderId"" />
-          <PropertyRef Name=""ShippingAddressId"" />
-        </Key>
-        <Property Name=""CustomerCountry"" Type=""Edm.String"" Nullable=""false"" />
-        <Property Name=""CustomerId"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""ShippingAddressOrderId"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""ShippingAddressId"" Type=""Edm.Int32"" Nullable=""false"" />
-        <NavigationProperty Name=""Customer"" Type=""OdataToEntity.Test.Model.Customer"" Partner=""CustomerShippingAddresses"">
-          <ReferentialConstraint Property=""CustomerCountry"" ReferencedProperty=""Country"" />
-          <ReferentialConstraint Property=""CustomerId"" ReferencedProperty=""Id"" />
-        </NavigationProperty>
-        <NavigationProperty Name=""ShippingAddress"" Type=""OdataToEntity.Test.Model.ShippingAddress"" Nullable=""false"" Partner=""CustomerShippingAddresses"">
-          <ReferentialConstraint Property=""ShippingAddressOrderId"" ReferencedProperty=""OrderId"" />
-          <ReferentialConstraint Property=""ShippingAddressId"" ReferencedProperty=""Id"" />
-        </NavigationProperty>
-      </EntityType>
-      <EntityType Name=""ManyColumnsBase"">
-        <Key>
-          <PropertyRef Name=""Column01"" />
-        </Key>
-        <Property Name=""Column01"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Column02"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Column03"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Column04"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Column05"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Column06"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Column07"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Column08"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Column09"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Column10"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Column11"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Column12"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Column13"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Column14"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Column15"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Column16"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Column17"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Column18"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Column19"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Column20"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Column21"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Column22"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Column23"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Column24"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Column25"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Column26"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Column27"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Column28"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Column29"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Column30"" Type=""Edm.Int32"" Nullable=""false"" />
-      </EntityType>
-      <EntityType Name=""ManyColumns"" BaseType=""OdataToEntity.Test.Model.ManyColumnsBase"" />
-      <EntityType Name=""ManyColumnsView"" BaseType=""OdataToEntity.Test.Model.ManyColumnsBase"" />
-      <EntityType Name=""OrderBase"" Abstract=""true"">
-        <Property Name=""AltCustomerCountry"" Type=""Edm.String"" />
-        <Property Name=""AltCustomerId"" Type=""Edm.Int32"" />
-        <Property Name=""Name"" Type=""Edm.String"" Nullable=""false"" />
-      </EntityType>
-      <EntityType Name=""Order"" BaseType=""OdataToEntity.Test.Model.OrderBase"">
-        <Key>
-          <PropertyRef Name=""Id"" />
-        </Key>
-        <Property Name=""CustomerCountry"" Type=""Edm.String"" Nullable=""false"" />
-        <Property Name=""CustomerId"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Date"" Type=""Edm.DateTimeOffset"" />
-        <Property Name=""Id"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Status"" Type=""OdataToEntity.Test.Model.OrderStatus"" Nullable=""false"" />
-        <NavigationProperty Name=""AltCustomer"" Type=""OdataToEntity.Test.Model.Customer"" Partner=""AltOrders"">
-          <ReferentialConstraint Property=""AltCustomerCountry"" ReferencedProperty=""Country"" />
-          <ReferentialConstraint Property=""AltCustomerId"" ReferencedProperty=""Id"" />
-        </NavigationProperty>
-        <NavigationProperty Name=""Customer"" Type=""OdataToEntity.Test.Model.Customer"" Partner=""Orders"">
-          <ReferentialConstraint Property=""CustomerCountry"" ReferencedProperty=""Country"" />
-          <ReferentialConstraint Property=""CustomerId"" ReferencedProperty=""Id"" />
-        </NavigationProperty>
-        <NavigationProperty Name=""ShippingAddresses"" Type=""Collection(OdataToEntity.Test.Model.ShippingAddress)"">
-          <ReferentialConstraint Property=""OrderId"" ReferencedProperty=""Id"" />
-        </NavigationProperty>
-        <NavigationProperty Name=""Items"" Type=""Collection(OdataToEntity.Test.Model.OrderItem)"" Partner=""Order"" />
-      </EntityType>
-      <EntityType Name=""OrderItem"">
-        <Key>
-          <PropertyRef Name=""Id"" />
-        </Key>
-        <Property Name=""Count"" Type=""Edm.Int32"" />
-        <Property Name=""Id"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""OrderId"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""Price"" Type=""Edm.Decimal"" />
-        <Property Name=""Product"" Type=""Edm.String"" Nullable=""false"" />
-        <NavigationProperty Name=""Order"" Type=""OdataToEntity.Test.Model.Order"" Nullable=""false"" Partner=""Items"">
-          <ReferentialConstraint Property=""OrderId"" ReferencedProperty=""Id"" />
-        </NavigationProperty>
-      </EntityType>
-      <EntityType Name=""ShippingAddress"">
-        <Key>
-          <PropertyRef Name=""OrderId"" />
-          <PropertyRef Name=""Id"" />
-        </Key>
-        <Property Name=""Address"" Type=""Edm.String"" />
-        <Property Name=""Id"" Type=""Edm.Int32"" Nullable=""false"" />
-        <Property Name=""OrderId"" Type=""Edm.Int32"" Nullable=""false"" />
-        <NavigationProperty Name=""CustomerShippingAddresses"" Type=""Collection(OdataToEntity.Test.Model.CustomerShippingAddress)"" Partner=""ShippingAddress"" />
-        <NavigationProperty Name=""Customers"" Type=""Collection(OdataToEntity.Test.Model.Customer)"" ContainsTarget=""true"" />
-      </EntityType>
-      <Function Name=""OrderContext.GenerateDatabaseName"">
-        <ReturnType Type=""Collection(Edm.String)"" Nullable=""false"" />
-      </Function>
-      <Function Name=""OrderContext.GetOrders"">
-        <Parameter Name=""id"" Type=""Edm.Int32"" />
-        <Parameter Name=""name"" Type=""Edm.String"" />
-        <Parameter Name=""status"" Type=""OdataToEntity.Test.Model.OrderStatus"" />
-        <ReturnType Type=""Collection(OdataToEntity.Test.Model.Order)"" />
-      </Function>
-      <Action Name=""OrderContext.ResetDb"" />
-      <Action Name=""OrderContext.ResetManyColumns"" />
-      <Function Name=""OrderContext.ScalarFunction"">
-        <ReturnType Type=""Edm.Int32"" Nullable=""false"" />
-      </Function>
-      <Function Name=""OrderContext.ScalarFunctionWithParameters"">
-        <Parameter Name=""id"" Type=""Edm.Int32"" />
-        <Parameter Name=""name"" Type=""Edm.String"" />
-        <Parameter Name=""status"" Type=""OdataToEntity.Test.Model.OrderStatus"" />
-        <ReturnType Type=""Edm.Int32"" Nullable=""false"" />
-      </Function>
-      <Function Name=""OrderContext.TableFunction"">
-        <ReturnType Type=""Collection(OdataToEntity.Test.Model.Order)"" />
-      </Function>
-      <Function Name=""OrderContext.TableFunctionWithParameters"">
-        <Parameter Name=""id"" Type=""Edm.Int32"" />
-        <Parameter Name=""name"" Type=""Edm.String"" />
-        <Parameter Name=""status"" Type=""OdataToEntity.Test.Model.OrderStatus"" />
-        <ReturnType Type=""Collection(OdataToEntity.Test.Model.Order)"" />
-      </Function>
-    </Schema>
-    <Schema Namespace=""Default"" xmlns=""http://docs.oasis-open.org/odata/ns/edm"">
-      <EntityContainer Name=""Container"">
-        <EntitySet Name=""Categories"" EntityType=""OdataToEntity.Test.Model.Category"">
-          <NavigationPropertyBinding Path=""Parent"" Target=""Categories"" />
-          <NavigationPropertyBinding Path=""Children"" Target=""Categories"" />
-        </EntitySet>
-        <EntitySet Name=""Customers"" EntityType=""OdataToEntity.Test.Model.Customer"">
-          <NavigationPropertyBinding Path=""CustomerShippingAddresses"" Target=""CustomerShippingAddress"" />
-          <NavigationPropertyBinding Path=""AltOrders"" Target=""Orders"" />
-          <NavigationPropertyBinding Path=""Orders"" Target=""Orders"" />
-        </EntitySet>
-        <EntitySet Name=""CustomerShippingAddress"" EntityType=""OdataToEntity.Test.Model.CustomerShippingAddress"">
-          <NavigationPropertyBinding Path=""Customer"" Target=""Customers"" />
-          <NavigationPropertyBinding Path=""ShippingAddress"" Target=""ShippingAddresses"" />
-        </EntitySet>
-        <EntitySet Name=""ManyColumns"" EntityType=""OdataToEntity.Test.Model.ManyColumns"" />
-        <EntitySet Name=""ManyColumnsView"" EntityType=""OdataToEntity.Test.Model.ManyColumnsView"" />
-        <EntitySet Name=""Orders"" EntityType=""OdataToEntity.Test.Model.Order"">
-          <NavigationPropertyBinding Path=""AltCustomer"" Target=""Customers"" />
-          <NavigationPropertyBinding Path=""Customer"" Target=""Customers"" />
-          <NavigationPropertyBinding Path=""ShippingAddresses"" Target=""ShippingAddresses"" />
-          <NavigationPropertyBinding Path=""Items"" Target=""OrderItems"" />
-        </EntitySet>
-        <EntitySet Name=""OrderItems"" EntityType=""OdataToEntity.Test.Model.OrderItem"">
-          <NavigationPropertyBinding Path=""Order"" Target=""Orders"" />
-        </EntitySet>
-        <EntitySet Name=""ShippingAddresses"" EntityType=""OdataToEntity.Test.Model.ShippingAddress"">
-          <NavigationPropertyBinding Path=""CustomerShippingAddresses"" Target=""CustomerShippingAddress"" />
-        </EntitySet>
-        <FunctionImport Name=""GenerateDatabaseName"" Function=""OdataToEntity.Test.Model.OrderContext.GenerateDatabaseName"" />
-        <FunctionImport Name=""dbo.GetOrders"" Function=""OdataToEntity.Test.Model.OrderContext.GetOrders"" />
-        <ActionImport Name=""ResetDb"" Action=""OdataToEntity.Test.Model.OrderContext.ResetDb"" />
-        <ActionImport Name=""ResetManyColumns"" Action=""OdataToEntity.Test.Model.OrderContext.ResetManyColumns"" />
-        <FunctionImport Name=""dbo.ScalarFunction"" Function=""OdataToEntity.Test.Model.OrderContext.ScalarFunction"" />
-        <FunctionImport Name=""dbo.ScalarFunctionWithParameters"" Function=""OdataToEntity.Test.Model.OrderContext.ScalarFunctionWithParameters"" />
-        <FunctionImport Name=""TableFunction"" Function=""OdataToEntity.Test.Model.OrderContext.TableFunction"" />
-        <FunctionImport Name=""TableFunctionWithParameters"" Function=""OdataToEntity.Test.Model.OrderContext.TableFunctionWithParameters"" />
-      </EntityContainer>
-    </Schema>
-  </edmx:DataServices>
-</edmx:Edmx>";
-            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-            public static global::Microsoft.OData.Edm.IEdmModel GetInstance()
-            {
-                return ParsedModel;
-            }
-            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-            private static global::Microsoft.OData.Edm.IEdmModel LoadModelFromString()
-            {
-                global::System.Xml.XmlReader reader = CreateXmlReader(Edmx);
-                try
-                {
-                    return global::Microsoft.OData.Edm.Csdl.CsdlReader.Parse(reader);
-                }
-                finally
-                {
-                    ((global::System.IDisposable)(reader)).Dispose();
-                }
-            }
-            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-            private static global::System.Xml.XmlReader CreateXmlReader(string edmxToParse)
-            {
-                return global::System.Xml.XmlReader.Create(new global::System.IO.StringReader(edmxToParse));
-            }
-        }
-        /// <summary>
-        /// There are no comments for GenerateDatabaseName in the schema.
-        /// </summary>
-        public global::Microsoft.OData.Client.DataServiceQuery<string> GenerateDatabaseName()
-        {
-            return this.CreateFunctionQuery<string>("", "GenerateDatabaseName", false);
-        }
-        /// <summary>
-        /// There are no comments for dbo.GetOrders in the schema.
-        /// </summary>
-        public global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Order> GetOrders(global::System.Nullable<int> id, string name, global::System.Nullable<global::ODataClient.OdataToEntity.Test.Model.OrderStatus> status)
-        {
-            return this.CreateFunctionQuery<global::ODataClient.OdataToEntity.Test.Model.Order>("", "dbo.GetOrders", false, new global::Microsoft.OData.Client.UriOperationParameter("id", id),
-                    new global::Microsoft.OData.Client.UriOperationParameter("name", name),
-                    new global::Microsoft.OData.Client.UriOperationParameter("status", status));
-        }
-        /// <summary>
-        /// There are no comments for dbo.ScalarFunction in the schema.
-        /// </summary>
-        public global::Microsoft.OData.Client.DataServiceQuerySingle<int> ScalarFunction()
-        {
-            return this.CreateFunctionQuerySingle<int>("", "dbo.ScalarFunction", false);
-        }
-        /// <summary>
-        /// There are no comments for dbo.ScalarFunctionWithParameters in the schema.
-        /// </summary>
-        public global::Microsoft.OData.Client.DataServiceQuerySingle<int> ScalarFunctionWithParameters(global::System.Nullable<int> id, string name, global::System.Nullable<global::ODataClient.OdataToEntity.Test.Model.OrderStatus> status)
-        {
-            return this.CreateFunctionQuerySingle<int>("", "dbo.ScalarFunctionWithParameters", false, new global::Microsoft.OData.Client.UriOperationParameter("id", id),
-                    new global::Microsoft.OData.Client.UriOperationParameter("name", name),
-                    new global::Microsoft.OData.Client.UriOperationParameter("status", status));
-        }
-        /// <summary>
-        /// There are no comments for TableFunction in the schema.
-        /// </summary>
-        public global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Order> TableFunction()
-        {
-            return this.CreateFunctionQuery<global::ODataClient.OdataToEntity.Test.Model.Order>("", "TableFunction", false);
-        }
-        /// <summary>
-        /// There are no comments for TableFunctionWithParameters in the schema.
-        /// </summary>
-        public global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Order> TableFunctionWithParameters(global::System.Nullable<int> id, string name, global::System.Nullable<global::ODataClient.OdataToEntity.Test.Model.OrderStatus> status)
-        {
-            return this.CreateFunctionQuery<global::ODataClient.OdataToEntity.Test.Model.Order>("", "TableFunctionWithParameters", false, new global::Microsoft.OData.Client.UriOperationParameter("id", id),
-                    new global::Microsoft.OData.Client.UriOperationParameter("name", name),
-                    new global::Microsoft.OData.Client.UriOperationParameter("status", status));
-        }
-        /// <summary>
-        /// There are no comments for ResetDb in the schema.
-        /// </summary>
-        public global::Microsoft.OData.Client.DataServiceActionQuery ResetDb()
-        {
-            return new global::Microsoft.OData.Client.DataServiceActionQuery(this, this.BaseUri.OriginalString.Trim('/') + "/ResetDb");
-        }
-        /// <summary>
-        /// There are no comments for ResetManyColumns in the schema.
-        /// </summary>
-        public global::Microsoft.OData.Client.DataServiceActionQuery ResetManyColumns()
-        {
-            return new global::Microsoft.OData.Client.DataServiceActionQuery(this, this.BaseUri.OriginalString.Trim('/') + "/ResetManyColumns");
         }
     }
 }

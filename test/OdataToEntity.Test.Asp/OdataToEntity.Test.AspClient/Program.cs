@@ -1,5 +1,5 @@
 ﻿using Microsoft.OData.Client;
-using ODataClient.Default;
+using ODataClient.OdataToEntity.Test.Model;
 using System;
 
 namespace OdataToEntity.Test.AspClient

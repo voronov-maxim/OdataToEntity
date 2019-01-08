@@ -15,6 +15,7 @@ namespace OdataToEntity.Db
 
         public abstract Type EntityType { get; }
         public abstract String EntitySetName { get; }
+        public virtual bool IsDbQuery => false;
     }
 
     public sealed class OeEntitySetAdapterCollection : ReadOnlyCollection<OeEntitySetAdapter>

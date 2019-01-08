@@ -51,6 +51,8 @@ namespace OdataToEntity.Test.Ef6.SqlServer
         public int ScalarFunctionWithParameters(int? id, String name, OrderStatus? status) => throw new NotImplementedException();
         [DbFunction(".", "TableFunction")]
         public IEnumerable<Order> TableFunction() => throw new NotImplementedException();
+        [Description("TableFunctionWithCollectionParameter()")]
+        public IEnumerable<String> TableFunctionWithCollectionParameter(IEnumerable<String> string_list) => string_list;
         [DbFunction(".", "TableFunctionWithParameters")]
         public IEnumerable<Order> TableFunctionWithParameters(int? id, String name, OrderStatus? status) => throw new NotImplementedException();
     }

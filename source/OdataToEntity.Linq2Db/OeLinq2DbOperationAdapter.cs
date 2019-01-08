@@ -25,29 +25,45 @@ namespace OdataToEntity.Linq2Db
         }
         protected override OeAsyncEnumerator ExecuteReader(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, OeEntitySetAdapter entitySetAdapter)
         {
+            return ExecuteReader(dataContext, sql, parameters, entitySetAdapter.EntityType);
+        }
+        private OeAsyncEnumerator ExecuteReader(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type retuenType)
+        {
             Func<DataConnection, String, DataParameter[], IEnumerable<Object>> queryMethod;
             if (sql.StartsWith("select "))
                 queryMethod = DataConnectionExtensions.Query<Object>;
             else
                 queryMethod = DataConnectionExtensions.QueryProc<Object>;
 
-            MethodInfo queryMethodInfo = queryMethod.GetMethodInfo().GetGenericMethodDefinition().MakeGenericMethod(new Type[] { entitySetAdapter.EntityType });
+            MethodInfo queryMethodInfo = queryMethod.GetMethodInfo().GetGenericMethodDefinition().MakeGenericMethod(new Type[] { retuenType });
             Type queryMethodType = typeof(Func<DataConnection, String, DataParameter[], IEnumerable<Object>>);
             var queryFunc = (Func<DataConnection, String, DataParameter[], IEnumerable<Object>>)Delegate.CreateDelegate(queryMethodType, queryMethodInfo);
 
             IEnumerable<Object> result = queryFunc((DataConnection)dataContext, sql, GetDataParameters(parameters));
             return new OeAsyncEnumeratorAdapter(result, CancellationToken.None);
         }
-        protected override OeAsyncEnumerator ExecuteScalar(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
+        protected override OeAsyncEnumerator ExecutePrimitive(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
         {
-            Object result = ((DataConnection)dataContext).Execute<Object>(sql, GetDataParameters(parameters));
-            return new OeScalarAsyncEnumeratorAdapter(Task.FromResult(result), CancellationToken.None);
+            Type itemType = Parsers.OeExpressionHelper.GetCollectionItemType(returnType);
+            if (itemType == null)
+            {
+                Object result = ((DataConnection)dataContext).Execute<Object>(sql, GetDataParameters(parameters));
+                return new OeScalarAsyncEnumeratorAdapter(Task.FromResult(result), CancellationToken.None);
+            }
+
+            return ExecuteReader(dataContext, sql, parameters, itemType);
         }
-        private static DataParameter[] GetDataParameters(IReadOnlyList<KeyValuePair<String, Object>> parameters)
+        private DataParameter[] GetDataParameters(IReadOnlyList<KeyValuePair<String, Object>> parameters)
         {
             var dataParameters = new DataParameter[parameters.Count];
             for (int i = 0; i < dataParameters.Length; i++)
-                dataParameters[i] = new DataParameter(parameters[i].Key, parameters[i].Value);
+            {
+                Object value = GetParameterCore(parameters[i], null, i);
+                if (value is DataParameter dataParameter)
+                    dataParameters[i] = dataParameter;
+                else
+                    dataParameters[i] = new DataParameter(parameters[i].Key, value);
+            }
             return dataParameters;
         }
         protected override String[] GetParameterNames(Object dataContext, IReadOnlyList<KeyValuePair<String, Object>> parameters)
