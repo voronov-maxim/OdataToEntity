@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
 using OdataToEntity.AspNetCore;
 using System;
 using System.Collections.Generic;
@@ -29,6 +30,22 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
             var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
             Model.OrderContext orderContext = parser.GetDbContext<Model.OrderContext>();
             IAsyncEnumerable<Model.Order> orders = parser.ExecuteReader<Model.Order>(orderContext.Orders.Where(o => o.Id > 0));
+            List<Model.Order> orderList = await orders.OrderBy(o => o.Id).ToList();
+            return parser.OData(orderList);
+        }
+        //[OeFunction] // Might be needed to add to locate and add to EdmModel
+        [HttpGet("WithItems(itemIds={itemIds}")]
+        public async Task<ODataResult<Model.Order>> WithItems(string itemIds)
+        {
+            // Would be nice to not have this line and support `IEnumerable<int> itemIds` instead of `string itemIds`
+            // public async Task<ODataResult<Model.Order>> WithItems(IEnumerable<int> itemIds)
+            var itemIdsAsArray = JArray.Parse(itemIds).ToObject<IEnumerable<int>>();
+
+            var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
+            Model.OrderContext orderContext = parser.GetDbContext<Model.OrderContext>();
+            IAsyncEnumerable<Model.Order> orders = parser.ExecuteReader<Model.Order>(
+                orderContext.Orders.Where(o => o.Items.Any(i => itemIdsAsArray.Contains(i.Id)))
+            );
             List<Model.Order> orderList = await orders.OrderBy(o => o.Id).ToList();
             return parser.OData(orderList);
         }
