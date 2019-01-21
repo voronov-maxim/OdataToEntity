@@ -66,10 +66,10 @@ namespace OdataToEntity.AspNetCore
         public IAsyncEnumerable<T> ExecuteReader<T>(IQueryable source = null, bool navigationNextLink = false, int? maxPageSize = null)
         {
             OeAsyncEnumerator asyncEnumerator = GetAsyncEnumerator(source, navigationNextLink, maxPageSize);
-            if (OeExpressionHelper.IsPrimitiveType(typeof(T)))
-                return new OePrimitiveAsyncEnumerator<T>(asyncEnumerator);
-            else
-                return new OeEntityAsyncEnumerator<T>(asyncEnumerator, _queryContext.EntryFactory, _queryContext);
+            if (asyncEnumerator is OeAsyncEnumeratorAdapter || OeExpressionHelper.IsPrimitiveType(typeof(T)))
+                return new OeAsyncEnumeratorAdapter<T>(asyncEnumerator);
+
+            return new OeEntityAsyncEnumeratorAdapter<T>(asyncEnumerator, _queryContext);
         }
         public async Task<T?> ExecuteScalar<T>(IQueryable source = null) where T : struct
         {
@@ -141,9 +141,9 @@ namespace OdataToEntity.AspNetCore
                 PageSize = _queryContext.PageSize
             };
         }
-        public ODataResult<T> OData<T>(IEnumerable<T> asyncEnumerable)
+        public ODataResult<T> OData<T>(IEnumerable<T> enumerable)
         {
-            return OData(asyncEnumerable.ToAsyncEnumerable());
+            return OData(enumerable.ToAsyncEnumerable());
         }
         public IActionResult OData<T>(T? value) where T : struct
         {

@@ -19,15 +19,14 @@ namespace OdataToEntity.Db
             public override object Current => null;
         }
 
-        private readonly CancellationToken _cancellationToken;
         private static readonly OeAsyncEnumerator _empty = new EmptyAsyncEnumerator();
 
         public OeAsyncEnumerator(CancellationToken cancellationToken)
         {
-            _cancellationToken = cancellationToken;
+            CancellationToken = cancellationToken;
         }
 
-        protected CancellationToken CancellationToken => _cancellationToken;
+        protected internal CancellationToken CancellationToken { get; }
         public abstract void Dispose();
         public abstract Task<bool> MoveNextAsync();
 

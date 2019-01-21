@@ -96,7 +96,7 @@ namespace OdataToEntity.Test
                     {
                         PropertyInfo navigationProperty = typeof(T).GetProperty(keyValue.Key);
                         if (navigationProperty != null &&
-                            TestContractResolver.IsEntity(navigationProperty.PropertyType) &&
+                            Parsers.OeExpressionHelper.IsEntityType(navigationProperty.PropertyType) &&
                             !includes.Any(i => i.Property == navigationProperty))
                             item.Remove(keyValue.Key);
                     }

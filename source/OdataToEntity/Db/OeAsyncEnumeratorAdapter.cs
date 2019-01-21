@@ -2,13 +2,13 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace OdataToEntity.AspNetCore
+namespace OdataToEntity.Db
 {
-    public sealed class OePrimitiveAsyncEnumerator<T> : IAsyncEnumerator<T>, IAsyncEnumerable<T>
+    public sealed class OeAsyncEnumeratorAdapter<T> : IAsyncEnumerator<T>, IAsyncEnumerable<T>
     {
-        private readonly Db.OeAsyncEnumerator _asyncEnumerator;
+        private readonly OeAsyncEnumerator _asyncEnumerator;
 
-        public OePrimitiveAsyncEnumerator(Db.OeAsyncEnumerator asyncEnumerator)
+        public OeAsyncEnumeratorAdapter(OeAsyncEnumerator asyncEnumerator)
         {
             _asyncEnumerator = asyncEnumerator;
         }

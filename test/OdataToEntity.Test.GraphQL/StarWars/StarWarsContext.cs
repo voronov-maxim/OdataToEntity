@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Concurrent;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace OdataToEntity.Test.GraphQL.StarWars
 {

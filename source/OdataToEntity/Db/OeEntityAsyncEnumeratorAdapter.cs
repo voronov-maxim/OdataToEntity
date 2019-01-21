@@ -1,15 +1,16 @@
 ﻿using Microsoft.OData.UriParser;
 using OdataToEntity.Parsers;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace OdataToEntity.AspNetCore
+namespace OdataToEntity.Db
 {
-    public sealed class OeEntityAsyncEnumerator<T> : IAsyncEnumerator<T>, IAsyncEnumerable<T>
+    public sealed class OeEntityAsyncEnumeratorAdapter<T> : OeAsyncEnumerator, IAsyncEnumerator<T>, IAsyncEnumerable<T>
     {
         private sealed class SetPropertyValueVisitor : ExpressionVisitor
         {
@@ -47,20 +48,21 @@ namespace OdataToEntity.AspNetCore
 
         private readonly IDisposable _asyncEnumerator;
         private T _current;
-        private readonly Db.OeDbEnumerator _dbEnumerator;
+        private readonly OeDbEnumerator _dbEnumerator;
         private bool _isFirstMoveNext;
         private bool _isMoveNext;
         private readonly OeQueryContext _queryContext;
 
-        public OeEntityAsyncEnumerator(Db.OeAsyncEnumerator asyncEnumerator, OeEntryFactory entryFactory, OeQueryContext queryContext)
+        public OeEntityAsyncEnumeratorAdapter(OeAsyncEnumerator asyncEnumerator, OeQueryContext queryContext)
+            : base(asyncEnumerator.CancellationToken)
         {
             _asyncEnumerator = asyncEnumerator;
-            _dbEnumerator = new Db.OeDbEnumerator(asyncEnumerator, entryFactory);
+            _dbEnumerator = new OeDbEnumerator(asyncEnumerator, queryContext.EntryFactory);
             _queryContext = queryContext;
             _isFirstMoveNext = true;
         }
 
-        private static async Task<Object> CreateEntity(Db.OeDbEnumerator dbEnumerator, Object value, Object entity, Type entityType)
+        private static async Task<Object> CreateEntity(OeDbEnumerator dbEnumerator, Object value, Object entity, Type entityType)
         {
             if (OeExpressionHelper.IsTupleType(entity.GetType()))
             {
@@ -84,7 +86,7 @@ namespace OdataToEntity.AspNetCore
             }
             return entity;
         }
-        private static async Task<Object> CreateNestedEntity(Db.OeDbEnumerator dbEnumerator, Object value, Type nestedEntityType)
+        private static async Task<Object> CreateNestedEntity(OeDbEnumerator dbEnumerator, Object value, Type nestedEntityType)
         {
             Object entity = dbEnumerator.Current;
             if (entity == null)
@@ -92,20 +94,22 @@ namespace OdataToEntity.AspNetCore
 
             if (dbEnumerator.EntryFactory.ResourceInfo.IsCollection.GetValueOrDefault())
             {
-                Infrastructure.IGenericListWrapper listWrapper = Infrastructure.GenericListWrapper.Create(nestedEntityType);
+                Type listType = typeof(List<>).MakeGenericType(new[] { nestedEntityType });
+                var list = (IList)Activator.CreateInstance(listType);
+
                 do
                 {
                     Object item = dbEnumerator.Current;
                     if (item != null)
-                        listWrapper.Add(await CreateEntity(dbEnumerator, item, item, nestedEntityType).ConfigureAwait(false));
+                        list.Add(await CreateEntity(dbEnumerator, item, item, nestedEntityType).ConfigureAwait(false));
                 }
                 while (await dbEnumerator.MoveNextAsync().ConfigureAwait(false));
-                return listWrapper.List;
+                return list;
             }
 
             return await CreateEntity(dbEnumerator, value, entity, nestedEntityType).ConfigureAwait(false);
         }
-        public void Dispose()
+        public override void Dispose()
         {
             _asyncEnumerator.Dispose();
         }
@@ -116,7 +120,11 @@ namespace OdataToEntity.AspNetCore
 
             throw new InvalidOperationException("Already iterated");
         }
-        async Task<bool> IAsyncEnumerator<T>.MoveNext(CancellationToken cancellationToken)
+        Task<bool> IAsyncEnumerator<T>.MoveNext(CancellationToken cancellationToken)
+        {
+            return MoveNextAsync();
+        }
+        public override async Task<bool> MoveNextAsync()
         {
             if (_isFirstMoveNext)
             {
@@ -136,7 +144,7 @@ namespace OdataToEntity.AspNetCore
             _current = entity;
             return true;
         }
-        private static async Task SetNavigationProperty(Db.OeDbEnumerator dbEnumerator, Object value, Object entity)
+        private static async Task SetNavigationProperty(OeDbEnumerator dbEnumerator, Object value, Object entity)
         {
             PropertyInfo propertyInfo = entity.GetType().GetProperty(dbEnumerator.EntryFactory.ResourceInfo.Name);
             Type nestedEntityType = OeExpressionHelper.GetCollectionItemType(propertyInfo.PropertyType);
@@ -163,6 +171,7 @@ namespace OdataToEntity.AspNetCore
             }
         }
 
-        T IAsyncEnumerator<T>.Current => _current;
+        public override Object Current => _current;
+        T IAsyncEnumerator<T>.Current => (T)_current;
     }
 }

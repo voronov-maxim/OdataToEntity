@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Xunit
 {
@@ -48,6 +49,25 @@ namespace Xunit
 
             if (!expected.Equals(actual))
                 throw new InvalidOperationException($"expected: {expected.ToString()} actual: {actual.ToString()}");
+        }
+        public static void Equal<T>(IEnumerable<T> expected, IEnumerable<T> actual)
+        {
+            using (IEnumerator<T> expectedEnumerator = expected.GetEnumerator())
+            using (IEnumerator<T> actualEnumerator = actual.GetEnumerator())
+            {
+                for (; ; )
+                {
+                    bool expectedMoveNext = expectedEnumerator.MoveNext();
+                    bool actualMoveNext = actualEnumerator.MoveNext();
+                    if (expectedMoveNext != actualMoveNext)
+                        throw new InvalidOperationException($"expected collection count not equal actual collection count");
+
+                    if (!expectedMoveNext)
+                        break;
+
+                    Equal(expectedEnumerator.Current, actualEnumerator.Current);
+                }
+            }
         }
     }
 }

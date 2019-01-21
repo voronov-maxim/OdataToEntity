@@ -14,6 +14,57 @@ namespace OdataToEntity.Test
     public partial class SelectTest
     {
         [Fact]
+        public async Task BoundFunctionCollection()
+        {
+            List<int> expectedResult;
+            using (var dbContext = Fixture.CreateContext())
+                expectedResult = dbContext.OrderItems.Where(i =>
+                    i.Order.Customer.Name == "Natasha" ||
+                    i.Order.Customer.Name == "Ivan" ||
+                    i.Order.Customer.Name == "Sasha").Select(i => i.Id).ToList();
+
+            Db.OeDataAdapter dataAdapter = Fixture.EdmModel.GetDataAdapter(Fixture.EdmModel.EntityContainer);
+            String request = $"Orders/{dataAdapter.DataContextType.Namespace}.BoundFunctionCollection(customerNames=['Natasha','Ivan','Sasha'])";
+
+            ODataUri odataUri = Fixture.ParseUri(request);
+            IEdmModel edmModel = Fixture.EdmModel.GetEdmModel(odataUri.Path);
+            var parser = new OeParser(odataUri.ServiceRoot, edmModel);
+            var uri = new Uri(odataUri.ServiceRoot, request);
+
+            var response = new MemoryStream();
+            await parser.ExecuteQueryAsync(odataUri, OeRequestHeaders.JsonDefault, response, CancellationToken.None).ConfigureAwait(false);
+            response.Position = 0;
+
+            List<Object> fromOe = new ResponseReader(edmModel).Read(response).Cast<Object>().ToList();
+            Assert.Equal(expectedResult, fromOe.Select(i => (int)((dynamic)i).Id).OrderBy(id => id));
+        }
+        [Fact]
+        public async Task BoundFunctionSingle()
+        {
+            int orderId;
+            List<int> expectedResult;
+            using (var dbContext = Fixture.CreateContext())
+            {
+                orderId = dbContext.Orders.Single(i => i.Name == "Order 1").Id;
+                expectedResult = dbContext.OrderItems.Where(i => i.OrderId == orderId).Select(i => i.Id).ToList();
+            }
+
+            Db.OeDataAdapter dataAdapter = Fixture.EdmModel.GetDataAdapter(Fixture.EdmModel.EntityContainer);
+            String request = $"Orders({orderId})/{dataAdapter.DataContextType.Namespace}.BoundFunctionSingle(customerNames=['Natasha','Ivan','Sasha'])";
+
+            ODataUri odataUri = Fixture.ParseUri(request);
+            IEdmModel edmModel = Fixture.EdmModel.GetEdmModel(odataUri.Path);
+            var parser = new OeParser(odataUri.ServiceRoot, edmModel);
+            var uri = new Uri(odataUri.ServiceRoot, request);
+
+            var response = new MemoryStream();
+            await parser.ExecuteQueryAsync(odataUri, OeRequestHeaders.JsonDefault, response, CancellationToken.None).ConfigureAwait(false);
+            response.Position = 0;
+
+            List<Object> fromOe = new ResponseReader(edmModel).Read(response).Cast<Object>().ToList();
+            Assert.Equal(expectedResult, fromOe.Select(i => (int)((dynamic)i).Id).OrderBy(id => id));
+        }
+        [Fact]
         internal async Task CountExpandNested()
         {
             String request = "Orders?$expand=Items($count=true)&orderby=Id";

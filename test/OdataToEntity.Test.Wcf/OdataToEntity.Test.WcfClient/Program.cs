@@ -1,5 +1,5 @@
 ﻿using Microsoft.OData.Client;
-using ODataClient.Default;
+using ODataClient.OdataToEntity.Test.Model;
 using System;
 using System.Collections;
 using System.Linq;
@@ -10,7 +10,7 @@ namespace OdataToEntity.Test.WcfClient
 {
     internal sealed class WcfDbFixtureInitDb : DbFixtureInitDb
     {
-        protected override async Task<IList> ExecuteOeViaHttpClient<T, TResult>(QueryParameters<T, TResult> parameters)
+        internal protected override async Task<IList> ExecuteOeViaHttpClient<T, TResult>(QueryParameters<T, TResult> parameters)
         {
             WcfService.OdataWcfQuery result = await Program.Interceptor.Get(parameters.RequestUri);
 

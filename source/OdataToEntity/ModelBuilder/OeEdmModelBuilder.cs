@@ -38,14 +38,14 @@ namespace OdataToEntity.ModelBuilder
         }
         private void AddOperations()
         {
-            OeOperationConfiguration[] operations = _dataAdapter.OperationAdapter.GetOperations();
+            IReadOnlyList<OeOperationConfiguration> operations = _dataAdapter.OperationAdapter.GetOperations();
             if (operations != null)
-                foreach (OeOperationConfiguration operation in operations)
-                    AddOperation(operation);
+                for (int i = 0; i < operations.Count; i++)
+                    AddOperation(operations[i]);
         }
         private EdmAction BuildAction(OeOperationConfiguration operationConfiguration, Dictionary<Type, EntityTypeInfo> entityTypeInfos)
         {
-            var edmAction = new EdmAction(operationConfiguration.NamespaceName, operationConfiguration.MethodInfoName, null);
+            var edmAction = new EdmAction(operationConfiguration.NamespaceName, operationConfiguration.Name, null);
             foreach (OeOperationParameterConfiguration parameterConfiguration in operationConfiguration.Parameters)
             {
                 IEdmTypeReference edmTypeReference = GetEdmTypeReference(parameterConfiguration.ClrType, entityTypeInfos);
@@ -87,14 +87,13 @@ namespace OdataToEntity.ModelBuilder
                 edmModel.AddElement(typeInfo.EdmType);
                 edmModel.SetClrType(typeInfo.EdmType, typeInfo.ClrType);
 
-                foreach (Db.OeEntitySetAdapter entitySetAdapter in _dataAdapter.EntitySetAdapters)
-                    if (entitySetAdapter.EntityType == typeInfo.ClrType)
-                    {
-                        EdmEntitySet entitySet = container.AddEntitySet(entitySetAdapter.EntitySetName, typeInfo.EdmType);
-                        edmModel.SetEntitySetAdapter(entitySet, entitySetAdapter);
-                        entitySets.Add(typeInfo.EdmType, entitySet);
-                        break;
-                    }
+                Db.OeEntitySetAdapter entitySetAdapter = _dataAdapter.EntitySetAdapters.Find(typeInfo.ClrType);
+                if (entitySetAdapter != null)
+                {
+                    EdmEntitySet entitySet = container.AddEntitySet(entitySetAdapter.EntitySetName, typeInfo.EdmType);
+                    edmModel.SetEntitySetAdapter(entitySet, entitySetAdapter);
+                    entitySets.Add(typeInfo.EdmType, entitySet);
+                }
             }
 
             var manyToManyBuilder = new ManyToManyBuilder(edmModel, _metadataProvider, entityTypeInfos);
@@ -123,20 +122,21 @@ namespace OdataToEntity.ModelBuilder
             {
                 if (operationConfiguration.IsEdmFunction)
                 {
-                    EdmPathExpression path = null;
                     EdmFunction edmFunction = BuildFunction(operationConfiguration, entityTypeInfos);
-                    if (edmFunction.ReturnType.Definition.AsElementType() is IEdmEntityType entityType)
-                        path = new EdmPathExpression(_dataAdapter.DataContextType.FullName, entitySets[entityType].Name);
-
                     edmModel.AddElement(edmFunction);
-                    container.AddFunctionImport(operationConfiguration.Name, edmFunction, path);
+
+                    if (edmFunction.IsBound)
+                        edmModel.SetMethodInfo(edmFunction, operationConfiguration.MethodInfo);
+                    else
+                        container.AddFunctionImport(operationConfiguration.ImportName, edmFunction, edmFunction.EntitySetPath);
+
                     edmModel.SetIsDbFunction(edmFunction, operationConfiguration.IsDbFunction);
                 }
                 else
                 {
                     EdmAction edmAction = BuildAction(operationConfiguration, entityTypeInfos);
                     edmModel.AddElement(edmAction);
-                    container.AddActionImport(operationConfiguration.Name, edmAction);
+                    container.AddActionImport(operationConfiguration.ImportName, edmAction);
                     edmModel.SetIsDbFunction(edmAction, operationConfiguration.IsDbFunction);
                 }
             }
@@ -205,7 +205,8 @@ namespace OdataToEntity.ModelBuilder
             else
                 edmTypeReference = new EdmCollectionTypeReference(new EdmCollectionType(GetEdmTypeReference(itemType, entityTypeInfos)));
 
-            var edmFunction = new EdmFunction(operationConfiguration.NamespaceName, operationConfiguration.MethodInfoName, edmTypeReference);
+            var edmFunction = new EdmFunction(operationConfiguration.NamespaceName, operationConfiguration.Name,
+                edmTypeReference, operationConfiguration.IsBound, null, false);
             foreach (OeOperationParameterConfiguration parameterConfiguration in operationConfiguration.Parameters)
             {
                 edmTypeReference = GetEdmTypeReference(parameterConfiguration.ClrType, entityTypeInfos);
@@ -213,38 +214,6 @@ namespace OdataToEntity.ModelBuilder
             }
 
             return edmFunction;
-        }
-        private IEdmTypeReference GetEdmTypeReference(Type clrType, Dictionary<Type, EntityTypeInfo> entityTypeInfos)
-        {
-            bool nullable = PrimitiveTypeHelper.IsNullable(clrType);
-            if (nullable)
-            {
-                Type underlyingType = Nullable.GetUnderlyingType(clrType);
-                if (underlyingType != null)
-                    clrType = underlyingType;
-            }
-
-            if (entityTypeInfos.TryGetValue(clrType, out EntityTypeInfo entityTypeInfo))
-                return new EdmEntityTypeReference(entityTypeInfo.EdmType, nullable);
-
-            if (_enumTypes.TryGetValue(clrType, out EdmEnumType edmEnumType))
-                return new EdmEnumTypeReference(edmEnumType, nullable);
-
-            if (_complexTypes.TryGetValue(clrType, out EdmComplexType edmComplexType))
-                return new EdmComplexTypeReference(edmComplexType, nullable);
-
-            IEdmTypeReference typeRef = PrimitiveTypeHelper.GetPrimitiveTypeRef(clrType, nullable);
-            if (typeRef != null)
-                return typeRef;
-
-            Type itemType = Parsers.OeExpressionHelper.GetCollectionItemType(clrType);
-            if (itemType != null)
-            {
-                typeRef = GetEdmTypeReference(itemType, entityTypeInfos);
-                return new EdmCollectionTypeReference(new EdmCollectionType(typeRef));
-            }
-
-            throw new InvalidOperationException("Not suppoertyed parameter type " + clrType.FullName);
         }
         private static EdmStructuralProperty[] CreateDependentEdmProperties(EdmEntityType edmDependent, IReadOnlyList<PropertyInfo> dependentStructuralProperties)
         {
@@ -308,6 +277,38 @@ namespace OdataToEntity.ModelBuilder
                 TargetMultiplicity = fkeyInfo.PrincipalMultiplicity
             };
             return edmDependent.AddBidirectionalNavigation(edmDependentInfo, edmPrincipalInfo);
+        }
+        private IEdmTypeReference GetEdmTypeReference(Type clrType, Dictionary<Type, EntityTypeInfo> entityTypeInfos)
+        {
+            bool nullable = PrimitiveTypeHelper.IsNullable(clrType);
+            if (nullable)
+            {
+                Type underlyingType = Nullable.GetUnderlyingType(clrType);
+                if (underlyingType != null)
+                    clrType = underlyingType;
+            }
+
+            if (entityTypeInfos.TryGetValue(clrType, out EntityTypeInfo entityTypeInfo))
+                return new EdmEntityTypeReference(entityTypeInfo.EdmType, nullable);
+
+            if (_enumTypes.TryGetValue(clrType, out EdmEnumType edmEnumType))
+                return new EdmEnumTypeReference(edmEnumType, nullable);
+
+            if (_complexTypes.TryGetValue(clrType, out EdmComplexType edmComplexType))
+                return new EdmComplexTypeReference(edmComplexType, nullable);
+
+            IEdmTypeReference typeRef = PrimitiveTypeHelper.GetPrimitiveTypeRef(clrType, nullable);
+            if (typeRef != null)
+                return typeRef;
+
+            Type itemType = Parsers.OeExpressionHelper.GetCollectionItemType(clrType);
+            if (itemType != null)
+            {
+                typeRef = GetEdmTypeReference(itemType, entityTypeInfos);
+                return new EdmCollectionTypeReference(new EdmCollectionType(typeRef));
+            }
+
+            throw new InvalidOperationException("Not suppoertyed parameter type " + clrType.FullName);
         }
     }
 }

@@ -15,6 +15,7 @@ using LinqToDB.DataProvider.SqlServer;
 using LinqToDB.Mapping;
 using OdataToEntity.Linq2Db;
 using System.ComponentModel;
+using Microsoft.OData.Edm;
 
 namespace OdataToEntity.Test.Model
 {
@@ -77,9 +78,37 @@ namespace OdataToEntity.Test.Model
 
         #endregion
 
+        [Description("BoundFunctionCollection()")]
+        public static IEnumerable<OrderItem> BoundFunctionCollection(IEdmModel edmModel, IAsyncEnumerator<Order> orders, IEnumerable<String> customerNames)
+        {
+            var customerNameSet = new HashSet<String>(customerNames);
+            Db.OeDataAdapter dataAdapter = edmModel.GetDataAdapter(typeof(OdataToEntityDB));
+            var orderContext = (OdataToEntityDB)dataAdapter.CreateDataContext();
+            while (orders.MoveNext().GetAwaiter().GetResult())
+            {
+                var order = orders.Current;
+                Customer customer = orderContext.Customers.First(c => c.Country == order.CustomerCountry && c.Id == order.CustomerId);
+                if (customerNameSet.Contains(customer.Name))
+                    foreach (OrderItem orderItem in orderContext.OrderItems.Where(i => i.OrderId == order.Id))
+                        yield return orderItem;
+            }
+        }
+        [Description("BoundFunctionSingle()")]
+        public static IEnumerable<OrderItem> BoundFunctionSingle(IEdmModel edmModel, Order order, IEnumerable<String> customerNames)
+        {
+            var customerNameSet = new HashSet<String>(customerNames);
+            Db.OeDataAdapter dataAdapter = edmModel.GetDataAdapter(typeof(OdataToEntityDB));
+            var orderContext = (OdataToEntityDB)dataAdapter.CreateDataContext();
+            Customer customer = orderContext.Customers.First(c => c.Country == order.CustomerCountry && c.Id == order.CustomerId);
+            if (customerNameSet.Contains(customer.Name))
+                foreach (OrderItem orderItem in orderContext.OrderItems.Where(i => i.OrderId == order.Id))
+                    yield return orderItem;
+        }
         [Description("dbo.GetOrders")]
         public IEnumerable<Order> GetOrders(int? id, String name, OrderStatus? status) => throw new NotImplementedException();
+        [Description("ResetDb()")]
         public void ResetDb() => throw new NotImplementedException();
+        [Description("ResetManyColumns()")]
         public void ResetManyColumns() => throw new NotImplementedException();
         [Sql.Function("dbo", "ScalarFunction")]
         public int ScalarFunction() => Orders.Count();
@@ -280,27 +309,6 @@ namespace OdataToEntity.Test.Model
         public ShippingAddress ShippingAddress { get; set; }
 		#endregion
     }
-
-    public static partial class TableExtensions
-	{
-		public static Customer Find(this ITable<Customer> table, int Id)
-		{
-			return table.FirstOrDefault(t =>
-				t.Id == Id);
-		}
-
-		public static Order Find(this ITable<Order> table, int Id)
-		{
-			return table.FirstOrDefault(t =>
-				t.Id == Id);
-		}
-
-		public static OrderItem Find(this ITable<OrderItem> table, int Id)
-		{
-			return table.FirstOrDefault(t =>
-				t.Id == Id);
-		}
-	}
 
     public enum OrderStatus
     {

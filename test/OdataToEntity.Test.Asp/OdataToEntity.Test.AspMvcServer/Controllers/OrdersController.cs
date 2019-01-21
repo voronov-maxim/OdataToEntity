@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.OData.Edm;
+using Newtonsoft.Json.Linq;
 using OdataToEntity.AspNetCore;
 using System;
 using System.Collections.Generic;
@@ -18,6 +20,20 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
             _httpContextAccessor = httpContextAccessor;
         }
 
+        [HttpGet("OdataToEntity.Test.Model.BoundFunctionCollection(customerNames={customerNames})")]
+        public ODataResult<Model.OrderItem> BoundFunctionCollection(String customerNames)
+        {
+            var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
+            IAsyncEnumerable<Model.OrderItem> orderItems = parser.ExecuteReader<Model.OrderItem>();
+            return parser.OData(orderItems);
+        }
+        [HttpGet("{id}/OdataToEntity.Test.Model.BoundFunctionSingle(customerNames={customerNames})")]
+        public ODataResult<Model.OrderItem> BoundFunctionSingle(int id, String customerNames)
+        {
+            var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
+            IAsyncEnumerable<Model.OrderItem> orderItems = parser.ExecuteReader<Model.OrderItem>();
+            return parser.OData(orderItems);
+        }
         [HttpDelete]
         public void Delete(OeDataContext dataContext, Model.Order order)
         {
@@ -55,6 +71,20 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
         public void Post(OeDataContext dataContext, Model.Order order)
         {
             dataContext.Update(order);
+        }
+        [HttpGet("WithItems(itemIds={itemIds})")]
+        public ODataResult<Model.OrderItem> WithItems(String itemIds)
+        {
+            List<int> ids = JArray.Parse(itemIds).Select(j => j.Value<int>()).ToList();
+
+            var edmModel = (IEdmModel)_httpContextAccessor.HttpContext.RequestServices.GetService(typeof(IEdmModel));
+            Db.OeDataAdapter dataAdapter = edmModel.GetDataAdapter(typeof(Model.OrderContext));
+            var orderContext = (Model.OrderContext)dataAdapter.CreateDataContext();
+
+            List<Model.OrderItem> orderItems = orderContext.OrderItems.Where(i => ids.Contains(i.Id)).ToList();
+            dataAdapter.CloseDataContext(orderContext);
+
+            return _httpContextAccessor.HttpContext.OData(orderItems);
         }
     }
 }

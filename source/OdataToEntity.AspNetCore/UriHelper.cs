@@ -22,10 +22,14 @@ namespace OdataToEntity.AspNetCore
                             i = request.Path.Value.Length;
                         else if (request.Path.Value.EndsWith("/$batch", StringComparison.OrdinalIgnoreCase))
                             i++;
-                    }
 
-                    i = request.Path.Value.LastIndexOf('/', i - 1);
-                    uriBuilder.Path = request.Path.Value.Substring(1, i - 1);
+                        i = request.Path.Value.LastIndexOf('/', i - 1);
+                    }
+                    else
+                        i = request.Path.Value.IndexOf('/', 1);
+
+                    if (i > 1)
+                        uriBuilder.Path = request.Path.Value.Substring(1, i - 1);
                 }
             }
             return uriBuilder.Uri;

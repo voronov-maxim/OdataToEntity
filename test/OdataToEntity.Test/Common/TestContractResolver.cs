@@ -136,7 +136,7 @@ namespace OdataToEntity.Test
         protected override IList<JsonProperty> CreateProperties(Type type, MemberSerialization memberSerialization)
         {
             IList<JsonProperty> jproperties = base.CreateProperties(type, memberSerialization);
-            if (IsEntity(type))
+            if (Parsers.OeExpressionHelper.IsEntityType(type))
                 foreach (JsonProperty jproperty in jproperties)
                 {
                     PropertyInfo clrProperty = type.GetProperty(jproperty.PropertyName);
@@ -149,7 +149,7 @@ namespace OdataToEntity.Test
                     }
                     else
                     {
-                        if (IsEntity(clrProperty.PropertyType))
+                        if (Parsers.OeExpressionHelper.IsEntityType(clrProperty.PropertyType))
                             jproperty.ValueProvider = NullEntityValueProvider.Instance;
                         else
                         {
@@ -160,16 +160,6 @@ namespace OdataToEntity.Test
                 }
 
             return jproperties.OrderBy(p => p.PropertyName, StringComparer.Ordinal).ToList();
-        }
-        public static bool IsEntity(Type type)
-        {
-            if (type.IsPrimitive)
-                return false;
-            if (type.IsValueType)
-                return false;
-            if (type == typeof(String))
-                return false;
-            return true;
         }
         private static IComparer GetComparer(ModelBuilder.OeEdmModelMetadataProvider metadataProvider, Type entityType)
         {

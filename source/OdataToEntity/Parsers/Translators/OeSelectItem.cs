@@ -85,13 +85,6 @@ namespace OdataToEntity.Parsers.Translators
                     return i;
             return -1;
         }
-        public IReadOnlyList<IEdmNavigationProperty> GetJoinPath()
-        {
-            var joinPath = new List<IEdmNavigationProperty>();
-            for (OeSelectItem navigationItem = this; navigationItem.Parent != null; navigationItem = navigationItem.Parent)
-                joinPath.Insert(0, (IEdmNavigationProperty)navigationItem.EdmProperty);
-            return joinPath;
-        }
         private static IEdmEntitySet GetEntitySet(ODataPath path)
         {
             if (path.LastSegment is EntitySetSegment entitySetSegment)
@@ -103,7 +96,17 @@ namespace OdataToEntity.Parsers.Translators
             if (path.LastSegment is KeySegment keySegment)
                 return (IEdmEntitySet)keySegment.NavigationSource;
 
+            if (path.LastSegment is OperationSegment)
+                return ((EntitySetSegment)path.FirstSegment).EntitySet;
+
             throw new InvalidOperationException("unknown segment type " + path.LastSegment.ToString());
+        }
+        public IReadOnlyList<IEdmNavigationProperty> GetJoinPath()
+        {
+            var joinPath = new List<IEdmNavigationProperty>();
+            for (OeSelectItem navigationItem = this; navigationItem.Parent != null; navigationItem = navigationItem.Parent)
+                joinPath.Insert(0, (IEdmNavigationProperty)navigationItem.EdmProperty);
+            return joinPath;
         }
 
         public IEdmProperty EdmProperty { get; }

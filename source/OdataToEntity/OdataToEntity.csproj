@@ -32,6 +32,7 @@
     <PackageReference Include="Microsoft.OData.Edm" Version="$(ODataLibVersion)" />
     <PackageReference Include="Microsoft.Spatial" Version="$(ODataLibVersion)" />
     <PackageReference Include="System.ComponentModel.Annotations" Version="$(CoreFxVersion)" />
+    <PackageReference Include="System.Interactive.Async" Version="$(SystemInteractiveAsyncVersion)"/>
     <PackageReference Include="System.ValueTuple" Version="$(CoreFxVersion)" />
   </ItemGroup>
 

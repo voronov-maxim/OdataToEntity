@@ -60,6 +60,10 @@ namespace OdataToEntity.Cache.UriCompare
         {
             return GetNextSegment() is NavigationPropertySegment navigationPropertySegment && navigationPropertySegment.NavigationProperty == segment.NavigationProperty;
         }
+        public override bool Translate(OperationSegment segment)
+        {
+            return GetNextSegment() is OperationSegment operationSegment && operationSegment.Identifier == segment.Identifier;
+        }
         public override bool Translate(PropertySegment segment)
         {
             return GetNextSegment() is PropertySegment propertySegment && propertySegment.Property == segment.Property;

@@ -66,7 +66,7 @@ namespace OdataToEntity.Parsers
                         query = _queryableSource(enumerableStub.EntitySet);
 
                     if (query == null)
-                    { 
+                    {
                         Db.OeEntitySetAdapter entitySetAdapter = _edmModel.GetEntitySetAdapter(enumerableStub.EntitySet);
                         query = entitySetAdapter.GetEntitySet(_dataContext);
                     }
@@ -121,9 +121,19 @@ namespace OdataToEntity.Parsers
         }
         private OeEntryFactory CreateEntryFactory(OeExpressionBuilder expressionBuilder)
         {
-            IEdmEntitySet entitySet = OeParseNavigationSegment.GetEntitySet(ParseNavigationSegments);
+            IEdmEntitySet entitySet;
+            if (ODataUri.Path.LastSegment is OperationSegment)
+            {
+                entitySet = OeOperationHelper.GetEntitySet(ODataUri.Path);
+                Type clrEntityType = EdmModel.GetClrType(entitySet.EntityType());
+                OePropertyAccessor[] accessors = OePropertyAccessor.CreateFromType(clrEntityType, entitySet);
+                return OeEntryFactory.CreateEntryFactory(entitySet, accessors);
+            }
+
+            entitySet = OeParseNavigationSegment.GetEntitySet(ParseNavigationSegments);
             if (entitySet == null)
                 entitySet = OeEdmClrHelper.GetEntitySet(EdmModel, EntitySetAdapter.EntitySetName);
+
             return expressionBuilder.CreateEntryFactory(entitySet);
         }
         public Expression CreateExpression(OeConstantToVariableVisitor constantToVariableVisitor)

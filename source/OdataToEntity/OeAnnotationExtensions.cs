@@ -2,6 +2,7 @@
 using Microsoft.OData.Edm;
 using OdataToEntity.ModelBuilder;
 using System;
+using System.Reflection;
 
 namespace OdataToEntity
 {
@@ -57,6 +58,10 @@ namespace OdataToEntity
 
             throw new InvalidOperationException("Add many-to-many annotation for navigation property " + navigationProperty.Name);
         }
+        internal static MethodInfo GetMethodInfo(this IEdmModel edmModel, IEdmFunction edmFunction)
+        {
+            return edmModel.GetAnnotationValue<MethodInfo>(edmFunction);
+        }
         public static bool IsDbFunction(this IEdmModel edmModel, IEdmOperation edmOperation)
         {
             OeValueAnnotation<bool> valueAnnotation = edmModel.GetAnnotationValue<OeValueAnnotation<bool>>(edmOperation);
@@ -81,6 +86,10 @@ namespace OdataToEntity
         internal static void SetManyToManyJoinDescription(this IEdmModel edmModel, IEdmNavigationProperty navigationProperty, ManyToManyJoinDescription joinDescription)
         {
             edmModel.SetAnnotationValue(navigationProperty, joinDescription);
+        }
+        internal static void SetMethodInfo(this IEdmModel edmModel, IEdmFunction edmFunction, MethodInfo methodInfo)
+        {
+            edmModel.SetAnnotationValue(edmFunction, methodInfo);
         }
     }
 }

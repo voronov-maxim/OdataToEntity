@@ -171,7 +171,7 @@ namespace OdataToEntity.Linq2Db
             if (countExpression != null)
                 asyncEnumerator.Count = entitySet.Provider.Execute<int>(countExpression);
 
-            return asyncEnumerator;
+            return base.OperationAdapter.ApplyBoundFunction(asyncEnumerator, queryContext);
         }
         public override TResult ExecuteScalar<TResult>(Object dataContext, OeQueryContext queryContext)
         {

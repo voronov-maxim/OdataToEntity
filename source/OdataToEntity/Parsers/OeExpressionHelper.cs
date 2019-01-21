@@ -215,6 +215,31 @@ namespace OdataToEntity.Parsers
                 return typeof(Decimal);
             return type;
         }
+        public static bool IsEntityType(Type entityType)
+        {
+            if (entityType.IsValueType)
+                return false;
+            if (entityType == typeof(String))
+                return false;
+
+            return true;
+        }
+        public static bool IsEntityType(IEdmModel edmModel, Type entityType)
+        {
+            if (!IsEntityType(entityType))
+                return false;
+
+            if (edmModel.EntityContainer != null)
+                foreach (IEdmEntitySet entitySet in edmModel.EntityContainer.EntitySets())
+                    if (edmModel.GetClrType(entitySet.EntityType()) == entityType)
+                        return true;
+
+            foreach (IEdmModel refModel in edmModel.ReferencedModels)
+                return IsEntityType(refModel, entityType);
+
+            return false;
+        }
+
         public static bool IsNull(Expression expression)
         {
             return expression is ConstantExpression constantExpression ? constantExpression.Value == null : false;

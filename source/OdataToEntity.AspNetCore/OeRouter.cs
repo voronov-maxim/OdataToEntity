@@ -48,14 +48,6 @@ namespace OdataToEntity.AspNetCore
         private static String GetPath(String path)
         {
             int pos1, pos2;
-            if (path[path.Length - 1] == ')')
-            {
-                pos1 = path.LastIndexOf('(');
-                if (pos1 == -1)
-                    return null;
-
-                return path.Substring(0, pos1) + "/" + path.Substring(pos1 + 1, path.Length - pos1 - 2);
-            }
 
             if ((pos2 = path.IndexOf(")/")) != -1)
             {
@@ -64,6 +56,15 @@ namespace OdataToEntity.AspNetCore
                     return null;
 
                 return path.Substring(0, pos1) + "/" + path.Substring(pos1 + 1, pos2 - pos1 - 1) + path.Substring(pos2 + 1);
+            }
+
+            if (path[path.Length - 1] == ')')
+            {
+                pos1 = path.LastIndexOf('(');
+                if (pos1 == -1)
+                    return null;
+
+                return path.Substring(0, pos1) + "/" + path.Substring(pos1 + 1, path.Length - pos1 - 2);
             }
 
             if ((pos1 = path.IndexOf("/$")) != -1)

@@ -1,5 +1,4 @@
 ﻿using Microsoft.OData;
-using Microsoft.OData.Edm;
 using OdataToEntity.Parsers;
 using System;
 using System.Collections.Generic;
@@ -203,7 +202,7 @@ namespace OdataToEntity.Ef6
                 asyncEnumerator.Count = query.Provider.Execute<int>(countExpression);
             }
 
-            return asyncEnumerator;
+            return base.OperationAdapter.ApplyBoundFunction(asyncEnumerator, queryContext);
         }
         public override TResult ExecuteScalar<TResult>(Object dataContext, OeQueryContext queryContext)
         {

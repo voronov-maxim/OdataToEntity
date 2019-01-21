@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.OData.Edm;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -21,8 +22,40 @@ namespace OdataToEntity.Test.Model
             modelBuilder.Entity<CustomerShippingAddress>().HasKey(t => new { t.CustomerCountry, t.CustomerId, t.ShippingAddressOrderId, t.ShippingAddressId });
             base.OnModelCreating(modelBuilder);
         }
-        public static String GenerateDatabaseName() => Guid.NewGuid().ToString();
 
+        [Description("BoundFunctionCollection()")]
+        public static IEnumerable<OrderItem> BoundFunctionCollection(IEdmModel edmModel, IAsyncEnumerator<Order> orders, IEnumerable<String> customerNames)
+        {
+            var customerNameSet = new HashSet<String>(customerNames);
+            Db.OeDataAdapter dataAdapter = edmModel.GetDataAdapter(typeof(OrderContext));
+            var orderContext = (OrderContext)dataAdapter.CreateDataContext();
+
+            while (orders.MoveNext().GetAwaiter().GetResult())
+            {
+                Order order = orders.Current;
+                Customer customer = orderContext.Customers.Find(new Object[] { order.CustomerCountry, order.CustomerId });
+                if (customerNameSet.Contains(customer.Name))
+                    foreach (OrderItem orderItem in orderContext.OrderItems.Where(i => i.OrderId == order.Id))
+                        yield return orderItem;
+            }
+
+            dataAdapter.CloseDataContext(orderContext);
+        }
+        [Description("BoundFunctionSingle()")]
+        public static IEnumerable<OrderItem> BoundFunctionSingle(IEdmModel edmModel, Order order, IEnumerable<String> customerNames)
+        {
+            var customerNameSet = new HashSet<String>(customerNames);
+            Db.OeDataAdapter dataAdapter = edmModel.GetDataAdapter(typeof(OrderContext));
+            var orderContext = (OrderContext)dataAdapter.CreateDataContext();
+
+            Customer customer = orderContext.Customers.Find(new Object[] { order.CustomerCountry, order.CustomerId });
+            if (customerNameSet.Contains(customer.Name))
+                foreach (OrderItem orderItem in orderContext.OrderItems.Where(i => i.OrderId == order.Id))
+                    yield return orderItem;
+
+            dataAdapter.CloseDataContext(orderContext);
+        }
+        public static String GenerateDatabaseName() => Guid.NewGuid().ToString();
         [Description("dbo.GetOrders")]
         public IEnumerable<Order> GetOrders(int? id, String name, OrderStatus? status)
         {
@@ -40,7 +73,9 @@ namespace OdataToEntity.Test.Model
 
             return Enumerable.Empty<Order>();
         }
+        [Description("ResetDb()")]
         public void ResetDb() => throw new NotImplementedException();
+        [Description("ResetManyColumns()")]
         public void ResetManyColumns() => throw new NotImplementedException();
         [DbFunction("ScalarFunction", Schema = "dbo")]
         public int ScalarFunction() => Orders.Count();

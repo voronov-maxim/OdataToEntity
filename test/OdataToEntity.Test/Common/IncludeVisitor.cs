@@ -50,7 +50,7 @@ namespace OdataToEntity.Test
                 foreach (MemberExpression propertyExpression in node.Arguments.OfType<MemberExpression>())
                 {
                     var property = (PropertyInfo)propertyExpression.Member;
-                    if (TestContractResolver.IsEntity(property.PropertyType))
+                    if (Parsers.OeExpressionHelper.IsEntityType(property.PropertyType))
                         SelectProperties.Add(property);
                 }
                 return node;

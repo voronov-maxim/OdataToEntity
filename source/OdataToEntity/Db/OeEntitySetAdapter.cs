@@ -24,7 +24,16 @@ namespace OdataToEntity.Db
         {
         }
 
-        public OeEntitySetAdapter FindByEntitySet(IEdmEntitySet entitySet)
+        public OeEntitySetAdapter Find(Type clrType)
+        {
+            var entitySetAdapters = (OeEntitySetAdapter[])base.Items;
+            foreach (OeEntitySetAdapter entitySetAdapter in entitySetAdapters)
+                if (entitySetAdapter.EntityType == clrType && !entitySetAdapter.IsDbQuery)
+                    return entitySetAdapter;
+
+            return null;
+        }
+        public OeEntitySetAdapter Find(IEdmEntitySet entitySet)
         {
             var entitySetAdapters = (OeEntitySetAdapter[])base.Items;
             foreach (OeEntitySetAdapter entitySetAdapter in entitySetAdapters)

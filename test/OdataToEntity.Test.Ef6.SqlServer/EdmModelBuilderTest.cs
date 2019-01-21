@@ -49,7 +49,7 @@ namespace OdataToEntity.Test
                 xdoc.WriteTo(xwriter);
                 xwriter.Flush();
                 String fixSchema = Encoding.UTF8.GetString(stream.ToArray());
-                return fixSchema.Replace(ef6.FullName, efCore.FullName);
+                return fixSchema.Replace(ef6.Namespace, efCore.Namespace);
             }
         }
         [Fact]

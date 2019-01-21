@@ -114,7 +114,7 @@ namespace OdataToEntity.Test
                 return CreateDelegate(elementType, func)(query, call);
             }
         }
-        protected virtual async Task<IList> ExecuteOeViaHttpClient<T, TResult>(QueryParameters<T, TResult> parameters)
+        internal protected virtual async Task<IList> ExecuteOeViaHttpClient<T, TResult>(QueryParameters<T, TResult> parameters)
         {
             Uri uri = CreateContainer(0).BaseUri;
             using (var client = new HttpClient())
@@ -128,7 +128,10 @@ namespace OdataToEntity.Test
                         {
                             ODataPath path = OeParser.ParsePath(EdmModel, client.BaseAddress, new Uri(client.BaseAddress, parameters.RequestUri));
                             var responseReader = new ResponseReader(EdmModel.GetEdmModel(path));
-                            return responseReader.Read<T>(content).Cast<Object>().ToList();
+                            if (typeof(TResult) == typeof(Object))
+                                return responseReader.Read<T>(content).Cast<Object>().ToList();
+                            else
+                                return responseReader.Read<TResult>(content).Cast<Object>().ToList();
                         }
                     }
             }
@@ -301,7 +304,7 @@ namespace OdataToEntity.Test
 
         public static Func<ODataClient.OdataToEntity.Test.Model.Container> ContainerFactory { get; set; }
         protected Db.OeDataAdapter DataAdapter { get; }
-        protected IEdmModel EdmModel { get; }
+        public IEdmModel EdmModel { get; }
         protected ModelBuilder.OeEdmModelMetadataProvider MetadataProvider { get; }
     }
 

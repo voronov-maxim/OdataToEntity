@@ -45,6 +45,7 @@
     <Compile Include="..\..\OdataToEntity.Test.Asp\OdataToEntity.Test.AspClient\DbFunctionAttribute.cs" Link="DbFunctionAttribute.cs" />
     <Compile Include="..\..\OdataToEntity.Test.Asp\OdataToEntity.Test.AspClient\FactAttribute.cs" Link="FactAttribute.cs" />
     <Compile Include="..\..\OdataToEntity.Test.Asp\OdataToEntity.Test.AspClient\ProcedureTest.cs" Link="ProcedureTest.cs" />
+    <Compile Include="..\..\OdataToEntity.Test.Asp\OdataToEntity.Test.AspClient\SelectTest2.cs" Link="SelectTest2.cs" />
     <Compile Include="..\..\OdataToEntity.Test.Asp\OdataToEntity.Test.AspClient\TypeMapperVisitor.cs" Link="TypeMapperVisitor.cs" />
     <Compile Include="..\..\OdataToEntity.Test\Common\IncludeVisitor.cs" Link="Common\IncludeVisitor.cs" />
     <Compile Include="..\..\OdataToEntity.Test\Common\QueryParameters.cs" Link="Common\QueryParameters.cs" />
