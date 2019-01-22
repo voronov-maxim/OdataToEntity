@@ -18,6 +18,7 @@ namespace OdataToEntity.AspNetCore
 {
     public sealed class OeAspQueryParser : IDisposable
     {
+        private int? _count;
         private OeDataAdapter _dataAdapter;
         private Object _dataContext;
         private readonly IEdmModel _edmModel;
@@ -66,6 +67,7 @@ namespace OdataToEntity.AspNetCore
         public IAsyncEnumerable<T> ExecuteReader<T>(IQueryable source = null, bool navigationNextLink = false, int? maxPageSize = null)
         {
             OeAsyncEnumerator asyncEnumerator = GetAsyncEnumerator(source, navigationNextLink, maxPageSize);
+            _count = asyncEnumerator.Count;
             if (asyncEnumerator is OeAsyncEnumeratorAdapter || OeExpressionHelper.IsPrimitiveType(typeof(T)))
                 return new OeAsyncEnumeratorAdapter<T>(asyncEnumerator);
 
@@ -128,22 +130,25 @@ namespace OdataToEntity.AspNetCore
 
             return new OeHttpRequestHeaders(headers, httpResponse);
         }
-        public ODataResult<T> OData<T>(IAsyncEnumerable<T> asyncEnumerable)
+        public ODataResult<T> OData<T>(IAsyncEnumerable<T> asyncEnumerable, int? count = null)
         {
             IAsyncEnumerator<T> asyncEnumerator = asyncEnumerable.GetEnumerator();
+            if (count == null)
+                count = (asyncEnumerator as OeAsyncEnumerator)?.Count;
+
             _httpContext.Response.RegisterForDispose(asyncEnumerator);
             if (OeExpressionHelper.IsPrimitiveType(typeof(T)))
-                return new ODataPrimitiveResult<T>(_edmModel, _odataUri, asyncEnumerator);
+                return new ODataPrimitiveResult<T>(_edmModel, _odataUri, asyncEnumerator) { Count = count };
 
             return new ODataResult<T>(_edmModel, _queryContext.ODataUri, _queryContext.EntryFactory.EntitySet, asyncEnumerator)
             {
-                Count = (asyncEnumerator as OeAsyncEnumerator)?.Count,
+                Count = count,
                 PageSize = _queryContext.PageSize
             };
         }
         public ODataResult<T> OData<T>(IEnumerable<T> enumerable)
         {
-            return OData(enumerable.ToAsyncEnumerable());
+            return OData(enumerable.ToAsyncEnumerable(), _count);
         }
         public IActionResult OData<T>(T? value) where T : struct
         {

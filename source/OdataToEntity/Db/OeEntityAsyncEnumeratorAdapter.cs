@@ -60,6 +60,7 @@ namespace OdataToEntity.Db
             _dbEnumerator = new OeDbEnumerator(asyncEnumerator, queryContext.EntryFactory);
             _queryContext = queryContext;
             _isFirstMoveNext = true;
+            base.Count = asyncEnumerator.Count;
         }
 
         private static async Task<Object> CreateEntity(OeDbEnumerator dbEnumerator, Object value, Object entity, Type entityType)

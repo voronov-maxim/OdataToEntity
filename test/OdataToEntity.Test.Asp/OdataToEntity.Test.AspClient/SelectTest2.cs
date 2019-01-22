@@ -23,7 +23,7 @@ namespace OdataToEntity.Test
             String request = "Orders/OdataToEntity.Test.Model.BoundFunctionCollection(customerNames=['Natasha','Ivan','Sasha'])";
 
             var queryParameters = new QueryParameters<Order, OrderItem>() { RequestUri = request };
-            IList fromOe = await Fixture.ExecuteOeViaHttpClient(queryParameters);
+            IList fromOe = await Fixture.ExecuteOeViaHttpClient(queryParameters, null);
 
             Assert.Equal(expectedResult, fromOe.Cast<OrderItem>().Select(i => i.Id).OrderBy(id => id));
         }
@@ -44,9 +44,23 @@ namespace OdataToEntity.Test
             String request = $"Orders({orderId})/OdataToEntity.Test.Model.BoundFunctionSingle(customerNames=['Natasha','Ivan','Sasha'])";
 
             var queryParameters = new QueryParameters<Order, OrderItem>() { RequestUri = request };
-            IList fromOe = await Fixture.ExecuteOeViaHttpClient(queryParameters);
+            IList fromOe = await Fixture.ExecuteOeViaHttpClient(queryParameters, null);
 
             Assert.Equal(expectedResult, fromOe.Cast<OrderItem>().Select(i => i.Id).OrderBy(id => id));
+        }
+        [Fact]
+        public async Task CountQueryParameter()
+        {
+            int expectedCount;
+            using (var dbContext = new OrderContext(OrderContextOptions.Create(true, null)))
+                expectedCount = dbContext.Orders.Count();
+
+            String request = "Orders?&$count=true&$top=1";
+
+            var queryParameters = new QueryParameters<Order>() { RequestUri = request };
+            IList fromOe = await Fixture.ExecuteOeViaHttpClient(queryParameters, expectedCount);
+
+            Assert.Equal(1, fromOe.Count);
         }
     }
 }

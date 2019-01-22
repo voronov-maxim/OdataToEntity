@@ -27,5 +27,6 @@ namespace OdataToEntity.Db
         }
 
         public T Current => (T)_asyncEnumerator.Current;
+        public int? Count => _asyncEnumerator.Count;
     }
 }

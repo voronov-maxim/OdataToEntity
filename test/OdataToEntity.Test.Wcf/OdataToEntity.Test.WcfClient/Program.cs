@@ -10,12 +10,22 @@ namespace OdataToEntity.Test.WcfClient
 {
     internal sealed class WcfDbFixtureInitDb : DbFixtureInitDb
     {
-        internal protected override async Task<IList> ExecuteOeViaHttpClient<T, TResult>(QueryParameters<T, TResult> parameters)
+        internal protected override async Task<IList> ExecuteOeViaHttpClient<T, TResult>(QueryParameters<T, TResult> parameters, long? resourceSetCount)
         {
             WcfService.OdataWcfQuery result = await Program.Interceptor.Get(parameters.RequestUri);
 
             var responseReader = new ResponseReader(base.EdmModel);
-            return responseReader.Read<T>(result.Content).Cast<Object>().ToList();
+
+            IList fromOe;
+            if (typeof(TResult) == typeof(Object))
+                fromOe = responseReader.Read<T>(result.Content).Cast<Object>().ToList();
+            else
+                fromOe = responseReader.Read<TResult>(result.Content).Cast<Object>().ToList();
+
+            if (resourceSetCount != null)
+                Xunit.Assert.Equal(resourceSetCount, responseReader.ResourceSet.Count);
+
+            return fromOe;
         }
     }
 

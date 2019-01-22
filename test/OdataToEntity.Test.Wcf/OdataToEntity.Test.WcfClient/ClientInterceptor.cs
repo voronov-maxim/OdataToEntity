@@ -81,7 +81,13 @@ namespace OdataToEntity.Test.WcfClient
             var tcs = new TaskCompletionSource<OdataWcfQuery>(asyncState);
             responseTask.ContinueWith(t =>
             {
-                tcs.TrySetResult(t.Result);
+                if (t.IsFaulted)
+                    tcs.TrySetException(t.Exception);
+                else if (t.IsCanceled)
+                    tcs.TrySetCanceled();
+                else
+                    tcs.TrySetResult(t.Result);
+
                 callback(tcs.Task);
             });
             return tcs.Task;

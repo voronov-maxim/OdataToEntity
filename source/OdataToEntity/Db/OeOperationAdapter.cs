@@ -44,7 +44,10 @@ namespace OdataToEntity.Db
                     boundParameter = ctor.Invoke(new Object[] { asyncEnumerator });
                 }
                 else
+                {
                     boundParameter = asyncEnumerator.MoveNextAsync().GetAwaiter().GetResult() ? asyncEnumerator.Current : null;
+                    asyncEnumerator.Dispose();
+                }
 
                 var parameters = new Object[parameterList.Count + 2];
                 parameters[0] = queryContext.EdmModel;
@@ -56,7 +59,7 @@ namespace OdataToEntity.Db
                 if (result is IEnumerable enumerable)
                     return new OeAsyncEnumeratorAdapter(enumerable, asyncEnumerator.CancellationToken);
                 else
-                    return new OeScalarAsyncEnumeratorAdapter(Task.FromResult(result), asyncEnumerator.CancellationToken);
+                    return new OeScalarAsyncEnumeratorAdapter(Task.FromResult(result), CancellationToken.None);
             }
 
             return asyncEnumerator;

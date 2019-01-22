@@ -39,6 +39,7 @@ namespace OdataToEntity.Test.Model
                         yield return orderItem;
             }
 
+            orders.Dispose();
             dataAdapter.CloseDataContext(orderContext);
         }
         [Description("BoundFunctionSingle()")]

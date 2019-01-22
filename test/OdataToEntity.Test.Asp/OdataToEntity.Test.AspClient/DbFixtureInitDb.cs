@@ -74,7 +74,7 @@ namespace OdataToEntity.Test
                 if (parameters.RequestUri.Contains("$apply="))
                     throw;
 
-                fromOe = await ExecuteOeViaHttpClient(parameters);
+                fromOe = await ExecuteOeViaHttpClient(parameters, null);
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine(e.Message);
                 Console.ResetColor();
@@ -114,7 +114,7 @@ namespace OdataToEntity.Test
                 return CreateDelegate(elementType, func)(query, call);
             }
         }
-        internal protected virtual async Task<IList> ExecuteOeViaHttpClient<T, TResult>(QueryParameters<T, TResult> parameters)
+        internal protected virtual async Task<IList> ExecuteOeViaHttpClient<T, TResult>(QueryParameters<T, TResult> parameters, long? resourceSetCount)
         {
             Uri uri = CreateContainer(0).BaseUri;
             using (var client = new HttpClient())
@@ -128,10 +128,17 @@ namespace OdataToEntity.Test
                         {
                             ODataPath path = OeParser.ParsePath(EdmModel, client.BaseAddress, new Uri(client.BaseAddress, parameters.RequestUri));
                             var responseReader = new ResponseReader(EdmModel.GetEdmModel(path));
+
+                            IList fromOe;
                             if (typeof(TResult) == typeof(Object))
-                                return responseReader.Read<T>(content).Cast<Object>().ToList();
+                                fromOe = responseReader.Read<T>(content).Cast<Object>().ToList();
                             else
-                                return responseReader.Read<TResult>(content).Cast<Object>().ToList();
+                                fromOe = responseReader.Read<TResult>(content).Cast<Object>().ToList();
+
+                            if (resourceSetCount != null)
+                                Assert.Equal(resourceSetCount, responseReader.ResourceSet.Count);
+
+                            return fromOe;
                         }
                     }
             }
