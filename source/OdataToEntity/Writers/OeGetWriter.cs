@@ -125,7 +125,8 @@ namespace OdataToEntity.Writers
 
                 Object buffer = null;
                 int count = 0;
-                var dbEnumerator = new Db.OeDbEnumerator(asyncEnumerator, entryFactory);
+                var dbEnumerator = entryFactory.IsTuple ?
+                    (Db.IOeDbEnumerator)new Db.OeDbEnumerator(asyncEnumerator, entryFactory) : new Db.OeEntityDbEnumerator(asyncEnumerator, entryFactory);
                 while (await dbEnumerator.MoveNextAsync().ConfigureAwait(false))
                 {
                     Object value = dbEnumerator.Current;
@@ -139,7 +140,7 @@ namespace OdataToEntity.Writers
 
                 _writer.WriteEnd();
             }
-            private async Task WriteEagerNestedCollection(Db.OeDbEnumerator dbEnumerator)
+            private async Task WriteEagerNestedCollection(Db.IOeDbEnumerator dbEnumerator)
             {
                 var items = new List<Object>();
                 do
@@ -155,7 +156,7 @@ namespace OdataToEntity.Writers
                     await WriteEntry(dbEnumerator, items[i], false).ConfigureAwait(false);
                 _writer.WriteEnd();
             }
-            private async Task WriteEntry(Db.OeDbEnumerator dbEnumerator, Object value, bool navigationNextLink)
+            private async Task WriteEntry(Db.IOeDbEnumerator dbEnumerator, Object value, bool navigationNextLink)
             {
                 OeEntryFactory entryFactory = dbEnumerator.EntryFactory;
                 ODataResource entry = CreateEntry(entryFactory, value);
@@ -169,7 +170,7 @@ namespace OdataToEntity.Writers
 
                 _writer.WriteEnd();
             }
-            private async Task WriteLazyNestedCollection(Db.OeDbEnumerator dbEnumerator)
+            private async Task WriteLazyNestedCollection(Db.IOeDbEnumerator dbEnumerator)
             {
                 _writer.WriteStart(new ODataResourceSet());
                 do
@@ -181,7 +182,7 @@ namespace OdataToEntity.Writers
                 while (await dbEnumerator.MoveNextAsync().ConfigureAwait(false));
                 _writer.WriteEnd();
             }
-            private async Task WriteNavigationLink(Db.OeDbEnumerator dbEnumerator)
+            private async Task WriteNavigationLink(Db.IOeDbEnumerator dbEnumerator)
             {
                 _writer.WriteStart(dbEnumerator.EntryFactory.ResourceInfo);
                 if (dbEnumerator.EntryFactory.ResourceInfo.IsCollection.GetValueOrDefault())
@@ -212,7 +213,7 @@ namespace OdataToEntity.Writers
 
                 _writer.WriteEnd();
             }
-            private async Task WriteNestedItem(Db.OeDbEnumerator dbEnumerator)
+            private async Task WriteNestedItem(Db.IOeDbEnumerator dbEnumerator)
             {
                 Object value = dbEnumerator.Current;
                 if (value == null)
@@ -241,7 +242,7 @@ namespace OdataToEntity.Writers
             using (ODataMessageWriter messageWriter = new ODataMessageWriter(responseMessage, settings, queryContext.EdmModel))
             {
                 ODataUtils.SetHeadersForPayload(messageWriter, ODataPayloadKind.ResourceSet);
-                ODataWriter writer = messageWriter.CreateODataResourceSetWriter(entryFactory.EntitySet, entryFactory.EntityType);
+                ODataWriter writer = messageWriter.CreateODataResourceSetWriter(entryFactory.EntitySet, entryFactory.EdmEntityType);
                 var getWriter = new GetWriter(queryContext, writer);
                 await getWriter.SerializeAsync(entryFactory, asyncEnumerator, queryContext).ConfigureAwait(false);
             }

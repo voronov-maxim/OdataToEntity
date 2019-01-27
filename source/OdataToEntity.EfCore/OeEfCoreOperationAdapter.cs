@@ -74,17 +74,17 @@ namespace OdataToEntity.EfCore
         {
             return ((Model)((DbContext)dataContext).Model).Relational().DefaultSchema;
         }
-        protected override OeOperationConfiguration GetOperationConfiguration(MethodInfo methodInfo)
+        protected override IReadOnlyList<OeOperationConfiguration> GetOperationConfigurations(MethodInfo methodInfo)
         {
             var dbFunction = (DbFunctionAttribute)methodInfo.GetCustomAttribute(typeof(DbFunctionAttribute));
             if (dbFunction == null)
-                return base.GetOperationConfiguration(methodInfo);
+                return base.GetOperationConfigurations(methodInfo);
 
             String functionName = dbFunction.FunctionName ?? methodInfo.Name;
             if (!String.IsNullOrEmpty(dbFunction.Schema))
                 functionName = dbFunction.Schema + "." + functionName;
 
-            return new OeOperationConfiguration(functionName, methodInfo, true);
+            return new[] { new OeOperationConfiguration(functionName, methodInfo, true) };
         }
         protected override String[] GetParameterNames(Object dataContext, IReadOnlyList<KeyValuePair<String, Object>> parameters)
         {

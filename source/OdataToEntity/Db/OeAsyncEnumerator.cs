@@ -40,9 +40,13 @@ namespace OdataToEntity.Db
         private readonly IEnumerator _enumerator;
 
         public OeAsyncEnumeratorAdapter(IEnumerable enumerable, CancellationToken cancellationToken)
+            : this(enumerable.GetEnumerator(), cancellationToken)
+        {
+        }
+        public OeAsyncEnumeratorAdapter(IEnumerator enumerator, CancellationToken cancellationToken)
             : base(cancellationToken)
         {
-            _enumerator = enumerable.GetEnumerator();
+            _enumerator = enumerator;
         }
 
         public override void Dispose()

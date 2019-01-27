@@ -231,7 +231,7 @@ namespace OdataToEntity.Parsers
 
             if (edmModel.EntityContainer != null)
                 foreach (IEdmEntitySet entitySet in edmModel.EntityContainer.EntitySets())
-                    if (edmModel.GetClrType(entitySet.EntityType()) == entityType)
+                    if (edmModel.GetClrType(entitySet) == entityType)
                         return true;
 
             foreach (IEdmModel refModel in edmModel.ReferencedModels)

@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -53,9 +55,16 @@ namespace OdataToEntity.Parsers
         public async Task ExecuteAsync(ODataUri odataUri, OeRequestHeaders headers, Stream stream, CancellationToken cancellationToken)
         {
             OeQueryContext queryContext = CreateQueryContext(odataUri, headers.MaxPageSize, headers.NavigationNextLink, headers.MetadataLevel);
-            Db.OeDataAdapter dataAdapter = _edmModel.GetDataAdapter(queryContext.EdmModel.EntityContainer);
+            if (queryContext.ODataUri.Path.LastSegment is OperationSegment)
+            {
+                using (Db.OeAsyncEnumerator asyncEnumerator = OeOperationHelper.ApplyBoundFunction(queryContext))
+                    await Writers.OeGetWriter.SerializeAsync(queryContext, asyncEnumerator, headers.ContentType, stream).ConfigureAwait(false);
+
+                return;
+            }
 
             Object dataContext = null;
+            Db.OeDataAdapter dataAdapter = queryContext.EdmModel.GetDataAdapter(queryContext.EdmModel.EntityContainer);
             try
             {
                 dataContext = dataAdapter.CreateDataContext();

@@ -18,13 +18,10 @@ namespace OdataToEntity.Test
         {
             List<int> expectedResult;
             using (var dbContext = Fixture.CreateContext())
-                expectedResult = dbContext.OrderItems.Where(i =>
-                    i.Order.Customer.Name == "Natasha" ||
-                    i.Order.Customer.Name == "Ivan" ||
-                    i.Order.Customer.Name == "Sasha").Select(i => i.Id).ToList();
+                expectedResult = dbContext.OrderItems.Where(i => i.Order.Name == "Order 1" || i.Order.Name == "Order 2").Select(i => i.Id).ToList();
 
             Db.OeDataAdapter dataAdapter = Fixture.EdmModel.GetDataAdapter(Fixture.EdmModel.EntityContainer);
-            String request = $"Orders/{dataAdapter.DataContextType.Namespace}.BoundFunctionCollection(customerNames=['Natasha','Ivan','Sasha'])";
+            String request = $"Customers/{dataAdapter.DataContextType.Namespace}.BoundFunctionCollection(orderNames=['Order 1','Order 2'])?$expand=Customer,Items&$select=Name";
 
             ODataUri odataUri = Fixture.ParseUri(request);
             IEdmModel edmModel = Fixture.EdmModel.GetEdmModel(odataUri.Path);
@@ -36,21 +33,19 @@ namespace OdataToEntity.Test
             response.Position = 0;
 
             List<Object> fromOe = new ResponseReader(edmModel).Read(response).Cast<Object>().ToList();
-            Assert.Equal(expectedResult, fromOe.Select(i => (int)((dynamic)i).Id).OrderBy(id => id));
+            Assert.Equal(expectedResult, fromOe.SelectMany(c => (IEnumerable<dynamic>)((dynamic)c).Items).Select(i => (int)i.Id).OrderBy(id => id));
         }
         [Fact]
         public async Task BoundFunctionSingle()
         {
-            int orderId;
             List<int> expectedResult;
             using (var dbContext = Fixture.CreateContext())
-            {
-                orderId = dbContext.Orders.Single(i => i.Name == "Order 1").Id;
-                expectedResult = dbContext.OrderItems.Where(i => i.OrderId == orderId).Select(i => i.Id).ToList();
-            }
+                expectedResult = dbContext.OrderItems.Where(i =>
+                    (i.Order.Name == "Order 1" || i.Order.Name == "Order 2") && i.Order.Customer.Country == "RU" && i.Order.Customer.Id == 1)
+                    .Select(i => i.Id).ToList();
 
             Db.OeDataAdapter dataAdapter = Fixture.EdmModel.GetDataAdapter(Fixture.EdmModel.EntityContainer);
-            String request = $"Orders({orderId})/{dataAdapter.DataContextType.Namespace}.BoundFunctionSingle(customerNames=['Natasha','Ivan','Sasha'])";
+            String request = $"Customers('RU',1)/{dataAdapter.DataContextType.Namespace}.BoundFunctionSingle(orderNames=['Order 1','Order 2'])?$expand=Customer,Items&$select=Name";
 
             ODataUri odataUri = Fixture.ParseUri(request);
             IEdmModel edmModel = Fixture.EdmModel.GetEdmModel(odataUri.Path);
@@ -62,7 +57,7 @@ namespace OdataToEntity.Test
             response.Position = 0;
 
             List<Object> fromOe = new ResponseReader(edmModel).Read(response).Cast<Object>().ToList();
-            Assert.Equal(expectedResult, fromOe.Select(i => (int)((dynamic)i).Id).OrderBy(id => id));
+            Assert.Equal(expectedResult, fromOe.SelectMany(c => (IEnumerable<dynamic>)((dynamic)c).Items).Select(i => (int)i.Id).OrderBy(id => id));
         }
         [Fact]
         internal async Task CountExpandNested()

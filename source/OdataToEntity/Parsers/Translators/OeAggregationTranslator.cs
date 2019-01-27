@@ -308,7 +308,8 @@ namespace OdataToEntity.Parsers.Translators
                 accessors = OePropertyAccessor.CreateFromTuple(clrType, _aggProperties, groupIndex);
             }
 
-            return OeEntryFactory.CreateEntryFactory(entitySet, accessors);
+            Type clrEntityType = _visitor.EdmModel.GetClrType(entitySet);
+            return OeEntryFactory.CreateEntryFactory(clrEntityType, entitySet, accessors);
         }
         private OeQueryNodeVisitor CreateVisitor(ParameterExpression parameter)
         {

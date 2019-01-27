@@ -77,14 +77,14 @@ namespace OdataToEntity.Linq2Db
         {
             return GetOperationCaseSensitivityName(operationName, null);
         }
-        protected override OeOperationConfiguration GetOperationConfiguration(MethodInfo methodInfo)
+        protected override IReadOnlyList<OeOperationConfiguration> GetOperationConfigurations(MethodInfo methodInfo)
         {
             var dbFunction = (Sql.FunctionAttribute)methodInfo.GetCustomAttribute(typeof(Sql.FunctionAttribute));
             if (dbFunction == null)
-                return base.GetOperationConfiguration(methodInfo);
+                return base.GetOperationConfigurations(methodInfo);
 
             String functionName = String.IsNullOrEmpty(dbFunction.Configuration) ? dbFunction.Name : dbFunction.Configuration + "." + dbFunction.Name;
-            return new OeOperationConfiguration(functionName, methodInfo, true);
+            return new[] { new OeOperationConfiguration(functionName, methodInfo, true) };
         }
     }
 }

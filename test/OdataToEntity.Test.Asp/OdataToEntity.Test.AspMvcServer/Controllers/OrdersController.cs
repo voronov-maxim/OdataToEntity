@@ -20,20 +20,6 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
             _httpContextAccessor = httpContextAccessor;
         }
 
-        [HttpGet("OdataToEntity.Test.Model.BoundFunctionCollection(customerNames={customerNames})")]
-        public ODataResult<Model.OrderItem> BoundFunctionCollection(String customerNames)
-        {
-            var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
-            IAsyncEnumerable<Model.OrderItem> orderItems = parser.ExecuteReader<Model.OrderItem>();
-            return parser.OData(orderItems);
-        }
-        [HttpGet("{id}/OdataToEntity.Test.Model.BoundFunctionSingle(customerNames={customerNames})")]
-        public ODataResult<Model.OrderItem> BoundFunctionSingle(int id, String customerNames)
-        {
-            var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
-            IAsyncEnumerable<Model.OrderItem> orderItems = parser.ExecuteReader<Model.OrderItem>();
-            return parser.OData(orderItems);
-        }
         [HttpDelete]
         public void Delete(OeDataContext dataContext, Model.Order order)
         {

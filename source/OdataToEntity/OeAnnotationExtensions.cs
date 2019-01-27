@@ -22,6 +22,12 @@ namespace OdataToEntity
 
             throw new InvalidOperationException("Add type annotation for " + edmType.FullTypeName());
         }
+        public static Type GetClrType(this IEdmModel edmModel, IEdmEntitySetBase entitySet)
+        {
+            IEdmEntityType entityType = entitySet.EntityType();
+            OeValueAnnotation<Type> clrTypeAnnotation = edmModel.GetAnnotationValue<OeValueAnnotation<Type>>(entityType);
+            return clrTypeAnnotation.Value;
+        }
         public static Db.OeDataAdapter GetDataAdapter(this IEdmModel edmModel, Type dataContextType)
         {
             Db.OeDataAdapter dataAdapter = edmModel.GetAnnotationValue<Db.OeDataAdapter>(edmModel.EntityContainer);

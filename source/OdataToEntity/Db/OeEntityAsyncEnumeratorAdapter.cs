@@ -54,16 +54,25 @@ namespace OdataToEntity.Db
         private readonly OeQueryContext _queryContext;
 
         public OeEntityAsyncEnumeratorAdapter(OeAsyncEnumerator asyncEnumerator, OeQueryContext queryContext)
+            : this(asyncEnumerator, queryContext.EntryFactory, queryContext)
+        {
+        }
+        public OeEntityAsyncEnumeratorAdapter(OeAsyncEnumerator asyncEnumerator, OeEntryFactory entryFactory)
+            : this(asyncEnumerator, entryFactory, null)
+        {
+
+        }
+        private OeEntityAsyncEnumeratorAdapter(OeAsyncEnumerator asyncEnumerator, OeEntryFactory entryFactory, OeQueryContext queryContext)
             : base(asyncEnumerator.CancellationToken)
         {
             _asyncEnumerator = asyncEnumerator;
-            _dbEnumerator = new OeDbEnumerator(asyncEnumerator, queryContext.EntryFactory);
+            _dbEnumerator = new OeDbEnumerator(asyncEnumerator, entryFactory);
             _queryContext = queryContext;
             _isFirstMoveNext = true;
             base.Count = asyncEnumerator.Count;
         }
 
-        private static async Task<Object> CreateEntity(OeDbEnumerator dbEnumerator, Object value, Object entity, Type entityType)
+        private static async Task<Object> CreateEntity(IOeDbEnumerator dbEnumerator, Object value, Object entity, Type entityType)
         {
             if (OeExpressionHelper.IsTupleType(entity.GetType()))
             {
@@ -87,7 +96,7 @@ namespace OdataToEntity.Db
             }
             return entity;
         }
-        private static async Task<Object> CreateNestedEntity(OeDbEnumerator dbEnumerator, Object value, Type nestedEntityType)
+        private static async Task<Object> CreateNestedEntity(IOeDbEnumerator dbEnumerator, Object value, Type nestedEntityType)
         {
             Object entity = dbEnumerator.Current;
             if (entity == null)
@@ -139,13 +148,13 @@ namespace OdataToEntity.Db
             Object buffer = _dbEnumerator.ClearBuffer();
 
             _isMoveNext = await _dbEnumerator.MoveNextAsync().ConfigureAwait(false);
-            if (!_isMoveNext && _queryContext.SkipTokenNameValues != null && _queryContext.SkipTokenAccessors != null)
+            if (!_isMoveNext && _queryContext != null && _queryContext.SkipTokenNameValues != null && _queryContext.SkipTokenAccessors != null)
                 SetOrderByProperties(_queryContext, entity, buffer);
 
             _current = entity;
             return true;
         }
-        private static async Task SetNavigationProperty(OeDbEnumerator dbEnumerator, Object value, Object entity)
+        private static async Task SetNavigationProperty(IOeDbEnumerator dbEnumerator, Object value, Object entity)
         {
             PropertyInfo propertyInfo = entity.GetType().GetProperty(dbEnumerator.EntryFactory.ResourceInfo.Name);
             Type nestedEntityType = OeExpressionHelper.GetCollectionItemType(propertyInfo.PropertyType);

@@ -66,7 +66,10 @@ namespace OdataToEntity.GraphQL
 
             Dictionary<String, Object> dictionary = CreateEntity(entity, dbEnumerator.EntryFactory.Accessors);
             foreach (OeEntryFactory navigationLink in dbEnumerator.EntryFactory.NavigationLinks)
-                await SetNavigationProperty(dbEnumerator.CreateChild(navigationLink), value, dictionary).ConfigureAwait(false);
+            {
+                var childDbEnumerator = (Db.OeDbEnumerator)dbEnumerator.CreateChild(navigationLink);
+                await SetNavigationProperty(childDbEnumerator, value, dictionary).ConfigureAwait(false);
+            }
 
             return dictionary;
         }
@@ -132,8 +135,7 @@ namespace OdataToEntity.GraphQL
         }
         private static void SetOrderByProperties(OeQueryContext queryContext, Dictionary<String, Object> entity, Object value)
         {
-            Type clrEntityType = queryContext.EdmModel.GetClrType(queryContext.EntryFactory.EntityType);
-            var visitor = new OeQueryNodeVisitor(queryContext.EdmModel, Expression.Parameter(clrEntityType));
+            var visitor = new OeQueryNodeVisitor(queryContext.EdmModel, Expression.Parameter(queryContext.EntryFactory.ClrEntityType));
             var setPropertyValueVisitor = new SetPropertyValueVisitor();
 
             int i = 0;

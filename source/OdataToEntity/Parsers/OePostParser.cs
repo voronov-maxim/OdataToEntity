@@ -28,13 +28,13 @@ namespace OdataToEntity.Parsers
             if (entitySet == null)
                 return null;
 
-            Type clrType = _edmModel.GetClrType(entitySet.EntityType());
-            OePropertyAccessor[] accessors = OePropertyAccessor.CreateFromType(clrType, entitySet);
+            Type clrEntityType = _edmModel.GetClrType(entitySet);
+            OePropertyAccessor[] accessors = OePropertyAccessor.CreateFromType(clrEntityType, entitySet);
 
             Db.OeEntitySetAdapter entitySetAdapter = _dataAdapter.EntitySetAdapters.Find(entitySet);
             return new OeQueryContext(_edmModel, odataUri, null, false, 0, false, metadataLevel, entitySetAdapter)
             {
-                EntryFactory = OeEntryFactory.CreateEntryFactory(entitySet, accessors),
+                EntryFactory = OeEntryFactory.CreateEntryFactory(clrEntityType, entitySet, accessors),
             };
         }
         public async Task ExecuteAsync(ODataUri odataUri, Stream requestStream, OeRequestHeaders headers, Stream responseStream, CancellationToken cancellationToken)

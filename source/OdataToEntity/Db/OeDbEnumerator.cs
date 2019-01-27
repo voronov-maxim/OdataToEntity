@@ -5,7 +5,17 @@ using System.Threading.Tasks;
 
 namespace OdataToEntity.Db
 {
-    public sealed class OeDbEnumerator
+    public interface IOeDbEnumerator
+    {
+        Object ClearBuffer();
+        IOeDbEnumerator CreateChild(OeEntryFactory entryFactory);
+        Task<bool> MoveNextAsync();
+
+        Object Current { get; }
+        OeEntryFactory EntryFactory { get; }
+    }
+
+    public sealed class OeDbEnumerator : IOeDbEnumerator
     {
         private sealed class DataContext
         {
@@ -74,7 +84,7 @@ namespace OdataToEntity.Db
 
             return lastValue;
         }
-        public OeDbEnumerator CreateChild(OeEntryFactory entryFactory)
+        public IOeDbEnumerator CreateChild(OeEntryFactory entryFactory)
         {
             return Context.GetFromPool(this, entryFactory);
         }

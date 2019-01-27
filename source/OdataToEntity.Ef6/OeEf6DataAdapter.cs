@@ -187,7 +187,7 @@ namespace OdataToEntity.Ef6
             else
             {
                 expression = queryContext.CreateExpression(new OeConstantToVariableVisitor());
-                expression = new EnumerableToQuerableVisitor().Visit(expression);
+                expression = new OeEf6EnumerableToQuerableVisitor().Visit(expression);
                 expression = queryContext.TranslateSource(dataContext, expression);
 
                 if (queryContext.ODataUri.QueryCount.GetValueOrDefault())
@@ -202,7 +202,7 @@ namespace OdataToEntity.Ef6
                 asyncEnumerator.Count = query.Provider.Execute<int>(countExpression);
             }
 
-            return base.OperationAdapter.ApplyBoundFunction(asyncEnumerator, queryContext);
+            return asyncEnumerator;
         }
         public override TResult ExecuteScalar<TResult>(Object dataContext, OeQueryContext queryContext)
         {
@@ -227,7 +227,7 @@ namespace OdataToEntity.Ef6
             {
                 var parameterVisitor = new OeConstantToParameterVisitor();
                 expression = queryContext.CreateExpression(parameterVisitor);
-                expression = new EnumerableToQuerableVisitor().Visit(expression);
+                expression = new OeEf6EnumerableToQuerableVisitor().Visit(expression);
 
                 countExpression = OeQueryContext.CreateCountExpression(expression);
                 queryCache.AddQuery(queryContext.CreateCacheContext(parameterVisitor.ConstantToParameterMapper), expression, countExpression,

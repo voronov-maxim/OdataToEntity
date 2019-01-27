@@ -120,7 +120,7 @@ namespace OdataToEntity.AspNetCore
                     {
                         ActionDescriptor actionDescriptor = actionDescriptors[i];
                         if (actionDescriptor.AttributeRouteInfo != null
-                            && path.IndexOf(actionDescriptor.AttributeRouteInfo.Template) == 1
+                            && path.IndexOf(actionDescriptor.AttributeRouteInfo.Template, StringComparison.OrdinalIgnoreCase) == 1
                             && path[actionDescriptor.AttributeRouteInfo.Template.Length + 1] == '/'
                             && ActionConstaint(actionDescriptor, httpMethod))
                         {

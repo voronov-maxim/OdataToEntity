@@ -24,46 +24,6 @@ namespace OdataToEntity.Db
             _dataContextType = dataContextType;
         }
 
-        public OeAsyncEnumerator ApplyBoundFunction(OeAsyncEnumerator asyncEnumerator, OeQueryContext queryContext)
-        {
-            if (queryContext.ODataUri.Path.LastSegment is OperationSegment operationSegment)
-            {
-                var edmFunction = (IEdmFunction)operationSegment.Operations.First();
-                MethodInfo methodInfo = queryContext.EdmModel.GetMethodInfo(edmFunction);
-
-                IReadOnlyList<KeyValuePair<String, Object>> parameterList = OeOperationHelper.GetParameters(
-                    queryContext.EdmModel, operationSegment, queryContext.ODataUri.ParameterAliasNodes);
-
-                Object boundParameter;
-                Type boundParameterType = methodInfo.GetParameters()[1].ParameterType;
-                if (boundParameterType.IsGenericType && boundParameterType.GetGenericTypeDefinition() == typeof(IAsyncEnumerator<>))
-                {
-                    boundParameterType = boundParameterType.GetGenericArguments()[0];
-                    Type asyncEnumeratorAdapterType = typeof(OeAsyncEnumeratorAdapter<>).MakeGenericType(boundParameterType);
-                    ConstructorInfo ctor = asyncEnumeratorAdapterType.GetConstructor(new[] { typeof(OeAsyncEnumerator) });
-                    boundParameter = ctor.Invoke(new Object[] { asyncEnumerator });
-                }
-                else
-                {
-                    boundParameter = asyncEnumerator.MoveNextAsync().GetAwaiter().GetResult() ? asyncEnumerator.Current : null;
-                    asyncEnumerator.Dispose();
-                }
-
-                var parameters = new Object[parameterList.Count + 2];
-                parameters[0] = queryContext.EdmModel;
-                parameters[1] = boundParameter;
-                for (int i = 2; i < parameters.Length; i++)
-                    parameters[i] = parameterList[i - 2].Value;
-
-                Object result = methodInfo.Invoke(null, parameters);
-                if (result is IEnumerable enumerable)
-                    return new OeAsyncEnumeratorAdapter(enumerable, asyncEnumerator.CancellationToken);
-                else
-                    return new OeScalarAsyncEnumeratorAdapter(Task.FromResult(result), CancellationToken.None);
-            }
-
-            return asyncEnumerator;
-        }
         public virtual OeAsyncEnumerator ExecuteFunctionNonQuery(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters)
         {
             String sql = GetSql(dataContext, parameters);
@@ -74,7 +34,7 @@ namespace OdataToEntity.Db
         {
             String sql = GetSql(dataContext, parameters);
             String functionName = GetOperationCaseSensitivityName(operationName, GetDefaultSchema(dataContext));
-            String selectSql = (Parsers.OeExpressionHelper.GetCollectionItemType(returnType) == null ? "select " : "select * from ") + functionName + sql.ToString();
+            String selectSql = (OeExpressionHelper.GetCollectionItemType(returnType) == null ? "select " : "select * from ") + functionName + sql.ToString();
             return ExecutePrimitive(dataContext, selectSql, parameters, returnType);
         }
         public virtual OeAsyncEnumerator ExecuteFunctionReader(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters, OeEntitySetAdapter entitySetAdapter)
@@ -142,10 +102,24 @@ namespace OdataToEntity.Db
 
             return _operations;
         }
-        protected virtual OeOperationConfiguration GetOperationConfiguration(MethodInfo methodInfo)
+        protected virtual IReadOnlyList<OeOperationConfiguration> GetOperationConfigurations(MethodInfo methodInfo)
         {
             var description = (DescriptionAttribute)methodInfo.GetCustomAttribute(typeof(DescriptionAttribute));
-            return description == null ? null : new OeOperationConfiguration(description.Description, methodInfo, null);
+            if (description == null)
+            {
+                var boundFunction = (OeBoundFunctionAttribute)methodInfo.GetCustomAttribute(typeof(OeBoundFunctionAttribute));
+                if (boundFunction == null)
+                    return null;
+
+                var operations = new List<OeOperationConfiguration>(2);
+                if (boundFunction.CollectionFunctionName != null)
+                    operations.Add(new OeOperationConfiguration(boundFunction.CollectionFunctionName, methodInfo, true, true));
+                if (boundFunction.SingleFunctionName != null)
+                    operations.Add(new OeOperationConfiguration(boundFunction.SingleFunctionName, methodInfo, true, false));
+                return operations;
+            }
+
+            return new[] { new OeOperationConfiguration(description.Description, methodInfo, null) };
         }
         protected virtual IReadOnlyList<OeOperationConfiguration> GetOperationsCore(Type dataContextType)
         {
@@ -153,9 +127,9 @@ namespace OdataToEntity.Db
             var operations = new List<OeOperationConfiguration>(methodInfos.Count);
             for (int i = 0; i < methodInfos.Count; i++)
             {
-                OeOperationConfiguration operationConfiguration = GetOperationConfiguration(methodInfos[i]);
+                IReadOnlyList<OeOperationConfiguration> operationConfiguration = GetOperationConfigurations(methodInfos[i]);
                 if (operationConfiguration != null)
-                    operations.Add(operationConfiguration);
+                    operations.AddRange(operationConfiguration);
             }
             return operations;
         }

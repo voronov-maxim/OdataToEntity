@@ -27,6 +27,8 @@ namespace OdataToEntity.Test.AspClient
 
         static void Main(String[] args)
         {
+            System.Threading.Thread.Sleep(1000);
+
             DbFixtureInitDb.ContainerFactory = CreateContainer;
 
             DbFixtureInitDb.RunTest(new BatchTest()).GetAwaiter().GetResult();

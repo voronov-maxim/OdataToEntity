@@ -1,5 +1,4 @@
-﻿using Microsoft.OData.Edm;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
 
@@ -7,56 +6,59 @@ namespace OdataToEntity.ModelBuilder
 {
     public sealed class OeOperationConfiguration
     {
-        private readonly bool _isBound;
-        private readonly List<OeOperationParameterConfiguration> _parameters;
-
         public OeOperationConfiguration(String name, MethodInfo methodInfo, bool? isDbFunction)
         {
             MethodInfo = methodInfo;
-            _parameters = GetParameters(methodInfo, out _isBound);
+            Parameters = GetParameters(methodInfo);
 
             bool parentheses = name.EndsWith("()");
             ImportName = parentheses ? name.Substring(0, name.Length - 2) : name;
             IsDbFunction = isDbFunction ?? parentheses;
+            Name = methodInfo.Name;
         }
 
-        private static List<OeOperationParameterConfiguration> GetParameters(MethodInfo methodInfo, out bool isBound)
+        public OeOperationConfiguration(String name, MethodInfo methodInfo, bool isBound, bool isCollection)
         {
-            isBound = false;
+            MethodInfo = methodInfo;
+            Parameters = GetBoundParameters(methodInfo, isCollection);
 
+            IsBound = isBound;
+            Name = name;
+        }
+        private static OeOperationParameterConfiguration[] GetBoundParameters(MethodInfo methodInfo, bool isCollection)
+        {
             ParameterInfo[] parameterInfos = methodInfo.GetParameters();
-            var parameters = new List<OeOperationParameterConfiguration>(parameterInfos.Length);
-            for (int i = 0; i < parameterInfos.Length; i++)
-                if (i == 0 && parameterInfos[0].ParameterType == typeof(IEdmModel))
-                {
-                    bool isCollection;
-                    Type entityType = parameterInfos[1].ParameterType;
-                    if (isCollection = entityType.IsGenericType && entityType.GetGenericTypeDefinition() == typeof(IAsyncEnumerator<>))
-                        entityType = entityType.GetGenericArguments()[0];
+            Type boundParameterType = parameterInfos[0].ParameterType;
+            if (!(boundParameterType.IsGenericType && typeof(Db.OeBoundFunctionParameter).IsAssignableFrom(boundParameterType)))
+                throw new InvalidOperationException("First parameter in bound function must be OeBoundFunctionParameter<,>");
 
-                    if (!Parsers.OeExpressionHelper.IsEntityType(entityType))
-                        throw new InvalidOperationException("Second parameter in function " + methodInfo.Name + " must be entity or IAsyncEnumerable<entity>");
+            var parameters = new OeOperationParameterConfiguration[parameterInfos.Length];
 
-                    isBound = true;
-                    Type parameterType = isCollection ? typeof(IEnumerable<>).MakeGenericType(entityType) : entityType;
-                    parameters.Add(new OeOperationParameterConfiguration(parameterInfos[i].Name, parameterType));
-
-                    i = 1;
-                }
-                else
-                    parameters.Add(new OeOperationParameterConfiguration(parameterInfos[i].Name, parameterInfos[i].ParameterType));
+            Type entityType = boundParameterType.GetGenericArguments()[0];
+            Type parameterType = isCollection ? typeof(IEnumerable<>).MakeGenericType(entityType) : entityType;
+            parameters[0] = new OeOperationParameterConfiguration(parameterInfos[0].Name, parameterType);
+            for (int i = 1; i < parameterInfos.Length; i++)
+                parameters[i] = new OeOperationParameterConfiguration(parameterInfos[i].Name, parameterInfos[i].ParameterType);
 
             return parameters;
         }
+        private static OeOperationParameterConfiguration[] GetParameters(MethodInfo methodInfo)
+        {
+            ParameterInfo[] parameterInfos = methodInfo.GetParameters();
+            var parameters = new OeOperationParameterConfiguration[parameterInfos.Length];
+            for (int i = 0; i < parameterInfos.Length; i++)
+                parameters[i] = new OeOperationParameterConfiguration(parameterInfos[i].Name, parameterInfos[i].ParameterType);
+            return parameters;
+        }
 
-        public bool IsBound => _isBound;
+        public bool IsBound { get; }
         public bool IsDbFunction { get; }
         public bool IsEdmFunction => ReturnType != null && ReturnType != typeof(void);
         public MethodInfo MethodInfo { get; }
-        public String Name => MethodInfo.Name;
+        public String Name { get; }
         public String ImportName { get; }
         public String NamespaceName => MethodInfo.DeclaringType.Namespace;
-        public IReadOnlyList<OeOperationParameterConfiguration> Parameters => _parameters;
+        public OeOperationParameterConfiguration[] Parameters { get; }
         public Type ReturnType => MethodInfo.ReturnType;
     }
 

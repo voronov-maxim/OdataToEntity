@@ -12,7 +12,7 @@ namespace OdataToEntity.Test.EfCore.SqlServer
         static void Main(string[] args)
         {
             //PerformanceCacheTest.RunTest(100);
-            //new AC_RDBNull(new AC_RDBNull_DbFixtureInitDb()).SelectName(1).GetAwaiter().GetResult();
+            new AC_RDBNull(new AC_RDBNull_DbFixtureInitDb()).BoundFunctionSingle().GetAwaiter().GetResult();
         }
     }
 }

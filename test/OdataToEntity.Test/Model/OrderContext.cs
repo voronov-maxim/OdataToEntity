@@ -23,38 +23,18 @@ namespace OdataToEntity.Test.Model
             base.OnModelCreating(modelBuilder);
         }
 
-        [Description("BoundFunctionCollection()")]
-        public static IEnumerable<OrderItem> BoundFunctionCollection(IEdmModel edmModel, IAsyncEnumerator<Order> orders, IEnumerable<String> customerNames)
+        [Db.OeBoundFunction(CollectionFunctionName = "BoundFunctionCollection", SingleFunctionName = "BoundFunctionSingle")]
+        public static IEnumerable<Order> BoundFunction(Db.OeBoundFunctionParameter<Customer, Order> boundParameter, IEnumerable<String> orderNames)
         {
-            var customerNameSet = new HashSet<String>(customerNames);
-            Db.OeDataAdapter dataAdapter = edmModel.GetDataAdapter(typeof(OrderContext));
-            var orderContext = (OrderContext)dataAdapter.CreateDataContext();
+            OrderContext orderContext = boundParameter.CreateDataContext<OrderContext>();
 
-            while (orders.MoveNext().GetAwaiter().GetResult())
-            {
-                Order order = orders.Current;
-                Customer customer = orderContext.Customers.Find(new Object[] { order.CustomerCountry, order.CustomerId });
-                if (customerNameSet.Contains(customer.Name))
-                    foreach (OrderItem orderItem in orderContext.OrderItems.Where(i => i.OrderId == order.Id))
-                        yield return orderItem;
-            }
+            IQueryable<Customer> customers = boundParameter.ApplyFilter(orderContext.Customers, orderContext);
+            IQueryable<Order> orders = customers.SelectMany(c => c.Orders).Where(o => orderNames.Contains(o.Name));
+            IQueryable result = boundParameter.ApplySelect(orders, orderContext);
+            List<Order> orderList = boundParameter.Materialize(result).ToList().GetAwaiter().GetResult();
 
-            orders.Dispose();
-            dataAdapter.CloseDataContext(orderContext);
-        }
-        [Description("BoundFunctionSingle()")]
-        public static IEnumerable<OrderItem> BoundFunctionSingle(IEdmModel edmModel, Order order, IEnumerable<String> customerNames)
-        {
-            var customerNameSet = new HashSet<String>(customerNames);
-            Db.OeDataAdapter dataAdapter = edmModel.GetDataAdapter(typeof(OrderContext));
-            var orderContext = (OrderContext)dataAdapter.CreateDataContext();
-
-            Customer customer = orderContext.Customers.Find(new Object[] { order.CustomerCountry, order.CustomerId });
-            if (customerNameSet.Contains(customer.Name))
-                foreach (OrderItem orderItem in orderContext.OrderItems.Where(i => i.OrderId == order.Id))
-                    yield return orderItem;
-
-            dataAdapter.CloseDataContext(orderContext);
+            boundParameter.CloseDataContext(orderContext);
+            return orderList;
         }
         public static String GenerateDatabaseName() => Guid.NewGuid().ToString();
         [Description("dbo.GetOrders")]

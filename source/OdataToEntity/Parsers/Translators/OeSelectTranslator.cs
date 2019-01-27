@@ -220,9 +220,9 @@ namespace OdataToEntity.Parsers.Translators
         }
         public OeEntryFactory CreateEntryFactory(IEdmEntitySet entitySet, Type clrType)
         {
-            return CreateEntryFactory(_navigationItem, clrType);
+            return CreateEntryFactory(_visitor.EdmModel, _navigationItem, clrType);
         }
-        private static OeEntryFactory CreateEntryFactory(OeSelectItem root, Type clrType)
+        private static OeEntryFactory CreateEntryFactory(IEdmModel edmModel, OeSelectItem root, Type clrType)
         {
             ParameterExpression parameter = Expression.Parameter(typeof(Object));
             UnaryExpression typedParameter = Expression.Convert(parameter, clrType);
@@ -231,16 +231,18 @@ namespace OdataToEntity.Parsers.Translators
             {
                 List<OeSelectItem> navigationItems = FlattenNavigationItems(root, false);
                 IReadOnlyList<MemberExpression> navigationProperties = OeExpressionHelper.GetPropertyExpressions(typedParameter);
+
                 for (int i = navigationItems.Count - 1; i >= 0; i--)
                 {
                     OeSelectItem navigationItem = navigationItems[i];
                     OeEntryFactory[] nestedNavigationLinks = GetNestedNavigationLinks(navigationItem);
 
                     OeEntryFactory entryFactory;
+                    Type clrEntityType = edmModel.GetClrType(navigationItem.EntitySet);
                     OePropertyAccessor[] accessors = GetAccessors(navigationProperties[i].Type, navigationItem.EntitySet, navigationItem.SelectItems);
-                    Func<Object, Object> linkAccessor = (Func<Object, Object>)Expression.Lambda(navigationProperties[i], parameter).Compile();
+                    LambdaExpression linkAccessor = Expression.Lambda(navigationProperties[i], parameter);
                     if (i == 0)
-                        entryFactory = OeEntryFactory.CreateEntryFactoryParent(navigationItem.EntitySet, accessors, nestedNavigationLinks, linkAccessor);
+                        entryFactory = OeEntryFactory.CreateEntryFactoryParent(clrEntityType, navigationItem.EntitySet, accessors, nestedNavigationLinks, linkAccessor);
                     else
                     {
                         var resourceInfo = new ODataNestedResourceInfo()
@@ -248,7 +250,7 @@ namespace OdataToEntity.Parsers.Translators
                             IsCollection = navigationItem.EdmProperty.Type.Definition is EdmCollectionType,
                             Name = navigationItem.EdmProperty.Name
                         };
-                        entryFactory = OeEntryFactory.CreateEntryFactoryNested(navigationItem.EntitySet, accessors, resourceInfo, nestedNavigationLinks, linkAccessor);
+                        entryFactory = OeEntryFactory.CreateEntryFactoryNested(clrEntityType, navigationItem.EntitySet, accessors, nestedNavigationLinks, linkAccessor, resourceInfo);
                         entryFactory.CountOption = navigationItem.ExpandedNavigationSelectItem.CountOption;
                     }
                     navigationItem.EntryFactory = entryFactory;
@@ -270,7 +272,8 @@ namespace OdataToEntity.Parsers.Translators
                     }
                     accessors = accessorList.ToArray();
                 }
-                root.EntryFactory = OeEntryFactory.CreateEntryFactory(root.EntitySet, accessors);
+                Type clrEntityType = edmModel.GetClrType(root.EntitySet);
+                root.EntryFactory = OeEntryFactory.CreateEntryFactory(clrEntityType, root.EntitySet, accessors);
             }
 
             return root.EntryFactory;

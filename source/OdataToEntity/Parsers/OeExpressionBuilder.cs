@@ -172,7 +172,8 @@ namespace OdataToEntity.Parsers
                 return _entryFactoryFactory(entitySet, ParameterType);
 
             OePropertyAccessor[] accessors = OePropertyAccessor.CreateFromType(ParameterType, entitySet);
-            return OeEntryFactory.CreateEntryFactory(entitySet, accessors);
+            Type clrEntityType = Visitor.EdmModel.GetClrType(entitySet);
+            return OeEntryFactory.CreateEntryFactory(clrEntityType, entitySet, accessors);
         }
 
         public IReadOnlyDictionary<ConstantExpression, ConstantNode> Constants => Visitor.Constans;

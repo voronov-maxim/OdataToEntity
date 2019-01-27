@@ -41,8 +41,12 @@ namespace OdataToEntity.AspNetCore
         {
             var parser = new OeGetParser(refModel);
             _queryContext = parser.CreateQueryContext(odataUri, headers.MaxPageSize, headers.NavigationNextLink, headers.MetadataLevel);
+
+            if (odataUri.Path.LastSegment is OperationSegment)
+                return OeOperationHelper.ApplyBoundFunction(_queryContext);
+
             if (source != null)
-                _queryContext.QueryableSource = e => e.Name == _queryContext.EntryFactory.EntitySet.Name ? source : null;
+                _queryContext.QueryableSource = e => e == _queryContext.EntryFactory.EntitySet ? source : null;
 
             if (_queryContext.IsCountSegment)
             {

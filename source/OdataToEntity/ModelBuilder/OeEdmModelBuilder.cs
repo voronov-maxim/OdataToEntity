@@ -128,9 +128,10 @@ namespace OdataToEntity.ModelBuilder
                     if (edmFunction.IsBound)
                         edmModel.SetMethodInfo(edmFunction, operationConfiguration.MethodInfo);
                     else
+                    {
                         container.AddFunctionImport(operationConfiguration.ImportName, edmFunction, edmFunction.EntitySetPath);
-
-                    edmModel.SetIsDbFunction(edmFunction, operationConfiguration.IsDbFunction);
+                        edmModel.SetIsDbFunction(edmFunction, operationConfiguration.IsDbFunction);
+                    }
                 }
                 else
                 {

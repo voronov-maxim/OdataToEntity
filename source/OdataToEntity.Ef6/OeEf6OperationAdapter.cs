@@ -48,17 +48,17 @@ namespace OdataToEntity.Ef6
             return dummyCommandBuilder.GetDbParameterName(parameterOrder);
         }
         protected override String GetDefaultSchema(Object dataContext) => null;
-        protected override OeOperationConfiguration GetOperationConfiguration(MethodInfo methodInfo)
+        protected override IReadOnlyList<OeOperationConfiguration> GetOperationConfigurations(MethodInfo methodInfo)
         {
             var dbFunction = (DbFunctionAttribute)methodInfo.GetCustomAttribute(typeof(DbFunctionAttribute));
             if (dbFunction == null)
-                return base.GetOperationConfiguration(methodInfo);
+                return base.GetOperationConfigurations(methodInfo);
 
             String functionName = dbFunction.FunctionName ?? methodInfo.Name;
             if (!String.IsNullOrEmpty(dbFunction.NamespaceName) && dbFunction.NamespaceName != ".")
                 functionName = dbFunction.NamespaceName + "." + functionName;
 
-            return new OeOperationConfiguration(functionName, methodInfo, true);
+            return new[] { new OeOperationConfiguration(functionName, methodInfo, true) };
         }
         protected override String[] GetParameterNames(Object dataContext, IReadOnlyList<KeyValuePair<String, Object>> parameters)
         {

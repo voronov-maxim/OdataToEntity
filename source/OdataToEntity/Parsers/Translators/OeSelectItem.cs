@@ -25,7 +25,7 @@ namespace OdataToEntity.Parsers.Translators
             EdmProperty = edmProperty;
             SkipToken = skipToken;
         }
-        public OeSelectItem(OeSelectItem parent, ExpandedNavigationSelectItem expandedNavigationSelectItem, bool skipToken) : this()
+        public OeSelectItem(IEdmModel edmModel, OeSelectItem parent, ExpandedNavigationSelectItem expandedNavigationSelectItem, bool skipToken) : this()
         {
             var segment = (NavigationPropertySegment)expandedNavigationSelectItem.PathToNavigationProperty.LastSegment;
 
@@ -33,7 +33,7 @@ namespace OdataToEntity.Parsers.Translators
             segments.AddRange(expandedNavigationSelectItem.PathToNavigationProperty);
 
             EdmProperty = segment.NavigationProperty;
-            EntitySet = (IEdmEntitySetBase)expandedNavigationSelectItem.NavigationSource;
+            EntitySet = (IEdmEntitySetBase)expandedNavigationSelectItem.NavigationSource ?? OeEdmClrHelper.GetEntitySet(edmModel, segment.NavigationProperty);
             ExpandedNavigationSelectItem = expandedNavigationSelectItem;
             Parent = parent;
             Path = new ODataPath(segments);

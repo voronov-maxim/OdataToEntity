@@ -16,6 +16,20 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
             _httpContextAccessor = httpContextAccessor;
         }
 
+        [HttpGet("OdataToEntity.Test.Model.BoundFunctionCollection(orderNames={orderNames})", Order = 1)]
+        public ODataResult<Model.Order> BoundFunctionCollection(String orderNames)
+        {
+            var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
+            IAsyncEnumerable<Model.Order> orders = parser.ExecuteReader<Model.Order>();
+            return parser.OData(orders);
+        }
+        [HttpGet("{country},{id}/OdataToEntity.Test.Model.BoundFunctionSingle(orderNames={orderNames})")]
+        public ODataResult<Model.Order> BoundFunctionSingle(String country, String id, String orderNames)
+        {
+            var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
+            IAsyncEnumerable<Model.Order> orders = parser.ExecuteReader<Model.Order>();
+            return parser.OData(orders);
+        }
         [HttpDelete]
         public void Delete(OeDataContext dataContext, Model.Customer customer)
         {
@@ -28,7 +42,7 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
             IAsyncEnumerable<Model.Customer> customers = parser.ExecuteReader<Model.Customer>();
             return parser.OData(customers);
         }
-        [HttpGet("{country},{id}")]
+        [HttpGet("{country},{id}", Order = 2)]
         public ODataResult<Model.Customer> Get(String country, String id)
         {
             var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);

@@ -25,38 +25,41 @@ namespace OdataToEntity.Parsers
         private readonly OePropertyAccessor[] _allAccessors;
         private readonly String _typeName;
 
-        private OeEntryFactory(IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors)
+        private OeEntryFactory(Type clrEntityType, IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors)
         {
             Array.Sort(accessors, AccessorByNameComparer.Instance);
+            ClrEntityType = clrEntityType;
             EntitySet = entitySet;
             _allAccessors = accessors;
             Accessors = GetAccessorsWithoutSkiptoken(accessors);
 
-            EntityType = entitySet.EntityType();
+            EdmEntityType = entitySet.EntityType();
             NavigationLinks = Array.Empty<OeEntryFactory>();
-            _typeName = EntityType.FullName();
+            _typeName = EdmEntityType.FullName();
         }
-        private OeEntryFactory(IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors,
-            IReadOnlyList<OeEntryFactory> navigationLinks, Func<Object, Object> linkAccessor)
-            : this(entitySet, accessors)
+        private OeEntryFactory(Type clrEntityType, IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors,
+            IReadOnlyList<OeEntryFactory> navigationLinks, LambdaExpression linkAccessor)
+            : this(clrEntityType, entitySet, accessors)
         {
             NavigationLinks = navigationLinks ?? Array.Empty<OeEntryFactory>();
-            LinkAccessor = linkAccessor;
+            LinkAccessor = linkAccessor == null ? null : (Func<Object, Object>)linkAccessor.Compile();
             EqualityComparer = new Infrastructure.OeEntryEqualityComparer(GetKeyExpressions(entitySet, accessors));
+            IsTuple = GetIsTuple(linkAccessor);
         }
-        private OeEntryFactory(IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors, ODataNestedResourceInfo resourceInfo)
-            : this(entitySet, accessors)
+        private OeEntryFactory(Type clrEntityType, IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors, ODataNestedResourceInfo resourceInfo)
+            : this(clrEntityType, entitySet, accessors)
         {
             ResourceInfo = resourceInfo;
         }
-        private OeEntryFactory(IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors, ODataNestedResourceInfo resourceInfo,
-            IReadOnlyList<OeEntryFactory> navigationLinks, Func<Object, Object> linkAccessor)
-            : this(entitySet, accessors)
+        private OeEntryFactory(Type clrEntityType, IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors,
+            IReadOnlyList<OeEntryFactory> navigationLinks, LambdaExpression linkAccessor, ODataNestedResourceInfo resourceInfo)
+            : this(clrEntityType, entitySet, accessors)
         {
-            ResourceInfo = resourceInfo;
             NavigationLinks = navigationLinks ?? Array.Empty<OeEntryFactory>();
-            LinkAccessor = linkAccessor;
+            LinkAccessor = linkAccessor == null ? null : (Func<Object, Object>)linkAccessor.Compile();
             EqualityComparer = new Infrastructure.OeEntryEqualityComparer(GetKeyExpressions(entitySet, accessors));
+            ResourceInfo = resourceInfo;
+            IsTuple = GetIsTuple(linkAccessor);
         }
 
         public ODataResource CreateEntry(Object entity)
@@ -76,19 +79,57 @@ namespace OdataToEntity.Parsers
                 Properties = odataProperties
             };
         }
-        public static OeEntryFactory CreateEntryFactory(IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors)
+        public static OeEntryFactory CreateEntryFactory(Type clrEntityType, IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors)
         {
-            return new OeEntryFactory(entitySet, accessors);
+            return new OeEntryFactory(clrEntityType, entitySet, accessors);
         }
-        public static OeEntryFactory CreateEntryFactoryParent(IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors,
-            IReadOnlyList<OeEntryFactory> navigationLinks, Func<Object, Object> linkAccessor)
+        public static OeEntryFactory CreateEntryFactoryParent(Type clrEntityType, IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors,
+            IReadOnlyList<OeEntryFactory> navigationLinks, LambdaExpression linkAccessor)
         {
-            return new OeEntryFactory(entitySet, accessors, navigationLinks, linkAccessor);
+            return new OeEntryFactory(clrEntityType, entitySet, accessors, navigationLinks, linkAccessor);
         }
-        public static OeEntryFactory CreateEntryFactoryNested(IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors, ODataNestedResourceInfo resourceInfo,
-            IReadOnlyList<OeEntryFactory> navigationLinks, Func<Object, Object> linkAccessor)
+        public static OeEntryFactory CreateEntryFactoryNested(Type clrEntityType, IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors,
+            IReadOnlyList<OeEntryFactory> navigationLinks, LambdaExpression linkAccessor, ODataNestedResourceInfo resourceInfo)
         {
-            return new OeEntryFactory(entitySet, accessors, resourceInfo, navigationLinks, linkAccessor);
+            return new OeEntryFactory(clrEntityType, entitySet, accessors, navigationLinks, linkAccessor, resourceInfo);
+        }
+        public OeEntryFactory CreateEntryFactoryFromTuple()
+        {
+            return CreateEntryFactoryFromTuple(null);
+        }
+        private OeEntryFactory CreateEntryFactoryFromTuple(OeEntryFactory parentEntryFactory)
+        {
+            OePropertyAccessor[] accessors = _allAccessors;
+            if (IsTuple)
+            {
+                accessors = new OePropertyAccessor[_allAccessors.Length];
+                OePropertyAccessor[] propertyAccessors = OePropertyAccessor.CreateFromType(ClrEntityType, EntitySet);
+                for (int i = 0; i < accessors.Length; i++)
+                {
+                    OePropertyAccessor accessor = Array.Find(propertyAccessors, pa => pa.EdmProperty == _allAccessors[i].EdmProperty);
+                    if (Array.IndexOf(Accessors, _allAccessors[i]) == -1)
+                    {
+                        var convertExpression = (UnaryExpression)accessor.PropertyExpression.Expression;
+                        var parameterExpression = (ParameterExpression)convertExpression.Operand;
+                        accessor = OePropertyAccessor.CreatePropertyAccessor(accessor.EdmProperty, accessor.PropertyExpression, parameterExpression, true);
+                    }
+                    accessors[i] = accessor;
+                }
+            }
+
+            var navigationLinks = new OeEntryFactory[NavigationLinks.Count];
+            for (int i = 0; i < NavigationLinks.Count; i++)
+                navigationLinks[i] = NavigationLinks[i].CreateEntryFactoryFromTuple(this);
+
+            if (parentEntryFactory == null)
+                return OeEntryFactory.CreateEntryFactoryParent(ClrEntityType, EntitySet, accessors, navigationLinks, null);
+
+            ParameterExpression parameter = Expression.Parameter(typeof(Object));
+            UnaryExpression typedParameter = Expression.Convert(parameter, parentEntryFactory.ClrEntityType);
+            MemberExpression navigationPropertyExpression = Expression.Property(typedParameter, ResourceInfo.Name);
+            LambdaExpression linkAccessor = Expression.Lambda(navigationPropertyExpression, parameter);
+
+            return OeEntryFactory.CreateEntryFactoryNested(ClrEntityType, EntitySet, accessors, navigationLinks, linkAccessor, ResourceInfo);
         }
         public ref OePropertyAccessor GetAccessorByName(String propertyName)
         {
@@ -126,6 +167,13 @@ namespace OdataToEntity.Parsers
                     accessorsWithoutSkiptoken[index++] = accessors[i];
             return accessorsWithoutSkiptoken;
         }
+        private static bool GetIsTuple(LambdaExpression linkAccessor)
+        {
+            if (linkAccessor != null && ((MemberExpression)linkAccessor.Body).Expression is UnaryExpression unaryExpression)
+                return OeExpressionHelper.IsTupleType(unaryExpression.Type);
+
+            return false;
+        }
         private static List<MemberExpression> GetKeyExpressions(IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors)
         {
             var propertyExpressions = new List<MemberExpression>();
@@ -151,10 +199,12 @@ namespace OdataToEntity.Parsers
         }
 
         public OePropertyAccessor[] Accessors { get; }
+        public Type ClrEntityType { get; }
         public bool? CountOption { get; set; }
         public IEdmEntitySetBase EntitySet { get; }
-        public IEdmEntityType EntityType { get; }
+        public IEdmEntityType EdmEntityType { get; }
         public IEqualityComparer<Object> EqualityComparer { get; }
+        public bool IsTuple { get; }
         public Func<Object, Object> LinkAccessor { get; }
         public IReadOnlyList<OeEntryFactory> NavigationLinks { get; }
         public ODataNestedResourceInfo ResourceInfo { get; }

@@ -65,7 +65,7 @@ namespace OdataToEntity.Parsers.Translators
             OeSelectItem navigationItem = _navigationItem.FindChildrenNavigationItem(navigationProperty);
             if (navigationItem == null)
             {
-                navigationItem = new OeSelectItem(_navigationItem, item, _skipToken);
+                navigationItem = new OeSelectItem(_visitor.EdmModel, _navigationItem, item, _skipToken);
                 _navigationItem.AddNavigationItem(navigationItem);
 
                 Expression innerSource = GetInnerSource(navigationItem, item);

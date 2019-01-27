@@ -5,9 +5,9 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace OdataToEntity.Ef6
+namespace OdataToEntity.Parsers
 {
-    public sealed class EnumerableToQuerableVisitor : ExpressionVisitor
+    public class OeEnumerableToQuerableVisitor : ExpressionVisitor
     {
         private static MethodInfo GetQuerableMethodInfo(MethodInfo enumerableMethodInfo, ReadOnlyCollection<Expression> arguments)
         {
@@ -65,7 +65,7 @@ namespace OdataToEntity.Ef6
 
         protected override Expression VisitConstant(ConstantExpression node)
         {
-            if (node.Value is Parsers.OeEnumerableStub enumerableStub)
+            if (node.Value is OeEnumerableStub enumerableStub)
                 return Expression.Constant(enumerableStub, typeof(IQueryable<>).MakeGenericType(enumerableStub.ElementType));
             return base.VisitConstant(node);
         }
@@ -83,21 +83,13 @@ namespace OdataToEntity.Ef6
         {
             ReadOnlyCollection<Expression> arguments = base.Visit(node.Arguments);
             if (node.Method.DeclaringType != typeof(Enumerable))
-            {
-                if (node.Method.Name == "GetValueOrDefault")
-                {
-                    Type underlyingType = Nullable.GetUnderlyingType(node.Object.Type);
-                    if (underlyingType != null)
-                        return Expression.Property(node.Object, "Value");
-                }
-
                 return Expression.Call(base.Visit(node.Object), node.Method, arguments);
-            }
 
-            if (arguments[0].Type.GetGenericTypeDefinition() == typeof(IGrouping<,>) ||
-                arguments[0].Type.GetGenericTypeDefinition() == typeof(ICollection<>) ||
-                arguments[0].Type.GetGenericTypeDefinition() == typeof(IEnumerable<>) ||
-                arguments[0].Type.GetGenericTypeDefinition() == typeof(IOrderedEnumerable<>))
+            Type genericTypeDefinition = arguments[0].Type.GetGenericTypeDefinition();
+            if (genericTypeDefinition == typeof(IGrouping<,>) ||
+                genericTypeDefinition == typeof(ICollection<>) ||
+                genericTypeDefinition == typeof(IEnumerable<>) ||
+                genericTypeDefinition == typeof(IOrderedEnumerable<>))
                 return Expression.Call(base.Visit(node.Object), node.Method, arguments);
 
             MethodInfo querableMethodInfo = GetQuerableMethodInfo(node.Method, arguments);

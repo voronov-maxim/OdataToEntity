@@ -322,7 +322,7 @@ namespace OdataToEntity.EfCore
                 asyncEnumerator.Count = query.Provider.Execute<int>(countExpression);
             }
 
-            return base.OperationAdapter.ApplyBoundFunction(asyncEnumerator, queryContext);
+            return asyncEnumerator;
         }
         public override TResult ExecuteScalar<TResult>(Object dataContext, OeQueryContext queryContext)
         {

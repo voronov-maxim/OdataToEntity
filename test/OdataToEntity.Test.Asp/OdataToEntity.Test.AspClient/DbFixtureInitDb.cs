@@ -284,7 +284,7 @@ namespace OdataToEntity.Test
                 else
                     continue;
 
-                //if (methodInfo.Name != "GetOrders_status_get")
+                //if (methodInfo.Name != "BoundFunctionCollection")
                 //    continue;
 
                 Console.WriteLine(methodInfo.Name);
