@@ -17,7 +17,7 @@ namespace OdataToEntity.Test
             using (var dbContext = new OrderContext(OrderContextOptions.Create(true, null)))
                 expectedResult = dbContext.OrderItems.Where(i => i.Order.Name == "Order 1" || i.Order.Name == "Order 2").Select(i => i.Id).ToList();
 
-            String request = $"Customers/OdataToEntity.Test.Model.BoundFunctionCollection(orderNames=['Order 1','Order 2'])?$expand=Customer,Items&$select=Name";
+            String request = $"Customers/BoundFunctionCollection(orderNames=['Order 1','Order 2'])?$expand=Customer,Items&$select=Name";
 
             var queryParameters = new QueryParameters<Customer, Order>() { RequestUri = request };
             IList fromOe = await Fixture.ExecuteOeViaHttpClient(queryParameters, null);

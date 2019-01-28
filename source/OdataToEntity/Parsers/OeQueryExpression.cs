@@ -1,7 +1,11 @@
-﻿using Microsoft.OData.Edm;
+﻿using Microsoft.OData;
+using Microsoft.OData.Edm;
+using Microsoft.OData.UriParser;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading;
 
 namespace OdataToEntity.Parsers
 {
@@ -11,11 +15,26 @@ namespace OdataToEntity.Parsers
         private readonly Expression _expression;
         private IQueryable _source;
 
-        public OeQueryExpression(IEdmModel edmModel, IEdmEntitySet entitySet, Expression expression)
+        public OeQueryExpression(IEdmModel edmModel, String query)
+        {
+            EdmModel = edmModel;
+
+            ODataUri odataUri = OeParser.ParseUri(edmModel, new Uri(query, UriKind.Relative));
+            _entitySet = ((EntitySetSegment)odataUri.Path.FirstSegment).EntitySet;
+
+            var getParser = new OeGetParser(edmModel);
+            OeQueryContext queryContext = getParser.CreateQueryContext(odataUri, 0, false, OeMetadataLevel.Minimal);
+            Expression expression = queryContext.CreateExpression(out _);
+            _expression = new OeEnumerableToQuerableVisitor().Visit(expression);
+
+            EntryFactory = queryContext.EntryFactory;
+        }
+        public OeQueryExpression(IEdmModel edmModel, IEdmEntitySet entitySet, Expression expression, OeEntryFactory entryFactory = null)
         {
             EdmModel = edmModel;
             _entitySet = entitySet;
             _expression = new OeEnumerableToQuerableVisitor().Visit(expression);
+            EntryFactory = entryFactory;
         }
 
         public IQueryable ApplyTo(IQueryable source, Object dataContext)
@@ -31,6 +50,11 @@ namespace OdataToEntity.Parsers
         {
             return (IQueryable<T>)ApplyTo((IQueryable)source, dataContext);
         }
+        public Expression GetExpression(Object dataContext)
+        {
+            _source = GetQuerySource(dataContext);
+            return OeQueryContext.TranslateSource(EdmModel, dataContext, _expression, GetQuerySource);
+        }
         public IQueryable GetQuerySource(Object dataContext)
         {
             Db.OeDataAdapter dataAdapter = EdmModel.GetDataAdapter(_entitySet.Container);
@@ -40,8 +64,16 @@ namespace OdataToEntity.Parsers
         {
             return entitySet == _entitySet ? _source : null;
         }
+        public IAsyncEnumerable<TResult> Materialize<TResult>(IQueryable result, CancellationToken cancellationToken = default)
+        {
+            if (EntryFactory == null)
+                throw new InvalidOperationException("Must set OeEntryFactory via constructor");
+
+            var asyncEnumerator = new Db.OeAsyncEnumeratorAdapter(result, cancellationToken == default ? CancellationToken.None : cancellationToken);
+            return new Db.OeEntityAsyncEnumeratorAdapter<TResult>(asyncEnumerator, EntryFactory);
+        }
 
         public IEdmModel EdmModel { get; }
-        public OeEntryFactory EntryFactory { get; set; }
+        internal OeEntryFactory EntryFactory { get; }
     }
 }

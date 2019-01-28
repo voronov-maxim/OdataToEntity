@@ -26,13 +26,16 @@ namespace OdataToEntity.Db
         {
             return _result.ApplyTo(result, dataContext);
         }
-        public OeEntryFactory CreateEntryFactory()
+        public OeEntryFactory CreateEntryFactoryFromTuple()
         {
             return _result.EntryFactory.CreateEntryFactoryFromTuple();
         }
+        protected IAsyncEnumerable<TResult> Materialize<TResult>(IQueryable result, CancellationToken cancellationToken = default)
+        {
+            return _result.Materialize<TResult>(result, cancellationToken);
+        }
 
         protected IEdmModel EdmModel => _source.EdmModel;
-        public OeEntryFactory EntryFactory => _result.EntryFactory;
     }
 
     public sealed class OeBoundFunctionParameter<TSource, TResult> : OeBoundFunctionParameter
@@ -63,8 +66,7 @@ namespace OdataToEntity.Db
         }
         public IAsyncEnumerable<TResult> Materialize(IQueryable result, CancellationToken cancellationToken = default)
         {
-            var asyncEnumerator = new OeAsyncEnumeratorAdapter(result, cancellationToken == default ? CancellationToken.None : cancellationToken);
-            return new OeEntityAsyncEnumeratorAdapter<TResult>(asyncEnumerator, EntryFactory);
+            return base.Materialize<TResult>(result, cancellationToken);
         }
     }
 

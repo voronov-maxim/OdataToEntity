@@ -7,6 +7,9 @@ namespace OdataToEntity.Test.Model
     {
         private readonly bool _useRelationalNulls;
 
+        public OrderDataAdapter() : this(true, true, null)
+        {
+        }
         public OrderDataAdapter(bool allowCache, bool useRelationalNulls, String databaseName) : base(new Cache.OeQueryCache(allowCache))
         {
             _useRelationalNulls = useRelationalNulls;

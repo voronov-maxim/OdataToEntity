@@ -16,7 +16,7 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
             _httpContextAccessor = httpContextAccessor;
         }
 
-        [HttpGet("OdataToEntity.Test.Model.BoundFunctionCollection(orderNames={orderNames})", Order = 1)]
+        [HttpGet("BoundFunctionCollection(orderNames={orderNames})", Order = 1)]
         public ODataResult<Model.Order> BoundFunctionCollection(String orderNames)
         {
             var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);

@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,6 +21,26 @@ namespace OdataToEntity
                 EnableCaseInsensitive = true;
             }
 
+            public override IEnumerable<IEdmOperation> ResolveBoundOperations(IEdmModel model, String identifier, IEdmType bindingType)
+            {
+                if (identifier.IndexOf('.') != -1)
+                    return base.ResolveBoundOperations(model, identifier, bindingType);
+
+                var edmOperations = new List<IEdmOperation>();
+
+                foreach (IEdmSchemaElement element in model.SchemaElements)
+                    if (element is IEdmOperation edmOperation &&
+                        edmOperation.IsBound &&
+                        String.Compare(edmOperation.Name, identifier, StringComparison.OrdinalIgnoreCase) == 0 &&
+                        edmOperation.HasEquivalentBindingType(bindingType))
+                        edmOperations.Add(edmOperation);
+
+                foreach (IEdmModel refModel in model.ReferencedModels)
+                    if (refModel.EntityContainer != null)
+                        edmOperations.AddRange(ResolveBoundOperations(refModel, identifier, bindingType));
+
+                return edmOperations;
+            }
             public override IEdmNavigationSource ResolveNavigationSource(IEdmModel model, String identifier)
             {
                 return OeEdmClrHelper.GetEntitySet(model, identifier);
@@ -119,7 +140,7 @@ namespace OdataToEntity
         }
         public async Task ExecutePostAsync(Uri requestUri, OeRequestHeaders headers, Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
         {
-            ODataUri odataUri = OeParser.ParseUri(_edmModel, _baseUri, requestUri);
+            ODataUri odataUri = ParseUri(_edmModel, _baseUri, requestUri);
             if (odataUri.Path.LastSegment.Identifier == "$batch")
                 await ExecuteBatchAsync(requestStream, responseStream, headers.ContentType, cancellationToken).ConfigureAwait(false);
             else
@@ -165,15 +186,14 @@ namespace OdataToEntity
             var uriParser = new ODataUriParser(model, serviceRoot, uri, ServiceProvider.Instance);
             return uriParser.ParsePath();
         }
+        public static ODataUri ParseUri(IEdmModel model, Uri relativeUri)
+        {
+            var uriParser = new ODataUriParser(model, relativeUri, ServiceProvider.Instance);
+            return uriParser.ParseUri();
+        }
         public static ODataUri ParseUri(IEdmModel model, Uri serviceRoot, Uri uri)
         {
             var uriParser = new ODataUriParser(model, serviceRoot, uri, ServiceProvider.Instance);
-            ODataUri odataUri = uriParser.ParseUri();
-            IEdmModel refModel = model.GetEdmModel(odataUri.Path);
-            if (refModel == model)
-                return odataUri;
-
-            uriParser = new ODataUriParser(refModel, serviceRoot, uri, ServiceProvider.Instance);
             return uriParser.ParseUri();
         }
     }

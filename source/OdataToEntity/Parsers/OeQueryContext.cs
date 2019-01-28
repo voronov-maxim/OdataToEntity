@@ -131,7 +131,7 @@ namespace OdataToEntity.Parsers
 
             return expressionBuilder.CreateEntryFactory(entitySet);
         }
-        public Expression CreateExpression(OeConstantToVariableVisitor constantToVariableVisitor)
+        public Expression CreateExpression(out IReadOnlyDictionary<ConstantExpression, ConstantNode> constants)
         {
             Expression expression;
             var expressionBuilder = new OeExpressionBuilder(JoinBuilder);
@@ -158,7 +158,13 @@ namespace OdataToEntity.Parsers
             if (SkipTokenNameValues != null)
                 SkipTokenAccessors = OeSkipTokenParser.GetAccessors(expression, ODataUri.OrderBy, JoinBuilder);
 
-            return constantToVariableVisitor.Translate(expression, expressionBuilder.Constants);
+            constants = expressionBuilder.Constants;
+            return expression;
+        }
+        public Expression CreateExpression(OeConstantToVariableVisitor constantToVariableVisitor)
+        {
+            Expression expression = CreateExpression(out IReadOnlyDictionary<ConstantExpression, ConstantNode> constants);
+            return constantToVariableVisitor.Translate(expression, constants);
         }
         public Expression TranslateSource(Object dataContext, Expression expression)
         {

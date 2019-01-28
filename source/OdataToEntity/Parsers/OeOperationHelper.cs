@@ -33,7 +33,7 @@ namespace OdataToEntity.Parsers
                     parameters[i] = parameterList[i - 1].Value;
 
                 Object result = methodInfo.Invoke(null, parameters);
-                queryContext.EntryFactory = boundFunctionParameter.CreateEntryFactory();
+                queryContext.EntryFactory = boundFunctionParameter.CreateEntryFactoryFromTuple();
                 if (result is IEnumerable enumerable)
                     return new Db.OeAsyncEnumeratorAdapter(enumerable, CancellationToken.None);
 
@@ -60,11 +60,9 @@ namespace OdataToEntity.Parsers
             Expression target = OeEnumerableStub.CreateEnumerableStubExpression(targetEntityType, targetEntitySet);
             target = expressionBuilder.ApplySelect(target, queryContext);
 
+            OeEntryFactory targetEntryFactory = expressionBuilder.CreateEntryFactory(targetEntitySet);
             var sourceQueryExpression = new OeQueryExpression(queryContext.EdmModel, sourceEntitySet, source);
-            var targetQueryExpression = new OeQueryExpression(queryContext.EdmModel, targetEntitySet, target)
-            {
-                EntryFactory = expressionBuilder.CreateEntryFactory(targetEntitySet)
-            };
+            var targetQueryExpression = new OeQueryExpression(queryContext.EdmModel, targetEntitySet, target, targetEntryFactory);
 
             Type boundFunctionParameterType = typeof(Db.OeBoundFunctionParameter<,>).MakeGenericType(new[] { sourceEntityType, targetEntityType });
             ConstructorInfo ctor = boundFunctionParameterType.GetConstructor(new[] { typeof(OeQueryExpression), typeof(OeQueryExpression) });

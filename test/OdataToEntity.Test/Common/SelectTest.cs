@@ -929,8 +929,8 @@ private const string SkipTest = null;
         {
             var parameters = new QueryParameters<Customer>()
             {
-                RequestUri = "Customers?$filter=Address gt 'Tula'&$orderby=Country,Id",
-                Expression = t => t.Where(c => String.Compare(c.Address, "Tula") > 0).OrderBy(c => c.Country).ThenBy(c => c.Id),
+                RequestUri = "Customers?$filter=Address gt 'London'&$orderby=Country,Id",
+                Expression = t => t.Where(c => String.Compare(c.Address, "London") > 0).OrderBy(c => c.Country).ThenBy(c => c.Id),
                 PageSize = pageSize
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
