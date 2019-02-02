@@ -119,6 +119,9 @@ namespace OdataToEntity.EfCore
         {
             foreach (IEntityType efEntityType in GetEntityTypes(propertyInfo))
             {
+                if (efEntityType.IsQueryType)
+                    continue;
+
                 IKey key = efEntityType.FindPrimaryKey();
                 for (int i = 0; i < key.Properties.Count; i++)
                     if (key.Properties[i].Name == propertyInfo.Name)

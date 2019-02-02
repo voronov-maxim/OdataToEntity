@@ -179,6 +179,23 @@ namespace ODataClient.OdataToEntity.Test.Model
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
         private global::Microsoft.OData.Client.DataServiceQuery<OrderItem> _OrderItems;
         /// <summary>
+        /// There are no comments for OrderItemsView in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public global::Microsoft.OData.Client.DataServiceQuery<OrderItemsView> OrderItemsView
+        {
+            get
+            {
+                if ((this._OrderItemsView == null))
+                {
+                    this._OrderItemsView = base.CreateQuery<OrderItemsView>("OrderItemsView");
+                }
+                return this._OrderItemsView;
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private global::Microsoft.OData.Client.DataServiceQuery<OrderItemsView> _OrderItemsView;
+        /// <summary>
         /// There are no comments for ShippingAddresses in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
@@ -250,6 +267,14 @@ namespace ODataClient.OdataToEntity.Test.Model
         public void AddToOrderItems(OrderItem orderItem)
         {
             base.AddObject("OrderItems", orderItem);
+        }
+        /// <summary>
+        /// There are no comments for OrderItemsView in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public void AddToOrderItemsView(OrderItemsView orderItemsView)
+        {
+            base.AddObject("OrderItemsView", orderItemsView);
         }
         /// <summary>
         /// There are no comments for ShippingAddresses in the schema.
@@ -404,45 +429,60 @@ namespace ODataClient.OdataToEntity.Test.Model
           <ReferentialConstraint Property=""OrderId"" ReferencedProperty=""Id"" />
         </NavigationProperty>
       </EntityType>
+      <EntityType Name=""OrderItemsView"">
+        <Key>
+          <PropertyRef Name=""Name"" />
+          <PropertyRef Name=""Product"" />
+        </Key>
+        <Property Name=""Name"" Type=""Edm.String"" Nullable=""false"" />
+        <Property Name=""Product"" Type=""Edm.String"" Nullable=""false"" />
+      </EntityType>
       <EntityType Name=""ShippingAddress"">
         <Key>
           <PropertyRef Name=""OrderId"" />
           <PropertyRef Name=""Id"" />
         </Key>
-        <Property Name=""Address"" Type=""Edm.String"" />
+        <Property Name=""Address"" Type=""Edm.String"" Nullable=""false"" />
         <Property Name=""Id"" Type=""Edm.Int32"" Nullable=""false"" />
         <Property Name=""OrderId"" Type=""Edm.Int32"" Nullable=""false"" />
         <NavigationProperty Name=""CustomerShippingAddresses"" Type=""Collection(OdataToEntity.Test.Model.CustomerShippingAddress)"" Partner=""ShippingAddress"" />
         <NavigationProperty Name=""Customers"" Type=""Collection(OdataToEntity.Test.Model.Customer)"" ContainsTarget=""true"" />
       </EntityType>
-      <Function Name=""OrderContext.GenerateDatabaseName"">
-        <ReturnType Type=""Collection(Edm.String)"" Nullable=""false"" />
+      <Function Name=""BoundFunctionCollection"" IsBound=""true"">
+        <Parameter Name=""boundParameter"" Type=""Collection(OdataToEntity.Test.Model.Customer)"" />
+        <Parameter Name=""orderNames"" Type=""Collection(Edm.String)"" />
+        <ReturnType Type=""Collection(OdataToEntity.Test.Model.Order)"" />
       </Function>
-      <Function Name=""OrderContext.GetOrders"">
+      <Function Name=""BoundFunctionSingle"" IsBound=""true"">
+        <Parameter Name=""boundParameter"" Type=""OdataToEntity.Test.Model.Customer"" />
+        <Parameter Name=""orderNames"" Type=""Collection(Edm.String)"" />
+        <ReturnType Type=""Collection(OdataToEntity.Test.Model.Order)"" />
+      </Function>
+      <Function Name=""GetOrders"">
         <Parameter Name=""id"" Type=""Edm.Int32"" />
         <Parameter Name=""name"" Type=""Edm.String"" />
         <Parameter Name=""status"" Type=""OdataToEntity.Test.Model.OrderStatus"" />
         <ReturnType Type=""Collection(OdataToEntity.Test.Model.Order)"" />
       </Function>
-      <Action Name=""OrderContext.ResetDb"" />
-      <Action Name=""OrderContext.ResetManyColumns"" />
-      <Function Name=""OrderContext.ScalarFunction"">
+      <Action Name=""ResetDb"" />
+      <Action Name=""ResetManyColumns"" />
+      <Function Name=""ScalarFunction"">
         <ReturnType Type=""Edm.Int32"" Nullable=""false"" />
       </Function>
-      <Function Name=""OrderContext.ScalarFunctionWithParameters"">
+      <Function Name=""ScalarFunctionWithParameters"">
         <Parameter Name=""id"" Type=""Edm.Int32"" />
         <Parameter Name=""name"" Type=""Edm.String"" />
         <Parameter Name=""status"" Type=""OdataToEntity.Test.Model.OrderStatus"" />
         <ReturnType Type=""Edm.Int32"" Nullable=""false"" />
       </Function>
-      <Function Name=""OrderContext.TableFunction"">
+      <Function Name=""TableFunction"">
         <ReturnType Type=""Collection(OdataToEntity.Test.Model.Order)"" />
       </Function>
-      <Function Name=""OrderContext.TableFunctionWithCollectionParameter"">
+      <Function Name=""TableFunctionWithCollectionParameter"">
         <Parameter Name=""string_list"" Type=""Collection(Edm.String)"" />
         <ReturnType Type=""Collection(Edm.String)"" />
       </Function>
-      <Function Name=""OrderContext.TableFunctionWithParameters"">
+      <Function Name=""TableFunctionWithParameters"">
         <Parameter Name=""id"" Type=""Edm.Int32"" />
         <Parameter Name=""name"" Type=""Edm.String"" />
         <Parameter Name=""status"" Type=""OdataToEntity.Test.Model.OrderStatus"" />
@@ -473,18 +513,18 @@ namespace ODataClient.OdataToEntity.Test.Model
         <EntitySet Name=""OrderItems"" EntityType=""OdataToEntity.Test.Model.OrderItem"">
           <NavigationPropertyBinding Path=""Order"" Target=""Orders"" />
         </EntitySet>
+        <EntitySet Name=""OrderItemsView"" EntityType=""OdataToEntity.Test.Model.OrderItemsView"" />
         <EntitySet Name=""ShippingAddresses"" EntityType=""OdataToEntity.Test.Model.ShippingAddress"">
           <NavigationPropertyBinding Path=""CustomerShippingAddresses"" Target=""CustomerShippingAddress"" />
         </EntitySet>
-        <FunctionImport Name=""GenerateDatabaseName"" Function=""OdataToEntity.Test.Model.OrderContext.GenerateDatabaseName"" />
-        <FunctionImport Name=""dbo.GetOrders"" Function=""OdataToEntity.Test.Model.OrderContext.GetOrders"" EntitySet=""OdataToEntity.Test.Model.OrderContext/Orders"" />
-        <ActionImport Name=""ResetDb"" Action=""OdataToEntity.Test.Model.OrderContext.ResetDb"" />
-        <ActionImport Name=""ResetManyColumns"" Action=""OdataToEntity.Test.Model.OrderContext.ResetManyColumns"" />
-        <FunctionImport Name=""dbo.ScalarFunction"" Function=""OdataToEntity.Test.Model.OrderContext.ScalarFunction"" />
-        <FunctionImport Name=""dbo.ScalarFunctionWithParameters"" Function=""OdataToEntity.Test.Model.OrderContext.ScalarFunctionWithParameters"" />
-        <FunctionImport Name=""TableFunction"" Function=""OdataToEntity.Test.Model.OrderContext.TableFunction"" EntitySet=""OdataToEntity.Test.Model.OrderContext/Orders"" />
-        <FunctionImport Name=""TableFunctionWithCollectionParameter"" Function=""OdataToEntity.Test.Model.OrderContext.TableFunctionWithCollectionParameter"" />
-        <FunctionImport Name=""TableFunctionWithParameters"" Function=""OdataToEntity.Test.Model.OrderContext.TableFunctionWithParameters"" EntitySet=""OdataToEntity.Test.Model.OrderContext/Orders"" />
+        <FunctionImport Name=""dbo.GetOrders"" Function=""OdataToEntity.Test.Model.GetOrders"" />
+        <ActionImport Name=""ResetDb"" Action=""OdataToEntity.Test.Model.ResetDb"" />
+        <ActionImport Name=""ResetManyColumns"" Action=""OdataToEntity.Test.Model.ResetManyColumns"" />
+        <FunctionImport Name=""dbo.ScalarFunction"" Function=""OdataToEntity.Test.Model.ScalarFunction"" />
+        <FunctionImport Name=""dbo.ScalarFunctionWithParameters"" Function=""OdataToEntity.Test.Model.ScalarFunctionWithParameters"" />
+        <FunctionImport Name=""TableFunction"" Function=""OdataToEntity.Test.Model.TableFunction"" />
+        <FunctionImport Name=""TableFunctionWithCollectionParameter"" Function=""OdataToEntity.Test.Model.TableFunctionWithCollectionParameter"" />
+        <FunctionImport Name=""TableFunctionWithParameters"" Function=""OdataToEntity.Test.Model.TableFunctionWithParameters"" />
       </EntityContainer>
     </Schema>
   </edmx:DataServices>
@@ -512,13 +552,6 @@ namespace ODataClient.OdataToEntity.Test.Model
             {
                 return global::System.Xml.XmlReader.Create(new global::System.IO.StringReader(edmxToParse));
             }
-        }
-        /// <summary>
-        /// There are no comments for GenerateDatabaseName in the schema.
-        /// </summary>
-        public global::Microsoft.OData.Client.DataServiceQuery<string> GenerateDatabaseName()
-        {
-            return this.CreateFunctionQuery<string>("", "GenerateDatabaseName", false);
         }
         /// <summary>
         /// There are no comments for dbo.GetOrders in the schema.
@@ -1120,6 +1153,15 @@ namespace ODataClient.OdataToEntity.Test.Model
         private global::System.Collections.ObjectModel.Collection<global::ODataClient.OdataToEntity.Test.Model.ShippingAddress> _ShippingAddresses = new global::System.Collections.ObjectModel.Collection<global::ODataClient.OdataToEntity.Test.Model.ShippingAddress>();
         partial void OnShippingAddressesChanging(global::System.Collections.ObjectModel.Collection<global::ODataClient.OdataToEntity.Test.Model.ShippingAddress> value);
         partial void OnShippingAddressesChanged();
+        /// <summary>
+        /// There are no comments for BoundFunctionSingle in the schema.
+        /// </summary>
+        public global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Order> BoundFunctionSingle(global::System.Collections.Generic.ICollection<string> orderNames)
+        {
+            global::System.Uri requestUri;
+            Context.TryGetUri(this, out requestUri);
+            return this.Context.CreateFunctionQuery<global::ODataClient.OdataToEntity.Test.Model.Order>(string.Join("/", global::System.Linq.Enumerable.Select(global::System.Linq.Enumerable.Skip(requestUri.Segments, this.Context.BaseUri.Segments.Length), s => s.Trim('/'))), "OdataToEntity.Test.Model.BoundFunctionSingle", false, new global::Microsoft.OData.Client.UriOperationParameter("orderNames", orderNames));
+        }
     }
     /// <summary>
     /// There are no comments for CustomerShippingAddressSingle in the schema.
@@ -2998,6 +3040,96 @@ namespace ODataClient.OdataToEntity.Test.Model
         partial void OnOrderChanged();
     }
     /// <summary>
+    /// There are no comments for OrderItemsViewSingle in the schema.
+    /// </summary>
+    public partial class OrderItemsViewSingle : global::Microsoft.OData.Client.DataServiceQuerySingle<OrderItemsView>
+    {
+        /// <summary>
+        /// Initialize a new OrderItemsViewSingle object.
+        /// </summary>
+        public OrderItemsViewSingle(global::Microsoft.OData.Client.DataServiceContext context, string path)
+            : base(context, path) {}
+
+        /// <summary>
+        /// Initialize a new OrderItemsViewSingle object.
+        /// </summary>
+        public OrderItemsViewSingle(global::Microsoft.OData.Client.DataServiceContext context, string path, bool isComposable)
+            : base(context, path, isComposable) {}
+
+        /// <summary>
+        /// Initialize a new OrderItemsViewSingle object.
+        /// </summary>
+        public OrderItemsViewSingle(global::Microsoft.OData.Client.DataServiceQuerySingle<OrderItemsView> query)
+            : base(query) {}
+
+    }
+    /// <summary>
+    /// There are no comments for OrderItemsView in the schema.
+    /// </summary>
+    /// <KeyProperties>
+    /// Name
+    /// Product
+    /// </KeyProperties>
+    [global::Microsoft.OData.Client.Key("Name", "Product")]
+    public partial class OrderItemsView : global::Microsoft.OData.Client.BaseEntityType
+    {
+        /// <summary>
+        /// Create a new OrderItemsView object.
+        /// </summary>
+        /// <param name="name">Initial value of Name.</param>
+        /// <param name="product">Initial value of Product.</param>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public static OrderItemsView CreateOrderItemsView(string name, string product)
+        {
+            OrderItemsView orderItemsView = new OrderItemsView();
+            orderItemsView.Name = name;
+            orderItemsView.Product = product;
+            return orderItemsView;
+        }
+        /// <summary>
+        /// There are no comments for Property Name in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public string Name
+        {
+            get
+            {
+                return this._Name;
+            }
+            set
+            {
+                this.OnNameChanging(value);
+                this._Name = value;
+                this.OnNameChanged();
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private string _Name;
+        partial void OnNameChanging(string value);
+        partial void OnNameChanged();
+        /// <summary>
+        /// There are no comments for Property Product in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public string Product
+        {
+            get
+            {
+                return this._Product;
+            }
+            set
+            {
+                this.OnProductChanging(value);
+                this._Product = value;
+                this.OnProductChanged();
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private string _Product;
+        partial void OnProductChanging(string value);
+        partial void OnProductChanged();
+    }
+    /// <summary>
     /// There are no comments for ShippingAddressSingle in the schema.
     /// </summary>
     public partial class ShippingAddressSingle : global::Microsoft.OData.Client.DataServiceQuerySingle<ShippingAddress>
@@ -3076,12 +3208,14 @@ namespace ODataClient.OdataToEntity.Test.Model
         /// <summary>
         /// Create a new ShippingAddress object.
         /// </summary>
+        /// <param name="address">Initial value of Address.</param>
         /// <param name="ID">Initial value of Id.</param>
         /// <param name="orderId">Initial value of OrderId.</param>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
-        public static ShippingAddress CreateShippingAddress(int ID, int orderId)
+        public static ShippingAddress CreateShippingAddress(string address, int ID, int orderId)
         {
             ShippingAddress shippingAddress = new ShippingAddress();
+            shippingAddress.Address = address;
             shippingAddress.Id = ID;
             shippingAddress.OrderId = orderId;
             return shippingAddress;
@@ -3440,6 +3574,32 @@ namespace ODataClient.OdataToEntity.Test.Model
             return new global::ODataClient.OdataToEntity.Test.Model.OrderItemSingle(source.Context, source.GetKeyPath(global::Microsoft.OData.Client.Serializer.GetKeyString(source.Context, keys)));
         }
         /// <summary>
+        /// Get an entity of type global::ODataClient.OdataToEntity.Test.Model.OrderItemsView as global::ODataClient.OdataToEntity.Test.Model.OrderItemsViewSingle specified by key from an entity set
+        /// </summary>
+        /// <param name="source">source entity set</param>
+        /// <param name="keys">dictionary with the names and values of keys</param>
+        public static global::ODataClient.OdataToEntity.Test.Model.OrderItemsViewSingle ByKey(this global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.OrderItemsView> source, global::System.Collections.Generic.Dictionary<string, object> keys)
+        {
+            return new global::ODataClient.OdataToEntity.Test.Model.OrderItemsViewSingle(source.Context, source.GetKeyPath(global::Microsoft.OData.Client.Serializer.GetKeyString(source.Context, keys)));
+        }
+        /// <summary>
+        /// Get an entity of type global::ODataClient.OdataToEntity.Test.Model.OrderItemsView as global::ODataClient.OdataToEntity.Test.Model.OrderItemsViewSingle specified by key from an entity set
+        /// </summary>
+        /// <param name="source">source entity set</param>
+        /// <param name="name">The value of name</param>
+        /// <param name="product">The value of product</param>
+        public static global::ODataClient.OdataToEntity.Test.Model.OrderItemsViewSingle ByKey(this global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.OrderItemsView> source,
+            string name, 
+            string product)
+        {
+            global::System.Collections.Generic.Dictionary<string, object> keys = new global::System.Collections.Generic.Dictionary<string, object>
+            {
+                { "Name", name }, 
+                { "Product", product }
+            };
+            return new global::ODataClient.OdataToEntity.Test.Model.OrderItemsViewSingle(source.Context, source.GetKeyPath(global::Microsoft.OData.Client.Serializer.GetKeyString(source.Context, keys)));
+        }
+        /// <summary>
         /// Get an entity of type global::ODataClient.OdataToEntity.Test.Model.ShippingAddress as global::ODataClient.OdataToEntity.Test.Model.ShippingAddressSingle specified by key from an entity set
         /// </summary>
         /// <param name="source">source entity set</param>
@@ -3464,6 +3624,30 @@ namespace ODataClient.OdataToEntity.Test.Model
                 { "Id", id }
             };
             return new global::ODataClient.OdataToEntity.Test.Model.ShippingAddressSingle(source.Context, source.GetKeyPath(global::Microsoft.OData.Client.Serializer.GetKeyString(source.Context, keys)));
+        }
+        /// <summary>
+        /// There are no comments for BoundFunctionCollection in the schema.
+        /// </summary>
+        public static global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Order> BoundFunctionCollection(this global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Customer> source, global::System.Collections.Generic.ICollection<string> orderNames)
+        {
+            if (!source.IsComposable)
+            {
+                throw new global::System.NotSupportedException("The previous function is not composable.");
+            }
+
+            return source.CreateFunctionQuery<global::ODataClient.OdataToEntity.Test.Model.Order>("OdataToEntity.Test.Model.BoundFunctionCollection", false, new global::Microsoft.OData.Client.UriOperationParameter("orderNames", orderNames));
+        }
+        /// <summary>
+        /// There are no comments for BoundFunctionSingle in the schema.
+        /// </summary>
+        public static global::Microsoft.OData.Client.DataServiceQuery<global::ODataClient.OdataToEntity.Test.Model.Order> BoundFunctionSingle(this global::Microsoft.OData.Client.DataServiceQuerySingle<global::ODataClient.OdataToEntity.Test.Model.Customer> source, global::System.Collections.Generic.ICollection<string> orderNames)
+        {
+            if (!source.IsComposable)
+            {
+                throw new global::System.NotSupportedException("The previous function is not composable.");
+            }
+
+            return source.CreateFunctionQuery<global::ODataClient.OdataToEntity.Test.Model.Order>("OdataToEntity.Test.Model.BoundFunctionSingle", false, new global::Microsoft.OData.Client.UriOperationParameter("orderNames", orderNames));
         }
     }
 }

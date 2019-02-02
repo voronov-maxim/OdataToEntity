@@ -264,6 +264,19 @@ private const string SkipTest = null;
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        public async Task DbQuery(int pageSize)
+        {
+            var parameters = new QueryParameters<OrderItemsView>()
+            {
+                RequestUri = "OrderItemsView?$orderby=Name,Product",
+                Expression = t => t.OrderBy(v => v.Name).ThenBy(v => v.Product),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters).ConfigureAwait(false);
+        }
+        [Theory]
         [InlineData(0, false)]
         [InlineData(1, false)]
         [InlineData(0, true)]

@@ -10,12 +10,11 @@ namespace OdataToEntity.Test.WcfService
     public class OdataWcfService : IOdataWcf
     {
         private readonly static Uri _baseUri = new Uri("http://dummy");
-        private readonly OeDataAdapter _dataAdapter;
         private readonly IEdmModel _edmModel;
 
         public OdataWcfService(OeDataAdapter dataAdapter, IEdmModel edmModel)
         {
-            _dataAdapter = dataAdapter;
+            DataAdapter = dataAdapter;
             _edmModel = edmModel;
         }
 
@@ -50,6 +49,6 @@ namespace OdataToEntity.Test.WcfService
             };
         }
 
-        public OeDataAdapter DataAdapter => _dataAdapter;
+        public OeDataAdapter DataAdapter { get; }
     }
 }

@@ -172,12 +172,12 @@ namespace OdataToEntity.ModelBuilder
                         if (baseEdmType == null)
                         {
                             edmType = new EdmEntityType(baseClrType.Namespace, baseClrType.Name, edmType, baseClrType.IsAbstract, false);
-                            entityTypeInfo = new EntityTypeInfo(_metadataProvider, baseClrType, edmType, false);
+                            entityTypeInfo = new EntityTypeInfo(_metadataProvider, baseClrType, edmType, false, entitySetAdapter.IsDbQuery);
                         }
                         else
                         {
                             edmType = baseEdmType;
-                            entityTypeInfo = new EntityTypeInfo(_metadataProvider, baseClrType, edmType, true);
+                            entityTypeInfo = new EntityTypeInfo(_metadataProvider, baseClrType, edmType, true, entitySetAdapter.IsDbQuery);
                         }
                         entityTypeInfos.Add(baseClrType, entityTypeInfo);
                     }

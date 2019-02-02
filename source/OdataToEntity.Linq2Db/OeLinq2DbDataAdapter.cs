@@ -62,10 +62,11 @@ namespace OdataToEntity.Linq2Db
         {
             private readonly Func<T, ITable<TEntity>> _getEntitySet;
 
-            public TableAdapterImpl(Func<T, ITable<TEntity>> getEntitySet, String entitySetName)
+            public TableAdapterImpl(Func<T, ITable<TEntity>> getEntitySet, String entitySetName, bool isDbQuery)
             {
                 _getEntitySet = getEntitySet;
                 EntitySetName = entitySetName;
+                IsDbQuery = isDbQuery;
             }
 
             public override void AddEntity(Object dataContext, ODataResourceBase entry)
@@ -94,6 +95,7 @@ namespace OdataToEntity.Linq2Db
 
             public override Type EntityType => typeof(TEntity);
             public override String EntitySetName { get; }
+            public override bool IsDbQuery { get; }
         }
 
         private IEdmModel _edmModel;
@@ -146,7 +148,8 @@ namespace OdataToEntity.Linq2Db
         private static Db.OeEntitySetAdapter CreateEntitySetInvoker<TEntity>(PropertyInfo property) where TEntity : class
         {
             var getEntitySet = (Func<T, ITable<TEntity>>)property.GetGetMethod().CreateDelegate(typeof(Func<T, ITable<TEntity>>));
-            return new TableAdapterImpl<TEntity>(getEntitySet, property.Name);
+            var tableAttribute = typeof(TEntity).GetCustomAttribute<LinqToDB.Mapping.TableAttribute>();
+            return new TableAdapterImpl<TEntity>(getEntitySet, property.Name, tableAttribute.IsView);
         }
         public override Db.OeAsyncEnumerator ExecuteEnumerator(Object dataContext, OeQueryContext queryContext, CancellationToken cancellationToken)
         {

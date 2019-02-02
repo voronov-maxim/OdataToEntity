@@ -1,5 +1,4 @@
-﻿using Microsoft.OData.Edm;
-using OdataToEntity.Test.Model;
+﻿using OdataToEntity.Test.Model;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -30,6 +29,7 @@ namespace OdataToEntity.Test.Ef6.SqlServer
 
             modelBuilder.Entity<Order>().HasMany(p => p.ShippingAddresses).WithRequired().HasForeignKey(s => s.OrderId);
             modelBuilder.Entity<Customer>().HasMany(p => p.CustomerShippingAddresses).WithRequired().HasForeignKey(s => new { s.CustomerCountry, s.CustomerId });
+            modelBuilder.Entity<OrderItemsView>().HasKey(v => new { v.Name, v.Product });
             base.OnModelCreating(modelBuilder);
         }
 
@@ -40,6 +40,7 @@ namespace OdataToEntity.Test.Ef6.SqlServer
         public DbSet<ManyColumnsView> ManyColumnsView { get; set; }
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
+        public DbSet<OrderItemsView> OrderItemsView { get; set; }
         public DbSet<ShippingAddress> ShippingAddresses { get; set; }
 
         [Db.OeBoundFunction(CollectionFunctionName = "BoundFunctionCollection", SingleFunctionName = "BoundFunctionSingle")]

@@ -9,21 +9,27 @@ namespace OdataToEntity.ModelBuilder
 {
     internal sealed class EntityTypeInfo
     {
+        private readonly bool _isDbQuery;
         private readonly List<KeyValuePair<PropertyInfo, EdmStructuralProperty>> _keyProperties;
         private readonly OeEdmModelMetadataProvider _metadataProvider;
         private readonly List<FKeyInfo> _navigationClrProperties;
 
-        public EntityTypeInfo(OeEdmModelMetadataProvider metadataProvider, Type clrType, EdmEntityType edmType, bool isRefModel)
+        public EntityTypeInfo(OeEdmModelMetadataProvider metadataProvider, Type clrType, EdmEntityType edmType, bool isRefModel, bool isDbQuery)
         {
             _metadataProvider = metadataProvider;
             ClrType = clrType;
             EdmType = edmType;
             IsRefModel = isRefModel;
+            _isDbQuery = isDbQuery;
 
             _keyProperties = new List<KeyValuePair<PropertyInfo, EdmStructuralProperty>>(1);
             _navigationClrProperties = new List<FKeyInfo>();
         }
 
+        private void AddDbQueryKeys()
+        {
+            EdmType.AddKeys(EdmType.StructuralProperties());
+        }
         private void AddKeys()
         {
             if (_keyProperties.Count == 0)
@@ -124,7 +130,11 @@ namespace OdataToEntity.ModelBuilder
             foreach (PropertyInfo clrProperty in _metadataProvider.GetProperties(ClrType))
                 if (!_metadataProvider.IsNotMapped(clrProperty))
                     BuildProperty(entityTypes, enumTypes, complexTypes, clrProperty);
-            AddKeys();
+
+            if (_isDbQuery)
+                AddDbQueryKeys();
+            else
+                AddKeys();
         }
         internal static EdmEnumType CreateEdmEnumType(Type clrEnumType)
         {

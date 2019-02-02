@@ -28,7 +28,7 @@ namespace OdataToEntity.Db
         {
             var entitySetAdapters = (OeEntitySetAdapter[])base.Items;
             foreach (OeEntitySetAdapter entitySetAdapter in entitySetAdapters)
-                if (entitySetAdapter.EntityType == clrType && !entitySetAdapter.IsDbQuery)
+                if (entitySetAdapter.EntityType == clrType)
                     return entitySetAdapter;
 
             return null;

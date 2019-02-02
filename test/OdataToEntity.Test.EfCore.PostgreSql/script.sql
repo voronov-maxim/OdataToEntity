@@ -7,6 +7,8 @@ drop function if exists dbo."TableFunction"();
 drop function if exists dbo."TableFunctionWithCollectionParameter"(items dbo.string_list[]);
 drop function if exists dbo."TableFunctionWithParameters"(id integer, name character varying(256), status integer);
 
+drop view if exists dbo."OrderItemsView";
+
 drop table if exists dbo."CustomerShippingAddress";
 drop table if exists dbo."ShippingAddresses";
 drop table if exists dbo."OrderItems";
@@ -218,3 +220,6 @@ create function dbo."TableFunctionWithParameters"(id integer, name character var
 as $$
     select * from dbo."GetOrders"(id, name, status)
 $$ language sql;
+
+create view dbo."OrderItemsView" as
+	select o."Name", i."Product" from dbo."Orders" o inner join dbo."OrderItems" i on o."Id" = i."OrderId";

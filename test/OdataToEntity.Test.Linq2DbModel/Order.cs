@@ -27,11 +27,13 @@ namespace OdataToEntity.Test.Model
     {
         public ITable<Category>                Categories              { get { return this.GetTable<Category>(); } }
         public ITable<Customer>                Customers               { get { return this.GetTable<Customer>(); } }
+        public ITable<CustomerShippingAddress> CustomerShippingAddress { get { return this.GetTable<CustomerShippingAddress>(); } }
         public ITable<ManyColumns>             ManyColumns             { get { return this.GetTable<ManyColumns>(); } }
+        public ITable<ManyColumnsView>         ManyColumnsView         { get { return this.GetTable<ManyColumnsView>(); } }
         public ITable<Order>                   Orders                  { get { return this.GetTable<Order>(); } }
 		public ITable<OrderItem>               OrderItems              { get { return this.GetTable<OrderItem>(); } }
+		public ITable<OrderItemsView>          OrderItemsView          { get { return this.GetTable<OrderItemsView>(); } }
         public ITable<ShippingAddress>         ShippingAddresses       { get { return this.GetTable<ShippingAddress>(); } }
-        public ITable<CustomerShippingAddress> CustomerShippingAddress { get { return this.GetTable<CustomerShippingAddress>(); } }
 
         OeLinq2DbDataContext IOeLinq2DbDataContext.DataContext
         {
@@ -140,11 +142,11 @@ namespace OdataToEntity.Test.Model
     [Table(Schema="dbo", Name="Customers")]
 	public partial class Customer
 	{
-		[Column,     Nullable ] public string Address { get; set; } // varchar(256)
-        [PrimaryKey(Order = 0)] public string Country { get; set; } // char(2)
-        [PrimaryKey(Order = 1)] public int    Id      { get; set; } // int
-		[Column,     NotNull  ] public string Name    { get; set; } // varchar(128)
-		[Column,     Nullable ] public Sex?   Sex     { get; set; } // int
+		[Column,                Nullable] public string Address { get; set; } // varchar(256)
+        [PrimaryKey(Order = 0), NotNull ] public string Country { get; set; } // char(2)
+        [PrimaryKey(Order = 1)          ] public int    Id      { get; set; } // int
+		[Column,                NotNull ] public string Name    { get; set; } // varchar(128)
+		[Column,                Nullable] public Sex?   Sex     { get; set; } // int
 
 		#region Associations
 		[Association(ThisKey="Country,Id", OtherKey="AltCustomerCountry,AltCustomerId", CanBeNull=true, IsBackReference=true)]
@@ -196,6 +198,11 @@ namespace OdataToEntity.Test.Model
 
     [Table(Schema = "dbo", Name = "ManyColumns")]
     public sealed class ManyColumns : ManyColumnsBase
+    {
+    }
+
+    [Table(Schema = "dbo", Name = "ManyColumnsView")]
+    public sealed class ManyColumnsView : ManyColumnsBase
     {
     }
 
@@ -264,6 +271,13 @@ namespace OdataToEntity.Test.Model
 		#endregion
 	}
 
+    [Table(Schema = "dbo", Name = "OrderItemsView", IsView = true)]
+    public sealed class OrderItemsView
+    {
+        [Column, NotNull] public String Name    { get; set; }
+        [Column, NotNull] public String Product { get; set; }
+    }
+
     [Table(Schema = "dbo", Name = "ShippingAddresses")]
     public sealed class ShippingAddress
     {
@@ -282,10 +296,10 @@ namespace OdataToEntity.Test.Model
     [Table(Schema = "dbo", Name = "CustomerShippingAddress")]
     public sealed class CustomerShippingAddress
     {
-        [Column, PrimaryKey(Order = 0)] public String CustomerCountry        { get; set; }
-        [Column, PrimaryKey(Order = 1)] public int    CustomerId             { get; set; }
-        [Column, PrimaryKey(Order = 2)] public int    ShippingAddressOrderId { get; set; }
-        [Column, PrimaryKey(Order = 3)] public int    ShippingAddressId      { get; set; }
+        [Column, PrimaryKey(Order = 0), NotNull] public String CustomerCountry        { get; set; }
+        [Column, PrimaryKey(Order = 1)         ] public int    CustomerId             { get; set; }
+        [Column, PrimaryKey(Order = 2)         ] public int    ShippingAddressOrderId { get; set; }
+        [Column, PrimaryKey(Order = 3)         ] public int    ShippingAddressId      { get; set; }
 
 		#region Associations
 		[Association(ThisKey="CustomerCountry,CustomerId", OtherKey="Country,Id", CanBeNull=false, KeyName="FK_CustomerShippingAddress_Customers", BackReferenceName="CustomerShippingAddresses")]

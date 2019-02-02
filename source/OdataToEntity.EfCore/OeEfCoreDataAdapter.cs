@@ -288,7 +288,7 @@ namespace OdataToEntity.EfCore
             if (property.PropertyType == typeof(DbQuery<TEntity>))
             {
                 var getDbQuery = (Func<T, DbQuery<TEntity>>)property.GetGetMethod().CreateDelegate(typeof(Func<T, DbQuery<TEntity>>));
-                return new DbQueryAdapterImpl<TEntity>(null, property.Name);
+                return new DbQueryAdapterImpl<TEntity>(getDbQuery, property.Name);
             }
 
             throw new InvalidOperationException("Not suppoerted entity sourse type " + property.PropertyType.Name);

@@ -88,6 +88,7 @@ namespace OdataToEntity.Test.Model
     [Table("ShippingAddresses", Schema = "dbo")]
     public sealed class ShippingAddress
     {
+        [Required]
         public String Address { get; set; }
         [NotMapped]
         public ICollection<Customer> Customers { get; set; }
@@ -114,6 +115,14 @@ namespace OdataToEntity.Test.Model
         public int ShippingAddressOrderId { get; set; }
         [Key, Column(Order = 3)]
         public int ShippingAddressId { get; set; }
+    }
+
+    public sealed class OrderItemsView
+    {
+        [Required] //ef6 FluentApi test 
+        public String Name { get; set; }
+        [Required] //ef6 FluentApi test
+        public String Product { get; set; }
     }
 
     public class ManyColumnsBase

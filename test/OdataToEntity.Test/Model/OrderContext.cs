@@ -76,6 +76,7 @@ namespace OdataToEntity.Test.Model
         public DbSet<ManyColumnsView> ManyColumnsView { get; set; }
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
+        public DbQuery<OrderItemsView> OrderItemsView { get; set; }
         public DbSet<ShippingAddress> ShippingAddresses { get; set; }
     }
 
