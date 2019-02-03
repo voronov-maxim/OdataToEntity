@@ -35,6 +35,22 @@ namespace OdataToEntity.Parsers
 
             return null;
         }
+        private static NavigationPropertySegment GetNavigationSegment(ODataPathSegment previousSegment, out IEdmEntitySet entitySet)
+        {
+            if (previousSegment is EntitySetSegment entitySetSegment)
+            {
+                entitySet = entitySetSegment.EntitySet;
+                return null;
+            }
+
+            if (previousSegment is NavigationPropertySegment navigationPropertySegment)
+            {
+                entitySet = (IEdmEntitySet)navigationPropertySegment.NavigationSource;
+                return navigationPropertySegment;
+            }
+
+            throw new InvalidOperationException("Invalid segment");
+        }
         public static IReadOnlyList<OeParseNavigationSegment> GetNavigationSegments(ODataPath path)
         {
             var navigationSegments = new List<OeParseNavigationSegment>();
@@ -46,24 +62,17 @@ namespace OdataToEntity.Parsers
                     navigationSegments.Add(new OeParseNavigationSegment(navigationSegment, null));
                 else if (segment is KeySegment keySegment)
                 {
-                    IEdmEntitySet previousEntitySet;
-                    navigationSegment = null;
-                    if (previousSegment is EntitySetSegment)
-                    {
-                        var previousEntitySetSegment = previousSegment as EntitySetSegment;
-                        previousEntitySet = previousEntitySetSegment.EntitySet;
-                    }
-                    else if (previousSegment is NavigationPropertySegment)
-                    {
-                        navigationSegment = previousSegment as NavigationPropertySegment;
-                        previousEntitySet = (IEdmEntitySet)navigationSegment.NavigationSource;
-                    }
-                    else
-                        throw new InvalidOperationException("invalid segment");
-
-                    FilterClause keyFilter = CreateFilterClause(previousEntitySet, keySegment.Keys);
+                    navigationSegment = GetNavigationSegment(previousSegment, out IEdmEntitySet entitySet);
+                    FilterClause keyFilter = CreateFilterClause(entitySet, keySegment.Keys);
                     navigationSegments.Add(new OeParseNavigationSegment(navigationSegment, keyFilter));
                 }
+                else if (segment is FilterSegment filterSegment)
+                {
+                    navigationSegment = GetNavigationSegment(previousSegment, out _);
+                    FilterClause filterClause = new FilterClause(filterSegment.Expression, filterSegment.RangeVariable);
+                    navigationSegments.Add(new OeParseNavigationSegment(navigationSegment, filterClause));
+                }
+
                 previousSegment = segment;
             }
 

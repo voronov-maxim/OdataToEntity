@@ -49,6 +49,10 @@ namespace OdataToEntity.Cache.UriCompare
         {
             return GetNextSegment() is EntitySetSegment entitySetSegment && entitySetSegment.EntitySet == segment.EntitySet;
         }
+        public override bool Translate(FilterSegment segment)
+        {
+            return GetNextSegment() is FilterSegment filterSegment && filterSegment.EdmType == segment.EdmType;
+        }
         public override bool Translate(KeySegment segment)
         {
             if (GetNextSegment() is KeySegment keySegment && keySegment.EdmType == segment.EdmType && keySegment.NavigationSource == segment.NavigationSource)

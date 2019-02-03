@@ -886,6 +886,19 @@ private const string SkipTest = null;
         [Theory]
         [InlineData(0)]
         [InlineData(1)]
+        public async Task FilterSegment(int pageSize)
+        {
+            var parameters = new QueryParameters<Customer>()
+            {
+                RequestUri = "Customers/$filter(Sex eq OdataToEntity.Test.Model.Sex'Female')?$orderby=Id",
+                Expression = t => t.Where(c => c.Sex == Sex.Female).OrderBy(c => c.Id),
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters).ConfigureAwait(false);
+        }
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
         public async Task FilterStringConcat(int pageSize)
         {
             var parameters = new QueryParameters<Customer>()

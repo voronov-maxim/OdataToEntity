@@ -110,16 +110,18 @@ namespace OdataToEntity.Cache.UriCompare
                 if (stringBuilder.Length > 0)
                     stringBuilder.Append('/');
 
-                if (pathSegment is EntitySetSegment)
-                    stringBuilder.Append((pathSegment as EntitySetSegment).EntitySet.Name);
-                else if (pathSegment is NavigationPropertySegment)
-                    stringBuilder.Append((pathSegment as NavigationPropertySegment).NavigationProperty.Name);
+                if (pathSegment is EntitySetSegment entitySetSegment)
+                    stringBuilder.Append(entitySetSegment.EntitySet.Name);
+                else if (pathSegment is NavigationPropertySegment navigationPropertySegment)
+                    stringBuilder.Append(navigationPropertySegment.NavigationProperty.Name);
                 else if (pathSegment is KeySegment)
                 {
                     stringBuilder.Append(pathSegment.Identifier);
                     stringBuilder.Append("()");
                 }
                 else if (pathSegment is CountSegment)
+                    stringBuilder.Append(pathSegment.Identifier);
+                else if (pathSegment is FilterSegment)
                     stringBuilder.Append(pathSegment.Identifier);
                 else
                     throw new InvalidOperationException("unknown ODataPathSegment " + pathSegment.GetType().ToString());

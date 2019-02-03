@@ -18,10 +18,12 @@ namespace OdataToEntity.Test
         {
             List<int> expectedResult;
             using (var dbContext = Fixture.CreateContext())
-                expectedResult = dbContext.OrderItems.Where(i => i.Order.Name == "Order 1" || i.Order.Name == "Order 2").Select(i => i.Id).ToList();
+                expectedResult = dbContext.OrderItems.Where(i =>
+                    (i.Order.Name == "Order 1" || i.Order.Name == "Order 2") && i.Order.Customer.Sex == Model.Sex.Female)
+                    .Select(i => i.Id).ToList();
 
             Db.OeDataAdapter dataAdapter = Fixture.EdmModel.GetDataAdapter(Fixture.EdmModel.EntityContainer);
-            String request = $"Customers/BoundFunctionCollection(orderNames=['Order 1','Order 2'])?$expand=Customer,Items&$select=Name";
+            String request = $"Customers/$filter(Sex eq 'Female')/BoundFunctionCollection(orderNames=['Order 1','Order 2'])?$expand=Customer,Items&$select=Name";
 
             ODataUri odataUri = Fixture.ParseUri(request);
             IEdmModel edmModel = Fixture.EdmModel.GetEdmModel(odataUri.Path);

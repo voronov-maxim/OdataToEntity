@@ -99,6 +99,9 @@ namespace OdataToEntity.Parsers.Translators
             if (path.LastSegment is OperationSegment)
                 return ((EntitySetSegment)path.FirstSegment).EntitySet;
 
+            if (path.LastSegment is FilterSegment)
+                return ((EntitySetSegment)path.FirstSegment).EntitySet;
+
             throw new InvalidOperationException("unknown segment type " + path.LastSegment.ToString());
         }
         public IReadOnlyList<IEdmNavigationProperty> GetJoinPath()
