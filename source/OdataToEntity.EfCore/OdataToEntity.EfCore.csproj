@@ -24,7 +24,6 @@
     <PackageId>OdataToEntity.EfCore</PackageId>
     <PackageTags>odata;data;services;odatatoentity;ef;entity framework core;entity;core</PackageTags>
     <PackageProjectUrl>https://github.com/voronov-maxim/OdataToEntity</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/voronov-maxim/OdataToEntity/blob/master/LICENSE</PackageLicenseUrl>
     <PackageVersion>$(OdataToEntityVersion)</PackageVersion>
   </PropertyGroup>
 

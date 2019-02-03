@@ -22,7 +22,6 @@
     <PackageId>OdataToEntity.GraphQL</PackageId>
     <PackageTags>graphql;odata;odatatoentity</PackageTags>
     <PackageProjectUrl>https://github.com/voronov-maxim/OdataToEntity</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/voronov-maxim/OdataToEntity/blob/master/LICENSE</PackageLicenseUrl>
     <PackageVersion>$(OdataToEntityVersion)</PackageVersion>
   </PropertyGroup>
 

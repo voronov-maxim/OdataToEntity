@@ -23,7 +23,6 @@
     <PackageId>OdataToEntity</PackageId>
     <PackageTags>odata;data;services;odatalib;edmlib;ef;entity framework;linq2db;entity;core</PackageTags>
     <PackageProjectUrl>https://github.com/voronov-maxim/OdataToEntity</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/voronov-maxim/OdataToEntity/blob/master/LICENSE</PackageLicenseUrl>
     <PackageVersion>$(OdataToEntityVersion)</PackageVersion>
   </PropertyGroup>
 

@@ -23,7 +23,6 @@
     <PackageId>OdataToEntity.Linq2Db</PackageId>
     <PackageTags>odata;data;services;odatatoentity;linq2db;entity</PackageTags>
     <PackageProjectUrl>https://github.com/voronov-maxim/OdataToEntity</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/voronov-maxim/OdataToEntity/blob/master/LICENSE</PackageLicenseUrl>
     <PackageVersion>$(OdataToEntityVersion)</PackageVersion>
   </PropertyGroup>
 
