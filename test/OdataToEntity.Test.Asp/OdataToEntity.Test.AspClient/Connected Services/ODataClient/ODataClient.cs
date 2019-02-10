@@ -392,6 +392,7 @@ namespace ODataClient.OdataToEntity.Test.Model
       <EntityType Name=""OrderBase"" Abstract=""true"">
         <Property Name=""AltCustomerCountry"" Type=""Edm.String"" />
         <Property Name=""AltCustomerId"" Type=""Edm.Int32"" />
+        <Property Name=""Dummy"" Type=""Edm.Int32"" />
         <Property Name=""Name"" Type=""Edm.String"" Nullable=""false"" />
       </EntityType>
       <EntityType Name=""Order"" BaseType=""OdataToEntity.Test.Model.OrderBase"">
@@ -2489,6 +2490,27 @@ namespace ODataClient.OdataToEntity.Test.Model
         private global::System.Nullable<int> _AltCustomerId;
         partial void OnAltCustomerIdChanging(global::System.Nullable<int> value);
         partial void OnAltCustomerIdChanged();
+        /// <summary>
+        /// There are no comments for Property Dummy in the schema.
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        public global::System.Nullable<int> Dummy
+        {
+            get
+            {
+                return this._Dummy;
+            }
+            set
+            {
+                this.OnDummyChanging(value);
+                this._Dummy = value;
+                this.OnDummyChanged();
+            }
+        }
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.OData.Client.Design.T4", "2.4.0")]
+        private global::System.Nullable<int> _Dummy;
+        partial void OnDummyChanging(global::System.Nullable<int> value);
+        partial void OnDummyChanged();
         /// <summary>
         /// There are no comments for Property Name in the schema.
         /// </summary>

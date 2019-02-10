@@ -1,4 +1,5 @@
-﻿using System;
+﻿using OdataToEntity.Query;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -29,6 +30,7 @@ namespace OdataToEntity.Test.Model
         [Key, Column(Order = 1)]
         public int Id { get; set; }
         [Required]
+        [Expand(SelectExpandType.Automatic)]
         public String Name { get; set; }
         [InverseProperty(nameof(Order.Customer))]
         public ICollection<Order> Orders { get; set; }
@@ -36,7 +38,7 @@ namespace OdataToEntity.Test.Model
         [NotMapped]
         public ICollection<ShippingAddress> ShippingAddresses { get; set; }
 
-        public override string ToString() => "Customer: " + "Country = " + Country + ", Id = " + Id.ToString();
+        public override String ToString() => "Customer: " + "Country = " + Country + ", Id = " + Id.ToString();
     }
 
     public abstract class OrderBase
@@ -45,6 +47,8 @@ namespace OdataToEntity.Test.Model
         public String AltCustomerCountry { get; set; }
         //[ForeignKey(nameof(AltCustomer)), Column(Order = 1)]
         public int? AltCustomerId { get; set; }
+        [Expand(SelectExpandType.Disabled)]
+        public int? Dummy { get; set; }
         [Required]
         public String Name { get; set; }
     }
@@ -55,6 +59,7 @@ namespace OdataToEntity.Test.Model
         [ForeignKey("AltCustomerCountry,AltCustomerId")]
         public Customer AltCustomer { get; set; }
         [ForeignKey("CustomerCountry,CustomerId")]
+        [Expand(SelectExpandType.Automatic)]
         public Customer Customer { get; set; }
         [Required]
         public String CustomerCountry { get; set; }

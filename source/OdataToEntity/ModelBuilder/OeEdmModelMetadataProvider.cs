@@ -8,6 +8,14 @@ namespace OdataToEntity.ModelBuilder
 {
     public class OeEdmModelMetadataProvider
     {
+        public OeEdmModelMetadataProvider() : this(false)
+        {
+        }
+        public OeEdmModelMetadataProvider(bool useModelBoundAttribute)
+        {
+            UseModelBoundAttribute = useModelBoundAttribute;
+        }
+
         public virtual PropertyInfo[] GetForeignKey(PropertyInfo propertyInfo)
         {
             var fkey = (ForeignKeyAttribute)propertyInfo.GetCustomAttribute(typeof(ForeignKeyAttribute));
@@ -62,7 +70,20 @@ namespace OdataToEntity.ModelBuilder
         }
         public virtual bool IsNotMapped(PropertyInfo propertyInfo)
         {
-            return propertyInfo.GetCustomAttribute(typeof(NotMappedAttribute)) != null;
+            if (propertyInfo.GetCustomAttribute(typeof(NotMappedAttribute)) != null)
+                return true;
+
+            return IsNotMappedModelBoundAttribute(propertyInfo);
+        }
+        protected bool IsNotMappedModelBoundAttribute(PropertyInfo propertyInfo)
+        {
+            if (UseModelBoundAttribute)
+            {
+                var expandAttribute = (Query.ExpandAttribute)propertyInfo.GetCustomAttribute(typeof(Query.ExpandAttribute));
+                return expandAttribute != null && expandAttribute.ExpandType == Query.SelectExpandType.Disabled;
+            }
+
+            return false;
         }
         public virtual bool IsRequired(PropertyInfo propertyInfo)
         {
@@ -75,5 +96,7 @@ namespace OdataToEntity.ModelBuilder
             if (clrProperties.Length > 1)
                 Array.Sort(clrProperties, (x, y) => GetOrder(x).CompareTo(GetOrder(y)));
         }
+
+        public bool UseModelBoundAttribute { get; }
     }
 }

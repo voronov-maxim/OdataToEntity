@@ -33,9 +33,9 @@ namespace OdataToEntity.Test.Model
             _dbDataAdapter = new OrderDbDataAdapter(useRelationalNulls);
         }
 
-        public static ModelBuilder.OeEdmModelMetadataProvider CreateMetadataProvider(bool useRelationalNulls, String databaseName)
+        public static ModelBuilder.OeEdmModelMetadataProvider CreateMetadataProvider(bool useRelationalNulls, String databaseName, bool useModelBoundAttribute)
         {
-            return new OeLinq2DbEdmModelMetadataProvider();
+            return new OeLinq2DbEdmModelMetadataProvider(useModelBoundAttribute);
         }
 
         Db.OeDataAdapter ITestDbDataAdapter.DbDataAdapter => _dbDataAdapter;

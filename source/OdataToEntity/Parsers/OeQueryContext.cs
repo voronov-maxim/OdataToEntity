@@ -82,9 +82,9 @@ namespace OdataToEntity.Parsers
             }
         }
 
-        internal OeQueryContext(IEdmModel edmModel, ODataUri odataUri,
-            IReadOnlyList<OeParseNavigationSegment> parseNavigationSegments,
-            bool isCountSegment, int pageSize, bool navigationNextLink, OeMetadataLevel metadataLevel, Db.OeEntitySetAdapter entitySetAdapter)
+        internal OeQueryContext(IEdmModel edmModel, ODataUri odataUri, Db.OeEntitySetAdapter entitySetAdapter,
+            IReadOnlyList<OeParseNavigationSegment> parseNavigationSegments, bool isCountSegment, int pageSize,
+            bool navigationNextLink, OeMetadataLevel metadataLevel, bool useModelBoundAttribute)
         {
             EntitySetAdapter = entitySetAdapter;
             EdmModel = edmModel;
@@ -94,6 +94,7 @@ namespace OdataToEntity.Parsers
             PageSize = pageSize;
             NavigationNextLink = navigationNextLink;
             MetadataLevel = metadataLevel;
+            UseModelBoundAttribute = useModelBoundAttribute;
 
             var visitor = new OeQueryNodeVisitor(edmModel, Expression.Parameter(entitySetAdapter.EntityType));
             JoinBuilder = new Translators.OeJoinBuilder(visitor);
@@ -189,5 +190,6 @@ namespace OdataToEntity.Parsers
         public Func<IEdmEntitySet, IQueryable> QueryableSource { get; set; }
         public OePropertyAccessor[] SkipTokenAccessors { get; set; }
         public OeSkipTokenNameValue[] SkipTokenNameValues { get; }
+        public bool UseModelBoundAttribute { get; }
     }
 }

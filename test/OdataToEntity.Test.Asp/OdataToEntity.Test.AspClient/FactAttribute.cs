@@ -40,7 +40,14 @@ namespace Xunit
         public static void Equal(String expected, String actual)
         {
             if (expected != actual)
+            {
+                if (expected.Length > 100)
+                    expected = expected.Substring(0, 100);
+                if (actual.Length > 100)
+                    actual = actual.Substring(0, 100);
+
                 throw new InvalidOperationException($"expected: {expected} actual: {actual}");
+            }
         }
         public static void Equal<T>(T expected, T actual)
         {

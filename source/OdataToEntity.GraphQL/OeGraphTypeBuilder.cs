@@ -210,7 +210,7 @@ namespace OdataToEntity.GraphQL
         }
         private bool IsRequired(PropertyInfo propertyInfo)
         {
-            var entityType = GetEntityTypeByName(propertyInfo.DeclaringType.FullName);
+            IEdmEntityType entityType = GetEntityTypeByName(propertyInfo.DeclaringType.FullName);
             IEdmProperty edmProperty = entityType.FindProperty(propertyInfo.Name);
             return !edmProperty.Type.IsNullable;
         }

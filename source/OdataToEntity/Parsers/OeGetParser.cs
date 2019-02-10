@@ -14,9 +14,13 @@ namespace OdataToEntity.Parsers
     {
         private readonly IEdmModel _edmModel;
 
-        public OeGetParser(IEdmModel model)
+        public OeGetParser(IEdmModel edmModel) : this(edmModel, false)
+        {
+        }
+        public OeGetParser(IEdmModel model, bool useModelBoundAttribute)
         {
             _edmModel = model;
+            UseModelBoundAttribute = useModelBoundAttribute;
         }
 
         internal static BinaryOperatorNode CreateFilterExpression(SingleValueNode singleValueNode, IEnumerable<KeyValuePair<IEdmStructuralProperty, Object>> keys)
@@ -48,7 +52,8 @@ namespace OdataToEntity.Parsers
 
             Db.OeEntitySetAdapter entitySetAdapter = _edmModel.GetEntitySetAdapter(entitySetSegment.EntitySet);
             bool isCountSegment = odataUri.Path.LastSegment is CountSegment;
-            return new OeQueryContext(_edmModel, odataUri, navigationSegments, isCountSegment, pageSize, navigationNextLink, metadataLevel, entitySetAdapter);
+            return new OeQueryContext(_edmModel, odataUri, entitySetAdapter, navigationSegments,
+                isCountSegment, pageSize, navigationNextLink, metadataLevel, UseModelBoundAttribute);
         }
         public async Task ExecuteAsync(ODataUri odataUri, OeRequestHeaders headers, Stream stream, CancellationToken cancellationToken)
         {
@@ -85,5 +90,7 @@ namespace OdataToEntity.Parsers
                     dataAdapter.CloseDataContext(dataContext);
             }
         }
+
+        public bool UseModelBoundAttribute { get; }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Microsoft.OData.Edm;
+using Microsoft.OData.UriParser;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -135,6 +136,64 @@ namespace OdataToEntity.ModelBuilder
                 AddDbQueryKeys();
             else
                 AddKeys();
+        }
+        internal SelectItem[] BuildSelectItems(IEdmModel edmModel, Dictionary<Type, EntityTypeInfo> entityTypeInfos, ref int level)
+        {
+            if (--level < 0)
+                return Array.Empty<SelectItem>();
+
+            SelectItem[] selectItemArray = edmModel.GetSelectItems(EdmType);
+            if (selectItemArray != null)
+                return selectItemArray;
+
+            var selectItems = new List<SelectItem>();
+            foreach (IEdmProperty edmProperty in EdmType.Properties())
+            {
+                PropertyInfo clrProperty = ClrType.GetPropertyIgnoreCase(edmProperty.Name);
+                if (clrProperty == null) //shadow property
+                    continue;
+
+                var expandAttribute = (Query.ExpandAttribute)clrProperty.GetCustomAttribute(typeof(Query.ExpandAttribute));
+                if (expandAttribute == null || expandAttribute.ExpandType != Query.SelectExpandType.Automatic)
+                    continue;
+
+                if (expandAttribute.MaxDepth > 0 && expandAttribute.MaxDepth < level)
+                    level = expandAttribute.MaxDepth;
+
+                if (edmProperty is IEdmStructuralProperty structuralProperty)
+                    selectItems.Add(new PathSelectItem(new ODataSelectPath(new PropertySegment(structuralProperty))));
+                else if (edmProperty is IEdmNavigationProperty navigationProperty)
+                {
+                    IEdmEntitySet entitySet = OeEdmClrHelper.GetEntitySet(edmModel, navigationProperty);
+                    var segment = new NavigationPropertySegment(navigationProperty, entitySet);
+
+                    Type childType = Parsers.OeExpressionHelper.GetCollectionItemType(clrProperty.PropertyType);
+                    if (childType == null)
+                        childType = clrProperty.PropertyType;
+
+                    EntityTypeInfo entityTypeInfo = entityTypeInfos[childType];
+                    SelectItem[] childSelectItems = entityTypeInfo.BuildSelectItems(edmModel, entityTypeInfos, ref level);
+                    if (childSelectItems.Length == 0)
+                    {
+                        var childSelectItemList = new List<SelectItem>();
+                        foreach (IEdmStructuralProperty childStructuralProperty in entityTypeInfo.EdmType.StructuralProperties())
+                            childSelectItemList.Add(new PathSelectItem(new ODataSelectPath(new PropertySegment(childStructuralProperty))));
+                        childSelectItems = childSelectItemList.ToArray();
+                    }
+
+                    var selectExpandClause = new SelectExpandClause(childSelectItems, false);
+                    selectItems.Add(new ExpandedNavigationSelectItem(new ODataExpandPath(segment), entitySet, selectExpandClause));
+                }
+                else
+                    throw new InvalidOperationException("Unknown IEdmProperty type " + edmProperty.GetType());
+            }
+
+            if (selectItems.Count == 0)
+                return Array.Empty<SelectItem>();
+
+            selectItemArray = selectItems.ToArray();
+            edmModel.SetSelectItems(EdmType, selectItemArray);
+            return selectItemArray;
         }
         internal static EdmEnumType CreateEdmEnumType(Type clrEnumType)
         {

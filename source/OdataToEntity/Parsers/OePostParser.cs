@@ -32,7 +32,7 @@ namespace OdataToEntity.Parsers
             OePropertyAccessor[] accessors = OePropertyAccessor.CreateFromType(clrEntityType, entitySet);
 
             Db.OeEntitySetAdapter entitySetAdapter = _dataAdapter.EntitySetAdapters.Find(entitySet);
-            return new OeQueryContext(_edmModel, odataUri, null, false, 0, false, metadataLevel, entitySetAdapter)
+            return new OeQueryContext(_edmModel, odataUri, entitySetAdapter, null, false, 0, false, metadataLevel, false)
             {
                 EntryFactory = OeEntryFactory.CreateEntryFactory(clrEntityType, entitySet, accessors),
             };

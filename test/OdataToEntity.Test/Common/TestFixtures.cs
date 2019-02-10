@@ -5,56 +5,56 @@ namespace OdataToEntity.Test
     //Fuxtures --------------------------------------------------------------------------------
     public class AC_PLNull_DbFixtureInitDb : DbFixtureInitDb
     {
-        public AC_PLNull_DbFixtureInitDb() : base(true, false)
+        public AC_PLNull_DbFixtureInitDb() : base(true, false, false)
         {
         }
     }
 
     public class AC_PLNull_ManyColumnsFixtureInitDb : ManyColumnsFixtureInitDb
     {
-        public AC_PLNull_ManyColumnsFixtureInitDb() : base(true, false)
+        public AC_PLNull_ManyColumnsFixtureInitDb() : base(true, false, false)
         {
         }
     }
 
     public class AC_RDBNull_DbFixtureInitDb : DbFixtureInitDb
     {
-        public AC_RDBNull_DbFixtureInitDb() : base(true, true)
+        public AC_RDBNull_DbFixtureInitDb() : base(true, true, false)
         {
         }
     }
 
     public class AC_RDBNull_ManyColumnsFixtureInitDb : ManyColumnsFixtureInitDb
     {
-        public AC_RDBNull_ManyColumnsFixtureInitDb() : base(true, true)
+        public AC_RDBNull_ManyColumnsFixtureInitDb() : base(true, true, false)
         {
         }
     }
 
     public class NC_PLNull_DbFixtureInitDb : DbFixtureInitDb
     {
-        public NC_PLNull_DbFixtureInitDb() : base(false, false)
+        public NC_PLNull_DbFixtureInitDb() : base(false, false, false)
         {
         }
     }
 
     public class NC_PLNull_ManyColumnsFixtureInitDb : ManyColumnsFixtureInitDb
     {
-        public NC_PLNull_ManyColumnsFixtureInitDb() : base(false, false)
+        public NC_PLNull_ManyColumnsFixtureInitDb() : base(false, false, false)
         {
         }
     }
 
     public class NC_RDBNull_DbFixtureInitDb : DbFixtureInitDb
     {
-        public NC_RDBNull_DbFixtureInitDb() : base(false, true)
+        public NC_RDBNull_DbFixtureInitDb() : base(false, true, false)
         {
         }
     }
 
     public class NC_RDBNull_ManyColumnsFixtureInitDb : ManyColumnsFixtureInitDb
     {
-        public NC_RDBNull_ManyColumnsFixtureInitDb() : base(false, true)
+        public NC_RDBNull_ManyColumnsFixtureInitDb() : base(false, true, false)
         {
         }
     }

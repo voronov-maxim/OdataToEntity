@@ -262,7 +262,7 @@ namespace OdataToEntity.Cache.UriCompare
                 if (expand1.NavigationSource != expand2.NavigationSource)
                     return false;
 
-                bool navigationNextLink = _navigationNextLink && expand1.GetNavigationNextLink();
+                bool navigationNextLink = _navigationNextLink && expand1.IsNavigationNextLink();
                 if (!CompareFilter(expand1.FilterOption, expand2.FilterOption, navigationNextLink))
                     return false;
 

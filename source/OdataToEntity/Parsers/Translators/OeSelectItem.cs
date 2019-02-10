@@ -40,9 +40,25 @@ namespace OdataToEntity.Parsers.Translators
             SkipToken = skipToken;
         }
 
-        public void AddNavigationItem(OeSelectItem navigationItem)
+        internal void AddKeyRecursive(bool skipToken)
         {
-            _navigationItems.Add(navigationItem);
+            if (SelectItems.Count > 0)
+                foreach (IEdmStructuralProperty keyProperty in EntitySet.EntityType().Key())
+                    AddSelectItem(new OeSelectItem(keyProperty, skipToken));
+
+            foreach (OeSelectItem childNavigationItem in _navigationItems)
+                childNavigationItem.AddKeyRecursive(skipToken);
+        }
+        internal OeSelectItem AddOrGetNavigationItem(OeSelectItem navigationItem)
+        {
+            OeSelectItem existingNavigationItem = FindChildrenNavigationItem((IEdmNavigationProperty)navigationItem.EdmProperty);
+            if (existingNavigationItem == null)
+            {
+                _navigationItems.Add(navigationItem);
+                return navigationItem;
+            }
+
+            return existingNavigationItem;
         }
         public bool AddSelectItem(OeSelectItem selectItem)
         {
@@ -57,7 +73,7 @@ namespace OdataToEntity.Parsers.Translators
             _selectItems.Add(selectItem);
             return true;
         }
-        public OeSelectItem FindChildrenNavigationItem(IEdmNavigationProperty navigationProperty)
+        private OeSelectItem FindChildrenNavigationItem(IEdmNavigationProperty navigationProperty)
         {
             for (int i = 0; i < _navigationItems.Count; i++)
                 if (_navigationItems[i].EdmProperty == navigationProperty)
@@ -112,6 +128,7 @@ namespace OdataToEntity.Parsers.Translators
             return joinPath;
         }
 
+        public bool AlreadyUsedInBuildExpression { get; set; }
         public IEdmProperty EdmProperty { get; }
         public IEdmEntitySetBase EntitySet { get; }
         public OeEntryFactory EntryFactory { get; set; }

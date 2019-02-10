@@ -60,6 +60,7 @@ create table dbo."Orders"
     "CustomerCountry" character(2) not null,
     "CustomerId" integer not null,
     "Date" timestamp with time zone,
+    "Dummy" integer null,
     "Id" integer not null default nextval('dbo."Orders_Id_seq"'),
     "Name" character varying(256) not null,
     "Status" integer not null,

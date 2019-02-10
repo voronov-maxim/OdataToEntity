@@ -15,6 +15,7 @@ using LinqToDB.DataProvider.SqlServer;
 using LinqToDB.Mapping;
 using OdataToEntity.Linq2Db;
 using System.ComponentModel;
+using OdataToEntity.Query;
 
 namespace OdataToEntity.Test.Model
 {
@@ -145,7 +146,8 @@ namespace OdataToEntity.Test.Model
 		[Column,                Nullable] public string Address { get; set; } // varchar(256)
         [PrimaryKey(Order = 0), NotNull ] public string Country { get; set; } // char(2)
         [PrimaryKey(Order = 1)          ] public int    Id      { get; set; } // int
-		[Column,                NotNull ] public string Name    { get; set; } // varchar(128)
+        [Expand(SelectExpandType.Automatic)]
+        [Column,                NotNull ] public string Name    { get; set; } // varchar(128)
 		[Column,                Nullable] public Sex?   Sex     { get; set; } // int
 
 		#region Associations
@@ -210,7 +212,9 @@ namespace OdataToEntity.Test.Model
     {
         [Column,     Nullable ] public string          AltCustomerCountry { get; set; } // char(2)
         [Column,     Nullable ] public int?            AltCustomerId      { get; set; } // int
-		[Column,     NotNull  ] public string          Name               { get; set; } // varchar(256)
+        [Expand(SelectExpandType.Disabled)]
+        [Column,     Nullable ] public int?            Dummy              { get; set; } //int
+        [Column,     NotNull  ] public string          Name               { get; set; } // varchar(256)
     }
 
     [Table(Schema="dbo", Name="Orders")]
@@ -234,7 +238,8 @@ namespace OdataToEntity.Test.Model
 		/// FK_Orders_Customers
 		/// </summary>
 		[Association(ThisKey= "CustomerCountry,CustomerId", OtherKey="Country,Id", CanBeNull=false, KeyName="FK_Orders_Customers", BackReferenceName="Orders")]
-		public Customer Customer { get; set; }
+        [Expand(SelectExpandType.Automatic)]
+        public Customer Customer { get; set; }
 
 		/// <summary>
 		/// FK_OrderItem_Order_BackReference

@@ -14,12 +14,10 @@ namespace OdataToEntity.Test
 #else
 private const string SkipTest = null;
 #endif
-        private readonly DbFixtureInitDb _fixture;
-
         protected SelectTest(DbFixtureInitDb fixture)
         {
             fixture.Initalize().GetAwaiter().GetResult();
-            _fixture = fixture;
+            Fixture = fixture;
         }
 
         [Theory]
@@ -1320,7 +1318,7 @@ private const string SkipTest = null;
             {
                 RequestUri = "Orders",
                 Expression = t => t,
-                PageSize = pageSize
+                PageSize = pageSize,
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
@@ -1335,6 +1333,6 @@ private const string SkipTest = null;
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
 
-        private DbFixtureInitDb Fixture => _fixture;
+        private DbFixtureInitDb Fixture { get; }
     }
 }

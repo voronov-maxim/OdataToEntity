@@ -1,7 +1,9 @@
 ﻿using Microsoft.OData;
 using Microsoft.OData.Edm;
+using Microsoft.OData.UriParser;
 using OdataToEntity.ModelBuilder;
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 
 namespace OdataToEntity
@@ -25,6 +27,7 @@ namespace OdataToEntity
         public static Type GetClrType(this IEdmModel edmModel, IEdmEntitySetBase entitySet)
         {
             IEdmEntityType entityType = entitySet.EntityType();
+            edmModel = OeEdmClrHelper.GetEdmModel(edmModel, entityType);
             OeValueAnnotation<Type> clrTypeAnnotation = edmModel.GetAnnotationValue<OeValueAnnotation<Type>>(entityType);
             return clrTypeAnnotation.Value;
         }
@@ -68,6 +71,10 @@ namespace OdataToEntity
         {
             return edmModel.GetAnnotationValue<MethodInfo>(edmFunction);
         }
+        public static SelectItem[] GetSelectItems(this IEdmModel edmModel, IEdmEntityType entityType)
+        {
+            return edmModel.GetEdmModel(entityType).GetAnnotationValue<SelectItem[]>(entityType);
+        }
         public static bool IsDbFunction(this IEdmModel edmModel, IEdmOperation edmOperation)
         {
             OeValueAnnotation<bool> valueAnnotation = edmModel.GetAnnotationValue<OeValueAnnotation<bool>>(edmOperation);
@@ -96,6 +103,10 @@ namespace OdataToEntity
         internal static void SetMethodInfo(this IEdmModel edmModel, IEdmFunction edmFunction, MethodInfo methodInfo)
         {
             edmModel.SetAnnotationValue(edmFunction, methodInfo);
+        }
+        public static void SetSelectItems(this IEdmModel edmModel, IEdmEntityType entityType, SelectItem[] selectItems)
+        {
+            OeEdmClrHelper.GetEdmModel(edmModel, entityType).SetAnnotationValue(entityType, selectItems);
         }
     }
 }

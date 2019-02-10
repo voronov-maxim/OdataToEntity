@@ -94,6 +94,21 @@ namespace OdataToEntity
         {
             return edmModel.GetEdmModel(entitySet.Container);
         }
+        public static IEdmModel GetEdmModel(this IEdmModel edmModel, IEdmEntityType entityType)
+        {
+            foreach (IEdmSchemaElement element in edmModel.SchemaElements)
+                if (element == entityType)
+                    return edmModel;
+
+            foreach (IEdmModel refModel in edmModel.ReferencedModels)
+            {
+                 IEdmModel foundModel = GetEdmModel(refModel, entityType);
+                if (foundModel != null)
+                    return foundModel;
+            }
+
+            return null;
+        }
         public static IEdmModel GetEdmModel(this IEdmModel edmModel, ODataPath path)
         {
             if (path.FirstSegment is EntitySetSegment entitySetSegment)
@@ -105,7 +120,7 @@ namespace OdataToEntity
                 return edmModel.GetEdmModel(operationImport.Container);
             }
 
-            throw new InvalidOperationException("Not supported segmet type " + path.FirstSegment.GetType().FullName);
+            throw new InvalidOperationException("Not supported segment type " + path.FirstSegment.GetType().FullName);
         }
         public static IEdmTypeReference GetEdmTypeReference(this IEdmModel edmModel, Type clrType)
         {

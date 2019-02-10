@@ -13,7 +13,10 @@ namespace OdataToEntity.EfCore
         private readonly IModel _efModel;
         private readonly Dictionary<Type, IEntityType> _entityTypes;
 
-        public OeEfCoreEdmModelMetadataProvider(IModel model)
+        public OeEfCoreEdmModelMetadataProvider(IModel model) : this(model, false)
+        {
+        }
+        public OeEfCoreEdmModelMetadataProvider(IModel model, bool useModelBoundAttribute) : base(useModelBoundAttribute)
         {
             _efModel = model;
             _entityTypes = _efModel.GetEntityTypes().ToDictionary(e => e.ClrType);
@@ -132,6 +135,9 @@ namespace OdataToEntity.EfCore
         }
         public override bool IsNotMapped(PropertyInfo propertyInfo)
         {
+            if (base.IsNotMappedModelBoundAttribute(propertyInfo))
+                return true;
+
             foreach (IEntityType efEntityType in GetEntityTypes(propertyInfo))
             {
                 foreach (IProperty efProperty in efEntityType.GetProperties())

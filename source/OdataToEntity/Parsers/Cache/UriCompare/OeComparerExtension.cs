@@ -5,7 +5,7 @@ namespace OdataToEntity.Cache.UriCompare
 {
     public static class OeComparerExtension
     {
-        public static bool GetNavigationNextLink(this ExpandedNavigationSelectItem item)
+        public static bool IsNavigationNextLink(this ExpandedNavigationSelectItem item)
         {
             var segment = (NavigationPropertySegment)item.PathToNavigationProperty.LastSegment;
             return segment.NavigationProperty.Type is IEdmCollectionTypeReference;

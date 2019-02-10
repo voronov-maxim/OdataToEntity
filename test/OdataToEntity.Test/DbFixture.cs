@@ -19,16 +19,16 @@ namespace OdataToEntity.Test
         private readonly String _databaseName;
         private readonly bool _useRelationalNulls;
 
-        protected DbFixture(bool allowCache, bool useRelationalNulls)
-            : this(allowCache, useRelationalNulls, OrderContext.GenerateDatabaseName())
+        protected DbFixture(bool allowCache, bool useRelationalNulls, bool useModelBoundAttribute)
+            : this(allowCache, useRelationalNulls, OrderContext.GenerateDatabaseName(), useModelBoundAttribute)
         {
         }
-        private DbFixture(bool allowCache, bool useRelationalNulls, String databaseName)
-            : this(useRelationalNulls, databaseName, new OrderDataAdapter(allowCache, useRelationalNulls, databaseName))
+        private DbFixture(bool allowCache, bool useRelationalNulls, String databaseName, bool useModelBoundAttribute)
+            : this(useRelationalNulls, databaseName, new OrderDataAdapter(allowCache, useRelationalNulls, databaseName), useModelBoundAttribute)
         {
         }
-        private DbFixture(bool useRelationalNulls, String databaseName, Db.OeDataAdapter dataAdapter)
-            : this(useRelationalNulls, databaseName, dataAdapter, OrderDataAdapter.CreateMetadataProvider(useRelationalNulls, databaseName))
+        private DbFixture(bool useRelationalNulls, String databaseName, Db.OeDataAdapter dataAdapter, bool useModelBoundAttribute)
+            : this(useRelationalNulls, databaseName, dataAdapter, OrderDataAdapter.CreateMetadataProvider(useRelationalNulls, databaseName, useModelBoundAttribute))
         {
 
         }
@@ -66,7 +66,7 @@ namespace OdataToEntity.Test
         }
         public virtual async Task Execute<T, TResult>(QueryParametersScalar<T, TResult> parameters)
         {
-            IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri, false, 0).ConfigureAwait(false);
+            IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri, false, 0, false).ConfigureAwait(false);
 
             ODataUri odataUri = ParseUri(parameters.RequestUri);
             IEdmModel edmModel = EdmModel.GetEdmModel(odataUri.Path);
@@ -82,7 +82,8 @@ namespace OdataToEntity.Test
         }
         public virtual async Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
         {
-            IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri, parameters.NavigationNextLink, parameters.PageSize).ConfigureAwait(false);
+            IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri, parameters.NavigationNextLink, parameters.PageSize,
+                parameters.UseModelBoundAttribute).ConfigureAwait(false);
 
             ODataUri odataUri = ParseUri(parameters.RequestUri);
             IEdmModel edmModel = EdmModel.GetEdmModel(odataUri.Path);
@@ -118,10 +119,10 @@ namespace OdataToEntity.Test
 
             await parser.ExecuteBatchAsync(new MemoryStream(bytes), responseStream, CancellationToken.None).ConfigureAwait(false);
         }
-        public async Task<IList> ExecuteOe<TResult>(String requestUri, bool navigationNextLink, int pageSize)
+        public async Task<IList> ExecuteOe<TResult>(String requestUri, bool navigationNextLink, int pageSize, bool useModelBoundAttribute)
         {
             ODataUri odataUri = ParseUri(requestUri);
-            var parser = new OeParser(odataUri.ServiceRoot, EdmModel);
+            var parser = new OeParser(odataUri.ServiceRoot, EdmModel, useModelBoundAttribute);
             var uri = new Uri(odataUri.ServiceRoot, requestUri);
             OeRequestHeaders requestHeaders = OeRequestHeaders.JsonDefault.SetMaxPageSize(pageSize).SetNavigationNextLink(navigationNextLink);
 

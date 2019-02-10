@@ -9,6 +9,13 @@ namespace OdataToEntity.Linq2Db
 {
     public sealed class OeLinq2DbEdmModelMetadataProvider : OeEdmModelMetadataProvider
     {
+        public OeLinq2DbEdmModelMetadataProvider() : this(false)
+        {
+        }
+        public OeLinq2DbEdmModelMetadataProvider(bool useModelBoundAttribute) : base(useModelBoundAttribute)
+        {
+        }
+
         public override PropertyInfo[] GetForeignKey(PropertyInfo propertyInfo)
         {
             var association = (AssociationAttribute)propertyInfo.GetCustomAttribute(typeof(AssociationAttribute));
@@ -75,6 +82,9 @@ namespace OdataToEntity.Linq2Db
         public override bool IsKey(PropertyInfo propertyInfo) => propertyInfo.GetCustomAttribute(typeof(PrimaryKeyAttribute)) != null;
         public override bool IsNotMapped(PropertyInfo propertyInfo)
         {
+            if (base.IsNotMappedModelBoundAttribute(propertyInfo))
+                return true;
+
             if (propertyInfo.GetCustomAttribute(typeof(ColumnAttribute)) != null)
                 return false;
             if (propertyInfo.GetCustomAttribute(typeof(PrimaryKeyAttribute)) != null)

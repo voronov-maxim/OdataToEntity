@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -98,14 +97,14 @@ namespace OdataToEntity
         private readonly Uri _baseUri;
         private readonly IEdmModel _edmModel;
 
-        public OeParser(Uri baseUri, IEdmModel edmModel)
+        public OeParser(Uri baseUri, IEdmModel edmModel) : this(baseUri, edmModel, false)
+        {
+        }
+        public OeParser(Uri baseUri, IEdmModel edmModel, bool useModelBoundAttribute)
         {
             _baseUri = baseUri;
             _edmModel = edmModel;
-        }
-        [Obsolete("Use OeParser(Uri, IEdmModel)", true)]
-        public OeParser(Uri baseUri, Db.OeDataAdapter dataAdapter, IEdmModel edmModel) : this(baseUri, edmModel)
-        {
+            UseModelBoundAttribute = useModelBoundAttribute;
         }
 
         public async Task<String> ExecuteBatchAsync(Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
@@ -130,7 +129,7 @@ namespace OdataToEntity
         }
         public async Task ExecuteQueryAsync(ODataUri odataUri, OeRequestHeaders headers, Stream responseStream, CancellationToken cancellationToken)
         {
-            var parser = new Parsers.OeGetParser(_edmModel.GetEdmModel(odataUri.Path));
+            var parser = new Parsers.OeGetParser(_edmModel.GetEdmModel(odataUri.Path), UseModelBoundAttribute);
             await parser.ExecuteAsync(odataUri, headers, responseStream, cancellationToken).ConfigureAwait(false);
         }
         public async Task ExecuteOperationAsync(ODataUri odataUri, OeRequestHeaders headers, Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
@@ -196,5 +195,7 @@ namespace OdataToEntity
             var uriParser = new ODataUriParser(model, serviceRoot, uri, ServiceProvider.Instance);
             return uriParser.ParseUri();
         }
+
+        public bool UseModelBoundAttribute { get; }
     }
 }

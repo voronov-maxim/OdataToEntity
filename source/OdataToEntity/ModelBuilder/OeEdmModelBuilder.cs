@@ -64,8 +64,9 @@ namespace OdataToEntity.ModelBuilder
                     typeInfo.BuildProperties(entityTypeInfos, _enumTypes, _complexTypes);
 
             foreach (EntityTypeInfo typeInfo in entityTypeInfos.Values)
-                foreach (FKeyInfo fkeyInfo in typeInfo.NavigationClrProperties)
-                    fkeyInfo.EdmNavigationProperty = CreateNavigationProperty(fkeyInfo);
+                if (!typeInfo.IsRefModel)
+                    foreach (FKeyInfo fkeyInfo in typeInfo.NavigationClrProperties)
+                        fkeyInfo.EdmNavigationProperty = CreateNavigationProperty(fkeyInfo);
 
             var edmModel = new EdmModel();
             var containers = new Dictionary<Db.OeDataAdapter, EdmEntityContainer>();
@@ -84,8 +85,11 @@ namespace OdataToEntity.ModelBuilder
             var entitySets = new Dictionary<IEdmEntityType, EdmEntitySet>(entityTypeInfos.Count);
             foreach (EntityTypeInfo typeInfo in entityTypeInfos.Values)
             {
-                edmModel.AddElement(typeInfo.EdmType);
-                edmModel.SetClrType(typeInfo.EdmType, typeInfo.ClrType);
+                if (!typeInfo.IsRefModel)
+                {
+                    edmModel.AddElement(typeInfo.EdmType);
+                    edmModel.SetClrType(typeInfo.EdmType, typeInfo.ClrType);
+                }
 
                 Db.OeEntitySetAdapter entitySetAdapter = _dataAdapter.EntitySetAdapters.Find(typeInfo.ClrType);
                 if (entitySetAdapter != null)
@@ -98,25 +102,25 @@ namespace OdataToEntity.ModelBuilder
 
             var manyToManyBuilder = new ManyToManyBuilder(edmModel, _metadataProvider, entityTypeInfos);
             foreach (EntityTypeInfo typeInfo in entityTypeInfos.Values)
-            {
-                foreach (FKeyInfo fkeyInfo in typeInfo.NavigationClrProperties)
-                {
-                    EdmEntitySet principal = entitySets[fkeyInfo.PrincipalInfo.EdmType];
-                    EdmEntitySet dependent = entitySets[fkeyInfo.DependentInfo.EdmType];
-
-                    if (fkeyInfo.DependentNavigationProperty == null)
-                        principal.AddNavigationTarget(fkeyInfo.EdmNavigationProperty, dependent);
-                    else
-                    {
-                        dependent.AddNavigationTarget(fkeyInfo.EdmNavigationProperty, principal);
-                        if (fkeyInfo.EdmNavigationProperty.Partner != null)
-                            principal.AddNavigationTarget(fkeyInfo.EdmNavigationProperty.Partner, dependent);
-                    }
-                }
-
                 if (!typeInfo.IsRefModel)
+                {
+                    foreach (FKeyInfo fkeyInfo in typeInfo.NavigationClrProperties)
+                    {
+                        EdmEntitySet principal = entitySets[fkeyInfo.PrincipalInfo.EdmType];
+                        EdmEntitySet dependent = entitySets[fkeyInfo.DependentInfo.EdmType];
+
+                        if (fkeyInfo.DependentNavigationProperty == null)
+                            principal.AddNavigationTarget(fkeyInfo.EdmNavigationProperty, dependent);
+                        else
+                        {
+                            dependent.AddNavigationTarget(fkeyInfo.EdmNavigationProperty, principal);
+                            if (fkeyInfo.EdmNavigationProperty.Partner != null)
+                                principal.AddNavigationTarget(fkeyInfo.EdmNavigationProperty.Partner, dependent);
+                        }
+                    }
+
                     manyToManyBuilder.Build(typeInfo);
-            }
+                }
 
             foreach (OeOperationConfiguration operationConfiguration in _operationConfigurations)
             {
@@ -146,6 +150,9 @@ namespace OdataToEntity.ModelBuilder
             _dataAdapter.SetEdmModel(edmModel);
             foreach (IEdmModel refModel in refModels)
                 edmModel.AddReferencedModel(refModel);
+
+            if (_metadataProvider.UseModelBoundAttribute)
+                BuildModelBoundAttribute(edmModel, entityTypeInfos);
             return edmModel;
         }
         private Dictionary<Type, EntityTypeInfo> BuildEntityTypes(IEdmModel[] refModels)
@@ -195,7 +202,6 @@ namespace OdataToEntity.ModelBuilder
 
                 return null;
             }
-
         }
         private EdmFunction BuildFunction(OeOperationConfiguration operationConfiguration, Dictionary<Type, EntityTypeInfo> entityTypeInfos)
         {
@@ -215,6 +221,14 @@ namespace OdataToEntity.ModelBuilder
             }
 
             return edmFunction;
+        }
+        private void BuildModelBoundAttribute(IEdmModel edmModel, Dictionary<Type, EntityTypeInfo> entityTypeInfos)
+        {
+            foreach (EntityTypeInfo typeInfo in entityTypeInfos.Values)
+            {
+                int level = 2;
+                typeInfo.BuildSelectItems(edmModel, entityTypeInfos, ref level);
+            }
         }
         private static EdmStructuralProperty[] CreateDependentEdmProperties(EdmEntityType edmDependent, IReadOnlyList<PropertyInfo> dependentStructuralProperties)
         {
