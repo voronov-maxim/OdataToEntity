@@ -71,6 +71,15 @@ namespace OdataToEntity
         {
             return edmModel.GetAnnotationValue<MethodInfo>(edmFunction);
         }
+        public static Query.PageAttribute GetPageAttribute(this IEdmModel edmModel, IEdmEntityType entityType)
+        {
+            return edmModel.GetEdmModel(entityType).GetAnnotationValue<Query.PageAttribute>(entityType);
+        }
+        public static Query.PageAttribute GetPageAttribute(this IEdmModel edmModel, IEdmNavigationProperty navigationProperty)
+        {
+            IEdmEntitySet entitySet = OeEdmClrHelper.GetEntitySet(edmModel, navigationProperty);
+            return OeEdmClrHelper.GetEdmModel(edmModel, entitySet.Container).GetAnnotationValue<Query.PageAttribute>(navigationProperty);
+        }
         public static SelectItem[] GetSelectItems(this IEdmModel edmModel, IEdmEntityType entityType)
         {
             return edmModel.GetEdmModel(entityType).GetAnnotationValue<SelectItem[]>(entityType);
@@ -103,6 +112,15 @@ namespace OdataToEntity
         internal static void SetMethodInfo(this IEdmModel edmModel, IEdmFunction edmFunction, MethodInfo methodInfo)
         {
             edmModel.SetAnnotationValue(edmFunction, methodInfo);
+        }
+        public static void SetPageAttribute(this IEdmModel edmModel, IEdmEntityType entityType, Query.PageAttribute pageAttribute)
+        {
+            OeEdmClrHelper.GetEdmModel(edmModel, entityType).SetAnnotationValue(entityType, pageAttribute);
+        }
+        public static void SetPageAttribute(this IEdmModel edmModel, IEdmNavigationProperty navigationProperty, Query.PageAttribute pageAttribute)
+        {
+            IEdmEntitySet entitySet = OeEdmClrHelper.GetEntitySet(edmModel, navigationProperty);
+            OeEdmClrHelper.GetEdmModel(edmModel, entitySet.Container).SetAnnotationValue(navigationProperty, pageAttribute);
         }
         public static void SetSelectItems(this IEdmModel edmModel, IEdmEntityType entityType, SelectItem[] selectItems)
         {

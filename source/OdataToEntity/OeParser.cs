@@ -97,10 +97,10 @@ namespace OdataToEntity
         private readonly Uri _baseUri;
         private readonly IEdmModel _edmModel;
 
-        public OeParser(Uri baseUri, IEdmModel edmModel) : this(baseUri, edmModel, false)
+        public OeParser(Uri baseUri, IEdmModel edmModel) : this(baseUri, edmModel, OeModelBoundAttribute.No)
         {
         }
-        public OeParser(Uri baseUri, IEdmModel edmModel, bool useModelBoundAttribute)
+        public OeParser(Uri baseUri, IEdmModel edmModel, OeModelBoundAttribute useModelBoundAttribute)
         {
             _baseUri = baseUri;
             _edmModel = edmModel;
@@ -196,6 +196,6 @@ namespace OdataToEntity
             return uriParser.ParseUri();
         }
 
-        public bool UseModelBoundAttribute { get; }
+        public OeModelBoundAttribute UseModelBoundAttribute { get; }
     }
 }

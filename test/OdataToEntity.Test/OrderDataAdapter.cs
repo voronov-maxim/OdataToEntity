@@ -9,7 +9,7 @@ namespace OdataToEntity.Test.Model
         {
         }
 
-        public static ModelBuilder.OeEdmModelMetadataProvider CreateMetadataProvider(bool useRelationalNulls, String databaseName, bool useModelBoundAttribute)
+        public static ModelBuilder.OeEdmModelMetadataProvider CreateMetadataProvider(bool useRelationalNulls, String databaseName, OeModelBoundAttribute useModelBoundAttribute)
         {
             return new ModelBuilder.OeEdmModelMetadataProvider(useModelBoundAttribute);
         }

@@ -10,9 +10,9 @@ namespace OdataToEntity.EfCore
     {
         public static EdmModel BuildEdmModelFromEfCorePgSqlModel(this Db.OeDataAdapter dataAdapter, String schema, params IEdmModel[] refModels)
         {
-            return dataAdapter.BuildEdmModelFromEfCorePgSqlModel(schema, false, refModels);
+            return dataAdapter.BuildEdmModelFromEfCorePgSqlModel(schema, OeModelBoundAttribute.No, refModels);
         }
-        public static EdmModel BuildEdmModelFromEfCorePgSqlModel(this Db.OeDataAdapter dataAdapter, String schema, bool useModelBoundAttribute, params IEdmModel[] refModels)
+        public static EdmModel BuildEdmModelFromEfCorePgSqlModel(this Db.OeDataAdapter dataAdapter, String schema, OeModelBoundAttribute useModelBoundAttribute, params IEdmModel[] refModels)
         {
             var context = (DbContext)dataAdapter.CreateDataContext();
             try

@@ -8,10 +8,10 @@ namespace OdataToEntity.ModelBuilder
 {
     public class OeEdmModelMetadataProvider
     {
-        public OeEdmModelMetadataProvider() : this(false)
+        public OeEdmModelMetadataProvider() : this(OeModelBoundAttribute.No)
         {
         }
-        public OeEdmModelMetadataProvider(bool useModelBoundAttribute)
+        public OeEdmModelMetadataProvider(OeModelBoundAttribute useModelBoundAttribute)
         {
             UseModelBoundAttribute = useModelBoundAttribute;
         }
@@ -77,7 +77,7 @@ namespace OdataToEntity.ModelBuilder
         }
         protected bool IsNotMappedModelBoundAttribute(PropertyInfo propertyInfo)
         {
-            if (UseModelBoundAttribute)
+            if (UseModelBoundAttribute == OeModelBoundAttribute.Yes)
             {
                 var expandAttribute = (Query.ExpandAttribute)propertyInfo.GetCustomAttribute(typeof(Query.ExpandAttribute));
                 return expandAttribute != null && expandAttribute.ExpandType == Query.SelectExpandType.Disabled;
@@ -97,6 +97,6 @@ namespace OdataToEntity.ModelBuilder
                 Array.Sort(clrProperties, (x, y) => GetOrder(x).CompareTo(GetOrder(y)));
         }
 
-        public bool UseModelBoundAttribute { get; }
+        public OeModelBoundAttribute UseModelBoundAttribute { get; }
     }
 }

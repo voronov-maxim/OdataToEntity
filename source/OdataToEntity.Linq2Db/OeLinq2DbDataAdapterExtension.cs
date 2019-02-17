@@ -7,9 +7,9 @@ namespace OdataToEntity.Linq2Db
     {
         public static EdmModel BuildEdmModelFromLinq2DbModel(this Db.OeDataAdapter dataAdapter, params IEdmModel[] refModels)
         {
-            return dataAdapter.BuildEdmModelFromLinq2DbModel(false, refModels);
+            return dataAdapter.BuildEdmModelFromLinq2DbModel(OeModelBoundAttribute.No, refModels);
         }
-        public static EdmModel BuildEdmModelFromLinq2DbModel(this Db.OeDataAdapter dataAdapter, bool useModelBoundAttribute, params IEdmModel[] refModels)
+        public static EdmModel BuildEdmModelFromLinq2DbModel(this Db.OeDataAdapter dataAdapter, OeModelBoundAttribute useModelBoundAttribute, params IEdmModel[] refModels)
         {
             var modelBuilder = new OeEdmModelBuilder(dataAdapter, new OeLinq2DbEdmModelMetadataProvider(useModelBoundAttribute));
             return modelBuilder.BuildEdmModel(refModels);

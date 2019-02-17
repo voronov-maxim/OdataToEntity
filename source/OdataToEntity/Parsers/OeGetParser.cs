@@ -14,10 +14,10 @@ namespace OdataToEntity.Parsers
     {
         private readonly IEdmModel _edmModel;
 
-        public OeGetParser(IEdmModel edmModel) : this(edmModel, false)
+        public OeGetParser(IEdmModel edmModel) : this(edmModel, OdataToEntity.OeModelBoundAttribute.No)
         {
         }
-        public OeGetParser(IEdmModel model, bool useModelBoundAttribute)
+        public OeGetParser(IEdmModel model, OeModelBoundAttribute useModelBoundAttribute)
         {
             _edmModel = model;
             UseModelBoundAttribute = useModelBoundAttribute;
@@ -39,13 +39,13 @@ namespace OdataToEntity.Parsers
             }
             return compositeNode;
         }
-        public OeQueryContext CreateQueryContext(ODataUri odataUri, int pageSize, bool navigationNextLink, OeMetadataLevel metadataLevel)
+        public OeQueryContext CreateQueryContext(ODataUri odataUri, int maxPageSize, bool navigationNextLink, OeMetadataLevel metadataLevel)
         {
             IReadOnlyList<OeParseNavigationSegment> navigationSegments = OeParseNavigationSegment.GetNavigationSegments(odataUri.Path);
             var entitySetSegment = (EntitySetSegment)odataUri.Path.FirstSegment;
-            if (pageSize > 0)
+            if (maxPageSize > 0)
             {
-                odataUri.Top = pageSize;
+                odataUri.Top = maxPageSize;
                 IEdmEntitySet resultEntitySet = OeParseNavigationSegment.GetEntitySet(navigationSegments) ?? entitySetSegment.EntitySet;
                 odataUri.OrderBy = OeSkipTokenParser.GetUniqueOrderBy(_edmModel, resultEntitySet, odataUri.OrderBy, odataUri.Apply);
             }
@@ -53,7 +53,7 @@ namespace OdataToEntity.Parsers
             Db.OeEntitySetAdapter entitySetAdapter = _edmModel.GetEntitySetAdapter(entitySetSegment.EntitySet);
             bool isCountSegment = odataUri.Path.LastSegment is CountSegment;
             return new OeQueryContext(_edmModel, odataUri, entitySetAdapter, navigationSegments,
-                isCountSegment, pageSize, navigationNextLink, metadataLevel, UseModelBoundAttribute);
+                isCountSegment, maxPageSize, navigationNextLink, metadataLevel, UseModelBoundAttribute);
         }
         public async Task ExecuteAsync(ODataUri odataUri, OeRequestHeaders headers, Stream stream, CancellationToken cancellationToken)
         {
@@ -91,6 +91,6 @@ namespace OdataToEntity.Parsers
             }
         }
 
-        public bool UseModelBoundAttribute { get; }
+        public OeModelBoundAttribute UseModelBoundAttribute { get; }
     }
 }

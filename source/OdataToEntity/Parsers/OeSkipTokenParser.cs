@@ -26,12 +26,15 @@ namespace OdataToEntity.Parsers
 
     public static class OeSkipTokenParser
     {
+        private const String RestCountName = "<>$restCount";
+
         private static readonly ODataMessageReaderSettings ReaderSettings = new ODataMessageReaderSettings() { EnableMessageStreamDisposal = false };
         private static readonly ODataMessageWriterSettings WriterSettings = new ODataMessageWriterSettings() { EnableMessageStreamDisposal = false };
 
-        public static OeSkipTokenNameValue[] CreateNameValues(IEdmModel edmModel, OrderByClause uniqueOrderBy, String skipToken)
+        public static OeSkipTokenNameValue[] CreateNameValues(IEdmModel edmModel, OrderByClause uniqueOrderBy, String skipToken, out int? restCount)
         {
-            return skipToken == null ? Array.Empty<OeSkipTokenNameValue>() : ParseSkipToken(edmModel, uniqueOrderBy, skipToken);
+            restCount = null;
+            return skipToken == null ? Array.Empty<OeSkipTokenNameValue>() : ParseSkipToken(edmModel, uniqueOrderBy, skipToken, out restCount);
         }
         public static OePropertyAccessor[] GetAccessors(Expression source, OrderByClause orderByClause, Translators.OeJoinBuilder joinBuilder)
         {
@@ -50,7 +53,7 @@ namespace OdataToEntity.Parsers
 
             return accessors.ToArray();
         }
-        private static List<SingleValuePropertyAccessNode> GetOrderByProperties(IEdmModel edmModel, IEdmEntitySet entitySet, OrderByClause orderByClause, ApplyClause applyClause)
+        private static List<SingleValuePropertyAccessNode> GetOrderByProperties(IEdmModel edmModel, IEdmEntitySetBase entitySet, OrderByClause orderByClause, ApplyClause applyClause)
         {
             var keys = new List<SingleValuePropertyAccessNode>();
             GroupByTransformationNode groupByNode;
@@ -81,7 +84,7 @@ namespace OdataToEntity.Parsers
             }
             return keys;
         }
-        internal static OrderByClause GetUniqueOrderBy(IEdmModel edmModel, IEdmEntitySet entitySet, OrderByClause orderByClause, ApplyClause applyClause)
+        internal static OrderByClause GetUniqueOrderBy(IEdmModel edmModel, IEdmEntitySetBase entitySet, OrderByClause orderByClause, ApplyClause applyClause)
         {
             if (orderByClause != null && applyClause == null && GetIsKey(entitySet.EntityType(), GetEdmProperies(orderByClause)))
                 return orderByClause;
@@ -127,7 +130,7 @@ namespace OdataToEntity.Parsers
                 keys[i] = new KeyValuePair<String, Object>(GetPropertyName(accessors[i].EdmProperty), accessors[i].GetValue(value));
             return keys;
         }
-        private static IEdmStructuralProperty[] GetEdmProperies(OrderByClause orderByClause)
+        public static IEdmStructuralProperty[] GetEdmProperies(OrderByClause orderByClause)
         {
             var edmProperties = new List<IEdmStructuralProperty>();
             while (orderByClause != null)
@@ -141,12 +144,12 @@ namespace OdataToEntity.Parsers
             }
             return edmProperties.ToArray();
         }
-        public static String GetJson(IEdmModel model, IEnumerable<KeyValuePair<String, Object>> keys)
+        public static String GetJson(IEdmModel edmModel, IEnumerable<KeyValuePair<String, Object>> keys)
         {
             using (var stream = new MemoryStream())
             {
                 IODataRequestMessage requestMessage = new Infrastructure.OeInMemoryMessage(stream, null);
-                using (ODataMessageWriter messageWriter = new ODataMessageWriter(requestMessage, WriterSettings, model))
+                using (ODataMessageWriter messageWriter = new ODataMessageWriter(requestMessage, WriterSettings, edmModel))
                 {
                     ODataParameterWriter writer = messageWriter.CreateODataParameterWriter(null);
                     writer.WriteStart();
@@ -183,25 +186,45 @@ namespace OdataToEntity.Parsers
         {
             return ((IEdmNamedElement)edmProperty.DeclaringType).Name + "_" + edmProperty.Name;
         }
-        public static String GetSkipToken(IEdmModel edmModel, OePropertyAccessor[] accessors, Object value)
+        public static String GetSkipToken(IEdmModel edmModel, OePropertyAccessor[] accessors, Object value, int? restCount)
         {
-            return GetJson(edmModel, GetKeys(accessors, value));
-        }
-        public static String GetSkipToken(IEdmModel edmModel, IEnumerable<KeyValuePair<String, Object>> keys)
-        {
+            KeyValuePair<String, Object>[] keys = GetKeys(accessors, value);
+            if (restCount.GetValueOrDefault() > 0)
+            {
+                Array.Resize(ref keys, keys.Length + 1);
+                keys[keys.Length - 1] = new KeyValuePair<String, Object>(RestCountName, restCount.GetValueOrDefault());
+            }
+
             return GetJson(edmModel, keys);
         }
-        private static OeSkipTokenNameValue[] ParseJson(IEdmModel model, String skipToken, IEdmStructuralProperty[] keys)
+        public static String GetSkipToken(IEdmModel edmModel, ICollection<KeyValuePair<String, Object>> keys, int? restCount)
         {
+            if (restCount.GetValueOrDefault() > 0)
+            {
+                var keyArray = new KeyValuePair<String, Object>[keys.Count + 1];
+                int i = 0;
+                foreach (KeyValuePair<String, Object> key in keys)
+                    keyArray[i++] = key;
+                keyArray[keyArray.Length - 1] = new KeyValuePair<String, Object>(RestCountName, restCount);
+
+                return GetJson(edmModel, keyArray);
+            }
+
+            return GetJson(edmModel, keys);
+        }
+        private static OeSkipTokenNameValue[] ParseJson(IEdmModel edmModel, String skipToken, IEdmStructuralProperty[] keys, out int? restCount)
+        {
+            restCount = null;
             var skipTokenNameValues = new OeSkipTokenNameValue[keys.Length];
             using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(skipToken)))
             {
                 IODataRequestMessage requestMessage = new Infrastructure.OeInMemoryMessage(stream, null);
-                using (ODataMessageReader messageReader = new ODataMessageReader(requestMessage, ReaderSettings, model))
+                using (ODataMessageReader messageReader = new ODataMessageReader(requestMessage, ReaderSettings, edmModel))
                 {
                     var operation = new EdmAction("", "", null);
                     foreach (IEdmStructuralProperty key in keys)
                         operation.AddParameter(GetPropertyName(key), key.Type);
+                    operation.AddParameter(RestCountName, OeEdmClrHelper.GetEdmTypeReference(edmModel, typeof(int?)));
 
                     ODataParameterReader reader = messageReader.CreateODataParameterReader(operation);
                     int i = 0;
@@ -209,16 +232,20 @@ namespace OdataToEntity.Parsers
                     {
                         Object value = reader.Value;
                         if (value is ODataEnumValue enumValue)
-                            value = OeEdmClrHelper.GetValue(model, enumValue);
-                        skipTokenNameValues[i++] = new OeSkipTokenNameValue(reader.Name, value);
+                            value = OeEdmClrHelper.GetValue(edmModel, enumValue);
+
+                        if (reader.Name == RestCountName)
+                            restCount = (int)value;
+                        else
+                            skipTokenNameValues[i++] = new OeSkipTokenNameValue(reader.Name, value);
                     }
                 }
             }
             return skipTokenNameValues;
         }
-        private static OeSkipTokenNameValue[] ParseSkipToken(IEdmModel edmModel, OrderByClause uniqueOrderBy, String skipToken)
+        private static OeSkipTokenNameValue[] ParseSkipToken(IEdmModel edmModel, OrderByClause uniqueOrderBy, String skipToken, out int? restCount)
         {
-            return ParseJson(edmModel, skipToken, GetEdmProperies(uniqueOrderBy));
+            return ParseJson(edmModel, skipToken, GetEdmProperies(uniqueOrderBy), out restCount);
         }
     }
 }

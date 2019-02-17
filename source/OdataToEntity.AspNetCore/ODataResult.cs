@@ -190,7 +190,10 @@ namespace OdataToEntity.AspNetCore
             }
 
             if (PageSize > 0 && count > 0 && (Count ?? Int32.MaxValue) > count)
-                resourceSet.NextPageLink = BuildNextPageLink(OeSkipTokenParser.GetSkipToken(_edmModel, GetKeys(entity)));
+            {
+                var keys = new List<KeyValuePair<String, Object>>(GetKeys(entity));
+                resourceSet.NextPageLink = BuildNextPageLink(OeSkipTokenParser.GetSkipToken(_edmModel, keys, null));
+            }
 
             writer.WriteEnd();
         }

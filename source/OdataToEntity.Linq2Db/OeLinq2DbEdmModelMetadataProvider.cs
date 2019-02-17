@@ -9,10 +9,10 @@ namespace OdataToEntity.Linq2Db
 {
     public sealed class OeLinq2DbEdmModelMetadataProvider : OeEdmModelMetadataProvider
     {
-        public OeLinq2DbEdmModelMetadataProvider() : this(false)
+        public OeLinq2DbEdmModelMetadataProvider() : this(OeModelBoundAttribute.No)
         {
         }
-        public OeLinq2DbEdmModelMetadataProvider(bool useModelBoundAttribute) : base(useModelBoundAttribute)
+        public OeLinq2DbEdmModelMetadataProvider(OeModelBoundAttribute useModelBoundAttribute) : base(useModelBoundAttribute)
         {
         }
 

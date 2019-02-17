@@ -7,9 +7,9 @@ namespace OdataToEntity
     {
         public static EdmModel BuildEdmModel(this Db.OeDataAdapter dataAdapter, params IEdmModel[] refModels)
         {
-            return dataAdapter.BuildEdmModel(false, refModels);
+            return dataAdapter.BuildEdmModel(OeModelBoundAttribute.No, refModels);
         }
-        public static EdmModel BuildEdmModel(this Db.OeDataAdapter dataAdapter, bool useModelBoundAttribute, params IEdmModel[] refModels)
+        public static EdmModel BuildEdmModel(this Db.OeDataAdapter dataAdapter, OeModelBoundAttribute useModelBoundAttribute, params IEdmModel[] refModels)
         {
             var modelBuilder = new OeEdmModelBuilder(dataAdapter, new OeEdmModelMetadataProvider(useModelBoundAttribute));
             return modelBuilder.BuildEdmModel(refModels);

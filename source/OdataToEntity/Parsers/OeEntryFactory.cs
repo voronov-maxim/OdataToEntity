@@ -51,10 +51,11 @@ namespace OdataToEntity.Parsers
         {
             ResourceInfo = resourceInfo;
         }
-        private OeEntryFactory(Type clrEntityType, IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors,
-            IReadOnlyList<OeEntryFactory> navigationLinks, LambdaExpression linkAccessor, ODataNestedResourceInfo resourceInfo)
+        private OeEntryFactory(Type clrEntityType, IEdmEntitySetBase entitySet, IEdmNavigationProperty edmNavigationProperty,
+            OePropertyAccessor[] accessors, IReadOnlyList<OeEntryFactory> navigationLinks, LambdaExpression linkAccessor, ODataNestedResourceInfo resourceInfo)
             : this(clrEntityType, entitySet, accessors)
         {
+            EdmNavigationProperty = edmNavigationProperty;
             NavigationLinks = navigationLinks ?? Array.Empty<OeEntryFactory>();
             LinkAccessor = linkAccessor == null ? null : (Func<Object, Object>)linkAccessor.Compile();
             EqualityComparer = new Infrastructure.OeEntryEqualityComparer(GetKeyExpressions(entitySet, accessors));
@@ -88,10 +89,10 @@ namespace OdataToEntity.Parsers
         {
             return new OeEntryFactory(clrEntityType, entitySet, accessors, navigationLinks, linkAccessor);
         }
-        public static OeEntryFactory CreateEntryFactoryNested(Type clrEntityType, IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors,
-            IReadOnlyList<OeEntryFactory> navigationLinks, LambdaExpression linkAccessor, ODataNestedResourceInfo resourceInfo)
+        public static OeEntryFactory CreateEntryFactoryNested(Type clrEntityType, IEdmEntitySetBase entitySet, IEdmNavigationProperty edmNavigationProperty,
+            OePropertyAccessor[] accessors, IReadOnlyList<OeEntryFactory> navigationLinks, LambdaExpression linkAccessor, ODataNestedResourceInfo resourceInfo)
         {
-            return new OeEntryFactory(clrEntityType, entitySet, accessors, navigationLinks, linkAccessor, resourceInfo);
+            return new OeEntryFactory(clrEntityType, entitySet, edmNavigationProperty, accessors, navigationLinks, linkAccessor, resourceInfo);
         }
         public OeEntryFactory CreateEntryFactoryFromTuple()
         {
@@ -126,10 +127,10 @@ namespace OdataToEntity.Parsers
 
             ParameterExpression parameter = Expression.Parameter(typeof(Object));
             UnaryExpression typedParameter = Expression.Convert(parameter, parentEntryFactory.ClrEntityType);
-            MemberExpression navigationPropertyExpression = Expression.Property(typedParameter, ResourceInfo.Name);
+            MemberExpression navigationPropertyExpression = Expression.Property(typedParameter, EdmNavigationProperty.Name);
             LambdaExpression linkAccessor = Expression.Lambda(navigationPropertyExpression, parameter);
 
-            return OeEntryFactory.CreateEntryFactoryNested(ClrEntityType, EntitySet, accessors, navigationLinks, linkAccessor, ResourceInfo);
+            return OeEntryFactory.CreateEntryFactoryNested(ClrEntityType, EntitySet, EdmNavigationProperty, accessors, navigationLinks, linkAccessor, ResourceInfo);
         }
         public ref OePropertyAccessor GetAccessorByName(String propertyName)
         {
@@ -203,10 +204,13 @@ namespace OdataToEntity.Parsers
         public bool? CountOption { get; set; }
         public IEdmEntitySetBase EntitySet { get; }
         public IEdmEntityType EdmEntityType { get; }
+        public IEdmNavigationProperty EdmNavigationProperty { get; }
         public IEqualityComparer<Object> EqualityComparer { get; }
         public bool IsTuple { get; }
         public Func<Object, Object> LinkAccessor { get; }
+        public int MaxTop { get; set; }
         public IReadOnlyList<OeEntryFactory> NavigationLinks { get; }
+        public int PageSize { get; set; }
         public ODataNestedResourceInfo ResourceInfo { get; }
     }
 }

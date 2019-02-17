@@ -54,6 +54,7 @@ namespace OdataToEntity.Test.Model
     }
 
     [Table("Orders", Schema = "dbo")]
+    [Page(MaxTop = 2, PageSize = 1)]
     public sealed class Order : OrderBase
     {
         [ForeignKey("AltCustomerCountry,AltCustomerId")]
@@ -68,6 +69,8 @@ namespace OdataToEntity.Test.Model
         public DateTimeOffset? Date { get; set; }
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
+        [Expand(SelectExpandType.Automatic)]
+        [Page(MaxTop = 2, PageSize = 1)]
         public ICollection<OrderItem> Items { get; set; }
         public ICollection<ShippingAddress> ShippingAddresses { get; set; }
         public OrderStatus Status { get; set; }

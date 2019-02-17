@@ -218,6 +218,7 @@ namespace OdataToEntity.Test.Model
     }
 
     [Table(Schema="dbo", Name="Orders")]
+    [Page(MaxTop = 2, PageSize = 1)]
 	public partial class Order : OrderBase
 	{
         [Column,     NotNull  ] public string          CustomerCountry    { get; set; } // char(2)
@@ -245,6 +246,8 @@ namespace OdataToEntity.Test.Model
 		/// FK_OrderItem_Order_BackReference
 		/// </summary>
 		[Association(ThisKey="Id", OtherKey="OrderId", CanBeNull=true, IsBackReference=true)]
+        [Expand(SelectExpandType.Automatic)]
+        [Page(MaxTop = 2, PageSize = 1)]
 		public IEnumerable<OrderItem> Items { get; set; }
 
         /// <summary>

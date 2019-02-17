@@ -82,16 +82,18 @@ namespace OdataToEntity.Parsers
             }
         }
 
+        private int? _restCount;
+
         internal OeQueryContext(IEdmModel edmModel, ODataUri odataUri, Db.OeEntitySetAdapter entitySetAdapter,
-            IReadOnlyList<OeParseNavigationSegment> parseNavigationSegments, bool isCountSegment, int pageSize,
-            bool navigationNextLink, OeMetadataLevel metadataLevel, bool useModelBoundAttribute)
+            IReadOnlyList<OeParseNavigationSegment> parseNavigationSegments, bool isCountSegment, int maxPageSize,
+            bool navigationNextLink, OeMetadataLevel metadataLevel, OeModelBoundAttribute useModelBoundAttribute)
         {
             EntitySetAdapter = entitySetAdapter;
             EdmModel = edmModel;
             ODataUri = odataUri;
             ParseNavigationSegments = parseNavigationSegments;
             IsCountSegment = isCountSegment;
-            PageSize = pageSize;
+            MaxPageSize = maxPageSize;
             NavigationNextLink = navigationNextLink;
             MetadataLevel = metadataLevel;
             UseModelBoundAttribute = useModelBoundAttribute;
@@ -99,8 +101,10 @@ namespace OdataToEntity.Parsers
             var visitor = new OeQueryNodeVisitor(edmModel, Expression.Parameter(entitySetAdapter.EntityType));
             JoinBuilder = new Translators.OeJoinBuilder(visitor);
 
-            if (pageSize > 0 || (odataUri.OrderBy != null && odataUri.Skip != null && odataUri.Top != null))
-                SkipTokenNameValues = OeSkipTokenParser.CreateNameValues(edmModel, odataUri.OrderBy, odataUri.SkipToken);
+            if (IsGenerateSkipToken())
+                SkipTokenNameValues = OeSkipTokenParser.CreateNameValues(edmModel, odataUri.OrderBy, odataUri.SkipToken, out _restCount);
+            else
+                SkipTokenNameValues = Array.Empty<OeSkipTokenNameValue>();
         }
 
         public Cache.OeCacheContext CreateCacheContext()
@@ -154,10 +158,12 @@ namespace OdataToEntity.Parsers
             expression = expressionBuilder.ApplyCount(expression, IsCountSegment);
 
             if (!IsCountSegment)
+            {
                 EntryFactory = CreateEntryFactory(expressionBuilder);
 
-            if (SkipTokenNameValues != null)
-                SkipTokenAccessors = OeSkipTokenParser.GetAccessors(expression, ODataUri.OrderBy, JoinBuilder);
+                if (IsGenerateSkipToken() || EntryFactory.PageSize > 0)
+                    SkipTokenAccessors = OeSkipTokenParser.GetAccessors(expression, ODataUri.OrderBy, JoinBuilder);
+            }
 
             constants = expressionBuilder.Constants;
             return expression;
@@ -166,6 +172,10 @@ namespace OdataToEntity.Parsers
         {
             Expression expression = CreateExpression(out IReadOnlyDictionary<ConstantExpression, ConstantNode> constants);
             return constantToVariableVisitor.Translate(expression, constants);
+        }
+        private bool IsGenerateSkipToken()
+        {
+            return ODataUri.SkipToken != null || MaxPageSize > 0 || (ODataUri.OrderBy != null && ODataUri.Skip != null && ODataUri.Top != null);
         }
         public Expression TranslateSource(Object dataContext, Expression expression)
         {
@@ -182,14 +192,15 @@ namespace OdataToEntity.Parsers
         public Translators.OeJoinBuilder JoinBuilder { get; }
         public bool IsCountSegment { get; }
         public bool IsDatabaseNullHighestValue => EdmModel.GetDataAdapter(EdmModel.EntityContainer).IsDatabaseNullHighestValue;
+        public int MaxPageSize { get; }
         public OeMetadataLevel MetadataLevel { get; }
         public bool NavigationNextLink { get; }
         public ODataUri ODataUri { get; }
-        public int PageSize { get; }
         public IReadOnlyList<OeParseNavigationSegment> ParseNavigationSegments { get; }
         public Func<IEdmEntitySet, IQueryable> QueryableSource { get; set; }
+        public int? RestCount { get => _restCount; set => _restCount = value; }
         public OePropertyAccessor[] SkipTokenAccessors { get; set; }
         public OeSkipTokenNameValue[] SkipTokenNameValues { get; }
-        public bool UseModelBoundAttribute { get; }
+        public OeModelBoundAttribute UseModelBoundAttribute { get; }
     }
 }

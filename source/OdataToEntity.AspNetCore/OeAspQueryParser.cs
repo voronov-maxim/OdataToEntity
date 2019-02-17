@@ -147,7 +147,7 @@ namespace OdataToEntity.AspNetCore
             return new ODataResult<T>(_edmModel, _queryContext.ODataUri, _queryContext.EntryFactory.EntitySet, asyncEnumerator)
             {
                 Count = count,
-                PageSize = _queryContext.PageSize
+                PageSize = _queryContext.MaxPageSize
             };
         }
         public ODataResult<T> OData<T>(IEnumerable<T> enumerable)

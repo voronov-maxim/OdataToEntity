@@ -19,15 +19,15 @@ namespace OdataToEntity.Test
         private readonly String _databaseName;
         private readonly bool _useRelationalNulls;
 
-        protected DbFixture(bool allowCache, bool useRelationalNulls, bool useModelBoundAttribute)
+        protected DbFixture(bool allowCache, bool useRelationalNulls, OeModelBoundAttribute useModelBoundAttribute)
             : this(allowCache, useRelationalNulls, OrderContext.GenerateDatabaseName(), useModelBoundAttribute)
         {
         }
-        private DbFixture(bool allowCache, bool useRelationalNulls, String databaseName, bool useModelBoundAttribute)
+        private DbFixture(bool allowCache, bool useRelationalNulls, String databaseName, OeModelBoundAttribute useModelBoundAttribute)
             : this(useRelationalNulls, databaseName, new OrderDataAdapter(allowCache, useRelationalNulls, databaseName), useModelBoundAttribute)
         {
         }
-        private DbFixture(bool useRelationalNulls, String databaseName, Db.OeDataAdapter dataAdapter, bool useModelBoundAttribute)
+        private DbFixture(bool useRelationalNulls, String databaseName, Db.OeDataAdapter dataAdapter, OeModelBoundAttribute useModelBoundAttribute)
             : this(useRelationalNulls, databaseName, dataAdapter, OrderDataAdapter.CreateMetadataProvider(useRelationalNulls, databaseName, useModelBoundAttribute))
         {
 
@@ -66,7 +66,7 @@ namespace OdataToEntity.Test
         }
         public virtual async Task Execute<T, TResult>(QueryParametersScalar<T, TResult> parameters)
         {
-            IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri, false, 0, false).ConfigureAwait(false);
+            IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri, false, 0, OeModelBoundAttribute.No).ConfigureAwait(false);
 
             ODataUri odataUri = ParseUri(parameters.RequestUri);
             IEdmModel edmModel = EdmModel.GetEdmModel(odataUri.Path);
@@ -119,7 +119,7 @@ namespace OdataToEntity.Test
 
             await parser.ExecuteBatchAsync(new MemoryStream(bytes), responseStream, CancellationToken.None).ConfigureAwait(false);
         }
-        public async Task<IList> ExecuteOe<TResult>(String requestUri, bool navigationNextLink, int pageSize, bool useModelBoundAttribute)
+        public async Task<IList> ExecuteOe<TResult>(String requestUri, bool navigationNextLink, int pageSize, OeModelBoundAttribute useModelBoundAttribute)
         {
             ODataUri odataUri = ParseUri(requestUri);
             var parser = new OeParser(odataUri.ServiceRoot, EdmModel, useModelBoundAttribute);

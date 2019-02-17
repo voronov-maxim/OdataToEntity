@@ -68,7 +68,7 @@ namespace OdataToEntity.ModelBuilder
                     foreach (FKeyInfo fkeyInfo in typeInfo.NavigationClrProperties)
                         fkeyInfo.EdmNavigationProperty = CreateNavigationProperty(fkeyInfo);
 
-            var edmModel = new EdmModel();
+            var edmModel = new EdmModel(false);
             var containers = new Dictionary<Db.OeDataAdapter, EdmEntityContainer>();
 
             edmModel.AddElements(_enumTypes.Values);
@@ -151,7 +151,7 @@ namespace OdataToEntity.ModelBuilder
             foreach (IEdmModel refModel in refModels)
                 edmModel.AddReferencedModel(refModel);
 
-            if (_metadataProvider.UseModelBoundAttribute)
+            if (_metadataProvider.UseModelBoundAttribute == OeModelBoundAttribute.Yes)
                 BuildModelBoundAttribute(edmModel, entityTypeInfos);
             return edmModel;
         }
@@ -224,11 +224,9 @@ namespace OdataToEntity.ModelBuilder
         }
         private void BuildModelBoundAttribute(IEdmModel edmModel, Dictionary<Type, EntityTypeInfo> entityTypeInfos)
         {
-            foreach (EntityTypeInfo typeInfo in entityTypeInfos.Values)
-            {
-                int level = 2;
-                typeInfo.BuildSelectItems(edmModel, entityTypeInfos, ref level);
-            }
+            var modelBoundAttributeBuilder = new ModelBoundAttributeBuilder(edmModel, entityTypeInfos);
+            modelBoundAttributeBuilder.BuildExpandAttribute();
+            modelBoundAttributeBuilder.BuildPageAttribute();
         }
         private static EdmStructuralProperty[] CreateDependentEdmProperties(EdmEntityType edmDependent, IReadOnlyList<PropertyInfo> dependentStructuralProperties)
         {

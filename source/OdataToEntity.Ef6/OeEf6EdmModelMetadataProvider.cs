@@ -13,11 +13,11 @@ namespace OdataToEntity.Ef6
     {
         private readonly Dictionary<Type, EntityType> _entityTypes;
 
-        public OeEf6EdmModelMetadataProvider(DbContext dbContext) : this(dbContext, false)
+        public OeEf6EdmModelMetadataProvider(DbContext dbContext) : this(dbContext, OeModelBoundAttribute.No)
         {
 
         }
-        public OeEf6EdmModelMetadataProvider(DbContext dbContext, bool useModelBoundAttribute) : base(useModelBoundAttribute)
+        public OeEf6EdmModelMetadataProvider(DbContext dbContext, OeModelBoundAttribute useModelBoundAttribute) : base(useModelBoundAttribute)
         {
             MetadataWorkspace workspace = ((IObjectContextAdapter)dbContext).ObjectContext.MetadataWorkspace;
             var itemCollection = (ObjectItemCollection)workspace.GetItemCollection(DataSpace.OSpace);

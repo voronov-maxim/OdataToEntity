@@ -25,16 +25,16 @@ namespace OdataToEntity.Parsers.Translators
             EdmProperty = edmProperty;
             SkipToken = skipToken;
         }
-        public OeSelectItem(IEdmModel edmModel, OeSelectItem parent, ExpandedNavigationSelectItem expandedNavigationSelectItem, bool skipToken) : this()
+        public OeSelectItem(IEdmModel edmModel, OeSelectItem parent, ExpandedNavigationSelectItem item, bool skipToken) : this()
         {
-            var segment = (NavigationPropertySegment)expandedNavigationSelectItem.PathToNavigationProperty.LastSegment;
+            var segment = (NavigationPropertySegment)item.PathToNavigationProperty.LastSegment;
 
             var segments = new List<ODataPathSegment>(parent.Path);
-            segments.AddRange(expandedNavigationSelectItem.PathToNavigationProperty);
+            segments.AddRange(item.PathToNavigationProperty);
 
             EdmProperty = segment.NavigationProperty;
-            EntitySet = (IEdmEntitySetBase)expandedNavigationSelectItem.NavigationSource ?? OeEdmClrHelper.GetEntitySet(edmModel, segment.NavigationProperty);
-            ExpandedNavigationSelectItem = expandedNavigationSelectItem;
+            EntitySet = (IEdmEntitySetBase)item.NavigationSource ?? OeEdmClrHelper.GetEntitySet(edmModel, segment.NavigationProperty);
+            ExpandedNavigationSelectItem = item;
             Parent = parent;
             Path = new ODataPath(segments);
             SkipToken = skipToken;
@@ -133,8 +133,9 @@ namespace OdataToEntity.Parsers.Translators
         public IEdmEntitySetBase EntitySet { get; }
         public OeEntryFactory EntryFactory { get; set; }
         public ExpandedNavigationSelectItem ExpandedNavigationSelectItem { get; }
-        public bool HasNavigationItems => _navigationItems.Count > 0;
+        public int MaxTop { get; set; }
         public IReadOnlyList<OeSelectItem> NavigationItems => _navigationItems;
+        public int PageSize { get; set; }
         public OeSelectItem Parent { get; }
         public ODataPath Path { get; }
         public IReadOnlyList<OeSelectItem> SelectItems => _selectItems;

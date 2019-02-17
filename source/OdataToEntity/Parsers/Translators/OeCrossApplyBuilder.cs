@@ -9,16 +9,16 @@ namespace OdataToEntity.Parsers.Translators
 {
     public static class OeCrossApplyBuilder
     {
-        public static MethodCallExpression Build(Expression outer, Expression inner, ExpandedNavigationSelectItem item, ODataPath odataPath, OeExpressionBuilder expressionBuilder)
+        public static MethodCallExpression Build(OeExpressionBuilder expressionBuilder, Expression outer, Expression inner,
+            ODataPath odataPath, OrderByClause orderBy, long? skip, long? top)
         {
-            var segment = (NavigationPropertySegment)item.PathToNavigationProperty.LastSegment;
-
             Type outerType = OeExpressionHelper.GetCollectionItemType(outer.Type);
             var outerParameter = Expression.Parameter(outerType, outerType.Name);
+            var segment = (NavigationPropertySegment)odataPath.LastSegment;
             Expression subquery = CreateWhereExpression(outerParameter, inner, segment.NavigationProperty);
-            subquery = expressionBuilder.ApplyOrderBy(subquery, item.OrderByOption);
-            subquery = expressionBuilder.ApplySkip(subquery, item.SkipOption, odataPath);
-            subquery = expressionBuilder.ApplyTake(subquery, item.TopOption, odataPath);
+            subquery = expressionBuilder.ApplyOrderBy(subquery, orderBy);
+            subquery = expressionBuilder.ApplySkip(subquery, skip, odataPath);
+            subquery = expressionBuilder.ApplyTake(subquery, top, odataPath);
 
             Type innerType = OeExpressionHelper.GetCollectionItemType(inner.Type);
             MethodInfo selectManyMethdoInfo = OeMethodInfoHelper.GetSelectManyMethodInfo(outerType, innerType);

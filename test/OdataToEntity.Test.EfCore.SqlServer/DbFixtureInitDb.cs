@@ -10,7 +10,7 @@ namespace OdataToEntity.Test
         private bool _initialized;
         private int _queryCount;
 
-        protected DbFixtureInitDb(bool allowCache, bool useRelationalNulls, bool useModelBoundAttribute)
+        protected DbFixtureInitDb(bool allowCache, bool useRelationalNulls, OeModelBoundAttribute useModelBoundAttribute)
             : base(allowCache, useRelationalNulls, useModelBoundAttribute)
         {
         }
@@ -30,8 +30,8 @@ namespace OdataToEntity.Test
         {
             _queryCount++;
             Task t1 = base.Execute(parameters);
-            Task t2 = base.Execute(parameters);
-            await Task.WhenAll(t1, t2);
+            //Task t2 = base.Execute(parameters);zzz
+            await Task.WhenAll(t1, Task.CompletedTask);
         }
         public override async Task Execute<T, TResult>(QueryParametersScalar<T, TResult> parameters)
         {
@@ -54,7 +54,7 @@ namespace OdataToEntity.Test
         private bool _initialized;
         private int _queryCount;
 
-        protected ManyColumnsFixtureInitDb(bool allowCache, bool useRelationalNulls, bool useModelBoundAttribute)
+        protected ManyColumnsFixtureInitDb(bool allowCache, bool useRelationalNulls, OeModelBoundAttribute useModelBoundAttribute)
             : base(allowCache, useRelationalNulls, useModelBoundAttribute)
         {
         }

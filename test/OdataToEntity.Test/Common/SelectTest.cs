@@ -10,9 +10,9 @@ namespace OdataToEntity.Test
     public abstract partial class SelectTest
     {
 #if SQLITE
-        private const string SkipTest = "Sqlite";
+        public const string SkipTest = "Sqlite";
 #else
-private const string SkipTest = null;
+        public const string SkipTest = null;
 #endif
         protected SelectTest(DbFixtureInitDb fixture)
         {

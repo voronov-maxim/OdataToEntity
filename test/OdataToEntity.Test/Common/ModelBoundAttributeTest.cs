@@ -9,7 +9,7 @@ namespace OdataToEntity.Test
 {
     public class ModelBoundAttributeDbFixture : DbFixtureInitDb
     {
-        public ModelBoundAttributeDbFixture() : base(true, true, true)
+        public ModelBoundAttributeDbFixture() : base(false, true, OeModelBoundAttribute.Yes)
         {
         }
     }
@@ -22,15 +22,13 @@ namespace OdataToEntity.Test
             Fixture = fixture;
         }
 
-        [Theory]
-        [InlineData(0)]
-        [InlineData(1)]
-        public async Task Expand(int pageSize)
+        [Fact(Skip = SelectTest.SkipTest)]
+        public async Task ExpandPage()
         {
             var parameters = new QueryParameters<Order, Object>()
             {
-                RequestUri = "Orders",
-                Expression = t => t.Include(o => o.Customer).Select(o => new
+                RequestUri = "Orders?$orderby=Id&$top=100",
+                Expression = t => t.OrderBy(o => o.Id).Take(2).Include(o => o.Customer).Include(o => o.Items.OrderBy(i => i.Id)).Select(o => new
                 {
                     o.AltCustomerCountry,
                     o.AltCustomerId,
@@ -39,11 +37,35 @@ namespace OdataToEntity.Test
                     o.CustomerId,
                     o.Date,
                     o.Id,
+                    Items = o.Items.Take(2),
                     o.Name,
                     o.Status
                 }),
-                PageSize = pageSize,
-                UseModelBoundAttribute = true
+                UseModelBoundAttribute = OeModelBoundAttribute.Yes
+            };
+            await Fixture.Execute(parameters).ConfigureAwait(false);
+        }
+        [Fact(Skip = SelectTest.SkipTest)]
+        public async Task Page()
+        {
+            var parameters = new QueryParameters<Order, Object>()
+            {
+                //RequestUri = "Orders?$expand=Items($orderby=Id;$top=100)&$orderby=Id&$top=100",
+                RequestUri = "Orders?$orderby=Id&$top=100",
+                Expression = t => t.OrderBy(o => o.Id).Take(2).Include(o => o.Customer).Include(o => o.Items.OrderBy(i => i.Id)).Select(o => new
+                {
+                    o.AltCustomerCountry,
+                    o.AltCustomerId,
+                    Customer = new { o.Customer.Name },
+                    o.CustomerCountry,
+                    o.CustomerId,
+                    o.Date,
+                    o.Id,
+                    Items = o.Items.Take(2),
+                    o.Name,
+                    o.Status
+                }),
+                UseModelBoundAttribute = OeModelBoundAttribute.Yes
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }

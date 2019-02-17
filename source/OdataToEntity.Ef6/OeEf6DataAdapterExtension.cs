@@ -8,9 +8,9 @@ namespace OdataToEntity.Ef6
     {
         public static EdmModel BuildEdmModelFromEf6Model(this Db.OeDataAdapter dataAdapter)
         {
-            return dataAdapter.BuildEdmModelFromEf6Model(false);
+            return dataAdapter.BuildEdmModelFromEf6Model(OeModelBoundAttribute.No);
         }
-        public static EdmModel BuildEdmModelFromEf6Model(this Db.OeDataAdapter dataAdapter, bool useModelBoundAttribute)
+        public static EdmModel BuildEdmModelFromEf6Model(this Db.OeDataAdapter dataAdapter, OeModelBoundAttribute useModelBoundAttribute)
         {
             using (var context = (DbContext)dataAdapter.CreateDataContext())
             {

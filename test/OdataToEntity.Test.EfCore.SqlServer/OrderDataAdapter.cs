@@ -19,7 +19,7 @@ namespace OdataToEntity.Test.Model
         {
             return new OrderContext(OrderContextOptions.Create(_useRelationalNulls, null));
         }
-        public static ModelBuilder.OeEdmModelMetadataProvider CreateMetadataProvider(bool useRelationalNulls, String databaseName, bool useModelBoundAttribute)
+        public static ModelBuilder.OeEdmModelMetadataProvider CreateMetadataProvider(bool useRelationalNulls, String databaseName, OeModelBoundAttribute useModelBoundAttribute)
         {
             using (var dbContext = new OrderContext(OrderContextOptions.Create(useRelationalNulls, databaseName)))
                 return new OeEfCoreEdmModelMetadataProvider(dbContext.Model, useModelBoundAttribute);

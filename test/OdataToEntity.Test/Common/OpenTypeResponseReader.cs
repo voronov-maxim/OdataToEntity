@@ -18,10 +18,9 @@ namespace OdataToEntity.Test
         protected override void AddItems(Object entity, PropertyInfo propertyInfo, IEnumerable values)
         {
             var openType = (SortedDictionary<String, Object>)entity;
-            var collection = (IEnumerable)openType[propertyInfo.Name];
-
-            foreach (dynamic value in values)
-                ((dynamic)collection).Add(value);
+            var list = (IList)openType[propertyInfo.Name];
+            foreach (Object value in values)
+                list.Add(value);
         }
         protected override Object CreateRootEntity(ODataResource resource, IReadOnlyList<NavigationProperty> navigationProperties, Type entityType)
         {

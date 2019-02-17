@@ -163,6 +163,14 @@ namespace OdataToEntity.Test
 
                     var navigationPropertyReader = new ResponseReader(EdmModel);
                     AddItems(entity, propertyResourceSet.Key, navigationPropertyReader.Read(response));
+
+                    if (navigationPropertyReader.ResourceSet.NextPageLink != null)
+                    {
+                        response.SetLength(0);
+                        await parser.ExecuteGetAsync(navigationPropertyReader.ResourceSet.NextPageLink, OeRequestHeaders.JsonDefault, response, token);
+                        response.Position = 0;
+                        AddItems(entity, propertyResourceSet.Key, navigationPropertyReader.Read(response));
+                    }
                 }
         }
         protected static String GetEntitSetName(Stream response)
