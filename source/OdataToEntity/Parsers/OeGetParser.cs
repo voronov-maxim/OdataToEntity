@@ -41,15 +41,11 @@ namespace OdataToEntity.Parsers
         }
         public OeQueryContext CreateQueryContext(ODataUri odataUri, int maxPageSize, bool navigationNextLink, OeMetadataLevel metadataLevel)
         {
+            if (maxPageSize > 0)
+                odataUri.Top = maxPageSize;
+
             IReadOnlyList<OeParseNavigationSegment> navigationSegments = OeParseNavigationSegment.GetNavigationSegments(odataUri.Path);
             var entitySetSegment = (EntitySetSegment)odataUri.Path.FirstSegment;
-            if (maxPageSize > 0)
-            {
-                odataUri.Top = maxPageSize;
-                IEdmEntitySet resultEntitySet = OeParseNavigationSegment.GetEntitySet(navigationSegments) ?? entitySetSegment.EntitySet;
-                odataUri.OrderBy = OeSkipTokenParser.GetUniqueOrderBy(_edmModel, resultEntitySet, odataUri.OrderBy, odataUri.Apply);
-            }
-
             Db.OeEntitySetAdapter entitySetAdapter = _edmModel.GetEntitySetAdapter(entitySetSegment.EntitySet);
             bool isCountSegment = odataUri.Path.LastSegment is CountSegment;
             return new OeQueryContext(_edmModel, odataUri, entitySetAdapter, navigationSegments,

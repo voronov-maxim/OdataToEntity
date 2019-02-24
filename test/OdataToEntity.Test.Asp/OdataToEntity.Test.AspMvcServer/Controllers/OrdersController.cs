@@ -1,7 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.OData.Edm;
-using Newtonsoft.Json.Linq;
 using OdataToEntity.AspNetCore;
 using System;
 using System.Collections.Generic;
@@ -57,20 +55,6 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
         public void Post(OeDataContext dataContext, Model.Order order)
         {
             dataContext.Update(order);
-        }
-        [HttpGet("WithItems(itemIds={itemIds})")]
-        public ODataResult<Model.OrderItem> WithItems(String itemIds)
-        {
-            List<int> ids = JArray.Parse(itemIds).Select(j => j.Value<int>()).ToList();
-
-            var edmModel = (IEdmModel)_httpContextAccessor.HttpContext.RequestServices.GetService(typeof(IEdmModel));
-            Db.OeDataAdapter dataAdapter = edmModel.GetDataAdapter(typeof(Model.OrderContext));
-            var orderContext = (Model.OrderContext)dataAdapter.CreateDataContext();
-
-            List<Model.OrderItem> orderItems = orderContext.OrderItems.Where(i => ids.Contains(i.Id)).ToList();
-            dataAdapter.CloseDataContext(orderContext);
-
-            return _httpContextAccessor.HttpContext.OData(orderItems);
         }
     }
 }

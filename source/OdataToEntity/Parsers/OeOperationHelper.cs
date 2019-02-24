@@ -9,7 +9,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace OdataToEntity.Parsers
 {
@@ -35,9 +34,9 @@ namespace OdataToEntity.Parsers
                 Object result = methodInfo.Invoke(null, parameters);
                 queryContext.EntryFactory = boundFunctionParameter.CreateEntryFactoryFromTuple();
                 if (result is IEnumerable enumerable)
-                    return new Db.OeAsyncEnumeratorAdapter(enumerable, CancellationToken.None);
+                    return Db.OeAsyncEnumerator.Create(enumerable, CancellationToken.None);
 
-                return new Db.OeScalarAsyncEnumeratorAdapter(Task.FromResult(result), CancellationToken.None);
+                return Db.OeAsyncEnumerator.Create(result, CancellationToken.None);
             }
 
             throw new InvalidOperationException("Path last segment not OperationSegment");
@@ -60,7 +59,7 @@ namespace OdataToEntity.Parsers
             Expression target = OeEnumerableStub.CreateEnumerableStubExpression(targetEntityType, targetEntitySet);
             target = expressionBuilder.ApplySelect(target, queryContext);
 
-            OeEntryFactory targetEntryFactory = expressionBuilder.CreateEntryFactory(targetEntitySet);
+            OeEntryFactory targetEntryFactory = expressionBuilder.CreateEntryFactory(targetEntitySet, Array.Empty<OePropertyAccessor>());
             var sourceQueryExpression = new OeQueryExpression(queryContext.EdmModel, sourceEntitySet, source);
             var targetQueryExpression = new OeQueryExpression(queryContext.EdmModel, targetEntitySet, target, targetEntryFactory);
 

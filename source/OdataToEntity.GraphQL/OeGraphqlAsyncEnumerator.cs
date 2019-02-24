@@ -122,7 +122,7 @@ namespace OdataToEntity.GraphQL
             Object buffer = _dbEnumerator.ClearBuffer();
 
             _isMoveNext = await _dbEnumerator.MoveNextAsync().ConfigureAwait(false);
-            if (!_isMoveNext && _queryContext.SkipTokenNameValues != null && _queryContext.SkipTokenAccessors != null)
+            if (!_isMoveNext && _queryContext.EntryFactory.SkipTokenAccessors.Length > 0)
                 SetOrderByProperties(_queryContext, entity, buffer);
 
             Current = entity;
@@ -143,7 +143,7 @@ namespace OdataToEntity.GraphQL
             while (orderByClause != null)
             {
                 var propertyExpression = (MemberExpression)visitor.TranslateNode(orderByClause.Expression);
-                Object orderValue = queryContext.SkipTokenAccessors[i++].GetValue(value);
+                Object orderValue = queryContext.EntryFactory.SkipTokenAccessors[i++].GetValue(value);
                 setPropertyValueVisitor.SetPropertyValue(entity, propertyExpression, orderValue);
 
                 orderByClause = orderByClause.ThenBy;

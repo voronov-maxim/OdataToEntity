@@ -101,10 +101,13 @@ namespace OdataToEntity.Parsers
             var visitor = new OeQueryNodeVisitor(edmModel, Expression.Parameter(entitySetAdapter.EntityType));
             JoinBuilder = new Translators.OeJoinBuilder(visitor);
 
-            if (IsGenerateSkipToken())
-                SkipTokenNameValues = OeSkipTokenParser.CreateNameValues(edmModel, odataUri.OrderBy, odataUri.SkipToken, out _restCount);
-            else
-                SkipTokenNameValues = Array.Empty<OeSkipTokenNameValue>();
+            SkipTokenNameValues = Array.Empty<OeSkipTokenNameValue>();
+            if (!(odataUri.Path.LastSegment is OperationSegment))
+            {
+                odataUri.OrderBy = GetUniqueOrderBy(edmModel, odataUri, parseNavigationSegments);
+                if (IsGenerateSkipToken())
+                    SkipTokenNameValues = OeSkipTokenParser.CreateNameValues(edmModel, odataUri.OrderBy, odataUri.SkipToken, out _restCount);
+            }
         }
 
         public Cache.OeCacheContext CreateCacheContext()
@@ -128,13 +131,13 @@ namespace OdataToEntity.Parsers
             MethodInfo countMethodInfo = OeMethodInfoHelper.GetCountMethodInfo(sourceType);
             return Expression.Call(countMethodInfo, whereExpression);
         }
-        private OeEntryFactory CreateEntryFactory(OeExpressionBuilder expressionBuilder)
+        private OeEntryFactory CreateEntryFactory(OeExpressionBuilder expressionBuilder, OePropertyAccessor[] skipTokenAccessors)
         {
             IEdmEntitySet entitySet = OeParseNavigationSegment.GetEntitySet(ParseNavigationSegments);
             if (entitySet == null)
                 entitySet = OeEdmClrHelper.GetEntitySet(EdmModel, EntitySetAdapter.EntitySetName);
 
-            return expressionBuilder.CreateEntryFactory(entitySet);
+            return expressionBuilder.CreateEntryFactory(entitySet, skipTokenAccessors);
         }
         public Expression CreateExpression(out IReadOnlyDictionary<ConstantExpression, ConstantNode> constants)
         {
@@ -159,10 +162,13 @@ namespace OdataToEntity.Parsers
 
             if (!IsCountSegment)
             {
-                EntryFactory = CreateEntryFactory(expressionBuilder);
+                OePropertyAccessor[] skipTokenAccessors;
+                if (IsGenerateSkipToken())
+                    skipTokenAccessors = OeSkipTokenParser.GetAccessors(expression, ODataUri.OrderBy, JoinBuilder);
+                else
+                    skipTokenAccessors = Array.Empty<OePropertyAccessor>();
 
-                if (IsGenerateSkipToken() || EntryFactory.PageSize > 0)
-                    SkipTokenAccessors = OeSkipTokenParser.GetAccessors(expression, ODataUri.OrderBy, JoinBuilder);
+                EntryFactory = CreateEntryFactory(expressionBuilder, skipTokenAccessors);
             }
 
             constants = expressionBuilder.Constants;
@@ -173,9 +179,24 @@ namespace OdataToEntity.Parsers
             Expression expression = CreateExpression(out IReadOnlyDictionary<ConstantExpression, ConstantNode> constants);
             return constantToVariableVisitor.Translate(expression, constants);
         }
+        private static IEdmEntitySet GetEntitySet(ODataPath odataPath, IReadOnlyList<OeParseNavigationSegment> parseNavigationSegments)
+        {
+            IEdmEntitySet entitySet = OeParseNavigationSegment.GetEntitySet(parseNavigationSegments);
+            if (entitySet == null && odataPath.FirstSegment is EntitySetSegment entitySetSegment)
+                entitySet = entitySetSegment.EntitySet;
+            return entitySet;
+        }
+        private static OrderByClause GetUniqueOrderBy(IEdmModel edmModel, ODataUri odataUri, IReadOnlyList<OeParseNavigationSegment> parseNavigationSegments)
+        {
+            IEdmEntitySet entitySet = GetEntitySet(odataUri.Path, parseNavigationSegments);
+            if (entitySet != null)
+                return OeSkipTokenParser.GetUniqueOrderBy(edmModel, entitySet, odataUri.OrderBy, odataUri.Apply);
+
+            return odataUri.OrderBy;
+        }
         private bool IsGenerateSkipToken()
         {
-            return ODataUri.SkipToken != null || MaxPageSize > 0 || (ODataUri.OrderBy != null && ODataUri.Skip != null && ODataUri.Top != null);
+            return ODataUri.SkipToken != null || ODataUri.Top != null;
         }
         public Expression TranslateSource(Object dataContext, Expression expression)
         {
@@ -199,7 +220,6 @@ namespace OdataToEntity.Parsers
         public IReadOnlyList<OeParseNavigationSegment> ParseNavigationSegments { get; }
         public Func<IEdmEntitySet, IQueryable> QueryableSource { get; set; }
         public int? RestCount { get => _restCount; set => _restCount = value; }
-        public OePropertyAccessor[] SkipTokenAccessors { get; set; }
         public OeSkipTokenNameValue[] SkipTokenNameValues { get; }
         public OeModelBoundAttribute UseModelBoundAttribute { get; }
     }

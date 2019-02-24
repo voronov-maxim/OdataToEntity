@@ -297,7 +297,7 @@ namespace OdataToEntity.Parsers.Translators
         {
             return new AggProperty(name, model.GetEdmTypeReference(clrType), isGroup);
         }
-        public OeEntryFactory CreateEntryFactory(IEdmEntitySet entitySet, Type clrType)
+        public OeEntryFactory CreateEntryFactory(IEdmEntitySet entitySet, Type clrType, OePropertyAccessor[] skipTokenAccessors)
         {
             OePropertyAccessor[] accessors;
             if (_aggProperties.Count == 0)
@@ -309,7 +309,7 @@ namespace OdataToEntity.Parsers.Translators
             }
 
             Type clrEntityType = _visitor.EdmModel.GetClrType(entitySet);
-            return OeEntryFactory.CreateEntryFactory(clrEntityType, entitySet, accessors);
+            return new OeEntryFactory(clrEntityType, entitySet, accessors, skipTokenAccessors);
         }
         private OeQueryNodeVisitor CreateVisitor(ParameterExpression parameter)
         {

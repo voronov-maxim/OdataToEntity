@@ -229,16 +229,15 @@ namespace OdataToEntity.Ef6
                 expression = queryContext.CreateExpression(parameterVisitor);
                 expression = new OeEf6EnumerableToQuerableVisitor().Visit(expression);
 
+                cacheContext = queryContext.CreateCacheContext(parameterVisitor.ConstantToParameterMapper);
                 countExpression = OeQueryContext.CreateCountExpression(expression);
-                queryCache.AddQuery(queryContext.CreateCacheContext(parameterVisitor.ConstantToParameterMapper), expression, countExpression,
-                    queryContext.EntryFactory, queryContext.SkipTokenAccessors);
+                queryCache.AddQuery(cacheContext, expression, countExpression, queryContext.EntryFactory);
                 parameterValues = parameterVisitor.ParameterValues;
             }
             else
             {
                 expression = (Expression)queryCacheItem.Query;
                 queryContext.EntryFactory = queryCacheItem.EntryFactory;
-                queryContext.SkipTokenAccessors = queryCacheItem.SkipTokenAccessors;
                 countExpression = queryCacheItem.CountExpression;
                 parameterValues = cacheContext.ParameterValues;
             }

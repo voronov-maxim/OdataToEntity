@@ -54,7 +54,7 @@ namespace OdataToEntity.EfCore
         {
             var fromSql = (IFromSql)entitySetAdapter;
             var query = (IQueryable<Object>)fromSql.FromSql((DbContext)dataContext, sql, GetParameterValues(parameters));
-            return new OeAsyncEnumeratorAdapter(query, CancellationToken.None);
+            return OeAsyncEnumerator.Create(query, CancellationToken.None);
         }
         protected override OeAsyncEnumerator ExecutePrimitive(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
         {
@@ -64,8 +64,8 @@ namespace OdataToEntity.EfCore
 
             if (Parsers.OeExpressionHelper.GetCollectionItemType(returnType) == null)
             {
-                Task<Object> scalarTask = command.ExecuteScalarAsync(connection, parameterValues);
-                return new OeScalarAsyncEnumeratorAdapter(scalarTask, CancellationToken.None);
+                Task<Object> scalarResult = command.ExecuteScalarAsync(connection, parameterValues);
+                return OeAsyncEnumerator.Create(scalarResult, CancellationToken.None);
             }
 
             return new OeEfCoreDataReaderAsyncEnumerator(command.ExecuteReader(connection, parameterValues), CancellationToken.None);

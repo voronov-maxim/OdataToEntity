@@ -239,7 +239,6 @@ namespace OdataToEntity.Parsers
 
             return false;
         }
-
         public static bool IsNull(Expression expression)
         {
             return expression is ConstantExpression constantExpression ? constantExpression.Value == null : false;
@@ -275,6 +274,22 @@ namespace OdataToEntity.Parsers
                 tupleType == typeof(Tuple<,,,,,>) ||
                 tupleType == typeof(Tuple<,,,,,,>) ||
                 tupleType == typeof(Tuple<,,,,,,,>);
+        }
+        public static MemberExpression ReplaceParameter(MemberExpression propertyExpression, Expression newParameter)
+        {
+            var properties = new Stack<PropertyInfo>();
+            do
+            {
+                properties.Push((PropertyInfo)propertyExpression.Member);
+                propertyExpression = propertyExpression.Expression as MemberExpression;
+            }
+            while (propertyExpression != null);
+
+            Expression expression = Expression.Convert(newParameter, properties.Peek().DeclaringType);
+            while (properties.Count > 0)
+                expression = Expression.Property(expression, properties.Pop());
+
+            return (MemberExpression)expression;
         }
         public static ExpressionType ToExpressionType(BinaryOperatorKind operatorKind)
         {

@@ -6,17 +6,15 @@ namespace OdataToEntity.Cache
 {
     public sealed class OeQueryCacheItem
     {
-        public OeQueryCacheItem(Object query, MethodCallExpression countExpression, OeEntryFactory entryFactory, OePropertyAccessor[] skipTokenAccessors)
+        public OeQueryCacheItem(Object query, MethodCallExpression countExpression, OeEntryFactory entryFactory)
         {
             Query = query;
             CountExpression = countExpression;
             EntryFactory = entryFactory;
-            SkipTokenAccessors = skipTokenAccessors;
         }
 
         public MethodCallExpression CountExpression { get; }
         public OeEntryFactory EntryFactory { get; }
         public Object Query { get; }
-        public OePropertyAccessor[] SkipTokenAccessors { get; }
     }
 }

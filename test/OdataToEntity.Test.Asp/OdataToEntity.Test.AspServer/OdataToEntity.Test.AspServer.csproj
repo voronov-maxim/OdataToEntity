@@ -20,7 +20,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore" Version="$(AspNetCoreVersion)" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="$(AspNetCoreMvcVersion)" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="$(AspNetCoreMvcCoreVersion)" />
   </ItemGroup>
 
   <ItemGroup>

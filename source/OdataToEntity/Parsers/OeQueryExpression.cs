@@ -69,7 +69,7 @@ namespace OdataToEntity.Parsers
             if (EntryFactory == null)
                 throw new InvalidOperationException("Must set OeEntryFactory via constructor");
 
-            var asyncEnumerator = new Db.OeAsyncEnumeratorAdapter(result, cancellationToken == default ? CancellationToken.None : cancellationToken);
+            Db.OeAsyncEnumerator asyncEnumerator = Db.OeAsyncEnumerator.Create(result, cancellationToken == default ? CancellationToken.None : cancellationToken);
             return new Db.OeEntityAsyncEnumeratorAdapter<TResult>(asyncEnumerator, EntryFactory);
         }
 

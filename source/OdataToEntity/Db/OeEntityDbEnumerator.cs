@@ -25,9 +25,9 @@ namespace OdataToEntity.Db
             OeAsyncEnumerator asyncEnumerator;
             Object navigationValue = entryFactory.GetValue(Current);
             if (navigationValue is IEnumerable enumerable)
-                asyncEnumerator = new OeAsyncEnumeratorAdapter(enumerable, CancellationToken.None);
+                asyncEnumerator = OeAsyncEnumerator.Create(enumerable, CancellationToken.None);
             else
-                asyncEnumerator = new OeScalarAsyncEnumeratorAdapter(Task.FromResult(navigationValue), CancellationToken.None);
+                asyncEnumerator = OeAsyncEnumerator.Create(navigationValue, CancellationToken.None);
 
             asyncEnumerator.MoveNextAsync().GetAwaiter().GetResult();
             return new OeEntityDbEnumerator(asyncEnumerator, entryFactory);

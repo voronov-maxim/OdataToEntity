@@ -351,15 +351,13 @@ namespace OdataToEntity.EfCore
 
                 queryExecutor = dbContext.CreateAsyncQueryExecutor<TResult>(expression);
                 countExpression = OeQueryContext.CreateCountExpression(expression);
-                queryCache.AddQuery(queryContext.CreateCacheContext(parameterVisitor.ConstantToParameterMapper), queryExecutor, countExpression,
-                    queryContext.EntryFactory, queryContext.SkipTokenAccessors);
+                queryCache.AddQuery(queryContext.CreateCacheContext(parameterVisitor.ConstantToParameterMapper), queryExecutor, countExpression, queryContext.EntryFactory);
                 parameterValues = parameterVisitor.ParameterValues;
             }
             else
             {
                 queryExecutor = (Func<QueryContext, IAsyncEnumerable<TResult>>)queryCacheItem.Query;
                 queryContext.EntryFactory = queryCacheItem.EntryFactory;
-                queryContext.SkipTokenAccessors = queryCacheItem.SkipTokenAccessors;
                 countExpression = queryCacheItem.CountExpression;
                 parameterValues = cacheContext.ParameterValues;
             }

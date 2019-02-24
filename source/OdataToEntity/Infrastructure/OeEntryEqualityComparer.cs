@@ -51,8 +51,8 @@ namespace OdataToEntity.Infrastructure
             ParameterExpression xparameter = Expression.Parameter(typeof(Object));
             ParameterExpression yparameter = Expression.Parameter(typeof(Object));
 
-            MemberExpression xproperty = ReplaceParameter(property, xparameter);
-            MemberExpression yproperty = ReplaceParameter(property, yparameter);
+            MemberExpression xproperty = Parsers.OeExpressionHelper.ReplaceParameter(property, xparameter);
+            MemberExpression yproperty = Parsers.OeExpressionHelper.ReplaceParameter(property, yparameter);
 
             MethodInfo compareMethodInfo = typeof(Comparer<>).MakeGenericType(property.Type).GetMethod(nameof(Comparer<Object>.Compare));
             MethodInfo defaultMethod = typeof(Comparer<>).MakeGenericType(property.Type).GetProperty(nameof(Comparer<Object>.Default)).GetGetMethod();
@@ -70,7 +70,7 @@ namespace OdataToEntity.Infrastructure
         private static Func<Object, int> CreatePropertyGetHashCode(MemberExpression propertyExpression)
         {
             ParameterExpression parameter = Expression.Parameter(typeof(Object));
-            propertyExpression = ReplaceParameter(propertyExpression, parameter);
+            propertyExpression = Parsers.OeExpressionHelper.ReplaceParameter(propertyExpression, parameter);
             MethodCallExpression getHashCodeCall = Expression.Call(propertyExpression, propertyExpression.Type.GetMethod(nameof(Object.GetHashCode), Type.EmptyTypes));
             return (Func<Object, int>)Expression.Lambda(getHashCodeCall, parameter).Compile();
         }
@@ -100,22 +100,6 @@ namespace OdataToEntity.Infrastructure
         public IEqualityComparer<T> GetTypedEqualityComparer<T>()
         {
             return new TypedEqualityComparer<T>(this);
-        }
-        private static MemberExpression ReplaceParameter(MemberExpression propertyExpression, ParameterExpression newParameter)
-        {
-            var properties = new Stack<PropertyInfo>();
-            do
-            {
-                properties.Push((PropertyInfo)propertyExpression.Member);
-                propertyExpression = propertyExpression.Expression as MemberExpression;
-            }
-            while (propertyExpression != null);
-
-            Expression expression = Expression.Convert(newParameter, properties.Peek().DeclaringType);
-            while (properties.Count > 0)
-                expression = Expression.Property(expression, properties.Pop());
-
-            return (MemberExpression)expression;
         }
     }
 }

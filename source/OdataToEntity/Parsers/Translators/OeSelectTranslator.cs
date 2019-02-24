@@ -58,10 +58,15 @@ namespace OdataToEntity.Parsers.Translators
         public Expression Build(Expression source, OeQueryContext queryContext)
         {
             bool isBuild = false;
-            if (queryContext.ODataUri.Skip != null || queryContext.ODataUri.Top != null)
+            if (queryContext.UseModelBoundAttribute == OeModelBoundAttribute.Yes || queryContext.ODataUri.Skip != null || queryContext.ODataUri.Top != null)
             {
-                isBuild = true;
-                source = BuildSkipTakeSource(source, queryContext, _navigationItem);
+                Expression skipTakeSource = BuildSkipTakeSource(source, queryContext, _navigationItem);
+                if (source != skipTakeSource)
+                {
+                    isBuild = true;
+                    source = skipTakeSource;
+                }
+
             }
 
             if (queryContext.UseModelBoundAttribute == OeModelBoundAttribute.Yes || queryContext.ODataUri.SelectAndExpand != null)
@@ -206,7 +211,9 @@ namespace OdataToEntity.Parsers.Translators
         }
         private Expression BuildSkipTakeSource(Expression source, OeQueryContext queryContext, OeSelectItem navigationItem)
         {
-            long? top = queryContext.ODataUri.Top;
+            ODataUri odataUri = queryContext.ODataUri;
+
+            long? top = odataUri.Top;
             if (queryContext.UseModelBoundAttribute == OeModelBoundAttribute.Yes)
             {
                 Query.PageAttribute pageAttribute = _visitor.EdmModel.GetPageAttribute(navigationItem.EntitySet.EntityType());
@@ -223,21 +230,24 @@ namespace OdataToEntity.Parsers.Translators
                     top = navigationItem.PageSize;
             }
 
-            bool hasSelectItems = HasSelectItems(queryContext.ODataUri.SelectAndExpand);
-            BuildOrderBySkipTake(navigationItem, queryContext.ODataUri.OrderBy, hasSelectItems);
+            if (top == null && odataUri.Skip == null)
+                return source;
+
+            bool hasSelectItems = HasSelectItems(odataUri.SelectAndExpand);
+            BuildOrderBySkipTake(navigationItem, odataUri.OrderBy, hasSelectItems);
             source = BuildJoin(source, queryContext.UseModelBoundAttribute);
 
             var expressionBuilder = new OeExpressionBuilder(queryContext.JoinBuilder);
-            source = expressionBuilder.ApplySkipToken(source, queryContext.SkipTokenNameValues, queryContext.ODataUri.OrderBy, queryContext.IsDatabaseNullHighestValue);
-            source = expressionBuilder.ApplyOrderBy(source, queryContext.ODataUri.OrderBy);
-            source = expressionBuilder.ApplySkip(source, queryContext.ODataUri.Skip, queryContext.ODataUri.Path);
-            return expressionBuilder.ApplyTake(source, top, queryContext.ODataUri.Path);
+            source = expressionBuilder.ApplySkipToken(source, queryContext.SkipTokenNameValues, odataUri.OrderBy, queryContext.IsDatabaseNullHighestValue);
+            source = expressionBuilder.ApplyOrderBy(source, odataUri.OrderBy);
+            source = expressionBuilder.ApplySkip(source, odataUri.Skip, odataUri.Path);
+            return expressionBuilder.ApplyTake(source, top, odataUri.Path);
         }
-        public OeEntryFactory CreateEntryFactory(IEdmEntitySet entitySet, Type clrType)
+        public OeEntryFactory CreateEntryFactory(IEdmEntitySet entitySet, Type clrType, OePropertyAccessor[] skipTokenAccessors)
         {
-            return CreateEntryFactory(_visitor.EdmModel, _navigationItem, clrType);
+            return CreateEntryFactory(_visitor.EdmModel, _navigationItem, clrType, skipTokenAccessors);
         }
-        private static OeEntryFactory CreateEntryFactory(IEdmModel edmModel, OeSelectItem root, Type clrType)
+        private static OeEntryFactory CreateEntryFactory(IEdmModel edmModel, OeSelectItem root, Type clrType, OePropertyAccessor[] skipTokenAccessors)
         {
             ParameterExpression parameter = Expression.Parameter(typeof(Object));
             UnaryExpression typedParameter = Expression.Convert(parameter, clrType);
@@ -252,12 +262,25 @@ namespace OdataToEntity.Parsers.Translators
                     OeSelectItem navigationItem = navigationItems[i];
                     OeEntryFactory[] nestedNavigationLinks = GetNestedNavigationLinks(navigationItem);
 
-                    OeEntryFactory entryFactory;
                     Type clrEntityType = edmModel.GetClrType(navigationItem.EntitySet);
                     OePropertyAccessor[] accessors = GetAccessors(navigationProperties[i].Type, navigationItem.EntitySet, navigationItem.SelectItems);
                     LambdaExpression linkAccessor = Expression.Lambda(navigationProperties[i], parameter);
+
+                    OeEntryFactoryOptions options;
                     if (i == 0)
-                        entryFactory = OeEntryFactory.CreateEntryFactoryParent(clrEntityType, navigationItem.EntitySet, accessors, nestedNavigationLinks, linkAccessor);
+                    {
+                        options = new OeEntryFactoryOptions()
+                        {
+                            Accessors = accessors,
+                            ClrEntityType = clrEntityType,
+                            EntitySet = navigationItem.EntitySet,
+                            LinkAccessor = linkAccessor,
+                            MaxTop = navigationItem.MaxTop,
+                            NavigationLinks = nestedNavigationLinks,
+                            PageSize = navigationItem.PageSize,
+                            SkipTokenAccessors = skipTokenAccessors
+                        };
+                    }
                     else
                     {
                         var resourceInfo = new ODataNestedResourceInfo()
@@ -265,14 +288,23 @@ namespace OdataToEntity.Parsers.Translators
                             IsCollection = navigationItem.EdmProperty.Type.Definition is EdmCollectionType,
                             Name = navigationItem.EdmProperty.Name
                         };
-                        entryFactory = OeEntryFactory.CreateEntryFactoryNested(clrEntityType, navigationItem.EntitySet, (IEdmNavigationProperty)navigationItem.EdmProperty,
-                            accessors, nestedNavigationLinks, linkAccessor, resourceInfo);
-                        entryFactory.CountOption = navigationItem.ExpandedNavigationSelectItem.CountOption;
-                    }
 
-                    entryFactory.MaxTop = navigationItem.MaxTop;
-                    entryFactory.PageSize = navigationItem.PageSize;
-                    navigationItem.EntryFactory = entryFactory;
+                        options = new OeEntryFactoryOptions()
+                        {
+                            Accessors = accessors,
+                            ClrEntityType = clrEntityType,
+                            CountOption = navigationItem.ExpandedNavigationSelectItem.CountOption,
+                            EdmNavigationProperty = (IEdmNavigationProperty)navigationItem.EdmProperty,
+                            EntitySet = navigationItem.EntitySet,
+                            LinkAccessor = linkAccessor,
+                            MaxTop = navigationItem.MaxTop,
+                            NavigationLinks = nestedNavigationLinks,
+                            PageSize = navigationItem.PageSize,
+                            ResourceInfo = resourceInfo,
+                            SkipTokenAccessors = skipTokenAccessors
+                        };
+                    }
+                    navigationItem.EntryFactory = new OeEntryFactory(ref options);
                 }
             }
             else
@@ -293,9 +325,16 @@ namespace OdataToEntity.Parsers.Translators
                 }
                 Type clrEntityType = edmModel.GetClrType(root.EntitySet);
 
-                root.EntryFactory = OeEntryFactory.CreateEntryFactory(clrEntityType, root.EntitySet, accessors);
-                root.EntryFactory.MaxTop = root.MaxTop;
-                root.EntryFactory.PageSize = root.PageSize;
+                var options = new OeEntryFactoryOptions()
+                {
+                    Accessors = accessors,
+                    ClrEntityType = clrEntityType,
+                    EntitySet = root.EntitySet,
+                    MaxTop = root.MaxTop,
+                    PageSize = root.PageSize,
+                    SkipTokenAccessors = skipTokenAccessors
+                };
+                root.EntryFactory = new OeEntryFactory(ref options);
             }
 
             return root.EntryFactory;

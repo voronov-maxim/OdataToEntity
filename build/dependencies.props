@@ -2,6 +2,7 @@
   <PropertyGroup>
     <AspNetCoreVersion>2.2.0</AspNetCoreVersion>
     <AspNetCoreMvcVersion>2.2.0</AspNetCoreMvcVersion>
+    <AspNetCoreMvcCoreVersion>2.2.2</AspNetCoreMvcCoreVersion>
     <CoreFxVersion>4.5.0</CoreFxVersion>
     <CSharpVersion>7.2</CSharpVersion>
     <EfCoreVersion>2.2.2</EfCoreVersion>

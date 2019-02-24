@@ -26,7 +26,7 @@ namespace OdataToEntity.Ef6
         protected override OeAsyncEnumerator ExecuteReader(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, OeEntitySetAdapter entitySetAdapter)
         {
             DbRawSqlQuery query = ((DbContext)dataContext).Database.SqlQuery(entitySetAdapter.EntityType, sql, GetParameterValues(parameters));
-            return new OeAsyncEnumeratorAdapter(query, CancellationToken.None);
+            return OeAsyncEnumerator.Create(query, CancellationToken.None);
         }
         protected override OeAsyncEnumerator ExecutePrimitive(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
         {
@@ -35,7 +35,7 @@ namespace OdataToEntity.Ef6
                 returnType = itemType;
 
             DbRawSqlQuery query = ((DbContext)dataContext).Database.SqlQuery(returnType, sql, GetParameterValues(parameters));
-            return new OeAsyncEnumeratorAdapter(query, CancellationToken.None);
+            return OeAsyncEnumerator.Create(query, CancellationToken.None);
         }
         private static String GetDbParameterName(DbContext dbContext, int parameterOrder)
         {

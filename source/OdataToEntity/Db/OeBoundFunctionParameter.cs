@@ -28,7 +28,7 @@ namespace OdataToEntity.Db
         }
         public OeEntryFactory CreateEntryFactoryFromTuple()
         {
-            return _result.EntryFactory.CreateEntryFactoryFromTuple();
+            return _result.EntryFactory.GetEntryFactoryFromTuple(_result.EdmModel, null);
         }
         protected IAsyncEnumerable<TResult> Materialize<TResult>(IQueryable result, CancellationToken cancellationToken = default)
         {
@@ -43,7 +43,6 @@ namespace OdataToEntity.Db
         public OeBoundFunctionParameter(OeQueryExpression source, OeQueryExpression result)
             : base(source, result)
         {
-
         }
 
         public IQueryable<TSource> ApplyFilter(IQueryable<TSource> source, Object dataContext)

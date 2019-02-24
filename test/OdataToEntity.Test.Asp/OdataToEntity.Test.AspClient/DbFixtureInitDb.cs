@@ -82,7 +82,11 @@ namespace OdataToEntity.Test
 
             List<IncludeVisitor.Include> includes = GetIncludes(parameters.Expression);
             if (typeof(TResult) == typeof(Object))
+            {
                 fromOe = TestHelper.ToOpenType(fromOe);
+                foreach (SortedDictionary<String, Object> entity in fromOe)
+                    entity.Remove("Dummy");
+            }
 
             IList fromDb;
             using (var dataContext = new OrderContext(OrderContextOptions.Create(true, null)))

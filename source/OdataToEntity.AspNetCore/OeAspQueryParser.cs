@@ -52,7 +52,7 @@ namespace OdataToEntity.AspNetCore
             {
                 headers.ResponseContentType = OeRequestHeaders.TextDefault.ContentType;
                 int count = _dataAdapter.ExecuteScalar<int>(_dataContext, _queryContext);
-                return new OeScalarAsyncEnumeratorAdapter(Task.FromResult((Object)count), cancellationToken);
+                return OeAsyncEnumerator.Create(count, cancellationToken);
             }
 
             return _dataAdapter.ExecuteEnumerator(_dataContext, _queryContext, cancellationToken);
@@ -72,7 +72,7 @@ namespace OdataToEntity.AspNetCore
         {
             OeAsyncEnumerator asyncEnumerator = GetAsyncEnumerator(source, navigationNextLink, maxPageSize);
             _count = asyncEnumerator.Count;
-            if (asyncEnumerator is OeAsyncEnumeratorAdapter || OeExpressionHelper.IsPrimitiveType(typeof(T)))
+            if (OeExpressionHelper.IsPrimitiveType(typeof(T)) || !_queryContext.EntryFactory.IsTuple)
                 return new OeAsyncEnumeratorAdapter<T>(asyncEnumerator);
 
             return new OeEntityAsyncEnumeratorAdapter<T>(asyncEnumerator, _queryContext);
@@ -136,19 +136,17 @@ namespace OdataToEntity.AspNetCore
         }
         public ODataResult<T> OData<T>(IAsyncEnumerable<T> asyncEnumerable, int? count = null)
         {
-            IAsyncEnumerator<T> asyncEnumerator = asyncEnumerable.GetEnumerator();
             if (count == null)
-                count = (asyncEnumerator as OeAsyncEnumerator)?.Count;
+                count = (asyncEnumerable as OeAsyncEnumerator)?.Count;
 
+            OeAsyncEnumerator asyncEnumerator = OeAsyncEnumerator.Create<T>(asyncEnumerable, CancellationToken.None);
+            asyncEnumerator.Count = count;
             _httpContext.Response.RegisterForDispose(asyncEnumerator);
-            if (OeExpressionHelper.IsPrimitiveType(typeof(T)))
-                return new ODataPrimitiveResult<T>(_edmModel, _odataUri, asyncEnumerator) { Count = count };
 
-            return new ODataResult<T>(_edmModel, _queryContext.ODataUri, _queryContext.EntryFactory.EntitySet, asyncEnumerator)
-            {
-                Count = count,
-                PageSize = _queryContext.MaxPageSize
-            };
+            if (OeExpressionHelper.IsPrimitiveType(typeof(T)) || _queryContext.IsCountSegment)
+                return new ODataPrimitiveResult<T>(_edmModel, _odataUri, asyncEnumerator);
+
+            return new ODataResult<T>(_queryContext, asyncEnumerator);
         }
         public ODataResult<T> OData<T>(IEnumerable<T> enumerable)
         {

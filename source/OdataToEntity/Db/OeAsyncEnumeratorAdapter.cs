@@ -7,10 +7,12 @@ namespace OdataToEntity.Db
     public sealed class OeAsyncEnumeratorAdapter<T> : IAsyncEnumerator<T>, IAsyncEnumerable<T>
     {
         private readonly OeAsyncEnumerator _asyncEnumerator;
+        private readonly CancellationToken _cancellationToken;
 
-        public OeAsyncEnumeratorAdapter(OeAsyncEnumerator asyncEnumerator)
+        public OeAsyncEnumeratorAdapter(OeAsyncEnumerator asyncEnumerator, CancellationToken cancellationToken = default)
         {
             _asyncEnumerator = asyncEnumerator;
+            _cancellationToken = cancellationToken;
         }
 
         public void Dispose()
@@ -23,6 +25,7 @@ namespace OdataToEntity.Db
         }
         public Task<bool> MoveNext(CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             return _asyncEnumerator.MoveNextAsync();
         }
 

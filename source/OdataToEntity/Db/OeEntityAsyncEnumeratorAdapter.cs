@@ -60,7 +60,6 @@ namespace OdataToEntity.Db
         public OeEntityAsyncEnumeratorAdapter(OeAsyncEnumerator asyncEnumerator, OeEntryFactory entryFactory)
             : this(asyncEnumerator, entryFactory, null)
         {
-
         }
         private OeEntityAsyncEnumeratorAdapter(OeAsyncEnumerator asyncEnumerator, OeEntryFactory entryFactory, OeQueryContext queryContext)
             : base(asyncEnumerator.CancellationToken)
@@ -148,7 +147,7 @@ namespace OdataToEntity.Db
             Object buffer = _dbEnumerator.ClearBuffer();
 
             _isMoveNext = await _dbEnumerator.MoveNextAsync().ConfigureAwait(false);
-            if (!_isMoveNext && _queryContext != null && _queryContext.SkipTokenNameValues != null && _queryContext.SkipTokenAccessors != null)
+            if (!_isMoveNext && _queryContext != null && _queryContext.EntryFactory.SkipTokenAccessors.Length > 0)
                 SetOrderByProperties(_queryContext, entity, buffer);
 
             _current = entity;
@@ -174,7 +173,7 @@ namespace OdataToEntity.Db
             while (orderByClause != null)
             {
                 var propertyExpression = (MemberExpression)visitor.TranslateNode(orderByClause.Expression);
-                Object orderValue = queryContext.SkipTokenAccessors[i++].GetValue(value);
+                Object orderValue = queryContext.EntryFactory.SkipTokenAccessors[i++].GetValue(value);
                 setPropertyValueVisitor.SetPropertyValue(entity, propertyExpression, orderValue);
 
                 orderByClause = orderByClause.ThenBy;

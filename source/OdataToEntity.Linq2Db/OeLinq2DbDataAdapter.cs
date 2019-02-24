@@ -169,7 +169,7 @@ namespace OdataToEntity.Linq2Db
             }
 
             IQueryable<Object> query = (IQueryable<Object>)entitySet.Provider.CreateQuery(expression);
-            Db.OeAsyncEnumerator asyncEnumerator = new Db.OeAsyncEnumeratorAdapter(query, cancellationToken);
+            Db.OeAsyncEnumerator asyncEnumerator = Db.OeAsyncEnumerator.Create(query, cancellationToken);
 
             if (countExpression != null)
                 asyncEnumerator.Count = entitySet.Provider.Execute<int>(countExpression);
@@ -205,16 +205,15 @@ namespace OdataToEntity.Linq2Db
                 expression = queryContext.CreateExpression(parameterVisitor);
                 expression = new ParameterVisitor().Visit(expression);
 
+                cacheContext = queryContext.CreateCacheContext(parameterVisitor.ConstantToParameterMapper);
                 countExpression = OeQueryContext.CreateCountExpression(expression);
-                queryCache.AddQuery(queryContext.CreateCacheContext(parameterVisitor.ConstantToParameterMapper), expression, countExpression,
-                    queryContext.EntryFactory, queryContext.SkipTokenAccessors);
+                queryCache.AddQuery(cacheContext, expression, countExpression, queryContext.EntryFactory);
                 parameterValues = parameterVisitor.ParameterValues;
             }
             else
             {
                 expression = (Expression)queryCacheItem.Query;
                 queryContext.EntryFactory = queryCacheItem.EntryFactory;
-                queryContext.SkipTokenAccessors = queryCacheItem.SkipTokenAccessors;
                 countExpression = queryCacheItem.CountExpression;
                 parameterValues = cacheContext.ParameterValues;
             }

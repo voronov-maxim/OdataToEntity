@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace OdataToEntity.Linq2Db
 {
@@ -40,7 +39,7 @@ namespace OdataToEntity.Linq2Db
             var queryFunc = (Func<DataConnection, String, DataParameter[], IEnumerable<Object>>)Delegate.CreateDelegate(queryMethodType, queryMethodInfo);
 
             IEnumerable<Object> result = queryFunc((DataConnection)dataContext, sql, GetDataParameters(parameters));
-            return new OeAsyncEnumeratorAdapter(result, CancellationToken.None);
+            return OeAsyncEnumerator.Create(result, CancellationToken.None);
         }
         protected override OeAsyncEnumerator ExecutePrimitive(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
         {
@@ -48,7 +47,7 @@ namespace OdataToEntity.Linq2Db
             if (itemType == null)
             {
                 Object result = ((DataConnection)dataContext).Execute<Object>(sql, GetDataParameters(parameters));
-                return new OeScalarAsyncEnumeratorAdapter(Task.FromResult(result), CancellationToken.None);
+                return OeAsyncEnumerator.Create(result, CancellationToken.None);
             }
 
             return ExecuteReader(dataContext, sql, parameters, itemType);

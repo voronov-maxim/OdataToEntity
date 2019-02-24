@@ -10,7 +10,7 @@ namespace OdataToEntity.Parsers
 {
     public sealed class OeExpressionBuilder
     {
-        private Func<IEdmEntitySet, Type, OeEntryFactory> _entryFactoryFactory;
+        private Func<IEdmEntitySet, Type, OePropertyAccessor[], OeEntryFactory> _entryFactoryFactory;
         private readonly Translators.OeJoinBuilder _joinBuilder;
 
         public OeExpressionBuilder(Translators.OeJoinBuilder joinBuilder)
@@ -166,14 +166,14 @@ namespace OdataToEntity.Parsers
         {
             _joinBuilder.Visitor.ChangeParameterType(source);
         }
-        public OeEntryFactory CreateEntryFactory(IEdmEntitySet entitySet)
+        public OeEntryFactory CreateEntryFactory(IEdmEntitySet entitySet, OePropertyAccessor[] skipTokenAccessors)
         {
             if (_entryFactoryFactory != null)
-                return _entryFactoryFactory(entitySet, ParameterType);
+                return _entryFactoryFactory(entitySet, ParameterType, skipTokenAccessors);
 
             OePropertyAccessor[] accessors = OePropertyAccessor.CreateFromType(ParameterType, entitySet);
             Type clrEntityType = Visitor.EdmModel.GetClrType(entitySet);
-            return OeEntryFactory.CreateEntryFactory(clrEntityType, entitySet, accessors);
+            return new OeEntryFactory(clrEntityType, entitySet, accessors, skipTokenAccessors);
         }
 
         public IReadOnlyDictionary<ConstantExpression, ConstantNode> Constants => Visitor.Constans;
