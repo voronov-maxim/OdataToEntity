@@ -28,13 +28,11 @@ namespace OdataToEntity.Parsers
             if (entitySet == null)
                 return null;
 
-            Type clrEntityType = _edmModel.GetClrType(entitySet);
-            OePropertyAccessor[] accessors = OePropertyAccessor.CreateFromType(clrEntityType, entitySet);
-
+            OePropertyAccessor[] accessors = OePropertyAccessor.CreateFromType(_edmModel.GetClrType(entitySet), entitySet);
             Db.OeEntitySetAdapter entitySetAdapter = _dataAdapter.EntitySetAdapters.Find(entitySet);
-            return new OeQueryContext(_edmModel, odataUri, entitySetAdapter, Array.Empty<OeParseNavigationSegment>(), false, 0, false, metadataLevel, OeModelBoundAttribute.No)
+            return new OeQueryContext(_edmModel, odataUri, entitySetAdapter, Array.Empty<OeParseNavigationSegment>(), 0, false, metadataLevel, OeModelBoundAttribute.No)
             {
-                EntryFactory = new OeEntryFactory(clrEntityType, entitySet, accessors, Array.Empty<OePropertyAccessor>()),
+                EntryFactory = new OeEntryFactory(entitySet, accessors, Array.Empty<OePropertyAccessor>()),
             };
         }
         public async Task ExecuteAsync(ODataUri odataUri, Stream requestStream, OeRequestHeaders headers, Stream responseStream, CancellationToken cancellationToken)
@@ -105,17 +103,17 @@ namespace OdataToEntity.Parsers
             else
                 return _dataAdapter.OperationAdapter.ExecuteProcedureReader(dataContext, operationImport.Name, parameters, entitySetAdapter);
         }
-        public static async Task WriteCollectionAsync(IEdmModel model, ODataUri odataUri, Db.OeAsyncEnumerator asyncEnumerator, Stream responseStream)
+        public static async Task WriteCollectionAsync(IEdmModel edmModel, ODataUri odataUri, Db.OeAsyncEnumerator asyncEnumerator, Stream responseStream)
         {
             var importSegment = (OperationImportSegment)odataUri.Path.LastSegment;
             IEdmOperationImport operationImport = importSegment.OperationImports.Single();
-            Type returnType = model.GetClrType(operationImport.Operation.ReturnType.Definition);
+            Type returnType = edmModel.GetClrType(operationImport.Operation.ReturnType.Definition);
 
             IODataRequestMessage requestMessage = new Infrastructure.OeInMemoryMessage(responseStream, null);
             using (ODataMessageWriter messageWriter = new ODataMessageWriter(requestMessage,
-                new ODataMessageWriterSettings() { EnableMessageStreamDisposal = false, ODataUri = odataUri }, model))
+                new ODataMessageWriterSettings() { EnableMessageStreamDisposal = false, ODataUri = odataUri }, edmModel))
             {
-                IEdmTypeReference typeRef = OeEdmClrHelper.GetEdmTypeReference(model, returnType);
+                IEdmTypeReference typeRef = OeEdmClrHelper.GetEdmTypeReference(edmModel, returnType);
                 ODataCollectionWriter writer = messageWriter.CreateODataCollectionWriter(typeRef);
                 writer.WriteStart(new ODataCollectionStart());
 

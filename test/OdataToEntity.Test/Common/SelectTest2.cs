@@ -140,49 +140,7 @@ namespace OdataToEntity.Test
 
             ODataUri odataUri = Fixture.ParseUri(request);
             IEdmModel edmModel = Fixture.EdmModel.GetEdmModel(odataUri.Path);
-            var parser = new OeParser(odataUri.ServiceRoot, edmModel);
             var requestUri = new Uri(odataUri.ServiceRoot, request);
-            Uri uri = requestUri;
-            OeRequestHeaders requestHeaders = OeRequestHeaders.JsonDefault.SetMaxPageSize(1).SetNavigationNextLink(true);
-
-            long count = -1;
-            var fromOe = new List<Object>();
-            do
-            {
-                var response = new MemoryStream();
-                await parser.ExecuteGetAsync(uri, requestHeaders, response, CancellationToken.None).ConfigureAwait(false);
-                response.Position = 0;
-
-                var reader = new ResponseReader(edmModel);
-                List<Object> result = reader.Read(response).Cast<Object>().ToList();
-                Assert.InRange(result.Count, 0, requestHeaders.MaxPageSize);
-                fromOe.AddRange(result);
-
-                var navigationPropertyParser = new OeParser(odataUri.ServiceRoot, edmModel);
-                foreach (dynamic order in result)
-                {
-                    var navigationProperty = (IEnumerable)order.Items;
-                    ODataResourceSetBase resourceSet = reader.GetResourceSet(navigationProperty);
-
-                    var navigationPropertyResponse = new MemoryStream();
-                    await navigationPropertyParser.ExecuteGetAsync(resourceSet.NextPageLink, OeRequestHeaders.JsonDefault, navigationPropertyResponse, CancellationToken.None).ConfigureAwait(false);
-                    navigationPropertyResponse.Position = 0;
-
-                    var navigationPropertyReader = new ResponseReader(edmModel);
-                    foreach (dynamic orderItem in navigationPropertyReader.Read(navigationPropertyResponse))
-                        order.Items.Add(orderItem);
-
-                    Assert.Equal(navigationPropertyReader.ResourceSet.Count, order.Items.Count);
-                }
-
-                if (count < 0)
-                    count = reader.ResourceSet.Count.GetValueOrDefault();
-
-                uri = reader.ResourceSet.NextPageLink;
-            }
-            while (uri != null);
-
-            Assert.Equal(count, fromOe.Count);
 
             var exprectedResponse = new MemoryStream();
             var expectedParser = new OeParser(odataUri.ServiceRoot, edmModel);
@@ -192,6 +150,7 @@ namespace OdataToEntity.Test
             var exprectedReader = new ResponseReader(edmModel);
             List<Object> expectedResult = exprectedReader.Read(exprectedResponse).Cast<Object>().ToList();
 
+            List<Object> fromOe = await OrdersCountItemsCount(Fixture, request, i => i.Count == null || i.Count > 0, 1, true, OeModelBoundAttribute.No);
             TestHelper.Compare(expectedResult, fromOe, Fixture.MetadataProvider, null);
         }
         [Fact]
@@ -230,6 +189,69 @@ namespace OdataToEntity.Test
                 fromDb = context.OrderItems.OrderBy(i => i.Id).ToList();
 
             TestHelper.Compare(fromDb, fromOe, Fixture.MetadataProvider, null);
+        }
+        internal static async Task<List<Object>> OrdersCountItemsCount(DbFixture fixture, String request, Func<Model.OrderItem, bool> orderItemPredicate,
+            int maxPageSize, bool navigationNextLink, OeModelBoundAttribute useModelBoundAttribute)
+        {
+            ODataUri odataUri = fixture.ParseUri(request);
+            IEdmModel edmModel = fixture.EdmModel.GetEdmModel(odataUri.Path);
+            var parser = new OeParser(odataUri.ServiceRoot, edmModel, useModelBoundAttribute);
+            var requestUri = new Uri(odataUri.ServiceRoot, request);
+            Uri uri = requestUri;
+            OeRequestHeaders requestHeaders = OeRequestHeaders.JsonDefault.SetMaxPageSize(maxPageSize).SetNavigationNextLink(navigationNextLink);
+
+            int expectedCount;
+            long count = -1;
+            var fromOe = new List<Object>();
+            do
+            {
+                var response = new MemoryStream();
+                await parser.ExecuteGetAsync(uri, requestHeaders, response, CancellationToken.None).ConfigureAwait(false);
+                response.Position = 0;
+
+                var reader = new ResponseReader(edmModel);
+                List<Object> result = reader.Read(response).Cast<Object>().ToList();
+                fromOe.AddRange(result);
+
+                if (maxPageSize > 0)
+                    Assert.InRange(result.Count, 0, maxPageSize);
+
+                var navigationPropertyParser = new OeParser(odataUri.ServiceRoot, edmModel);
+                foreach (dynamic order in result)
+                {
+                    using (var dbContext = fixture.CreateContext())
+                        expectedCount = dbContext.OrderItems.ToList().Where(i => i.OrderId == (int)order.Id).Where(orderItemPredicate).Count();
+
+                    var navigationProperty = (IEnumerable)order.Items;
+                    ODataResourceSetBase resourceSet = reader.GetResourceSet(navigationProperty);
+
+                    if (!navigationNextLink)
+                        Assert.Equal(expectedCount, resourceSet.Count);
+
+                    var navigationPropertyResponse = new MemoryStream();
+                    await navigationPropertyParser.ExecuteGetAsync(resourceSet.NextPageLink, OeRequestHeaders.JsonDefault, navigationPropertyResponse, CancellationToken.None).ConfigureAwait(false);
+                    navigationPropertyResponse.Position = 0;
+
+                    var navigationPropertyReader = new ResponseReader(edmModel);
+                    foreach (dynamic orderItem in navigationPropertyReader.Read(navigationPropertyResponse))
+                        order.Items.Add(orderItem);
+
+                    if (navigationNextLink)
+                        Assert.Equal(expectedCount, navigationPropertyReader.ResourceSet.Count);
+                }
+
+                if (count < 0)
+                    count = reader.ResourceSet.Count.GetValueOrDefault();
+
+                uri = reader.ResourceSet.NextPageLink;
+            }
+            while (uri != null);
+
+            using (var dbContext = fixture.CreateContext())
+                expectedCount = dbContext.Orders.Count();
+            Assert.Equal(expectedCount, count);
+
+            return fromOe;
         }
     }
 }

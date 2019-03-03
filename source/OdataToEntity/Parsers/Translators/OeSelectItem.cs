@@ -1,31 +1,30 @@
-﻿using Microsoft.OData.Edm;
+﻿using Microsoft.OData;
+using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using System;
 using System.Collections.Generic;
 
 namespace OdataToEntity.Parsers.Translators
 {
-    internal sealed class OeSelectItem
+    internal sealed class OeNavigationSelectItem
     {
-        private readonly List<OeSelectItem> _navigationItems;
-        private readonly List<OeSelectItem> _selectItems;
+        private readonly List<OeNavigationSelectItem> _navigationItems;
+        private readonly List<OeStructuralSelectItem> _structualItems;
 
-        private OeSelectItem()
+        private OeNavigationSelectItem()
         {
-            _navigationItems = new List<OeSelectItem>();
-            _selectItems = new List<OeSelectItem>();
+            _navigationItems = new List<OeNavigationSelectItem>();
+            _structualItems = new List<OeStructuralSelectItem>();
         }
-        public OeSelectItem(ODataPath path) : this()
+        public OeNavigationSelectItem(IEdmModel edmModel, ODataUri odataUri) : this()
         {
-            EntitySet = GetEntitySet(path);
-            Path = path;
+            EntitySet = GetEntitySet(odataUri.Path);
+            Path = odataUri.Path;
+
+            ApplyModelBoundAttribute(edmModel);
+            CountOption = CountOption ?? odataUri.QueryCount;
         }
-        public OeSelectItem(IEdmProperty edmProperty, bool skipToken) : this()
-        {
-            EdmProperty = edmProperty;
-            SkipToken = skipToken;
-        }
-        public OeSelectItem(IEdmModel edmModel, OeSelectItem parent, ExpandedNavigationSelectItem item, bool skipToken) : this()
+        public OeNavigationSelectItem(IEdmModel edmModel, OeNavigationSelectItem parent, ExpandedNavigationSelectItem item, bool skipToken) : this()
         {
             var segment = (NavigationPropertySegment)item.PathToNavigationProperty.LastSegment;
 
@@ -34,24 +33,30 @@ namespace OdataToEntity.Parsers.Translators
 
             EdmProperty = segment.NavigationProperty;
             EntitySet = (IEdmEntitySetBase)item.NavigationSource ?? OeEdmClrHelper.GetEntitySet(edmModel, segment.NavigationProperty);
-            ExpandedNavigationSelectItem = item;
+            NavigationSelectItem = item;
             Parent = parent;
             Path = new ODataPath(segments);
             SkipToken = skipToken;
+
+            if (segment.NavigationProperty.Type.IsCollection() && !segment.NavigationProperty.ContainsTarget)
+            {
+                ApplyModelBoundAttribute(edmModel);
+                CountOption = CountOption ?? item.CountOption;
+            }
         }
 
         internal void AddKeyRecursive(bool skipToken)
         {
-            if (SelectItems.Count > 0)
+            if (StructuralItems.Count > 0)
                 foreach (IEdmStructuralProperty keyProperty in EntitySet.EntityType().Key())
-                    AddSelectItem(new OeSelectItem(keyProperty, skipToken));
+                    AddStructuralItem(keyProperty, skipToken);
 
-            foreach (OeSelectItem childNavigationItem in _navigationItems)
+            foreach (OeNavigationSelectItem childNavigationItem in _navigationItems)
                 childNavigationItem.AddKeyRecursive(skipToken);
         }
-        internal OeSelectItem AddOrGetNavigationItem(OeSelectItem navigationItem)
+        internal OeNavigationSelectItem AddOrGetNavigationItem(OeNavigationSelectItem navigationItem)
         {
-            OeSelectItem existingNavigationItem = FindChildrenNavigationItem((IEdmNavigationProperty)navigationItem.EdmProperty);
+            OeNavigationSelectItem existingNavigationItem = FindChildrenNavigationItem(navigationItem.EdmProperty);
             if (existingNavigationItem == null)
             {
                 _navigationItems.Add(navigationItem);
@@ -60,34 +65,56 @@ namespace OdataToEntity.Parsers.Translators
 
             return existingNavigationItem;
         }
-        public bool AddSelectItem(OeSelectItem selectItem)
+        public bool AddStructuralItem(IEdmStructuralProperty structuralProperty, bool skipToken)
         {
+            var structuralItem = new OeStructuralSelectItem(structuralProperty, skipToken);
             int existsSelectItemIndex;
-            if ((existsSelectItemIndex = FindSelectItem(selectItem.EdmProperty)) != -1)
+            if ((existsSelectItemIndex = FindSelectItem(structuralItem.EdmProperty)) != -1)
             {
-                if (_selectItems[existsSelectItemIndex].SkipToken && !selectItem.SkipToken)
-                    _selectItems[existsSelectItemIndex] = selectItem;
+                if (_structualItems[existsSelectItemIndex].SkipToken && !structuralItem.SkipToken)
+                    _structualItems[existsSelectItemIndex] = structuralItem;
                 return false;
             }
 
-            _selectItems.Add(selectItem);
+            _structualItems.Add(structuralItem);
             return true;
         }
-        private OeSelectItem FindChildrenNavigationItem(IEdmNavigationProperty navigationProperty)
+        private void ApplyModelBoundAttribute(IEdmModel edmModel)
+        {
+            Query.PageAttribute pageAttribute;
+            if (EdmProperty == null)
+                pageAttribute = edmModel.GetModelBoundAttribute<Query.PageAttribute>(EntitySet.EntityType());
+            else
+                pageAttribute = edmModel.GetModelBoundAttribute<Query.PageAttribute>(EdmProperty);
+            if (pageAttribute != null)
+            {
+                MaxTop = pageAttribute.MaxTop;
+                PageSize = pageAttribute.PageSize;
+            }
+
+            Query.CountAttribute countAttribute;
+            if (EdmProperty == null)
+                countAttribute = edmModel.GetModelBoundAttribute<Query.CountAttribute>(EntitySet.EntityType());
+            else
+                countAttribute = edmModel.GetModelBoundAttribute<Query.CountAttribute>(EdmProperty);
+            if (countAttribute != null)
+                CountOption = !countAttribute.Disabled;
+        }
+        private OeNavigationSelectItem FindChildrenNavigationItem(IEdmNavigationProperty navigationProperty)
         {
             for (int i = 0; i < _navigationItems.Count; i++)
                 if (_navigationItems[i].EdmProperty == navigationProperty)
                     return _navigationItems[i];
             return null;
         }
-        public OeSelectItem FindHierarchyNavigationItem(IEdmNavigationProperty navigationProperty)
+        public OeNavigationSelectItem FindHierarchyNavigationItem(IEdmNavigationProperty navigationProperty)
         {
             if (EdmProperty == navigationProperty)
                 return this;
 
             for (int i = 0; i < _navigationItems.Count; i++)
             {
-                OeSelectItem matched = _navigationItems[i].FindHierarchyNavigationItem(navigationProperty);
+                OeNavigationSelectItem matched = _navigationItems[i].FindHierarchyNavigationItem(navigationProperty);
                 if (matched != null)
                     return matched;
             }
@@ -96,8 +123,8 @@ namespace OdataToEntity.Parsers.Translators
         }
         private int FindSelectItem(IEdmProperty structuralProperty)
         {
-            for (int i = 0; i < _selectItems.Count; i++)
-                if (_selectItems[i].EdmProperty == structuralProperty)
+            for (int i = 0; i < _structualItems.Count; i++)
+                if (_structualItems[i].EdmProperty == structuralProperty)
                     return i;
             return -1;
         }
@@ -123,22 +150,35 @@ namespace OdataToEntity.Parsers.Translators
         public IReadOnlyList<IEdmNavigationProperty> GetJoinPath()
         {
             var joinPath = new List<IEdmNavigationProperty>();
-            for (OeSelectItem navigationItem = this; navigationItem.Parent != null; navigationItem = navigationItem.Parent)
-                joinPath.Insert(0, (IEdmNavigationProperty)navigationItem.EdmProperty);
+            for (OeNavigationSelectItem navigationItem = this; navigationItem.Parent != null; navigationItem = navigationItem.Parent)
+                joinPath.Insert(0, navigationItem.EdmProperty);
             return joinPath;
         }
 
         public bool AlreadyUsedInBuildExpression { get; set; }
-        public IEdmProperty EdmProperty { get; }
+        public bool? CountOption { get; private set; }
+        public IEdmNavigationProperty EdmProperty { get; }
         public IEdmEntitySetBase EntitySet { get; }
         public OeEntryFactory EntryFactory { get; set; }
-        public ExpandedNavigationSelectItem ExpandedNavigationSelectItem { get; }
-        public int MaxTop { get; set; }
-        public IReadOnlyList<OeSelectItem> NavigationItems => _navigationItems;
-        public int PageSize { get; set; }
-        public OeSelectItem Parent { get; }
+        public int MaxTop { get; private set; }
+        public IReadOnlyList<OeNavigationSelectItem> NavigationItems => _navigationItems;
+        public ExpandedNavigationSelectItem NavigationSelectItem { get; }
+        public int PageSize { get; private set; }
+        public OeNavigationSelectItem Parent { get; }
         public ODataPath Path { get; }
-        public IReadOnlyList<OeSelectItem> SelectItems => _selectItems;
+        public bool SkipToken { get; }
+        public IReadOnlyList<OeStructuralSelectItem> StructuralItems => _structualItems;
+    }
+
+    internal readonly struct OeStructuralSelectItem
+    {
+        public OeStructuralSelectItem(IEdmStructuralProperty edmProperty, bool skipToken)
+        {
+            EdmProperty = edmProperty;
+            SkipToken = skipToken;
+        }
+
+        public IEdmStructuralProperty EdmProperty { get; }
         public bool SkipToken { get; }
     }
 }

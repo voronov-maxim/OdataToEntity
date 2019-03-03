@@ -86,21 +86,30 @@ namespace OdataToEntity.ModelBuilder
         public void BuildPageAttribute()
         {
             foreach (EntityTypeInfo typeInfo in _entityTypeInfos.Values)
-                BuildPageAttribute(typeInfo);
+                BuildModelBoundAttribute(typeInfo);
         }
-        private void BuildPageAttribute(EntityTypeInfo entityTypeInfo)
+        private void BuildModelBoundAttribute(EntityTypeInfo entityTypeInfo)
         {
             var pageAttribute = (Query.PageAttribute)entityTypeInfo.ClrType.GetCustomAttribute(typeof(Query.PageAttribute));
             if (pageAttribute != null)
-                _edmModel.SetPageAttribute(entityTypeInfo.EdmType, pageAttribute);
+                _edmModel.SetModelBoundAttribute(entityTypeInfo.EdmType, pageAttribute);
+
+            var countAttribute = (Query.CountAttribute)entityTypeInfo.ClrType.GetCustomAttribute(typeof(Query.CountAttribute));
+            if (countAttribute != null)
+                _edmModel.SetModelBoundAttribute(entityTypeInfo.EdmType, countAttribute);
 
             foreach (IEdmNavigationProperty navigationProperty in entityTypeInfo.EdmType.NavigationProperties())
                 if (navigationProperty.Type.IsCollection())
                 {
                     PropertyInfo clrProperty = entityTypeInfo.ClrType.GetPropertyIgnoreCase(navigationProperty.Name);
+
                     pageAttribute = (Query.PageAttribute)clrProperty.GetCustomAttribute(typeof(Query.PageAttribute));
                     if (pageAttribute != null)
-                        _edmModel.SetPageAttribute(navigationProperty, pageAttribute);
+                        _edmModel.SetModelBoundAttribute(navigationProperty, pageAttribute);
+
+                    countAttribute = (Query.CountAttribute)clrProperty.GetCustomAttribute(typeof(Query.CountAttribute));
+                    if (countAttribute != null)
+                        _edmModel.SetModelBoundAttribute(navigationProperty, countAttribute);
                 }
         }
     }

@@ -9,11 +9,10 @@ using System.Threading;
 
 namespace OdataToEntity.Parsers
 {
-    public sealed class OeQueryExpression
+    public readonly struct OeQueryExpression
     {
         private readonly IEdmEntitySet _entitySet;
         private readonly Expression _expression;
-        private IQueryable _source;
 
         public OeQueryExpression(IEdmModel edmModel, String query)
         {
@@ -42,8 +41,8 @@ namespace OdataToEntity.Parsers
             if (_expression == null)
                 return source;
 
-            _source = source;
-            Expression expression = OeQueryContext.TranslateSource(EdmModel, dataContext, _expression, GetQuerySource);
+            IEdmEntitySet entitySet = _entitySet;
+            Expression expression = OeQueryContext.TranslateSource(EdmModel, dataContext, _expression, e => e == entitySet ? source : null);
             return source.Provider.CreateQuery(expression);
         }
         public IQueryable<T> ApplyTo<T>(IQueryable<T> source, Object dataContext)
@@ -52,17 +51,23 @@ namespace OdataToEntity.Parsers
         }
         public Expression GetExpression(Object dataContext)
         {
-            _source = GetQuerySource(dataContext);
-            return OeQueryContext.TranslateSource(EdmModel, dataContext, _expression, GetQuerySource);
+            IQueryable source = GetQuerySource(dataContext);
+            IEdmEntitySet entitySet = _entitySet;
+            return OeQueryContext.TranslateSource(EdmModel, dataContext, _expression, e => e == entitySet ? source : null);
+        }
+        public static Expression GetExpression(IEdmModel edmModel, String query, Object dataContext)
+        {
+            return new OeQueryExpression(edmModel, query).GetExpression(dataContext);
+        }
+        public static Expression GetExpression(IEdmModel edmModel, String query, IQueryable source)
+        {
+            var queryExpression = new OeQueryExpression(edmModel, query);
+            return OeQueryContext.TranslateSource(edmModel, null, queryExpression._expression, e => source);
         }
         public IQueryable GetQuerySource(Object dataContext)
         {
             Db.OeDataAdapter dataAdapter = EdmModel.GetDataAdapter(_entitySet.Container);
             return dataAdapter.EntitySetAdapters.Find(_entitySet).GetEntitySet(dataContext);
-        }
-        private IQueryable GetQuerySource(IEdmEntitySet entitySet)
-        {
-            return entitySet == _entitySet ? _source : null;
         }
         public IAsyncEnumerable<TResult> Materialize<TResult>(IQueryable result, CancellationToken cancellationToken = default)
         {

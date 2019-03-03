@@ -42,12 +42,13 @@ namespace OdataToEntity.Parsers.Translators
             newJoinPath[newJoinPath.Length - 1] = navigationProperty;
             _joinPaths.Add(newJoinPath);
         }
-        public MethodCallExpression Build(Expression outerSource, Expression innerSource, IReadOnlyList<IEdmNavigationProperty> joinPath, IEdmNavigationProperty navigationProperty)
+        public MethodCallExpression Build(IEdmModel edmModel, Expression outerSource, Expression innerSource,
+            IReadOnlyList<IEdmNavigationProperty> joinPath, IEdmNavigationProperty navigationProperty)
         {
             if (navigationProperty.ContainsTarget)
             {
-                ModelBuilder.ManyToManyJoinDescription joinDescription = Visitor.EdmModel.GetManyToManyJoinDescription(navigationProperty);
-                IEdmEntitySet joinEntitySet = OeEdmClrHelper.GetEntitySet(Visitor.EdmModel, joinDescription.JoinNavigationProperty);
+                ModelBuilder.ManyToManyJoinDescription joinDescription = edmModel.GetManyToManyJoinDescription(navigationProperty);
+                IEdmEntitySet joinEntitySet = OeEdmClrHelper.GetEntitySet(edmModel, joinDescription.JoinNavigationProperty);
                 Expression joinSource = OeEnumerableStub.CreateEnumerableStubExpression(joinDescription.JoinClassType, joinEntitySet);
 
                 outerSource = Build(outerSource, joinSource, joinPath, joinDescription.JoinNavigationProperty, false);

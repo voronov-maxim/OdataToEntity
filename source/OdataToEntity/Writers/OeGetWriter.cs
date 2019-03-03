@@ -29,7 +29,7 @@ namespace OdataToEntity.Writers
                 ODataUtils.SetHeadersForPayload(messageWriter, ODataPayloadKind.ResourceSet);
                 ODataWriter writer = messageWriter.CreateODataResourceSetWriter(entryFactory.EntitySet, entryFactory.EdmEntityType);
                 var odataWriter = new OeODataWriter(queryContext, writer);
-                await odataWriter.SerializeAsync(entryFactory, asyncEnumerator).ConfigureAwait(false);
+                await odataWriter.WriteAsync(entryFactory, asyncEnumerator).ConfigureAwait(false);
             }
         }
     }

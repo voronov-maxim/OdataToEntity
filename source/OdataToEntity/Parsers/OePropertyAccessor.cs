@@ -18,7 +18,14 @@ namespace OdataToEntity.Parsers
             _accessor = accessor;
             PropertyExpression = propertyExpression;
             SkipToken = skipToken;
-            TypeAnnotation = edmProperty.DeclaringType == PrimitiveTypeHelper.TupleEdmType ? new ODataTypeAnnotation(edmProperty.Type.ShortQualifiedName()) : null;
+
+            if (edmProperty.DeclaringType == PrimitiveTypeHelper.TupleEdmType)
+            {
+                String typeName = propertyExpression.Type.IsEnum ? propertyExpression.Type.FullName : edmProperty.Type.ShortQualifiedName();
+                TypeAnnotation = new ODataTypeAnnotation(typeName);
+            }
+            else
+                TypeAnnotation = null;
         }
 
         public static OePropertyAccessor CreatePropertyAccessor(IEdmProperty edmProperty, MemberExpression propertyExpression, ParameterExpression parameter, bool skipToken)

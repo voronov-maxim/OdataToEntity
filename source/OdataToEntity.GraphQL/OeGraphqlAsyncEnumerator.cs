@@ -1,4 +1,5 @@
-﻿using Microsoft.OData.UriParser;
+﻿using Microsoft.OData.Edm;
+using Microsoft.OData.UriParser;
 using OdataToEntity.Parsers;
 using System;
 using System.Collections.Generic;
@@ -89,7 +90,7 @@ namespace OdataToEntity.GraphQL
             if (entity == null)
                 return null;
 
-            if (dbEnumerator.EntryFactory.ResourceInfo.IsCollection.GetValueOrDefault())
+            if (dbEnumerator.EntryFactory.EdmNavigationProperty.Type.Definition is EdmCollectionType)
             {
                 var entityList = new List<Object>();
                 do
@@ -131,11 +132,12 @@ namespace OdataToEntity.GraphQL
         private static async Task SetNavigationProperty(Db.OeDbEnumerator dbEnumerator, Object value, Dictionary<String, Object> entity)
         {
             Object navigationValue = await CreateNestedEntity(dbEnumerator, value).ConfigureAwait(false);
-            entity[dbEnumerator.EntryFactory.ResourceInfo.Name] = navigationValue;
+            entity[dbEnumerator.EntryFactory.EdmNavigationProperty.Name] = navigationValue;
         }
         private static void SetOrderByProperties(OeQueryContext queryContext, Dictionary<String, Object> entity, Object value)
         {
-            var visitor = new OeQueryNodeVisitor(queryContext.EdmModel, Expression.Parameter(queryContext.EntryFactory.ClrEntityType));
+            Type clrEntityType = queryContext.EdmModel.GetClrType(queryContext.EntryFactory.EntitySet);
+            var visitor = new OeQueryNodeVisitor(Expression.Parameter(clrEntityType));
             var setPropertyValueVisitor = new SetPropertyValueVisitor();
 
             int i = 0;

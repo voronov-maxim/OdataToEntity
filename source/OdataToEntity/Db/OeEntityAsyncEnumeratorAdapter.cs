@@ -1,4 +1,5 @@
-﻿using Microsoft.OData.UriParser;
+﻿using Microsoft.OData.Edm;
+using Microsoft.OData.UriParser;
 using OdataToEntity.Parsers;
 using System;
 using System.Collections;
@@ -101,7 +102,7 @@ namespace OdataToEntity.Db
             if (entity == null)
                 return null;
 
-            if (dbEnumerator.EntryFactory.ResourceInfo.IsCollection.GetValueOrDefault())
+            if (dbEnumerator.EntryFactory.EdmNavigationProperty.Type.Definition is EdmCollectionType)
             {
                 Type listType = typeof(List<>).MakeGenericType(new[] { nestedEntityType });
                 var list = (IList)Activator.CreateInstance(listType);
@@ -155,7 +156,7 @@ namespace OdataToEntity.Db
         }
         private static async Task SetNavigationProperty(IOeDbEnumerator dbEnumerator, Object value, Object entity)
         {
-            PropertyInfo propertyInfo = entity.GetType().GetProperty(dbEnumerator.EntryFactory.ResourceInfo.Name);
+            PropertyInfo propertyInfo = entity.GetType().GetProperty(dbEnumerator.EntryFactory.EdmNavigationProperty.Name);
             Type nestedEntityType = OeExpressionHelper.GetCollectionItemType(propertyInfo.PropertyType);
             if (nestedEntityType == null)
                 nestedEntityType = propertyInfo.PropertyType;
@@ -165,7 +166,7 @@ namespace OdataToEntity.Db
         }
         private static void SetOrderByProperties(OeQueryContext queryContext, Object entity, Object value)
         {
-            var visitor = new OeQueryNodeVisitor(queryContext.EdmModel, Expression.Parameter(typeof(T)));
+            var visitor = new OeQueryNodeVisitor(Expression.Parameter(typeof(T)));
             var setPropertyValueVisitor = new SetPropertyValueVisitor();
 
             int i = 0;

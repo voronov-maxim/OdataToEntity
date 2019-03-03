@@ -1,9 +1,7 @@
-﻿using Microsoft.OData;
-using Microsoft.OData.Edm;
+﻿using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using OdataToEntity.ModelBuilder;
 using System;
-using System.Collections.Generic;
 using System.Reflection;
 
 namespace OdataToEntity
@@ -71,14 +69,14 @@ namespace OdataToEntity
         {
             return edmModel.GetAnnotationValue<MethodInfo>(edmFunction);
         }
-        public static Query.PageAttribute GetPageAttribute(this IEdmModel edmModel, IEdmEntityType entityType)
+        public static T GetModelBoundAttribute<T>(this IEdmModel edmModel, IEdmEntityType entityType) where T : Attribute
         {
-            return edmModel.GetEdmModel(entityType).GetAnnotationValue<Query.PageAttribute>(entityType);
+            return edmModel.GetEdmModel(entityType).GetAnnotationValue<T>(entityType);
         }
-        public static Query.PageAttribute GetPageAttribute(this IEdmModel edmModel, IEdmNavigationProperty navigationProperty)
+        public static T GetModelBoundAttribute<T>(this IEdmModel edmModel, IEdmNavigationProperty navigationProperty) where T : Attribute
         {
             IEdmEntitySet entitySet = OeEdmClrHelper.GetEntitySet(edmModel, navigationProperty);
-            return OeEdmClrHelper.GetEdmModel(edmModel, entitySet.Container).GetAnnotationValue<Query.PageAttribute>(navigationProperty);
+            return OeEdmClrHelper.GetEdmModel(edmModel, entitySet.Container).GetAnnotationValue<T>(navigationProperty);
         }
         public static SelectItem[] GetSelectItems(this IEdmModel edmModel, IEdmEntityType entityType)
         {
@@ -113,14 +111,14 @@ namespace OdataToEntity
         {
             edmModel.SetAnnotationValue(edmFunction, methodInfo);
         }
-        public static void SetPageAttribute(this IEdmModel edmModel, IEdmEntityType entityType, Query.PageAttribute pageAttribute)
+        public static void SetModelBoundAttribute<T>(this IEdmModel edmModel, IEdmEntityType entityType, T attribute) where T : Attribute
         {
-            OeEdmClrHelper.GetEdmModel(edmModel, entityType).SetAnnotationValue(entityType, pageAttribute);
+            OeEdmClrHelper.GetEdmModel(edmModel, entityType).SetAnnotationValue(entityType, attribute);
         }
-        public static void SetPageAttribute(this IEdmModel edmModel, IEdmNavigationProperty navigationProperty, Query.PageAttribute pageAttribute)
+        public static void SetModelBoundAttribute<T>(this IEdmModel edmModel, IEdmNavigationProperty navigationProperty, T attribute) where T : Attribute
         {
             IEdmEntitySet entitySet = OeEdmClrHelper.GetEntitySet(edmModel, navigationProperty);
-            OeEdmClrHelper.GetEdmModel(edmModel, entitySet.Container).SetAnnotationValue(navigationProperty, pageAttribute);
+            OeEdmClrHelper.GetEdmModel(edmModel, entitySet.Container).SetAnnotationValue(navigationProperty, attribute);
         }
         public static void SetSelectItems(this IEdmModel edmModel, IEdmEntityType entityType, SelectItem[] selectItems)
         {

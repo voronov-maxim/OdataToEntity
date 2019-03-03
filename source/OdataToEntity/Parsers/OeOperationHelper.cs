@@ -64,7 +64,7 @@ namespace OdataToEntity.Parsers
             var targetQueryExpression = new OeQueryExpression(queryContext.EdmModel, targetEntitySet, target, targetEntryFactory);
 
             Type boundFunctionParameterType = typeof(Db.OeBoundFunctionParameter<,>).MakeGenericType(new[] { sourceEntityType, targetEntityType });
-            ConstructorInfo ctor = boundFunctionParameterType.GetConstructor(new[] { typeof(OeQueryExpression), typeof(OeQueryExpression) });
+            ConstructorInfo ctor = boundFunctionParameterType.GetConstructors()[0];
             return (Db.OeBoundFunctionParameter)ctor.Invoke(new Object[] { sourceQueryExpression, targetQueryExpression });
         }
         private static void FillParameters(IEdmModel edmModel, List<KeyValuePair<String, Object>> parameters, Stream requestStream, IEdmOperation operation, String contentType)

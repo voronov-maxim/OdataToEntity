@@ -47,9 +47,8 @@ namespace OdataToEntity.Parsers
             IReadOnlyList<OeParseNavigationSegment> navigationSegments = OeParseNavigationSegment.GetNavigationSegments(odataUri.Path);
             var entitySetSegment = (EntitySetSegment)odataUri.Path.FirstSegment;
             Db.OeEntitySetAdapter entitySetAdapter = _edmModel.GetEntitySetAdapter(entitySetSegment.EntitySet);
-            bool isCountSegment = odataUri.Path.LastSegment is CountSegment;
             return new OeQueryContext(_edmModel, odataUri, entitySetAdapter, navigationSegments,
-                isCountSegment, maxPageSize, navigationNextLink, metadataLevel, UseModelBoundAttribute);
+                maxPageSize, navigationNextLink, metadataLevel, UseModelBoundAttribute);
         }
         public async Task ExecuteAsync(ODataUri odataUri, OeRequestHeaders headers, Stream stream, CancellationToken cancellationToken)
         {
@@ -67,7 +66,7 @@ namespace OdataToEntity.Parsers
             try
             {
                 dataContext = dataAdapter.CreateDataContext();
-                if (queryContext.IsCountSegment)
+                if (odataUri.Path.LastSegment is CountSegment)
                 {
                     headers.ResponseContentType = OeRequestHeaders.TextDefault.ContentType;
                     int count = dataAdapter.ExecuteScalar<int>(dataContext, queryContext);

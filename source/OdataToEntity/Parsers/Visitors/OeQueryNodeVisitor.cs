@@ -1,8 +1,6 @@
-﻿using Microsoft.OData;
-using Microsoft.OData.Edm;
+﻿using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using OdataToEntity.Cache.UriCompare;
-using OdataToEntity.ModelBuilder;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,21 +15,20 @@ namespace OdataToEntity.Parsers
         private ParameterExpression _parameter;
         private readonly OeQueryNodeVisitor _parentVisitor;
 
-        public OeQueryNodeVisitor(IEdmModel edmModel, ParameterExpression parameter)
+        public OeQueryNodeVisitor(ParameterExpression parameter)
         {
-            EdmModel = edmModel;
             _parameter = parameter;
 
             _constants = new Dictionary<ConstantExpression, ConstantNode>();
         }
-        public OeQueryNodeVisitor(IEdmModel edmModel, ParameterExpression it, IReadOnlyDictionary<ConstantExpression, ConstantNode> constants)
-                : this(edmModel, it)
+        public OeQueryNodeVisitor(ParameterExpression parameter, IReadOnlyDictionary<ConstantExpression, ConstantNode> constants)
+                : this(parameter)
         {
             foreach (KeyValuePair<ConstantExpression, ConstantNode> pair in constants)
                 AddConstant(pair.Key, pair.Value);
         }
-        public OeQueryNodeVisitor(OeQueryNodeVisitor parentVisitor, ParameterExpression it)
-                : this(parentVisitor.EdmModel, it)
+        public OeQueryNodeVisitor(OeQueryNodeVisitor parentVisitor, ParameterExpression parameter)
+                : this(parameter)
         {
             _parentVisitor = parentVisitor;
         }
@@ -237,28 +234,8 @@ namespace OdataToEntity.Parsers
         public override Expression Visit(ConvertNode nodeIn)
         {
             Expression e = TranslateNode(nodeIn.Source);
-            if (e.NodeType == ExpressionType.Constant)
-            {
-                var constantExpression = e as ConstantExpression;
-                if (constantExpression.Value == null && constantExpression.Type == typeof(Object))
-                {
-                    Type clrType;
-                    EdmPrimitiveTypeKind primitiveTypeKind = nodeIn.TypeReference.PrimitiveKind();
-                    if (primitiveTypeKind == EdmPrimitiveTypeKind.None)
-                    {
-                        if (nodeIn.TypeReference.IsEnum())
-                            clrType = EdmModel.GetClrType(nodeIn.TypeReference.Definition);
-                        else
-                            throw new NotSupportedException(nodeIn.TypeReference.FullName());
-                    }
-                    else
-                        clrType = PrimitiveTypeHelper.GetClrType(primitiveTypeKind);
-                    if (nodeIn.TypeReference.IsNullable && clrType.IsValueType)
-                        clrType = typeof(Nullable<>).MakeGenericType(clrType);
-
-                    e = OeConstantToVariableVisitor.NullConstantExpression;
-                }
-            }
+            if (e is ConstantExpression constantExpression && constantExpression.Value == null && constantExpression.Type == typeof(Object))
+                return OeConstantToVariableVisitor.NullConstantExpression;
             return e;
         }
         public override Expression Visit(CountNode nodeIn)
@@ -351,7 +328,6 @@ namespace OdataToEntity.Parsers
         }
 
         public IReadOnlyDictionary<ConstantExpression, ConstantNode> Constans => _parentVisitor == null ? _constants : _parentVisitor.Constans;
-        public IEdmModel EdmModel { get; }
         public ParameterExpression Parameter => _parameter;
         public Func<Expression, SingleValueNode, Expression> TuplePropertyByAliasName { get; set; }
     }

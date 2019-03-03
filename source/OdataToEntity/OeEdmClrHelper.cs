@@ -102,7 +102,7 @@ namespace OdataToEntity
 
             foreach (IEdmModel refModel in edmModel.ReferencedModels)
             {
-                 IEdmModel foundModel = GetEdmModel(refModel, entityType);
+                IEdmModel foundModel = GetEdmModel(refModel, entityType);
                 if (foundModel != null)
                     return foundModel;
             }
@@ -122,9 +122,26 @@ namespace OdataToEntity
 
             throw new InvalidOperationException("Not supported segment type " + path.FirstSegment.GetType().FullName);
         }
-        public static IEdmTypeReference GetEdmTypeReference(this IEdmModel edmModel, Type clrType)
+        public static IEdmTypeReference GetEdmTypeReference(Type clrType)
         {
-            IEdmTypeReference edmTypeRef;
+            bool nullable;
+            Type underlyingType = Nullable.GetUnderlyingType(clrType);
+            if (underlyingType == null)
+                nullable = clrType.IsClass;
+            else
+            {
+                clrType = underlyingType;
+                nullable = true;
+            }
+
+            if (clrType.IsEnum)
+                clrType = Enum.GetUnderlyingType(clrType);
+
+            IEdmPrimitiveType primitiveEdmType = PrimitiveTypeHelper.GetPrimitiveType(clrType);
+            return EdmCoreModel.Instance.GetPrimitive(primitiveEdmType.PrimitiveKind, nullable);
+        }
+        public static IEdmTypeReference GetEdmTypeReference(IEdmModel edmModel, Type clrType)
+        {
             bool nullable;
             Type underlyingType = Nullable.GetUnderlyingType(clrType);
             if (underlyingType == null)
@@ -139,12 +156,10 @@ namespace OdataToEntity
             if (primitiveEdmType == null)
             {
                 var edmEnumType = (IEdmEnumType)edmModel.FindType(clrType.FullName);
-                edmTypeRef = new EdmEnumTypeReference(edmEnumType, nullable);
+                return new EdmEnumTypeReference(edmEnumType, nullable);
             }
-            else
-                edmTypeRef = EdmCoreModel.Instance.GetPrimitive(primitiveEdmType.PrimitiveKind, nullable);
 
-            return edmTypeRef;
+            return EdmCoreModel.Instance.GetPrimitive(primitiveEdmType.PrimitiveKind, nullable);
         }
         public static IEdmEntitySet GetEntitySet(IEdmModel edmModel, IEdmNavigationProperty navigationProperty)
         {

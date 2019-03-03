@@ -53,7 +53,7 @@ namespace OdataToEntity.Parsers
 
             return accessors.ToArray();
         }
-        private static List<SingleValuePropertyAccessNode> GetOrderByProperties(IEdmModel edmModel, IEdmEntitySetBase entitySet, OrderByClause orderByClause, ApplyClause applyClause)
+        private static List<SingleValuePropertyAccessNode> GetOrderByProperties(IEdmEntitySetBase entitySet, OrderByClause orderByClause, ApplyClause applyClause)
         {
             var keys = new List<SingleValuePropertyAccessNode>();
             GroupByTransformationNode groupByNode;
@@ -84,12 +84,12 @@ namespace OdataToEntity.Parsers
             }
             return keys;
         }
-        internal static OrderByClause GetUniqueOrderBy(IEdmModel edmModel, IEdmEntitySetBase entitySet, OrderByClause orderByClause, ApplyClause applyClause)
+        internal static OrderByClause GetUniqueOrderBy(IEdmEntitySetBase entitySet, OrderByClause orderByClause, ApplyClause applyClause)
         {
             if (orderByClause != null && applyClause == null && GetIsKey(entitySet.EntityType(), GetEdmProperies(orderByClause)))
                 return orderByClause;
 
-            List<SingleValuePropertyAccessNode> orderByProperties = GetOrderByProperties(edmModel, entitySet, orderByClause, applyClause);
+            List<SingleValuePropertyAccessNode> orderByProperties = GetOrderByProperties(entitySet, orderByClause, applyClause);
             if (orderByProperties.Count == 0)
                 return orderByClause ?? throw new InvalidOperationException("orderByClause must not null");
 

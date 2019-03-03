@@ -7,19 +7,17 @@ namespace OdataToEntity.Parsers.Translators
     internal readonly struct OeSelectItemTranslator
     {
         private readonly IEdmModel _edmModel;
-        private readonly OeJoinBuilder _joinBuilder;
         private readonly bool _navigationNextLink;
         private readonly bool _skipToken;
 
-        public OeSelectItemTranslator(OeJoinBuilder joinBuilder, bool navigationNextLink, bool skipToken)
+        public OeSelectItemTranslator(IEdmModel edmModel, bool navigationNextLink, bool skipToken)
         {
+            _edmModel = edmModel;
             _navigationNextLink = navigationNextLink;
-            _joinBuilder = joinBuilder;
             _skipToken = skipToken;
-            _edmModel = joinBuilder.Visitor.EdmModel;
         }
 
-        public void Translate(OeSelectItem navigationItem, SelectItem item)
+        public void Translate(OeNavigationSelectItem navigationItem, SelectItem item)
         {
             if (item is ExpandedNavigationSelectItem expandedNavigationSelectItem)
                 Translate(navigationItem, expandedNavigationSelectItem);
@@ -28,18 +26,18 @@ namespace OdataToEntity.Parsers.Translators
             else
                 throw new InvalidOperationException("Unknown SelectItem type " + item.GetType().Name);
         }
-        private void Translate(OeSelectItem navigationItem, ExpandedNavigationSelectItem item)
+        private void Translate(OeNavigationSelectItem navigationItem, ExpandedNavigationSelectItem item)
         {
             if (_navigationNextLink && Cache.UriCompare.OeComparerExtension.IsNavigationNextLink(item))
                 return;
 
-            var childNavigationItem = new OeSelectItem(_edmModel, navigationItem, item, _skipToken);
+            var childNavigationItem = new OeNavigationSelectItem(_edmModel, navigationItem, item, _skipToken);
             childNavigationItem = navigationItem.AddOrGetNavigationItem(childNavigationItem);
 
             foreach (SelectItem selectItemClause in item.SelectAndExpand.SelectedItems)
                 Translate(childNavigationItem, selectItemClause);
         }
-        private void Translate(OeSelectItem navigationItem, PathSelectItem item)
+        private void Translate(OeNavigationSelectItem navigationItem, PathSelectItem item)
         {
             if (item.SelectedPath.LastSegment is NavigationPropertySegment navigationSegment)
             {
@@ -51,10 +49,7 @@ namespace OdataToEntity.Parsers.Translators
                 Translate(navigationItem, selectItemClause);
             }
             else if (item.SelectedPath.LastSegment is PropertySegment propertySegment)
-            {
-                var selectItem = new OeSelectItem(propertySegment.Property, _skipToken);
-                navigationItem.AddSelectItem(selectItem);
-            }
+                navigationItem.AddStructuralItem(propertySegment.Property, _skipToken);
             else
                 throw new InvalidOperationException(item.SelectedPath.LastSegment.GetType().Name + " not supported");
         }

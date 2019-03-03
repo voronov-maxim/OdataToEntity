@@ -164,8 +164,8 @@ namespace OdataToEntity.Linq2Db
                 expression = queryContext.TranslateSource(dataContext, expression);
                 expression = new ParameterVisitor().Visit(expression);
 
-                if (queryContext.ODataUri.QueryCount.GetValueOrDefault())
-                    countExpression = OeQueryContext.CreateCountExpression(expression);
+                if (queryContext.IsQueryCount())
+                    countExpression = queryContext.CreateCountExpression(expression);
             }
 
             IQueryable<Object> query = (IQueryable<Object>)entitySet.Provider.CreateQuery(expression);
@@ -206,7 +206,7 @@ namespace OdataToEntity.Linq2Db
                 expression = new ParameterVisitor().Visit(expression);
 
                 cacheContext = queryContext.CreateCacheContext(parameterVisitor.ConstantToParameterMapper);
-                countExpression = OeQueryContext.CreateCountExpression(expression);
+                countExpression = queryContext.CreateCountExpression(expression);
                 queryCache.AddQuery(cacheContext, expression, countExpression, queryContext.EntryFactory);
                 parameterValues = parameterVisitor.ParameterValues;
             }
@@ -221,7 +221,7 @@ namespace OdataToEntity.Linq2Db
             expression = new OeParameterToVariableVisitor().Translate(expression, parameterValues);
             expression = queryContext.TranslateSource(dbContext, expression);
 
-            if (queryContext.ODataUri.QueryCount.GetValueOrDefault())
+            if (queryContext.IsQueryCount())
             {
                 countExpression = (MethodCallExpression)queryContext.TranslateSource(dbContext, countExpression);
                 countExpression = (MethodCallExpression)new OeParameterToVariableVisitor().Translate(countExpression, parameterValues);

@@ -190,8 +190,8 @@ namespace OdataToEntity.Ef6
                 expression = new OeEf6EnumerableToQuerableVisitor().Visit(expression);
                 expression = queryContext.TranslateSource(dataContext, expression);
 
-                if (queryContext.ODataUri.QueryCount.GetValueOrDefault())
-                    countExpression = OeQueryContext.CreateCountExpression(expression);
+                if (queryContext.IsQueryCount())
+                    countExpression = queryContext.CreateCountExpression(expression);
             }
 
             IDbAsyncEnumerable asyncEnumerable = (IDbAsyncEnumerable)query.Provider.CreateQuery(expression);
@@ -230,7 +230,7 @@ namespace OdataToEntity.Ef6
                 expression = new OeEf6EnumerableToQuerableVisitor().Visit(expression);
 
                 cacheContext = queryContext.CreateCacheContext(parameterVisitor.ConstantToParameterMapper);
-                countExpression = OeQueryContext.CreateCountExpression(expression);
+                countExpression = queryContext.CreateCountExpression(expression);
                 queryCache.AddQuery(cacheContext, expression, countExpression, queryContext.EntryFactory);
                 parameterValues = parameterVisitor.ParameterValues;
             }
@@ -245,7 +245,7 @@ namespace OdataToEntity.Ef6
             expression = new OeParameterToVariableVisitor().Translate(expression, parameterValues);
             expression = queryContext.TranslateSource(dbContext, expression);
 
-            if (queryContext.ODataUri.QueryCount.GetValueOrDefault())
+            if (queryContext.IsQueryCount())
             {
                 countExpression = (MethodCallExpression)queryContext.TranslateSource(dbContext, countExpression);
                 countExpression = (MethodCallExpression)new OeParameterToVariableVisitor().Translate(countExpression, parameterValues);

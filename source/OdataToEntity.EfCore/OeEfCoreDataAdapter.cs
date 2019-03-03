@@ -311,8 +311,8 @@ namespace OdataToEntity.EfCore
                 IQueryable query = entitySet.Provider.CreateQuery(queryContext.TranslateSource(dataContext, expression));
                 asyncEnumerable = ((IQueryable<Object>)query).AsAsyncEnumerable();
 
-                if (queryContext.ODataUri.QueryCount.GetValueOrDefault())
-                    countExpression = OeQueryContext.CreateCountExpression(query.Expression);
+                if (queryContext.IsQueryCount())
+                    countExpression = queryContext.CreateCountExpression(query.Expression);
             }
 
             Db.OeAsyncEnumerator asyncEnumerator = new OeEfCoreAsyncEnumerator(asyncEnumerable.GetEnumerator(), cancellationToken);
@@ -350,7 +350,7 @@ namespace OdataToEntity.EfCore
                 expression = queryContext.TranslateSource(dbContext, expression);
 
                 queryExecutor = dbContext.CreateAsyncQueryExecutor<TResult>(expression);
-                countExpression = OeQueryContext.CreateCountExpression(expression);
+                countExpression = queryContext.CreateCountExpression(expression);
                 queryCache.AddQuery(queryContext.CreateCacheContext(parameterVisitor.ConstantToParameterMapper), queryExecutor, countExpression, queryContext.EntryFactory);
                 parameterValues = parameterVisitor.ParameterValues;
             }
@@ -367,7 +367,7 @@ namespace OdataToEntity.EfCore
             foreach (Cache.OeQueryCacheDbParameterValue parameterValue in parameterValues)
                 efQueryContext.AddParameter(parameterValue.ParameterName, parameterValue.ParameterValue);
 
-            if (queryContext.ODataUri.QueryCount.GetValueOrDefault())
+            if (queryContext.IsQueryCount())
             {
                 countExpression = (MethodCallExpression)queryContext.TranslateSource(dbContext, countExpression);
                 countExpression = (MethodCallExpression)new OeParameterToVariableVisitor().Translate(countExpression, parameterValues);

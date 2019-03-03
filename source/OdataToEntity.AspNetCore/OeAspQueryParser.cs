@@ -48,7 +48,7 @@ namespace OdataToEntity.AspNetCore
             if (source != null)
                 _queryContext.QueryableSource = e => e == _queryContext.EntryFactory.EntitySet ? source : null;
 
-            if (_queryContext.IsCountSegment)
+            if (_queryContext.ODataUri.Path.LastSegment is CountSegment)
             {
                 headers.ResponseContentType = OeRequestHeaders.TextDefault.ContentType;
                 int count = _dataAdapter.ExecuteScalar<int>(_dataContext, _queryContext);
@@ -143,7 +143,7 @@ namespace OdataToEntity.AspNetCore
             asyncEnumerator.Count = count;
             _httpContext.Response.RegisterForDispose(asyncEnumerator);
 
-            if (OeExpressionHelper.IsPrimitiveType(typeof(T)) || _queryContext.IsCountSegment)
+            if (OeExpressionHelper.IsPrimitiveType(typeof(T)) || _queryContext.ODataUri.Path.LastSegment is CountSegment)
                 return new ODataPrimitiveResult<T>(_edmModel, _odataUri, asyncEnumerator);
 
             return new ODataResult<T>(_queryContext, asyncEnumerator);

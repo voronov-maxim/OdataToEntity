@@ -122,7 +122,7 @@ namespace OdataToEntity.Parsers
             if (queryContext.ODataUri.Path.LastSegment is CountSegment)
                 return source;
 
-            var selectTranslator = new Translators.OeSelectTranslator(_joinBuilder, queryContext.ODataUri.Path, queryContext.MetadataLevel);
+            var selectTranslator = new Translators.OeSelectTranslator(queryContext.EdmModel, _joinBuilder, queryContext.ODataUri, queryContext.MetadataLevel);
             source = selectTranslator.Build(source, queryContext);
             _entryFactoryFactory = selectTranslator.CreateEntryFactory;
 
@@ -172,8 +172,7 @@ namespace OdataToEntity.Parsers
                 return _entryFactoryFactory(entitySet, ParameterType, skipTokenAccessors);
 
             OePropertyAccessor[] accessors = OePropertyAccessor.CreateFromType(ParameterType, entitySet);
-            Type clrEntityType = Visitor.EdmModel.GetClrType(entitySet);
-            return new OeEntryFactory(clrEntityType, entitySet, accessors, skipTokenAccessors);
+            return new OeEntryFactory(entitySet, accessors, skipTokenAccessors);
         }
 
         public IReadOnlyDictionary<ConstantExpression, ConstantNode> Constants => Visitor.Constans;

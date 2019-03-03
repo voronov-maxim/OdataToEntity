@@ -145,7 +145,7 @@ namespace OdataToEntity.Parsers.Translators
                     MethodCallExpression aggCallExpression = AggCallExpression(aggExpression.Method, sourceParameter, aggLambda);
                     expressions.Add(aggCallExpression);
 
-                    _aggProperties.Add(CreateEdmProperty(visitor.EdmModel, aggCallExpression.Type, aggExpression.Alias, false));
+                    _aggProperties.Add(CreateEdmProperty(aggCallExpression.Type, aggExpression.Alias, false));
                 }
                 else
                     throw new NotSupportedException("Unknown aggregate expression type " + aggExpressionBase.GetType().Name);
@@ -183,7 +183,7 @@ namespace OdataToEntity.Parsers.Translators
                 Expression expression = visitor.TranslateNode(computeExpression.Expression);
                 expressions.Add(expression);
 
-                _aggProperties.Add(CreateEdmProperty(visitor.EdmModel, expression.Type, computeExpression.Alias, false));
+                _aggProperties.Add(CreateEdmProperty(expression.Type, computeExpression.Alias, false));
             }
 
             NewExpression newExpression = OeExpressionHelper.CreateTupleExpression(expressions);
@@ -221,7 +221,7 @@ namespace OdataToEntity.Parsers.Translators
                         expressions.Add(e);
 
                         String aliasName = node.Name + "_" + node.ChildTransformations[i].Name;
-                        _aggProperties.Add(CreateEdmProperty(visitor.EdmModel, e.Type, aliasName, true));
+                        _aggProperties.Add(CreateEdmProperty(e.Type, aliasName, true));
                     }
                 }
                 else
@@ -229,7 +229,7 @@ namespace OdataToEntity.Parsers.Translators
                     Expression e = visitor.TranslateNode(node.Expression);
                     expressions.Add(e);
 
-                    _aggProperties.Add(CreateEdmProperty(visitor.EdmModel, e.Type, node.Name, true));
+                    _aggProperties.Add(CreateEdmProperty(e.Type, node.Name, true));
                 }
 
             NewExpression newExpression = OeExpressionHelper.CreateTupleExpression(expressions);
@@ -293,9 +293,9 @@ namespace OdataToEntity.Parsers.Translators
             MethodInfo countMethodInfo = OeMethodInfoHelper.GetCountMethodInfo(itemType);
             return Expression.Call(countMethodInfo, sourceParameter);
         }
-        private static AggProperty CreateEdmProperty(IEdmModel model, Type clrType, String name, bool isGroup)
+        private static AggProperty CreateEdmProperty(Type clrType, String name, bool isGroup)
         {
-            return new AggProperty(name, model.GetEdmTypeReference(clrType), isGroup);
+            return new AggProperty(name, OeEdmClrHelper.GetEdmTypeReference(clrType), isGroup);
         }
         public OeEntryFactory CreateEntryFactory(IEdmEntitySet entitySet, Type clrType, OePropertyAccessor[] skipTokenAccessors)
         {
@@ -308,8 +308,7 @@ namespace OdataToEntity.Parsers.Translators
                 accessors = OePropertyAccessor.CreateFromTuple(clrType, _aggProperties, groupIndex);
             }
 
-            Type clrEntityType = _visitor.EdmModel.GetClrType(entitySet);
-            return new OeEntryFactory(clrEntityType, entitySet, accessors, skipTokenAccessors);
+            return new OeEntryFactory(entitySet, accessors, skipTokenAccessors);
         }
         private OeQueryNodeVisitor CreateVisitor(ParameterExpression parameter)
         {

@@ -1,4 +1,5 @@
-﻿using OdataToEntity.Parsers;
+﻿using Microsoft.OData.Edm;
+using OdataToEntity.Parsers;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -62,7 +63,7 @@ namespace OdataToEntity.Db
             Context = parentEnumerator.Context;
             EntryFactory = entryFactory;
 
-            if (entryFactory.ResourceInfo.IsCollection.GetValueOrDefault())
+            if (entryFactory.EdmNavigationProperty.Type.Definition is EdmCollectionType)
                 _uniqueConstraint = new HashSet<Object>(entryFactory.EqualityComparer);
 
             Initialize();

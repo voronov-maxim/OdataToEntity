@@ -12,7 +12,7 @@ namespace OdataToEntity.Db
         private readonly OeQueryExpression _source;
         private readonly OeQueryExpression _result;
 
-        protected OeBoundFunctionParameter(OeQueryExpression source, OeQueryExpression result)
+        protected OeBoundFunctionParameter(in OeQueryExpression source, in OeQueryExpression result)
         {
             _source = source;
             _result = result;
@@ -40,7 +40,7 @@ namespace OdataToEntity.Db
 
     public sealed class OeBoundFunctionParameter<TSource, TResult> : OeBoundFunctionParameter
     {
-        public OeBoundFunctionParameter(OeQueryExpression source, OeQueryExpression result)
+        public OeBoundFunctionParameter(in OeQueryExpression source, in OeQueryExpression result)
             : base(source, result)
         {
         }
