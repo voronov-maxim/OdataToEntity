@@ -82,9 +82,6 @@ namespace OdataToEntity.Linq2Db
         public override bool IsKey(PropertyInfo propertyInfo) => propertyInfo.GetCustomAttribute(typeof(PrimaryKeyAttribute)) != null;
         public override bool IsNotMapped(PropertyInfo propertyInfo)
         {
-            if (base.IsNotMappedModelBoundAttribute(propertyInfo))
-                return true;
-
             if (propertyInfo.GetCustomAttribute(typeof(ColumnAttribute)) != null)
                 return false;
             if (propertyInfo.GetCustomAttribute(typeof(PrimaryKeyAttribute)) != null)

@@ -73,14 +73,18 @@ namespace OdataToEntity
         {
             return edmModel.GetEdmModel(entityType).GetAnnotationValue<T>(entityType);
         }
-        public static T GetModelBoundAttribute<T>(this IEdmModel edmModel, IEdmNavigationProperty navigationProperty) where T : Attribute
+        public static T GetModelBoundAttribute<T>(this IEdmModel edmModel, IEdmProperty edmProperty) where T : Attribute
         {
-            IEdmEntitySet entitySet = OeEdmClrHelper.GetEntitySet(edmModel, navigationProperty);
-            return OeEdmClrHelper.GetEdmModel(edmModel, entitySet.Container).GetAnnotationValue<T>(navigationProperty);
+            IEdmModel refModel = OeEdmClrHelper.GetEdmModel(edmModel, (IEdmEntityType)edmProperty.DeclaringType);
+            return edmModel.GetAnnotationValue<T>(edmProperty);
         }
-        public static SelectItem[] GetSelectItems(this IEdmModel edmModel, IEdmEntityType entityType)
+        public static ExpandedNavigationSelectItem[] GetExpandItems(this IEdmModel edmModel, IEdmEntityType entityType)
         {
-            return edmModel.GetEdmModel(entityType).GetAnnotationValue<SelectItem[]>(entityType);
+            return edmModel.GetEdmModel(entityType).GetAnnotationValue<ExpandedNavigationSelectItem[]>(entityType);
+        }
+        public static Query.OeModelBoundQueryProvider GetModelBoundQueryProvider(this IEdmModel edmModel)
+        {
+            return ExtensionMethods.GetAnnotationValue<Query.OeModelBoundQueryProvider>(edmModel, edmModel);
         }
         public static bool IsDbFunction(this IEdmModel edmModel, IEdmOperation edmOperation)
         {
@@ -99,6 +103,10 @@ namespace OdataToEntity
         {
             edmModel.SetAnnotationValue(entitySet, entitySetAdapter);
         }
+        public static void SetExpandItems(this IEdmModel edmModel, IEdmEntityType entityType, ExpandedNavigationSelectItem[] expandItems)
+        {
+            OeEdmClrHelper.GetEdmModel(edmModel, entityType).SetAnnotationValue(entityType, expandItems);
+        }
         public static void SetIsDbFunction(this IEdmModel edmModel, IEdmOperation edmOperation, bool isDbFunction)
         {
             edmModel.SetAnnotationValue(edmOperation, new OeValueAnnotation<bool>(isDbFunction));
@@ -115,14 +123,14 @@ namespace OdataToEntity
         {
             OeEdmClrHelper.GetEdmModel(edmModel, entityType).SetAnnotationValue(entityType, attribute);
         }
-        public static void SetModelBoundAttribute<T>(this IEdmModel edmModel, IEdmNavigationProperty navigationProperty, T attribute) where T : Attribute
+        public static void SetModelBoundAttribute<T>(this IEdmModel edmModel, IEdmProperty edmProperty, T attribute) where T : Attribute
         {
-            IEdmEntitySet entitySet = OeEdmClrHelper.GetEntitySet(edmModel, navigationProperty);
-            OeEdmClrHelper.GetEdmModel(edmModel, entitySet.Container).SetAnnotationValue(navigationProperty, attribute);
+            IEdmModel refModel = OeEdmClrHelper.GetEdmModel(edmModel, (IEdmEntityType)edmProperty.DeclaringType);
+            refModel.SetAnnotationValue(edmProperty, attribute);
         }
-        public static void SetSelectItems(this IEdmModel edmModel, IEdmEntityType entityType, SelectItem[] selectItems)
+        public static void SetModelBoundQueryProvider(this IEdmModel edmModel, Query.OeModelBoundQueryProvider modelBoundQueryProvider)
         {
-            OeEdmClrHelper.GetEdmModel(edmModel, entityType).SetAnnotationValue(entityType, selectItems);
+            edmModel.SetAnnotationValue(edmModel, modelBoundQueryProvider);
         }
     }
 }

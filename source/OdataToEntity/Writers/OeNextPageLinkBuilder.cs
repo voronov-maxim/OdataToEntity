@@ -20,12 +20,10 @@ namespace OdataToEntity.Writers
         public static int GetCount(IEdmModel edmModel, OeEntryFactory entryFactory, Object value)
         {
             ODataUri odataUri = OeNextPageLinkBuilder.GetCountODataUri(edmModel, entryFactory, entryFactory.NavigationSelectItem, value);
+            var queryContext = new OeQueryContext(edmModel, odataUri, 0, false, OeMetadataLevel.Minimal);
+
             IEdmEntitySet entitySet = (odataUri.Path.FirstSegment as EntitySetSegment).EntitySet;
             Db.OeDataAdapter dataAdapter = edmModel.GetDataAdapter(entitySet.Container);
-            Db.OeEntitySetAdapter entitySetAdapter = dataAdapter.EntitySetAdapters.Find(entitySet);
-            var queryContext = new OeQueryContext(edmModel, odataUri, entitySetAdapter, Array.Empty<OeParseNavigationSegment>(),
-                0, false, OeMetadataLevel.Minimal, OeModelBoundAttribute.No);
-
             Object dataContext = null;
             try
             {
@@ -137,24 +135,14 @@ namespace OdataToEntity.Writers
         private static Uri GetNavigationUri(IEdmModel edmModel, OeEntryFactory entryFactory,
             ExpandedNavigationSelectItem item, OrderByClause orderByClause, Object value, String skipToken)
         {
-            bool? queryCount;
-            int maxTop = 0;
-            if (skipToken == null)
-            {
-                queryCount = entryFactory.CountOption ?? item.CountOption;
-                if (entryFactory.MaxTop > 0)
-                    maxTop = entryFactory.MaxTop;
-            }
-            else
+            bool? queryCount = item.CountOption;
+            long? top = item.TopOption;
+            if (skipToken != null)
             {
                 queryCount = null;
-                if (entryFactory.PageSize > 0)
-                    maxTop = entryFactory.PageSize;
+                if (entryFactory.PageSize > 0 && (top == null || entryFactory.PageSize < top.GetValueOrDefault()))
+                    top = entryFactory.PageSize;
             }
-
-            long? top = item.TopOption;
-            if (maxTop > 0 && (top == null || maxTop < top.GetValueOrDefault()))
-                top = maxTop;
 
             FilterClause filterClause = GetFilter(edmModel, entryFactory, item, value);
             var entitytSet = (IEdmEntitySet)(filterClause.RangeVariable as ResourceRangeVariable).NavigationSource;
@@ -173,7 +161,7 @@ namespace OdataToEntity.Writers
             };
             return odataUri.BuildUri(ODataUrlKeyDelimiter.Parentheses);
         }
-        public Uri GetNextPageLinkNavigation(OeEntryFactory entryFactory, int readCount, int? totalCount, Object value)
+        public Uri GetNextPageLinkNavigation(OeEntryFactory entryFactory, int readCount, long? totalCount, Object value)
         {
             if (entryFactory.PageSize == 0 || readCount == 0 || (totalCount != null && readCount >= totalCount))
                 return null;
@@ -182,17 +170,20 @@ namespace OdataToEntity.Writers
             OrderByClause orderByClause = OeSkipTokenParser.GetUniqueOrderBy(entryFactory.EntitySet, item.OrderByOption, null);
             KeyValuePair<String, Object>[] keys = GetNavigationSkipTokenKeys(entryFactory, orderByClause, value);
 
-            int restCount = GetRestCountNavigation(entryFactory, (int?)item.TopOption, readCount, totalCount);
+            int restCount = GetRestCountNavigation((int?)item.TopOption, readCount, totalCount);
             String skipToken = OeSkipTokenParser.GetSkipToken(_queryContext.EdmModel, keys, restCount);
             return GetNavigationUri(_queryContext.EdmModel, entryFactory, item, orderByClause, value, skipToken);
         }
         public Uri GetNextPageLinkRoot(OeEntryFactory entryFactory, int readCount, int? totalCount, Object value)
         {
+            if (readCount == 0)
+                return null;
+
             int pageSize = GetPageSizeRoot(entryFactory);
             if (pageSize == 0)
                 return null;
 
-            int restCount = GetRestCountRoot(readCount, totalCount);
+            int restCount = GetRestCountRoot(pageSize, readCount, totalCount);
             if (restCount == 0)
                 return null;
 
@@ -222,55 +213,35 @@ namespace OdataToEntity.Writers
 
             return pageSize;
         }
-        private static int GetRestCountNavigation(OeEntryFactory entryFactory, int? top, int readCount, int? totalCount)
+        private static int GetRestCountNavigation(int? top, int readCount, long? totalCount)
         {
-            if (entryFactory.MaxTop > 0 && (top == null || entryFactory.MaxTop < top))
-                top = entryFactory.MaxTop;
-
             if (totalCount != null && totalCount < top.GetValueOrDefault())
-                top = totalCount;
+                top = (int)totalCount.GetValueOrDefault();
 
             return (top ?? Int32.MaxValue) - readCount;
         }
-        private int GetRestCountRoot(int readCount, int? totalCount)
+        private int GetRestCountRoot(int pageSize, int readCount, int? totalCount)
         {
             int? restCount;
             if (totalCount == null)
                 restCount = _queryContext.RestCount;
             else
-            {
-                if (_queryContext.EntryFactory.MaxTop > 0 && _queryContext.EntryFactory.MaxTop < totalCount)
-                    restCount = _queryContext.EntryFactory.MaxTop;
-                else
-                    restCount = totalCount;
-            }
+                restCount = totalCount;
 
             if (readCount > 0 && (restCount == null || restCount.GetValueOrDefault() > 0))
             {
                 if (restCount == null)
                 {
-                    var top = (int)_queryContext.ODataUri.Top.GetValueOrDefault();
-                    if (top > 0 && _queryContext.ODataUri.SkipToken == null)
-                    {
-                        if (_queryContext.EntryFactory.MaxTop > 0)
-                        {
-                            if (_queryContext.EntryFactory.MaxTop < top)
-                                top = _queryContext.EntryFactory.MaxTop;
-                            restCount = top - readCount;
-                        }
-                        else
-                            restCount = Int32.MaxValue;
-                    }
+                    if (_queryContext.ODataUri.Top.GetValueOrDefault() > 0)
+                        restCount = (int)_queryContext.ODataUri.Top.GetValueOrDefault() - readCount;
                     else
-                        throw new InvalidOperationException("Rest row count must by set in $skiptoken");
+                        restCount = Int32.MaxValue;
                 }
                 else
-                    restCount -= readCount;
-
-                return restCount.Value;
+                    restCount = restCount.GetValueOrDefault() - readCount;
             }
 
-            return 0;
+            return restCount.GetValueOrDefault();
         }
     }
 }

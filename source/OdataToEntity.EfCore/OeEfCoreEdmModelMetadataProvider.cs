@@ -135,9 +135,6 @@ namespace OdataToEntity.EfCore
         }
         public override bool IsNotMapped(PropertyInfo propertyInfo)
         {
-            if (base.IsNotMappedModelBoundAttribute(propertyInfo))
-                return true;
-
             foreach (IEntityType efEntityType in GetEntityTypes(propertyInfo))
             {
                 foreach (IProperty efProperty in efEntityType.GetProperties())

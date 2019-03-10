@@ -212,8 +212,6 @@ namespace OdataToEntity.Test.Model
     {
         [Column,     Nullable ] public string          AltCustomerCountry { get; set; } // char(2)
         [Column,     Nullable ] public int?            AltCustomerId      { get; set; } // int
-        [Expand(SelectExpandType.Disabled)]
-        [Column,     Nullable ] public int?            Dummy              { get; set; } //int
         [Column,     NotNull  ] public string          Name               { get; set; } // varchar(256)
     }
 

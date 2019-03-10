@@ -10,7 +10,6 @@ namespace OdataToEntity.Test
         public Expression<Func<IQueryable<T>, IQueryable<TResult>>> Expression { get; set; }
         public bool NavigationNextLink { get; set; }
         public int PageSize { get; set; }
-        public OeModelBoundAttribute UseModelBoundAttribute { get; set; }
     }
 
     public sealed class QueryParameters<T> : QueryParameters<T, T>

@@ -60,7 +60,7 @@ namespace OdataToEntity.Test
             using (var dataContext = new OrderContext(OrderContextOptions.Create(true, null)))
                 fromDb = TestHelper.ExecuteDb(DataAdapter.EntitySetAdapters, dataContext, parameters.Expression);
 
-            TestHelper.Compare(fromDb, fromOe, MetadataProvider, null);
+            TestHelper.Compare(fromDb, fromOe, null);
         }
         public async virtual Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
         {
@@ -80,22 +80,16 @@ namespace OdataToEntity.Test
                 Console.ResetColor();
             }
 
-            List<IncludeVisitor.Include> includes = GetIncludes(parameters.Expression);
-            if (typeof(TResult) == typeof(Object))
-            {
-                fromOe = TestHelper.ToOpenType(fromOe);
-                foreach (SortedDictionary<String, Object> entity in fromOe)
-                    entity.Remove("Dummy");
-            }
+            List<EfInclude> includes = GetIncludes(parameters.Expression);
 
             IList fromDb;
             using (var dataContext = new OrderContext(OrderContextOptions.Create(true, null)))
             {
-                fromDb = TestHelper.ExecuteDb(DataAdapter, dataContext, parameters.Expression, out IReadOnlyList<IncludeVisitor.Include> includesDb);
+                fromDb = TestHelper.ExecuteDb(DataAdapter, dataContext, parameters.Expression, out IReadOnlyList<EfInclude> includesDb);
                 includes.AddRange(includesDb);
             }
 
-            TestHelper.Compare(fromDb, fromOe, MetadataProvider, includes);
+            TestHelper.Compare(fromDb, fromOe, includes);
         }
         private async Task<IList> ExecuteOe<T, TResult>(LambdaExpression lambda, int maxPageSize)
         {
@@ -182,12 +176,12 @@ namespace OdataToEntity.Test
             T value = query.Provider.Execute<T>(expression);
             return new T[] { value };
         }
-        private List<IncludeVisitor.Include> GetIncludes(Expression expression)
+        private List<EfInclude> GetIncludes(Expression expression)
         {
-            var includes = new List<IncludeVisitor.Include>();
+            var includes = new List<EfInclude>();
             var includeVisitor = new IncludeVisitor(MetadataProvider, DataAdapter.IsDatabaseNullHighestValue);
             includeVisitor.Visit(expression);
-            foreach (IncludeVisitor.Include include in includeVisitor.Includes)
+            foreach (EfInclude include in includeVisitor.Includes)
             {
                 PropertyInfo property = include.Property;
                 Type declaringType;
@@ -212,7 +206,7 @@ namespace OdataToEntity.Test
                 if (mapProperty == null)
                     throw new InvalidOperationException("unknown property " + property.ToString());
 
-                includes.Add(new IncludeVisitor.Include(mapProperty, null));
+                includes.Add(new EfInclude(mapProperty, null));
             }
             return includes;
         }

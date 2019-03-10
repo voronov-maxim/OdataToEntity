@@ -104,9 +104,6 @@ namespace OdataToEntity.Ef6
         }
         public override bool IsNotMapped(PropertyInfo propertyInfo)
         {
-            if (base.IsNotMappedModelBoundAttribute(propertyInfo))
-                return true;
-
             foreach (EntityType efEntityType in GetEntityTypes(propertyInfo))
             {
                 for (int i = 0; i < efEntityType.Properties.Count; i++)

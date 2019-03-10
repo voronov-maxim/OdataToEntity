@@ -66,7 +66,7 @@ namespace OdataToEntity.Test
         }
         public virtual async Task Execute<T, TResult>(QueryParametersScalar<T, TResult> parameters)
         {
-            IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri, false, 0, OeModelBoundAttribute.No).ConfigureAwait(false);
+            IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri, false, 0).ConfigureAwait(false);
 
             ODataUri odataUri = ParseUri(parameters.RequestUri);
             IEdmModel edmModel = EdmModel.GetEdmModel(odataUri.Path);
@@ -78,12 +78,11 @@ namespace OdataToEntity.Test
                 fromDb = TestHelper.ExecuteDb(dbDataAdapter.EntitySetAdapters, dataContext, parameters.Expression);
 
             Console.WriteLine(parameters.RequestUri);
-            TestHelper.Compare(fromDb, fromOe, MetadataProvider, null);
+            TestHelper.Compare(fromDb, fromOe, null);
         }
         public virtual async Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
         {
-            IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri, parameters.NavigationNextLink, parameters.PageSize,
-                parameters.UseModelBoundAttribute).ConfigureAwait(false);
+            IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri, parameters.NavigationNextLink, parameters.PageSize).ConfigureAwait(false);
 
             ODataUri odataUri = ParseUri(parameters.RequestUri);
             IEdmModel edmModel = EdmModel.GetEdmModel(odataUri.Path);
@@ -91,24 +90,12 @@ namespace OdataToEntity.Test
             Db.OeDataAdapter dbDataAdapter = ((ITestDbDataAdapter)oeDataAdapter).DbDataAdapter;
 
             IList fromDb;
-            IReadOnlyList<IncludeVisitor.Include> includes;
+            IReadOnlyList<EfInclude> includes;
             using (var dataContext = (DbContext)dbDataAdapter.CreateDataContext())
                 fromDb = TestHelper.ExecuteDb(dbDataAdapter, dataContext, parameters.Expression, out includes);
 
-            //fix null navigation property Order where aggregate Order(Name)
-            if (typeof(TResult) == typeof(Object))
-                foreach (SortedDictionary<String, Object> item in fromOe)
-                    foreach (KeyValuePair<String, Object> keyValue in item.Where(i => i.Value == null).ToList())
-                    {
-                        PropertyInfo navigationProperty = typeof(T).GetProperty(keyValue.Key);
-                        if (navigationProperty != null &&
-                            Parsers.OeExpressionHelper.IsEntityType(navigationProperty.PropertyType) &&
-                            !includes.Any(i => i.Property == navigationProperty))
-                            item.Remove(keyValue.Key);
-                    }
-
             Console.WriteLine(parameters.RequestUri);
-            TestHelper.Compare(fromDb, fromOe, MetadataProvider, includes);
+            TestHelper.Compare(fromDb, fromOe, includes);
         }
         internal async Task ExecuteBatchAsync(String batchName)
         {
@@ -119,10 +106,10 @@ namespace OdataToEntity.Test
 
             await parser.ExecuteBatchAsync(new MemoryStream(bytes), responseStream, CancellationToken.None).ConfigureAwait(false);
         }
-        public async Task<IList> ExecuteOe<TResult>(String requestUri, bool navigationNextLink, int pageSize, OeModelBoundAttribute useModelBoundAttribute)
+        public async Task<IList> ExecuteOe<TResult>(String requestUri, bool navigationNextLink, int pageSize)
         {
             ODataUri odataUri = ParseUri(requestUri);
-            var parser = new OeParser(odataUri.ServiceRoot, EdmModel, useModelBoundAttribute);
+            var parser = new OeParser(odataUri.ServiceRoot, EdmModel);
             var uri = new Uri(odataUri.ServiceRoot, requestUri);
             OeRequestHeaders requestHeaders = OeRequestHeaders.JsonDefault.SetMaxPageSize(pageSize).SetNavigationNextLink(navigationNextLink);
 

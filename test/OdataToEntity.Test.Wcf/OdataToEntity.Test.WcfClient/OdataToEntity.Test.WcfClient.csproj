@@ -47,12 +47,13 @@
     <Compile Include="..\..\OdataToEntity.Test.Asp\OdataToEntity.Test.AspClient\ProcedureTest.cs" Link="ProcedureTest.cs" />
     <Compile Include="..\..\OdataToEntity.Test.Asp\OdataToEntity.Test.AspClient\SelectTest2.cs" Link="SelectTest2.cs" />
     <Compile Include="..\..\OdataToEntity.Test.Asp\OdataToEntity.Test.AspClient\TypeMapperVisitor.cs" Link="TypeMapperVisitor.cs" />
+    <Compile Include="..\..\OdataToEntity.Test\Common\EfInclude.cs" Link="EfInclude.cs" />
     <Compile Include="..\..\OdataToEntity.Test\Common\IncludeVisitor.cs" Link="Common\IncludeVisitor.cs" />
+    <Compile Include="..\..\OdataToEntity.Test\Common\OpenTypeConverter.cs" Link="OpenTypeConverter.cs" />
     <Compile Include="..\..\OdataToEntity.Test\Common\QueryParameters.cs" Link="Common\QueryParameters.cs" />
     <Compile Include="..\..\OdataToEntity.Test\Common\ResponseReader.cs" Link="Common\ResponseReader.cs" />
     <Compile Include="..\..\OdataToEntity.Test\Common\SelectTest.cs" Link="Common\SelectTest.cs" />
     <Compile Include="..\..\OdataToEntity.Test\Common\ManyColumnsTest.cs" Link="Common\ManyColumnsTest.cs" />
-    <Compile Include="..\..\OdataToEntity.Test\Common\TestContractResolver.cs" Link="Common\TestContractResolver.cs" />
     <Compile Include="..\..\OdataToEntity.Test\Common\TestHelper.cs" Link="Common\TestHelper.cs" />
     <Compile Include="..\..\OdataToEntity.Test\Model\*.cs" Link="Model\%(FileName)" />
     <Compile Include="..\OdataToEntity.Test.WcfService\IOdataWcf.cs" Link="IOdataWcf.cs" />

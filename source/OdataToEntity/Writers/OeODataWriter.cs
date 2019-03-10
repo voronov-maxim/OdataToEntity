@@ -93,10 +93,9 @@ namespace OdataToEntity.Writers
         }
         private async Task WriteNavigationCollection(Db.IOeDbEnumerator dbEnumerator)
         {
-            ODataResourceSet resourceSet = null;
             Object value;
             int readCount = 0;
-            int? totalCount = null;
+            ODataResourceSet resourceSet = null;
             do
             {
                 value = dbEnumerator.Current;
@@ -105,11 +104,8 @@ namespace OdataToEntity.Writers
                     if (resourceSet == null)
                     {
                         resourceSet = new ODataResourceSet();
-                        if (dbEnumerator.EntryFactory.CountOption.GetValueOrDefault())
-                        {
-                            totalCount = OeNextPageLinkBuilder.GetCount(_queryContext.EdmModel, dbEnumerator.EntryFactory, value);
-                            resourceSet.Count = totalCount;
-                        }
+                        if (dbEnumerator.EntryFactory.NavigationSelectItem.CountOption.GetValueOrDefault())
+                            resourceSet.Count = OeNextPageLinkBuilder.GetCount(_queryContext.EdmModel, dbEnumerator.EntryFactory, value);
                         _writer.WriteStart(resourceSet);
                     }
 
@@ -120,16 +116,18 @@ namespace OdataToEntity.Writers
             }
             while (await dbEnumerator.MoveNextAsync().ConfigureAwait(false));
 
-            if (resourceSet == null)
+            if (readCount == 0)
             {
                 resourceSet = new ODataResourceSet();
-                if (dbEnumerator.EntryFactory.CountOption.GetValueOrDefault())
+                if (dbEnumerator.EntryFactory.NavigationSelectItem.CountOption.GetValueOrDefault())
                     resourceSet.Count = 0;
                 _writer.WriteStart(resourceSet);
             }
-
-            var nextPageLinkBuilder = new OeNextPageLinkBuilder(_queryContext);
-            resourceSet.NextPageLink = nextPageLinkBuilder.GetNextPageLinkNavigation(dbEnumerator.EntryFactory, readCount, totalCount, value);
+            else
+            {
+                var nextPageLinkBuilder = new OeNextPageLinkBuilder(_queryContext);
+                resourceSet.NextPageLink = nextPageLinkBuilder.GetNextPageLinkNavigation(dbEnumerator.EntryFactory, readCount, resourceSet.Count, value);
+            }
 
             _writer.WriteEnd();
         }

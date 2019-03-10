@@ -23,6 +23,7 @@ namespace OdataToEntity.Test.Model
     {
         public String Address { get; set; }
         [InverseProperty(nameof(Order.AltCustomer))]
+        [Expand(SelectExpandType.Disabled)]
         public ICollection<Order> AltOrders { get; set; }
         [Key, Column(Order = 0), Required]
         public String Country { get; set; }
@@ -30,9 +31,10 @@ namespace OdataToEntity.Test.Model
         [Key, Column(Order = 1)]
         public int Id { get; set; }
         [Required]
-        [Expand(SelectExpandType.Automatic)]
         public String Name { get; set; }
         [InverseProperty(nameof(Order.Customer))]
+        [Count(Disabled = true)]
+        [Expand(SelectExpandType.Automatic)]
         public ICollection<Order> Orders { get; set; }
         public Sex? Sex { get; set; }
         [NotMapped]
@@ -47,8 +49,6 @@ namespace OdataToEntity.Test.Model
         public String AltCustomerCountry { get; set; }
         //[ForeignKey(nameof(AltCustomer)), Column(Order = 1)]
         public int? AltCustomerId { get; set; }
-        [Expand(SelectExpandType.Disabled)]
-        public int? Dummy { get; set; }
         [Required]
         public String Name { get; set; }
     }
@@ -72,6 +72,7 @@ namespace OdataToEntity.Test.Model
         public int Id { get; set; }
         [Count]
         [Expand(SelectExpandType.Automatic)]
+        [OrderBy("Id")]
         [Page(MaxTop = 2, PageSize = 1)]
         public ICollection<OrderItem> Items { get; set; }
         public ICollection<ShippingAddress> ShippingAddresses { get; set; }
@@ -81,8 +82,18 @@ namespace OdataToEntity.Test.Model
     }
 
     [Table("OrderItems", Schema = "dbo")]
+    [Count(Disabled = true)]
+    [OrderBy(Disabled = true)]
     public sealed class OrderItem
     {
+        public OrderItem()
+        {
+            Count = Int32.MinValue;
+            Id = Int32.MinValue;
+            OrderId = Int32.MinValue;
+            Price = Decimal.MinValue;
+            Product = OpenTypeConverter.NotSetString;
+        }
         public int? Count { get; set; }
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }

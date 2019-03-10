@@ -70,20 +70,7 @@ namespace OdataToEntity.ModelBuilder
         }
         public virtual bool IsNotMapped(PropertyInfo propertyInfo)
         {
-            if (propertyInfo.GetCustomAttribute(typeof(NotMappedAttribute)) != null)
-                return true;
-
-            return IsNotMappedModelBoundAttribute(propertyInfo);
-        }
-        protected bool IsNotMappedModelBoundAttribute(PropertyInfo propertyInfo)
-        {
-            if (UseModelBoundAttribute == OeModelBoundAttribute.Yes)
-            {
-                var expandAttribute = (Query.ExpandAttribute)propertyInfo.GetCustomAttribute(typeof(Query.ExpandAttribute));
-                return expandAttribute != null && expandAttribute.ExpandType == Query.SelectExpandType.Disabled;
-            }
-
-            return false;
+            return propertyInfo.GetCustomAttribute(typeof(NotMappedAttribute)) != null;
         }
         public virtual bool IsRequired(PropertyInfo propertyInfo)
         {

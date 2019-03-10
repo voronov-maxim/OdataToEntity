@@ -1,10 +1,7 @@
 ﻿using Microsoft.OData.Edm;
-using Microsoft.OData.UriParser;
 using OdataToEntity.Parsers;
 using System;
 using System.Collections.Generic;
-using System.Linq.Expressions;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -12,40 +9,6 @@ namespace OdataToEntity.GraphQL
 {
     public sealed class OeGraphqlAsyncEnumerator : IAsyncEnumerator<Dictionary<String, Object>>
     {
-        private sealed class SetPropertyValueVisitor : ExpressionVisitor
-        {
-            private Dictionary<String, Object> _entity;
-            private Object _orderValue;
-            private MemberExpression _propertyExpression;
-
-            public void SetPropertyValue(Dictionary<String, Object> entity, MemberExpression propertyExpression, Object orderValue)
-            {
-                _entity = entity;
-                _propertyExpression = propertyExpression;
-                _orderValue = orderValue;
-
-                base.Visit(propertyExpression);
-            }
-            protected override Expression VisitMember(MemberExpression node)
-            {
-                base.VisitMember(node);
-
-                var property = (PropertyInfo)node.Member;
-                Object propertyValue = _entity[property.Name];
-                if (propertyValue == null)
-                {
-                    if (node == _propertyExpression)
-                        propertyValue = _orderValue;
-                    else
-                        propertyValue = Activator.CreateInstance(property.PropertyType);
-                    property.SetValue(_entity, propertyValue);
-                }
-                _entity = new Dictionary<String, Object>() { { property.Name, propertyValue } };
-
-                return node;
-            }
-        }
-
         private readonly Db.OeDbEnumerator _dbEnumerator;
         private readonly IDisposable _dispose;
         private bool _isFirstMoveNext;
@@ -123,9 +86,6 @@ namespace OdataToEntity.GraphQL
             Object buffer = _dbEnumerator.ClearBuffer();
 
             _isMoveNext = await _dbEnumerator.MoveNextAsync().ConfigureAwait(false);
-            if (!_isMoveNext && _queryContext.EntryFactory.SkipTokenAccessors.Length > 0)
-                SetOrderByProperties(_queryContext, entity, buffer);
-
             Current = entity;
             return true;
         }
@@ -133,23 +93,6 @@ namespace OdataToEntity.GraphQL
         {
             Object navigationValue = await CreateNestedEntity(dbEnumerator, value).ConfigureAwait(false);
             entity[dbEnumerator.EntryFactory.EdmNavigationProperty.Name] = navigationValue;
-        }
-        private static void SetOrderByProperties(OeQueryContext queryContext, Dictionary<String, Object> entity, Object value)
-        {
-            Type clrEntityType = queryContext.EdmModel.GetClrType(queryContext.EntryFactory.EntitySet);
-            var visitor = new OeQueryNodeVisitor(Expression.Parameter(clrEntityType));
-            var setPropertyValueVisitor = new SetPropertyValueVisitor();
-
-            int i = 0;
-            OrderByClause orderByClause = queryContext.ODataUri.OrderBy;
-            while (orderByClause != null)
-            {
-                var propertyExpression = (MemberExpression)visitor.TranslateNode(orderByClause.Expression);
-                Object orderValue = queryContext.EntryFactory.SkipTokenAccessors[i++].GetValue(value);
-                setPropertyValueVisitor.SetPropertyValue(entity, propertyExpression, orderValue);
-
-                orderByClause = orderByClause.ThenBy;
-            }
         }
 
         public Dictionary<String, Object> Current { get; private set; }

@@ -26,18 +26,6 @@ namespace OdataToEntity.Test
             }
         }
 
-        public readonly struct Include
-        {
-            public Include(PropertyInfo property, Func<IEnumerable, IList> filter)
-            {
-                Property = property;
-                Filter = filter;
-            }
-
-            public Func<IEnumerable, IList> Filter { get; }
-            public PropertyInfo Property { get; }
-        }
-
         private sealed class NewVisitor : ExpressionVisitor
         {
             public NewVisitor()
@@ -121,7 +109,7 @@ namespace OdataToEntity.Test
             public MemberExpression Property => _property;
         }
 
-        private readonly List<Include> _includes;
+        private readonly List<EfInclude> _includes;
         private readonly bool _isDatabaseNullHighestValue;
         private readonly ModelBuilder.OeEdmModelMetadataProvider _metadataProvider;
 
@@ -129,7 +117,7 @@ namespace OdataToEntity.Test
         {
             _metadataProvider = metadataProvider;
             _isDatabaseNullHighestValue = isDatabaseNullHighestValue;
-            _includes = new List<Include>();
+            _includes = new List<EfInclude>();
         }
 
         protected override Expression VisitMethodCall(MethodCallExpression node)
@@ -146,7 +134,7 @@ namespace OdataToEntity.Test
 
                     if (_metadataProvider.IsNotMapped((PropertyInfo)visitor.Property.Member))
                     {
-                        _includes.Add(new Include(visitor.Property.Member as PropertyInfo, visitor.Filter));
+                        _includes.Add(new EfInclude(visitor.Property.Member as PropertyInfo, visitor.Filter));
                         return node.Arguments[0];
                     }
 
@@ -167,7 +155,7 @@ namespace OdataToEntity.Test
                         node = Expression.Call(null, method, new Expression[] { expression, lambda });
                     }
 
-                    _includes.Add(new Include(visitor.Property.Member as PropertyInfo, visitor.Filter));
+                    _includes.Add(new EfInclude(visitor.Property.Member as PropertyInfo, visitor.Filter));
                     return node;
                 }
             }
@@ -175,7 +163,7 @@ namespace OdataToEntity.Test
             {
                 var visitor = new NewVisitor();
                 visitor.Visit(node.Arguments[1]);
-                _includes.AddRange(visitor.SelectProperties.Select(p => new Include(p, null)));
+                _includes.AddRange(visitor.SelectProperties.Select(p => new EfInclude(p, null)));
             }
             else if (node.Method.DeclaringType == typeof(Queryable) && node.Method.Name == nameof(Queryable.GroupJoin))
             {
@@ -187,11 +175,11 @@ namespace OdataToEntity.Test
                 {
                     Type collectionType = typeof(IEnumerable<>).MakeGenericType(innerType);
                     PropertyInfo navigationProperty = outerType.GetProperties().Where(p => collectionType.IsAssignableFrom(p.PropertyType)).Single();
-                    _includes.Add(new Include(navigationProperty, null));
+                    _includes.Add(new EfInclude(navigationProperty, null));
                 }
                 else if (navigationProperties.Count == 1)
                 {
-                    _includes.Add(new Include(navigationProperties[0], null));
+                    _includes.Add(new EfInclude(navigationProperties[0], null));
                 }
                 else
                 {
@@ -204,7 +192,7 @@ namespace OdataToEntity.Test
                     if (outerKeySelector.Body is MemberExpression propertyExpression)
                     {
                         PropertyInfo navigationProperty = _metadataProvider.GetForeignKey((PropertyInfo)propertyExpression.Member).Single();
-                        _includes.Add(new Include(navigationProperty, null));
+                        _includes.Add(new EfInclude(navigationProperty, null));
                     }
                     else if (outerKeySelector.Body is NewExpression newExpression)
                     {
@@ -214,7 +202,7 @@ namespace OdataToEntity.Test
                             PropertyInfo[] structuralProperties = _metadataProvider.GetForeignKey(navigationProperty);
                             if (!structuralProperties.Except(properties).Any())
                             {
-                                _includes.Add(new Include(navigationProperty, null));
+                                _includes.Add(new EfInclude(navigationProperty, null));
                                 break;
                             }
                         }
@@ -228,6 +216,6 @@ namespace OdataToEntity.Test
             return Expression.Call(node.Object, node.Method, arguments);
         }
 
-        public IReadOnlyList<Include> Includes => _includes;
+        public IReadOnlyList<EfInclude> Includes => _includes;
     }
 }

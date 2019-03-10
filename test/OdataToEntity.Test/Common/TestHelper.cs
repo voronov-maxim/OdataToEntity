@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.OData.Edm;
 using Microsoft.OData.Edm.Csdl;
-using Microsoft.OData.Edm.Validation;
 using Newtonsoft.Json;
 using System;
 using System.Collections;
@@ -56,12 +55,13 @@ namespace OdataToEntity.Test
             public IQueryable<T> Query => _query;
         }
 
-        public static void Compare(IList fromDb, IList fromOe, ModelBuilder.OeEdmModelMetadataProvider metadataProvider, IReadOnlyList<IncludeVisitor.Include> includes)
+        public static void Compare(IList fromDb, IList fromOe, IReadOnlyList<EfInclude> includes)
         {
-            var contractResolver = new TestContractResolver(metadataProvider, includes);
+            fromDb = ToOpenType(fromDb, includes);
+            fromOe = ToOpenType(fromOe, null);
+
             var settings = new JsonSerializerSettings()
             {
-                ContractResolver = contractResolver,
                 DateFormatString = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'ffffff",
                 DateTimeZoneHandling = DateTimeZoneHandling.Utc,
                 Formatting = Newtonsoft.Json.Formatting.Indented,
@@ -69,10 +69,9 @@ namespace OdataToEntity.Test
                 NullValueHandling = NullValueHandling.Ignore
             };
 
-            String jsonDb = RemoveEmptyArrays(JsonConvert.SerializeObject(fromDb, settings));
-            contractResolver.DisableWhereOrder = true;
+            String jsonDb = JsonConvert.SerializeObject(fromDb, settings);
             settings.ReferenceLoopHandling = ReferenceLoopHandling.Error;
-            String jsonOe = RemoveEmptyArrays(JsonConvert.SerializeObject(fromOe, settings));
+            String jsonOe = JsonConvert.SerializeObject(fromOe, settings);
 
             Assert.Equal(jsonDb, jsonOe);
         }
@@ -87,7 +86,7 @@ namespace OdataToEntity.Test
             return new[] { visitor.Query.Provider.Execute<TResult>(call) };
         }
         public static IList ExecuteDb<T, TResult>(Db.OeDataAdapter dataAdapter, DbContext dataContext,
-            Expression<Func<IQueryable<T>, IQueryable<TResult>>> expression, out IReadOnlyList<IncludeVisitor.Include> includes)
+            Expression<Func<IQueryable<T>, IQueryable<TResult>>> expression, out IReadOnlyList<EfInclude> includes)
         {
             var visitor = new QueryVisitor<T>(dataAdapter.EntitySetAdapters, dataContext);
             Expression call = visitor.Visit(expression.Body);
@@ -97,11 +96,7 @@ namespace OdataToEntity.Test
             call = includeVisitor.Visit(call);
             includes = includeVisitor.Includes;
 
-            IList fromDb = visitor.Query.Provider.CreateQuery<TResult>(call).ToList();
-            if (typeof(TResult) == typeof(Object))
-                fromDb = ToOpenType(fromDb);
-
-            return fromDb;
+            return visitor.Query.Provider.CreateQuery<TResult>(call).ToList();
         }
         public static Db.OeEntitySetAdapter FindEntitySetAdapterByClrType(Db.OeEntitySetAdapterCollection entitySetAdapters, Type entityType)
         {
@@ -139,19 +134,6 @@ namespace OdataToEntity.Test
 
                 return Encoding.UTF8.GetString(stream.ToArray());
             }
-        }
-        private static Type GetCollectionItemType(Type collectionType)
-        {
-            if (collectionType.IsPrimitive)
-                return null;
-
-            if (collectionType.IsGenericType && collectionType.GetGenericTypeDefinition() == typeof(IEnumerable<>))
-                return collectionType.GetGenericArguments()[0];
-
-            foreach (Type iface in collectionType.GetInterfaces())
-                if (iface.IsGenericType && iface.GetGenericTypeDefinition() == typeof(IEnumerable<>))
-                    return iface.GetGenericArguments()[0];
-            return null;
         }
         private static MemberExpression[] GetKeyExpressions(ModelBuilder.OeEdmModelMetadataProvider metadataProvider, Type entityType)
         {
@@ -194,36 +176,9 @@ namespace OdataToEntity.Test
 
             return queryCache.AllowCache ? count : -1;
         }
-        private static String RemoveEmptyArrays(String json)
+        private static IList ToOpenType(IEnumerable entities, IReadOnlyList<EfInclude> includes)
         {
-            String[] lines = json.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
-            for (int i = 1; i < lines.Length; i++)
-                if (lines[i].EndsWith(": []"))
-                {
-                    if (lines[i - 1].EndsWith(","))
-                        lines[i - 1] = lines[i - 1].Remove(lines[i - 1].Length - 1, 1);
-                    lines[i] = null;
-                }
-                else if (lines[i].EndsWith(": [],"))
-                    lines[i] = null;
-
-            var stringBuilder = new StringBuilder(json.Length);
-            for (int i = 0; i < lines.Length; i++)
-                if (lines[i] != null)
-                    stringBuilder.AppendLine(lines[i]);
-            return stringBuilder.ToString();
-        }
-        public static IList ToOpenType(IEnumerable entities)
-        {
-            var openTypes = new List<SortedDictionary<String, Object>>();
-            foreach (Object entity in entities)
-            {
-                var openType = new SortedDictionary<String, Object>(StringComparer.Ordinal);
-                foreach (PropertyInfo property in entity.GetType().GetProperties())
-                    openType.Add(property.Name, property.GetValue(entity));
-                openTypes.Add(openType);
-            }
-            return openTypes;
+            return new OpenTypeConverter(includes).Convert(entities);
         }
     }
 }

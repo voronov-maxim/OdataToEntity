@@ -31,11 +31,6 @@ namespace OdataToEntity.Parsers
         private static readonly ODataMessageReaderSettings ReaderSettings = new ODataMessageReaderSettings() { EnableMessageStreamDisposal = false };
         private static readonly ODataMessageWriterSettings WriterSettings = new ODataMessageWriterSettings() { EnableMessageStreamDisposal = false };
 
-        public static OeSkipTokenNameValue[] CreateNameValues(IEdmModel edmModel, OrderByClause uniqueOrderBy, String skipToken, out int? restCount)
-        {
-            restCount = null;
-            return skipToken == null ? Array.Empty<OeSkipTokenNameValue>() : ParseSkipToken(edmModel, uniqueOrderBy, skipToken, out restCount);
-        }
         public static OePropertyAccessor[] GetAccessors(Expression source, OrderByClause orderByClause, Translators.OeJoinBuilder joinBuilder)
         {
             var accessors = new List<OePropertyAccessor>();
@@ -243,7 +238,7 @@ namespace OdataToEntity.Parsers
             }
             return skipTokenNameValues;
         }
-        private static OeSkipTokenNameValue[] ParseSkipToken(IEdmModel edmModel, OrderByClause uniqueOrderBy, String skipToken, out int? restCount)
+        public static OeSkipTokenNameValue[] ParseSkipToken(IEdmModel edmModel, OrderByClause uniqueOrderBy, String skipToken, out int? restCount)
         {
             return ParseJson(edmModel, skipToken, GetEdmProperies(uniqueOrderBy), out restCount);
         }

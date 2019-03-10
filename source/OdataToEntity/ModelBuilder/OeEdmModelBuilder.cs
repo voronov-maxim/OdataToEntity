@@ -152,7 +152,12 @@ namespace OdataToEntity.ModelBuilder
                 edmModel.AddReferencedModel(refModel);
 
             if (_metadataProvider.UseModelBoundAttribute == OeModelBoundAttribute.Yes)
-                BuildModelBoundAttribute(edmModel, entityTypeInfos);
+            {
+                Query.OeModelBoundQueryProvider modelBoundQueryProvider = BuildModelBoundQueryProvider(edmModel, entityTypeInfos);
+                edmModel.SetModelBoundQueryProvider(modelBoundQueryProvider);
+                foreach (IEdmModel refModel in refModels)
+                    refModel.SetModelBoundQueryProvider(modelBoundQueryProvider);
+            }
             return edmModel;
         }
         private Dictionary<Type, EntityTypeInfo> BuildEntityTypes(IEdmModel[] refModels)
@@ -222,11 +227,10 @@ namespace OdataToEntity.ModelBuilder
 
             return edmFunction;
         }
-        private void BuildModelBoundAttribute(IEdmModel edmModel, Dictionary<Type, EntityTypeInfo> entityTypeInfos)
+        private Query.OeModelBoundQueryProvider BuildModelBoundQueryProvider(IEdmModel edmModel, Dictionary<Type, EntityTypeInfo> entityTypeInfos)
         {
-            var modelBoundAttributeBuilder = new ModelBoundAttributeBuilder(edmModel, entityTypeInfos);
-            modelBoundAttributeBuilder.BuildExpandAttribute();
-            modelBoundAttributeBuilder.BuildPageAttribute();
+            var modelBoundAttributeReader = new Query.ModelBoundAttributeReader(edmModel, entityTypeInfos);
+            return modelBoundAttributeReader.BuildProvider();
         }
         private static EdmStructuralProperty[] CreateDependentEdmProperties(EdmEntityType edmDependent, IReadOnlyList<PropertyInfo> dependentStructuralProperties)
         {

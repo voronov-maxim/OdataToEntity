@@ -61,6 +61,17 @@ namespace OdataToEntity.Test
                     }
                 }
 
+                if (value == null)
+                {
+                    PropertyInfo clrProprety = entityType.GetProperty(property.Name);
+                    Type type = Parsers.OeExpressionHelper.GetCollectionItemType(clrProprety.PropertyType);
+                    if (type == null)
+                        type = clrProprety.PropertyType;
+
+                    if (Parsers.OeExpressionHelper.IsEntityType(type))
+                        value = clrProprety.PropertyType;
+                }
+
                 openType.Add(property.Name, value);
             }
 

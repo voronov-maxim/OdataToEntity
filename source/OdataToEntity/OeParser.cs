@@ -97,14 +97,10 @@ namespace OdataToEntity
         private readonly Uri _baseUri;
         private readonly IEdmModel _edmModel;
 
-        public OeParser(Uri baseUri, IEdmModel edmModel) : this(baseUri, edmModel, OeModelBoundAttribute.No)
-        {
-        }
-        public OeParser(Uri baseUri, IEdmModel edmModel, OeModelBoundAttribute useModelBoundAttribute)
+        public OeParser(Uri baseUri, IEdmModel edmModel)
         {
             _baseUri = baseUri;
             _edmModel = edmModel;
-            UseModelBoundAttribute = useModelBoundAttribute;
         }
 
         public async Task<String> ExecuteBatchAsync(Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
@@ -129,7 +125,7 @@ namespace OdataToEntity
         }
         public async Task ExecuteQueryAsync(ODataUri odataUri, OeRequestHeaders headers, Stream responseStream, CancellationToken cancellationToken)
         {
-            var parser = new Parsers.OeGetParser(_edmModel.GetEdmModel(odataUri.Path), UseModelBoundAttribute);
+            var parser = new Parsers.OeGetParser(_edmModel.GetEdmModel(odataUri.Path));
             await parser.ExecuteAsync(odataUri, headers, responseStream, cancellationToken).ConfigureAwait(false);
         }
         public async Task ExecuteOperationAsync(ODataUri odataUri, OeRequestHeaders headers, Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
@@ -195,7 +191,5 @@ namespace OdataToEntity
             var uriParser = new ODataUriParser(model, serviceRoot, uri, ServiceProvider.Instance);
             return uriParser.ParseUri();
         }
-
-        public OeModelBoundAttribute UseModelBoundAttribute { get; }
     }
 }

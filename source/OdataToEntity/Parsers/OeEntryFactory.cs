@@ -44,10 +44,8 @@ namespace OdataToEntity.Parsers
         public OeEntryFactory(ref OeEntryFactoryOptions options)
             : this(options.EntitySet, options.Accessors, options.SkipTokenAccessors)
         {
-            CountOption = options.CountOption;
             EdmNavigationProperty = options.EdmNavigationProperty;
             LinkAccessor = options.LinkAccessor == null ? null : (Func<Object, Object>)options.LinkAccessor.Compile();
-            MaxTop = options.MaxTop;
             NavigationLinks = options.NavigationLinks ?? Array.Empty<OeEntryFactory>();
             NavigationSelectItem = options.NavigationSelectItem;
             PageSize = options.PageSize;
@@ -234,14 +232,12 @@ namespace OdataToEntity.Parsers
         }
 
         public OePropertyAccessor[] Accessors { get; }
-        public bool? CountOption { get; }
         public IEdmEntitySetBase EntitySet { get; }
         public IEdmEntityType EdmEntityType { get; }
         public IEdmNavigationProperty EdmNavigationProperty { get; }
         public IEqualityComparer<Object> EqualityComparer { get; }
         public bool IsTuple { get; }
         public Func<Object, Object> LinkAccessor { get; }
-        public int MaxTop { get; }
         public IReadOnlyList<OeEntryFactory> NavigationLinks { get; }
         public ExpandedNavigationSelectItem NavigationSelectItem { get; set; }
         public int PageSize { get; }
@@ -251,11 +247,9 @@ namespace OdataToEntity.Parsers
     public struct OeEntryFactoryOptions
     {
         public OePropertyAccessor[] Accessors { get; set; }
-        public bool? CountOption { get; set; }
         public IEdmEntitySetBase EntitySet { get; set; }
         public IEdmNavigationProperty EdmNavigationProperty { get; set; }
         public LambdaExpression LinkAccessor { get; set; }
-        public int MaxTop { get; set; }
         public IReadOnlyList<OeEntryFactory> NavigationLinks { get; set; }
         public ExpandedNavigationSelectItem NavigationSelectItem { get; set; }
         public int PageSize { get; set; }

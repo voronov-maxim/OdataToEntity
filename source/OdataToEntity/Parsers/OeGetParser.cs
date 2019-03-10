@@ -14,13 +14,9 @@ namespace OdataToEntity.Parsers
     {
         private readonly IEdmModel _edmModel;
 
-        public OeGetParser(IEdmModel edmModel) : this(edmModel, OdataToEntity.OeModelBoundAttribute.No)
-        {
-        }
-        public OeGetParser(IEdmModel model, OeModelBoundAttribute useModelBoundAttribute)
+        public OeGetParser(IEdmModel model)
         {
             _edmModel = model;
-            UseModelBoundAttribute = useModelBoundAttribute;
         }
 
         internal static BinaryOperatorNode CreateFilterExpression(SingleValueNode singleValueNode, IEnumerable<KeyValuePair<IEdmStructuralProperty, Object>> keys)
@@ -39,20 +35,9 @@ namespace OdataToEntity.Parsers
             }
             return compositeNode;
         }
-        public OeQueryContext CreateQueryContext(ODataUri odataUri, int maxPageSize, bool navigationNextLink, OeMetadataLevel metadataLevel)
-        {
-            if (maxPageSize > 0)
-                odataUri.Top = maxPageSize;
-
-            IReadOnlyList<OeParseNavigationSegment> navigationSegments = OeParseNavigationSegment.GetNavigationSegments(odataUri.Path);
-            var entitySetSegment = (EntitySetSegment)odataUri.Path.FirstSegment;
-            Db.OeEntitySetAdapter entitySetAdapter = _edmModel.GetEntitySetAdapter(entitySetSegment.EntitySet);
-            return new OeQueryContext(_edmModel, odataUri, entitySetAdapter, navigationSegments,
-                maxPageSize, navigationNextLink, metadataLevel, UseModelBoundAttribute);
-        }
         public async Task ExecuteAsync(ODataUri odataUri, OeRequestHeaders headers, Stream stream, CancellationToken cancellationToken)
         {
-            OeQueryContext queryContext = CreateQueryContext(odataUri, headers.MaxPageSize, headers.NavigationNextLink, headers.MetadataLevel);
+            var queryContext = new OeQueryContext(_edmModel, odataUri, headers.MaxPageSize, headers.NavigationNextLink, headers.MetadataLevel);
             if (queryContext.ODataUri.Path.LastSegment is OperationSegment)
             {
                 using (Db.OeAsyncEnumerator asyncEnumerator = OeOperationHelper.ApplyBoundFunction(queryContext))
@@ -85,7 +70,5 @@ namespace OdataToEntity.Parsers
                     dataAdapter.CloseDataContext(dataContext);
             }
         }
-
-        public OeModelBoundAttribute UseModelBoundAttribute { get; }
     }
 }

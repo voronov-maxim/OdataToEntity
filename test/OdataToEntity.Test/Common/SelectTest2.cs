@@ -150,8 +150,8 @@ namespace OdataToEntity.Test
             var exprectedReader = new ResponseReader(edmModel);
             List<Object> expectedResult = exprectedReader.Read(exprectedResponse).Cast<Object>().ToList();
 
-            List<Object> fromOe = await OrdersCountItemsCount(Fixture, request, i => i.Count == null || i.Count > 0, 1, true, OeModelBoundAttribute.No);
-            TestHelper.Compare(expectedResult, fromOe, Fixture.MetadataProvider, null);
+            List<Object> fromOe = await OrdersCountItemsCount(Fixture, request, i => i.Count == null || i.Count > 0, 1, true);
+            TestHelper.Compare(expectedResult, fromOe, null);
         }
         [Fact]
         public async Task NextPageLink()
@@ -188,14 +188,14 @@ namespace OdataToEntity.Test
             using (var context = Fixture.CreateContext())
                 fromDb = context.OrderItems.OrderBy(i => i.Id).ToList();
 
-            TestHelper.Compare(fromDb, fromOe, Fixture.MetadataProvider, null);
+            TestHelper.Compare(fromDb, fromOe, null);
         }
         internal static async Task<List<Object>> OrdersCountItemsCount(DbFixture fixture, String request, Func<Model.OrderItem, bool> orderItemPredicate,
-            int maxPageSize, bool navigationNextLink, OeModelBoundAttribute useModelBoundAttribute)
+            int maxPageSize, bool navigationNextLink)
         {
             ODataUri odataUri = fixture.ParseUri(request);
             IEdmModel edmModel = fixture.EdmModel.GetEdmModel(odataUri.Path);
-            var parser = new OeParser(odataUri.ServiceRoot, edmModel, useModelBoundAttribute);
+            var parser = new OeParser(odataUri.ServiceRoot, edmModel);
             var requestUri = new Uri(odataUri.ServiceRoot, request);
             Uri uri = requestUri;
             OeRequestHeaders requestHeaders = OeRequestHeaders.JsonDefault.SetMaxPageSize(maxPageSize).SetNavigationNextLink(navigationNextLink);
