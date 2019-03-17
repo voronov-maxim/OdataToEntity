@@ -19,12 +19,17 @@ using OdataToEntity.Query;
 
 namespace OdataToEntity.Test.Model
 {
-	/// <summary>
-	/// Database       : OdataToEntity
-	/// Data Source    : .\sqlexpress
-	/// Server Version : 12.00.5203
-	/// </summary>
-	public partial class OdataToEntityDB : LinqToDB.Data.DataConnection, IOeLinq2DbDataContext
+    static class OpenTypeConverter
+    {
+        public static readonly String NotSetString = Guid.NewGuid().ToString();
+    }
+
+    /// <summary>
+    /// Database       : OdataToEntity
+    /// Data Source    : .\sqlexpress
+    /// Server Version : 12.00.5203
+    /// </summary>
+    public partial class OdataToEntityDB : LinqToDB.Data.DataConnection, IOeLinq2DbDataContext
     {
         public ITable<Category>                Categories              { get { return this.GetTable<Category>(); } }
         public ITable<Customer>                Customers               { get { return this.GetTable<Customer>(); } }
@@ -146,16 +151,18 @@ namespace OdataToEntity.Test.Model
 		[Column,                Nullable] public string Address { get; set; } // varchar(256)
         [PrimaryKey(Order = 0), NotNull ] public string Country { get; set; } // char(2)
         [PrimaryKey(Order = 1)          ] public int    Id      { get; set; } // int
-        [Expand(SelectExpandType.Automatic)]
         [Column,                NotNull ] public string Name    { get; set; } // varchar(128)
 		[Column,                Nullable] public Sex?   Sex     { get; set; } // int
 
 		#region Associations
 		[Association(ThisKey="Country,Id", OtherKey="AltCustomerCountry,AltCustomerId", CanBeNull=true, IsBackReference=true)]
-		public IEnumerable<Order> AltOrders { get; set; }
+        [Expand(SelectExpandType.Disabled)]
+        public IEnumerable<Order> AltOrders { get; set; }
 
 		[Association(ThisKey="Country,Id", OtherKey="CustomerCountry,CustomerId", CanBeNull=true, IsBackReference=true)]
-		public IEnumerable<Order> Orders { get; set; }
+        [Count(Disabled = true)]
+        [Expand(SelectExpandType.Automatic)]
+        public IEnumerable<Order> Orders { get; set; }
 
 		[Association(ThisKey="Country,Id", OtherKey="CustomerCountry,CustomerId", CanBeNull=true, IsBackReference=true)]
         public ICollection<CustomerShippingAddress> CustomerShippingAddresses { get; set; }
@@ -210,8 +217,16 @@ namespace OdataToEntity.Test.Model
 
     public abstract class OrderBase
     {
+        public OrderBase()
+        {
+            AltCustomerCountry = OpenTypeConverter.NotSetString;
+            AltCustomerId = Int32.MinValue;
+            Name = OpenTypeConverter.NotSetString;
+        }
+
         [Column,     Nullable ] public string          AltCustomerCountry { get; set; } // char(2)
         [Column,     Nullable ] public int?            AltCustomerId      { get; set; } // int
+        [Select(SelectExpandType.Automatic)]
         [Column,     NotNull  ] public string          Name               { get; set; } // varchar(256)
     }
 
@@ -220,11 +235,22 @@ namespace OdataToEntity.Test.Model
     [Page(MaxTop = 2, PageSize = 1)]
 	public partial class Order : OrderBase
 	{
+        public Order()
+        {
+            CustomerCountry = OpenTypeConverter.NotSetString;
+            CustomerId = Int32.MinValue;
+            Date = DateTimeOffset.MinValue;
+            Id = Int32.MinValue;
+            Status = (OrderStatus)Int32.MinValue;
+        }
+
         [Column,     NotNull  ] public string          CustomerCountry    { get; set; } // char(2)
         [Column,     NotNull  ] public int             CustomerId         { get; set; } // int
-		[Column,     Nullable ] public DateTimeOffset? Date               { get; set; } // datetimeoffset(7)
+        [Select(SelectExpandType.Automatic)]
+        [Column,     Nullable ] public DateTimeOffset? Date               { get; set; } // datetimeoffset(7)
 		[PrimaryKey, Identity ] public int             Id                 { get; set; } // int
-		[Column,     NotNull  ] public OrderStatus     Status             { get; set; } // int
+        [Select(SelectExpandType.Automatic)]
+        [Column,     NotNull  ] public OrderStatus     Status             { get; set; } // int
 
 		#region Associations
 
@@ -247,8 +273,9 @@ namespace OdataToEntity.Test.Model
 		[Association(ThisKey="Id", OtherKey="OrderId", CanBeNull=true, IsBackReference=true)]
         [Count]
         [Expand(SelectExpandType.Automatic)]
+        [OrderBy("Id")]
         [Page(MaxTop = 2, PageSize = 1)]
-		public IEnumerable<OrderItem> Items { get; set; }
+        public IEnumerable<OrderItem> Items { get; set; }
 
         /// <summary>
         /// FK_ShippingAddresses_Order_BackReference
@@ -260,11 +287,24 @@ namespace OdataToEntity.Test.Model
     }
 
     [Table(Schema="dbo", Name="OrderItems")]
-	public partial class OrderItem
+    [Count(Disabled = true)]
+    [OrderBy(Disabled = true)]
+    public partial class OrderItem
 	{
-		[Column,     Nullable ] public int?     Count   { get; set; } // int
-		[PrimaryKey, Identity ] public int      Id      { get; set; } // int
-		[Column,     NotNull  ] public int      OrderId { get; set; } // int
+        public OrderItem()
+        {
+            Count = Int32.MinValue;
+            Id = Int32.MinValue;
+            OrderId = Int32.MinValue;
+            Price = Decimal.MinValue;
+            Product = OpenTypeConverter.NotSetString;
+        }
+
+        [Column,     Nullable ] public int?     Count   { get; set; } // int
+        [Select(SelectExpandType.Disabled)]
+        [PrimaryKey, Identity ] public int      Id      { get; set; } // int
+        [Select(SelectExpandType.Disabled)]
+        [Column,     NotNull  ] public int      OrderId { get; set; } // int
 		[Column,     Nullable ] public decimal? Price   { get; set; } // decimal(18, 0)
 		[Column,     NotNull  ] public string   Product { get; set; } // varchar(256)
 

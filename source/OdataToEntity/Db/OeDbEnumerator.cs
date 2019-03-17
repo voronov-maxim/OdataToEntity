@@ -8,12 +8,13 @@ namespace OdataToEntity.Db
 {
     public interface IOeDbEnumerator
     {
-        Object ClearBuffer();
+        void ClearBuffer();
         IOeDbEnumerator CreateChild(OeEntryFactory entryFactory);
         Task<bool> MoveNextAsync();
 
         Object Current { get; }
         OeEntryFactory EntryFactory { get; }
+        Object RawValue { get; }
     }
 
     public sealed class OeDbEnumerator : IOeDbEnumerator
@@ -69,7 +70,7 @@ namespace OdataToEntity.Db
             Initialize();
         }
 
-        public Object ClearBuffer()
+        public void ClearBuffer()
         {
             if (ParentEnumerator != null)
                 throw new InvalidOperationException($"ClearBuffer can not from child {nameof(OeDbEnumerator)}");
@@ -82,8 +83,6 @@ namespace OdataToEntity.Db
 
             if (!Context.Eof)
                 _bufferPosition = -1;
-
-            return lastValue;
         }
         public IOeDbEnumerator CreateChild(OeEntryFactory entryFactory)
         {
@@ -160,8 +159,9 @@ namespace OdataToEntity.Db
         }
 
         private DataContext Context { get; }
-        public Object Current => EntryFactory.GetValue(Context.Buffer[_bufferPosition]);
+        public Object Current => EntryFactory.GetValue(RawValue);
         public OeEntryFactory EntryFactory { get; }
         private OeDbEnumerator ParentEnumerator { get; }
+        public Object RawValue => Context.Buffer[_bufferPosition];
     }
 }

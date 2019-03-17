@@ -74,7 +74,7 @@ Accept: application/json;odata.metadata=minimal
 Accept-Charset: UTF-8
 User-Agent: Microsoft ADO.NET Data Services
 
-{"@odata.type":"#OdataToEntity.Test.Model.Order","CustomerCountry":"RU","CustomerId":1,"Date":"2016-07-04T19:10:10.8237573+03:00","Id":-1,"Name":"Order 1","Status@odata.type":"#OdataToEntity.Test.Model.OrderStatus","Status":"Processing"}
+{"@odata.type":"#OdataToEntity.Test.Model.Order","AltCustomerCountry":null,"AltCustomerId":null,"CustomerCountry":"RU","CustomerId":1,"Date":"2016-07-04T19:10:10.8237573+03:00","Id":-1,"Name":"Order 1","Status@odata.type":"#OdataToEntity.Test.Model.OrderStatus","Status":"Processing"}
 
 --changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
 Content-Type: application/http
@@ -89,7 +89,7 @@ Accept: application/json;odata.metadata=minimal
 Accept-Charset: UTF-8
 User-Agent: Microsoft ADO.NET Data Services
 
-{"@odata.type":"#OdataToEntity.Test.Model.Order","CustomerCountry":"EN","CustomerId":1,"Date":"2016-07-04T19:10:11.0000000+03:00","Id":-2,"Name":"Order 2","Status@odata.type":"#OdataToEntity.Test.Model.OrderStatus","Status":"Processing"}
+{"@odata.type":"#OdataToEntity.Test.Model.Order","AltCustomerCountry":null,"AltCustomerId":null,"CustomerCountry":"EN","CustomerId":1,"Date":"2016-07-04T19:10:11.0000000+03:00","Id":-2,"Name":"Order 2","Status@odata.type":"#OdataToEntity.Test.Model.OrderStatus","Status":"Processing"}
 
 --changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
 Content-Type: application/http

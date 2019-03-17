@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -128,7 +127,7 @@ namespace OdataToEntity.Test
                     TypeConverter converter = TypeDescriptor.GetConverter(typeof(TResult));
                     return new Object[] { converter.ConvertFromString(new StreamReader(response).ReadToEnd()) };
                 }
-                else if (typeof(TResult) == typeof(Object))
+                else if (typeof(TResult) == typeof(Object) && (requestUri.Contains("$apply=") || requestUri.Contains("$compute=")))
                 {
                     responseReader = new OpenTypeResponseReader(EdmModel.GetEdmModel(odataUri.Path));
                     result = responseReader.Read(response).Cast<Object>().ToList();
@@ -143,8 +142,7 @@ namespace OdataToEntity.Test
                     Xunit.Assert.InRange(result.Count, 0, requestHeaders.MaxPageSize);
                 fromOe.AddRange(result);
 
-                foreach (Object entity in fromOe)
-                    await responseReader.FillNextLinkProperties(parser, entity, CancellationToken.None).ConfigureAwait(false);
+                await responseReader.FillNextLinkProperties(parser, CancellationToken.None).ConfigureAwait(false);
 
                 if (count < 0)
                     count = responseReader.ResourceSet.Count.GetValueOrDefault();

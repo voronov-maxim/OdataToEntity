@@ -144,6 +144,8 @@ namespace OdataToEntity.Test.AspClient
 
             var order1 = new Order()
             {
+                AltCustomerCountry = null,
+                AltCustomerId = null,
                 Date = DateTimeOffset.Now,
                 Id = -1,
                 Name = "Order 1",
@@ -153,6 +155,8 @@ namespace OdataToEntity.Test.AspClient
             };
             var order2 = new Order()
             {
+                AltCustomerCountry = null,
+                AltCustomerId = null,
                 Date = DateTimeOffset.Now,
                 Id = -2,
                 Name = "Order 2",

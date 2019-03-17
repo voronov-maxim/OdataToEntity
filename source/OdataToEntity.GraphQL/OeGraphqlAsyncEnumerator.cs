@@ -83,7 +83,7 @@ namespace OdataToEntity.GraphQL
                 return false;
 
             Dictionary<String, Object> entity = await CreateEntity(_dbEnumerator, _dbEnumerator.Current, _dbEnumerator.Current).ConfigureAwait(false);
-            Object buffer = _dbEnumerator.ClearBuffer();
+            _dbEnumerator.ClearBuffer();
 
             _isMoveNext = await _dbEnumerator.MoveNextAsync().ConfigureAwait(false);
             Current = entity;

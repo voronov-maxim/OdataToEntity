@@ -65,12 +65,10 @@ namespace OdataToEntity.Test
                 DateFormatString = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'ffffff",
                 DateTimeZoneHandling = DateTimeZoneHandling.Utc,
                 Formatting = Newtonsoft.Json.Formatting.Indented,
-                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
                 NullValueHandling = NullValueHandling.Ignore
             };
 
             String jsonDb = JsonConvert.SerializeObject(fromDb, settings);
-            settings.ReferenceLoopHandling = ReferenceLoopHandling.Error;
             String jsonOe = JsonConvert.SerializeObject(fromOe, settings);
 
             Assert.Equal(jsonDb, jsonOe);

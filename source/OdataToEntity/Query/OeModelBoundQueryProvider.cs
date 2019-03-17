@@ -32,19 +32,6 @@ namespace OdataToEntity.Query
 
             return true;
         }
-        public bool IsExpandable(ODataPath path)
-        {
-            IEdmNavigationProperty navigationProperty;
-            if (path.LastSegment is NavigationPropertySegment navigationPropertySegment)
-                navigationProperty = navigationPropertySegment.NavigationProperty;
-            else
-                return false;
-
-            if (_queryPropertySettings.TryGetValue(navigationProperty, out OeModelBoundQuerySettings querySettings))
-                return querySettings.Expandable;
-
-            return true;
-        }
         public bool IsOrdering(OrderByClause orderByClause)
         {
             while (orderByClause != null)
@@ -87,6 +74,21 @@ namespace OdataToEntity.Query
 
                 orderByClause = orderByClause.ThenBy;
             }
+
+            return true;
+        }
+        public bool IsSelectable(ODataPath path)
+        {
+            IEdmProperty property;
+            if (path.LastSegment is NavigationPropertySegment navigationPropertySegment)
+                property = navigationPropertySegment.NavigationProperty;
+            else if (path.LastSegment is PropertySegment propertySegment)
+                property = propertySegment.Property;
+            else
+                return false;
+
+            if (_queryPropertySettings.TryGetValue(property, out OeModelBoundQuerySettings querySettings))
+                return querySettings.Selectable;
 
             return true;
         }
@@ -140,7 +142,7 @@ namespace OdataToEntity.Query
             if (item.CountOption.GetValueOrDefault() && !IsCountable(navigationProperty))
                 throw new ODataErrorException("Navigation property " + navigationProperty.Name + " not countable");
 
-            if (!IsExpandable(item.PathToNavigationProperty))
+            if (!IsSelectable(item.PathToNavigationProperty))
                 throw new ODataErrorException("Navigation property " + item.PathToNavigationProperty.LastSegment.Identifier + " not expandable");
 
             if (item.OrderByOption != null && !IsOrdering(item.OrderByOption, navigationProperty))
@@ -152,11 +154,13 @@ namespace OdataToEntity.Query
             foreach (SelectItem selectItem in item.SelectAndExpand.SelectedItems)
                 if (selectItem is ExpandedNavigationSelectItem navigationSelectItem)
                     Validate(navigationSelectItem);
+                else if (selectItem is PathSelectItem pathSelectItem)
+                    Validate(pathSelectItem);
         }
         private void Validate(PathSelectItem item)
         {
-            if (!IsExpandable(item.SelectedPath))
-                throw new ODataErrorException("Navigation property " + item.SelectedPath.LastSegment.Identifier + " not expandable");
+            if (!IsSelectable(item.SelectedPath))
+                throw new ODataErrorException("Structural property " + item.SelectedPath.LastSegment.Identifier + " not expandable");
         }
     }
 }

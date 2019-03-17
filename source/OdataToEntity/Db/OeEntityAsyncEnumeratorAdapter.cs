@@ -4,7 +4,6 @@ using OdataToEntity.Parsers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,40 +12,6 @@ namespace OdataToEntity.Db
 {
     public sealed class OeEntityAsyncEnumeratorAdapter<T> : OeAsyncEnumerator, IAsyncEnumerator<T>, IAsyncEnumerable<T>
     {
-        private sealed class SetPropertyValueVisitor : ExpressionVisitor
-        {
-            private Object _entity;
-            private Object _orderValue;
-            private MemberExpression _propertyExpression;
-
-            public void SetPropertyValue(Object entity, MemberExpression propertyExpression, Object orderValue)
-            {
-                _entity = entity;
-                _propertyExpression = propertyExpression;
-                _orderValue = orderValue;
-
-                base.Visit(propertyExpression);
-            }
-            protected override Expression VisitMember(MemberExpression node)
-            {
-                base.VisitMember(node);
-
-                var property = (PropertyInfo)node.Member;
-                Object propertyValue = property.GetValue(_entity);
-                if (propertyValue == null)
-                {
-                    if (node == _propertyExpression)
-                        propertyValue = _orderValue;
-                    else
-                        propertyValue = Activator.CreateInstance(property.PropertyType);
-                    property.SetValue(_entity, propertyValue);
-                }
-                _entity = propertyValue;
-
-                return node;
-            }
-        }
-
         private readonly IDisposable _asyncEnumerator;
         private T _current;
         private readonly OeDbEnumerator _dbEnumerator;
@@ -145,11 +110,11 @@ namespace OdataToEntity.Db
                 return false;
 
             var entity = (T)await CreateEntity(_dbEnumerator, _dbEnumerator.Current, _dbEnumerator.Current, typeof(T)).ConfigureAwait(false);
-            Object buffer = _dbEnumerator.ClearBuffer();
+            Object rawValue = _dbEnumerator.RawValue;
 
             _isMoveNext = await _dbEnumerator.MoveNextAsync().ConfigureAwait(false);
             if (!_isMoveNext && _queryContext != null && _queryContext.EntryFactory.SkipTokenAccessors.Length > 0)
-                SetOrderByProperties(_queryContext, entity, buffer);
+                SetOrderByProperties(_queryContext, entity, rawValue);
 
             _current = entity;
             return true;
@@ -166,22 +131,45 @@ namespace OdataToEntity.Db
         }
         private static void SetOrderByProperties(OeQueryContext queryContext, Object entity, Object value)
         {
-            var visitor = new OeQueryNodeVisitor(Expression.Parameter(typeof(T)));
-            var setPropertyValueVisitor = new SetPropertyValueVisitor();
-
             int i = 0;
             OrderByClause orderByClause = queryContext.ODataUri.OrderBy;
             while (orderByClause != null)
             {
-                var propertyExpression = (MemberExpression)visitor.TranslateNode(orderByClause.Expression);
+                var propertyAccessNode = (SingleValuePropertyAccessNode)orderByClause.Expression;
+                var properties = new List<IEdmProperty>() { propertyAccessNode.Property };
+                if (propertyAccessNode.Source is SingleNavigationNode navigationNode)
+                    do
+                    {
+                        properties.Add(navigationNode.NavigationProperty);
+                    }
+                    while ((navigationNode = navigationNode.Source as SingleNavigationNode) != null);
+
                 Object orderValue = queryContext.EntryFactory.SkipTokenAccessors[i++].GetValue(value);
-                setPropertyValueVisitor.SetPropertyValue(entity, propertyExpression, orderValue);
+                SetPropertyValue(entity, properties, orderValue);
 
                 orderByClause = orderByClause.ThenBy;
             }
         }
+        private static void SetPropertyValue(Object entity, List<IEdmProperty> edmProperties, Object orderValue)
+        {
+            PropertyInfo clrProperty;
+            for (int i = edmProperties.Count - 1; i > 0; i--)
+            {
+                clrProperty = entity.GetType().GetPropertyIgnoreCase(edmProperties[i]);
+                Object navigationValue = clrProperty.GetValue(entity);
+                if (navigationValue == null)
+                {
+                    navigationValue = Activator.CreateInstance(clrProperty.PropertyType);
+                    clrProperty.SetValue(entity, navigationValue);
+                }
+                entity = navigationValue;
+            }
+
+            clrProperty = entity.GetType().GetPropertyIgnoreCase(edmProperties[0]);
+            clrProperty.SetValue(entity, orderValue);
+        }
 
         public override Object Current => _current;
-        T IAsyncEnumerator<T>.Current => (T)_current;
+        T IAsyncEnumerator<T>.Current => _current;
     }
 }

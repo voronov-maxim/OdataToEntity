@@ -16,9 +16,8 @@ namespace OdataToEntity.Db
             EntryFactory = entryFactory;
         }
 
-        public Object ClearBuffer()
+        public void ClearBuffer()
         {
-            return _asyncEnumerator.Current;
         }
         public IOeDbEnumerator CreateChild(OeEntryFactory entryFactory)
         {
@@ -39,5 +38,6 @@ namespace OdataToEntity.Db
 
         public Object Current => _asyncEnumerator.Current;
         public OeEntryFactory EntryFactory { get; }
+        public Object RawValue => _asyncEnumerator.Current;
     }
 }

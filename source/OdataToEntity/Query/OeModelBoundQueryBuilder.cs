@@ -61,9 +61,9 @@ namespace OdataToEntity.Query
         {
             GetQuerySettings(navigationProperty).Countable = countable;
         }
-        public void SetExpandable(IEdmNavigationProperty navigationProperty, bool expandable)
+        public void SetExpandable(IEdmProperty edmProperty, bool expandable)
         {
-            GetQuerySettings(navigationProperty).Expandable = expandable;
+            GetQuerySettings(edmProperty).Selectable = expandable;
         }
         public void SetMaxTop(IEdmEntityType entityType, int maxTop)
         {

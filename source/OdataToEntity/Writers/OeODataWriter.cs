@@ -45,17 +45,18 @@ namespace OdataToEntity.Writers
             Db.IOeDbEnumerator dbEnumerator = entryFactory.IsTuple ?
                 (Db.IOeDbEnumerator)new Db.OeDbEnumerator(asyncEnumerator, entryFactory) : new Db.OeEntityDbEnumerator(asyncEnumerator, entryFactory);
 
-            Object buffer = null;
+            Object rawValue = null;
             int readCount = 0;
             while (await dbEnumerator.MoveNextAsync().ConfigureAwait(false))
             {
                 await WriteEntry(dbEnumerator, dbEnumerator.Current, _queryContext.NavigationNextLink, _queryContext.ODataUri.SelectAndExpand).ConfigureAwait(false);
                 readCount++;
-                buffer = dbEnumerator.ClearBuffer();
+                rawValue = dbEnumerator.RawValue;
+                dbEnumerator.ClearBuffer();
             }
 
             var nextPageLinkBuilder = new OeNextPageLinkBuilder(_queryContext);
-            resourceSet.NextPageLink = nextPageLinkBuilder.GetNextPageLinkRoot(entryFactory, readCount, asyncEnumerator.Count, buffer);
+            resourceSet.NextPageLink = nextPageLinkBuilder.GetNextPageLinkRoot(entryFactory, readCount, asyncEnumerator.Count, rawValue);
 
             _writer.WriteEnd();
         }

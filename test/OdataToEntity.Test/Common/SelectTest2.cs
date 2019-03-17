@@ -220,7 +220,10 @@ namespace OdataToEntity.Test
                 foreach (dynamic order in result)
                 {
                     using (var dbContext = fixture.CreateContext())
-                        expectedCount = dbContext.OrderItems.ToList().Where(i => i.OrderId == (int)order.Id).Where(orderItemPredicate).Count();
+                    {
+                        String orderName = order.Name;
+                        expectedCount = dbContext.OrderItems.Where(i => i.Order.Name == orderName).ToList().Where(orderItemPredicate).Count();
+                    }
 
                     var navigationProperty = (IEnumerable)order.Items;
                     ODataResourceSetBase resourceSet = reader.GetResourceSet(navigationProperty);

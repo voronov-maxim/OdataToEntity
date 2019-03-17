@@ -23,8 +23,14 @@ namespace OdataToEntity.Parsers.Translators
                 Translate(navigationItem, expandedNavigationSelectItem);
             else if (item is PathSelectItem pathSelectItem)
                 Translate(navigationItem, pathSelectItem);
+            else if (item is OeDisableSelectItem disableSelectItem)
+                Translate(navigationItem, disableSelectItem);
             else
                 throw new InvalidOperationException("Unknown SelectItem type " + item.GetType().Name);
+        }
+        private void Translate(OeNavigationSelectItem navigationItem, OeDisableSelectItem item)
+        {
+            navigationItem.RemoveStructuralItem(item.StructuralProperty);
         }
         private void Translate(OeNavigationSelectItem navigationItem, ExpandedNavigationSelectItem item)
         {

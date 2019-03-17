@@ -97,7 +97,7 @@ namespace OdataToEntity.Test.Model
             modelBuilder.Query<CustomerOrdersCount>();
 
             modelBuilder.Entity<Order>().HasData(
-                new Order() { Id = 1, Name = "Order from Order2 context", CustomerCountry = "AL", CustomerId = 42, Status = OrderStatus.Cancelled }
+                new Order() { Id = 1, Name = "Order from Order2 context", AltCustomerCountry = null, AltCustomerId = null, CustomerCountry = "AL", CustomerId = 42, Status = OrderStatus.Cancelled }
                 );
 
             modelBuilder.Entity<ManyColumns2>().HasData(

@@ -45,11 +45,19 @@ namespace OdataToEntity.Test.Model
 
     public abstract class OrderBase
     {
+        public OrderBase()
+        {
+            AltCustomerCountry = OpenTypeConverter.NotSetString;
+            AltCustomerId = Int32.MinValue;
+            Name = OpenTypeConverter.NotSetString;
+        }
+
         //[ForeignKey(nameof(AltCustomer)), Column(Order = 0)]
         public String AltCustomerCountry { get; set; }
         //[ForeignKey(nameof(AltCustomer)), Column(Order = 1)]
         public int? AltCustomerId { get; set; }
         [Required]
+        [Select(SelectExpandType.Automatic)]
         public String Name { get; set; }
     }
 
@@ -58,6 +66,15 @@ namespace OdataToEntity.Test.Model
     [Page(MaxTop = 2, PageSize = 1)]
     public sealed class Order : OrderBase
     {
+        public Order()
+        {
+            CustomerCountry = OpenTypeConverter.NotSetString;
+            CustomerId = Int32.MinValue;
+            Date = DateTimeOffset.MinValue;
+            Id = Int32.MinValue;
+            Status = (OrderStatus)Int32.MinValue;
+        }
+
         [ForeignKey("AltCustomerCountry,AltCustomerId")]
         public Customer AltCustomer { get; set; }
         [ForeignKey("CustomerCountry,CustomerId")]
@@ -67,6 +84,7 @@ namespace OdataToEntity.Test.Model
         public String CustomerCountry { get; set; }
         public int CustomerId { get; set; }
 
+        [Select(SelectExpandType.Automatic)]
         public DateTimeOffset? Date { get; set; }
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
@@ -76,9 +94,10 @@ namespace OdataToEntity.Test.Model
         [Page(MaxTop = 2, PageSize = 1)]
         public ICollection<OrderItem> Items { get; set; }
         public ICollection<ShippingAddress> ShippingAddresses { get; set; }
+        [Select(SelectExpandType.Automatic)]
         public OrderStatus Status { get; set; }
 
-        public override string ToString() => "Order: Id = " + Id.ToString();
+        public override String ToString() => "Order: Id = " + Id.ToString();
     }
 
     [Table("OrderItems", Schema = "dbo")]
@@ -94,16 +113,19 @@ namespace OdataToEntity.Test.Model
             Price = Decimal.MinValue;
             Product = OpenTypeConverter.NotSetString;
         }
+
         public int? Count { get; set; }
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        [Select(SelectExpandType.Disabled)]
         public int Id { get; set; }
         public Order Order { get; set; }
+        [Select(SelectExpandType.Disabled)]
         public int OrderId { get; set; }
         public Decimal? Price { get; set; }
         [Required]
         public String Product { get; set; }
 
-        public override string ToString() => "OrderItem: Id = " + Id.ToString();
+        public override String ToString() => "OrderItem: Id = " + Id.ToString();
     }
 
     [Table("ShippingAddresses", Schema = "dbo")]
@@ -119,7 +141,7 @@ namespace OdataToEntity.Test.Model
         [Key, Column(Order = 0)]
         public int OrderId { get; set; }
 
-        public override string ToString() => "ShippingAddress: OrderId = " + OrderId.ToString() + ", Id = " + Id.ToString();
+        public override String ToString() => "ShippingAddress: OrderId = " + OrderId.ToString() + ", Id = " + Id.ToString();
     }
 
     public sealed class CustomerShippingAddress

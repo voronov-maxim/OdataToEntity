@@ -49,10 +49,7 @@ namespace OdataToEntity.Test
 
         private sealed class PropertyVisitor : ExpressionVisitor
         {
-            private Func<IEnumerable, IList> _filter;
             private readonly bool _isDatabaseNullHighestValue;
-            private ParameterExpression _parameter;
-            private MemberExpression _property;
 
             public PropertyVisitor(bool isDatabaseNullHighestValue)
             {
@@ -61,15 +58,15 @@ namespace OdataToEntity.Test
 
             protected override Expression VisitMember(MemberExpression node)
             {
-                if (_property == null)
-                    _property = node;
+                if (PropertyExpression == null)
+                    PropertyExpression = node;
                 return node;
             }
             protected override Expression VisitLambda<T>(Expression<T> node)
             {
-                if (_property == null)
+                if (PropertyExpression == null)
                 {
-                    _parameter = node.Parameters[0];
+                    Parameter = node.Parameters[0];
                     return base.VisitLambda<T>(node);
                 }
                 return node;
@@ -99,14 +96,20 @@ namespace OdataToEntity.Test
                 Type listType = typeof(List<>).MakeGenericType(itemType);
                 ConstructorInfo listCtor = listType.GetConstructor(new[] { typeof(IEnumerable<>).MakeGenericType(itemType) });
                 NewExpression list = Expression.New(listCtor, call);
-                _filter = Expression.Lambda<Func<IEnumerable, IList>>(list, source).Compile();
+                Filter = Expression.Lambda<Func<IEnumerable, IList>>(list, source).Compile();
 
-                return base.VisitMethodCall(node);
+                if (node.Method.Name == nameof(EntityFrameworkQueryableExtensions.Include) ||
+                    node.Method.Name == nameof(EntityFrameworkQueryableExtensions.ThenInclude))
+                    base.Visit(node.Arguments[1]);
+                else
+                    base.VisitMethodCall(node);
+
+                return node;
             }
 
-            public Func<IEnumerable, IList> Filter => _filter;
-            public ParameterExpression Parameter => _parameter;
-            public MemberExpression Property => _property;
+            public Func<IEnumerable, IList> Filter { get; private set; }
+            public ParameterExpression Parameter { get; private set; }
+            public MemberExpression PropertyExpression { get; private set; }
         }
 
         private readonly List<EfInclude> _includes;
@@ -132,9 +135,9 @@ namespace OdataToEntity.Test
                     var visitor = new PropertyVisitor(_isDatabaseNullHighestValue);
                     visitor.Visit(node.Arguments[1]);
 
-                    if (_metadataProvider.IsNotMapped((PropertyInfo)visitor.Property.Member))
+                    if (_metadataProvider.IsNotMapped((PropertyInfo)visitor.PropertyExpression.Member))
                     {
-                        _includes.Add(new EfInclude(visitor.Property.Member as PropertyInfo, visitor.Filter));
+                        _includes.Add(new EfInclude(visitor.PropertyExpression.Member as PropertyInfo, visitor.Filter));
                         return node.Arguments[0];
                     }
 
@@ -145,17 +148,25 @@ namespace OdataToEntity.Test
                         Type entityType = node.Method.GetGenericArguments()[0];
                         MethodInfo method;
                         if (node.Method.Name == nameof(EntityFrameworkQueryableExtensions.Include))
-                            method = node.Method.GetGenericMethodDefinition().MakeGenericMethod(entityType, visitor.Property.Type);
+                            method = node.Method.GetGenericMethodDefinition().MakeGenericMethod(entityType, visitor.PropertyExpression.Type);
                         else
                         {
                             Type previousPropertyType = node.Method.GetGenericArguments()[1];
-                            method = node.Method.GetGenericMethodDefinition().MakeGenericMethod(entityType, previousPropertyType, visitor.Property.Type);
+                            method = node.Method.GetGenericMethodDefinition().MakeGenericMethod(entityType, previousPropertyType, visitor.PropertyExpression.Type);
                         }
-                        LambdaExpression lambda = Expression.Lambda(visitor.Property, visitor.Parameter);
+                        LambdaExpression lambda = Expression.Lambda(visitor.PropertyExpression, visitor.Parameter);
                         node = Expression.Call(null, method, new Expression[] { expression, lambda });
                     }
 
-                    _includes.Add(new EfInclude(visitor.Property.Member as PropertyInfo, visitor.Filter));
+                    PropertyInfo parentProperty = null;
+                    if (node.Method.Name == nameof(EntityFrameworkQueryableExtensions.ThenInclude))
+                    {
+                        var parentVisitor = new PropertyVisitor(_isDatabaseNullHighestValue);
+                        parentVisitor.Visit(node.Arguments[0]);
+                        parentProperty = parentVisitor.PropertyExpression.Member as PropertyInfo;
+                    }
+
+                    _includes.Add(new EfInclude(visitor.PropertyExpression.Member as PropertyInfo, visitor.Filter, parentProperty));
                     return node;
                 }
             }

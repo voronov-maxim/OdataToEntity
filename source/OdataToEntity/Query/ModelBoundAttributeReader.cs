@@ -21,57 +21,6 @@ namespace OdataToEntity.Query
             _modelBoundQueryBuilder = new OeModelBoundQueryBuilder();
         }
 
-        private ExpandedNavigationSelectItem[] BuildExpandAttribute(EntityTypeInfo entityTypeInfo, int level)
-        {
-            if (level < 0)
-                return Array.Empty<ExpandedNavigationSelectItem>();
-
-            ExpandedNavigationSelectItem[] expandItemArray = _edmModel.GetExpandItems(entityTypeInfo.EdmType);
-            if (expandItemArray != null)
-                return expandItemArray;
-
-            var expandItems = new List<ExpandedNavigationSelectItem>();
-            foreach (IEdmProperty edmProperty in entityTypeInfo.EdmType.Properties())
-            {
-                PropertyInfo clrProperty = entityTypeInfo.ClrType.GetPropertyIgnoreCase(edmProperty.Name);
-                if (clrProperty == null) //shadow property
-                    continue;
-
-                var expandAttribute = (ExpandAttribute)clrProperty.GetCustomAttribute(typeof(ExpandAttribute));
-                if (expandAttribute == null)
-                    continue;
-
-                if (expandAttribute.ExpandType == SelectExpandType.Disabled)
-                    _modelBoundQueryBuilder.SetExpandable((IEdmNavigationProperty)edmProperty, false);
-
-                if (expandAttribute.ExpandType != SelectExpandType.Automatic)
-                    continue;
-
-                if (expandAttribute.MaxDepth > 0 && expandAttribute.MaxDepth < level)
-                    level = expandAttribute.MaxDepth;
-
-                if (edmProperty is IEdmNavigationProperty navigationProperty)
-                {
-                    IEdmEntitySet entitySet = OeEdmClrHelper.GetEntitySet(_edmModel, navigationProperty);
-                    var segment = new NavigationPropertySegment(navigationProperty, entitySet);
-
-                    Type childType = Parsers.OeExpressionHelper.GetCollectionItemType(clrProperty.PropertyType);
-                    if (childType == null)
-                        childType = clrProperty.PropertyType;
-
-                    ExpandedNavigationSelectItem[] childExpandItems = BuildExpandAttribute(_entityTypeInfos[childType], level - 1);
-                    var selectExpandClause = new SelectExpandClause(childExpandItems, false);
-                    expandItems.Add(new ExpandedNavigationSelectItem(new ODataExpandPath(segment), entitySet, selectExpandClause));
-                }
-            }
-
-            if (expandItems.Count == 0)
-                return Array.Empty<ExpandedNavigationSelectItem>();
-
-            expandItemArray = expandItems.ToArray();
-            _edmModel.SetExpandItems(entityTypeInfo.EdmType, expandItemArray);
-            return expandItemArray;
-        }
         private void BuildModelBoundAttribute(EntityTypeInfo entityTypeInfo)
         {
             var pageAttribute = (PageAttribute)entityTypeInfo.ClrType.GetCustomAttribute(typeof(PageAttribute));
@@ -106,8 +55,8 @@ namespace OdataToEntity.Query
         {
             foreach (EntityTypeInfo typeInfo in _entityTypeInfos.Values)
             {
-                int level = 2;
-                BuildExpandAttribute(typeInfo, level);
+                int level = 3;
+                BuildSelectExpandAttribute(typeInfo, new HashSet<PropertyInfo>(), level);
 
                 BuildModelBoundAttribute(typeInfo);
 
@@ -146,6 +95,78 @@ namespace OdataToEntity.Query
                         _modelBoundQueryBuilder.AddOrderByDisabled(properties);
                     }
             }
+        }
+        private SelectItem[] BuildSelectExpandAttribute(EntityTypeInfo entityTypeInfo, HashSet<PropertyInfo> visited, int level)
+        {
+            if (level < 0)
+                return Array.Empty<SelectItem>();
+
+            var selectExpandItems = new List<SelectItem>();
+            foreach (IEdmProperty edmProperty in entityTypeInfo.EdmType.Properties())
+            {
+                PropertyInfo clrProperty = entityTypeInfo.ClrType.GetPropertyIgnoreCase(edmProperty.Name);
+                if (clrProperty == null) //shadow property
+                    continue;
+
+                if (edmProperty is IEdmNavigationProperty navigationProperty && level > 0)
+                {
+                    var expandAttribute = (ExpandAttribute)clrProperty.GetCustomAttribute(typeof(ExpandAttribute));
+                    if (expandAttribute == null)
+                        continue;
+
+                    if (expandAttribute.ExpandType == SelectExpandType.Disabled)
+                        _modelBoundQueryBuilder.SetExpandable(edmProperty, false);
+
+                    if (expandAttribute.ExpandType != SelectExpandType.Automatic)
+                        continue;
+
+                    if (expandAttribute.MaxDepth > 0 && expandAttribute.MaxDepth < level)
+                        level = expandAttribute.MaxDepth;
+
+                    IEdmEntitySet entitySet = OeEdmClrHelper.GetEntitySet(_edmModel, navigationProperty);
+                    var segment = new NavigationPropertySegment(navigationProperty, entitySet);
+
+                    Type childType = Parsers.OeExpressionHelper.GetCollectionItemType(clrProperty.PropertyType);
+                    if (childType == null)
+                        childType = clrProperty.PropertyType;
+
+                    SelectItem[] childSelectExpandItems = Array.Empty<SelectItem>();
+                    if (visited.Add(clrProperty))
+                    {
+                        childSelectExpandItems = BuildSelectExpandAttribute(_entityTypeInfos[childType], visited, level - 1);
+                        visited.Remove(clrProperty);
+                    }
+                    else
+                    {
+                        if (level >= 0)
+                            childSelectExpandItems = BuildSelectExpandAttribute(_entityTypeInfos[childType], visited, 0);
+                    }
+
+                    var selectExpandClause = new SelectExpandClause(childSelectExpandItems, false);
+                    selectExpandItems.Add(new ExpandedNavigationSelectItem(new ODataExpandPath(segment), entitySet, selectExpandClause));
+                }
+                else if (edmProperty is IEdmStructuralProperty structuralProperty)
+                {
+                    var selectAttribute = (SelectAttribute)clrProperty.GetCustomAttribute(typeof(SelectAttribute));
+                    if (selectAttribute == null)
+                        continue;
+
+                    if (selectAttribute.SelectType == SelectExpandType.Automatic)
+                        selectExpandItems.Add(new PathSelectItem(new ODataSelectPath(new PropertySegment(structuralProperty))));
+                    else if (selectAttribute.SelectType == SelectExpandType.Disabled)
+                    {
+                        selectExpandItems.Add(new Parsers.Translators.OeDisableSelectItem(structuralProperty));
+                        _modelBoundQueryBuilder.SetExpandable(edmProperty, false);
+                    }
+                }
+            }
+
+            if (selectExpandItems.Count == 0)
+                return Array.Empty<ExpandedNavigationSelectItem>();
+
+            SelectItem[] selectExpandItemArray = selectExpandItems.ToArray();
+            _edmModel.SetSelectExpandItems(entityTypeInfo.EdmType, selectExpandItemArray);
+            return selectExpandItemArray;
         }
         private Dictionary<IEdmProperty, bool> GetOrderByAttributes(EntityTypeInfo entityTypeInfo)
         {

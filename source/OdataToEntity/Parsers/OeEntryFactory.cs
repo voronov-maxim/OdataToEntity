@@ -142,7 +142,7 @@ namespace OdataToEntity.Parsers
                     right = middle - 1;
             }
 
-            throw new InvalidOperationException("Proeprty " + propertyName + " not found in accessors");
+            throw new InvalidOperationException("Property " + propertyName + " not found in accessors");
         }
         private static OePropertyAccessor[] GetAccessorsWithoutSkiptoken(OePropertyAccessor[] accessors)
         {

@@ -53,6 +53,18 @@ namespace OdataToEntity.Parsers.Translators
             foreach (OeNavigationSelectItem childNavigationItem in _navigationItems)
                 childNavigationItem.AddKeyRecursive(skipToken);
         }
+        internal void AddForeignKeyRecursive()
+        {
+            if (Parent != null && PageSize > 0)
+            {
+                IEdmNavigationProperty dependentNavigationProperty = EdmProperty.IsPrincipal() ? EdmProperty.Partner : EdmProperty;
+                foreach (IEdmStructuralProperty key in dependentNavigationProperty.DependentProperties())
+                    AddStructuralItem(key, true);
+            }
+
+            foreach (OeNavigationSelectItem navigationItem in _navigationItems)
+                navigationItem.AddForeignKeyRecursive();
+        }
         internal OeNavigationSelectItem AddOrGetNavigationItem(OeNavigationSelectItem navigationItem)
         {
             OeNavigationSelectItem existingNavigationItem = FindChildrenNavigationItem(navigationItem.EdmProperty);
@@ -80,12 +92,19 @@ namespace OdataToEntity.Parsers.Translators
                 if (FindStructuralItemIndex(_structuralItemsSkipToken, structuralProperty) != -1)
                     return false;
 
+                if (FindStructuralItemIndex(_structuralItems, structuralProperty) != -1)
+                    return false;
+
                 _structuralItemsSkipToken.Add(new OeStructuralSelectItem(structuralProperty, skipToken));
             }
             else
             {
                 if (FindStructuralItemIndex(_structuralItems, structuralProperty) != -1)
                     return false;
+
+                int i = FindStructuralItemIndex(_structuralItemsSkipToken, structuralProperty);
+                if (i != -1)
+                    _structuralItemsSkipToken.RemoveAt(i);
 
                 _structuralItems.Add(new OeStructuralSelectItem(structuralProperty, skipToken));
             }
@@ -169,6 +188,24 @@ namespace OdataToEntity.Parsers.Translators
                     allStructuralItems.Add(_structuralItemsSkipToken[i]);
 
             return allStructuralItems;
+        }
+        public bool RemoveStructuralItem(IEdmStructuralProperty notSelectableProperty)
+        {
+            if (_structuralItems.Count == 0)
+            {
+                _selectAll = false;
+                foreach (IEdmStructuralProperty structuralProperty in EntitySet.EntityType().StructuralProperties())
+                    if (structuralProperty != notSelectableProperty)
+                        AddStructuralItem(structuralProperty, false);
+                return true;
+            }
+
+            int i = FindStructuralItemIndex(_structuralItems, notSelectableProperty);
+            if (i == -1)
+                return false;
+
+            _structuralItems.RemoveAt(i);
+            return true;
         }
 
         public bool AlreadyUsedInBuildExpression { get; set; }

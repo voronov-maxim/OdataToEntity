@@ -78,13 +78,13 @@ namespace OdataToEntity
             IEdmModel refModel = OeEdmClrHelper.GetEdmModel(edmModel, (IEdmEntityType)edmProperty.DeclaringType);
             return edmModel.GetAnnotationValue<T>(edmProperty);
         }
-        public static ExpandedNavigationSelectItem[] GetExpandItems(this IEdmModel edmModel, IEdmEntityType entityType)
-        {
-            return edmModel.GetEdmModel(entityType).GetAnnotationValue<ExpandedNavigationSelectItem[]>(entityType);
-        }
         public static Query.OeModelBoundQueryProvider GetModelBoundQueryProvider(this IEdmModel edmModel)
         {
             return ExtensionMethods.GetAnnotationValue<Query.OeModelBoundQueryProvider>(edmModel, edmModel);
+        }
+        public static SelectItem[] GetSelectExpandItems(this IEdmModel edmModel, IEdmEntityType entityType)
+        {
+            return edmModel.GetEdmModel(entityType).GetAnnotationValue<SelectItem[]>(entityType);
         }
         public static bool IsDbFunction(this IEdmModel edmModel, IEdmOperation edmOperation)
         {
@@ -102,10 +102,6 @@ namespace OdataToEntity
         public static void SetEntitySetAdapter(this IEdmModel edmModel, IEdmEntitySet entitySet, Db.OeEntitySetAdapter entitySetAdapter)
         {
             edmModel.SetAnnotationValue(entitySet, entitySetAdapter);
-        }
-        public static void SetExpandItems(this IEdmModel edmModel, IEdmEntityType entityType, ExpandedNavigationSelectItem[] expandItems)
-        {
-            OeEdmClrHelper.GetEdmModel(edmModel, entityType).SetAnnotationValue(entityType, expandItems);
         }
         public static void SetIsDbFunction(this IEdmModel edmModel, IEdmOperation edmOperation, bool isDbFunction)
         {
@@ -131,6 +127,10 @@ namespace OdataToEntity
         public static void SetModelBoundQueryProvider(this IEdmModel edmModel, Query.OeModelBoundQueryProvider modelBoundQueryProvider)
         {
             edmModel.SetAnnotationValue(edmModel, modelBoundQueryProvider);
+        }
+        public static void SetSelectExpandItems(this IEdmModel edmModel, IEdmEntityType entityType, SelectItem[] selectExpandItems)
+        {
+            OeEdmClrHelper.GetEdmModel(edmModel, entityType).SetAnnotationValue(entityType, selectExpandItems);
         }
     }
 }

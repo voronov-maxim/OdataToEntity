@@ -1,11 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.OData;
-using Microsoft.OData.Edm;
 using OdataToEntity.Test.Model;
 using System;
-using System.IO;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -50,36 +47,6 @@ namespace OdataToEntity.Test
             };
             await Assert.ThrowsAsync<ODataErrorException>(async () => await Fixture.Execute(parameters).ConfigureAwait(false));
         }
-        [Fact(Skip = SelectTest.SkipTest)]
-        public async Task Expand()
-        {
-            var parameters = new QueryParameters<Order, Object>()
-            {
-                RequestUri = "Orders",
-                Expression = t => t.OrderBy(o => o.Id).Include(o => o.Customer).ThenInclude(c => c.Orders).Include(o => o.Items.OrderBy(i => i.Id)).Select(o => new
-                {
-                    o.AltCustomerCountry,
-                    o.AltCustomerId,
-                    Customer = new
-                    {
-                        o.Customer.Address,
-                        o.Customer.Country,
-                        o.Customer.Id,
-                        o.Customer.Name,
-                        o.Customer.Orders,
-                        o.Customer.Sex
-                    },
-                    o.CustomerCountry,
-                    o.CustomerId,
-                    o.Date,
-                    o.Id,
-                    o.Items,
-                    o.Name,
-                    o.Status
-                }),
-            };
-            await Fixture.Execute(parameters).ConfigureAwait(false);
-        }
         [Fact]
         public async Task ExpandFailed()
         {
@@ -104,7 +71,41 @@ namespace OdataToEntity.Test
             var parameters = new QueryParameters<Order, Object>()
             {
                 RequestUri = "Orders?$expand=Items($orderby=Id)&$orderby=Customer/Name",
-                Expression = t => t.OrderBy(o => o.Customer.Name).Include(o => o.Customer).ThenInclude(c => c.Orders).Include(o => o.Items.OrderBy(i => i.Id)),
+                Expression = t => t.OrderBy(o => o.Customer.Name).Include(o => o.Customer).ThenInclude(c => c.Orders).ThenInclude(o => o.Customer)
+                    .Include(o => o.Customer).ThenInclude(c => c.Orders).ThenInclude(o => o.Items).Include(o => o.Items.OrderBy(i => i.Id)).Select(o =>
+                    new
+                    {
+                        Customer = new
+                        {
+                            o.Customer.Address,
+                            o.Customer.Country,
+                            o.Customer.Id,
+                            o.Customer.Name,
+                            Orders = o.Customer.Orders.Select(z => new
+                            {
+                                z.Customer,
+                                Items = o.Items.Select(i => new
+                                {
+                                    i.Count,
+                                    i.Price,
+                                    i.Product
+                                }),
+                                z.Name,
+                                z.Date,
+                                z.Status
+                            }),
+                            o.Customer.Sex
+                        },
+                        o.Date,
+                        Items = o.Items.Select(i => new
+                        {
+                            i.Count,
+                            i.Price,
+                            i.Product
+                        }),
+                        o.Name,
+                        o.Status
+                    })
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
@@ -123,6 +124,68 @@ namespace OdataToEntity.Test
             var parameters = new QueryParameters<Order, Object>()
             {
                 RequestUri = "Orders?$expand=Items($orderby=Product)&$orderby=Customer/Name",
+            };
+            await Assert.ThrowsAsync<ODataErrorException>(async () => await Fixture.Execute(parameters).ConfigureAwait(false));
+        }
+        [Fact(Skip = SelectTest.SkipTest)]
+        public async Task SelectExpand()
+        {
+            var parameters = new QueryParameters<Order, Object>()
+            {
+                RequestUri = "Orders",
+                Expression = t => t.OrderBy(o => o.Id).Include(o => o.Customer).ThenInclude(c => c.Orders).ThenInclude(o => o.Customer)
+                    .Include(o => o.Customer).ThenInclude(c => c.Orders).ThenInclude(o => o.Items).Include(o => o.Items.OrderBy(i => i.Id)).Select(o =>
+                    new
+                    {
+                        Customer = new
+                        {
+                            o.Customer.Address,
+                            o.Customer.Country,
+                            o.Customer.Id,
+                            o.Customer.Name,
+                            Orders = o.Customer.Orders.Select(z => new
+                            {
+                                z.Customer,
+                                Items = o.Items.Select(i => new
+                                {
+                                    i.Count,
+                                    i.Price,
+                                    i.Product
+                                }),
+                                z.Name,
+                                z.Date,
+                                z.Status
+                            }),
+                            o.Customer.Sex
+                        },
+                        o.Date,
+                        Items = o.Items.Select(i => new
+                        {
+                            i.Count,
+                            i.Price,
+                            i.Product
+                        }),
+                        o.Name,
+                        o.Status
+                    })
+            };
+            await Fixture.Execute(parameters).ConfigureAwait(false);
+        }
+        [Fact]
+        public async Task SelectFailed()
+        {
+            var parameters = new QueryParameters<OrderItem, OrderItem>()
+            {
+                RequestUri = "OrderItems?$select=Id",
+            };
+            await Assert.ThrowsAsync<ODataErrorException>(async () => await Fixture.Execute(parameters).ConfigureAwait(false));
+        }
+        [Fact]
+        public async Task SelectNestedFailed()
+        {
+            var parameters = new QueryParameters<Order, Order>()
+            {
+                RequestUri = "Orders?$expand=Items($select=Id)",
             };
             await Assert.ThrowsAsync<ODataErrorException>(async () => await Fixture.Execute(parameters).ConfigureAwait(false));
         }

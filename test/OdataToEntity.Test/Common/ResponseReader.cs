@@ -152,26 +152,27 @@ namespace OdataToEntity.Test
         {
             return CreateEntity(resource, navigationProperties);
         }
-        public async Task FillNextLinkProperties(OeParser parser, Object entity, CancellationToken token)
+        public async Task FillNextLinkProperties(OeParser parser, CancellationToken token)
         {
             using (var response = new MemoryStream())
-                foreach (KeyValuePair<PropertyInfo, ODataResourceSetBase> propertyResourceSet in GetResourceSets(entity))
-                {
-                    response.SetLength(0);
-                    await parser.ExecuteGetAsync(propertyResourceSet.Value.NextPageLink, OeRequestHeaders.JsonDefault, response, token).ConfigureAwait(false);
-                    response.Position = 0;
-
-                    var navigationPropertyReader = new ResponseReader(EdmModel);
-                    AddItems(entity, propertyResourceSet.Key, navigationPropertyReader.Read(response));
-
-                    if (navigationPropertyReader.ResourceSet.NextPageLink != null)
+                foreach (KeyValuePair<Object, Dictionary<PropertyInfo, ODataResourceSetBase>> navigationPropertyEntity in NavigationPropertyEntities)
+                    foreach (KeyValuePair<PropertyInfo, ODataResourceSetBase> propertyResourceSet in navigationPropertyEntity.Value)
                     {
                         response.SetLength(0);
-                        await parser.ExecuteGetAsync(navigationPropertyReader.ResourceSet.NextPageLink, OeRequestHeaders.JsonDefault, response, token);
+                        await parser.ExecuteGetAsync(propertyResourceSet.Value.NextPageLink, OeRequestHeaders.JsonDefault, response, token).ConfigureAwait(false);
                         response.Position = 0;
-                        AddItems(entity, propertyResourceSet.Key, navigationPropertyReader.Read(response));
+
+                        var navigationPropertyReader = new ResponseReader(EdmModel);
+                        AddItems(navigationPropertyEntity.Key, propertyResourceSet.Key, navigationPropertyReader.Read(response));
+
+                        if (navigationPropertyReader.ResourceSet.NextPageLink != null)
+                        {
+                            response.SetLength(0);
+                            await parser.ExecuteGetAsync(navigationPropertyReader.ResourceSet.NextPageLink, OeRequestHeaders.JsonDefault, response, token);
+                            response.Position = 0;
+                            AddItems(navigationPropertyEntity.Key, propertyResourceSet.Key, navigationPropertyReader.Read(response));
+                        }
                     }
-                }
         }
         protected static String GetEntitSetName(Stream response)
         {

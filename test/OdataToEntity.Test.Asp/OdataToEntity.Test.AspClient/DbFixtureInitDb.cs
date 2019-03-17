@@ -80,14 +80,10 @@ namespace OdataToEntity.Test
                 Console.ResetColor();
             }
 
-            List<EfInclude> includes = GetIncludes(parameters.Expression);
-
+            IReadOnlyList<EfInclude> includes;
             IList fromDb;
             using (var dataContext = new OrderContext(OrderContextOptions.Create(true, null)))
-            {
-                fromDb = TestHelper.ExecuteDb(DataAdapter, dataContext, parameters.Expression, out IReadOnlyList<EfInclude> includesDb);
-                includes.AddRange(includesDb);
-            }
+                fromDb = TestHelper.ExecuteDb(DataAdapter, dataContext, parameters.Expression, out includes);
 
             TestHelper.Compare(fromDb, fromOe, includes);
         }
@@ -175,40 +171,6 @@ namespace OdataToEntity.Test
         {
             T value = query.Provider.Execute<T>(expression);
             return new T[] { value };
-        }
-        private List<EfInclude> GetIncludes(Expression expression)
-        {
-            var includes = new List<EfInclude>();
-            var includeVisitor = new IncludeVisitor(MetadataProvider, DataAdapter.IsDatabaseNullHighestValue);
-            includeVisitor.Visit(expression);
-            foreach (EfInclude include in includeVisitor.Includes)
-            {
-                PropertyInfo property = include.Property;
-                Type declaringType;
-                if (property.DeclaringType == typeof(Category))
-                    declaringType = typeof(ODataClient.OdataToEntity.Test.Model.Category);
-                else if (property.DeclaringType == typeof(Customer))
-                    declaringType = typeof(ODataClient.OdataToEntity.Test.Model.Customer);
-                else if (property.DeclaringType == typeof(OrderItem))
-                    declaringType = typeof(ODataClient.OdataToEntity.Test.Model.OrderItem);
-                else if (property.DeclaringType == typeof(Order))
-                    declaringType = typeof(ODataClient.OdataToEntity.Test.Model.Order);
-                else if (property.DeclaringType == typeof(ShippingAddress))
-                    declaringType = typeof(ODataClient.OdataToEntity.Test.Model.ShippingAddress);
-                else if (property.DeclaringType == typeof(CustomerShippingAddress))
-                    declaringType = typeof(ODataClient.OdataToEntity.Test.Model.CustomerShippingAddress);
-                else if (property.DeclaringType == typeof(OrderItemsView))
-                    declaringType = typeof(ODataClient.OdataToEntity.Test.Model.OrderItemsView);
-                else
-                    throw new InvalidOperationException("unknown type " + property.DeclaringType.FullName);
-
-                PropertyInfo mapProperty = declaringType.GetProperty(property.Name);
-                if (mapProperty == null)
-                    throw new InvalidOperationException("unknown property " + property.ToString());
-
-                includes.Add(new EfInclude(mapProperty, null));
-            }
-            return includes;
         }
         internal static IQueryable GetQuerableOe(ODataClient.OdataToEntity.Test.Model.Container container, Type entityType)
         {

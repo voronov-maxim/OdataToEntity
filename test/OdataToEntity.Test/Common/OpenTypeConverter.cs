@@ -9,48 +9,94 @@ namespace OdataToEntity.Test
     public readonly struct OpenTypeConverter
     {
         private readonly IReadOnlyList<EfInclude> _includes;
+        private readonly List<String> _navigationProperties;
         private readonly Dictionary<Object, Object> _visited;
-        private readonly HashSet<Object> _visitedRecursive;
         public static readonly String NotSetString = Guid.NewGuid().ToString();
 
         public OpenTypeConverter(IReadOnlyList<EfInclude> includes)
         {
             _includes = includes;
+            _navigationProperties = new List<String>();
             _visited = new Dictionary<Object, Object>();
-            _visitedRecursive = new HashSet<Object>();
         }
 
+        private static IList AnonumousToEntity(Type entityType, IEnumerable collection)
+        {
+            Type itemType = Parsers.OeExpressionHelper.GetCollectionItemType(collection.GetType());
+            var items = (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(entityType));
+            PropertyInfo[] anonymousProperties = itemType.GetProperties();
+            PropertyInfo[] entityProperties = entityType.GetProperties();
+            foreach (Object item in (IEnumerable)collection)
+            {
+                Object entity = Activator.CreateInstance(entityType);
+                foreach (PropertyInfo anonymousProperty in anonymousProperties)
+                {
+                    PropertyInfo entityProperty = Array.Find(entityProperties, p => p.Name == anonymousProperty.Name);
+                    entityProperty.SetValue(entity, anonymousProperty.GetValue(item));
+                }
+                items.Add(entity);
+            }
+            return items;
+        }
         public IList Convert(IEnumerable entities)
         {
-            IList list = ToOpenType(entities);
-            for (int i = 0; i < list.Count; i++)
-                UpdateRecursive(list[i]);
-            return list;
+            return ToOpenType(entities);
         }
-        private Object FilterCollection(Object value, PropertyInfo property)
+        private Object FilterNavigation(Object value, String propertyName)
         {
             if (_includes == null)
                 return value;
 
-            EfInclude include;
-            if (property.DeclaringType.Name.StartsWith("<>"))
-                include = _includes.FirstOrDefault(i => i.Property.Name == property.Name);
-            else
-                include = _includes.FirstOrDefault(i => i.Property == property);
-            if (include.Property == null)
+            List<EfInclude> includes = _includes.Where(t => t.Property.Name == propertyName).ToList();
+            if (includes.Count == 0)
                 return null;
 
-            if (include.Filter == null)
+            EfInclude matched = default;
+            foreach (EfInclude include in includes)
+            {
+                int i = _navigationProperties.Count - 1;
+                PropertyInfo parentProperty = include.ParentProperty;
+                while (parentProperty != null && i >= 0)
+                {
+                    EfInclude parentInclude = _includes.FirstOrDefault(t => t.Property.Name == parentProperty.Name);
+                    if (_navigationProperties[i] != parentInclude.Property.Name)
+                        break;
+
+                    i--;
+                    parentProperty = parentInclude.ParentProperty;
+                }
+                if (parentProperty == null && i < 0)
+                {
+                    matched = include;
+                    break;
+                }
+            }
+
+            if (matched.Property == null)
+                return null;
+
+            if (matched.Filter == null)
                 return value;
 
-            return include.Filter((IEnumerable)value);
+            Type itemType = Parsers.OeExpressionHelper.GetCollectionItemType(value.GetType());
+            if (itemType.Name.StartsWith("<>"))
+            {
+                Type entityType = Parsers.OeExpressionHelper.GetCollectionItemType(matched.Property.PropertyType);
+                value = AnonumousToEntity(entityType, (IEnumerable)value);
+            }
+            return matched.Filter((IEnumerable)value);
         }
         private IList ToOpenType(IEnumerable entities)
         {
             var openTypes = new List<Object>();
             foreach (Object entity in entities)
-                openTypes.Add(ToOpenType(entity));
-            return openTypes;
+            {
+                Object value = ToOpenType(entity);
+                if (value != null)
+                    openTypes.Add(ToOpenType(entity));
+            }
+
+            return openTypes.Count == 0 ? null : openTypes;
         }
         private Object ToOpenType(Object entity)
         {
@@ -72,7 +118,12 @@ namespace OdataToEntity.Test
                     if (value is Decimal d)
                         value = Math.Round(d, 2);
 
+                    if (value is ICollection collection && collection.Count == 0)
+                        continue;
+
+                    _navigationProperties.Add(pair.Key);
                     openType.Add(pair.Key, ToOpenType(value));
+                    _navigationProperties.RemoveAt(_navigationProperties.Count - 1);
                 }
                 return openType;
             }
@@ -90,49 +141,48 @@ namespace OdataToEntity.Test
                     foreach (PropertyInfo property in entity.GetType().GetProperties())
                     {
                         type = Parsers.OeExpressionHelper.GetCollectionItemType(property.PropertyType);
+                        bool isEntityType;
+                        if (type == null)
+                        {
+                            isEntityType = Parsers.OeExpressionHelper.IsEntityType(property.PropertyType);
+                            if (!isEntityType)
+                                type = property.PropertyType;
+                        }
+                        else
+                            isEntityType = Parsers.OeExpressionHelper.IsEntityType(type);
+
                         Object value = property.GetValue(entity);
                         if (value == null)
                         {
-                            if (type == null)
-                                type = property.PropertyType;
-
-                            if (!Parsers.OeExpressionHelper.IsEntityType(type))
+                            if (!isEntityType)
                                 openType.Add(property.Name, null);
                         }
                         else
                         {
-                            if (type == null)
+                            if (isEntityType)
                             {
-                                if (Parsers.OeExpressionHelper.IsEntityType(property.PropertyType))
-                                {
-                                    value = FilterCollection(value, property);
-                                    if (value == null)
-                                        continue;
+                                value = FilterNavigation(value, property.Name);
+                                if (value == null)
+                                    continue;
 
-                                    _visited[entity] = value;
+                                _navigationProperties.Add(property.Name);
+                                if (type == null)
                                     value = ToOpenType(value);
-                                    _visited[entity] = value;
-                                }
                                 else
-                                {
-                                    var comparable = (IComparable)value;
-                                    if (notSetEntity != null && comparable.CompareTo(property.GetValue(notSetEntity)) == 0)
-                                        continue;
+                                    value = ToOpenType((IEnumerable)value);
+                                _navigationProperties.RemoveAt(_navigationProperties.Count - 1);
 
-                                    if (value is Decimal d)
-                                        value = Math.Round(d, 2);
-                                }
+                                if (value == null)
+                                    continue;
                             }
                             else
                             {
-                                if (Parsers.OeExpressionHelper.IsEntityType(type))
-                                {
-                                    value = FilterCollection(value, property);
-                                    if (value == null)
-                                        continue;
+                                var comparable = (IComparable)value;
+                                if (notSetEntity != null && comparable.CompareTo(property.GetValue(notSetEntity)) == 0)
+                                    continue;
 
-                                    value = ToOpenType((IEnumerable)value);
-                                }
+                                if (value is Decimal d)
+                                    value = Math.Round(d, 2);
                             }
                             openType.Add(property.Name, value);
                         }
@@ -149,32 +199,6 @@ namespace OdataToEntity.Test
                 return ToOpenType((IEnumerable)entity);
 
             return entity;
-
-        }
-        private void UpdateRecursive(Object value)
-        {
-            if (!_visitedRecursive.Add(value))
-                return;
-
-            if (value is SortedDictionary<String, Object> openType)
-                foreach (KeyValuePair<String, Object> pair in new List<KeyValuePair<String, Object>>(openType))
-                {
-                    if (pair.Value is SortedDictionary<String, Object> dictionary)
-                        foreach (KeyValuePair<String, Object> child in dictionary)
-                            UpdateRecursive(pair.Value);
-                    else if (pair.Value is List<Object> list)
-                    {
-                        if (list.Count == 0)
-                            openType.Remove(pair.Key);
-                        else
-                            for (int i = 0; i < list.Count; i++)
-                            {
-                                if (_visited.ContainsKey(list[i]))
-                                    list[i] = _visited[list[i]];
-                                UpdateRecursive(list[i]);
-                            }
-                    }
-                }
         }
     }
 }

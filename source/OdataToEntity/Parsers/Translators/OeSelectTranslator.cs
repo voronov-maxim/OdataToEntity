@@ -194,15 +194,16 @@ namespace OdataToEntity.Parsers.Translators
                     selectItemTranslator.Translate(_navigationItem, selectItemClause);
             }
 
-            ExpandedNavigationSelectItem[] expandItems = _edmModel.GetExpandItems(_navigationItem.EntitySet.EntityType());
-            if (expandItems != null)
+            SelectItem[] selectExpandItems = _edmModel.GetSelectExpandItems(_navigationItem.EntitySet.EntityType());
+            if (selectExpandItems != null)
             {
                 var selectItemTranslator = new OeSelectItemTranslator(_edmModel, navigationNextLink, false);
-                foreach (ExpandedNavigationSelectItem expandItem in expandItems)
-                    selectItemTranslator.Translate(_navigationItem, expandItem);
+                foreach (SelectItem selecExpandItem in selectExpandItems)
+                    selectItemTranslator.Translate(_navigationItem, selecExpandItem);
             }
 
             _navigationItem.AddKeyRecursive(_metadataLevel != OeMetadataLevel.Full);
+            _navigationItem.AddForeignKeyRecursive();
         }
         private Expression BuildSkipTakeSource(Expression source, OeQueryContext queryContext, OeNavigationSelectItem navigationItem)
         {
