@@ -48,7 +48,7 @@ namespace OdataToEntity.GraphQL
                 {
                     IGraphType resolvedType;
                     QueryArgument[] queryArguments;
-                    Type itemType = Parsers.OeExpressionHelper.GetCollectionItemType(propertyInfo.PropertyType);
+                    Type itemType = Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(propertyInfo.PropertyType);
                     if (itemType == null)
                     {
                         if (!_clrTypeToObjectGraphType.TryGetValue(propertyInfo.PropertyType, out resolvedType))
@@ -130,7 +130,7 @@ namespace OdataToEntity.GraphQL
                     objectGraphType.AddField(CreateStructuralFieldType(propertyInfo));
                 else
                 {
-                    Type navigationType = Parsers.OeExpressionHelper.GetCollectionItemType(propertyInfo.PropertyType);
+                    Type navigationType = Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(propertyInfo.PropertyType);
                     if (navigationType == null)
                         navigationType = propertyInfo.PropertyType;
 

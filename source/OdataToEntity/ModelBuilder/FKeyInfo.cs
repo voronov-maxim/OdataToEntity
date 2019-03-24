@@ -37,10 +37,7 @@ namespace OdataToEntity.ModelBuilder
         public static FKeyInfo Create(OeEdmModelMetadataProvider metadataProvider,
             Dictionary<Type, EntityTypeInfo> entityTypes, EntityTypeInfo dependentInfo, PropertyInfo dependentNavigationProperty)
         {
-            Type clrType = Parsers.OeExpressionHelper.GetCollectionItemType(dependentNavigationProperty.PropertyType);
-            if (clrType == null)
-                clrType = dependentNavigationProperty.PropertyType;
-
+            Type clrType = Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(dependentNavigationProperty.PropertyType) ?? dependentNavigationProperty.PropertyType;
             if (!entityTypes.TryGetValue(clrType, out EntityTypeInfo principalInfo))
                 return null;
 
@@ -93,7 +90,7 @@ namespace OdataToEntity.ModelBuilder
         }
         private static EdmMultiplicity GetEdmMultiplicity(Type propertyType, PropertyInfo[] dependentStructuralProperties)
         {
-            if (propertyType != null && Parsers.OeExpressionHelper.GetCollectionItemType(propertyType) != null)
+            if (propertyType != null && Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(propertyType) != null)
                 return EdmMultiplicity.Many;
 
             if (dependentStructuralProperties.Length == 0)
@@ -114,7 +111,7 @@ namespace OdataToEntity.ModelBuilder
 
             foreach (PropertyInfo clrProperty in metadataProvider.GetProperties(principalInfo.ClrType))
                 if (clrProperty.PropertyType == dependentInfo.ClrType ||
-                    Parsers.OeExpressionHelper.GetCollectionItemType(clrProperty.PropertyType) == dependentInfo.ClrType)
+                    Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(clrProperty.PropertyType) == dependentInfo.ClrType)
                 {
                     inverseProperty = metadataProvider.GetInverseProperty(clrProperty);
                     if (inverseProperty == null || inverseProperty == dependentNavigationProperty)

@@ -57,10 +57,7 @@ namespace OdataToEntity.Parsers
         }
         public void ChangeParameterType(Expression source)
         {
-            Type itemType = OeExpressionHelper.GetCollectionItemType(source.Type);
-            if (itemType == null)
-                itemType = source.Type;
-
+            Type itemType = OeExpressionHelper.GetCollectionItemTypeOrNull(source.Type) ?? source.Type;
             if (Parameter.Type != itemType)
                 _parameter = Expression.Parameter(itemType);
         }
@@ -68,24 +65,7 @@ namespace OdataToEntity.Parsers
         {
             Expression e = TranslateNode(nodeIn.Source);
             PropertyInfo property = e.Type.GetPropertyIgnoreCase(nodeIn.Property);
-            if (property == null)
-            {
-                if (!OeExpressionHelper.IsTupleType(e.Type))
-                    throw new InvalidOperationException("must by Tuple " + e.Type.ToString());
-
-                IEdmNavigationSource navigationSource = ((ResourceRangeVariableReferenceNode)nodeIn.Source).NavigationSource;
-                property = GetTuplePropertyByEntityType(e.Type, navigationSource.EntityType());
-            }
             return Expression.Property(e, property);
-        }
-        private static PropertyInfo GetTuplePropertyByEntityType(Type tupleType, IEdmEntityType edmEntityType)
-        {
-            foreach (PropertyInfo propertyInfo in tupleType.GetProperties())
-                if (String.Compare(propertyInfo.PropertyType.Name, edmEntityType.Name, StringComparison.OrdinalIgnoreCase) == 0 &&
-                    String.Compare(propertyInfo.PropertyType.Namespace, edmEntityType.Namespace, StringComparison.OrdinalIgnoreCase) == 0)
-                    return propertyInfo;
-
-            return null;
         }
         private Expression Lambda(CollectionNavigationNode sourceNode, SingleValueNode body, String methodName)
         {
@@ -280,7 +260,7 @@ namespace OdataToEntity.Parsers
             else
                 source = Parameter;
 
-            PropertyInfo propertyInfo = source.Type.GetPropertyIgnoreCase(nodeIn.NavigationProperty);
+            PropertyInfo propertyInfo = source.Type.GetPropertyIgnoreCaseOrNull(nodeIn.NavigationProperty);
             if (propertyInfo == null)
                 return null;
 
@@ -292,18 +272,7 @@ namespace OdataToEntity.Parsers
             if (TuplePropertyByAliasName == null)
             {
                 e = TranslateNode(nodeIn.Source);
-                if (e == null)
-                    return null;
-
-                PropertyInfo property = e.Type.GetProperty(nodeIn.Property.Name);
-                if (property == null)
-                {
-                    if (!OeExpressionHelper.IsTupleType(e.Type))
-                        throw new InvalidOperationException("must by Tuple " + e.Type.ToString());
-
-                    IEdmNavigationSource navigationSource = ((ResourceRangeVariableReferenceNode)nodeIn.Source).NavigationSource;
-                    property = GetTuplePropertyByEntityType(e.Type, navigationSource.EntityType());
-                }
+                PropertyInfo property = e.Type.GetPropertyIgnoreCase(nodeIn.Property);
                 return Expression.Property(e, property);
             }
 

@@ -301,6 +301,7 @@ namespace OdataToEntity.Test.Model
         }
 
         [Column,     Nullable ] public int?     Count   { get; set; } // int
+        [Filter(Disabled = true)]
         [Select(SelectExpandType.Disabled)]
         [PrimaryKey, Identity ] public int      Id      { get; set; } // int
         [Select(SelectExpandType.Disabled)]

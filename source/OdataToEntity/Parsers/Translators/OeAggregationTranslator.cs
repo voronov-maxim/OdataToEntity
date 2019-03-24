@@ -169,8 +169,6 @@ namespace OdataToEntity.Parsers.Translators
                 source = callExpression.Arguments[0];
                 var aggLambda = (LambdaExpression)callExpression.Arguments[1];
                 expressions.AddRange(((NewExpression)aggLambda.Body).Arguments);
-
-                sourceType = OeExpressionHelper.GetCollectionItemType(source.Type);
                 sourceParameter = aggLambda.Parameters[0];
             }
 

@@ -54,16 +54,18 @@ namespace OdataToEntity.Parsers
             Object dataContext = null;
             try
             {
-                foreach (OeOperationMessage operation in changeset)
+                for (int i = 0; i < changeset.Count; i++)
                 {
-                    if (dataContext == null)
+                    if (dataAdapter == null)
                     {
-                        dataAdapter = _model.GetDataAdapter(operation.EntitySet.Container);
+                        dataAdapter = _model.GetDataAdapter(changeset[i].EntitySet.Container);
                         dataContext = dataAdapter.CreateDataContext();
                     }
-                    AddToEntitySet(dataContext, operation);
+                    AddToEntitySet(dataContext, changeset[i]);
                 }
-                await dataAdapter.SaveChangesAsync(dataContext, cancellationToken).ConfigureAwait(false);
+
+                if (dataAdapter != null)
+                    await dataAdapter.SaveChangesAsync(dataContext, cancellationToken).ConfigureAwait(false);
             }
             finally
             {

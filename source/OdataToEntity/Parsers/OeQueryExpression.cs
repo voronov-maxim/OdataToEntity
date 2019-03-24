@@ -21,7 +21,7 @@ namespace OdataToEntity.Parsers
             ODataUri odataUri = OeParser.ParseUri(edmModel, new Uri(query, UriKind.Relative));
             _entitySet = ((EntitySetSegment)odataUri.Path.FirstSegment).EntitySet;
 
-            var queryContext = new OeQueryContext(edmModel, odataUri, 0, false, OeMetadataLevel.Minimal);
+            var queryContext = new OeQueryContext(edmModel, odataUri);
             Expression expression = queryContext.CreateExpression(out _);
             _expression = new OeEnumerableToQuerableVisitor().Visit(expression);
 

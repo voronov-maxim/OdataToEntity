@@ -35,10 +35,10 @@ namespace OdataToEntity.Test.Model
         {
             return new OrderEf6Context(_useRelationalNulls);
         }
-        public static ModelBuilder.OeEdmModelMetadataProvider CreateMetadataProvider(bool useRelationalNulls, String databaseName, OeModelBoundAttribute useModelBoundAttribute)
+        public static ModelBuilder.OeEdmModelMetadataProvider CreateMetadataProvider(bool useRelationalNulls, String databaseName)
         {
             using (var dbContext = new OrderEf6Context(false))
-                return new OeEf6EdmModelMetadataProvider(dbContext, useModelBoundAttribute);
+                return new OeEf6EdmModelMetadataProvider(dbContext);
         }
 
         Db.OeDataAdapter ITestDbDataAdapter.DbDataAdapter => _dbDataAdapter;

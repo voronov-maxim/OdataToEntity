@@ -16,18 +16,21 @@ namespace OdataToEntity.Test
     public abstract class DbFixture
     {
         private readonly String _databaseName;
+        private readonly Query.OeModelBoundQueryProvider _modelBoundQueryProvider; 
         private readonly bool _useRelationalNulls;
 
         protected DbFixture(bool allowCache, bool useRelationalNulls, OeModelBoundAttribute useModelBoundAttribute)
-            : this(allowCache, useRelationalNulls, OrderContext.GenerateDatabaseName(), useModelBoundAttribute)
+            : this(allowCache, useRelationalNulls, OrderContext.GenerateDatabaseName())
+        {
+            if (useModelBoundAttribute == OeModelBoundAttribute.Yes)
+                _modelBoundQueryProvider = new Query.OeModelBoundAttributeReader(EdmModel).BuildProvider();
+        }
+        private DbFixture(bool allowCache, bool useRelationalNulls, String databaseName)
+            : this(useRelationalNulls, databaseName, new OrderDataAdapter(allowCache, useRelationalNulls, databaseName))
         {
         }
-        private DbFixture(bool allowCache, bool useRelationalNulls, String databaseName, OeModelBoundAttribute useModelBoundAttribute)
-            : this(useRelationalNulls, databaseName, new OrderDataAdapter(allowCache, useRelationalNulls, databaseName), useModelBoundAttribute)
-        {
-        }
-        private DbFixture(bool useRelationalNulls, String databaseName, Db.OeDataAdapter dataAdapter, OeModelBoundAttribute useModelBoundAttribute)
-            : this(useRelationalNulls, databaseName, dataAdapter, OrderDataAdapter.CreateMetadataProvider(useRelationalNulls, databaseName, useModelBoundAttribute))
+        private DbFixture(bool useRelationalNulls, String databaseName, Db.OeDataAdapter dataAdapter)
+            : this(useRelationalNulls, databaseName, dataAdapter, OrderDataAdapter.CreateMetadataProvider(useRelationalNulls, databaseName))
         {
 
         }
@@ -108,7 +111,7 @@ namespace OdataToEntity.Test
         public async Task<IList> ExecuteOe<TResult>(String requestUri, bool navigationNextLink, int pageSize)
         {
             ODataUri odataUri = ParseUri(requestUri);
-            var parser = new OeParser(odataUri.ServiceRoot, EdmModel);
+            var parser = new OeParser(odataUri.ServiceRoot, EdmModel, _modelBoundQueryProvider);
             var uri = new Uri(odataUri.ServiceRoot, requestUri);
             OeRequestHeaders requestHeaders = OeRequestHeaders.JsonDefault.SetMaxPageSize(pageSize).SetNavigationNextLink(navigationNextLink);
 

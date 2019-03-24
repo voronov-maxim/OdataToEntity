@@ -55,7 +55,7 @@ namespace OdataToEntity.ModelBuilder
         {
             foreach (PropertyInfo propertyInfo in typeInfo.ClrType.GetProperties())
             {
-                Type itemType = Parsers.OeExpressionHelper.GetCollectionItemType(propertyInfo.PropertyType);
+                Type itemType = Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(propertyInfo.PropertyType);
                 if (itemType == joinClassType)
                     foreach (IEdmNavigationProperty edmNavigationProperty in typeInfo.EdmType.NavigationProperties())
                         if (String.CompareOrdinal(edmNavigationProperty.Name, propertyInfo.Name) == 0)
@@ -69,7 +69,7 @@ namespace OdataToEntity.ModelBuilder
             var collectionProperties = new List<PropertyInfo>();
             foreach (PropertyInfo propertyInfo in entityType.GetProperties())
                 if (!Parsers.OeExpressionHelper.IsPrimitiveType(propertyInfo.PropertyType) &&
-                    Parsers.OeExpressionHelper.GetCollectionItemType(propertyInfo.PropertyType) != null)
+                    Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(propertyInfo.PropertyType) != null)
                     collectionProperties.Add(propertyInfo);
 
             foreach (PropertyInfo propertyInfo in collectionProperties)
@@ -120,7 +120,7 @@ namespace OdataToEntity.ModelBuilder
                 }
                 else
                 {
-                    if (Parsers.OeExpressionHelper.GetCollectionItemType(propertyInfo.PropertyType) == null)
+                    if (Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(propertyInfo.PropertyType) == null)
                     {
                         if (otherSideProperty != null)
                             return null;

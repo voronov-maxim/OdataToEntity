@@ -144,7 +144,7 @@ namespace OdataToEntity.Writers
 
             var resourceSet = new ODataResourceSet()
             {
-                NextPageLink = OeNextPageLinkBuilder.GetNavigationUri(_queryContext.EdmModel, parentEntryFactory, item, value)
+                NextPageLink = new OeNextPageLinkBuilder(_queryContext).GetNavigationUri(parentEntryFactory, item, value)
             };
             _writer.WriteStart(resourceSet);
             _writer.WriteEnd();

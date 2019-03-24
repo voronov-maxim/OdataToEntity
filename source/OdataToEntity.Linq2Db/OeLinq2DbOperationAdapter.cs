@@ -43,7 +43,7 @@ namespace OdataToEntity.Linq2Db
         }
         protected override OeAsyncEnumerator ExecutePrimitive(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
         {
-            Type itemType = Parsers.OeExpressionHelper.GetCollectionItemType(returnType);
+            Type itemType = Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(returnType);
             if (itemType == null)
             {
                 Object result = ((DataConnection)dataContext).Execute<Object>(sql, GetDataParameters(parameters));

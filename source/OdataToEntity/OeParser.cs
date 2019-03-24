@@ -96,11 +96,16 @@ namespace OdataToEntity
 
         private readonly Uri _baseUri;
         private readonly IEdmModel _edmModel;
+        private readonly Query.OeModelBoundQueryProvider _modelBoundQueryProvider;
 
-        public OeParser(Uri baseUri, IEdmModel edmModel)
+        public OeParser(Uri baseUri, IEdmModel edmModel) : this(baseUri, edmModel, null)
+        {
+        }
+        public OeParser(Uri baseUri, IEdmModel edmModel, Query.OeModelBoundQueryProvider modelBoundQueryProvider)
         {
             _baseUri = baseUri;
             _edmModel = edmModel;
+            _modelBoundQueryProvider = modelBoundQueryProvider;
         }
 
         public async Task<String> ExecuteBatchAsync(Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
@@ -125,7 +130,7 @@ namespace OdataToEntity
         }
         public async Task ExecuteQueryAsync(ODataUri odataUri, OeRequestHeaders headers, Stream responseStream, CancellationToken cancellationToken)
         {
-            var parser = new Parsers.OeGetParser(_edmModel.GetEdmModel(odataUri.Path));
+            var parser = new Parsers.OeGetParser(_edmModel.GetEdmModel(odataUri.Path), _modelBoundQueryProvider);
             await parser.ExecuteAsync(odataUri, headers, responseStream, cancellationToken).ConfigureAwait(false);
         }
         public async Task ExecuteOperationAsync(ODataUri odataUri, OeRequestHeaders headers, Stream requestStream, Stream responseStream, CancellationToken cancellationToken)

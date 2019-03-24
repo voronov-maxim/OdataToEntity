@@ -9,13 +9,6 @@ namespace OdataToEntity.Linq2Db
 {
     public sealed class OeLinq2DbEdmModelMetadataProvider : OeEdmModelMetadataProvider
     {
-        public OeLinq2DbEdmModelMetadataProvider() : this(OeModelBoundAttribute.No)
-        {
-        }
-        public OeLinq2DbEdmModelMetadataProvider(OeModelBoundAttribute useModelBoundAttribute) : base(useModelBoundAttribute)
-        {
-        }
-
         public override PropertyInfo[] GetForeignKey(PropertyInfo propertyInfo)
         {
             var association = (AssociationAttribute)propertyInfo.GetCustomAttribute(typeof(AssociationAttribute));
@@ -49,10 +42,7 @@ namespace OdataToEntity.Linq2Db
             if (association == null || !association.IsBackReference)
                 return null;
 
-            Type clrType = OeExpressionHelper.GetCollectionItemType(propertyInfo.PropertyType);
-            if (clrType == null)
-                clrType = propertyInfo.PropertyType;
-
+            Type clrType = OeExpressionHelper.GetCollectionItemTypeOrNull(propertyInfo.PropertyType) ?? propertyInfo.PropertyType;
             foreach (PropertyInfo clrProperty in clrType.GetProperties())
             {
                 var association2 = (AssociationAttribute)clrProperty.GetCustomAttribute(typeof(AssociationAttribute));

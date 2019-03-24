@@ -17,10 +17,51 @@ namespace OdataToEntity.Writers
             _queryContext = queryContext;
         }
 
+        private SelectExpandClause FilterDisableSelectExpand(IEdmEntitySet entitySet, SelectExpandClause selectExpandClause)
+        {
+            if (_queryContext.ModelBoundQueryProvider == null || selectExpandClause == null)
+                return selectExpandClause;
+
+            var navigationSelectItem = new ExpandedNavigationSelectItem(new ODataExpandPath(), entitySet, selectExpandClause);
+            IList<SelectItem> selectedItems = FilterDisableSelectItem(navigationSelectItem);
+            return new SelectExpandClause(selectedItems, selectedItems.Count == 0);
+        }
+        private IList<SelectItem> FilterDisableSelectItem(ExpandedNavigationSelectItem navigationSelectItem)
+        {
+            var selectedItems = new List<SelectItem>();
+            if (navigationSelectItem.SelectAndExpand != null)
+            {
+                foreach (SelectItem selectItem in navigationSelectItem.SelectAndExpand.SelectedItems)
+                    if (selectItem is ExpandedNavigationSelectItem item)
+                    {
+                        IList<SelectItem> navigationSelectItems = FilterDisableSelectItem(item);
+                        var selectExpandClause = new SelectExpandClause(navigationSelectItems, navigationSelectItems.Count == 0);
+                        selectedItems.Add(new ExpandedNavigationSelectItem(item.PathToNavigationProperty, item.NavigationSource, selectExpandClause));
+                    }
+                    else if (selectItem is PathSelectItem)
+                        selectedItems.Add(selectItem);
+
+                if (selectedItems.Count > 0)
+                    return selectedItems;
+            }
+
+            bool disabledFound = false;
+            IEdmEntitySetBase entitySet = OeEdmClrHelper.GetEntitySet(_queryContext.EdmModel, navigationSelectItem);
+            foreach (IEdmStructuralProperty structuralProperty in entitySet.EntityType().StructuralProperties())
+            {
+                var selectPath = new ODataSelectPath(new PropertySegment(structuralProperty));
+                if (_queryContext.ModelBoundQueryProvider.IsSelectable(selectPath))
+                    selectedItems.Add(new PathSelectItem(selectPath));
+                else
+                    disabledFound = true;
+            }
+
+            return disabledFound ? selectedItems : (IList<SelectItem>)Array.Empty<SelectItem>();
+        }
         public static int GetCount(IEdmModel edmModel, OeEntryFactory entryFactory, Object value)
         {
             ODataUri odataUri = OeNextPageLinkBuilder.GetCountODataUri(edmModel, entryFactory, entryFactory.NavigationSelectItem, value);
-            var queryContext = new OeQueryContext(edmModel, odataUri, 0, false, OeMetadataLevel.Minimal);
+            var queryContext = new OeQueryContext(edmModel, odataUri);
 
             IEdmEntitySet entitySet = (odataUri.Path.FirstSegment as EntitySetSegment).EntitySet;
             Db.OeDataAdapter dataAdapter = edmModel.GetDataAdapter(entitySet.Container);
@@ -69,7 +110,7 @@ namespace OdataToEntity.Writers
                 var anyNode = new AnyNode(new Collection<RangeVariable>() { joinRefNode.RangeVariable, targetRefNode.RangeVariable }, joinRefNode.RangeVariable)
                 {
                     Source = new CollectionNavigationNode(targetRefNode, joinDescription.TargetNavigationProperty.Partner, null),
-                    Body = OeGetParser.CreateFilterExpression(joinRefNode, GetKeysFromParentValue(navigationProperty))
+                    Body = OeExpressionHelper.CreateFilterExpression(joinRefNode, GetKeysFromParentValue(navigationProperty))
                 };
 
                 refNode = targetRefNode;
@@ -85,7 +126,7 @@ namespace OdataToEntity.Writers
                     keys = GetKeysSelfValue(dependentNavigationProperty);
                 else
                     keys = GetKeysFromParentValue(dependentNavigationProperty);
-                filterExpression = OeGetParser.CreateFilterExpression(refNode, keys);
+                filterExpression = OeExpressionHelper.CreateFilterExpression(refNode, keys);
             }
 
             if (item.FilterOption != null)
@@ -128,11 +169,11 @@ namespace OdataToEntity.Writers
             }
             return keys;
         }
-        public static Uri GetNavigationUri(IEdmModel edmModel, OeEntryFactory entryFactory, ExpandedNavigationSelectItem item, Object value)
+        public Uri GetNavigationUri(OeEntryFactory entryFactory, ExpandedNavigationSelectItem item, Object value)
         {
-            return GetNavigationUri(edmModel, entryFactory, item, item.OrderByOption, value, null);
+            return GetNavigationUri(entryFactory, item, item.OrderByOption, value, null);
         }
-        private static Uri GetNavigationUri(IEdmModel edmModel, OeEntryFactory entryFactory,
+        private Uri GetNavigationUri(OeEntryFactory entryFactory,
             ExpandedNavigationSelectItem item, OrderByClause orderByClause, Object value, String skipToken)
         {
             bool? queryCount = item.CountOption;
@@ -144,7 +185,7 @@ namespace OdataToEntity.Writers
                     top = entryFactory.PageSize;
             }
 
-            FilterClause filterClause = GetFilter(edmModel, entryFactory, item, value);
+            FilterClause filterClause = GetFilter(_queryContext.EdmModel, entryFactory, item, value);
             var entitytSet = (IEdmEntitySet)(filterClause.RangeVariable as ResourceRangeVariable).NavigationSource;
             var pathSegments = new ODataPathSegment[] { new EntitySetSegment(entitytSet) };
 
@@ -154,7 +195,7 @@ namespace OdataToEntity.Writers
                 OrderBy = orderByClause,
                 Path = new ODataPath(pathSegments),
                 QueryCount = queryCount,
-                SelectAndExpand = item.SelectAndExpand,
+                SelectAndExpand = FilterDisableSelectExpand(entitytSet, item.SelectAndExpand),
                 Skip = item.SkipOption,
                 SkipToken = skipToken,
                 Top = top
@@ -172,7 +213,7 @@ namespace OdataToEntity.Writers
 
             int restCount = GetRestCountNavigation((int?)item.TopOption, readCount, totalCount);
             String skipToken = OeSkipTokenParser.GetSkipToken(_queryContext.EdmModel, keys, restCount);
-            return GetNavigationUri(_queryContext.EdmModel, entryFactory, item, orderByClause, value, skipToken);
+            return GetNavigationUri(entryFactory, item, orderByClause, value, skipToken);
         }
         public Uri GetNextPageLinkRoot(OeEntryFactory entryFactory, int readCount, int? totalCount, Object value)
         {
@@ -187,7 +228,11 @@ namespace OdataToEntity.Writers
             if (restCount == 0)
                 return null;
 
+            IEdmEntitySet entitySet = OeQueryContext.GetEntitySet(_queryContext.ODataUri.Path, _queryContext.ParseNavigationSegments);
+            SelectExpandClause selectExpandClause = FilterDisableSelectExpand(entitySet, _queryContext.ODataUri.SelectAndExpand);
+
             ODataUri nextOdataUri = _queryContext.ODataUri.Clone();
+            nextOdataUri.SelectAndExpand = selectExpandClause;
             nextOdataUri.ServiceRoot = null;
             nextOdataUri.QueryCount = null;
             nextOdataUri.Top = pageSize;

@@ -81,7 +81,7 @@ namespace OdataToEntity.Test
             Type itemType = Parsers.OeExpressionHelper.GetCollectionItemType(value.GetType());
             if (itemType.Name.StartsWith("<>"))
             {
-                Type entityType = Parsers.OeExpressionHelper.GetCollectionItemType(matched.Property.PropertyType);
+                Type entityType = Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(matched.Property.PropertyType);
                 value = AnonumousToEntity(entityType, (IEnumerable)value);
             }
             return matched.Filter((IEnumerable)value);
@@ -128,7 +128,7 @@ namespace OdataToEntity.Test
                 return openType;
             }
 
-            Type type = Parsers.OeExpressionHelper.GetCollectionItemType(entity.GetType());
+            Type type = Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(entity.GetType());
             if (type == null)
             {
                 if (Parsers.OeExpressionHelper.IsEntityType(entity.GetType()))
@@ -140,7 +140,7 @@ namespace OdataToEntity.Test
                     var openType = new SortedDictionary<String, Object>(StringComparer.Ordinal);
                     foreach (PropertyInfo property in entity.GetType().GetProperties())
                     {
-                        type = Parsers.OeExpressionHelper.GetCollectionItemType(property.PropertyType);
+                        type = Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(property.PropertyType);
                         bool isEntityType;
                         if (type == null)
                         {

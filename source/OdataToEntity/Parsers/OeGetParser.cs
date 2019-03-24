@@ -2,7 +2,6 @@
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Threading;
@@ -13,31 +12,27 @@ namespace OdataToEntity.Parsers
     public readonly struct OeGetParser
     {
         private readonly IEdmModel _edmModel;
+        private readonly Query.OeModelBoundQueryProvider _modelBoundQueryProvider;
 
-        public OeGetParser(IEdmModel model)
+        public OeGetParser(IEdmModel edmModel) : this(edmModel, null)
+        {
+        }
+        public OeGetParser(IEdmModel model, Query.OeModelBoundQueryProvider modelBoundQueryProvider)
         {
             _edmModel = model;
+            _modelBoundQueryProvider = modelBoundQueryProvider;
         }
 
-        internal static BinaryOperatorNode CreateFilterExpression(SingleValueNode singleValueNode, IEnumerable<KeyValuePair<IEdmStructuralProperty, Object>> keys)
-        {
-            BinaryOperatorNode compositeNode = null;
-            foreach (KeyValuePair<IEdmStructuralProperty, Object> keyValue in keys)
-            {
-                var left = new SingleValuePropertyAccessNode(singleValueNode, keyValue.Key);
-                var right = new ConstantNode(keyValue.Value, ODataUriUtils.ConvertToUriLiteral(keyValue.Value, ODataVersion.V4));
-                var node = new BinaryOperatorNode(BinaryOperatorKind.Equal, left, right);
-
-                if (compositeNode == null)
-                    compositeNode = node;
-                else
-                    compositeNode = new BinaryOperatorNode(BinaryOperatorKind.And, compositeNode, node);
-            }
-            return compositeNode;
-        }
         public async Task ExecuteAsync(ODataUri odataUri, OeRequestHeaders headers, Stream stream, CancellationToken cancellationToken)
         {
-            var queryContext = new OeQueryContext(_edmModel, odataUri, headers.MaxPageSize, headers.NavigationNextLink, headers.MetadataLevel);
+            var queryContext = new OeQueryContext(_edmModel, odataUri)
+            {
+                MaxPageSize = headers.MaxPageSize,
+                MetadataLevel = headers.MetadataLevel,
+                NavigationNextLink = headers.NavigationNextLink,
+                ModelBoundQueryProvider = _modelBoundQueryProvider
+            };
+
             if (queryContext.ODataUri.Path.LastSegment is OperationSegment)
             {
                 using (Db.OeAsyncEnumerator asyncEnumerator = OeOperationHelper.ApplyBoundFunction(queryContext))

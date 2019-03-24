@@ -19,10 +19,10 @@ namespace OdataToEntity.Test.Model
         {
             return new OrderContext(OrderContextOptions.Create(_useRelationalNulls, null));
         }
-        public static ModelBuilder.OeEdmModelMetadataProvider CreateMetadataProvider(bool useRelationalNulls, String databaseName, OeModelBoundAttribute useModelBoundAttribute)
+        public static ModelBuilder.OeEdmModelMetadataProvider CreateMetadataProvider(bool useRelationalNulls, String databaseName)
         {
             using (var dbContext = new OrderContext(OrderContextOptions.Create(useRelationalNulls, databaseName)))
-                return new OeEfCoreEdmModelMetadataProvider(dbContext.Model, useModelBoundAttribute);
+                return new OeEfCoreEdmModelMetadataProvider(dbContext.Model);
         }
 
         Db.OeDataAdapter ITestDbDataAdapter.DbDataAdapter => this;

@@ -30,10 +30,7 @@ namespace OdataToEntity.Ef6
         }
         protected override OeAsyncEnumerator ExecutePrimitive(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
         {
-            Type itemType = Parsers.OeExpressionHelper.GetCollectionItemType(returnType);
-            if (itemType != null)
-                returnType = itemType;
-
+            returnType = Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(returnType) ?? returnType;
             DbRawSqlQuery query = ((DbContext)dataContext).Database.SqlQuery(returnType, sql, GetParameterValues(parameters));
             return OeAsyncEnumerator.Create(query, CancellationToken.None);
         }

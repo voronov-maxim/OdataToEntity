@@ -53,6 +53,22 @@ namespace OdataToEntity.Parsers
             value = Convert.ChangeType(constantExpression.Value, targetType, CultureInfo.InvariantCulture);
             return Expression.Constant(value);
         }
+        public static BinaryOperatorNode CreateFilterExpression(SingleValueNode singleValueNode, IEnumerable<KeyValuePair<IEdmStructuralProperty, Object>> keys)
+        {
+            BinaryOperatorNode compositeNode = null;
+            foreach (KeyValuePair<IEdmStructuralProperty, Object> keyValue in keys)
+            {
+                var left = new SingleValuePropertyAccessNode(singleValueNode, keyValue.Key);
+                var right = new ConstantNode(keyValue.Value, ODataUriUtils.ConvertToUriLiteral(keyValue.Value, ODataVersion.V4));
+                var node = new BinaryOperatorNode(BinaryOperatorKind.Equal, left, right);
+
+                if (compositeNode == null)
+                    compositeNode = node;
+                else
+                    compositeNode = new BinaryOperatorNode(BinaryOperatorKind.And, compositeNode, node);
+            }
+            return compositeNode;
+        }
         public static NewExpression CreateTupleExpression(IReadOnlyList<Expression> expressions)
         {
             if (expressions.Count < 8 || (expressions.Count == 8 && IsTupleType(expressions[7].Type)))
@@ -113,15 +129,20 @@ namespace OdataToEntity.Parsers
         }
         public static Type GetCollectionItemType(Type collectionType)
         {
-            if (collectionType.IsPrimitive)
+            return GetCollectionItemTypeOrNull(collectionType) ?? throw new InvalidOperationException("Type " + collectionType.Name + " is not collection type");
+        }
+        public static Type GetCollectionItemTypeOrNull(Type type)
+        {
+            if (type.IsPrimitive)
                 return null;
 
-            if (collectionType.IsGenericType && collectionType.GetGenericTypeDefinition() == typeof(IEnumerable<>))
-                return collectionType.GetGenericArguments()[0];
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+                return type.GetGenericArguments()[0];
 
-            foreach (Type iface in collectionType.GetInterfaces())
+            foreach (Type iface in type.GetInterfaces())
                 if (iface.IsGenericType && iface.GetGenericTypeDefinition() == typeof(IEnumerable<>))
                     return iface.GetGenericArguments()[0];
+
             return null;
         }
         public static IReadOnlyList<MemberExpression> GetPropertyExpressions(Expression instance)

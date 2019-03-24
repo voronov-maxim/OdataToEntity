@@ -151,13 +151,6 @@ namespace OdataToEntity.ModelBuilder
             foreach (IEdmModel refModel in refModels)
                 edmModel.AddReferencedModel(refModel);
 
-            if (_metadataProvider.UseModelBoundAttribute == OeModelBoundAttribute.Yes)
-            {
-                Query.OeModelBoundQueryProvider modelBoundQueryProvider = BuildModelBoundQueryProvider(edmModel, entityTypeInfos);
-                edmModel.SetModelBoundQueryProvider(modelBoundQueryProvider);
-                foreach (IEdmModel refModel in refModels)
-                    refModel.SetModelBoundQueryProvider(modelBoundQueryProvider);
-            }
             return edmModel;
         }
         private Dictionary<Type, EntityTypeInfo> BuildEntityTypes(IEdmModel[] refModels)
@@ -211,7 +204,7 @@ namespace OdataToEntity.ModelBuilder
         private EdmFunction BuildFunction(OeOperationConfiguration operationConfiguration, Dictionary<Type, EntityTypeInfo> entityTypeInfos)
         {
             IEdmTypeReference edmTypeReference;
-            Type itemType = Parsers.OeExpressionHelper.GetCollectionItemType(operationConfiguration.ReturnType);
+            Type itemType = Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(operationConfiguration.ReturnType);
             if (itemType == null)
                 edmTypeReference = GetEdmTypeReference(operationConfiguration.ReturnType, entityTypeInfos);
             else
@@ -226,11 +219,6 @@ namespace OdataToEntity.ModelBuilder
             }
 
             return edmFunction;
-        }
-        private Query.OeModelBoundQueryProvider BuildModelBoundQueryProvider(IEdmModel edmModel, Dictionary<Type, EntityTypeInfo> entityTypeInfos)
-        {
-            var modelBoundAttributeReader = new Query.ModelBoundAttributeReader(edmModel, entityTypeInfos);
-            return modelBoundAttributeReader.BuildProvider();
         }
         private static EdmStructuralProperty[] CreateDependentEdmProperties(EdmEntityType edmDependent, IReadOnlyList<PropertyInfo> dependentStructuralProperties)
         {
@@ -319,13 +307,8 @@ namespace OdataToEntity.ModelBuilder
                 return typeRef;
 
             Type itemType = Parsers.OeExpressionHelper.GetCollectionItemType(clrType);
-            if (itemType != null)
-            {
-                typeRef = GetEdmTypeReference(itemType, entityTypeInfos);
-                return new EdmCollectionTypeReference(new EdmCollectionType(typeRef));
-            }
-
-            throw new InvalidOperationException("Not suppoertyed parameter type " + clrType.FullName);
+            typeRef = GetEdmTypeReference(itemType, entityTypeInfos);
+            return new EdmCollectionTypeReference(new EdmCollectionType(typeRef));
         }
     }
 }

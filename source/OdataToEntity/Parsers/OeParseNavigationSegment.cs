@@ -25,7 +25,7 @@ namespace OdataToEntity.Parsers
                 propertyValues.Add(new KeyValuePair<IEdmStructuralProperty, Object>(property, keyValue.Value));
             }
 
-            return new FilterClause(OeGetParser.CreateFilterExpression(refNode, propertyValues), refNode.RangeVariable);
+            return new FilterClause(OeExpressionHelper.CreateFilterExpression(refNode, propertyValues), refNode.RangeVariable);
         }
         public static IEdmEntitySet GetEntitySet(IReadOnlyList<OeParseNavigationSegment> navigationSegments)
         {

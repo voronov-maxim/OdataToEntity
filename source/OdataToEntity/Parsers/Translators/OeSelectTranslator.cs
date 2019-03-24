@@ -194,14 +194,6 @@ namespace OdataToEntity.Parsers.Translators
                     selectItemTranslator.Translate(_navigationItem, selectItemClause);
             }
 
-            SelectItem[] selectExpandItems = _edmModel.GetSelectExpandItems(_navigationItem.EntitySet.EntityType());
-            if (selectExpandItems != null)
-            {
-                var selectItemTranslator = new OeSelectItemTranslator(_edmModel, navigationNextLink, false);
-                foreach (SelectItem selecExpandItem in selectExpandItems)
-                    selectItemTranslator.Translate(_navigationItem, selecExpandItem);
-            }
-
             _navigationItem.AddKeyRecursive(_metadataLevel != OeMetadataLevel.Full);
             _navigationItem.AddForeignKeyRecursive();
         }
@@ -347,10 +339,7 @@ namespace OdataToEntity.Parsers.Translators
             Type clrEntityType = _edmModel.GetClrType(navigationItem.EdmProperty.DeclaringType);
             PropertyInfo navigationClrProperty = clrEntityType.GetPropertyIgnoreCase(navigationItem.EdmProperty);
 
-            Type itemType = OeExpressionHelper.GetCollectionItemType(navigationClrProperty.PropertyType);
-            if (itemType == null)
-                itemType = navigationClrProperty.PropertyType;
-
+            Type itemType = OeExpressionHelper.GetCollectionItemTypeOrNull(navigationClrProperty.PropertyType) ?? navigationClrProperty.PropertyType;
             var visitor = new OeQueryNodeVisitor(_joinBuilder.Visitor, Expression.Parameter(itemType));
             var expressionBuilder = new OeExpressionBuilder(_joinBuilder, visitor);
 

@@ -8,14 +8,10 @@ namespace OdataToEntity.EfCore
     {
         public static EdmModel BuildEdmModelFromEfCoreModel(this Db.OeDataAdapter dataAdapter, params IEdmModel[] refModels)
         {
-            return dataAdapter.BuildEdmModelFromEfCoreModel(OeModelBoundAttribute.No, refModels);
-        }
-        public static EdmModel BuildEdmModelFromEfCoreModel(this Db.OeDataAdapter dataAdapter, OeModelBoundAttribute useModelBoundAttribute, params IEdmModel[] refModels)
-        {
             var context = (DbContext)dataAdapter.CreateDataContext();
             try
             {
-                var modelBuilder = new OeEdmModelBuilder(dataAdapter, new OeEfCoreEdmModelMetadataProvider(context.Model, useModelBoundAttribute));
+                var modelBuilder = new OeEdmModelBuilder(dataAdapter, new OeEfCoreEdmModelMetadataProvider(context.Model));
                 return modelBuilder.BuildEdmModel(refModels);
             }
             finally

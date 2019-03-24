@@ -13,10 +13,7 @@ namespace OdataToEntity.EfCore
         private readonly IModel _efModel;
         private readonly Dictionary<Type, IEntityType> _entityTypes;
 
-        public OeEfCoreEdmModelMetadataProvider(IModel model) : this(model, OdataToEntity.OeModelBoundAttribute.No)
-        {
-        }
-        public OeEfCoreEdmModelMetadataProvider(IModel model, OeModelBoundAttribute useModelBoundAttribute) : base(useModelBoundAttribute)
+        public OeEfCoreEdmModelMetadataProvider(IModel model)
         {
             _efModel = model;
             _entityTypes = _efModel.GetEntityTypes().ToDictionary(e => e.ClrType);

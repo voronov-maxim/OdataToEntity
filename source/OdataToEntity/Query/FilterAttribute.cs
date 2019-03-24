@@ -4,19 +4,19 @@ using System.Collections.Generic;
 namespace OdataToEntity.Query
 {
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Property, AllowMultiple = true)]
-    public sealed class OrderByAttribute : Attribute
+    public sealed class FilterAttribute : Attribute
     {
         private bool _disable;
 
-        private OrderByAttribute(bool disabled)
+        private FilterAttribute(bool disabled)
         {
             _disable = disabled;
         }
-        public OrderByAttribute(params String[] properties)
+        public FilterAttribute(params String[] properties)
         {
-            OrderByConfigurations = new Dictionary<String, bool>();
+            FilterConfigurations = new Dictionary<String, bool>();
             foreach (String key in properties)
-                OrderByConfigurations[key] = true;
+                FilterConfigurations[key] = true;
         }
 
         public bool Disabled
@@ -28,12 +28,12 @@ namespace OdataToEntity.Query
             set
             {
                 _disable = value;
-                if (OrderByConfigurations != null)
-                    foreach (String item in OrderByConfigurations.Keys)
-                        OrderByConfigurations[item] = !_disable;
+                if (FilterConfigurations != null)
+                    foreach (String item in FilterConfigurations.Keys)
+                        FilterConfigurations[item] = !_disable;
             }
         }
 
-        public Dictionary<String, bool> OrderByConfigurations { get; }
+        public Dictionary<String, bool> FilterConfigurations { get; }
     }
 }

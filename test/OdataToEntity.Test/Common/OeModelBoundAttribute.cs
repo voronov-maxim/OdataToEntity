@@ -1,4 +1,4 @@
-﻿namespace OdataToEntity
+﻿namespace OdataToEntity.Test
 {
     public enum OeModelBoundAttribute
     {

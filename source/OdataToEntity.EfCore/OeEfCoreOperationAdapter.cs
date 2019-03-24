@@ -62,7 +62,7 @@ namespace OdataToEntity.EfCore
             var connection = dbContext.GetService<IRelationalConnection>();
             IRelationalCommand command = CreateCommand(dataContext, sql, parameters, out Dictionary<String, Object> parameterValues);
 
-            if (Parsers.OeExpressionHelper.GetCollectionItemType(returnType) == null)
+            if (Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(returnType) == null)
             {
                 Task<Object> scalarResult = command.ExecuteScalarAsync(connection, parameterValues);
                 return OeAsyncEnumerator.Create(scalarResult, CancellationToken.None);

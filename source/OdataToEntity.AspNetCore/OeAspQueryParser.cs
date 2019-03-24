@@ -39,7 +39,12 @@ namespace OdataToEntity.AspNetCore
         }
         private OeAsyncEnumerator ExecuteGet(IEdmModel refModel, ODataUri odataUri, OeRequestHeaders headers, CancellationToken cancellationToken, IQueryable source)
         {
-            _queryContext = new OeQueryContext(refModel, odataUri, headers.MaxPageSize, headers.NavigationNextLink, headers.MetadataLevel);
+            _queryContext = new OeQueryContext(refModel, odataUri)
+            {
+                MaxPageSize = headers.MaxPageSize,
+                NavigationNextLink = headers.NavigationNextLink,
+                MetadataLevel = headers.MetadataLevel
+            };
 
             if (odataUri.Path.LastSegment is OperationSegment)
                 return OeOperationHelper.ApplyBoundFunction(_queryContext);

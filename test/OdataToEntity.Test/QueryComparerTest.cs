@@ -175,7 +175,7 @@ namespace OdataToEntity.Test
             var fixture = new NC_RDBNull_DbFixtureInitDb();
             for (int i = 0; i < requestMethodNames.Length; i++)
             {
-                var queryContext = new OeQueryContext(fixture.EdmModel, fixture.ParseUri(requestMethodNames[i].Request), 0, false, OeMetadataLevel.Minimal);
+                var queryContext = new OeQueryContext(fixture.EdmModel, fixture.ParseUri(requestMethodNames[i].Request));
                 int hash = OeCacheComparer.GetCacheCode(queryContext.CreateCacheContext());
                 if (!hashes.TryGetValue(hash, out List<String> value))
                 {
@@ -195,8 +195,8 @@ namespace OdataToEntity.Test
             var fixture = new NC_RDBNull_DbFixtureInitDb();
             for (int i = 0; i < requestMethodNames.Length; i++)
             {
-                var queryContext1 = new OeQueryContext(fixture.EdmModel, fixture.ParseUri(requestMethodNames[i].Request), 0, false, OeMetadataLevel.Minimal);
-                var queryContext2 = new OeQueryContext(fixture.EdmModel, fixture.ParseUri(requestMethodNames[i].Request), 0, false, OeMetadataLevel.Minimal);
+                var queryContext1 = new OeQueryContext(fixture.EdmModel, fixture.ParseUri(requestMethodNames[i].Request));
+                var queryContext2 = new OeQueryContext(fixture.EdmModel, fixture.ParseUri(requestMethodNames[i].Request));
 
                 var constantToParameterMapper = new FakeReadOnlyDictionary<ConstantNode, OeQueryCacheDbParameterDefinition>();
                 if (queryContext1.ODataUri.Skip != null)
@@ -217,7 +217,7 @@ namespace OdataToEntity.Test
 
                 for (int j = i + 1; j < requestMethodNames.Length; j++)
                 {
-                    queryContext2 = new OeQueryContext(fixture.EdmModel, fixture.ParseUri(requestMethodNames[j].Request), 0, false, OeMetadataLevel.Minimal);
+                    queryContext2 = new OeQueryContext(fixture.EdmModel, fixture.ParseUri(requestMethodNames[j].Request));
 
                     constantToParameterMapper = new FakeReadOnlyDictionary<ConstantNode, OeQueryCacheDbParameterDefinition>();
                     result = new OeCacheComparer(constantToParameterMapper, false).Compare(cacheContext1, cacheContext2);

@@ -108,7 +108,7 @@ namespace OdataToEntity.Test
         }
         protected static IEnumerable CreateCollection(Type type)
         {
-            Type itemType = OeExpressionHelper.GetCollectionItemType(type);
+            Type itemType = OeExpressionHelper.GetCollectionItemTypeOrNull(type);
             return (IEnumerable)Activator.CreateInstance(typeof(List<>).MakeGenericType(itemType));
         }
         protected Object CreateEntity(ODataResource resource, IReadOnlyList<NavigationProperty> navigationProperties)

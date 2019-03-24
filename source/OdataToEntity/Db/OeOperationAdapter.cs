@@ -34,7 +34,7 @@ namespace OdataToEntity.Db
         {
             String sql = GetSql(dataContext, parameters);
             String functionName = GetOperationCaseSensitivityName(operationName, GetDefaultSchema(dataContext));
-            String selectSql = (OeExpressionHelper.GetCollectionItemType(returnType) == null ? "select " : "select * from ") + functionName + sql.ToString();
+            String selectSql = (OeExpressionHelper.GetCollectionItemTypeOrNull(returnType) == null ? "select " : "select * from ") + functionName + sql.ToString();
             return ExecutePrimitive(dataContext, selectSql, parameters, returnType);
         }
         public virtual OeAsyncEnumerator ExecuteFunctionReader(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters, OeEntitySetAdapter entitySetAdapter)

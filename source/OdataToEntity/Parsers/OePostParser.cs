@@ -30,9 +30,10 @@ namespace OdataToEntity.Parsers
 
             OePropertyAccessor[] accessors = OePropertyAccessor.CreateFromType(_edmModel.GetClrType(entitySet), entitySet);
             Db.OeEntitySetAdapter entitySetAdapter = _dataAdapter.EntitySetAdapters.Find(entitySet);
-            return new OeQueryContext(_edmModel, odataUri, entitySetAdapter, metadataLevel)
+            return new OeQueryContext(_edmModel, odataUri, entitySetAdapter)
             {
                 EntryFactory = new OeEntryFactory(entitySet, accessors, Array.Empty<OePropertyAccessor>()),
+                MetadataLevel = metadataLevel
             };
         }
         public async Task ExecuteAsync(ODataUri odataUri, Stream requestStream, OeRequestHeaders headers, Stream responseStream, CancellationToken cancellationToken)

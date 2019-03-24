@@ -8,12 +8,8 @@ namespace OdataToEntity.ModelBuilder
 {
     public class OeEdmModelMetadataProvider
     {
-        public OeEdmModelMetadataProvider() : this(OeModelBoundAttribute.No)
+        public OeEdmModelMetadataProvider()
         {
-        }
-        public OeEdmModelMetadataProvider(OeModelBoundAttribute useModelBoundAttribute)
-        {
-            UseModelBoundAttribute = useModelBoundAttribute;
         }
 
         public virtual PropertyInfo[] GetForeignKey(PropertyInfo propertyInfo)
@@ -49,10 +45,7 @@ namespace OdataToEntity.ModelBuilder
             if (inverse == null)
                 return null;
 
-            Type clrType = OeExpressionHelper.GetCollectionItemType(propertyInfo.PropertyType);
-            if (clrType == null)
-                clrType = propertyInfo.PropertyType;
-
+            Type clrType = OeExpressionHelper.GetCollectionItemTypeOrNull(propertyInfo.PropertyType) ?? propertyInfo.PropertyType;
             return clrType.GetPropertyIgnoreCase(inverse.Property);
         }
         public virtual int GetOrder(PropertyInfo propertyInfo)
@@ -83,7 +76,5 @@ namespace OdataToEntity.ModelBuilder
             if (clrProperties.Length > 1)
                 Array.Sort(clrProperties, (x, y) => GetOrder(x).CompareTo(GetOrder(y)));
         }
-
-        public OeModelBoundAttribute UseModelBoundAttribute { get; }
     }
 }

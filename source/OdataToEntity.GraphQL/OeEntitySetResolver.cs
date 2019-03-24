@@ -28,7 +28,7 @@ namespace OdataToEntity.GraphQL
 
             try
             {
-                var queryContext = new Parsers.OeQueryContext(refModel, odataUri, 0, false, OeMetadataLevel.Minimal);
+                var queryContext = new Parsers.OeQueryContext(refModel, odataUri);
                 Db.OeAsyncEnumerator asyncEnumerator = dataAdapter.ExecuteEnumerator(context.UserContext, queryContext, CancellationToken.None);
                 using (var entityAsyncEnumerator = new OeGraphqlAsyncEnumerator(asyncEnumerator, queryContext.EntryFactory, queryContext))
                 {

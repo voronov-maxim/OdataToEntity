@@ -83,7 +83,6 @@ namespace OdataToEntity.Test.Model
         [Required]
         public String CustomerCountry { get; set; }
         public int CustomerId { get; set; }
-
         [Select(SelectExpandType.Automatic)]
         public DateTimeOffset? Date { get; set; }
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -117,6 +116,7 @@ namespace OdataToEntity.Test.Model
         public int? Count { get; set; }
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         [Select(SelectExpandType.Disabled)]
+        [Filter(Disabled = true)]
         public int Id { get; set; }
         public Order Order { get; set; }
         [Select(SelectExpandType.Disabled)]

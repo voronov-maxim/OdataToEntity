@@ -169,14 +169,7 @@ namespace OdataToEntity.Parsers.Translators
             foreach (IEdmStructuralProperty edmProperty in structuralProperties)
             {
                 PropertyInfo clrProperty = instance.Type.GetPropertyIgnoreCase(edmProperty);
-                if (clrProperty != null)
-                    expressions.Add(Expression.Property(instance, clrProperty));
-            }
-
-            if (expressions.Count == 0)
-            {
-                instance = OeExpressionHelper.GetPropertyExpressions(instance)[0];
-                return GetGroupJoinKeySelector(instance, structuralProperties);
+                expressions.Add(Expression.Property(instance, clrProperty));
             }
 
             if (expressions.Count == 1)
@@ -268,7 +261,7 @@ namespace OdataToEntity.Parsers.Translators
             if (propertyExpression == null)
                 return null;
 
-            PropertyInfo propertyInfo = propertyExpression.Type.GetPropertyIgnoreCase(edmProperty);
+            PropertyInfo propertyInfo = propertyExpression.Type.GetPropertyIgnoreCaseOrNull(edmProperty);
             if (propertyInfo != null)
                 return Expression.Property(propertyExpression, propertyInfo);
 

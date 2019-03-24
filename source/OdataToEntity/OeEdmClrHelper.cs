@@ -199,11 +199,25 @@ namespace OdataToEntity
 
             return null;
         }
+        public static IEdmEntitySetBase GetEntitySet(IEdmModel edmModel, ExpandedNavigationSelectItem item)
+        {
+            var entitySet = (IEdmEntitySetBase)item.NavigationSource;
+            if (entitySet == null)
+            {
+                var segment = (NavigationPropertySegment)item.PathToNavigationProperty.LastSegment;
+                entitySet = OeEdmClrHelper.GetEntitySet(edmModel, segment.NavigationProperty);
+            }
+            return entitySet;
+        }
         public static PropertyInfo GetPropertyIgnoreCase(this Type declaringType, String propertyName)
         {
             return declaringType.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase);
         }
         public static PropertyInfo GetPropertyIgnoreCase(this Type declaringType, IEdmProperty edmProperty)
+        {
+            return declaringType.GetPropertyIgnoreCaseOrNull(edmProperty) ?? throw new InvalidOperationException("EdmProperty " + edmProperty.Name + " not found in type " + declaringType.FullName);
+        }
+        public static PropertyInfo GetPropertyIgnoreCaseOrNull(this Type declaringType, IEdmProperty edmProperty)
         {
             var schemaElement = (IEdmSchemaElement)edmProperty.DeclaringType;
             do
@@ -227,16 +241,32 @@ namespace OdataToEntity
         public static Object GetValue(IEdmModel edmModel, ODataCollectionValue odataValue)
         {
             IList list = null;
+            int nullCount = 0;
             foreach (Object odataItem in odataValue.Items)
             {
                 Object listItem = GetValue(edmModel, odataItem);
                 if (list == null)
                 {
-                    Type listType = typeof(List<>).MakeGenericType(new[] { listItem.GetType() });
-                    list = (IList)Activator.CreateInstance(listType);
+                    if (listItem == null)
+                        nullCount++;
+                    else
+                    {
+                        Type listType = typeof(List<>).MakeGenericType(new[] { listItem.GetType() });
+                        list = (IList)Activator.CreateInstance(listType);
+
+                        while (nullCount > 0)
+                        {
+                            list.Add(null);
+                            nullCount--;
+                        }
+                    }
                 }
                 list.Add(listItem);
             }
+
+            if (nullCount > 0)
+                list = new Object[nullCount];
+
             return list;
         }
         public static Object GetValue(IEdmModel edmModel, ODataResource odataValue)

@@ -61,7 +61,8 @@ namespace OdataToEntity.Writers
             foreach (ODataProperty entryProperty in entry.Properties)
                 if (String.CompareOrdinal(entryProperty.Name, propertyName) == 0)
                     return entryProperty;
-            return null;
+
+            throw new InvalidOperationException("Property " + propertyName + " not found in ODataResource");
         }
     }
 }

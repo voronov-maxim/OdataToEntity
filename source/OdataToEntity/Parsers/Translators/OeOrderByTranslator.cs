@@ -33,8 +33,10 @@ namespace OdataToEntity.Parsers.Translators
             {
                 var propertyNode = (SingleValuePropertyAccessNode)orderByClause.Expression;
                 Expression keySelector = joinBuilder.GetJoinPropertyExpression(source, joinBuilder.Visitor.Parameter, joinPath, propertyNode.Property);
-                LambdaExpression lambda = Expression.Lambda(keySelector, parameterExpression);
+                if (keySelector == null)
+                    throw new InvalidOperationException("Sorting EdmProperty " + propertyNode.Property.Name + " not found in source");
 
+                LambdaExpression lambda = Expression.Lambda(keySelector, parameterExpression);
                 MethodInfo orderByMethodInfo = GetOrderByMethodInfo(source, orderByClause.Direction, parameterExpression.Type, keySelector.Type);
                 source = Expression.Call(orderByMethodInfo, source, lambda);
 

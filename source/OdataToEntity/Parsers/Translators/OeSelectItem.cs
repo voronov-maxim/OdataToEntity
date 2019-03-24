@@ -34,7 +34,7 @@ namespace OdataToEntity.Parsers.Translators
             segments.AddRange(item.PathToNavigationProperty);
 
             EdmProperty = segment.NavigationProperty;
-            EntitySet = (IEdmEntitySetBase)item.NavigationSource ?? OeEdmClrHelper.GetEntitySet(edmModel, segment.NavigationProperty);
+            EntitySet = OeEdmClrHelper.GetEntitySet(edmModel, item);
             NavigationSelectItem = item;
             Parent = parent;
             Path = new ODataPath(segments);

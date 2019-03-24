@@ -83,7 +83,7 @@ namespace OdataToEntity.Test
                 {
                     Type keyType = ((LambdaExpression)node.Arguments[1]).ReturnType;
 
-                    Type sourceType = Parsers.OeExpressionHelper.GetCollectionItemType(node.Arguments[0].Type);
+                    Type sourceType = Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(node.Arguments[0].Type);
                     MethodInfo method = typeof(Enumerable).GetMethods().Single(m => m.Name == node.Method.Name && m.GetParameters().Length == 3);
                     MethodInfo sortMethod = method.GetGenericMethodDefinition().MakeGenericMethod(new Type[] { sourceType, keyType });
 

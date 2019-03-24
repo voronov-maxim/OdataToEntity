@@ -101,12 +101,12 @@ namespace OdataToEntity.Parsers.Translators
             if (!OeExpressionHelper.IsPrimitiveType(expression.Type))
                 if (OeExpressionHelper.IsTupleType(expression.Type))
                 {
-                    var proeprtyTranslator = new OePropertyTranslator(_source);
-                    MemberExpression propertyExpression = proeprtyTranslator.Build(expression, _propertyDef);
+                    var propertyTranslator = new OePropertyTranslator(_source);
+                    MemberExpression propertyExpression = propertyTranslator.Build(expression, _propertyDef);
                     if (propertyExpression != null)
                     {
                         _foundProperty = (PropertyInfo)propertyExpression.Member;
-                        _expressions.AddRange(proeprtyTranslator._expressions);
+                        _expressions.AddRange(propertyTranslator._expressions);
                         return true;
                     }
                 }

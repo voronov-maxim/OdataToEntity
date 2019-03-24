@@ -64,7 +64,7 @@ namespace OdataToEntity.Test
                 if (value == null)
                 {
                     PropertyInfo clrProprety = entityType.GetProperty(property.Name);
-                    Type type = Parsers.OeExpressionHelper.GetCollectionItemType(clrProprety.PropertyType);
+                    Type type = Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(clrProprety.PropertyType);
                     if (type == null)
                         type = clrProprety.PropertyType;
 

@@ -1,5 +1,4 @@
 ﻿using Microsoft.OData.Edm;
-using Microsoft.OData.UriParser;
 using OdataToEntity.ModelBuilder;
 using System;
 using System.Reflection;
@@ -10,24 +9,38 @@ namespace OdataToEntity
     {
         public static Type GetClrType(this IEdmModel edmModel, IEdmType edmType)
         {
+            Type clrType = GetClrTypeImpl(edmModel, edmType);
+            if (clrType == null)
+                throw new InvalidOperationException("Add type annotation for " + edmType.FullTypeName());
+
+            return clrType;
+        }
+        private static Type GetClrTypeImpl(IEdmModel edmModel, IEdmType edmType)
+        {
             if (edmType.TypeKind == EdmTypeKind.Primitive)
                 return PrimitiveTypeHelper.GetClrType((edmType as IEdmPrimitiveType).PrimitiveKind);
 
-            OeValueAnnotation<Type> clrTypeAnnotation = edmModel.GetAnnotationValue<OeValueAnnotation<Type>>(edmType);
-            if (clrTypeAnnotation != null)
-                return clrTypeAnnotation.Value;
+            Type clrType = edmModel.GetAnnotationValue<Type>(edmType);
+            if (clrType != null)
+                return clrType;
 
             if (edmType is IEdmCollectionType collectionType)
-                return edmModel.GetClrType(collectionType.ElementType.Definition);
+                return GetClrTypeImpl(edmModel, collectionType.ElementType.Definition);
 
-            throw new InvalidOperationException("Add type annotation for " + edmType.FullTypeName());
+            foreach (IEdmModel refModel in edmModel.ReferencedModels)
+            {
+                clrType = GetClrTypeImpl(refModel, edmType);
+                if (clrType != null)
+                    return clrType;
+            }
+
+            return null;
         }
         public static Type GetClrType(this IEdmModel edmModel, IEdmEntitySetBase entitySet)
         {
             IEdmEntityType entityType = entitySet.EntityType();
             edmModel = OeEdmClrHelper.GetEdmModel(edmModel, entityType);
-            OeValueAnnotation<Type> clrTypeAnnotation = edmModel.GetAnnotationValue<OeValueAnnotation<Type>>(entityType);
-            return clrTypeAnnotation.Value;
+            return edmModel.GetAnnotationValue<Type>(entityType);
         }
         public static Db.OeDataAdapter GetDataAdapter(this IEdmModel edmModel, Type dataContextType)
         {
@@ -46,6 +59,9 @@ namespace OdataToEntity
             Db.OeDataAdapter dataAdapter = edmModel.GetAnnotationValue<Db.OeDataAdapter>(entityContainer);
             if (dataAdapter == null)
                 dataAdapter = edmModel.GetEdmModel(entityContainer).GetAnnotationValue<Db.OeDataAdapter>(entityContainer);
+
+            if (dataAdapter == null)
+                throw new InvalidOperationException("OeDataAdapter not found in EdmModel");
 
             return dataAdapter;
         }
@@ -78,14 +94,6 @@ namespace OdataToEntity
             IEdmModel refModel = OeEdmClrHelper.GetEdmModel(edmModel, (IEdmEntityType)edmProperty.DeclaringType);
             return edmModel.GetAnnotationValue<T>(edmProperty);
         }
-        public static Query.OeModelBoundQueryProvider GetModelBoundQueryProvider(this IEdmModel edmModel)
-        {
-            return ExtensionMethods.GetAnnotationValue<Query.OeModelBoundQueryProvider>(edmModel, edmModel);
-        }
-        public static SelectItem[] GetSelectExpandItems(this IEdmModel edmModel, IEdmEntityType entityType)
-        {
-            return edmModel.GetEdmModel(entityType).GetAnnotationValue<SelectItem[]>(entityType);
-        }
         public static bool IsDbFunction(this IEdmModel edmModel, IEdmOperation edmOperation)
         {
             OeValueAnnotation<bool> valueAnnotation = edmModel.GetAnnotationValue<OeValueAnnotation<bool>>(edmOperation);
@@ -93,7 +101,7 @@ namespace OdataToEntity
         }
         public static void SetClrType(this IEdmModel edmModel, IEdmType edmType, Type clrType)
         {
-            edmModel.SetAnnotationValue(edmType, new OeValueAnnotation<Type>(clrType));
+            edmModel.SetAnnotationValue(edmType, clrType);
         }
         public static void SetDataAdapter(this IEdmModel edmModel, EdmEntityContainer entityContainer, Db.OeDataAdapter dataAdapter)
         {
@@ -123,14 +131,6 @@ namespace OdataToEntity
         {
             IEdmModel refModel = OeEdmClrHelper.GetEdmModel(edmModel, (IEdmEntityType)edmProperty.DeclaringType);
             refModel.SetAnnotationValue(edmProperty, attribute);
-        }
-        public static void SetModelBoundQueryProvider(this IEdmModel edmModel, Query.OeModelBoundQueryProvider modelBoundQueryProvider)
-        {
-            edmModel.SetAnnotationValue(edmModel, modelBoundQueryProvider);
-        }
-        public static void SetSelectExpandItems(this IEdmModel edmModel, IEdmEntityType entityType, SelectItem[] selectExpandItems)
-        {
-            OeEdmClrHelper.GetEdmModel(edmModel, entityType).SetAnnotationValue(entityType, selectExpandItems);
         }
     }
 }

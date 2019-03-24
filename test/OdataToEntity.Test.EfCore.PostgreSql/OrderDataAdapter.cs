@@ -12,13 +12,13 @@ namespace OdataToEntity.Test.Model
         {
         }
 
-        public static ModelBuilder.OeEdmModelMetadataProvider CreateMetadataProvider(bool useRelationalNulls, String databaseName, OeModelBoundAttribute useModelBoundAttribute)
+        public static ModelBuilder.OeEdmModelMetadataProvider CreateMetadataProvider(bool useRelationalNulls, String databaseName)
         {
             using (var dbContext = new OrderContext(OrderContextOptions.Create(useRelationalNulls, databaseName)))
             {
                 var model = (IMutableModel)dbContext.Model;
                 model.Relational().DefaultSchema = "dbo";
-                return new OeEfCoreEdmModelMetadataProvider(model, useModelBoundAttribute);
+                return new OeEfCoreEdmModelMetadataProvider(model);
             }
         }
 

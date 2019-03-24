@@ -1,4 +1,5 @@
 ﻿using Microsoft.OData.Edm;
+using Microsoft.OData.UriParser;
 using System.Collections.Generic;
 
 namespace OdataToEntity.Query
@@ -14,22 +15,21 @@ namespace OdataToEntity.Query
             _queryPropertySettings = new Dictionary<IEdmProperty, OeModelBoundQuerySettings>();
         }
 
+        public void AddFilterDisabled(IEdmProperty edmProperty)
+        {
+            GetQuerySettings(edmProperty).Filterable = false;
+        }
+        public void AddFilterDisabled(IEdmNavigationProperty navigationProperty, IEdmProperty edmProperty)
+        {
+            GetQuerySettings(navigationProperty).NotFilterableCollection.Add(edmProperty);
+        }
         public void AddOrderByDisabled(IEdmProperty edmProperty)
         {
             GetQuerySettings(edmProperty).Orderable = false;
         }
-        public void AddOrderByDisabled(IEnumerable<IEdmProperty> edmProperties)
-        {
-            foreach (IEdmProperty edmProperty in edmProperties)
-                GetQuerySettings(edmProperty).Orderable = false;
-        }
         public void AddOrderByDisabled(IEdmNavigationProperty navigationProperty, IEdmProperty edmProperty)
         {
             GetQuerySettings(navigationProperty).NotOrderableCollection.Add(edmProperty);
-        }
-        public void AddOrderByDisabled(IEdmNavigationProperty navigationProperty, IEnumerable<IEdmProperty> edmProperties)
-        {
-            GetQuerySettings(navigationProperty).NotOrderableCollection.UnionWith(edmProperties);
         }
         public OeModelBoundQueryProvider Build()
         {
@@ -74,6 +74,10 @@ namespace OdataToEntity.Query
         {
             if (maxTop > 0)
                 GetQuerySettings(navigationProperty).MaxTop = maxTop;
+        }
+        public void SetSelectExpandItems(IEdmEntityType entityType, SelectItem[] selectExpandItems)
+        {
+            GetQuerySettings(entityType).SelectExpandItems = selectExpandItems;
         }
     }
 }

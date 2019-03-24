@@ -81,7 +81,7 @@ namespace OdataToEntity.Parsers
                     e = Expression.MakeMemberAccess(parameter, navigationClrProperty);
 
                     MethodInfo selectMethodInfo;
-                    selectType = OeExpressionHelper.GetCollectionItemType(e.Type);
+                    selectType = OeExpressionHelper.GetCollectionItemTypeOrNull(e.Type);
                     if (selectType == null)
                     {
                         selectType = e.Type;
