@@ -20,22 +20,22 @@ namespace OdataToEntity
                 EnableCaseInsensitive = true;
             }
 
-            public override IEnumerable<IEdmOperation> ResolveBoundOperations(IEdmModel model, String identifier, IEdmType bindingType)
+            public override IEnumerable<IEdmOperation> ResolveBoundOperations(IEdmModel edmModel, String identifier, IEdmType bindingType)
             {
                 if (identifier.IndexOf('.') != -1)
-                    return base.ResolveBoundOperations(model, identifier, bindingType);
+                    return base.ResolveBoundOperations(edmModel, identifier, bindingType);
 
                 var edmOperations = new List<IEdmOperation>();
 
-                foreach (IEdmSchemaElement element in model.SchemaElements)
+                foreach (IEdmSchemaElement element in edmModel.SchemaElements)
                     if (element is IEdmOperation edmOperation &&
                         edmOperation.IsBound &&
                         String.Compare(edmOperation.Name, identifier, StringComparison.OrdinalIgnoreCase) == 0 &&
                         edmOperation.HasEquivalentBindingType(bindingType))
                         edmOperations.Add(edmOperation);
 
-                foreach (IEdmModel refModel in model.ReferencedModels)
-                    if (refModel.EntityContainer != null)
+                foreach (IEdmModel refModel in edmModel.ReferencedModels)
+                    if (refModel.EntityContainer != null && refModel is EdmModel)
                         edmOperations.AddRange(ResolveBoundOperations(refModel, identifier, bindingType));
 
                 return edmOperations;
@@ -44,19 +44,19 @@ namespace OdataToEntity
             {
                 return OeEdmClrHelper.GetEntitySet(model, identifier);
             }
-            public override IEnumerable<IEdmOperationImport> ResolveOperationImports(IEdmModel model, String identifier)
+            public override IEnumerable<IEdmOperationImport> ResolveOperationImports(IEdmModel edmModel, String identifier)
             {
-                IEnumerable<IEdmOperationImport> operationImports = model.FindDeclaredOperationImports(identifier);
+                IEnumerable<IEdmOperationImport> operationImports = edmModel.FindDeclaredOperationImports(identifier);
                 if (operationImports != null && operationImports.Any())
                     return operationImports;
 
-                foreach (IEdmEntityContainerElement element in model.EntityContainer.Elements)
+                foreach (IEdmEntityContainerElement element in edmModel.EntityContainer.Elements)
                     if (element is IEdmOperationImport operationImport &&
                         String.Compare(operationImport.Name, identifier, StringComparison.OrdinalIgnoreCase) == 0)
                         return new[] { operationImport };
 
-                foreach (IEdmModel refModel in model.ReferencedModels)
-                    if (refModel.EntityContainer != null)
+                foreach (IEdmModel refModel in edmModel.ReferencedModels)
+                    if (refModel.EntityContainer != null && refModel is EdmModel)
                     {
                         operationImports = ResolveOperationImports(refModel, identifier);
                         if (operationImports != null && operationImports.Any())
@@ -96,16 +96,16 @@ namespace OdataToEntity
 
         private readonly Uri _baseUri;
         private readonly IEdmModel _edmModel;
-        private readonly Query.OeModelBoundQueryProvider _modelBoundQueryProvider;
+        private readonly Query.OeModelBoundProvider _modelBoundProvider;
 
         public OeParser(Uri baseUri, IEdmModel edmModel) : this(baseUri, edmModel, null)
         {
         }
-        public OeParser(Uri baseUri, IEdmModel edmModel, Query.OeModelBoundQueryProvider modelBoundQueryProvider)
+        public OeParser(Uri baseUri, IEdmModel edmModel, Query.OeModelBoundProvider modelBoundProvider)
         {
             _baseUri = baseUri;
             _edmModel = edmModel;
-            _modelBoundQueryProvider = modelBoundQueryProvider;
+            _modelBoundProvider = modelBoundProvider;
         }
 
         public async Task<String> ExecuteBatchAsync(Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
@@ -130,7 +130,7 @@ namespace OdataToEntity
         }
         public async Task ExecuteQueryAsync(ODataUri odataUri, OeRequestHeaders headers, Stream responseStream, CancellationToken cancellationToken)
         {
-            var parser = new Parsers.OeGetParser(_edmModel.GetEdmModel(odataUri.Path), _modelBoundQueryProvider);
+            var parser = new Parsers.OeGetParser(_edmModel.GetEdmModel(odataUri.Path), _modelBoundProvider);
             await parser.ExecuteAsync(odataUri, headers, responseStream, cancellationToken).ConfigureAwait(false);
         }
         public async Task ExecuteOperationAsync(ODataUri odataUri, OeRequestHeaders headers, Stream requestStream, Stream responseStream, CancellationToken cancellationToken)

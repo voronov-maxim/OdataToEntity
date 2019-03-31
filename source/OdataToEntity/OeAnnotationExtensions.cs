@@ -28,11 +28,12 @@ namespace OdataToEntity
                 return GetClrTypeImpl(edmModel, collectionType.ElementType.Definition);
 
             foreach (IEdmModel refModel in edmModel.ReferencedModels)
-            {
-                clrType = GetClrTypeImpl(refModel, edmType);
-                if (clrType != null)
-                    return clrType;
-            }
+                if (refModel is EdmModel)
+                {
+                    clrType = GetClrTypeImpl(refModel, edmType);
+                    if (clrType != null)
+                        return clrType;
+                }
 
             return null;
         }
@@ -49,7 +50,7 @@ namespace OdataToEntity
                 return dataAdapter;
 
             foreach (IEdmModel refModel in edmModel.ReferencedModels)
-                if (refModel.EntityContainer != null)
+                if (refModel.EntityContainer != null && refModel is EdmModel)
                     return refModel.GetDataAdapter(dataContextType);
 
             throw new InvalidOperationException("OeDataAdapter not found for data context type " + dataContextType.FullName);
@@ -85,15 +86,6 @@ namespace OdataToEntity
         {
             return edmModel.GetAnnotationValue<MethodInfo>(edmFunction);
         }
-        public static T GetModelBoundAttribute<T>(this IEdmModel edmModel, IEdmEntityType entityType) where T : Attribute
-        {
-            return edmModel.GetEdmModel(entityType).GetAnnotationValue<T>(entityType);
-        }
-        public static T GetModelBoundAttribute<T>(this IEdmModel edmModel, IEdmProperty edmProperty) where T : Attribute
-        {
-            IEdmModel refModel = OeEdmClrHelper.GetEdmModel(edmModel, (IEdmEntityType)edmProperty.DeclaringType);
-            return edmModel.GetAnnotationValue<T>(edmProperty);
-        }
         public static bool IsDbFunction(this IEdmModel edmModel, IEdmOperation edmOperation)
         {
             OeValueAnnotation<bool> valueAnnotation = edmModel.GetAnnotationValue<OeValueAnnotation<bool>>(edmOperation);
@@ -122,15 +114,6 @@ namespace OdataToEntity
         internal static void SetMethodInfo(this IEdmModel edmModel, IEdmFunction edmFunction, MethodInfo methodInfo)
         {
             edmModel.SetAnnotationValue(edmFunction, methodInfo);
-        }
-        public static void SetModelBoundAttribute<T>(this IEdmModel edmModel, IEdmEntityType entityType, T attribute) where T : Attribute
-        {
-            OeEdmClrHelper.GetEdmModel(edmModel, entityType).SetAnnotationValue(entityType, attribute);
-        }
-        public static void SetModelBoundAttribute<T>(this IEdmModel edmModel, IEdmProperty edmProperty, T attribute) where T : Attribute
-        {
-            IEdmModel refModel = OeEdmClrHelper.GetEdmModel(edmModel, (IEdmEntityType)edmProperty.DeclaringType);
-            refModel.SetAnnotationValue(edmProperty, attribute);
         }
     }
 }

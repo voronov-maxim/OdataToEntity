@@ -29,10 +29,6 @@ namespace OdataToEntity.ModelBuilder
                 if (joinNavigationProperty == null)
                     continue;
 
-                var targetNavigationProperty = (IEdmNavigationProperty)_entityTypeInfos[join.DeclaringType].EdmType.FindProperty(join.Name);
-                if (targetNavigationProperty == null)
-                    continue;
-
                 EntityTypeInfo principalInfo = _entityTypeInfos[join.PropertyType];
                 EntityTypeInfo dependentInfo = _entityTypeInfos[many.DeclaringType];
 
@@ -47,6 +43,7 @@ namespace OdataToEntity.ModelBuilder
                 };
                 EdmNavigationProperty edmManyToManyProperty = dependentInfo.EdmType.AddUnidirectionalNavigation(edmDependentInfo);
 
+                var targetNavigationProperty = (IEdmNavigationProperty)_entityTypeInfos[join.DeclaringType].EdmType.GetPropertyIgnoreCase(join.Name);
                 var manyToManyJoinDescription = new ManyToManyJoinDescription(join.DeclaringType, joinNavigationProperty, targetNavigationProperty);
                 _edmModel.SetAnnotationValue(edmManyToManyProperty, manyToManyJoinDescription);
             }

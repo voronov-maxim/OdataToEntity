@@ -101,11 +101,12 @@ namespace OdataToEntity
                     return edmModel;
 
             foreach (IEdmModel refModel in edmModel.ReferencedModels)
-            {
-                IEdmModel foundModel = GetEdmModel(refModel, entityType);
-                if (foundModel != null)
-                    return foundModel;
-            }
+                if (refModel is EdmModel)
+                {
+                    IEdmModel foundModel = GetEdmModel(refModel, entityType);
+                    if (foundModel != null)
+                        return foundModel;
+                }
 
             return null;
         }
@@ -169,7 +170,7 @@ namespace OdataToEntity
                         return (IEdmEntitySet)binding.Target;
 
             foreach (IEdmModel refModel in edmModel.ReferencedModels)
-                if (refModel.EntityContainer != null)
+                if (refModel.EntityContainer != null && refModel is EdmModel)
                 {
                     IEdmEntitySet entitySet = GetEntitySet(refModel, navigationProperty);
                     if (entitySet != null)
@@ -190,7 +191,7 @@ namespace OdataToEntity
                     return edmEntitySet;
 
             foreach (IEdmModel refModel in edmModel.ReferencedModels)
-                if (refModel.EntityContainer != null)
+                if (refModel.EntityContainer != null && refModel is EdmModel)
                 {
                     entitySet = GetEntitySet(refModel, entitySetName);
                     if (entitySet != null)
@@ -208,6 +209,14 @@ namespace OdataToEntity
                 entitySet = OeEdmClrHelper.GetEntitySet(edmModel, segment.NavigationProperty);
             }
             return entitySet;
+        }
+        public static IEdmProperty GetPropertyIgnoreCase(this IEdmStructuredType entityType, String propertyName)
+        {
+            foreach (IEdmProperty edmProperty in entityType.Properties())
+                if (String.Compare(edmProperty.Name, propertyName, StringComparison.OrdinalIgnoreCase) == 0)
+                    return edmProperty;
+
+            throw new InvalidOperationException("Property " + propertyName + " not found in IEdmStructuredType" + entityType.FullTypeName());
         }
         public static PropertyInfo GetPropertyIgnoreCase(this Type declaringType, String propertyName)
         {

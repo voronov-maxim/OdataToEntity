@@ -256,7 +256,8 @@ namespace OdataToEntity.Parsers
                         return true;
 
             foreach (IEdmModel refModel in edmModel.ReferencedModels)
-                return IsEntityType(refModel, entityType);
+                if (refModel is EdmModel)
+                    return IsEntityType(refModel, entityType);
 
             return false;
         }

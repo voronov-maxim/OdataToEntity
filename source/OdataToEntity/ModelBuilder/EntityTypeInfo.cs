@@ -37,7 +37,7 @@ namespace OdataToEntity.ModelBuilder
                 PropertyInfo key = ClrType.GetPropertyIgnoreCase("id");
                 if (key != null)
                 {
-                    var edmProperty = (EdmStructuralProperty)EdmType.Properties().Single(p => p.Name == key.Name);
+                    var edmProperty = (EdmStructuralProperty)EdmType.GetPropertyIgnoreCase(key.Name);
                     _keyProperties.Add(new KeyValuePair<PropertyInfo, EdmStructuralProperty>(key, edmProperty));
                 }
                 else
@@ -51,7 +51,7 @@ namespace OdataToEntity.ModelBuilder
                         throw new InvalidOperationException("Key property not matching");
                     }
 
-                    var edmProperty = (EdmStructuralProperty)EdmType.Properties().Single(p => p.Name == key.Name);
+                    var edmProperty = (EdmStructuralProperty)EdmType.GetPropertyIgnoreCase(key.Name);
                     _keyProperties.Add(new KeyValuePair<PropertyInfo, EdmStructuralProperty>(key, edmProperty));
                 }
             }

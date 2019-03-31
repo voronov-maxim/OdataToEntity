@@ -228,7 +228,7 @@ namespace OdataToEntity.ModelBuilder
             EdmStructuralProperty[] dependentEdmProperties;
             dependentEdmProperties = new EdmStructuralProperty[dependentStructuralProperties.Count];
             for (int i = 0; i < dependentEdmProperties.Length; i++)
-                dependentEdmProperties[i] = (EdmStructuralProperty)edmDependent.FindProperty(dependentStructuralProperties[i].Name);
+                dependentEdmProperties[i] = (EdmStructuralProperty)edmDependent.GetPropertyIgnoreCase(dependentStructuralProperties[i].Name);
             return dependentEdmProperties;
         }
         private static EdmNavigationProperty CreateNavigationProperty(FKeyInfo fkeyInfo)

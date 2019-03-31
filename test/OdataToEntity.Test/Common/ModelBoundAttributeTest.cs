@@ -8,16 +8,9 @@ using Xunit;
 
 namespace OdataToEntity.Test
 {
-    public class ModelBoundAttributeDbFixture : DbFixtureInitDb
+    public abstract class ModelBoundTest
     {
-        public ModelBoundAttributeDbFixture() : base(false, true, OeModelBoundAttribute.Yes)
-        {
-        }
-    }
-
-    public sealed class ModelBoundAttributeTest : IClassFixture<ModelBoundAttributeDbFixture>
-    {
-        public ModelBoundAttributeTest(ModelBoundAttributeDbFixture fixture)
+        protected ModelBoundTest(DbFixtureInitDb fixture)
         {
             fixture.Initalize().GetAwaiter().GetResult();
             Fixture = fixture;
@@ -86,25 +79,6 @@ namespace OdataToEntity.Test
             }
             Assert.Throws<ODataErrorException>(() => { });
         }
-        [Fact]
-        public async Task ExpandSelectFailed()
-        {
-            var parameters = new QueryParameters<Customer, Object>()
-            {
-                RequestUri = "Customers?$select=AltOrders",
-            };
-
-            try
-            {
-                await Fixture.Execute(parameters).ConfigureAwait(false);
-            }
-            catch (ODataErrorException e)
-            {
-                if (e.Message == "Structural property AltOrders not selectable")
-                    return;
-            }
-            Assert.Throws<ODataErrorException>(() => { });
-        }
         [Fact(Skip = SelectTest.SkipTest)]
         public async Task Filter()
         {
@@ -117,13 +91,14 @@ namespace OdataToEntity.Test
                     {
                         Customer = new
                         {
-                            o.Customer.Address,
-                            o.Customer.Country,
-                            o.Customer.Id,
                             o.Customer.Name,
                             Orders = o.Customer.Orders.Select(z => new
                             {
-                                z.Customer,
+                                Customer = new
+                                {
+                                    z.Customer.Name,
+                                    z.Customer.Sex
+                                },
                                 Items = o.Items.Select(i => new
                                 {
                                     i.Count,
@@ -199,13 +174,14 @@ namespace OdataToEntity.Test
                     {
                         Customer = new
                         {
-                            o.Customer.Address,
-                            o.Customer.Country,
-                            o.Customer.Id,
                             o.Customer.Name,
                             Orders = o.Customer.Orders.Select(z => new
                             {
-                                z.Customer,
+                                Customer = new
+                                {
+                                    z.Customer.Name,
+                                    z.Customer.Sex
+                                },
                                 Items = o.Items.Select(i => new
                                 {
                                     i.Count,
@@ -280,13 +256,14 @@ namespace OdataToEntity.Test
                     {
                         Customer = new
                         {
-                            o.Customer.Address,
-                            o.Customer.Country,
-                            o.Customer.Id,
                             o.Customer.Name,
                             Orders = o.Customer.Orders.Select(z => new
                             {
-                                z.Customer,
+                                Customer = new
+                                {
+                                    z.Customer.Name,
+                                    z.Customer.Sex
+                                },
                                 Items = o.Items.Select(i => new
                                 {
                                     i.Count,
@@ -311,6 +288,25 @@ namespace OdataToEntity.Test
                     })
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
+        }
+        [Fact]
+        public async Task SelectExpandFailed()
+        {
+            var parameters = new QueryParameters<Customer, Object>()
+            {
+                RequestUri = "Customers?$select=AltOrders",
+            };
+
+            try
+            {
+                await Fixture.Execute(parameters).ConfigureAwait(false);
+            }
+            catch (ODataErrorException e)
+            {
+                if (e.Message == "Structural property AltOrders not selectable")
+                    return;
+            }
+            Assert.Throws<ODataErrorException>(() => { });
         }
         [Fact]
         public async Task SelectFailed()

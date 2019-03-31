@@ -169,7 +169,7 @@ namespace OdataToEntity.Test
             int count = queryCache.CacheCount;
 
             foreach (IEdmModel refModel in edmModel.ReferencedModels)
-                if (refModel.EntityContainer != null)
+                if (refModel.EntityContainer != null && refModel is EdmModel)
                     count += GetQueryCacheCount(refModel);
 
             return queryCache.AllowCache ? count : -1;

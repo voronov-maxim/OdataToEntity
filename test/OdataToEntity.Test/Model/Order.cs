@@ -21,6 +21,15 @@ namespace OdataToEntity.Test.Model
     [Table("Customers", Schema = "dbo")]
     public sealed class Customer
     {
+        public Customer()
+        {
+            Address = OpenTypeConverter.NotSetString;
+            Country = OpenTypeConverter.NotSetString;
+            Id = int.MinValue;
+            Name = OpenTypeConverter.NotSetString;
+            Sex = (Sex)Int32.MinValue;
+        }
+
         public String Address { get; set; }
         [InverseProperty(nameof(Order.AltCustomer))]
         [Expand(SelectExpandType.Disabled)]
@@ -79,6 +88,7 @@ namespace OdataToEntity.Test.Model
         public Customer AltCustomer { get; set; }
         [ForeignKey("CustomerCountry,CustomerId")]
         [Expand(SelectExpandType.Automatic)]
+        [Select("Name", "Sex", SelectType = SelectExpandType.Automatic)]
         public Customer Customer { get; set; }
         [Required]
         public String CustomerCountry { get; set; }

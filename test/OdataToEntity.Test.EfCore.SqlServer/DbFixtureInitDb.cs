@@ -10,8 +10,8 @@ namespace OdataToEntity.Test
         private bool _initialized;
         private int _queryCount;
 
-        protected DbFixtureInitDb(bool allowCache, bool useRelationalNulls, OeModelBoundAttribute useModelBoundAttribute)
-            : base(allowCache, useRelationalNulls, useModelBoundAttribute)
+        protected DbFixtureInitDb(bool allowCache, bool useRelationalNulls, ModelBoundTestKind modelBoundTestKind)
+            : base(allowCache, useRelationalNulls, modelBoundTestKind)
         {
         }
 
@@ -54,8 +54,8 @@ namespace OdataToEntity.Test
         private bool _initialized;
         private int _queryCount;
 
-        protected ManyColumnsFixtureInitDb(bool allowCache, bool useRelationalNulls, OeModelBoundAttribute useModelBoundAttribute)
-            : base(allowCache, useRelationalNulls, useModelBoundAttribute)
+        protected ManyColumnsFixtureInitDb(bool allowCache, bool useRelationalNulls, ModelBoundTestKind modelBoundTestKind)
+            : base(allowCache, useRelationalNulls, modelBoundTestKind)
         {
         }
 

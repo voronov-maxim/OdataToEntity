@@ -195,7 +195,7 @@ namespace OdataToEntity.Test
         {
             ODataUri odataUri = fixture.ParseUri(request);
             IEdmModel edmModel = fixture.EdmModel.GetEdmModel(odataUri.Path);
-            var parser = new OeParser(odataUri.ServiceRoot, edmModel);
+            var parser = new OeParser(odataUri.ServiceRoot, edmModel, fixture.ModelBoundProvider);
             var requestUri = new Uri(odataUri.ServiceRoot, request);
             Uri uri = requestUri;
             OeRequestHeaders requestHeaders = OeRequestHeaders.JsonDefault.SetMaxPageSize(maxPageSize).SetNavigationNextLink(navigationNextLink);
@@ -216,7 +216,7 @@ namespace OdataToEntity.Test
                 if (maxPageSize > 0)
                     Assert.InRange(result.Count, 0, maxPageSize);
 
-                var navigationPropertyParser = new OeParser(odataUri.ServiceRoot, edmModel);
+                var navigationPropertyParser = new OeParser(odataUri.ServiceRoot, edmModel, fixture.ModelBoundProvider);
                 foreach (dynamic order in result)
                 {
                     using (var dbContext = fixture.CreateContext())
@@ -228,7 +228,7 @@ namespace OdataToEntity.Test
                     var navigationProperty = (IEnumerable)order.Items;
                     ODataResourceSetBase resourceSet = reader.GetResourceSet(navigationProperty);
 
-                    if (!navigationNextLink)
+                    if (!navigationNextLink && !uri.OriginalString.Contains("$skiptoken="))
                         Assert.Equal(expectedCount, resourceSet.Count);
 
                     var navigationPropertyResponse = new MemoryStream();

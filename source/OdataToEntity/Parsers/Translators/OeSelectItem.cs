@@ -19,12 +19,10 @@ namespace OdataToEntity.Parsers.Translators
             _structuralItems = new List<OeStructuralSelectItem>();
             _structuralItemsSkipToken = new List<OeStructuralSelectItem>();
         }
-        public OeNavigationSelectItem(IEdmModel edmModel, ODataUri odataUri) : this()
+        public OeNavigationSelectItem(ODataUri odataUri) : this()
         {
             EntitySet = GetEntitySet(odataUri.Path);
             Path = odataUri.Path;
-
-            PageSize = GetPageSize(edmModel, EntitySet, null);
         }
         public OeNavigationSelectItem(IEdmModel edmModel, OeNavigationSelectItem parent, ExpandedNavigationSelectItem item, bool skipToken) : this()
         {
@@ -39,9 +37,6 @@ namespace OdataToEntity.Parsers.Translators
             Parent = parent;
             Path = new ODataPath(segments);
             SkipToken = skipToken;
-
-            if (EdmProperty.Type.IsCollection() && !EdmProperty.ContainsTarget)
-                PageSize = GetPageSize(edmModel, null, EdmProperty);
         }
 
         internal void AddKeyRecursive(bool skipToken)
@@ -53,9 +48,9 @@ namespace OdataToEntity.Parsers.Translators
             foreach (OeNavigationSelectItem childNavigationItem in _navigationItems)
                 childNavigationItem.AddKeyRecursive(skipToken);
         }
-        internal void AddForeignKeyRecursive()
+        internal void AddForeignKeyRecursive(Query.OeModelBoundProvider modelBoundProvider)
         {
-            if (Parent != null && PageSize > 0)
+            if (Parent != null && modelBoundProvider.GetPageSize(EdmProperty) > 0)
             {
                 IEdmNavigationProperty dependentNavigationProperty = EdmProperty.IsPrincipal() ? EdmProperty.Partner : EdmProperty;
                 foreach (IEdmStructuralProperty key in dependentNavigationProperty.DependentProperties())
@@ -63,7 +58,7 @@ namespace OdataToEntity.Parsers.Translators
             }
 
             foreach (OeNavigationSelectItem navigationItem in _navigationItems)
-                navigationItem.AddForeignKeyRecursive();
+                navigationItem.AddForeignKeyRecursive(modelBoundProvider);
         }
         internal OeNavigationSelectItem AddOrGetNavigationItem(OeNavigationSelectItem navigationItem)
         {
@@ -76,8 +71,7 @@ namespace OdataToEntity.Parsers.Translators
 
             if (existingNavigationItem.SkipToken && !navigationItem.SkipToken)
                 existingNavigationItem.SkipToken = false;
-
-            if (existingNavigationItem.StructuralItems.Count == 0)
+            else if (existingNavigationItem.StructuralItems.Count == 0)
                 existingNavigationItem._selectAll = true;
 
             return existingNavigationItem;
@@ -163,15 +157,6 @@ namespace OdataToEntity.Parsers.Translators
                 joinPath.Insert(0, navigationItem.EdmProperty);
             return joinPath;
         }
-        private static int GetPageSize(IEdmModel edmModel, IEdmEntitySetBase entitySet, IEdmNavigationProperty navigationProperty)
-        {
-            Query.PageAttribute pageAttribute;
-            if (navigationProperty == null)
-                pageAttribute = edmModel.GetModelBoundAttribute<Query.PageAttribute>(entitySet.EntityType());
-            else
-                pageAttribute = edmModel.GetModelBoundAttribute<Query.PageAttribute>(navigationProperty);
-            return pageAttribute == null ? 0 : pageAttribute.PageSize;
-        }
         public IReadOnlyList<OeStructuralSelectItem> GetStructuralItemsWithSkipToken()
         {
             if (_structuralItems.Count == 0)
@@ -214,7 +199,6 @@ namespace OdataToEntity.Parsers.Translators
         public OeEntryFactory EntryFactory { get; set; }
         public IReadOnlyList<OeNavigationSelectItem> NavigationItems => _navigationItems;
         public ExpandedNavigationSelectItem NavigationSelectItem { get; }
-        public int PageSize { get; }
         public OeNavigationSelectItem Parent { get; }
         public ODataPath Path { get; }
         public bool SkipToken { get; private set; }

@@ -19,7 +19,7 @@ namespace OdataToEntity.Writers
 
         private SelectExpandClause FilterDisableSelectExpand(IEdmEntitySet entitySet, SelectExpandClause selectExpandClause)
         {
-            if (_queryContext.ModelBoundQueryProvider == null || selectExpandClause == null)
+            if (_queryContext.ModelBoundProvider == null || selectExpandClause == null)
                 return selectExpandClause;
 
             var navigationSelectItem = new ExpandedNavigationSelectItem(new ODataExpandPath(), entitySet, selectExpandClause);
@@ -50,7 +50,13 @@ namespace OdataToEntity.Writers
             foreach (IEdmStructuralProperty structuralProperty in entitySet.EntityType().StructuralProperties())
             {
                 var selectPath = new ODataSelectPath(new PropertySegment(structuralProperty));
-                if (_queryContext.ModelBoundQueryProvider.IsSelectable(selectPath))
+                bool isSelectable;
+                if (navigationSelectItem.PathToNavigationProperty.Count == 0)
+                    isSelectable = _queryContext.ModelBoundProvider.IsSelectable(selectPath, navigationSelectItem.NavigationSource.EntityType());
+                else
+                    isSelectable = _queryContext.ModelBoundProvider.IsSelectable(selectPath, navigationSelectItem);
+
+                if (isSelectable)
                     selectedItems.Add(new PathSelectItem(selectPath));
                 else
                     disabledFound = true;

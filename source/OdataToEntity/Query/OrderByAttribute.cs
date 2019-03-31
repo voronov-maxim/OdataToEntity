@@ -11,12 +11,13 @@ namespace OdataToEntity.Query
         private OrderByAttribute(bool disabled)
         {
             _disable = disabled;
+            OrderByConfigurations = new Dictionary<String, SelectExpandType>();
         }
         public OrderByAttribute(params String[] properties)
         {
-            OrderByConfigurations = new Dictionary<String, bool>();
+            OrderByConfigurations = new Dictionary<String, SelectExpandType>();
             foreach (String key in properties)
-                OrderByConfigurations[key] = true;
+                OrderByConfigurations[key] = SelectExpandType.Allowed;
         }
 
         public bool Disabled
@@ -28,12 +29,11 @@ namespace OdataToEntity.Query
             set
             {
                 _disable = value;
-                if (OrderByConfigurations != null)
-                    foreach (String item in OrderByConfigurations.Keys)
-                        OrderByConfigurations[item] = !_disable;
+                foreach (String item in new List<String>(OrderByConfigurations.Keys))
+                    OrderByConfigurations[item] = _disable ? SelectExpandType.Disabled : SelectExpandType.Allowed;
             }
         }
 
-        public Dictionary<String, bool> OrderByConfigurations { get; }
+        internal Dictionary<String, SelectExpandType> OrderByConfigurations { get; }
     }
 }

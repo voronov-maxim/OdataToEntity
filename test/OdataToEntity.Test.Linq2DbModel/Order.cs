@@ -148,6 +148,15 @@ namespace OdataToEntity.Test.Model
     [Table(Schema="dbo", Name="Customers")]
 	public partial class Customer
 	{
+        public Customer()
+        {
+            Address = OpenTypeConverter.NotSetString;
+            Country = OpenTypeConverter.NotSetString;
+            Id = int.MinValue;
+            Name = OpenTypeConverter.NotSetString;
+            Sex = (Sex)Int32.MinValue;
+        }
+
 		[Column,                Nullable] public string Address { get; set; } // varchar(256)
         [PrimaryKey(Order = 0), NotNull ] public string Country { get; set; } // char(2)
         [PrimaryKey(Order = 1)          ] public int    Id      { get; set; } // int
@@ -265,6 +274,7 @@ namespace OdataToEntity.Test.Model
 		/// </summary>
 		[Association(ThisKey= "CustomerCountry,CustomerId", OtherKey="Country,Id", CanBeNull=false, KeyName="FK_Orders_Customers", BackReferenceName="Orders")]
         [Expand(SelectExpandType.Automatic)]
+        [Select("Name", "Sex", SelectType = SelectExpandType.Automatic)]
         public Customer Customer { get; set; }
 
 		/// <summary>

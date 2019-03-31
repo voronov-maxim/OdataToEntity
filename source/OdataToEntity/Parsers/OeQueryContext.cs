@@ -237,10 +237,10 @@ namespace OdataToEntity.Parsers
         }
         private void ValidateModelBound()
         {
-            if (ModelBoundQueryProvider != null && ODataUri.SkipToken == null)
+            if (ModelBoundProvider != null && ODataUri.SkipToken == null)
             {
                 IEdmEntityType entityType = GetEntitySet(ODataUri.Path, ParseNavigationSegments).EntityType();
-                ModelBoundQueryProvider.Validate(ODataUri, entityType);
+                ModelBoundProvider.Validate(ODataUri, entityType);
             }
         }
 
@@ -251,7 +251,7 @@ namespace OdataToEntity.Parsers
         public bool IsDatabaseNullHighestValue => EdmModel.GetDataAdapter(EdmModel.EntityContainer).IsDatabaseNullHighestValue;
         public int MaxPageSize { get; set; }
         public OeMetadataLevel MetadataLevel { get; set; }
-        public Query.OeModelBoundQueryProvider ModelBoundQueryProvider { get; set; }
+        public Query.OeModelBoundProvider ModelBoundProvider { get; set; }
         public bool NavigationNextLink { get; set; }
         public ODataUri ODataUri { get; }
         public IReadOnlyList<OeParseNavigationSegment> ParseNavigationSegments { get; }

@@ -11,12 +11,13 @@ namespace OdataToEntity.Query
         private FilterAttribute(bool disabled)
         {
             _disable = disabled;
+            FilterConfigurations = new Dictionary<String, SelectExpandType>();
         }
         public FilterAttribute(params String[] properties)
         {
-            FilterConfigurations = new Dictionary<String, bool>();
+            FilterConfigurations = new Dictionary<String, SelectExpandType>();
             foreach (String key in properties)
-                FilterConfigurations[key] = true;
+                FilterConfigurations[key] = SelectExpandType.Allowed;
         }
 
         public bool Disabled
@@ -28,12 +29,11 @@ namespace OdataToEntity.Query
             set
             {
                 _disable = value;
-                if (FilterConfigurations != null)
-                    foreach (String item in FilterConfigurations.Keys)
-                        FilterConfigurations[item] = !_disable;
+                foreach (String item in new List<String>(FilterConfigurations.Keys))
+                    FilterConfigurations[item] = _disable ? SelectExpandType.Disabled : SelectExpandType.Allowed;
             }
         }
 
-        public Dictionary<String, bool> FilterConfigurations { get; }
+        internal Dictionary<String, SelectExpandType> FilterConfigurations { get; }
     }
 }

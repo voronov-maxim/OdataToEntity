@@ -122,8 +122,15 @@ namespace OdataToEntity.Parsers
             if (queryContext.ODataUri.Path.LastSegment is CountSegment)
                 return source;
 
-            var selectTranslator = new Translators.OeSelectTranslator(queryContext.EdmModel, _joinBuilder, queryContext.ODataUri, queryContext.MetadataLevel);
-            source = selectTranslator.Build(source, queryContext);
+            var selectTranslator = new Translators.OeSelectTranslator(queryContext.EdmModel, _joinBuilder, queryContext.ODataUri, queryContext.ModelBoundProvider);
+            var selectTranslatorParameters = new Translators.OeSelectTranslatorParameters()
+            {
+                IsDatabaseNullHighestValue = queryContext.IsDatabaseNullHighestValue,
+                MetadataLevel = queryContext.MetadataLevel,
+                NavigationNextLink = queryContext.NavigationNextLink,
+                SkipTokenNameValues = queryContext.SkipTokenNameValues
+            };
+            source = selectTranslator.Build(source, ref selectTranslatorParameters);
             _entryFactoryFactory = selectTranslator.CreateEntryFactory;
 
             ChangeParameterType(source);

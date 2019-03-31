@@ -12,15 +12,15 @@ namespace OdataToEntity.Parsers
     public readonly struct OeGetParser
     {
         private readonly IEdmModel _edmModel;
-        private readonly Query.OeModelBoundQueryProvider _modelBoundQueryProvider;
+        private readonly Query.OeModelBoundProvider _modelBoundProvider;
 
         public OeGetParser(IEdmModel edmModel) : this(edmModel, null)
         {
         }
-        public OeGetParser(IEdmModel model, Query.OeModelBoundQueryProvider modelBoundQueryProvider)
+        public OeGetParser(IEdmModel model, Query.OeModelBoundProvider modelBoundProvider)
         {
             _edmModel = model;
-            _modelBoundQueryProvider = modelBoundQueryProvider;
+            _modelBoundProvider = modelBoundProvider;
         }
 
         public async Task ExecuteAsync(ODataUri odataUri, OeRequestHeaders headers, Stream stream, CancellationToken cancellationToken)
@@ -30,7 +30,7 @@ namespace OdataToEntity.Parsers
                 MaxPageSize = headers.MaxPageSize,
                 MetadataLevel = headers.MetadataLevel,
                 NavigationNextLink = headers.NavigationNextLink,
-                ModelBoundQueryProvider = _modelBoundQueryProvider
+                ModelBoundProvider = _modelBoundProvider
             };
 
             if (queryContext.ODataUri.Path.LastSegment is OperationSegment)

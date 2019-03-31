@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.OData;
 using Microsoft.OData.Edm;
+using OdataToEntity.Query;
 using OdataToEntity.Test.Model;
 using System;
 using System.Collections;
@@ -16,14 +17,15 @@ namespace OdataToEntity.Test
     public abstract class DbFixture
     {
         private readonly String _databaseName;
-        private readonly Query.OeModelBoundQueryProvider _modelBoundQueryProvider; 
         private readonly bool _useRelationalNulls;
 
-        protected DbFixture(bool allowCache, bool useRelationalNulls, OeModelBoundAttribute useModelBoundAttribute)
+        protected DbFixture(bool allowCache, bool useRelationalNulls, ModelBoundTestKind modelBoundTestKind)
             : this(allowCache, useRelationalNulls, OrderContext.GenerateDatabaseName())
         {
-            if (useModelBoundAttribute == OeModelBoundAttribute.Yes)
-                _modelBoundQueryProvider = new Query.OeModelBoundAttributeReader(EdmModel).BuildProvider();
+            if (modelBoundTestKind == ModelBoundTestKind.Attribute)
+                ModelBoundProvider = new Query.Builder.OeModelBoundAttributeBuilder(EdmModel).BuildProvider();
+            else if (modelBoundTestKind == ModelBoundTestKind.Fluent)
+                ModelBoundProvider = CreateModelBoundProvider(EdmModel);
         }
         private DbFixture(bool allowCache, bool useRelationalNulls, String databaseName)
             : this(useRelationalNulls, databaseName, new OrderDataAdapter(allowCache, useRelationalNulls, databaseName))
@@ -32,7 +34,6 @@ namespace OdataToEntity.Test
         private DbFixture(bool useRelationalNulls, String databaseName, Db.OeDataAdapter dataAdapter)
             : this(useRelationalNulls, databaseName, dataAdapter, OrderDataAdapter.CreateMetadataProvider(useRelationalNulls, databaseName))
         {
-
         }
         private DbFixture(bool useRelationalNulls, String databaseName, Db.OeDataAdapter dataAdapter, ModelBuilder.OeEdmModelMetadataProvider metadataProvider)
             : this(useRelationalNulls, databaseName, OrderContextOptions.BuildEdmModel(dataAdapter, metadataProvider), metadataProvider)
@@ -50,6 +51,31 @@ namespace OdataToEntity.Test
         {
             return new OrderContext(OrderContextOptions.Create(_useRelationalNulls, _databaseName));
         }
+        private static OeModelBoundProvider CreateModelBoundProvider(IEdmModel edmModel)
+        {
+            var modelBoundBuilder = new Query.Builder.OeModelBoundFluentBuilder(edmModel);
+            modelBoundBuilder.EntitySet<Customer>("Customers").EntityType
+                .Expand(SelectExpandType.Disabled, "AltOrders")
+                .Expand(SelectExpandType.Automatic, "Orders")
+                .Property(c => c.Orders).Count(QueryOptionSetting.Disabled);
+
+            modelBoundBuilder.EntitySet<Order>("Orders").EntityType
+                .Count(QueryOptionSetting.Allowed)
+                .Expand(SelectExpandType.Automatic, "Customer", "Items")
+                .Page(2, 1)
+                .Select(SelectExpandType.Automatic, "Name", "Date", "Status")
+                .Property(o => o.Customer).Select(SelectExpandType.Automatic, "Name", "Sex")
+                .Property("Items").Count(QueryOptionSetting.Allowed).Page(2, 1).OrderBy(QueryOptionSetting.Allowed, "Id");
+
+            modelBoundBuilder.EntitySet<OrderItem>("OrderItems").EntityType
+                .Count(QueryOptionSetting.Disabled)
+                .Filter(QueryOptionSetting.Disabled, "Id")
+                .OrderBy(QueryOptionSetting.Disabled)
+                .Select(SelectExpandType.Disabled, "Id", "OrderId");
+
+            return modelBoundBuilder.BuildProvider();
+
+        }
         protected static void EnsureCreated(IEdmModel edmModel)
         {
             Db.OeDataAdapter dataAdapter = edmModel.GetDataAdapter(edmModel.EntityContainer);
@@ -63,7 +89,7 @@ namespace OdataToEntity.Test
             dataAdapter.CloseDataContext(dbContext);
 
             foreach (IEdmModel refModel in edmModel.ReferencedModels)
-                if (refModel.EntityContainer != null)
+                if (refModel.EntityContainer != null && refModel is EdmModel)
                     EnsureCreated(refModel);
         }
         public virtual async Task Execute<T, TResult>(QueryParametersScalar<T, TResult> parameters)
@@ -111,7 +137,7 @@ namespace OdataToEntity.Test
         public async Task<IList> ExecuteOe<TResult>(String requestUri, bool navigationNextLink, int pageSize)
         {
             ODataUri odataUri = ParseUri(requestUri);
-            var parser = new OeParser(odataUri.ServiceRoot, EdmModel, _modelBoundQueryProvider);
+            var parser = new OeParser(odataUri.ServiceRoot, EdmModel, ModelBoundProvider);
             var uri = new Uri(odataUri.ServiceRoot, requestUri);
             OeRequestHeaders requestHeaders = OeRequestHeaders.JsonDefault.SetMaxPageSize(pageSize).SetNavigationNextLink(navigationNextLink);
 
@@ -166,7 +192,8 @@ namespace OdataToEntity.Test
             return OeParser.ParseUri(EdmModel, baseUri, new Uri(baseUri, requestRelativeUri));
         }
 
-        internal EdmModel EdmModel { get; }
-        internal ModelBuilder.OeEdmModelMetadataProvider MetadataProvider { get; }
+        public EdmModel EdmModel { get; }
+        public ModelBuilder.OeEdmModelMetadataProvider MetadataProvider { get; }
+        public Query.OeModelBoundProvider ModelBoundProvider { get; }
     }
 }

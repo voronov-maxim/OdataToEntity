@@ -7,8 +7,8 @@ namespace OdataToEntity.Test
     {
         private bool _initialized;
 
-        protected DbFixtureInitDb(bool allowCache, bool useRelationalNulls, OeModelBoundAttribute useModelBoundAttribute)
-            : base(allowCache, useRelationalNulls, useModelBoundAttribute)
+        protected DbFixtureInitDb(bool allowCache, bool useRelationalNulls, ModelBoundTestKind modelNoundTestKind)
+            : base(allowCache, useRelationalNulls, modelNoundTestKind)
         {
         }
 
@@ -27,8 +27,8 @@ namespace OdataToEntity.Test
     {
         private bool _initialized;
 
-        protected ManyColumnsFixtureInitDb(bool allowCache, bool useRelationalNulls, OeModelBoundAttribute useModelBoundAttribute)
-            : base(allowCache, useRelationalNulls, useModelBoundAttribute)
+        protected ManyColumnsFixtureInitDb(bool allowCache, bool useRelationalNulls, ModelBoundTestKind modelNoundTestKind)
+            : base(allowCache, useRelationalNulls, modelNoundTestKind)
         {
         }
 
