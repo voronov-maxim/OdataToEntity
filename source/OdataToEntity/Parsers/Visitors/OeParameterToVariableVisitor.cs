@@ -15,14 +15,6 @@ namespace OdataToEntity.Parsers
             _constantExpressions = new SortedDictionary<String, ConstantExpression>(StringComparer.Ordinal);
         }
 
-        private Object GetParameterValue(String parameterName)
-        {
-            for (int i = 0; i < _parameterValues.Count; i++)
-                if (String.CompareOrdinal(_parameterValues[i].ParameterName, parameterName) == 0)
-                    return _parameterValues[i].ParameterValue;
-
-            throw new InvalidOperationException("parameter name " + parameterName + " not found");
-        }
         public Expression Translate(Expression expression, IReadOnlyList<Cache.OeQueryCacheDbParameterValue> parameterValues)
         {
             _parameterValues = parameterValues;

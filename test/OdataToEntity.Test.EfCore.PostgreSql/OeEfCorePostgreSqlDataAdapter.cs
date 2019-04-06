@@ -7,16 +7,17 @@ using System.Data;
 
 namespace OdataToEntity.EfCore
 {
-    public class StringList
+    public sealed class StringList
     {
         public string item { get; set; }
     }
+
     public class OeEfCorePostgreSqlDataAdapter<T> : OeEfCoreDataAdapter<T> where T : DbContext
     {
         private sealed class OeEfCorePostgreSqlOperationAdapter : OeEfCoreOperationAdapter
         {
-            public OeEfCorePostgreSqlOperationAdapter(Type dataContextType, OeEntitySetAdapterCollection entitySetAdapters)
-                : base(dataContextType, entitySetAdapters)
+            public OeEfCorePostgreSqlOperationAdapter(Type dataContextType)
+                : base(dataContextType)
             {
             }
 
@@ -53,7 +54,7 @@ namespace OdataToEntity.EfCore
         {
         }
         public OeEfCorePostgreSqlDataAdapter(DbContextOptions options, Cache.OeQueryCache queryCache)
-            : base(options, queryCache, new OeEfCorePostgreSqlOperationAdapter(typeof(T), _entitySetAdapters))
+            : base(options, queryCache, new OeEfCorePostgreSqlOperationAdapter(typeof(T)))
         {
             base.IsDatabaseNullHighestValue = true;
         }

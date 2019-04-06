@@ -90,7 +90,7 @@ namespace OdataToEntity
             bool streaming = true;
 
             int start;
-            start = GetParameterValue(acceptHeader, "odata.metadata", out int valueLength);
+            start = GetParameterValue(acceptHeader, "odata.metadata", out _);
             if (start != -1)
             {
                 if (String.Compare(acceptHeader, start, "none", 0, "none".Length, StringComparison.OrdinalIgnoreCase) == 0)
@@ -99,12 +99,12 @@ namespace OdataToEntity
                     metadataLevel = OeMetadataLevel.Full;
             }
 
-            start = GetParameterValue(acceptHeader, "charset", out valueLength);
+            start = GetParameterValue(acceptHeader, "charset", out int valueLength);
             if (start != -1)
                 if (String.Compare(acceptHeader, start, "utf-8", 0, "utf-8".Length, StringComparison.OrdinalIgnoreCase) != 0)
                     throw new NotSupportedException("charset=" + acceptHeader.Substring(start, valueLength) + " not supported");
 
-            start = GetParameterValue(acceptHeader, "odata.streaming", out valueLength);
+            start = GetParameterValue(acceptHeader, "odata.streaming", out _);
             if (start != -1)
                 streaming = String.Compare(acceptHeader, start, "true", 0, "true".Length, StringComparison.OrdinalIgnoreCase) == 0;
 

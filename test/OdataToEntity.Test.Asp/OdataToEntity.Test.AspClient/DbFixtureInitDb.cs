@@ -144,7 +144,7 @@ namespace OdataToEntity.Test
             var items = new List<T>();
             var newQuery = (DataServiceQuery<T>)query.Provider.CreateQuery<T>(expression);
 
-            DataServiceQueryContinuation<T> continuation = null;
+            DataServiceQueryContinuation<T> continuation;
             for (var response = (QueryOperationResponse<T>)await newQuery.ExecuteAsync(); response != null;
                 continuation = response.GetContinuation(), response = continuation == null ? null : (QueryOperationResponse<T>)await newQuery.Context.ExecuteAsync(continuation))
                 foreach (T item in response)

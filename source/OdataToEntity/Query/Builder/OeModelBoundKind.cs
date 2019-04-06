@@ -2,7 +2,6 @@
 {
     public enum OeModelBoundKind
     {
-        Expand,
         Filter,
         OrderBy,
         Select

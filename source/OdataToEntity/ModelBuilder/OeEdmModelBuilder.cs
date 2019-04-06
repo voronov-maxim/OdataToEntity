@@ -69,8 +69,6 @@ namespace OdataToEntity.ModelBuilder
                         fkeyInfo.EdmNavigationProperty = CreateNavigationProperty(fkeyInfo);
 
             var edmModel = new EdmModel(false);
-            var containers = new Dictionary<Db.OeDataAdapter, EdmEntityContainer>();
-
             edmModel.AddElements(_enumTypes.Values);
             foreach (KeyValuePair<Type, EdmEnumType> enumType in _enumTypes)
                 edmModel.SetClrType(enumType.Value, enumType.Key);

@@ -99,6 +99,7 @@ namespace OdataToEntity.Parsers
             }
         }
 
+        private bool _initialized;
         private int? _restCount;
 
         public OeQueryContext(IEdmModel edmModel, ODataUri odataUri)
@@ -124,6 +125,7 @@ namespace OdataToEntity.Parsers
 
         public Cache.OeCacheContext CreateCacheContext()
         {
+            Initialize();
             return new Cache.OeCacheContext(this);
         }
         public Cache.OeCacheContext CreateCacheContext(IReadOnlyDictionary<ConstantNode, Cache.OeQueryCacheDbParameterDefinition> constantToParameterMapper)
@@ -156,23 +158,7 @@ namespace OdataToEntity.Parsers
         }
         public Expression CreateExpression(out IReadOnlyDictionary<ConstantExpression, ConstantNode> constants)
         {
-            ValidateModelBound();
-
-            if (MaxPageSize > 0)
-            {
-                _restCount = (int?)ODataUri.Top ?? Int32.MaxValue;
-                ODataUri.Top = MaxPageSize;
-            }
-
-            SkipTokenNameValues = Array.Empty<OeSkipTokenNameValue>();
-            if (!(ODataUri.Path.LastSegment is OperationSegment))
-            {
-                ODataUri.OrderBy = GetUniqueOrderBy(ODataUri, ParseNavigationSegments);
-                if (ODataUri.SkipToken == null)
-                    SkipTokenNameValues = Array.Empty<OeSkipTokenNameValue>();
-                else
-                    SkipTokenNameValues = OeSkipTokenParser.ParseSkipToken(EdmModel, ODataUri.OrderBy, ODataUri.SkipToken, out _restCount);
-            }
+            Initialize();
 
             Expression expression;
             var expressionBuilder = new OeExpressionBuilder(JoinBuilder);
@@ -222,6 +208,31 @@ namespace OdataToEntity.Parsers
                 return OeSkipTokenParser.GetUniqueOrderBy(entitySet, odataUri.OrderBy, odataUri.Apply);
 
             return odataUri.OrderBy;
+        }
+        private void Initialize()
+        {
+            if (!_initialized)
+            {
+                _initialized = true;
+
+                ValidateModelBound();
+
+                if (MaxPageSize > 0)
+                {
+                    _restCount = (int?)ODataUri.Top ?? Int32.MaxValue;
+                    ODataUri.Top = MaxPageSize;
+                }
+
+                SkipTokenNameValues = Array.Empty<OeSkipTokenNameValue>();
+                if (!(ODataUri.Path.LastSegment is OperationSegment))
+                {
+                    ODataUri.OrderBy = GetUniqueOrderBy(ODataUri, ParseNavigationSegments);
+                    if (ODataUri.SkipToken == null)
+                        SkipTokenNameValues = Array.Empty<OeSkipTokenNameValue>();
+                    else
+                        SkipTokenNameValues = OeSkipTokenParser.ParseSkipToken(EdmModel, ODataUri.OrderBy, ODataUri.SkipToken, out _restCount);
+                }
+            }
         }
         public bool IsQueryCount()
         {

@@ -72,13 +72,11 @@ namespace OdataToEntity.Db
             private Object _scalarResult;
             private readonly Task<Object> _scalarTask;
             private int _state;
-            private readonly CancellationToken _cancellationToken;
 
             public ScalarEnumeratorAdapter(Task<Object> scalarTask, CancellationToken cancellationToken)
                 : base(cancellationToken)
             {
                 _scalarTask = scalarTask;
-                _cancellationToken = cancellationToken;
             }
 
             public override void Dispose() { }

@@ -124,7 +124,7 @@ namespace OdataToEntity
         {
             ODataUri odataUri = ParseUri(_edmModel, _baseUri, requestUri);
             if (odataUri.Path.LastSegment is OperationImportSegment)
-                await ExecuteOperationAsync(odataUri, headers, null, responseStream, cancellationToken).ConfigureAwait(false);
+                await ExecuteOperationAsync(odataUri, headers, null, responseStream).ConfigureAwait(false);
             else
                 await ExecuteQueryAsync(odataUri, headers, responseStream, cancellationToken).ConfigureAwait(false);
         }
@@ -133,10 +133,10 @@ namespace OdataToEntity
             var parser = new Parsers.OeGetParser(_edmModel.GetEdmModel(odataUri.Path), _modelBoundProvider);
             await parser.ExecuteAsync(odataUri, headers, responseStream, cancellationToken).ConfigureAwait(false);
         }
-        public async Task ExecuteOperationAsync(ODataUri odataUri, OeRequestHeaders headers, Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
+        public async Task ExecuteOperationAsync(ODataUri odataUri, OeRequestHeaders headers, Stream requestStream, Stream responseStream)
         {
             var parser = new Parsers.OePostParser(_edmModel.GetEdmModel(odataUri.Path));
-            await parser.ExecuteAsync(odataUri, requestStream, headers, responseStream, cancellationToken).ConfigureAwait(false);
+            await parser.ExecuteAsync(odataUri, requestStream, headers, responseStream).ConfigureAwait(false);
         }
         public async Task ExecutePostAsync(Uri requestUri, OeRequestHeaders headers, Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
         {
@@ -145,7 +145,7 @@ namespace OdataToEntity
                 await ExecuteBatchAsync(requestStream, responseStream, headers.ContentType, cancellationToken).ConfigureAwait(false);
             else
                 if (odataUri.Path.LastSegment is OperationImportSegment)
-                await ExecuteOperationAsync(odataUri, headers, requestStream, responseStream, cancellationToken).ConfigureAwait(false);
+                await ExecuteOperationAsync(odataUri, headers, requestStream, responseStream).ConfigureAwait(false);
             else
                 await ExecuteQueryAsync(odataUri, headers, responseStream, cancellationToken).ConfigureAwait(false);
         }
@@ -181,19 +181,19 @@ namespace OdataToEntity
 
             throw new InvalidDataException("is not batch stream");
         }
-        public static ODataPath ParsePath(IEdmModel model, Uri serviceRoot, Uri uri)
+        public static ODataPath ParsePath(IEdmModel edmModel, Uri serviceRoot, Uri uri)
         {
-            var uriParser = new ODataUriParser(model, serviceRoot, uri, ServiceProvider.Instance);
+            var uriParser = new ODataUriParser(edmModel, serviceRoot, uri, ServiceProvider.Instance);
             return uriParser.ParsePath();
         }
-        public static ODataUri ParseUri(IEdmModel model, Uri relativeUri)
+        public static ODataUri ParseUri(IEdmModel edmModel, Uri relativeUri)
         {
-            var uriParser = new ODataUriParser(model, relativeUri, ServiceProvider.Instance);
+            var uriParser = new ODataUriParser(edmModel, relativeUri, ServiceProvider.Instance);
             return uriParser.ParseUri();
         }
-        public static ODataUri ParseUri(IEdmModel model, Uri serviceRoot, Uri uri)
+        public static ODataUri ParseUri(IEdmModel edmModel, Uri serviceRoot, Uri uri)
         {
-            var uriParser = new ODataUriParser(model, serviceRoot, uri, ServiceProvider.Instance);
+            var uriParser = new ODataUriParser(edmModel, serviceRoot, uri, ServiceProvider.Instance);
             return uriParser.ParseUri();
         }
     }

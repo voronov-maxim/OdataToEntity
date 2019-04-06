@@ -59,7 +59,7 @@ namespace OdataToEntity.Test
                     return;
                 }
 
-                if (Item is ODataResourceSet set)
+                if (Item is ODataResourceSet)
                 {
                     AddToList((dynamic)value);
                     return;

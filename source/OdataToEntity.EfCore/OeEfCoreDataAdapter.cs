@@ -228,7 +228,7 @@ namespace OdataToEntity.EfCore
         {
         }
         public OeEfCoreDataAdapter(DbContextOptions options, Cache.OeQueryCache queryCache)
-            : this(options, queryCache, new OeEfCoreOperationAdapter(typeof(T), _entitySetAdapters))
+            : this(options, queryCache, new OeEfCoreOperationAdapter(typeof(T)))
         {
         }
         public OeEfCoreDataAdapter(DbContextOptions options, Cache.OeQueryCache queryCache, OeEfCoreOperationAdapter operationAdapter)
@@ -336,13 +336,11 @@ namespace OdataToEntity.EfCore
         private static IAsyncEnumerable<TResult> GetFromCache<TResult>(OeQueryContext queryContext, T dbContext, Cache.OeQueryCache queryCache,
             out MethodCallExpression countExpression)
         {
-            countExpression = null;
             Cache.OeCacheContext cacheContext = queryContext.CreateCacheContext();
             Cache.OeQueryCacheItem queryCacheItem = queryCache.GetQuery(cacheContext);
 
             Func<QueryContext, IAsyncEnumerable<TResult>> queryExecutor;
             IReadOnlyList<Cache.OeQueryCacheDbParameterValue> parameterValues;
-            IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dbContext);
             if (queryCacheItem == null)
             {
                 var parameterVisitor = new OeConstantToParameterVisitor();

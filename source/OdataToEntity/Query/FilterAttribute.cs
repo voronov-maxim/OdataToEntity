@@ -8,7 +8,7 @@ namespace OdataToEntity.Query
     {
         private bool _disable;
 
-        private FilterAttribute(bool disabled)
+        public FilterAttribute(bool disabled)
         {
             _disable = disabled;
             FilterConfigurations = new Dictionary<String, SelectExpandType>();

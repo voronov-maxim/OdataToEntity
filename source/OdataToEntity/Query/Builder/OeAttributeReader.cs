@@ -85,7 +85,7 @@ namespace OdataToEntity.Query.Builder
         private static OeModelBoundKind GetModelBoundKind()
         {
             if (typeof(T) == typeof(ExpandAttribute))
-                return OeModelBoundKind.Expand;
+                return OeModelBoundKind.Select;
 
             if (typeof(T) == typeof(FilterAttribute))
                 return OeModelBoundKind.Filter;
@@ -97,21 +97,6 @@ namespace OdataToEntity.Query.Builder
                 return OeModelBoundKind.Select;
 
             throw new InvalidOperationException("Unknown attribute " + typeof(T).Name);
-        }
-        private IEnumerable<IEdmProperty> GetProperties(IEdmEntityType entityType)
-        {
-            switch (_modelBoundKind)
-            {
-                case OeModelBoundKind.Expand:
-                    return entityType.DeclaredNavigationProperties();
-                case OeModelBoundKind.Filter:
-                case OeModelBoundKind.OrderBy:
-                    return entityType.DeclaredProperties;
-                case OeModelBoundKind.Select:
-                    return entityType.DeclaredStructuralProperties();
-                default:
-                    throw new InvalidOperationException("Unknown OeModelBoundKind " + _modelBoundKind.ToString());
-            }
         }
         private static SelectExpandType IsAllowed(T attribure)
         {
@@ -133,7 +118,6 @@ namespace OdataToEntity.Query.Builder
         {
             switch (_modelBoundKind)
             {
-                case OeModelBoundKind.Expand:
                 case OeModelBoundKind.Select:
                     _modelBoundSettingsBuilder.SetSelect(edmProperty, allowed);
                     break;
@@ -149,7 +133,6 @@ namespace OdataToEntity.Query.Builder
         {
             switch (_modelBoundKind)
             {
-                case OeModelBoundKind.Expand:
                 case OeModelBoundKind.Select:
                     _modelBoundSettingsBuilder.SetSelect(edmProperty, allowed, navigationProperty);
                     break;

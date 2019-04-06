@@ -135,7 +135,7 @@ namespace OdataToEntity.Cache.UriCompare
         }
         private bool Visit(CountVirtualPropertyNode node1, CountVirtualPropertyNode node2)
         {
-            return true;
+            return node1.TypeReference.IsEqual(node2.TypeReference);
         }
         private bool Visit(InNode node1, InNode node2)
         {

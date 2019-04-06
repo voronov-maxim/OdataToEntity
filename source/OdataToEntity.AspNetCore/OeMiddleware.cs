@@ -42,11 +42,11 @@ namespace OdataToEntity.AspNetCore
             else if (httpContext.Request.Path == "/$batch")
                 await InvokeBatch(httpContext);
             else if (httpContext.Request.PathBase == _apiPath)
-                await Invoke(httpContext, httpContext.Request.Path);
+                await InvokeApi(httpContext);
             else
                 await _next(httpContext);
         }
-        private async Task Invoke(HttpContext httpContext, PathString remaining)
+        private async Task InvokeApi(HttpContext httpContext)
         {
             var requestHeaders = (HttpRequestHeaders)httpContext.Request.Headers;
             ((IDictionary<String, StringValues>)requestHeaders).TryGetValue("Prefer", out StringValues preferHeader);

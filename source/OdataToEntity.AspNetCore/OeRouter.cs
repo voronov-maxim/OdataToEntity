@@ -4,10 +4,8 @@ using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Internal;
-using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Routing.Template;
-using Microsoft.OData.Edm;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,14 +17,11 @@ namespace OdataToEntity.AspNetCore
     {
         private readonly ActionDescriptorCollection _actionDescriptors;
         private readonly IActionInvokerFactory _actionInvokerFactory;
-        private readonly IEdmModel _edmModel;
 
-        public OeRouter(IActionInvokerFactory actionInvokerFactory, IActionDescriptorCollectionProvider actionDescriptorCollectionProvider,
-            IEdmModel edmModel)
+        public OeRouter(IActionInvokerFactory actionInvokerFactory, IActionDescriptorCollectionProvider actionDescriptorCollectionProvider)
         {
             _actionInvokerFactory = actionInvokerFactory;
             _actionDescriptors = actionDescriptorCollectionProvider.ActionDescriptors;
-            _edmModel = edmModel;
         }
 
         private static bool ActionConstaint(ActionDescriptor actionDescriptor, String httpMethod)

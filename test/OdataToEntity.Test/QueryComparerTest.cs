@@ -99,6 +99,9 @@ namespace OdataToEntity.Test
             var methodNames = new List<String>();
             foreach (MethodInfo methodInfo in selectTest.GetType().GetMethods().Where(m => m.GetCustomAttributes(typeof(FactAttribute), false).Count() == 1))
             {
+                if (methodInfo.GetCustomAttribute(typeof(NotPerformanceCahe)) != null)
+                    continue;
+
                 Func<SelectTest, Task> testMethod;
                 var factAttribute = (FactAttribute)methodInfo.GetCustomAttribute(typeof(FactAttribute), false);
                 if (factAttribute is TheoryAttribute)
@@ -149,8 +152,7 @@ namespace OdataToEntity.Test
     {
         private sealed class FakeReadOnlyDictionary<TKey, TValue> : Dictionary<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>
         {
-            TValue IReadOnlyDictionary<TKey, TValue>.this[TKey key]
-            {
+            TValue IReadOnlyDictionary<TKey, TValue>.this[TKey key] {
                 get
                 {
                     if (base.TryGetValue(key, out TValue value))

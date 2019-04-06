@@ -35,21 +35,10 @@ namespace OdataToEntity.Parsers
             using (Stream stream = batchRequest.GetStream())
                 return ReadEntityFromStream(edmModel, baseUri, stream, batchRequest.Url, contentType, out entitSet);
         }
-        private static IEdmEntityTypeReference GetEdmEntityTypeRef(ODataPath odataPath, out IEdmEntitySet entitySet)
-        {
-            entitySet = null;
-            foreach (ODataPathSegment segment in odataPath)
-                if (segment is EntitySetSegment entitySegment)
-                {
-                    entitySet = entitySegment.EntitySet;
-                    return (IEdmEntityTypeReference)((IEdmCollectionType)entitySegment.EdmType).ElementType;
-                }
-            throw new InvalidOperationException("not supported type ODataPath");
-        }
         private static ODataResource ReadEntityFromStream(IEdmModel edmModel, Uri baseUri, Stream content, Uri requestUrl, String contentType, out IEdmEntitySet entitySet)
         {
             ODataUri odataUri = OeParser.ParseUri(edmModel, baseUri, requestUrl);
-            IEdmEntityTypeReference entityTypeRef = GetEdmEntityTypeRef(odataUri.Path, out entitySet);
+            entitySet = ((EntitySetSegment)odataUri.Path.FirstSegment).EntitySet;
             edmModel = edmModel.GetEdmModel(entitySet);
 
             ODataResource entry = null;

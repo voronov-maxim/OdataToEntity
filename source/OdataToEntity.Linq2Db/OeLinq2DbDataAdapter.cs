@@ -198,7 +198,6 @@ namespace OdataToEntity.Linq2Db
 
             Expression expression;
             IReadOnlyList<Cache.OeQueryCacheDbParameterValue> parameterValues;
-            IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dbContext);
             if (queryCacheItem == null)
             {
                 var parameterVisitor = new OeConstantToParameterVisitor();

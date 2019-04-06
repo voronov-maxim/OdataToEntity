@@ -36,7 +36,7 @@ namespace OdataToEntity.Parsers
                 MetadataLevel = metadataLevel
             };
         }
-        public async Task ExecuteAsync(ODataUri odataUri, Stream requestStream, OeRequestHeaders headers, Stream responseStream, CancellationToken cancellationToken)
+        public async Task ExecuteAsync(ODataUri odataUri, Stream requestStream, OeRequestHeaders headers, Stream responseStream)
         {
             Object dataContext = null;
             try

@@ -11,41 +11,36 @@ namespace OdataToEntity.Query
     {
         private sealed class FilterableVisitor : QueryNodeVisitor<QueryNode>
         {
-            private readonly Stack<OeModelBoundEntitySettings> _entitySettings;
             private readonly OeModelBoundProvider _modelBoundProvider;
+            private readonly Stack<OeModelBoundSettings> _settings;
 
-            public FilterableVisitor(OeModelBoundProvider modelBoundProvider, OeModelBoundEntitySettings entitySettings)
+            public FilterableVisitor(OeModelBoundProvider modelBoundProvider, OeModelBoundSettings settings)
             {
                 _modelBoundProvider = modelBoundProvider;
-                _entitySettings = new Stack<OeModelBoundEntitySettings>();
+                _settings = new Stack<OeModelBoundSettings>();
 
                 IsFilterable = true;
-                _entitySettings.Push(entitySettings);
+                _settings.Push(settings);
             }
 
             private bool Filterable(IEdmNavigationProperty navigationProperty)
             {
-                OeModelBoundEntitySettings entitySettings = _modelBoundProvider.TryGetQuerySettings(navigationProperty.DeclaringEntityType());
-                if (entitySettings == null)
-                    return true;
-
-                OeModelBoundPropertySettings propertySettings = entitySettings.GetPropertySettings(navigationProperty);
-                return propertySettings != null && propertySettings.Filterable != null ? propertySettings.Filterable.Value : true;
+                return _modelBoundProvider.IsAllowed(navigationProperty, null, OeModelBoundKind.Filter);
             }
             private bool Filterable(IEdmStructuralProperty structuralProperty)
             {
                 if (IsFilterable)
-                    return _entitySettings.Peek().IsAllowed(_modelBoundProvider, structuralProperty, OeModelBoundKind.Filter);
+                    return _settings.Peek().IsAllowed(_modelBoundProvider, structuralProperty, OeModelBoundKind.Filter);
 
                 return false;
             }
             private bool PushPropertySettings(IEdmNavigationProperty navigationProperty)
             {
-                OeModelBoundEntitySettings navigationSettings = _modelBoundProvider.TryGetQuerySettings(navigationProperty);
-                if (navigationSettings == null || navigationSettings.Properties.Count == 0)
+                OeModelBoundSettings navigationSettings = _modelBoundProvider.GetSettings(navigationProperty);
+                if (navigationSettings == null)
                     return false;
 
-                _entitySettings.Push(navigationSettings);
+                _settings.Push(navigationSettings);
                 return true;
             }
             public override QueryNode Visit(AllNode nodeIn)
@@ -104,7 +99,7 @@ namespace OdataToEntity.Query
                     IsFilterable &= Filterable((IEdmStructuralProperty)nodeIn.Property);
 
                     if (isPushed)
-                        _entitySettings.Pop();
+                        _settings.Pop();
                 }
                 return nodeIn;
             }
@@ -118,7 +113,7 @@ namespace OdataToEntity.Query
                     nodeIn.Body.Accept(this);
 
                     if (isPushed)
-                        _entitySettings.Pop();
+                        _settings.Pop();
                 }
 
                 return nodeIn;
@@ -127,37 +122,43 @@ namespace OdataToEntity.Query
             public bool IsFilterable { get; private set; }
         }
 
-        private readonly IReadOnlyDictionary<IEdmEntityType, OeModelBoundEntitySettings> _queryEntitySettings;
-        private readonly IReadOnlyDictionary<IEdmNavigationProperty, OeModelBoundEntitySettings> _queryNavigationSettings;
+        private readonly IReadOnlyDictionary<IEdmNamedElement, OeModelBoundSettings> _settings;
 
-        internal OeModelBoundProvider(
-            IReadOnlyDictionary<IEdmEntityType, OeModelBoundEntitySettings> queryEntitySettings,
-            IReadOnlyDictionary<IEdmNavigationProperty, OeModelBoundEntitySettings> queryNavigationSettings)
+        internal OeModelBoundProvider(IReadOnlyDictionary<IEdmNamedElement, OeModelBoundSettings> settings)
         {
-            _queryEntitySettings = queryEntitySettings;
-            _queryNavigationSettings = queryNavigationSettings;
+            _settings = settings;
         }
 
         public int GetPageSize(IEdmEntityType entityType)
         {
-            OeModelBoundEntitySettings settings = TryGetQuerySettings(entityType);
+            OeModelBoundSettings settings = GetSettings(entityType);
             return settings == null ? 0 : settings.PageSize;
         }
         public int GetPageSize(IEdmNavigationProperty navigationProperty)
         {
-            OeModelBoundEntitySettings settings = TryGetQuerySettings(navigationProperty);
+            OeModelBoundSettings settings = GetSettings(navigationProperty);
             return settings == null ? 0 : settings.PageSize;
         }
         public SelectItem[] GetSelectExpandItems(IEdmEntityType entityType)
         {
-            OeModelBoundEntitySettings settings = TryGetQuerySettings(entityType);
+            OeModelBoundSettings settings = GetSettings(entityType);
             return settings == null ? Array.Empty<SelectItem>() : settings.SelectExpandItems;
         }
-        private bool IsAllowed(IEdmProperty property, OeModelBoundEntitySettings entitySettings, OeModelBoundKind modelBoundKind)
+        internal OeModelBoundSettings GetSettings(IEdmEntityType entityType)
+        {
+            _settings.TryGetValue(entityType, out OeModelBoundSettings settings);
+            return settings;
+        }
+        private OeModelBoundSettings GetSettings(IEdmNavigationProperty navigationProperty)
+        {
+            _settings.TryGetValue(navigationProperty, out OeModelBoundSettings settings);
+            return settings;
+        }
+        private bool IsAllowed(IEdmProperty property, OeModelBoundSettings entitySettings, OeModelBoundKind modelBoundKind)
         {
             if (entitySettings == null)
             {
-                entitySettings = TryGetQuerySettings((IEdmEntityType)property.DeclaringType);
+                entitySettings = GetSettings((IEdmEntityType)property.DeclaringType);
                 if (entitySettings == null)
                     return true;
             }
@@ -166,23 +167,23 @@ namespace OdataToEntity.Query
         }
         public bool IsCountable(IEdmEntityType entityType)
         {
-            OeModelBoundEntitySettings settings = TryGetQuerySettings(entityType);
+            OeModelBoundSettings settings = GetSettings(entityType);
             return settings == null ? true : settings.Countable;
         }
         public bool IsCountable(IEdmNavigationProperty navigationProperty)
         {
-            OeModelBoundEntitySettings settings = TryGetQuerySettings(navigationProperty);
+            OeModelBoundSettings settings = GetSettings(navigationProperty);
             return settings == null ? true : settings.Countable;
         }
         public bool IsFilterable(FilterClause filterClause, IEdmEntityType entityType)
         {
-            return IsFilterable(filterClause, TryGetQuerySettings(entityType));
+            return IsFilterable(filterClause, GetSettings(entityType));
         }
         public bool IsFilterable(FilterClause filterClause, IEdmNavigationProperty navigationProperty)
         {
-            return IsFilterable(filterClause, TryGetQuerySettings(navigationProperty));
+            return IsFilterable(filterClause, GetSettings(navigationProperty));
         }
-        public bool IsFilterable(FilterClause filterClause, OeModelBoundEntitySettings settings)
+        public bool IsFilterable(FilterClause filterClause, OeModelBoundSettings settings)
         {
             if (settings != null)
             {
@@ -195,13 +196,13 @@ namespace OdataToEntity.Query
         }
         public bool IsOrderable(OrderByClause orderByClause, IEdmEntityType entityType)
         {
-            return IsOrderable(orderByClause, TryGetQuerySettings(entityType));
+            return IsOrderable(orderByClause, GetSettings(entityType));
         }
         public bool IsOrdering(OrderByClause orderByClause, IEdmNavigationProperty navigationProperty)
         {
-            return IsOrderable(orderByClause, TryGetQuerySettings(navigationProperty));
+            return IsOrderable(orderByClause, GetSettings(navigationProperty));
         }
-        public bool IsOrderable(OrderByClause orderByClause, OeModelBoundEntitySettings entitySettings)
+        public bool IsOrderable(OrderByClause orderByClause, OeModelBoundSettings entitySettings)
         {
             while (orderByClause != null)
             {
@@ -212,13 +213,8 @@ namespace OdataToEntity.Query
                 if (propertyNode.Source is SingleNavigationNode navigationNode)
                     do
                     {
-                        OeModelBoundEntitySettings navigationSettings = TryGetQuerySettings(navigationNode.NavigationProperty.DeclaringEntityType());
-                        if (navigationSettings != null)
-                        {
-                            OeModelBoundPropertySettings propertySettings = navigationSettings.GetPropertySettings(navigationNode.NavigationProperty);
-                            if (propertySettings != null && propertySettings.Orderable == false)
-                                return false;
-                        }
+                        if (!IsAllowed(navigationNode.NavigationProperty, null, OeModelBoundKind.OrderBy))
+                            return false;
                     }
                     while ((navigationNode = navigationNode.Source as SingleNavigationNode) != null);
 
@@ -229,14 +225,14 @@ namespace OdataToEntity.Query
         }
         public bool IsSelectable(ODataPath path, IEdmEntityType entityType)
         {
-            return IsSelectable(path, TryGetQuerySettings(entityType));
+            return IsSelectable(path, GetSettings(entityType));
         }
         public bool IsSelectable(ODataPath path, ExpandedNavigationSelectItem navigationSelectItem)
         {
             var segment = (NavigationPropertySegment)navigationSelectItem.PathToNavigationProperty.LastSegment;
-            return IsSelectable(path, TryGetQuerySettings(segment.NavigationProperty));
+            return IsSelectable(path, GetSettings(segment.NavigationProperty));
         }
-        private bool IsSelectable(ODataPath path, OeModelBoundEntitySettings entitySettings)
+        private bool IsSelectable(ODataPath path, OeModelBoundSettings entitySettings)
         {
             IEdmProperty property;
             if (path.LastSegment is NavigationPropertySegment navigationPropertySegment)
@@ -250,23 +246,13 @@ namespace OdataToEntity.Query
         }
         public bool IsTop(long top, IEdmEntityType entityType)
         {
-            OeModelBoundEntitySettings settings = TryGetQuerySettings(entityType);
+            OeModelBoundSettings settings = GetSettings(entityType);
             return top <= (settings == null ? Int32.MaxValue : settings.MaxTop);
         }
         public bool IsTop(long top, IEdmNavigationProperty navigationProperty)
         {
-            OeModelBoundEntitySettings settings = TryGetQuerySettings(navigationProperty);
+            OeModelBoundSettings settings = GetSettings(navigationProperty);
             return top <= (settings == null ? Int32.MaxValue : settings.MaxTop);
-        }
-        internal OeModelBoundEntitySettings TryGetQuerySettings(IEdmEntityType entityType)
-        {
-            _queryEntitySettings.TryGetValue(entityType, out OeModelBoundEntitySettings entitytSettings);
-            return entitytSettings;
-        }
-        private OeModelBoundEntitySettings TryGetQuerySettings(IEdmNavigationProperty navigationProperty)
-        {
-            _queryNavigationSettings.TryGetValue(navigationProperty, out OeModelBoundEntitySettings entitySettings);
-            return entitySettings;
         }
         public void Validate(ODataUri odataUri, IEdmEntityType entityType)
         {

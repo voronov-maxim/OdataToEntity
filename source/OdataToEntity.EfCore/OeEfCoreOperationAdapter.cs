@@ -15,12 +15,9 @@ namespace OdataToEntity.EfCore
 {
     public class OeEfCoreOperationAdapter : OeOperationAdapter
     {
-        private readonly OeEntitySetAdapterCollection _entitySetAdapters;
-
-        public OeEfCoreOperationAdapter(Type dataContextType, OeEntitySetAdapterCollection entitySetAdapters)
+        public OeEfCoreOperationAdapter(Type dataContextType)
             : base(dataContextType)
         {
-            _entitySetAdapters = entitySetAdapters;
         }
 
         private IRelationalCommand CreateCommand(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, out Dictionary<String, Object> parameterValues)

@@ -230,7 +230,7 @@ namespace OdataToEntity.Writers
             if (pageSize == 0)
                 return null;
 
-            int restCount = GetRestCountRoot(pageSize, readCount, totalCount);
+            int restCount = GetRestCountRoot(readCount, totalCount);
             if (restCount == 0)
                 return null;
 
@@ -271,7 +271,7 @@ namespace OdataToEntity.Writers
 
             return (top ?? Int32.MaxValue) - readCount;
         }
-        private int GetRestCountRoot(int pageSize, int readCount, int? totalCount)
+        private int GetRestCountRoot(int readCount, int? totalCount)
         {
             int? restCount;
             if (totalCount == null)

@@ -143,7 +143,7 @@ namespace OdataToEntity.Parsers
         {
             var parameters = new List<KeyValuePair<String, Object>>();
 
-            IEdmOperation operation = null;
+            IEdmOperation operation;
             IEnumerable<OperationSegmentParameter> segmentParameters;
             if (segment is OperationSegment operationSegment)
             {

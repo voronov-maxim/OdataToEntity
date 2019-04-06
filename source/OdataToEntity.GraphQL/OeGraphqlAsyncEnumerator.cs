@@ -13,13 +13,11 @@ namespace OdataToEntity.GraphQL
         private readonly IDisposable _dispose;
         private bool _isFirstMoveNext;
         private bool _isMoveNext;
-        private readonly OeQueryContext _queryContext;
 
-        public OeGraphqlAsyncEnumerator(Db.OeAsyncEnumerator asyncEnumerator, OeEntryFactory entryFactory, OeQueryContext queryContext)
+        public OeGraphqlAsyncEnumerator(Db.OeAsyncEnumerator asyncEnumerator, OeEntryFactory entryFactory)
         {
             _dispose = asyncEnumerator;
             _dbEnumerator = new Db.OeDbEnumerator(asyncEnumerator, entryFactory);
-            _queryContext = queryContext;
             _isFirstMoveNext = true;
         }
 

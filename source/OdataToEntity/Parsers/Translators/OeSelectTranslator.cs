@@ -142,7 +142,7 @@ namespace OdataToEntity.Parsers.Translators
                 var propertyNode = (SingleValuePropertyAccessNode)orderByClause.Expression;
                 if (propertyNode.Source is SingleNavigationNode navigationNode)
                 {
-                    OeNavigationSelectItem match = null;
+                    OeNavigationSelectItem match;
                     ExpandedNavigationSelectItem navigationSelectItem = null;
                     do
                     {

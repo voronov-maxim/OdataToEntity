@@ -7,12 +7,10 @@ namespace OdataToEntity.Db
     public sealed class OeAsyncEnumeratorAdapter<T> : IAsyncEnumerator<T>, IAsyncEnumerable<T>
     {
         private readonly OeAsyncEnumerator _asyncEnumerator;
-        private readonly CancellationToken _cancellationToken;
 
-        public OeAsyncEnumeratorAdapter(OeAsyncEnumerator asyncEnumerator, CancellationToken cancellationToken = default)
+        public OeAsyncEnumeratorAdapter(OeAsyncEnumerator asyncEnumerator)
         {
             _asyncEnumerator = asyncEnumerator;
-            _cancellationToken = cancellationToken;
         }
 
         public void Dispose()

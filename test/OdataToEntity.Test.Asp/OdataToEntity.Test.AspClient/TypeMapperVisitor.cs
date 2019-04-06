@@ -107,7 +107,7 @@ namespace OdataToEntity.Test.Model
         }
         protected override Expression VisitMember(MemberExpression node)
         {
-            if (node.Expression is ConstantExpression constantExpression && node.Type.IsGenericType && node.Type.GetGenericTypeDefinition() == typeof(IQueryable<>))
+            if (node.Expression is ConstantExpression && node.Type.IsGenericType && node.Type.GetGenericTypeDefinition() == typeof(IQueryable<>))
             {
                 Type entityType = node.Type.GetGenericArguments()[0];
                 IQueryable source = DbFixtureInitDb.GetQuerableOe(_container, entityType);

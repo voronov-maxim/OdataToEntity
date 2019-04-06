@@ -53,7 +53,6 @@ namespace OdataToEntity.ModelBuilder
                 if (dependentProperty == null)
                     throw new InvalidOperationException("not found dependent structural property " + dependentInfo.ClrType.Name + "Id for navigation property " + dependentNavigationProperty.Name);
 
-                principalNavigationProperty = GetPrincipalNavigationProperty(metadataProvider, dependentInfo, principalInfo, dependentNavigationProperty);
                 return new FKeyInfo(principalInfo, null, new[] { dependentProperty }, dependentInfo, dependentNavigationProperty);
             }
 

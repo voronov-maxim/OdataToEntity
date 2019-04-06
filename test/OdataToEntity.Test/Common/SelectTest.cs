@@ -7,6 +7,11 @@ using Xunit;
 
 namespace OdataToEntity.Test
 {
+    [AttributeUsageAttribute(AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
+    internal sealed class NotPerformanceCahe : Attribute
+    {
+    }
+
     public abstract partial class SelectTest
     {
 #if SQLITE
@@ -86,6 +91,7 @@ namespace OdataToEntity.Test
         [Theory(Skip = SkipTest)]
         [InlineData(0)]
         [InlineData(1)]
+        [NotPerformanceCahe]
         public async Task ApplyGropuByAggregateCompute(int pageSize)
         {
             var parameters = new QueryParameters<OrderItem, Object>()
@@ -1258,6 +1264,7 @@ namespace OdataToEntity.Test
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
         [Fact]
+        [NotPerformanceCahe]
         public async Task ReferencedModels()
         {
             var parameters = new QueryParameters<Order>()

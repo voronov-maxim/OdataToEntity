@@ -37,7 +37,7 @@ namespace OdataToEntity.AspNetCore
             if (_dataContext != null)
                 _dataAdapter.CloseDataContext(_dataContext);
         }
-        private OeAsyncEnumerator ExecuteGet(IEdmModel refModel, ODataUri odataUri, OeRequestHeaders headers, CancellationToken cancellationToken, IQueryable source)
+        private OeAsyncEnumerator ExecuteGet(IEdmModel refModel, ODataUri odataUri, OeRequestHeaders headers, IQueryable source, CancellationToken cancellationToken)
         {
             _queryContext = new OeQueryContext(refModel, odataUri)
             {
@@ -61,7 +61,7 @@ namespace OdataToEntity.AspNetCore
 
             return _dataAdapter.ExecuteEnumerator(_dataContext, _queryContext, cancellationToken);
         }
-        private OeAsyncEnumerator ExecutePost(IEdmModel refModel, ODataUri odataUri, OeRequestHeaders headers, CancellationToken cancellationToken, Stream requestStream)
+        private OeAsyncEnumerator ExecutePost(IEdmModel refModel, ODataUri odataUri, OeRequestHeaders headers, Stream requestStream)
         {
             _odataUri = odataUri;
 
@@ -113,9 +113,9 @@ namespace OdataToEntity.AspNetCore
             OeRequestHeaders headers = GetRequestHeaders(requestHeaders, _httpContext.Response, navigationNextLink, maxPageSize);
 
             if (odataUri.Path.LastSegment is OperationImportSegment)
-                return ExecutePost(refModel, odataUri, headers, _httpContext.RequestAborted, _httpContext.Request.Body);
+                return ExecutePost(refModel, odataUri, headers, _httpContext.Request.Body);
             else
-                return ExecuteGet(refModel, odataUri, headers, _httpContext.RequestAborted, source);
+                return ExecuteGet(refModel, odataUri, headers, source, _httpContext.RequestAborted);
         }
         public TDataContext GetDbContext<TDataContext>() where TDataContext : class
         {

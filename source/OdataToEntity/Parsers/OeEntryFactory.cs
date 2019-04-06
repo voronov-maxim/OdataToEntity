@@ -165,7 +165,7 @@ namespace OdataToEntity.Parsers
         {
             if (_entryFactoryFromTuple == null)
             {
-                OePropertyAccessor[] skipTokenAccessors = Array.Empty<OePropertyAccessor>();
+                OePropertyAccessor[] skipTokenAccessors;
                 if (IsTuple)
                 {
                     if (SkipTokenAccessors.Length > 0)
@@ -210,7 +210,6 @@ namespace OdataToEntity.Parsers
         {
             ParameterExpression parameter = Expression.Parameter(typeof(Object));
             Type clrEntityType = edmModel.GetClrType(EntitySet);
-            UnaryExpression instance = Expression.Convert(parameter, clrEntityType);
             var visitor = new OeQueryNodeVisitor(Expression.Parameter(clrEntityType));
 
             var skipTokenAccessors = new List<OePropertyAccessor>();

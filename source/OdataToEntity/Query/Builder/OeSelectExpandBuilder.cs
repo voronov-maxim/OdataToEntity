@@ -10,6 +10,7 @@ namespace OdataToEntity.Query.Builder
     {
         private readonly IEdmModel _edmModel;
         private readonly OeModelBoundSettingsBuilder _modelBoundSettingsBuilder;
+        private readonly Dictionary<(IEdmEntityType, int), List<SelectItem>> _selectItemsCache;
         private readonly HashSet<IEdmNavigationProperty> _visited;
 
         public OeSelectExpandBuilder(IEdmModel edmModel, OeModelBoundSettingsBuilder modelBoundSettingsBuilder)
@@ -17,6 +18,7 @@ namespace OdataToEntity.Query.Builder
             _edmModel = edmModel;
             _modelBoundSettingsBuilder = modelBoundSettingsBuilder;
 
+            _selectItemsCache = new Dictionary<(IEdmEntityType, int), List<SelectItem>>();
             _visited = new HashSet<IEdmNavigationProperty>();
         }
 
@@ -33,40 +35,46 @@ namespace OdataToEntity.Query.Builder
             IEdmEntitySet entitySet = OeEdmClrHelper.GetEntitySet(_edmModel, navigationProperty);
             var expandPath = new ODataExpandPath(new NavigationPropertySegment(navigationProperty, entitySet));
 
-            OeModelBoundEntitySettings navigationSettings = _modelBoundSettingsBuilder.GetEntitySettings(navigationProperty);
-            if (navigationSettings == null || navigationSettings.Properties.Count == 0)
+            OeModelBoundSettings navigationSettings = _modelBoundSettingsBuilder.GetSettings(navigationProperty);
+            if (navigationSettings == null)
                 return new ExpandedNavigationSelectItem(expandPath, entitySet, new SelectExpandClause(selectItems, false));
 
-            MergeSelectItems<IEdmStructuralProperty, PathSelectItem>(selectItems, navigationSettings.Properties, level);
-            MergeSelectItems<IEdmNavigationProperty, ExpandedNavigationSelectItem>(selectItems, navigationSettings.Properties, level);
+            MergeSelectItems<IEdmStructuralProperty, PathSelectItem>(selectItems, navigationSettings, level);
+            MergeSelectItems<IEdmNavigationProperty, ExpandedNavigationSelectItem>(selectItems, navigationSettings, level);
 
             return new ExpandedNavigationSelectItem(expandPath, entitySet, new SelectExpandClause(selectItems, false));
         }
         private List<SelectItem> BuildSelectItems(IEdmEntityType entityType, int level)
         {
-            var selectItems = new List<SelectItem>();
-            if (level >= 0)
-                foreach (IEdmProperty property in entityType.Properties())
-                {
-                    OeModelBoundEntitySettings entitySettings = _modelBoundSettingsBuilder.GetEntitySettings((IEdmEntityType)property.DeclaringType);
-                    OeModelBoundPropertySettings propertySetting;
-                    if (entitySettings == null || (propertySetting = entitySettings.GetPropertySettings(property)) == null)
-                        continue;
+            if (level < 0)
+                return new List<SelectItem>();
 
+            if (_selectItemsCache.TryGetValue((entityType, level), out List<SelectItem> selectItems))
+                return selectItems;
+
+            selectItems = new List<SelectItem>();
+            foreach (IEdmProperty property in entityType.Properties())
+            {
+                OeModelBoundSettings settings = _modelBoundSettingsBuilder.GetSettings((IEdmEntityType)property.DeclaringType);
+                if (settings != null)
+                {
+                    SelectExpandType? propertySetting = settings.GetPropertySetting(property, OeModelBoundKind.Select);
                     if (property is IEdmNavigationProperty navigationProperty && level > 0)
                     {
-                        if (propertySetting.SelectType == SelectExpandType.Automatic)
+                        if (propertySetting == SelectExpandType.Automatic)
                             selectItems.Add(BuildNavigation(navigationProperty, level));
                     }
                     else if (property is IEdmStructuralProperty structuralProperty)
                     {
-                        if (propertySetting.SelectType == SelectExpandType.Automatic)
+                        if (propertySetting == SelectExpandType.Automatic)
                             selectItems.Add(new PathSelectItem(new ODataSelectPath(new PropertySegment(structuralProperty))));
-                        else if (propertySetting.SelectType == SelectExpandType.Disabled)
+                        else if (propertySetting == SelectExpandType.Disabled)
                             selectItems.Add(new OeDisableSelectItem(structuralProperty));
                     }
                 }
+            }
 
+            _selectItemsCache.Add((entityType, level), selectItems);
             return selectItems;
         }
         private SelectItem CreateSelectItem<TProperty>(TProperty property, int level) where TProperty : IEdmProperty
@@ -117,18 +125,18 @@ namespace OdataToEntity.Query.Builder
             else
                 throw new InvalidOperationException("Unsupported SelectItem type " + selectItem.GetType().Name);
         }
-        private void MergeSelectItems<TProperty, TSelectItem>(List<SelectItem> selectItems, Dictionary<IEdmProperty, OeModelBoundPropertySettings> propertiesSetting, int level)
+        private void MergeSelectItems<TProperty, TSelectItem>(List<SelectItem> selectItems, OeModelBoundSettings navigationSettings, int level)
             where TSelectItem : SelectItem
             where TProperty : IEdmProperty
         {
             var automaticProperties = new List<TProperty>();
             var disabledProperties = new HashSet<TProperty>();
 
-            foreach (KeyValuePair<IEdmProperty, OeModelBoundPropertySettings> propertySetting in propertiesSetting)
-                if (propertySetting.Key is TProperty property)
-                    if (propertySetting.Value.SelectType == SelectExpandType.Automatic)
+            foreach ((IEdmProperty, SelectExpandType) propertySetting in navigationSettings.GetPropertySettings(OeModelBoundKind.Select))
+                if (propertySetting.Item1 is TProperty property)
+                    if (propertySetting.Item2 == SelectExpandType.Automatic)
                         automaticProperties.Add(property);
-                    else if (propertySetting.Value.SelectType == SelectExpandType.Disabled)
+                    else if (propertySetting.Item2 == SelectExpandType.Disabled)
                         disabledProperties.Add(property);
 
             if (automaticProperties.Count > 0 || disabledProperties.Count > 0)

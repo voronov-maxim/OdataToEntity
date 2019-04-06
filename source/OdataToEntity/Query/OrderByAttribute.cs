@@ -8,7 +8,7 @@ namespace OdataToEntity.Query
     {
         private bool _disable;
 
-        private OrderByAttribute(bool disabled)
+        public OrderByAttribute(bool disabled)
         {
             _disable = disabled;
             OrderByConfigurations = new Dictionary<String, SelectExpandType>();

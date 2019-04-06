@@ -12,8 +12,8 @@ namespace OdataToEntity.EfCore
     {
         private sealed class OeEfCoreSqlServerOperationAdapter : OeEfCoreOperationAdapter
         {
-            public OeEfCoreSqlServerOperationAdapter(Type dataContextType, OeEntitySetAdapterCollection entitySetAdapters)
-                : base(dataContextType, entitySetAdapters)
+            public OeEfCoreSqlServerOperationAdapter(Type dataContextType)
+                : base(dataContextType)
             {
             }
 
@@ -38,7 +38,7 @@ namespace OdataToEntity.EfCore
         {
         }
         public OeEfCoreSqlServerDataAdapter(DbContextOptions options, Cache.OeQueryCache queryCache)
-            : base(options, queryCache, new OeEfCoreSqlServerOperationAdapter(typeof(T), _entitySetAdapters))
+            : base(options, queryCache, new OeEfCoreSqlServerOperationAdapter(typeof(T)))
         {
         }
     }
