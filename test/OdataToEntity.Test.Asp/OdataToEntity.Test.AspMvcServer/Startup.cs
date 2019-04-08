@@ -26,7 +26,7 @@ namespace OdataToEntity.Test.AspMvcServer
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            var dataAdapter = new OrderDataAdapter(true, true, null);
+            var dataAdapter = new OrderDataAdapter(true, true);
             services.AddOdataToEntityMvc(dataAdapter.BuildEdmModelFromEfCoreModel());
 
             services.AddLogging(loggingBuilder =>

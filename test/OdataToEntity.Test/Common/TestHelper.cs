@@ -162,18 +162,6 @@ namespace OdataToEntity.Test
             PropertyInfo propertyInfo = typeof(Db.OeDataAdapter).GetProperty("QueryCache", BindingFlags.Instance | BindingFlags.NonPublic);
             return (Cache.OeQueryCache)propertyInfo.GetValue(dataAdapter);
         }
-        public static int GetQueryCacheCount(IEdmModel edmModel)
-        {
-            Db.OeDataAdapter dataAdapter = edmModel.GetDataAdapter(edmModel.EntityContainer);
-            Cache.OeQueryCache queryCache = GetQueryCache(dataAdapter);
-            int count = queryCache.CacheCount;
-
-            foreach (IEdmModel refModel in edmModel.ReferencedModels)
-                if (refModel.EntityContainer != null && refModel is EdmModel)
-                    count += GetQueryCacheCount(refModel);
-
-            return queryCache.AllowCache ? count : -1;
-        }
         private static IList ToOpenType(IEnumerable entities, IReadOnlyList<EfInclude> includes)
         {
             return new OpenTypeConverter(includes).Convert(entities);

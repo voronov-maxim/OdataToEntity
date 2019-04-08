@@ -4,12 +4,12 @@ namespace OdataToEntity.Test.Model
 {
     public sealed class OrderDataAdapter : EfCore.OeEfCoreDataAdapter<OrderContext>, ITestDbDataAdapter
     {
-        public OrderDataAdapter(bool allowCache, bool useRelationalNulls, String databaseName) :
-            base(OrderContextOptions.Create(useRelationalNulls, databaseName), new Cache.OeQueryCache(allowCache))
+        public OrderDataAdapter(bool allowCache, String databaseName) :
+            base(OrderContextOptions.Create(databaseName), new Cache.OeQueryCache(allowCache))
         {
         }
 
-        public static ModelBuilder.OeEdmModelMetadataProvider CreateMetadataProvider(bool useRelationalNulls, String databaseName)
+        public static ModelBuilder.OeEdmModelMetadataProvider CreateMetadataProvider()
         {
             return new ModelBuilder.OeEdmModelMetadataProvider();
         }
@@ -19,8 +19,8 @@ namespace OdataToEntity.Test.Model
 
     public sealed class Order2DataAdapter : EfCore.OeEfCoreDataAdapter<Order2Context>, ITestDbDataAdapter
     {
-        public Order2DataAdapter(bool allowCache, bool useRelationalNulls, String databaseName) :
-            base(OrderContextOptions.Create<Order2Context>(useRelationalNulls, databaseName), new Cache.OeQueryCache(allowCache))
+        public Order2DataAdapter(bool allowCache, String databaseName) :
+            base(OrderContextOptions.Create<Order2Context>(databaseName), new Cache.OeQueryCache(allowCache))
         {
         }
 

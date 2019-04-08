@@ -37,7 +37,7 @@ namespace OdataToEntity.AspServer
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
-            var dataAdapter = new OrderDataAdapter(true, true, null);
+            var dataAdapter = new OrderDataAdapter(true, true);
             app.UseOdataToEntityMiddleware("/api", dataAdapter.BuildEdmModelFromEfCoreModel());
             app.UseMvcWithDefaultRoute();
         }

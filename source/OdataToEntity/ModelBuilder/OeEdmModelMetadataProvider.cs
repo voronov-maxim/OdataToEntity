@@ -8,10 +8,6 @@ namespace OdataToEntity.ModelBuilder
 {
     public class OeEdmModelMetadataProvider
     {
-        public OeEdmModelMetadataProvider()
-        {
-        }
-
         public virtual PropertyInfo[] GetForeignKey(PropertyInfo propertyInfo)
         {
             var fkey = (ForeignKeyAttribute)propertyInfo.GetCustomAttribute(typeof(ForeignKeyAttribute));

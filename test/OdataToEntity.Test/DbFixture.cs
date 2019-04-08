@@ -16,41 +16,17 @@ namespace OdataToEntity.Test
 {
     public abstract class DbFixture
     {
-        private readonly String _databaseName;
-        private readonly bool _useRelationalNulls;
-
-        protected DbFixture(bool allowCache, bool useRelationalNulls, ModelBoundTestKind modelBoundTestKind)
-            : this(allowCache, useRelationalNulls, OrderContext.GenerateDatabaseName())
+        protected DbFixture(EdmModel edmModel, ModelBoundTestKind modelBoundTestKind)
         {
-            if (modelBoundTestKind == ModelBoundTestKind.Attribute)
-                ModelBoundProvider = new Query.Builder.OeModelBoundAttributeBuilder(EdmModel).BuildProvider();
-            else if (modelBoundTestKind == ModelBoundTestKind.Fluent)
-                ModelBoundProvider = CreateModelBoundProvider(EdmModel);
-        }
-        private DbFixture(bool allowCache, bool useRelationalNulls, String databaseName)
-            : this(useRelationalNulls, databaseName, new OrderDataAdapter(allowCache, useRelationalNulls, databaseName))
-        {
-        }
-        private DbFixture(bool useRelationalNulls, String databaseName, Db.OeDataAdapter dataAdapter)
-            : this(useRelationalNulls, databaseName, dataAdapter, OrderDataAdapter.CreateMetadataProvider(useRelationalNulls, databaseName))
-        {
-        }
-        private DbFixture(bool useRelationalNulls, String databaseName, Db.OeDataAdapter dataAdapter, ModelBuilder.OeEdmModelMetadataProvider metadataProvider)
-            : this(useRelationalNulls, databaseName, OrderContextOptions.BuildEdmModel(dataAdapter, metadataProvider), metadataProvider)
-        {
-        }
-        private DbFixture(bool useRelationalNulls, String databaseName, EdmModel edmModel, ModelBuilder.OeEdmModelMetadataProvider metadataProvider)
-        {
-            _useRelationalNulls = useRelationalNulls;
-            _databaseName = databaseName;
             EdmModel = edmModel;
-            MetadataProvider = metadataProvider;
+
+            if (modelBoundTestKind == ModelBoundTestKind.Attribute)
+                ModelBoundProvider = new Query.Builder.OeModelBoundAttributeBuilder(edmModel).BuildProvider();
+            else if (modelBoundTestKind == ModelBoundTestKind.Fluent)
+                ModelBoundProvider = CreateModelBoundProvider(edmModel);
         }
 
-        public OrderContext CreateContext()
-        {
-            return new OrderContext(OrderContextOptions.Create(_useRelationalNulls, _databaseName));
-        }
+        public abstract OrderContext CreateContext();
         private static OeModelBoundProvider CreateModelBoundProvider(IEdmModel edmModel)
         {
             var modelBoundBuilder = new Query.Builder.OeModelBoundFluentBuilder(edmModel);
@@ -193,7 +169,6 @@ namespace OdataToEntity.Test
         }
 
         public EdmModel EdmModel { get; }
-        public ModelBuilder.OeEdmModelMetadataProvider MetadataProvider { get; }
-        public Query.OeModelBoundProvider ModelBoundProvider { get; }
+        public OeModelBoundProvider ModelBoundProvider { get; }
     }
 }

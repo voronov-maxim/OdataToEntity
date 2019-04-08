@@ -49,7 +49,7 @@ namespace OdataToEntity.Test
             if (ethalonSchema == null)
                 throw new InvalidOperationException("Invalid ethalon schema");
 
-            var testDataAdapter = new OrderDataAdapter(false, false, null);
+            var testDataAdapter = new OrderDataAdapter(false, false);
             EdmModel testEdmModel = testDataAdapter.BuildEdmModelFromLinq2DbModel();
             String testSchema = TestHelper.GetCsdlSchema(testEdmModel);
             if (testSchema == null)

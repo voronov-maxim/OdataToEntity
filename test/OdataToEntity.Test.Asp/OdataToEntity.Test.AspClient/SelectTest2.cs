@@ -14,7 +14,7 @@ namespace OdataToEntity.Test
         public async Task BoundFunctionCollection()
         {
             List<int> expectedResult;
-            using (var dbContext = new OrderContext(OrderContextOptions.Create(true, null)))
+            using (var dbContext = new OrderContext(OrderContextOptions.Create(true)))
                 expectedResult = dbContext.OrderItems.Where(i => i.Order.Name == "Order 1" || i.Order.Name == "Order 2").Select(i => i.Id).ToList();
 
             String request = $"Customers/BoundFunctionCollection(orderNames=['Order 1','Order 2'])?$expand=Customer,Items&$select=Name";
@@ -28,7 +28,7 @@ namespace OdataToEntity.Test
         public async Task BoundFunctionSingle()
         {
             List<int> expectedResult;
-            using (var dbContext = new OrderContext(OrderContextOptions.Create(true, null)))
+            using (var dbContext = new OrderContext(OrderContextOptions.Create(true)))
                 expectedResult = dbContext.OrderItems.Where(i =>
                     (i.Order.Name == "Order 1" || i.Order.Name == "Order 2") && i.Order.Customer.Country == "RU" && i.Order.Customer.Id == 1)
                     .Select(i => i.Id).ToList();
@@ -44,7 +44,7 @@ namespace OdataToEntity.Test
         public async Task CountQueryParameter()
         {
             int expectedCount;
-            using (var dbContext = new OrderContext(OrderContextOptions.Create(true, null)))
+            using (var dbContext = new OrderContext(OrderContextOptions.Create(true)))
                 expectedCount = dbContext.Orders.Count();
 
             String request = "Orders?&$count=true&$top=1";

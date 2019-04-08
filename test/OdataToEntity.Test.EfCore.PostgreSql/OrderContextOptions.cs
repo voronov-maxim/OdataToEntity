@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.OData.Edm;
-using System;
 
 namespace OdataToEntity.Test.Model
 {
@@ -9,15 +8,15 @@ namespace OdataToEntity.Test.Model
         public static EdmModel BuildEdmModel(Db.OeDataAdapter dataAdapter, ModelBuilder.OeEdmModelMetadataProvider metadataProvider)
         {
             bool allowCache = TestHelper.GetQueryCache(dataAdapter).AllowCache;
-            var order2DataAdapter = new Order2DataAdapter(allowCache, true, "test2");
+            var order2DataAdapter = new Order2DataAdapter(allowCache, true);
             var refModel = new ModelBuilder.OeEdmModelBuilder(dataAdapter, metadataProvider).BuildEdmModel();
             return order2DataAdapter.BuildEdmModel(refModel);
         }
-        public static DbContextOptions Create(bool useRelationalNulls, String databaseName)
+        public static DbContextOptions Create(bool useRelationalNulls)
         {
-            return Create<OrderContext>(useRelationalNulls, databaseName);
+            return Create<OrderContext>(useRelationalNulls);
         }
-        public static DbContextOptions Create<T>(bool useRelationalNulls, String databaseName) where T : DbContext
+        public static DbContextOptions Create<T>(bool useRelationalNulls) where T : DbContext
         {
             Npgsql.NpgsqlConnection.GlobalTypeMapper.MapComposite<OdataToEntity.EfCore.StringList>("dbo.string_list");
 

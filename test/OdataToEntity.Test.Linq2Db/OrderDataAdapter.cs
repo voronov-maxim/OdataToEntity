@@ -21,19 +21,19 @@ namespace OdataToEntity.Test.Model
 
             public override Object CreateDataContext()
             {
-                return new OrderContext(OrderContextOptions.Create(_useRelationalNulls, null));
+                return new OrderContext(OrderContextOptions.Create(_useRelationalNulls));
             }
         }
 
         private readonly Db.OeDataAdapter _dbDataAdapter;
 
-        public OrderDataAdapter(bool allowCache, bool useRelationalNulls, String databaseName) : base(new Cache.OeQueryCache(allowCache))
+        public OrderDataAdapter(bool allowCache, bool useRelationalNulls) : base(new Cache.OeQueryCache(allowCache))
         {
             LinqToDB.Common.Configuration.Linq.AllowMultipleQuery = true;
             _dbDataAdapter = new OrderDbDataAdapter(useRelationalNulls);
         }
 
-        public static ModelBuilder.OeEdmModelMetadataProvider CreateMetadataProvider(bool useRelationalNulls, String databaseName)
+        public static ModelBuilder.OeEdmModelMetadataProvider CreateMetadataProvider()
         {
             return new OeLinq2DbEdmModelMetadataProvider();
         }
@@ -54,13 +54,13 @@ namespace OdataToEntity.Test.Model
 
             public override Object CreateDataContext()
             {
-                return new Order2Context(OrderContextOptions.Create<Order2Context>(_useRelationalNulls, null));
+                return new Order2Context(OrderContextOptions.Create<Order2Context>(_useRelationalNulls));
             }
         }
 
         private readonly Db.OeDataAdapter _dbDataAdapter;
 
-        public Order2DataAdapter(bool allowCache, bool useRelationalNulls, String databaseName) : base(new Cache.OeQueryCache(allowCache))
+        public Order2DataAdapter(bool allowCache, bool useRelationalNulls) : base(new Cache.OeQueryCache(allowCache))
         {
             LinqToDB.Common.Configuration.Linq.AllowMultipleQuery = true;
             _dbDataAdapter = new Order2DbDataAdapter(useRelationalNulls);

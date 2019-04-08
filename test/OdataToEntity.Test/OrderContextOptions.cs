@@ -69,15 +69,15 @@ namespace OdataToEntity.Test.Model
 
         public static EdmModel BuildEdmModel(Db.OeDataAdapter dataAdapter, ModelBuilder.OeEdmModelMetadataProvider metadataProvider)
         {
-            var order2DataAdapter = new Order2DataAdapter(false, true, "test2");
+            var order2DataAdapter = new Order2DataAdapter(false, "test2");
             var refModel = new ModelBuilder.OeEdmModelBuilder(dataAdapter, metadataProvider).BuildEdmModel();
             return order2DataAdapter.BuildEdmModel(refModel);
         }
-        public static DbContextOptions Create(bool useRelationalNulls, String databaseName)
+        public static DbContextOptions Create(String databaseName)
         {
-            return Create<OrderContext>(useRelationalNulls, databaseName);
+            return Create<OrderContext>(databaseName);
         }
-        public static DbContextOptions Create<T>(bool useRelationalNulls, String databaseName) where T : DbContext
+        public static DbContextOptions Create<T>(String databaseName) where T : DbContext
         {
             var optionsBuilder = new DbContextOptionsBuilder<T>();
             optionsBuilder.UseSqlite(GetConnection(databaseName));
@@ -85,9 +85,9 @@ namespace OdataToEntity.Test.Model
             //optionsBuilder.UseLoggerFactory(MyLoggerFactory);
             return optionsBuilder.Options;
         }
-        public static DbContextOptions CreateClientEvaluationWarning(bool useRelationalNulls, String databaseName)
+        public static DbContextOptions CreateClientEvaluationWarning(String databaseName)
         {
-            return Create(useRelationalNulls, databaseName);
+            return Create(databaseName);
         }
         private static SqliteConnection GetConnection(String databaseName)
         {

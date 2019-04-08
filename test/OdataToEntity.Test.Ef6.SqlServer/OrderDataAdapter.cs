@@ -18,14 +18,14 @@ namespace OdataToEntity.Test.Model
 
             public override Object CreateDataContext()
             {
-                return new OrderContext(OrderContextOptions.Create(_useRelationalNulls, null));
+                return new OrderContext(OrderContextOptions.Create(_useRelationalNulls));
             }
         }
 
         private readonly Db.OeDataAdapter _dbDataAdapter;
         private readonly bool _useRelationalNulls;
 
-        public OrderDataAdapter(bool allowCache, bool useRelationalNulls, String databaseName) : base(new Cache.OeQueryCache(allowCache))
+        public OrderDataAdapter(bool allowCache, bool useRelationalNulls) : base(new Cache.OeQueryCache(allowCache))
         {
             _useRelationalNulls = useRelationalNulls;
             _dbDataAdapter = new OrderDbDataAdapter(useRelationalNulls);
@@ -35,7 +35,7 @@ namespace OdataToEntity.Test.Model
         {
             return new OrderEf6Context(_useRelationalNulls);
         }
-        public static ModelBuilder.OeEdmModelMetadataProvider CreateMetadataProvider(bool useRelationalNulls, String databaseName)
+        public static ModelBuilder.OeEdmModelMetadataProvider CreateMetadataProvider()
         {
             using (var dbContext = new OrderEf6Context(false))
                 return new OeEf6EdmModelMetadataProvider(dbContext);
@@ -57,14 +57,14 @@ namespace OdataToEntity.Test.Model
 
             public override Object CreateDataContext()
             {
-                return new Order2Context(OrderContextOptions.Create<Order2Context>(_useRelationalNulls, null));
+                return new Order2Context(OrderContextOptions.Create<Order2Context>(_useRelationalNulls));
             }
         }
 
         private readonly Db.OeDataAdapter _dbDataAdapter;
         private readonly bool _useRelationalNulls;
 
-        public Order2DataAdapter(bool allowCache, bool useRelationalNulls, String databaseName) : base(new Cache.OeQueryCache(allowCache))
+        public Order2DataAdapter(bool allowCache, bool useRelationalNulls) : base(new Cache.OeQueryCache(allowCache))
         {
             _useRelationalNulls = useRelationalNulls;
             _dbDataAdapter = new Order2DbDataAdapter(useRelationalNulls);

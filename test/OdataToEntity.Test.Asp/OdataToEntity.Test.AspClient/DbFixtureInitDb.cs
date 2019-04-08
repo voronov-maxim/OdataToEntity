@@ -57,7 +57,7 @@ namespace OdataToEntity.Test
             IList fromOe = await ExecuteOe<T, TResult>(parameters.Expression, 0);
             IList fromDb;
 
-            using (var dataContext = new OrderContext(OrderContextOptions.Create(true, null)))
+            using (var dataContext = new OrderContext(OrderContextOptions.Create(true)))
                 fromDb = TestHelper.ExecuteDb(DataAdapter.EntitySetAdapters, dataContext, parameters.Expression);
 
             TestHelper.Compare(fromDb, fromOe, null);
@@ -82,7 +82,7 @@ namespace OdataToEntity.Test
 
             IReadOnlyList<EfInclude> includes;
             IList fromDb;
-            using (var dataContext = new OrderContext(OrderContextOptions.Create(true, null)))
+            using (var dataContext = new OrderContext(OrderContextOptions.Create(true)))
                 fromDb = TestHelper.ExecuteDb(DataAdapter, dataContext, parameters.Expression, out includes);
 
             TestHelper.Compare(fromDb, fromOe, includes);
