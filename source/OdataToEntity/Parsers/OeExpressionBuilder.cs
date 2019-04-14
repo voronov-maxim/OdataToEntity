@@ -122,7 +122,7 @@ namespace OdataToEntity.Parsers
             if (queryContext.ODataUri.Path.LastSegment is CountSegment)
                 return source;
 
-            var selectTranslator = new Translators.OeSelectTranslator(queryContext.EdmModel, _joinBuilder, queryContext.ODataUri, queryContext.ModelBoundProvider);
+            var selectTranslator = new Translators.OeSelectTranslator(queryContext.EdmModel, _joinBuilder, queryContext.ODataUri);
             var selectTranslatorParameters = new Translators.OeSelectTranslatorParameters()
             {
                 IsDatabaseNullHighestValue = queryContext.IsDatabaseNullHighestValue,

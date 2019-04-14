@@ -25,12 +25,14 @@ namespace OdataToEntity.Parsers
 
         public async Task ExecuteAsync(ODataUri odataUri, OeRequestHeaders headers, Stream stream, CancellationToken cancellationToken)
         {
+            if (_modelBoundProvider != null)
+                _modelBoundProvider.Validate(_edmModel, odataUri);
+
             var queryContext = new OeQueryContext(_edmModel, odataUri)
             {
                 MaxPageSize = headers.MaxPageSize,
                 MetadataLevel = headers.MetadataLevel,
-                NavigationNextLink = headers.NavigationNextLink,
-                ModelBoundProvider = _modelBoundProvider
+                NavigationNextLink = headers.NavigationNextLink
             };
 
             if (queryContext.ODataUri.Path.LastSegment is OperationSegment)

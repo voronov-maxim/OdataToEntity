@@ -139,17 +139,12 @@ namespace OdataToEntity.Query
             OeModelBoundSettings settings = GetSettings(navigationProperty);
             return settings == null ? 0 : settings.PageSize;
         }
-        public SelectItem[] GetSelectExpandItems(IEdmEntityType entityType)
-        {
-            OeModelBoundSettings settings = GetSettings(entityType);
-            return settings == null ? Array.Empty<SelectItem>() : settings.SelectExpandItems;
-        }
-        internal OeModelBoundSettings GetSettings(IEdmEntityType entityType)
+        public OeModelBoundSettings GetSettings(IEdmEntityType entityType)
         {
             _settings.TryGetValue(entityType, out OeModelBoundSettings settings);
             return settings;
         }
-        private OeModelBoundSettings GetSettings(IEdmNavigationProperty navigationProperty)
+        public OeModelBoundSettings GetSettings(IEdmNavigationProperty navigationProperty)
         {
             _settings.TryGetValue(navigationProperty, out OeModelBoundSettings settings);
             return settings;
@@ -254,75 +249,22 @@ namespace OdataToEntity.Query
             OeModelBoundSettings settings = GetSettings(navigationProperty);
             return top <= (settings == null ? Int32.MaxValue : settings.MaxTop);
         }
-        public void Validate(ODataUri odataUri, IEdmEntityType entityType)
+        public void Validate(IEdmModel edmModel, ODataUri odataUri)
         {
-            if (odataUri.QueryCount.GetValueOrDefault() && !IsCountable(entityType))
-                throw new ODataErrorException("EntityType " + entityType.Name + " not countable");
-
-            if (odataUri.Top != null && !IsTop(odataUri.Top.GetValueOrDefault(), entityType))
-                throw new ODataErrorException("EntityType " + entityType.Name + " not valid top");
-
-            if (odataUri.Filter != null && !IsFilterable(odataUri.Filter, entityType))
-                throw new ODataErrorException("Invalid filter by property");
-
-            if (odataUri.OrderBy != null && !IsOrderable(odataUri.OrderBy, entityType))
-                throw new ODataErrorException("Invalid order by property");
-
-            if (odataUri.SelectAndExpand != null)
-                foreach (SelectItem selectItem in odataUri.SelectAndExpand.SelectedItems)
-                    if (selectItem is ExpandedNavigationSelectItem navigationSelectItem)
-                        Validate(navigationSelectItem);
-                    else if (selectItem is PathSelectItem pathSelectItem)
-                        Validate(pathSelectItem, entityType);
-
-            SelectItem[] selectExpandItems = GetSelectExpandItems(entityType);
-            if (selectExpandItems.Length > 0)
+            IEdmEntityType entityType = OeEdmClrHelper.GetEntitySet(odataUri.Path).EntityType();
+            if (odataUri.SkipToken == null)
             {
-                if (odataUri.SelectAndExpand == null)
-                    odataUri.SelectAndExpand = new SelectExpandClause(selectExpandItems, true);
-                else
-                {
-                    var selectItemList = new List<SelectItem>(odataUri.SelectAndExpand.SelectedItems);
-                    selectItemList.AddRange(selectExpandItems);
-                    odataUri.SelectAndExpand = new SelectExpandClause(selectItemList, odataUri.SelectAndExpand.AllSelected);
-                }
+                var modelBoundValidator = new OeModelBoundValidator(this);
+                modelBoundValidator.Validate(odataUri, entityType);
+
+                var selectExpandBuilder = new OeSelectExpandBuilder(edmModel, this);
+                odataUri.SelectAndExpand = selectExpandBuilder.Build(odataUri.SelectAndExpand, entityType);
             }
-        }
-        private void Validate(ExpandedNavigationSelectItem item)
-        {
-            var segment = (NavigationPropertySegment)item.PathToNavigationProperty.LastSegment;
-            IEdmNavigationProperty navigationProperty = segment.NavigationProperty;
-
-            if (item.CountOption.GetValueOrDefault() && !IsCountable(navigationProperty))
-                throw new ODataErrorException("Navigation property " + navigationProperty.Name + " not countable");
-
-            if (!IsSelectable(item.PathToNavigationProperty, item))
-                throw new ODataErrorException("Navigation property " + item.PathToNavigationProperty.LastSegment.Identifier + " not expandable");
-
-            if (item.FilterOption != null && !IsFilterable(item.FilterOption, navigationProperty))
-                throw new ODataErrorException("Navigation property " + navigationProperty.Name + " not filterable");
-
-            if (item.OrderByOption != null && !IsOrdering(item.OrderByOption, navigationProperty))
-                throw new ODataErrorException("Navigation property " + navigationProperty.Name + " not sortable");
-
-            if (item.TopOption != null && !IsTop(item.TopOption.GetValueOrDefault(), navigationProperty))
-                throw new ODataErrorException("Navigation property " + navigationProperty.Name + " not valid top");
-
-            foreach (SelectItem selectItem in item.SelectAndExpand.SelectedItems)
-                if (selectItem is ExpandedNavigationSelectItem navigationSelectItem)
-                    Validate(navigationSelectItem);
-                else if (selectItem is PathSelectItem pathSelectItem)
-                    Validate(pathSelectItem, item);
-        }
-        private void Validate(PathSelectItem pathSelectItem, IEdmEntityType entityType)
-        {
-            if (!IsSelectable(pathSelectItem.SelectedPath, entityType))
-                throw new ODataErrorException("Structural property " + pathSelectItem.SelectedPath.LastSegment.Identifier + " not selectable");
-        }
-        private void Validate(PathSelectItem pathSelectItem, ExpandedNavigationSelectItem navigationSelectItem)
-        {
-            if (!IsSelectable(pathSelectItem.SelectedPath, navigationSelectItem))
-                throw new ODataErrorException("Structural property " + pathSelectItem.SelectedPath.LastSegment.Identifier + " not selectable");
+            else
+            {
+                var pageSelectItemBuilder = new OePageSelectItemBuilder(this);
+                odataUri.SelectAndExpand = pageSelectItemBuilder.Build(odataUri.SelectAndExpand, entityType);
+            }
         }
     }
 }

@@ -2,15 +2,10 @@
 
 namespace OdataToEntity.Test
 {
-    //Fuxtures --------------------------------------------------------------------------------
+    //DbFixtureInitDb -----------------------------------------------------------------------------
     public sealed class AC_PLNull_DbFixtureInitDb : DbFixtureInitDb
     {
         public AC_PLNull_DbFixtureInitDb() : base(true, false, ModelBoundTestKind.No) { }
-    }
-
-    public sealed class AC_PLNull_ManyColumnsFixtureInitDb : ManyColumnsFixtureInitDb
-    {
-        public AC_PLNull_ManyColumnsFixtureInitDb() : base(true, false, ModelBoundTestKind.No) { }
     }
 
     public sealed class AC_RDBNull_DbFixtureInitDb : DbFixtureInitDb
@@ -18,19 +13,9 @@ namespace OdataToEntity.Test
         public AC_RDBNull_DbFixtureInitDb() : base(true, true, ModelBoundTestKind.No) { }
     }
 
-    public sealed class AC_RDBNull_ManyColumnsFixtureInitDb : ManyColumnsFixtureInitDb
-    {
-        public AC_RDBNull_ManyColumnsFixtureInitDb() : base(true, true, ModelBoundTestKind.No) { }
-    }
-
     public class NC_PLNull_DbFixtureInitDb : DbFixtureInitDb
     {
         public NC_PLNull_DbFixtureInitDb() : base(false, false, ModelBoundTestKind.No) { }
-    }
-
-    public sealed class NC_PLNull_ManyColumnsFixtureInitDb : ManyColumnsFixtureInitDb
-    {
-        public NC_PLNull_ManyColumnsFixtureInitDb() : base(false, false, ModelBoundTestKind.No) { }
     }
 
     public class NC_RDBNull_DbFixtureInitDb : DbFixtureInitDb
@@ -38,9 +23,36 @@ namespace OdataToEntity.Test
         public NC_RDBNull_DbFixtureInitDb() : base(false, true, ModelBoundTestKind.No) { }
     }
 
+    //ManyColumns----------------------------------------------------------------------------------
+    public sealed class AC_PLNull_ManyColumnsFixtureInitDb : ManyColumnsFixtureInitDb
+    {
+        public AC_PLNull_ManyColumnsFixtureInitDb() : base(true, false, ModelBoundTestKind.No) { }
+    }
+
+    public sealed class AC_RDBNull_ManyColumnsFixtureInitDb : ManyColumnsFixtureInitDb
+    {
+        public AC_RDBNull_ManyColumnsFixtureInitDb() : base(true, true, ModelBoundTestKind.No) { }
+    }
+
+    public sealed class NC_PLNull_ManyColumnsFixtureInitDb : ManyColumnsFixtureInitDb
+    {
+        public NC_PLNull_ManyColumnsFixtureInitDb() : base(false, false, ModelBoundTestKind.No) { }
+    }
+
     public sealed class NC_RDBNull_ManyColumnsFixtureInitDb : ManyColumnsFixtureInitDb
     {
         public NC_RDBNull_ManyColumnsFixtureInitDb() : base(false, true, ModelBoundTestKind.No) { }
+    }
+
+    //ModelBoundAttribute--------------------------------------------------------------------------
+    public sealed class AC_PLNull_ModelBoundAttributeDbFixture : DbFixtureInitDb
+    {
+        public AC_PLNull_ModelBoundAttributeDbFixture() : base(true, false, ModelBoundTestKind.Attribute) { }
+    }
+
+    public sealed class AC_RDBNull_ModelBoundAttributeDbFixture : DbFixtureInitDb
+    {
+        public AC_RDBNull_ModelBoundAttributeDbFixture() : base(true, true, ModelBoundTestKind.Attribute) { }
     }
 
     public sealed class NC_PLNull_ModelBoundAttributeDbFixture : DbFixtureInitDb
@@ -48,14 +60,25 @@ namespace OdataToEntity.Test
         public NC_PLNull_ModelBoundAttributeDbFixture() : base(false, false, ModelBoundTestKind.Attribute) { }
     }
 
-    public sealed class NC_PLNull_ModelBoundFluentDbFixture : DbFixtureInitDb
-    {
-        public NC_PLNull_ModelBoundFluentDbFixture() : base(false, false, ModelBoundTestKind.Fluent) { }
-    }
-
     public sealed class NC_RDBNull_ModelBoundAttributeDbFixture : DbFixtureInitDb
     {
         public NC_RDBNull_ModelBoundAttributeDbFixture() : base(false, true, ModelBoundTestKind.Attribute) { }
+    }
+
+    //ModelBoundFluent-----------------------------------------------------------------------------
+    public sealed class AC_PLNull_ModelBoundFluentDbFixture : DbFixtureInitDb
+    {
+        public AC_PLNull_ModelBoundFluentDbFixture() : base(true, false, ModelBoundTestKind.Fluent) { }
+    }
+
+    public sealed class AC_RDBNull_ModelBoundFluentDbFixture : DbFixtureInitDb
+    {
+        public AC_RDBNull_ModelBoundFluentDbFixture() : base(true, true, ModelBoundTestKind.Fluent) { }
+    }
+
+    public sealed class NC_PLNull_ModelBoundFluentDbFixture : DbFixtureInitDb
+    {
+        public NC_PLNull_ModelBoundFluentDbFixture() : base(false, false, ModelBoundTestKind.Fluent) { }
     }
 
     public sealed class NC_RDBNull_ModelBoundFluentDbFixture : DbFixtureInitDb
@@ -63,7 +86,7 @@ namespace OdataToEntity.Test
         public NC_RDBNull_ModelBoundFluentDbFixture() : base(false, true, ModelBoundTestKind.Fluent) { }
     }
 
-    //Tests -----------------------------------------------------------------------------------
+    //Tests ---------------------------------------------------------------------------------------
 #if !IGNORE_AC_PLNull
     public sealed class AC_PLNull : SelectTest, IClassFixture<AC_PLNull_DbFixtureInitDb>
     {
@@ -73,6 +96,16 @@ namespace OdataToEntity.Test
     public sealed class AC_PLNull_ManyColumns : ManyColumnsTest, IClassFixture<AC_PLNull_ManyColumnsFixtureInitDb>
     {
         public AC_PLNull_ManyColumns(AC_PLNull_ManyColumnsFixtureInitDb fixture) : base(fixture) { }
+    }
+
+    public sealed class AC_PLNull_ModelBoundAttributeTest : ModelBoundTest, IClassFixture<AC_PLNull_ModelBoundAttributeDbFixture>
+    {
+        public AC_PLNull_ModelBoundAttributeTest(AC_PLNull_ModelBoundAttributeDbFixture fixture) : base(fixture) { }
+    }
+
+    public sealed class AC_PLNull_ModelBoundFluentTest : ModelBoundTest, IClassFixture<AC_PLNull_ModelBoundFluentDbFixture>
+    {
+        public AC_PLNull_ModelBoundFluentTest(AC_PLNull_ModelBoundFluentDbFixture fixture) : base(fixture) { }
     }
 #endif
 
@@ -85,6 +118,16 @@ namespace OdataToEntity.Test
     public sealed class AC_RDBNull_ManyColumns : ManyColumnsTest, IClassFixture<AC_RDBNull_ManyColumnsFixtureInitDb>
     {
         public AC_RDBNull_ManyColumns(AC_RDBNull_ManyColumnsFixtureInitDb fixture) : base(fixture) { }
+    }
+
+    public sealed class AC_RDBNull_ModelBoundAttributeTest : ModelBoundTest, IClassFixture<AC_RDBNull_ModelBoundAttributeDbFixture>
+    {
+        public AC_RDBNull_ModelBoundAttributeTest(AC_RDBNull_ModelBoundAttributeDbFixture fixture) : base(fixture) { }
+    }
+
+    public sealed class AC_RDBNull_ModelBoundFluentTest : ModelBoundTest, IClassFixture<AC_RDBNull_ModelBoundFluentDbFixture>
+    {
+        public AC_RDBNull_ModelBoundFluentTest(AC_RDBNull_ModelBoundFluentDbFixture fixture) : base(fixture) { }
     }
 #endif
 

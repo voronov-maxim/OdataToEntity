@@ -44,7 +44,7 @@ namespace OdataToEntity.Cache.UriCompare
         }
         public static bool Compare<T, TParameter>(IEnumerable<T> items1, IEnumerable<T> items2, TParameter parameter, Func<T, T, TParameter, bool> compare)
         {
-            if (items1 == items2)
+            if (items1 == null && items2 == null)
                 return true;
 
             if (items1 == null || items2 == null)

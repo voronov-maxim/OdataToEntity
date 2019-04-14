@@ -1,43 +1,43 @@
 ﻿using Microsoft.OData.Edm;
-using Microsoft.OData.UriParser;
 using System.Collections.Generic;
 
 namespace OdataToEntity.Query.Builder
 {
     public sealed class OeModelBoundSettingsBuilder
     {
-        private readonly Dictionary<IEdmNamedElement, OeModelBoundSettings> _settings;
+        private readonly Dictionary<IEdmNamedElement, OeModelBoundSettings> _elementSettings;
 
         public OeModelBoundSettingsBuilder()
         {
-            _settings = new Dictionary<IEdmNamedElement, OeModelBoundSettings>();
+            _elementSettings = new Dictionary<IEdmNamedElement, OeModelBoundSettings>();
         }
 
         public OeModelBoundProvider Build()
         {
-            return new OeModelBoundProvider(_settings);
-        }
-        internal OeModelBoundSettings GetSettings(IEdmEntityType entityType)
-        {
-            _settings.TryGetValue(entityType, out OeModelBoundSettings settings);
-            return settings;
-        }
-        internal OeModelBoundSettings GetSettings(IEdmNavigationProperty navigationProperty)
-        {
-            _settings.TryGetValue(navigationProperty, out OeModelBoundSettings settings);
-            return settings;
+            foreach (KeyValuePair<IEdmNamedElement, OeModelBoundSettings> setting in _elementSettings)
+                if (setting.Key is IEdmEntityType entityType)
+                    MergeSettings(entityType);
+
+            return new OeModelBoundProvider(_elementSettings);
         }
         private OeModelBoundSettings GetSettingsOrAdd(IEdmEntityType entityType)
         {
-            if (!_settings.TryGetValue(entityType, out OeModelBoundSettings settings))
-                _settings.Add(entityType, settings = new OeModelBoundSettings(entityType));
+            if (!_elementSettings.TryGetValue(entityType, out OeModelBoundSettings settings))
+                _elementSettings.Add(entityType, settings = new OeModelBoundSettings(entityType));
             return settings;
         }
         private OeModelBoundSettings GetSettingsOrAdd(IEdmNavigationProperty navigationProperty)
         {
-            if (!_settings.TryGetValue(navigationProperty, out OeModelBoundSettings settings))
-                _settings.Add(navigationProperty, settings = new OeModelBoundSettings(navigationProperty));
+            if (!_elementSettings.TryGetValue(navigationProperty, out OeModelBoundSettings settings))
+                _elementSettings.Add(navigationProperty, settings = new OeModelBoundSettings(navigationProperty));
             return settings;
+        }
+        private void MergeSettings(IEdmEntityType entityType)
+        {
+            _elementSettings.TryGetValue(entityType, out OeModelBoundSettings settings);
+            while ((entityType = (IEdmEntityType)entityType.BaseType) != null)
+                if (_elementSettings.TryGetValue(entityType, out OeModelBoundSettings baseSettings))
+                    settings.Merge(baseSettings);
         }
         public void SetCount(bool countable, IEdmEntityType entityType)
         {
@@ -95,10 +95,6 @@ namespace OdataToEntity.Query.Builder
         public void SetSelect(IEdmProperty property, SelectExpandType selectType, IEdmNavigationProperty navigationProperty)
         {
             SetPropertySetting(property, OeModelBoundKind.Select, selectType, navigationProperty);
-        }
-        public void SetSelectExpandItems(IEdmEntityType entityType, SelectItem[] selectExpandItems)
-        {
-            GetSettingsOrAdd(entityType).SelectExpandItems = selectExpandItems;
         }
     }
 }

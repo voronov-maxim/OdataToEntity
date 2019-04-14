@@ -210,6 +210,14 @@ namespace OdataToEntity
             }
             return entitySet;
         }
+        public static IEdmEntitySet GetEntitySet(ODataPath odataPath)
+        {
+            IReadOnlyList<Parsers.OeParseNavigationSegment> parseNavigationSegments = Parsers.OeParseNavigationSegment.GetNavigationSegments(odataPath);
+            IEdmEntitySet entitySet = Parsers.OeParseNavigationSegment.GetEntitySet(parseNavigationSegments);
+            if (entitySet == null && odataPath.FirstSegment is EntitySetSegment entitySetSegment)
+                entitySet = entitySetSegment.EntitySet;
+            return entitySet;
+        }
         public static IEdmProperty GetPropertyIgnoreCase(this IEdmStructuredType entityType, String propertyName)
         {
             foreach (IEdmProperty edmProperty in entityType.Properties())

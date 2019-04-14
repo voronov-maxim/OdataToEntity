@@ -23,21 +23,22 @@ namespace OdataToEntity.Parsers.Translators
                 Translate(navigationItem, expandedNavigationSelectItem);
             else if (item is PathSelectItem pathSelectItem)
                 Translate(navigationItem, pathSelectItem);
-            else if (item is OeDisableSelectItem disableSelectItem)
-                Translate(navigationItem, disableSelectItem);
+            else if (item is OePageSelectItem pageSelectItem)
+                Translate(navigationItem, pageSelectItem);
             else
                 throw new InvalidOperationException("Unknown SelectItem type " + item.GetType().Name);
         }
-        private void Translate(OeNavigationSelectItem navigationItem, OeDisableSelectItem item)
+        private void Translate(OeNavigationSelectItem navigationItem, OePageSelectItem pageSelectItem)
         {
-            navigationItem.RemoveStructuralItem(item.StructuralProperty);
+            navigationItem.PageSize = pageSelectItem.PageSize;
         }
         private void Translate(OeNavigationSelectItem navigationItem, ExpandedNavigationSelectItem item)
         {
             if (_navigationNextLink && Cache.UriCompare.OeComparerExtension.IsNavigationNextLink(item))
                 return;
 
-            var childNavigationItem = new OeNavigationSelectItem(_edmModel, navigationItem, item, _skipToken);
+            IEdmEntitySetBase entitySet = OeEdmClrHelper.GetEntitySet(_edmModel, item);
+            var childNavigationItem = new OeNavigationSelectItem(entitySet, navigationItem, item, _skipToken);
             childNavigationItem = navigationItem.AddOrGetNavigationItem(childNavigationItem);
 
             foreach (SelectItem selectItemClause in item.SelectAndExpand.SelectedItems)

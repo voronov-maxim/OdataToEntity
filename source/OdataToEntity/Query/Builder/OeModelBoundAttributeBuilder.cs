@@ -75,19 +75,6 @@ namespace OdataToEntity.Query.Builder
                         selectAttributeReader.Build(edmEntityType, clrEntityType);
                     }
                 }
-
-            var selectExpandBuilder = new OeSelectExpandBuilder(edmModel, _modelBoundSettingsBuilder);
-            foreach (IEdmSchemaElement schemaElement in edmModel.SchemaElements)
-                if (schemaElement is IEdmEntityType edmEntityType)
-                {
-                    Type clrEntityType = edmModel.GetAnnotationValue<Type>(edmEntityType);
-                    if (clrEntityType != null)
-                    {
-                        SelectItem[] selectItems = selectExpandBuilder.Build(edmEntityType, 3);
-                        if (selectItems.Length > 0)
-                            _modelBoundSettingsBuilder.SetSelectExpandItems(edmEntityType, selectItems);
-                    }
-                }
         }
     }
 }

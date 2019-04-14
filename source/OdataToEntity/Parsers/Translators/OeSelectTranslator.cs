@@ -45,22 +45,22 @@ namespace OdataToEntity.Parsers.Translators
 
         private readonly IEdmModel _edmModel;
         private readonly OeJoinBuilder _joinBuilder;
-        private readonly Query.OeModelBoundProvider _modelBoundProvider;
         private readonly ODataUri _odataUri;
         private readonly OeNavigationSelectItem _rootNavigationItem;
 
-        public OeSelectTranslator(IEdmModel edmModel, OeJoinBuilder joinBuilder, ODataUri odataUri, Query.OeModelBoundProvider modelBoundProvider)
+        public OeSelectTranslator(IEdmModel edmModel, OeJoinBuilder joinBuilder, ODataUri odataUri)
         {
             _edmModel = edmModel;
             _joinBuilder = joinBuilder;
             _odataUri = odataUri;
-            _modelBoundProvider = modelBoundProvider;
             _rootNavigationItem = new OeNavigationSelectItem(odataUri);
         }
 
         public Expression Build(Expression source, ref OeSelectTranslatorParameters selectTranslatorParameters)
         {
-            bool isBuild = false;
+            BuildSelect(_odataUri.SelectAndExpand, selectTranslatorParameters.MetadataLevel, selectTranslatorParameters.NavigationNextLink);
+            bool isBuild = _rootNavigationItem.StructuralItems.Count > 0 || _rootNavigationItem.NavigationItems.Count > 0;
+
             Expression skipTakeSource = BuildSkipTakeSource(source, _rootNavigationItem, ref selectTranslatorParameters);
             if (source != skipTakeSource)
             {
@@ -68,8 +68,6 @@ namespace OdataToEntity.Parsers.Translators
                 source = skipTakeSource;
             }
 
-            BuildSelect(_odataUri.SelectAndExpand, selectTranslatorParameters.MetadataLevel, selectTranslatorParameters.NavigationNextLink);
-            isBuild |= _rootNavigationItem.StructuralItems.Count > 0 || _rootNavigationItem.NavigationItems.Count > 0;
 
             if (_odataUri.Compute != null)
             {
@@ -77,7 +75,7 @@ namespace OdataToEntity.Parsers.Translators
                 BuildCompute(_odataUri.Compute);
             }
 
-            source = BuildJoin(source);
+            source = BuildJoin(source, FlattenNavigationItems(_rootNavigationItem));
             source = BuildOrderBy(source, _odataUri.OrderBy);
 
             if (isBuild)
@@ -98,9 +96,8 @@ namespace OdataToEntity.Parsers.Translators
                 _rootNavigationItem.AddStructuralItem(computeProperty, false);
             }
         }
-        private Expression BuildJoin(Expression source)
+        private Expression BuildJoin(Expression source, IList<OeNavigationSelectItem> navigationItems)
         {
-            List<OeNavigationSelectItem> navigationItems = FlattenNavigationItems(_rootNavigationItem);
             for (int i = 1; i < navigationItems.Count; i++)
                 if (!navigationItems[i].AlreadyUsedInBuildExpression)
                 {
@@ -194,13 +191,11 @@ namespace OdataToEntity.Parsers.Translators
             }
 
             _rootNavigationItem.AddKeyRecursive(metadataLevel != OeMetadataLevel.Full);
-            if (_modelBoundProvider != null)
-                _rootNavigationItem.AddForeignKeyRecursive(_modelBoundProvider);
         }
         private Expression BuildSkipTakeSource(Expression source, OeNavigationSelectItem navigationItem, ref OeSelectTranslatorParameters parameters)
         {
             BuildOrderBySkipTake(navigationItem, _odataUri.OrderBy, HasSelectItems(_odataUri.SelectAndExpand));
-            source = BuildJoin(source);
+            source = BuildJoin(source, new OeNavigationSelectItem[] { _rootNavigationItem });
 
             long? top = GetTop(navigationItem, _odataUri.Top);
             if (top == null && _odataUri.Skip == null)
@@ -237,7 +232,7 @@ namespace OdataToEntity.Parsers.Translators
                 {
                     Accessors = GetAccessors(clrType, root),
                     EntitySet = root.EntitySet,
-                    PageSize = GetPageSize(root),
+                    PageSize = root.PageSize,
                     SkipTokenAccessors = skipTokenAccessors
                 };
                 root.EntryFactory = new OeEntryFactory(ref options);
@@ -265,7 +260,7 @@ namespace OdataToEntity.Parsers.Translators
                         LinkAccessor = linkAccessor,
                         NavigationLinks = nestedNavigationLinks,
                         NavigationSelectItem = navigationItem.NavigationSelectItem,
-                        PageSize = GetPageSize(navigationItem),
+                        PageSize = navigationItem.PageSize,
                         SkipTokenAccessors = skipTokenAccessors
                     };
                     navigationItem.EntryFactory = new OeEntryFactory(ref options);
@@ -359,7 +354,7 @@ namespace OdataToEntity.Parsers.Translators
                 return innerSource;
 
             OrderByClause orderByClause = item.OrderByOption;
-            if (GetPageSize(navigationItem) > 0)
+            if (navigationItem.PageSize > 0)
                 orderByClause = OeSkipTokenParser.GetUniqueOrderBy(navigationItem.EntitySet, item.OrderByOption, null);
 
             var entitySet = (IEdmEntitySet)navigationItem.Parent.EntitySet;
@@ -374,21 +369,10 @@ namespace OdataToEntity.Parsers.Translators
                     nestedEntryFactories.Add(navigationItem.NavigationItems[i].EntryFactory);
             return nestedEntryFactories.ToArray();
         }
-        private int GetPageSize(OeNavigationSelectItem navigationItem)
-        {
-            if (_modelBoundProvider == null)
-                return 0;
-
-            if (navigationItem.EdmProperty == null)
-                return _modelBoundProvider.GetPageSize(navigationItem.EntitySet.EntityType());
-            else
-                return _modelBoundProvider.GetPageSize(navigationItem.EdmProperty);
-        }
         private long? GetTop(OeNavigationSelectItem navigationItem, long? top)
         {
-            int pageSize = GetPageSize(navigationItem);
-            if (pageSize > 0 && (top == null || pageSize < top.GetValueOrDefault()))
-                top = pageSize;
+            if (navigationItem.PageSize > 0 && (top == null || navigationItem.PageSize < top.GetValueOrDefault()))
+                top = navigationItem.PageSize;
 
             return top;
         }

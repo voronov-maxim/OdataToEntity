@@ -1,5 +1,4 @@
 ﻿using Microsoft.OData.Edm;
-using Microsoft.OData.UriParser;
 using System;
 using System.Collections.Generic;
 
@@ -12,9 +11,8 @@ namespace OdataToEntity.Query.Builder
         private OeModelBoundSettings()
         {
             Countable = true;
-            MaxTop = Int32.MinValue;
+            MaxTop = 0;
             PageSize = 0;
-            SelectExpandItems = Array.Empty<SelectItem>();
 
             _properties = new Dictionary<IEdmProperty, SelectExpandType?[]>();
         }
@@ -58,7 +56,24 @@ namespace OdataToEntity.Query.Builder
                     yield return (propertySetting.Key, allowed.Value);
             }
         }
-        public void SetPropertySetting(IEdmProperty property, OeModelBoundKind modelBoundKind, SelectExpandType allowed)
+        internal void Merge(OeModelBoundSettings settings)
+        {
+            if (NavigationProperty != null || settings.NavigationProperty != null)
+                throw new InvalidOperationException("Only entity settings can be merged");
+
+            Countable &= settings.Countable;
+            MaxTop = Min(MaxTop, settings.MaxTop);
+            PageSize = Min(PageSize, settings.PageSize);
+
+            foreach (KeyValuePair<IEdmProperty, SelectExpandType?[]> pair in settings._properties)
+                _properties.Add(pair.Key, pair.Value);
+
+            int Min(int value1, int value2)
+            {
+                return value1 == 0 || value2 == 0 ? value1 + value2 : Math.Min(value1, value2);
+            }
+        }
+        internal void SetPropertySetting(IEdmProperty property, OeModelBoundKind modelBoundKind, SelectExpandType allowed)
         {
             if (!_properties.TryGetValue(property, out SelectExpandType?[] propertySettings))
             {
@@ -72,7 +87,6 @@ namespace OdataToEntity.Query.Builder
         public bool Countable { get; set; }
         public int MaxTop { get; set; }
         public int PageSize { get; set; }
-        public SelectItem[] SelectExpandItems { get; set; }
 
         public IEdmEntityType EntityType { get; }
         public IEdmNavigationProperty NavigationProperty { get; }

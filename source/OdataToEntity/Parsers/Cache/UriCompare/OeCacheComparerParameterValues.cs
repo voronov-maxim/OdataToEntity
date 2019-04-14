@@ -76,6 +76,14 @@ namespace OdataToEntity.Cache.UriCompare
             foreach (KeyValuePair<ConstantNode, OeQueryCacheDbParameterDefinition> pair in _constantToParameterMapper)
                 if (pair.Value.ParameterType == typeof(int) && pair.Key.LiteralText == resourcePath)
                 {
+                    for (int i = 0; i <  _parameterValues.Count; i++)
+                        if (String.CompareOrdinal(_parameterValues[i].ParameterName, pair.Value.ParameterName) == 0)
+                        {
+                            if (value < (int)_parameterValues[i].ParameterValue)
+                                _parameterValues[i] = new OeQueryCacheDbParameterValue(pair.Value.ParameterName, (int)value);
+                            return;
+                        }
+
                     _parameterValues.Add(new OeQueryCacheDbParameterValue(pair.Value.ParameterName, (int)value));
                     return;
                 }

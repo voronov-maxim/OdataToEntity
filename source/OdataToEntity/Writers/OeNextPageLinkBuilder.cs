@@ -17,53 +17,6 @@ namespace OdataToEntity.Writers
             _queryContext = queryContext;
         }
 
-        private SelectExpandClause FilterDisableSelectExpand(IEdmEntitySet entitySet, SelectExpandClause selectExpandClause)
-        {
-            if (_queryContext.ModelBoundProvider == null || selectExpandClause == null)
-                return selectExpandClause;
-
-            var navigationSelectItem = new ExpandedNavigationSelectItem(new ODataExpandPath(), entitySet, selectExpandClause);
-            IList<SelectItem> selectedItems = FilterDisableSelectItem(navigationSelectItem);
-            return new SelectExpandClause(selectedItems, selectedItems.Count == 0);
-        }
-        private IList<SelectItem> FilterDisableSelectItem(ExpandedNavigationSelectItem navigationSelectItem)
-        {
-            var selectedItems = new List<SelectItem>();
-            if (navigationSelectItem.SelectAndExpand != null)
-            {
-                foreach (SelectItem selectItem in navigationSelectItem.SelectAndExpand.SelectedItems)
-                    if (selectItem is ExpandedNavigationSelectItem item)
-                    {
-                        IList<SelectItem> navigationSelectItems = FilterDisableSelectItem(item);
-                        var selectExpandClause = new SelectExpandClause(navigationSelectItems, navigationSelectItems.Count == 0);
-                        selectedItems.Add(new ExpandedNavigationSelectItem(item.PathToNavigationProperty, item.NavigationSource, selectExpandClause));
-                    }
-                    else if (selectItem is PathSelectItem)
-                        selectedItems.Add(selectItem);
-
-                if (selectedItems.Count > 0)
-                    return selectedItems;
-            }
-
-            bool disabledFound = false;
-            IEdmEntitySetBase entitySet = OeEdmClrHelper.GetEntitySet(_queryContext.EdmModel, navigationSelectItem);
-            foreach (IEdmStructuralProperty structuralProperty in entitySet.EntityType().StructuralProperties())
-            {
-                var selectPath = new ODataSelectPath(new PropertySegment(structuralProperty));
-                bool isSelectable;
-                if (navigationSelectItem.PathToNavigationProperty.Count == 0)
-                    isSelectable = _queryContext.ModelBoundProvider.IsSelectable(selectPath, navigationSelectItem.NavigationSource.EntityType());
-                else
-                    isSelectable = _queryContext.ModelBoundProvider.IsSelectable(selectPath, navigationSelectItem);
-
-                if (isSelectable)
-                    selectedItems.Add(new PathSelectItem(selectPath));
-                else
-                    disabledFound = true;
-            }
-
-            return disabledFound ? selectedItems : (IList<SelectItem>)Array.Empty<SelectItem>();
-        }
         public static int GetCount(IEdmModel edmModel, OeEntryFactory entryFactory, Object value)
         {
             ODataUri odataUri = OeNextPageLinkBuilder.GetCountODataUri(edmModel, entryFactory, entryFactory.NavigationSelectItem, value);
@@ -201,7 +154,7 @@ namespace OdataToEntity.Writers
                 OrderBy = orderByClause,
                 Path = new ODataPath(pathSegments),
                 QueryCount = queryCount,
-                SelectAndExpand = FilterDisableSelectExpand(entitytSet, item.SelectAndExpand),
+                SelectAndExpand = item.SelectAndExpand,
                 Skip = item.SkipOption,
                 SkipToken = skipToken,
                 Top = top
@@ -234,11 +187,8 @@ namespace OdataToEntity.Writers
             if (restCount == 0)
                 return null;
 
-            IEdmEntitySet entitySet = OeQueryContext.GetEntitySet(_queryContext.ODataUri.Path, _queryContext.ParseNavigationSegments);
-            SelectExpandClause selectExpandClause = FilterDisableSelectExpand(entitySet, _queryContext.ODataUri.SelectAndExpand);
-
             ODataUri nextOdataUri = _queryContext.ODataUri.Clone();
-            nextOdataUri.SelectAndExpand = selectExpandClause;
+            nextOdataUri.SelectAndExpand = _queryContext.ODataUri.SelectAndExpand;
             nextOdataUri.ServiceRoot = null;
             nextOdataUri.QueryCount = null;
             nextOdataUri.Top = pageSize;

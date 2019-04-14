@@ -1,5 +1,4 @@
 ﻿using Microsoft.OData.Edm;
-using Microsoft.OData.UriParser;
 using System;
 
 namespace OdataToEntity.Query.Builder
@@ -20,25 +19,8 @@ namespace OdataToEntity.Query.Builder
 
             return new EntitySetConfiguration<TEntityType>(this, entitySet);
         }
-        private void BuildByEdmModel(IEdmModel edmModel)
-        {
-            var selectExpandBuilder = new OeSelectExpandBuilder(edmModel, ModelBoundSettingsBuilder);
-            foreach (IEdmSchemaElement element in edmModel.SchemaElements)
-                if (element is IEdmEntityType entityType)
-                    if (edmModel.GetAnnotationValue<Type>(entityType) != null)
-                    {
-                        SelectItem[] selectItems = selectExpandBuilder.Build(entityType, 3);
-                        if (selectItems.Length > 0)
-                            ModelBoundSettingsBuilder.SetSelectExpandItems(entityType, selectItems);
-                    }
-        }
         public OeModelBoundProvider BuildProvider()
         {
-            BuildByEdmModel((EdmModel)EdmModel);
-            foreach (IEdmModel refModel in EdmModel.ReferencedModels)
-                if (refModel is EdmModel)
-                    BuildByEdmModel(refModel);
-
             return ModelBoundSettingsBuilder.Build();
         }
 

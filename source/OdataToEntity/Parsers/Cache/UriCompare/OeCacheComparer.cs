@@ -235,7 +235,7 @@ namespace OdataToEntity.Cache.UriCompare
         }
         private bool CompareSelectAndExpand(SelectExpandClause clause1, SelectExpandClause clause2, ODataPath path)
         {
-            if (clause1 == clause2)
+            if (clause1 == null && clause2 == null)
                 return true;
             if (clause1 == null || clause2 == null)
                 return false;
@@ -293,12 +293,26 @@ namespace OdataToEntity.Cache.UriCompare
             }
             else if (selectItem1 is PathSelectItem)
             {
-                var path1 = selectItem1 as PathSelectItem;
-                var path2 = selectItem2 as PathSelectItem;
-                return ODataPathComparer.Compare(path1.SelectedPath, path2.SelectedPath);
+                if (selectItem2 is PathSelectItem item2)
+                {
+                    var item1 = selectItem1 as PathSelectItem;
+                    return ODataPathComparer.Compare(item1.SelectedPath, item2.SelectedPath);
+                }
+
+                return false;
+            }
+            else if (selectItem1 is Parsers.Translators.OePageSelectItem)
+            {
+                var item1 = selectItem1 as Parsers.Translators.OePageSelectItem;
+                if (selectItem2 is Parsers.Translators.OePageSelectItem item2 && item1.PageSize == item2.PageSize)
+                {
+                    _parameterValues.AddTopParameter(item2.PageSize, path);
+                    return true;
+                }
+                return false;
             }
             else
-                throw new NotSupportedException();
+                throw new InvalidOperationException("Unknown SelectItem " + selectItem1.GetType().ToString());
         }
         private bool CompareSkip(long? skip1, long? skip2, ODataPath path)
         {
@@ -442,7 +456,7 @@ namespace OdataToEntity.Cache.UriCompare
                         hash = CombineHashCodes(hash, compute.Alias.GetHashCode());
                 }
                 else
-                    throw new InvalidProgramException("unknown TransformationNode " + transformationNode.GetType().ToString());
+                    throw new InvalidProgramException("Unknown TransformationNode " + transformationNode.GetType().ToString());
             }
 
             return hash;
@@ -451,21 +465,18 @@ namespace OdataToEntity.Cache.UriCompare
         {
             foreach (SelectItem selectItem in selectExpandClause.SelectedItems)
             {
-                if (selectItem is ExpandedNavigationSelectItem)
+                if (selectItem is ExpandedNavigationSelectItem navigationSelectItem)
                 {
-                    var expanded = selectItem as ExpandedNavigationSelectItem;
-                    hash = CombineHashCodes(hash, expanded.NavigationSource.Name.GetHashCode());
-                    if (expanded.SelectAndExpand != null)
-                        hash = CombineHashCodes(hash, GetCacheCode(hash, expanded.SelectAndExpand));
+                    hash = CombineHashCodes(hash, navigationSelectItem.NavigationSource.Name.GetHashCode());
+                    if (navigationSelectItem.SelectAndExpand != null)
+                        hash = CombineHashCodes(hash, GetCacheCode(hash, navigationSelectItem.SelectAndExpand));
                 }
-                else if (selectItem is PathSelectItem)
-                {
-                    ODataSelectPath path = (selectItem as PathSelectItem).SelectedPath;
-                    hash = CombineHashCodes(hash, path.FirstSegment.Identifier.GetHashCode());
-                    hash = CombineHashCodes(hash, path.LastSegment.Identifier.GetHashCode());
-                }
+                else if (selectItem is PathSelectItem pathSelectItem)
+                    hash = CombineHashCodes(hash, pathSelectItem.SelectedPath.LastSegment.Identifier.GetHashCode());
+                else if (selectItem is Parsers.Translators.OePageSelectItem)
+                    hash = CombineHashCodes(hash, typeof(Parsers.Translators.OePageSelectItem).GetHashCode());
                 else
-                    throw new InvalidOperationException("unknown SelectItem " + selectItem.GetType().ToString());
+                    throw new InvalidOperationException("Unknown SelectItem " + selectItem.GetType().ToString());
             }
 
             return hash;

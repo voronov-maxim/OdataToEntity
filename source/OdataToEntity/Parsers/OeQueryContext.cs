@@ -194,28 +194,26 @@ namespace OdataToEntity.Parsers
             Expression expression = CreateExpression(out IReadOnlyDictionary<ConstantExpression, ConstantNode> constants);
             return constantToVariableVisitor.Translate(expression, constants);
         }
-        public static IEdmEntitySet GetEntitySet(ODataPath odataPath, IReadOnlyList<OeParseNavigationSegment> parseNavigationSegments)
+        public IEdmEntitySet GetEntitySet()
         {
-            IEdmEntitySet entitySet = OeParseNavigationSegment.GetEntitySet(parseNavigationSegments);
-            if (entitySet == null && odataPath.FirstSegment is EntitySetSegment entitySetSegment)
+            IEdmEntitySet entitySet = OeParseNavigationSegment.GetEntitySet(ParseNavigationSegments);
+            if (entitySet == null && ODataUri.Path.FirstSegment is EntitySetSegment entitySetSegment)
                 entitySet = entitySetSegment.EntitySet;
             return entitySet;
         }
-        private static OrderByClause GetUniqueOrderBy(ODataUri odataUri, IReadOnlyList<OeParseNavigationSegment> parseNavigationSegments)
+        private OrderByClause GetUniqueOrderBy()
         {
-            IEdmEntitySet entitySet = GetEntitySet(odataUri.Path, parseNavigationSegments);
+            IEdmEntitySet entitySet = GetEntitySet();
             if (entitySet != null)
-                return OeSkipTokenParser.GetUniqueOrderBy(entitySet, odataUri.OrderBy, odataUri.Apply);
+                return OeSkipTokenParser.GetUniqueOrderBy(entitySet, ODataUri.OrderBy, ODataUri.Apply);
 
-            return odataUri.OrderBy;
+            return ODataUri.OrderBy;
         }
         private void Initialize()
         {
             if (!_initialized)
             {
                 _initialized = true;
-
-                ValidateModelBound();
 
                 if (MaxPageSize > 0)
                 {
@@ -226,7 +224,7 @@ namespace OdataToEntity.Parsers
                 SkipTokenNameValues = Array.Empty<OeSkipTokenNameValue>();
                 if (!(ODataUri.Path.LastSegment is OperationSegment))
                 {
-                    ODataUri.OrderBy = GetUniqueOrderBy(ODataUri, ParseNavigationSegments);
+                    ODataUri.OrderBy = GetUniqueOrderBy();
                     if (ODataUri.SkipToken == null)
                         SkipTokenNameValues = Array.Empty<OeSkipTokenNameValue>();
                     else
@@ -246,14 +244,6 @@ namespace OdataToEntity.Parsers
         {
             return new SourceVisitor(edmModel, dataContext, queryableSource).Visit(expression);
         }
-        private void ValidateModelBound()
-        {
-            if (ModelBoundProvider != null && ODataUri.SkipToken == null)
-            {
-                IEdmEntityType entityType = GetEntitySet(ODataUri.Path, ParseNavigationSegments).EntityType();
-                ModelBoundProvider.Validate(ODataUri, entityType);
-            }
-        }
 
         public IEdmModel EdmModel { get; }
         public Db.OeEntitySetAdapter EntitySetAdapter { get; }
@@ -262,7 +252,6 @@ namespace OdataToEntity.Parsers
         public bool IsDatabaseNullHighestValue => EdmModel.GetDataAdapter(EdmModel.EntityContainer).IsDatabaseNullHighestValue;
         public int MaxPageSize { get; set; }
         public OeMetadataLevel MetadataLevel { get; set; }
-        public Query.OeModelBoundProvider ModelBoundProvider { get; set; }
         public bool NavigationNextLink { get; set; }
         public ODataUri ODataUri { get; }
         public IReadOnlyList<OeParseNavigationSegment> ParseNavigationSegments { get; }
