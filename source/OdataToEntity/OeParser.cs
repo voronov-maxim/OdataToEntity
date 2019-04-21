@@ -94,18 +94,14 @@ namespace OdataToEntity
             }
         }
 
-        private readonly Uri _baseUri;
-        private readonly IEdmModel _edmModel;
-        private readonly Query.OeModelBoundProvider _modelBoundProvider;
-
         public OeParser(Uri baseUri, IEdmModel edmModel) : this(baseUri, edmModel, null)
         {
         }
         public OeParser(Uri baseUri, IEdmModel edmModel, Query.OeModelBoundProvider modelBoundProvider)
         {
-            _baseUri = baseUri;
-            _edmModel = edmModel;
-            _modelBoundProvider = modelBoundProvider;
+            BaseUri = baseUri;
+            EdmModel = edmModel;
+            ModelBoundProvider = modelBoundProvider;
         }
 
         public async Task<String> ExecuteBatchAsync(Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
@@ -117,12 +113,12 @@ namespace OdataToEntity
         }
         public async Task ExecuteBatchAsync(Stream requestStream, Stream responseStream, String contentType, CancellationToken cancellationToken)
         {
-            var paser = new Parsers.OeBatchParser(_baseUri, _edmModel);
+            var paser = new Parsers.OeBatchParser(BaseUri, EdmModel);
             await paser.ExecuteAsync(requestStream, responseStream, contentType, cancellationToken).ConfigureAwait(false);
         }
         public async Task ExecuteGetAsync(Uri requestUri, OeRequestHeaders headers, Stream responseStream, CancellationToken cancellationToken)
         {
-            ODataUri odataUri = ParseUri(_edmModel, _baseUri, requestUri);
+            ODataUri odataUri = ParseUri(EdmModel, BaseUri, requestUri);
             if (odataUri.Path.LastSegment is OperationImportSegment)
                 await ExecuteOperationAsync(odataUri, headers, null, responseStream).ConfigureAwait(false);
             else
@@ -130,17 +126,17 @@ namespace OdataToEntity
         }
         public async Task ExecuteQueryAsync(ODataUri odataUri, OeRequestHeaders headers, Stream responseStream, CancellationToken cancellationToken)
         {
-            var parser = new Parsers.OeGetParser(_edmModel.GetEdmModel(odataUri.Path), _modelBoundProvider);
+            var parser = new Parsers.OeGetParser(EdmModel.GetEdmModel(odataUri.Path), ModelBoundProvider);
             await parser.ExecuteAsync(odataUri, headers, responseStream, cancellationToken).ConfigureAwait(false);
         }
         public async Task ExecuteOperationAsync(ODataUri odataUri, OeRequestHeaders headers, Stream requestStream, Stream responseStream)
         {
-            var parser = new Parsers.OePostParser(_edmModel.GetEdmModel(odataUri.Path));
+            var parser = new Parsers.OePostParser(EdmModel.GetEdmModel(odataUri.Path));
             await parser.ExecuteAsync(odataUri, requestStream, headers, responseStream).ConfigureAwait(false);
         }
         public async Task ExecutePostAsync(Uri requestUri, OeRequestHeaders headers, Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
         {
-            ODataUri odataUri = ParseUri(_edmModel, _baseUri, requestUri);
+            ODataUri odataUri = ParseUri(EdmModel, BaseUri, requestUri);
             if (odataUri.Path.LastSegment.Identifier == "$batch")
                 await ExecuteBatchAsync(requestStream, responseStream, headers.ContentType, cancellationToken).ConfigureAwait(false);
             else
@@ -196,5 +192,9 @@ namespace OdataToEntity
             var uriParser = new ODataUriParser(edmModel, serviceRoot, uri, ServiceProvider.Instance);
             return uriParser.ParseUri();
         }
+
+        public Uri BaseUri { get; }
+        public IEdmModel EdmModel { get; }
+        public Query.OeModelBoundProvider ModelBoundProvider { get; }
     }
 }

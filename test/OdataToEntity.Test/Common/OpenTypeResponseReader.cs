@@ -22,7 +22,7 @@ namespace OdataToEntity.Test
             foreach (Object value in values)
                 list.Add(value);
         }
-        protected override Object CreateRootEntity(ODataResource resource, IReadOnlyList<NavigationProperty> navigationProperties, Type entityType)
+        protected override Object CreateRootEntity(ODataResource resource, IReadOnlyList<NavigationInfo> navigationProperties, Type entityType)
         {
             var openType = new SortedDictionary<String, Object>(StringComparer.Ordinal);
 
@@ -37,33 +37,33 @@ namespace OdataToEntity.Test
                 else
                     openType.Add(property.Name, property.Value);
 
-            Dictionary<PropertyInfo, ODataResourceSetBase> propertyInfos = null;
-            foreach (NavigationProperty property in navigationProperties)
+            Dictionary<PropertyInfo, NavigationInfo> propertyInfos = null;
+            foreach (NavigationInfo navigationInfo in navigationProperties)
             {
-                Object value = property.Value;
+                Object value = navigationInfo.Value;
 
-                if (property.ResourceSet != null && (property.ResourceSet.Count != null || property.ResourceSet.NextPageLink != null))
+                if (navigationInfo.Count != null || navigationInfo.NextPageLink != null)
                 {
-                    PropertyInfo clrProperty = entityType.GetProperty(property.Name);
-                    if (value == null && property.ResourceSet.NextPageLink != null)
+                    PropertyInfo clrProperty = entityType.GetProperty(navigationInfo.Name);
+                    if (value == null && navigationInfo.NextPageLink != null)
                         value = ResponseReader.CreateCollection(clrProperty.PropertyType);
 
                     if (value is IEnumerable collection)
                     {
-                        base.NavigationProperties.Add(collection, property.ResourceSet);
+                        base.NavigationProperties.Add(collection, navigationInfo);
 
                         if (propertyInfos == null)
                         {
-                            propertyInfos = new Dictionary<PropertyInfo, ODataResourceSetBase>(navigationProperties.Count);
-                            base.NavigationPropertyEntities.Add(openType, propertyInfos);
+                            propertyInfos = new Dictionary<PropertyInfo, NavigationInfo>(navigationProperties.Count);
+                            base.NavigationInfoEntities.Add(openType, propertyInfos);
                         }
-                        propertyInfos.Add(clrProperty, property.ResourceSet);
+                        propertyInfos.Add(clrProperty, navigationInfo);
                     }
                 }
 
                 if (value == null)
                 {
-                    PropertyInfo clrProprety = entityType.GetProperty(property.Name);
+                    PropertyInfo clrProprety = entityType.GetProperty(navigationInfo.Name);
                     Type type = Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(clrProprety.PropertyType);
                     if (type == null)
                         type = clrProprety.PropertyType;
@@ -72,7 +72,7 @@ namespace OdataToEntity.Test
                         value = clrProprety.PropertyType;
                 }
 
-                openType.Add(property.Name, value);
+                openType.Add(navigationInfo.Name, value);
             }
 
             return openType;

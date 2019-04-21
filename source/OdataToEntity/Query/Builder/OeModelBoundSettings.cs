@@ -12,6 +12,7 @@ namespace OdataToEntity.Query.Builder
         {
             Countable = true;
             MaxTop = 0;
+            NavigationNextLink = false;
             PageSize = 0;
 
             _properties = new Dictionary<IEdmProperty, SelectExpandType?[]>();
@@ -86,6 +87,7 @@ namespace OdataToEntity.Query.Builder
 
         public bool Countable { get; set; }
         public int MaxTop { get; set; }
+        public bool NavigationNextLink { get; set; }
         public int PageSize { get; set; }
 
         public IEdmEntityType EntityType { get; }

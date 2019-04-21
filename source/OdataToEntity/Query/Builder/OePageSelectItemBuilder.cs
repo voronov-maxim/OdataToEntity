@@ -61,11 +61,11 @@ namespace OdataToEntity.Query.Builder
                 i++;
             }
 
-            if (settings != null && settings.PageSize > 0)
+            if (settings != null && (settings.PageSize > 0 || settings.NavigationNextLink))
             {
                 if (selectItems == null)
                     selectItems = new List<SelectItem>(selectExpandClause.SelectedItems);
-                selectItems.Add(new Parsers.Translators.OePageSelectItem(settings.PageSize));
+                selectItems.Add(new Parsers.Translators.OePageSelectItem(settings.PageSize, settings.NavigationNextLink));
             }
 
             return selectItems == null ? selectExpandClause : new SelectExpandClause(selectItems, selectExpandClause.AllSelected);

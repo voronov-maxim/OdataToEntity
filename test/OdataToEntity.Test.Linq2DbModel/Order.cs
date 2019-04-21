@@ -134,6 +134,7 @@ namespace OdataToEntity.Test.Model
         /// FK_Categories_Categories_BackReference
         /// </summary>
         [Association(ThisKey = "Id", OtherKey = "ParentId", CanBeNull = true, IsBackReference = true)]
+        [Page(NavigationNextLink = true)]
         public IEnumerable<Category> Children { get; set; }
 
         /// <summary>

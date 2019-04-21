@@ -27,13 +27,14 @@ namespace OdataToEntity.Cache.UriCompare
         public OeCacheComparerParameterValues(IReadOnlyDictionary<ConstantNode, OeQueryCacheDbParameterDefinition> constantToParameterMapper)
         {
             _constantToParameterMapper = constantToParameterMapper;
-            _parameterValues = new List<OeQueryCacheDbParameterValue>(_constantToParameterMapper.Count);
+            _parameterValues = new List<OeQueryCacheDbParameterValue>(_constantToParameterMapper == null ? 0 : _constantToParameterMapper.Count);
         }
 
         public void AddParameter(ConstantNode keyConstantNode, ConstantNode parameterConstanNode)
         {
             if (_constantToParameterMapper == null)
                 return;
+
             OeQueryCacheDbParameterDefinition parameterDefinition = _constantToParameterMapper[keyConstantNode];
             if (parameterConstanNode.Value == null)
                 _parameterValues.Add(new OeQueryCacheDbParameterValue(parameterDefinition.ParameterName, null));
@@ -51,6 +52,9 @@ namespace OdataToEntity.Cache.UriCompare
         }
         public void AddSkipParameter(long value, ODataPath path)
         {
+            if (_constantToParameterMapper == null)
+                return;
+
             String resourcePath = GetSegmentResourcePathSkip(path);
             foreach (KeyValuePair<ConstantNode, OeQueryCacheDbParameterDefinition> pair in _constantToParameterMapper)
                 if (pair.Value.ParameterType == typeof(int) && pair.Key.LiteralText == resourcePath)
@@ -63,7 +67,7 @@ namespace OdataToEntity.Cache.UriCompare
         }
         public void AddSkipTokenParameter(Object value, String propertyName)
         {
-            if (value == null)
+            if (_constantToParameterMapper == null)
                 return;
 
             foreach (KeyValuePair<ConstantNode, OeQueryCacheDbParameterDefinition> pair in _constantToParameterMapper)
@@ -72,11 +76,14 @@ namespace OdataToEntity.Cache.UriCompare
         }
         public void AddTopParameter(long value, ODataPath path)
         {
+            if (_constantToParameterMapper == null)
+                return;
+
             String resourcePath = GetSegmentResourcePathTop(path);
             foreach (KeyValuePair<ConstantNode, OeQueryCacheDbParameterDefinition> pair in _constantToParameterMapper)
                 if (pair.Value.ParameterType == typeof(int) && pair.Key.LiteralText == resourcePath)
                 {
-                    for (int i = 0; i <  _parameterValues.Count; i++)
+                    for (int i = 0; i < _parameterValues.Count; i++)
                         if (String.CompareOrdinal(_parameterValues[i].ParameterName, pair.Value.ParameterName) == 0)
                         {
                             if (value < (int)_parameterValues[i].ParameterValue)

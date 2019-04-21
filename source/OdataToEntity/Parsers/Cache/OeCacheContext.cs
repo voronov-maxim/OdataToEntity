@@ -13,7 +13,6 @@ namespace OdataToEntity.Cache
             ODataUri = queryContext.ODataUri;
             ParseNavigationSegments = queryContext.ParseNavigationSegments;
             MetadataLevel = queryContext.MetadataLevel;
-            NavigationNextLink = queryContext.NavigationNextLink;
             SkipTokenNameValues = queryContext.SkipTokenNameValues;
         }
         public OeCacheContext(OeQueryContext queryContext, IReadOnlyDictionary<ConstantNode, OeQueryCacheDbParameterDefinition> constantToParameterMapper)

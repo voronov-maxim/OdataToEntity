@@ -58,7 +58,7 @@ namespace OdataToEntity.Parsers.Translators
 
         public Expression Build(Expression source, ref OeSelectTranslatorParameters selectTranslatorParameters)
         {
-            BuildSelect(_odataUri.SelectAndExpand, selectTranslatorParameters.MetadataLevel, selectTranslatorParameters.NavigationNextLink);
+            BuildSelect(_odataUri.SelectAndExpand, selectTranslatorParameters.MetadataLevel);
             bool isBuild = _rootNavigationItem.StructuralItems.Count > 0 || _rootNavigationItem.NavigationItems.Count > 0;
 
             Expression skipTakeSource = BuildSkipTakeSource(source, _rootNavigationItem, ref selectTranslatorParameters);
@@ -168,7 +168,7 @@ namespace OdataToEntity.Parsers.Translators
                         if (match == null)
                             match = navigationItem;
 
-                        var selectItemTranslator = new OeSelectItemTranslator(_edmModel, false, true);
+                        var selectItemTranslator = new OeSelectItemTranslator(_edmModel, true);
                         selectItemTranslator.Translate(match, navigationSelectItem);
                     }
                 }
@@ -181,11 +181,11 @@ namespace OdataToEntity.Parsers.Translators
                 orderByClause = orderByClause.ThenBy;
             }
         }
-        public void BuildSelect(SelectExpandClause selectClause, OeMetadataLevel metadataLevel, bool navigationNextLink)
+        public void BuildSelect(SelectExpandClause selectClause, OeMetadataLevel metadataLevel)
         {
             if (selectClause != null)
             {
-                var selectItemTranslator = new OeSelectItemTranslator(_edmModel, navigationNextLink, false);
+                var selectItemTranslator = new OeSelectItemTranslator(_edmModel, false);
                 foreach (SelectItem selectItemClause in selectClause.SelectedItems)
                     selectItemTranslator.Translate(_rootNavigationItem, selectItemClause);
             }
@@ -232,7 +232,6 @@ namespace OdataToEntity.Parsers.Translators
                 {
                     Accessors = GetAccessors(clrType, root),
                     EntitySet = root.EntitySet,
-                    PageSize = root.PageSize,
                     SkipTokenAccessors = skipTokenAccessors
                 };
                 root.EntryFactory = new OeEntryFactory(ref options);
@@ -260,7 +259,6 @@ namespace OdataToEntity.Parsers.Translators
                         LinkAccessor = linkAccessor,
                         NavigationLinks = nestedNavigationLinks,
                         NavigationSelectItem = navigationItem.NavigationSelectItem,
-                        PageSize = navigationItem.PageSize,
                         SkipTokenAccessors = skipTokenAccessors
                     };
                     navigationItem.EntryFactory = new OeEntryFactory(ref options);

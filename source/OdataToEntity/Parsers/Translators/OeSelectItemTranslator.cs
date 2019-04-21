@@ -7,13 +7,11 @@ namespace OdataToEntity.Parsers.Translators
     internal readonly struct OeSelectItemTranslator
     {
         private readonly IEdmModel _edmModel;
-        private readonly bool _navigationNextLink;
         private readonly bool _skipToken;
 
-        public OeSelectItemTranslator(IEdmModel edmModel, bool navigationNextLink, bool skipToken)
+        public OeSelectItemTranslator(IEdmModel edmModel, bool skipToken)
         {
             _edmModel = edmModel;
-            _navigationNextLink = navigationNextLink;
             _skipToken = skipToken;
         }
 
@@ -34,15 +32,15 @@ namespace OdataToEntity.Parsers.Translators
         }
         private void Translate(OeNavigationSelectItem navigationItem, ExpandedNavigationSelectItem item)
         {
-            if (_navigationNextLink && Cache.UriCompare.OeComparerExtension.IsNavigationNextLink(item))
+            if (item.SelectAndExpand.IsNavigationNextLink())
                 return;
 
             IEdmEntitySetBase entitySet = OeEdmClrHelper.GetEntitySet(_edmModel, item);
-            var childNavigationItem = new OeNavigationSelectItem(entitySet, navigationItem, item, _skipToken);
-            childNavigationItem = navigationItem.AddOrGetNavigationItem(childNavigationItem);
+            var childNavigationSelectItem = new OeNavigationSelectItem(entitySet, navigationItem, item, _skipToken);
+            childNavigationSelectItem = navigationItem.AddOrGetNavigationItem(childNavigationSelectItem);
 
             foreach (SelectItem selectItemClause in item.SelectAndExpand.SelectedItems)
-                Translate(childNavigationItem, selectItemClause);
+                Translate(childNavigationSelectItem, selectItemClause);
         }
         private void Translate(OeNavigationSelectItem navigationItem, PathSelectItem item)
         {

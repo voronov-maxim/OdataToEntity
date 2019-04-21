@@ -214,7 +214,7 @@ namespace OdataToEntity.Test
 
                 OeCacheContext cacheContext1 = queryContext1.CreateCacheContext();
                 OeCacheContext cacheContext2 = queryContext2.CreateCacheContext();
-                bool result = new OeCacheComparer(constantToParameterMapper, false).Compare(cacheContext1, cacheContext2);
+                bool result = new OeCacheComparer(constantToParameterMapper).Compare(cacheContext1, cacheContext2);
                 Assert.True(result);
 
                 for (int j = i + 1; j < requestMethodNames.Length; j++)
@@ -222,7 +222,7 @@ namespace OdataToEntity.Test
                     queryContext2 = new OeQueryContext(fixture.EdmModel, fixture.ParseUri(requestMethodNames[j].Request));
 
                     constantToParameterMapper = new FakeReadOnlyDictionary<ConstantNode, OeQueryCacheDbParameterDefinition>();
-                    result = new OeCacheComparer(constantToParameterMapper, false).Compare(cacheContext1, cacheContext2);
+                    result = new OeCacheComparer(constantToParameterMapper).Compare(cacheContext1, cacheContext2);
                     Assert.False(result);
                 }
             }

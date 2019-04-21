@@ -48,7 +48,6 @@ namespace OdataToEntity.Parsers
             LinkAccessor = options.LinkAccessor == null ? null : (Func<Object, Object>)options.LinkAccessor.Compile();
             NavigationLinks = options.NavigationLinks ?? Array.Empty<OeEntryFactory>();
             NavigationSelectItem = options.NavigationSelectItem;
-            PageSize = options.PageSize;
 
             EqualityComparer = new Infrastructure.OeEntryEqualityComparer(GetKeyExpressions(options.EntitySet, options.Accessors));
             IsTuple |= GetIsTuple(options.LinkAccessor);
@@ -238,8 +237,7 @@ namespace OdataToEntity.Parsers
         public bool IsTuple { get; }
         public Func<Object, Object> LinkAccessor { get; }
         public IReadOnlyList<OeEntryFactory> NavigationLinks { get; }
-        public ExpandedNavigationSelectItem NavigationSelectItem { get; set; }
-        public int PageSize { get; }
+        public ExpandedNavigationSelectItem NavigationSelectItem { get; }
         public OePropertyAccessor[] SkipTokenAccessors { get; }
     }
 
@@ -251,7 +249,6 @@ namespace OdataToEntity.Parsers
         public LambdaExpression LinkAccessor { get; set; }
         public IReadOnlyList<OeEntryFactory> NavigationLinks { get; set; }
         public ExpandedNavigationSelectItem NavigationSelectItem { get; set; }
-        public int PageSize { get; set; }
         public OePropertyAccessor[] SkipTokenAccessors { get; set; }
     }
 }

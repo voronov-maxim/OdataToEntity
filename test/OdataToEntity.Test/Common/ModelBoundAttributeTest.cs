@@ -1,8 +1,13 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.OData;
+using Microsoft.OData.Edm;
 using OdataToEntity.Test.Model;
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -161,6 +166,28 @@ namespace OdataToEntity.Test
                     return;
             }
             Assert.Throws<ODataErrorException>(() => { });
+        }
+        [Fact]
+        public async Task NavigationNextLink()
+        {
+            String request = "Categories?$expand=Children";
+
+            OeParser parser = Fixture.CreateParser(request);
+            ODataUri odataUri = Fixture.ParseUri(request);
+
+            var response = new MemoryStream();
+            await parser.ExecuteQueryAsync(odataUri, OeRequestHeaders.JsonDefault, response, CancellationToken.None).ConfigureAwait(false);
+            response.Position = 0;
+
+            var reader = new ResponseReader(parser.EdmModel);
+            List<Object> categories = reader.Read(response).Cast<Object>().ToList();
+            foreach (dynamic category in categories)
+            {
+                ResponseReader.NavigationInfo navigationInfo = reader.GetNavigationInfo(category.Children);
+                String actual = Uri.UnescapeDataString(navigationInfo.NextPageLink.OriginalString);
+                String expected = $"http://dummy/Categories?$filter=ParentId eq {category.Id}&$select=Id,Name,ParentId,DateTime";
+                Assert.Equal(expected, actual);
+            }
         }
         [Fact(Skip = SelectTest.SkipTest)]
         public async Task OrderBy()

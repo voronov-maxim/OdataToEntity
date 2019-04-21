@@ -10,15 +10,13 @@ namespace OdataToEntity.Cache.UriCompare
 {
     public readonly struct OeCacheComparer
     {
-        private readonly bool _navigationNextLink;
         private readonly OeCacheComparerParameterValues _parameterValues;
         private readonly OeQueryNodeComparer _queryNodeComparer;
 
-        public OeCacheComparer(IReadOnlyDictionary<ConstantNode, OeQueryCacheDbParameterDefinition> constantToParameterMapper, bool navigationNextLink)
+        public OeCacheComparer(IReadOnlyDictionary<ConstantNode, OeQueryCacheDbParameterDefinition> constantToParameterMapper)
         {
             _parameterValues = new OeCacheComparerParameterValues(constantToParameterMapper);
             _queryNodeComparer = new OeQueryNodeComparer(_parameterValues);
-            _navigationNextLink = navigationNextLink;
         }
 
         private static int CombineHashCodes(int h1, int h2)
@@ -262,18 +260,22 @@ namespace OdataToEntity.Cache.UriCompare
                 if (expand1.NavigationSource != expand2.NavigationSource)
                     return false;
 
-                bool navigationNextLink = _navigationNextLink && expand1.IsNavigationNextLink();
-                if (!CompareFilter(expand1.FilterOption, expand2.FilterOption, navigationNextLink))
+                bool navigationNextLink1 = expand1.SelectAndExpand.IsNavigationNextLink();
+                bool navigationNextLink2 = expand2.SelectAndExpand.IsNavigationNextLink();
+                if (navigationNextLink1 != navigationNextLink2)
                     return false;
 
-                if (!CompareOrderBy(expand1.OrderByOption, expand2.OrderByOption, navigationNextLink))
+                if (!CompareFilter(expand1.FilterOption, expand2.FilterOption, navigationNextLink1))
+                    return false;
+
+                if (!CompareOrderBy(expand1.OrderByOption, expand2.OrderByOption, navigationNextLink1))
                     return false;
 
                 if (!ODataPathComparer.Compare(expand1.PathToNavigationProperty, expand2.PathToNavigationProperty))
                     return false;
 
                 path = new ODataPath(path.Union(expand2.PathToNavigationProperty));
-                if (navigationNextLink)
+                if (navigationNextLink1)
                 {
                     if (expand1.SkipOption == null || expand2.SkipOption == null)
                         if (expand1.SkipOption != expand2.SkipOption)
@@ -283,8 +285,7 @@ namespace OdataToEntity.Cache.UriCompare
                         if (expand1.TopOption != expand2.TopOption)
                             return false;
 
-                    var dummy = new Dictionary<ConstantNode, OeQueryCacheDbParameterDefinition>();
-                    return new OeCacheComparer(dummy, true).CompareSelectAndExpand(expand1.SelectAndExpand, expand2.SelectAndExpand, path);
+                    return new OeCacheComparer(null).CompareSelectAndExpand(expand1.SelectAndExpand, expand2.SelectAndExpand, path);
                 }
 
                 return CompareSkip(expand1.SkipOption, expand2.SkipOption, path) &&
@@ -301,14 +302,25 @@ namespace OdataToEntity.Cache.UriCompare
 
                 return false;
             }
-            else if (selectItem1 is Parsers.Translators.OePageSelectItem)
+            else if (selectItem1 is Parsers.Translators.OePageSelectItem item1)
             {
-                var item1 = selectItem1 as Parsers.Translators.OePageSelectItem;
-                if (selectItem2 is Parsers.Translators.OePageSelectItem item2 && item1.PageSize == item2.PageSize)
+                if (selectItem2 is Parsers.Translators.OePageSelectItem item2)
                 {
-                    _parameterValues.AddTopParameter(item2.PageSize, path);
+                    if (item1.NavigationNextLink != item2.NavigationNextLink)
+                        return false;
+
+                    if (item1.PageSize == 0 && item2.PageSize == 0)
+                        return true;
+
+                    if (item1.PageSize == 0 || item2.PageSize == 0)
+                        return false;
+
+                    if (item2.PageSize > 0)
+                        _parameterValues.AddTopParameter(item2.PageSize, path);
+
                     return true;
                 }
+
                 return false;
             }
             else

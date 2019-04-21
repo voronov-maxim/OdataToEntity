@@ -45,13 +45,6 @@ namespace OdataToEntity.Parsers.Translators
                 foreach (IEdmStructuralProperty keyProperty in EntitySet.EntityType().Key())
                     AddStructuralItem(keyProperty, skipToken);
 
-            if (Parent != null && (PageSize > 0 || NavigationSelectItem.CountOption != null))
-            {
-                IEdmNavigationProperty dependentNavigationProperty = EdmProperty.IsPrincipal() ? EdmProperty.Partner : EdmProperty;
-                foreach (IEdmStructuralProperty key in dependentNavigationProperty.DependentProperties())
-                    AddStructuralItem(key, true);
-            }
-
             foreach (OeNavigationSelectItem childNavigationItem in _navigationItems)
                 childNavigationItem.AddKeyRecursive(skipToken);
         }

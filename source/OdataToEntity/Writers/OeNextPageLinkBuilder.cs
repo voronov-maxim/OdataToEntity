@@ -17,25 +17,6 @@ namespace OdataToEntity.Writers
             _queryContext = queryContext;
         }
 
-        public static int GetCount(IEdmModel edmModel, OeEntryFactory entryFactory, Object value)
-        {
-            ODataUri odataUri = OeNextPageLinkBuilder.GetCountODataUri(edmModel, entryFactory, entryFactory.NavigationSelectItem, value);
-            var queryContext = new OeQueryContext(edmModel, odataUri);
-
-            IEdmEntitySet entitySet = (odataUri.Path.FirstSegment as EntitySetSegment).EntitySet;
-            Db.OeDataAdapter dataAdapter = edmModel.GetDataAdapter(entitySet.Container);
-            Object dataContext = null;
-            try
-            {
-                dataContext = dataAdapter.CreateDataContext();
-                return dataAdapter.ExecuteScalar<int>(dataContext, queryContext);
-            }
-            finally
-            {
-                if (dataContext != null)
-                    dataAdapter.CloseDataContext(dataContext);
-            }
-        }
         private static ODataUri GetCountODataUri(IEdmModel edmModel, OeEntryFactory entryFactory, ExpandedNavigationSelectItem item, Object value)
         {
             FilterClause filterClause = GetFilter(edmModel, entryFactory, item, value);
@@ -69,7 +50,7 @@ namespace OdataToEntity.Writers
                 var anyNode = new AnyNode(new Collection<RangeVariable>() { joinRefNode.RangeVariable, targetRefNode.RangeVariable }, joinRefNode.RangeVariable)
                 {
                     Source = new CollectionNavigationNode(targetRefNode, joinDescription.TargetNavigationProperty.Partner, null),
-                    Body = OeExpressionHelper.CreateFilterExpression(joinRefNode, GetKeysFromParentValue(navigationProperty))
+                    Body = OeExpressionHelper.CreateFilterExpression(joinRefNode, GetKeys(navigationProperty.PrincipalProperties(), navigationProperty.DependentProperties()))
                 };
 
                 refNode = targetRefNode;
@@ -77,14 +58,32 @@ namespace OdataToEntity.Writers
             }
             else
             {
-                IEdmNavigationProperty dependentNavigationProperty = navigationProperty.IsPrincipal() ? navigationProperty.Partner : navigationProperty;
+                IEnumerable<IEdmStructuralProperty> parentKeys;
+                IEnumerable<IEdmStructuralProperty> childKeys;
+                if (navigationProperty.Type.IsCollection())
+                {
+                    if (navigationProperty.Partner == null)
+                    {
+                        parentKeys = navigationProperty.PrincipalProperties();
+                        childKeys = navigationProperty.DependentProperties();
+                    }
+                    else
+                    {
+                        parentKeys = navigationProperty.Partner.PrincipalProperties();
+                        childKeys = navigationProperty.Partner.DependentProperties();
+                    }
+                }
+                else
+                {
+                    parentKeys = navigationProperty.DependentProperties();
+                    childKeys = navigationProperty.PrincipalProperties();
+                }
+
+                List<KeyValuePair<IEdmStructuralProperty, Object>> keys = GetKeys(parentKeys, childKeys);
+                if (keys == null)
+                    return null;
 
                 refNode = OeEdmClrHelper.CreateRangeVariableReferenceNode((IEdmEntitySetBase)segment.NavigationSource);
-                List<KeyValuePair<IEdmStructuralProperty, Object>> keys;
-                if (entryFactory.EdmNavigationProperty == navigationProperty)
-                    keys = GetKeysSelfValue(dependentNavigationProperty);
-                else
-                    keys = GetKeysFromParentValue(dependentNavigationProperty);
                 filterExpression = OeExpressionHelper.CreateFilterExpression(refNode, keys);
             }
 
@@ -93,27 +92,19 @@ namespace OdataToEntity.Writers
 
             return new FilterClause(filterExpression, refNode.RangeVariable);
 
-            List<KeyValuePair<IEdmStructuralProperty, Object>> GetKeysFromParentValue(IEdmNavigationProperty edmNavigationProperty)
+            List<KeyValuePair<IEdmStructuralProperty, Object>> GetKeys(IEnumerable<IEdmStructuralProperty> parentKeys, IEnumerable<IEdmStructuralProperty> childKeys)
             {
+                bool isNotNullValue = false;
                 var keys = new List<KeyValuePair<IEdmStructuralProperty, Object>>();
-                IEnumerator<IEdmStructuralProperty> dependentProperties = edmNavigationProperty.DependentProperties().GetEnumerator();
-                foreach (IEdmStructuralProperty key in edmNavigationProperty.PrincipalProperties())
+                IEnumerator<IEdmStructuralProperty> childKeyEnumerator = childKeys.GetEnumerator();
+                foreach (IEdmStructuralProperty parentKey in parentKeys)
                 {
-                    dependentProperties.MoveNext();
-                    Object keyValue = entryFactory.GetAccessorByName(key.Name).GetValue(value);
-                    keys.Add(new KeyValuePair<IEdmStructuralProperty, Object>(dependentProperties.Current, keyValue));
+                    childKeyEnumerator.MoveNext();
+                    Object keyValue = entryFactory.GetAccessorByName(parentKey.Name).GetValue(value);
+                    keys.Add(new KeyValuePair<IEdmStructuralProperty, Object>(childKeyEnumerator.Current, keyValue));
+                    isNotNullValue |= keyValue != null;
                 }
-                return keys;
-            }
-            List<KeyValuePair<IEdmStructuralProperty, Object>> GetKeysSelfValue(IEdmNavigationProperty edmNavigationProperty)
-            {
-                var keys = new List<KeyValuePair<IEdmStructuralProperty, Object>>();
-                foreach (IEdmStructuralProperty key in edmNavigationProperty.DependentProperties())
-                {
-                    Object keyValue = entryFactory.GetAccessorByName(key.Name).GetValue(value);
-                    keys.Add(new KeyValuePair<IEdmStructuralProperty, Object>(key, keyValue));
-                }
-                return keys;
+                return isNotNullValue ? keys : null;
             }
         }
         private static KeyValuePair<String, Object>[] GetNavigationSkipTokenKeys(OeEntryFactory entryFactory, OrderByClause orderByClause, Object value)
@@ -132,19 +123,22 @@ namespace OdataToEntity.Writers
         {
             return GetNavigationUri(entryFactory, item, item.OrderByOption, value, null);
         }
-        private Uri GetNavigationUri(OeEntryFactory entryFactory,
-            ExpandedNavigationSelectItem item, OrderByClause orderByClause, Object value, String skipToken)
+        private Uri GetNavigationUri(OeEntryFactory entryFactory, ExpandedNavigationSelectItem item, OrderByClause orderByClause, Object value, String skipToken)
         {
             bool? queryCount = item.CountOption;
             long? top = item.TopOption;
             if (skipToken != null)
             {
                 queryCount = null;
-                if (entryFactory.PageSize > 0 && (top == null || entryFactory.PageSize < top.GetValueOrDefault()))
-                    top = entryFactory.PageSize;
+                int pageSize = item.GetPageSize();
+                if (pageSize > 0 && (top == null || pageSize < top.GetValueOrDefault()))
+                    top = pageSize;
             }
 
             FilterClause filterClause = GetFilter(_queryContext.EdmModel, entryFactory, item, value);
+            if (filterClause == null)
+                return null;
+
             var entitytSet = (IEdmEntitySet)(filterClause.RangeVariable as ResourceRangeVariable).NavigationSource;
             var pathSegments = new ODataPathSegment[] { new EntitySetSegment(entitytSet) };
 
@@ -161,25 +155,47 @@ namespace OdataToEntity.Writers
             };
             return odataUri.BuildUri(ODataUrlKeyDelimiter.Parentheses);
         }
-        public Uri GetNextPageLinkNavigation(OeEntryFactory entryFactory, int readCount, long? totalCount, Object value)
+        public static int GetNestedCount(IEdmModel edmModel, Db.IOeDbEnumerator dbEnumerator)
         {
-            if (entryFactory.PageSize == 0 || readCount == 0 || (totalCount != null && readCount >= totalCount))
+            Db.IOeDbEnumerator parentEnumerator = dbEnumerator.ParentEnumerator;
+            ODataUri odataUri = OeNextPageLinkBuilder.GetCountODataUri(edmModel, parentEnumerator.EntryFactory, dbEnumerator.EntryFactory.NavigationSelectItem, parentEnumerator.Current);
+            var queryContext = new OeQueryContext(edmModel, odataUri);
+
+            IEdmEntitySet entitySet = (odataUri.Path.FirstSegment as EntitySetSegment).EntitySet;
+            Db.OeDataAdapter dataAdapter = edmModel.GetDataAdapter(entitySet.Container);
+            Object dataContext = null;
+            try
+            {
+                dataContext = dataAdapter.CreateDataContext();
+                return dataAdapter.ExecuteScalar<int>(dataContext, queryContext);
+            }
+            finally
+            {
+                if (dataContext != null)
+                    dataAdapter.CloseDataContext(dataContext);
+            }
+        }
+        public Uri GetNextPageLinkNavigation(Db.IOeDbEnumerator dbEnumerator, int readCount, long? totalCount, Object value)
+        {
+            OeEntryFactory entryFactory = dbEnumerator.EntryFactory;
+            ExpandedNavigationSelectItem navigationSelectItem = entryFactory.NavigationSelectItem;
+
+            if (navigationSelectItem.GetPageSize() == 0 || readCount == 0 || (totalCount != null && readCount >= totalCount))
                 return null;
 
-            ExpandedNavigationSelectItem item = entryFactory.NavigationSelectItem;
-            OrderByClause orderByClause = OeSkipTokenParser.GetUniqueOrderBy(entryFactory.EntitySet, item.OrderByOption, null);
+            OrderByClause orderByClause = OeSkipTokenParser.GetUniqueOrderBy(entryFactory.EntitySet, navigationSelectItem.OrderByOption, null);
             KeyValuePair<String, Object>[] keys = GetNavigationSkipTokenKeys(entryFactory, orderByClause, value);
 
-            int restCount = GetRestCountNavigation((int?)item.TopOption, readCount, totalCount);
+            int restCount = GetRestCountNavigation((int?)navigationSelectItem.TopOption, readCount, totalCount);
             String skipToken = OeSkipTokenParser.GetSkipToken(_queryContext.EdmModel, keys, restCount);
-            return GetNavigationUri(entryFactory, item, orderByClause, value, skipToken);
+            return GetNavigationUri(dbEnumerator.ParentEnumerator.EntryFactory, navigationSelectItem, orderByClause, dbEnumerator.ParentEnumerator.Current, skipToken);
         }
         public Uri GetNextPageLinkRoot(OeEntryFactory entryFactory, int readCount, int? totalCount, Object value)
         {
             if (readCount == 0)
                 return null;
 
-            int pageSize = GetPageSizeRoot(entryFactory);
+            int pageSize = GetPageSizeRoot();
             if (pageSize == 0)
                 return null;
 
@@ -197,9 +213,9 @@ namespace OdataToEntity.Writers
 
             return nextOdataUri.BuildUri(ODataUrlKeyDelimiter.Parentheses);
         }
-        private int GetPageSizeRoot(OeEntryFactory entryFactory)
+        private int GetPageSizeRoot()
         {
-            int pageSize = entryFactory.PageSize;
+            int pageSize = _queryContext.ODataUri.GetPageSize();
             if (pageSize == 0)
             {
                 pageSize = _queryContext.MaxPageSize;

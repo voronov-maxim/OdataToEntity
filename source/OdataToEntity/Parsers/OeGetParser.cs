@@ -32,7 +32,6 @@ namespace OdataToEntity.Parsers
             {
                 MaxPageSize = headers.MaxPageSize,
                 MetadataLevel = headers.MetadataLevel,
-                NavigationNextLink = headers.NavigationNextLink
             };
 
             if (queryContext.ODataUri.Path.LastSegment is OperationSegment)

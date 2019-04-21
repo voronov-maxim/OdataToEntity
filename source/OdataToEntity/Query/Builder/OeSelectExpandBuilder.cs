@@ -62,7 +62,7 @@ namespace OdataToEntity.Query.Builder
                             selectItems.Add(CreateStructuralSelectItem(structuralProperty));
                     }
 
-                if (settings.PageSize > 0)
+                if (settings.PageSize > 0 || settings.NavigationNextLink)
                     selectItems.Add(new OePageSelectItem(settings.PageSize));
             }
 
@@ -239,8 +239,8 @@ namespace OdataToEntity.Query.Builder
                         selectItems.RemoveAt(i);
             }
 
-            if (settings.PageSize > 0)
-                selectItems.Add(new OePageSelectItem(settings.PageSize));
+            if (settings.PageSize > 0 || settings.NavigationNextLink)
+                selectItems.Add(new OePageSelectItem(settings.PageSize, settings.NavigationNextLink));
         }
     }
 }

@@ -9,7 +9,16 @@ namespace OdataToEntity.Parsers.Translators
         {
             if (pageSize <= 0)
                 throw new ArgumentException("Must be greater zero", nameof(PageSize));
+
             PageSize = pageSize;
+        }
+        public OePageSelectItem(int pageSize, bool navigationNextLink)
+        {
+            if (pageSize < 0)
+                throw new ArgumentException("Must be greater or equal zero", nameof(PageSize));
+
+            PageSize = pageSize;
+            NavigationNextLink = navigationNextLink;
         }
 
         public override void HandleWith(SelectItemHandler handler)
@@ -21,6 +30,7 @@ namespace OdataToEntity.Parsers.Translators
             throw new NotImplementedException();
         }
 
+        public bool NavigationNextLink { get; }
         public int PageSize { get; }
     }
 }

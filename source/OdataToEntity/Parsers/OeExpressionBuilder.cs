@@ -127,7 +127,6 @@ namespace OdataToEntity.Parsers
             {
                 IsDatabaseNullHighestValue = queryContext.IsDatabaseNullHighestValue,
                 MetadataLevel = queryContext.MetadataLevel,
-                NavigationNextLink = queryContext.NavigationNextLink,
                 SkipTokenNameValues = queryContext.SkipTokenNameValues
             };
             source = selectTranslator.Build(source, ref selectTranslatorParameters);

@@ -189,6 +189,11 @@ namespace OdataToEntity.Query
 
             return true;
         }
+        public bool IsNavigationNextLink(IEdmNavigationProperty navigationProperty)
+        {
+            OeModelBoundSettings settings = GetSettings(navigationProperty);
+            return settings == null ? false : settings.NavigationNextLink;
+        }
         public bool IsOrderable(OrderByClause orderByClause, IEdmEntityType entityType)
         {
             return IsOrderable(orderByClause, GetSettings(entityType));

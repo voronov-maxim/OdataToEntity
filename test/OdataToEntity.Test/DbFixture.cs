@@ -41,7 +41,7 @@ namespace OdataToEntity.Test
                 .Page(2, 1)
                 .Select(SelectExpandType.Automatic, "Name", "Date", "Status")
                 .Property(o => o.Customer).Select(SelectExpandType.Automatic, "Name", "Sex")
-                .Property("Items").Count(QueryOptionSetting.Allowed).Page(2, 1).OrderBy(QueryOptionSetting.Allowed, "Id");
+                .Property(o => o.Items).Count(QueryOptionSetting.Allowed).Page(2, 1).OrderBy(QueryOptionSetting.Allowed, "Id");
 
             modelBoundBuilder.EntitySet<OrderItem>("OrderItems").EntityType
                 .Count(QueryOptionSetting.Disabled)
@@ -49,8 +49,17 @@ namespace OdataToEntity.Test
                 .OrderBy(QueryOptionSetting.Disabled)
                 .Select(SelectExpandType.Disabled, "Id", "OrderId");
 
+            modelBoundBuilder.EntitySet<Category>("Categories").EntityType
+                .Property(c => c.Children).NavigationNextLink();
+
             return modelBoundBuilder.BuildProvider();
 
+        }
+        public OeParser CreateParser(String request)
+        {
+            ODataUri odataUri = ParseUri(request);
+            IEdmModel edmModel = EdmModel.GetEdmModel(odataUri.Path);
+            return new OeParser(odataUri.ServiceRoot, edmModel, ModelBoundProvider);
         }
         protected static void EnsureCreated(IEdmModel edmModel)
         {
@@ -112,17 +121,24 @@ namespace OdataToEntity.Test
         }
         public async Task<IList> ExecuteOe<TResult>(String requestUri, bool navigationNextLink, int pageSize)
         {
-            ODataUri odataUri = ParseUri(requestUri);
-            var parser = new OeParser(odataUri.ServiceRoot, EdmModel, ModelBoundProvider);
-            var uri = new Uri(odataUri.ServiceRoot, requestUri);
-            OeRequestHeaders requestHeaders = OeRequestHeaders.JsonDefault.SetMaxPageSize(pageSize).SetNavigationNextLink(navigationNextLink);
+            OeParser parser = CreateParser(requestUri);
+            var uri = new Uri(parser.BaseUri, requestUri);
+            OeRequestHeaders requestHeaders = OeRequestHeaders.JsonDefault.SetMaxPageSize(pageSize);
 
             long count = -1;
+            ODataUri odataUri;
             var fromOe = new List<Object>();
             do
             {
+                odataUri  = OeParser.ParseUri(parser.EdmModel, parser.BaseUri, uri);
+                if (navigationNextLink)
+                {
+                    var pageSelectItemBuilder = new PageSelectItemBuilder(navigationNextLink, pageSize);
+                    odataUri.SelectAndExpand = pageSelectItemBuilder.Build(odataUri.SelectAndExpand);
+                }
+
                 var response = new MemoryStream();
-                await parser.ExecuteGetAsync(uri, requestHeaders, response, CancellationToken.None).ConfigureAwait(false);
+                await parser.ExecuteQueryAsync(odataUri, requestHeaders, response, CancellationToken.None).ConfigureAwait(false);
                 response.Position = 0;
 
                 List<Object> result;

@@ -9,6 +9,7 @@ namespace OdataToEntity.Test.Model
     [Table("Categories", Schema = "dbo")]
     public sealed class Category
     {
+        [Page(NavigationNextLink = true)]
         public ICollection<Category> Children { get; set; }
         public int Id { get; set; }
         [Required]

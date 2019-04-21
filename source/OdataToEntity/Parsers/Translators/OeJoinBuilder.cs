@@ -146,21 +146,16 @@ namespace OdataToEntity.Parsers.Translators
 
             return -1;
         }
-        private static LambdaExpression GetGroupJoinInnerKeySelector(Type innerType, IEdmNavigationProperty edmNavigationProperty)
+        private static LambdaExpression GetGroupJoinInnerKeySelector(Type innerType, IEdmNavigationProperty navigationProperty)
         {
-            IEnumerable<IEdmStructuralProperty> structuralProperties;
-            if (edmNavigationProperty.IsPrincipal())
-                structuralProperties = edmNavigationProperty.Partner.DependentProperties();
+            IEnumerable<IEdmStructuralProperty> keyProperties;
+            if (navigationProperty.IsPrincipal())
+                keyProperties = navigationProperty.Partner.DependentProperties();
             else
-            {
-                if (edmNavigationProperty.Type.IsCollection())
-                    structuralProperties = edmNavigationProperty.DependentProperties();
-                else
-                    structuralProperties = edmNavigationProperty.PrincipalProperties();
-            }
+                keyProperties = navigationProperty.Type.IsCollection() ? navigationProperty.DependentProperties() : navigationProperty.PrincipalProperties();
 
             ParameterExpression parameter = Expression.Parameter(innerType, innerType.Name);
-            Expression keySelector = GetGroupJoinKeySelector(parameter, structuralProperties);
+            Expression keySelector = GetGroupJoinKeySelector(parameter, keyProperties);
             return Expression.Lambda(keySelector, parameter);
         }
         private static Expression GetGroupJoinKeySelector(Expression instance, IEnumerable<IEdmStructuralProperty> structuralProperties)

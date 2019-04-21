@@ -7,7 +7,7 @@ namespace OdataToEntity.Cache
     {
         public bool Equals(OeCacheContext x, OeCacheContext y)
         {
-            var comparer = new OeCacheComparer(x.ConstantToParameterMapper, x.NavigationNextLink);
+            var comparer = new OeCacheComparer(x.ConstantToParameterMapper);
             if (comparer.Compare(x, y))
             {
                 y.ParameterValues = comparer.ParameterValues;

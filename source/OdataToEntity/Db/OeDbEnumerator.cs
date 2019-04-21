@@ -14,6 +14,7 @@ namespace OdataToEntity.Db
 
         Object Current { get; }
         OeEntryFactory EntryFactory { get; }
+        IOeDbEnumerator ParentEnumerator { get; }
         Object RawValue { get; }
     }
 
@@ -162,6 +163,7 @@ namespace OdataToEntity.Db
         public Object Current => EntryFactory.GetValue(RawValue);
         public OeEntryFactory EntryFactory { get; }
         private OeDbEnumerator ParentEnumerator { get; }
+        IOeDbEnumerator IOeDbEnumerator.ParentEnumerator => ParentEnumerator;
         public Object RawValue => Context.Buffer[_bufferPosition];
     }
 }

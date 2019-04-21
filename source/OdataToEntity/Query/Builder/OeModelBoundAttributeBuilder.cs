@@ -31,21 +31,28 @@ namespace OdataToEntity.Query.Builder
                 _modelBoundSettingsBuilder.SetCount(false, edmEntityType);
 
             foreach (IEdmNavigationProperty navigationProperty in edmEntityType.NavigationProperties())
-                if (navigationProperty.Type.IsCollection())
+            {
+                PropertyInfo clrProperty = clrEntityType.GetPropertyIgnoreCase(navigationProperty);
+
+                bool isCollection = navigationProperty.Type.IsCollection();
+                if (isCollection)
                 {
-                    PropertyInfo clrProperty = clrEntityType.GetPropertyIgnoreCase(navigationProperty);
-
-                    pageAttribute = (PageAttribute)clrProperty.GetCustomAttribute(typeof(PageAttribute));
-                    if (pageAttribute != null)
-                    {
-                        _modelBoundSettingsBuilder.SetPageSize(pageAttribute.PageSize, navigationProperty);
-                        _modelBoundSettingsBuilder.SetMaxTop(pageAttribute.MaxTop, navigationProperty);
-                    }
-
                     countAttribute = (CountAttribute)clrProperty.GetCustomAttribute(typeof(CountAttribute));
                     if (countAttribute != null && countAttribute.Disabled)
                         _modelBoundSettingsBuilder.SetCount(false, navigationProperty);
                 }
+
+                pageAttribute = (PageAttribute)clrProperty.GetCustomAttribute(typeof(PageAttribute));
+                if (pageAttribute != null)
+                {
+                    if (isCollection)
+                    {
+                        _modelBoundSettingsBuilder.SetPageSize(pageAttribute.PageSize, navigationProperty);
+                        _modelBoundSettingsBuilder.SetMaxTop(pageAttribute.MaxTop, navigationProperty);
+                    }
+                    _modelBoundSettingsBuilder.SetNavigationNextLink(pageAttribute.NavigationNextLink, navigationProperty);
+                }
+            }
         }
         public OeModelBoundProvider BuildProvider()
         {

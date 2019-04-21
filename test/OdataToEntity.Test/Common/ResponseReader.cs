@@ -16,30 +16,34 @@ namespace OdataToEntity.Test
 {
     public class ResponseReader
     {
-        protected readonly struct NavigationProperty
+        public readonly struct NavigationInfo
         {
-            public NavigationProperty(String name, Object value, ODataResourceSetBase resourceSet)
+            public NavigationInfo(String name, bool isCollection, Uri nextPageLink, long? count, Object value)
             {
                 Name = name;
+                IsCollection = isCollection;
+                NextPageLink = nextPageLink;
+                Count = count;
                 Value = value;
-                ResourceSet = resourceSet;
             }
 
+            public long? Count { get; }
+            public bool IsCollection { get; }
             public String Name { get; }
-            public ODataResourceSetBase ResourceSet { get; }
+            public Uri NextPageLink { get; }
             public Object Value { get; }
         }
 
         private sealed class StackItem
         {
             private readonly ODataItem _item;
-            private readonly List<NavigationProperty> _navigationProperties;
+            private readonly List<NavigationInfo> _navigationProperties;
             private Object _value;
 
             public StackItem(ODataItem item)
             {
                 _item = item;
-                _navigationProperties = new List<NavigationProperty>();
+                _navigationProperties = new List<NavigationInfo>();
             }
 
             public void AddEntry(Object value)
@@ -50,48 +54,43 @@ namespace OdataToEntity.Test
                     {
                         if (value is IList list)
                             foreach (Object item in list)
-                                AddToList((dynamic)item);
+                                AddToList(item);
                         else
-                            AddToList((dynamic)value);
+                            AddToList(value);
                     }
                     else
                         _value = value;
-                    return;
                 }
-
-                if (Item is ODataResourceSet)
-                {
-                    AddToList((dynamic)value);
-                    return;
-                }
-
-                throw new NotSupportedException(Item.GetType().ToString());
+                else if (Item is ODataResourceSet)
+                    AddToList(value);
+                else
+                    throw new NotSupportedException(Item.GetType().ToString());
             }
             public void AddLink(ODataNestedResourceInfo link, Object value, ODataResourceSetBase resourceSet)
             {
-                _navigationProperties.Add(new NavigationProperty(link.Name, value, resourceSet));
+                _navigationProperties.Add(new NavigationInfo(link.Name, resourceSet != null, resourceSet?.NextPageLink, resourceSet?.Count, value));
             }
-            private void AddToList<T>(T value)
+            private void AddToList(Object value)
             {
                 if (Value == null)
-                    _value = new List<T>();
-                (Value as List<T>).Add(value);
+                    _value = Activator.CreateInstance(typeof(List<>).MakeGenericType(value.GetType()));
+                (Value as IList).Add(value);
             }
 
             public ODataItem Item => _item;
             public Object Value => _value;
-            public IReadOnlyList<NavigationProperty> NavigationProperties => _navigationProperties;
+            public IReadOnlyList<NavigationInfo> NavigationProperties => _navigationProperties;
             public ODataResourceSetBase ResourceSet { get; set; }
         }
 
-        private static readonly Dictionary<PropertyInfo, ODataResourceSetBase> EmptyNavigationPropertyEntities = new Dictionary<PropertyInfo, ODataResourceSetBase>();
+        private static readonly Dictionary<PropertyInfo, NavigationInfo> EmptyNavigationPropertyEntities = new Dictionary<PropertyInfo, NavigationInfo>();
 
         public ResponseReader(IEdmModel edmModel)
         {
             EdmModel = edmModel;
 
-            NavigationProperties = new Dictionary<IEnumerable, ODataResourceSetBase>();
-            NavigationPropertyEntities = new Dictionary<Object, Dictionary<PropertyInfo, ODataResourceSetBase>>();
+            NavigationProperties = new Dictionary<Object, NavigationInfo>();
+            NavigationInfoEntities = new Dictionary<Object, Dictionary<PropertyInfo, NavigationInfo>>();
         }
 
         protected virtual void AddItems(Object entity, PropertyInfo propertyInfo, IEnumerable values)
@@ -111,52 +110,53 @@ namespace OdataToEntity.Test
             Type itemType = OeExpressionHelper.GetCollectionItemTypeOrNull(type);
             return (IEnumerable)Activator.CreateInstance(typeof(List<>).MakeGenericType(itemType));
         }
-        protected Object CreateEntity(ODataResource resource, IReadOnlyList<NavigationProperty> navigationProperties)
+        protected Object CreateEntity(ODataResource resource, IReadOnlyList<NavigationInfo> navigationProperties)
         {
             Db.OeEntitySetAdapter entitySetAdapter = TestHelper.FindEntitySetAdapterByTypeName(EntitySetAdapters, resource.TypeName);
             Object entity = OeEdmClrHelper.CreateEntity(entitySetAdapter.EntityType, resource);
-            Dictionary<PropertyInfo, ODataResourceSetBase> propertyInfos = null;
+            Dictionary<PropertyInfo, NavigationInfo> propertyInfos = null;
 
-            foreach (NavigationProperty navigationProperty in navigationProperties)
+            foreach (NavigationInfo navigationInfo in navigationProperties)
             {
-                PropertyInfo clrProperty = entitySetAdapter.EntityType.GetProperty(navigationProperty.Name);
-                Object value = navigationProperty.Value;
+                PropertyInfo clrProperty = entitySetAdapter.EntityType.GetProperty(navigationInfo.Name);
+                Object value = navigationInfo.Value;
 
-                if (navigationProperty.ResourceSet == null || (navigationProperty.ResourceSet.Count == null && navigationProperty.ResourceSet.NextPageLink == null))
+                if ((navigationInfo.Count == null && navigationInfo.NextPageLink == null))
                 {
                     if (clrProperty.GetSetMethod() != null)
                         clrProperty.SetValue(entity, value);
-                    continue;
                 }
-
-                if (value == null && navigationProperty.ResourceSet.NextPageLink != null)
-                    value = CreateCollection(clrProperty.PropertyType);
-
-                clrProperty.SetValue(entity, value);
-                if (value is IEnumerable collection)
+                else
                 {
-                    NavigationProperties.Add(collection, navigationProperty.ResourceSet);
+                    if (value == null && navigationInfo.NextPageLink != null)
+                        if (navigationInfo.IsCollection)
+                            value = CreateCollection(clrProperty.PropertyType);
+                        else
+                            value = Activator.CreateInstance(clrProperty.PropertyType);
+
+                    clrProperty.SetValue(entity, value);
+                    NavigationProperties.Add(value, navigationInfo);
 
                     if (propertyInfos == null)
                     {
-                        propertyInfos = new Dictionary<PropertyInfo, ODataResourceSetBase>(navigationProperties.Count);
-                        NavigationPropertyEntities.Add(entity, propertyInfos);
+                        propertyInfos = new Dictionary<PropertyInfo, NavigationInfo>(navigationProperties.Count);
+                        NavigationInfoEntities.Add(entity, propertyInfos);
                     }
-                    propertyInfos.Add(clrProperty, navigationProperty.ResourceSet);
+                    propertyInfos.Add(clrProperty, navigationInfo);
                 }
             }
 
             return entity;
         }
-        protected virtual Object CreateRootEntity(ODataResource resource, IReadOnlyList<NavigationProperty> navigationProperties, Type entityType)
+        protected virtual Object CreateRootEntity(ODataResource resource, IReadOnlyList<NavigationInfo> navigationProperties, Type entityType)
         {
             return CreateEntity(resource, navigationProperties);
         }
         public async Task FillNextLinkProperties(OeParser parser, CancellationToken token)
         {
             using (var response = new MemoryStream())
-                foreach (KeyValuePair<Object, Dictionary<PropertyInfo, ODataResourceSetBase>> navigationPropertyEntity in NavigationPropertyEntities)
-                    foreach (KeyValuePair<PropertyInfo, ODataResourceSetBase> propertyResourceSet in navigationPropertyEntity.Value)
+                foreach (KeyValuePair<Object, Dictionary<PropertyInfo, NavigationInfo>> navigationPropertyEntity in NavigationInfoEntities)
+                    foreach (KeyValuePair<PropertyInfo, NavigationInfo> propertyResourceSet in navigationPropertyEntity.Value)
                     {
                         response.SetLength(0);
                         await parser.ExecuteGetAsync(propertyResourceSet.Value.NextPageLink, OeRequestHeaders.JsonDefault, response, token).ConfigureAwait(false);
@@ -200,13 +200,13 @@ namespace OdataToEntity.Test
 
             return null;
         }
-        public ODataResourceSetBase GetResourceSet(IEnumerable navigationProperty)
+        public NavigationInfo GetNavigationInfo(Object navigationProperty)
         {
             return NavigationProperties[navigationProperty];
         }
-        public IReadOnlyDictionary<PropertyInfo, ODataResourceSetBase> GetResourceSets(Object entity)
+        public IReadOnlyDictionary<PropertyInfo, NavigationInfo> GetNavigationProperties(Object entity)
         {
-            if (NavigationPropertyEntities.TryGetValue(entity, out Dictionary<PropertyInfo, ODataResourceSetBase> resourceSets))
+            if (NavigationInfoEntities.TryGetValue(entity, out Dictionary<PropertyInfo, NavigationInfo> resourceSets))
                 return resourceSets;
             return EmptyNavigationPropertyEntities;
         }
@@ -226,7 +226,7 @@ namespace OdataToEntity.Test
         {
             ResourceSet = null;
             NavigationProperties.Clear();
-            NavigationPropertyEntities.Clear();
+            NavigationInfoEntities.Clear();
 
             IODataResponseMessage responseMessage = new Infrastructure.OeInMemoryMessage(response, null);
             var settings = new ODataMessageReaderSettings() { EnableMessageStreamDisposal = false, Validations = ValidationKinds.None };
@@ -272,8 +272,8 @@ namespace OdataToEntity.Test
 
         protected IEdmModel EdmModel { get; }
         protected Db.OeEntitySetAdapterCollection EntitySetAdapters => EdmModel.GetDataAdapter(EdmModel.EntityContainer).EntitySetAdapters;
-        protected Dictionary<IEnumerable, ODataResourceSetBase> NavigationProperties { get; }
-        public Dictionary<Object, Dictionary<PropertyInfo, ODataResourceSetBase>> NavigationPropertyEntities { get; }
+        protected Dictionary<Object, NavigationInfo> NavigationProperties { get; }
+        protected Dictionary<Object, Dictionary<PropertyInfo, NavigationInfo>> NavigationInfoEntities { get; }
         public ODataResourceSetBase ResourceSet { get; protected set; }
     }
 }

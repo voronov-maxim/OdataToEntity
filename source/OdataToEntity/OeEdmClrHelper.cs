@@ -218,6 +218,23 @@ namespace OdataToEntity
                 entitySet = entitySetSegment.EntitySet;
             return entitySet;
         }
+        public static int GetPageSize(this ExpandedNavigationSelectItem navigationSelectItem)
+        {
+            return navigationSelectItem.SelectAndExpand.GetPageSize();
+        }
+        public static int GetPageSize(this ODataUri odataUri)
+        {
+            return odataUri.SelectAndExpand.GetPageSize();
+        }
+        private static int GetPageSize(this SelectExpandClause selectExpandClause)
+        {
+            if (selectExpandClause != null)
+                foreach (SelectItem selectItem in selectExpandClause.SelectedItems)
+                    if (selectItem is Parsers.Translators.OePageSelectItem pageSelectItem)
+                        return pageSelectItem.PageSize;
+
+            return 0;
+        }
         public static IEdmProperty GetPropertyIgnoreCase(this IEdmStructuredType entityType, String propertyName)
         {
             foreach (IEdmProperty edmProperty in entityType.Properties())
@@ -315,6 +332,15 @@ namespace OdataToEntity
                 return GetValue(edmModel, resourceValue);
 
             return odataValue;
+        }
+        public static bool IsNavigationNextLink(this SelectExpandClause selectExpandClause)
+        {
+            if (selectExpandClause != null)
+                foreach (SelectItem selectItem in selectExpandClause.SelectedItems)
+                    if (selectItem is Parsers.Translators.OePageSelectItem pageSelectItem)
+                        return pageSelectItem.NavigationNextLink;
+
+            return false;
         }
     }
 }

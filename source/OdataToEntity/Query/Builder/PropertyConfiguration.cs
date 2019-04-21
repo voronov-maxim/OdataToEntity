@@ -1,9 +1,11 @@
 ﻿using Microsoft.OData.Edm;
 using System;
+using System.Linq.Expressions;
+using System.Reflection;
 
 namespace OdataToEntity.Query.Builder
 {
-    public sealed class PropertyConfiguration
+    public sealed class PropertyConfiguration<TEntity> where TEntity : class
     {
         private readonly IEdmProperty _edmProperty;
         private readonly OeModelBoundFluentBuilder _modelBuilder;
@@ -14,27 +16,27 @@ namespace OdataToEntity.Query.Builder
             _edmProperty = edmProperty;
         }
 
-        public PropertyConfiguration Count(QueryOptionSetting setting)
+        public PropertyConfiguration<TEntity> Count(QueryOptionSetting setting)
         {
             var navigationProperty = (IEdmNavigationProperty)_edmProperty;
             _modelBuilder.ModelBoundSettingsBuilder.SetCount(setting == QueryOptionSetting.Allowed, navigationProperty);
             return this;
         }
-        public PropertyConfiguration Expand(SelectExpandType expandType)
+        public PropertyConfiguration<TEntity> Expand(SelectExpandType expandType)
         {
             return Select(expandType);
         }
-        public PropertyConfiguration Expand(SelectExpandType expandType, params String[] propertyNames)
+        public PropertyConfiguration<TEntity> Expand(SelectExpandType expandType, params String[] propertyNames)
         {
             return Select(expandType, propertyNames);
         }
-        public PropertyConfiguration Filter(QueryOptionSetting setting)
+        public PropertyConfiguration<TEntity> Filter(QueryOptionSetting setting)
         {
             var navigationProperty = (IEdmNavigationProperty)_edmProperty;
             _modelBuilder.ModelBoundSettingsBuilder.SetFilter(_edmProperty, setting == QueryOptionSetting.Allowed, navigationProperty);
             return this;
         }
-        public PropertyConfiguration Filter(QueryOptionSetting setting, params String[] propertyNames)
+        public PropertyConfiguration<TEntity> Filter(QueryOptionSetting setting, params String[] propertyNames)
         {
             var navigationProperty = (IEdmNavigationProperty)_edmProperty;
             IEdmEntityType entityType = navigationProperty.ToEntityType();
@@ -45,13 +47,19 @@ namespace OdataToEntity.Query.Builder
             }
             return this;
         }
-        public PropertyConfiguration OrderBy(QueryOptionSetting setting)
+        public PropertyConfiguration<TEntity> NavigationNextLink()
+        {
+            var navigationProperty = (IEdmNavigationProperty)_edmProperty;
+            _modelBuilder.ModelBoundSettingsBuilder.SetNavigationNextLink(true, navigationProperty);
+            return this;
+        }
+        public PropertyConfiguration<TEntity> OrderBy(QueryOptionSetting setting)
         {
             var navigationProperty = (IEdmNavigationProperty)_edmProperty;
             _modelBuilder.ModelBoundSettingsBuilder.SetOrderBy(_edmProperty, setting == QueryOptionSetting.Allowed, navigationProperty);
             return this;
         }
-        public PropertyConfiguration OrderBy(QueryOptionSetting setting, params String[] propertyNames)
+        public PropertyConfiguration<TEntity> OrderBy(QueryOptionSetting setting, params String[] propertyNames)
         {
             var navigationProperty = (IEdmNavigationProperty)_edmProperty;
             IEdmEntityType entityType = navigationProperty.ToEntityType();
@@ -62,25 +70,32 @@ namespace OdataToEntity.Query.Builder
             }
             return this;
         }
-        public PropertyConfiguration Page(int? maxTopValue, int? pageSizeValue)
+        public PropertyConfiguration<TEntity> Page(int? maxTopValue, int? pageSizeValue)
         {
             var navigationProperty = (IEdmNavigationProperty)_edmProperty;
             _modelBuilder.ModelBoundSettingsBuilder.SetMaxTop(maxTopValue.GetValueOrDefault(), navigationProperty);
             _modelBuilder.ModelBoundSettingsBuilder.SetPageSize(pageSizeValue.GetValueOrDefault(), navigationProperty);
             return this;
         }
-        public PropertyConfiguration Property(String propertyName)
+        public PropertyConfiguration<TEntity> Property(String propertyName)
         {
-            IEdmProperty property =  _edmProperty.DeclaringType.GetPropertyIgnoreCase(propertyName);
-            return new PropertyConfiguration(_modelBuilder, property);
+            IEdmProperty property = _edmProperty.DeclaringType.GetPropertyIgnoreCase(propertyName);
+            return new PropertyConfiguration<TEntity>(_modelBuilder, property);
         }
-        public PropertyConfiguration Select(SelectExpandType expandType)
+        public PropertyConfiguration<TEntity> Property(Expression<Func<TEntity, Object>> propertyExpression)
+        {
+            var property = (MemberExpression)propertyExpression.Body;
+            var propertyInfo = (PropertyInfo)property.Member;
+            IEdmProperty edmProperty = _edmProperty.DeclaringType.GetPropertyIgnoreCase(propertyInfo.Name);
+            return new PropertyConfiguration<TEntity>(_modelBuilder, edmProperty);
+        }
+        public PropertyConfiguration<TEntity> Select(SelectExpandType expandType)
         {
             var navigationProperty = (IEdmNavigationProperty)_edmProperty;
             _modelBuilder.ModelBoundSettingsBuilder.SetSelect(_edmProperty, expandType, navigationProperty);
             return this;
         }
-        public PropertyConfiguration Select(SelectExpandType expandType, params String[] propertyNames)
+        public PropertyConfiguration<TEntity> Select(SelectExpandType expandType, params String[] propertyNames)
         {
             var navigationProperty = (IEdmNavigationProperty)_edmProperty;
             IEdmEntityType entityType = navigationProperty.ToEntityType();

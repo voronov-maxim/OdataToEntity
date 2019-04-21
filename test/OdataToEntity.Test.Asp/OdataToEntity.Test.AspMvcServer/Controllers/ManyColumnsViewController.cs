@@ -17,7 +17,7 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
 
         public async Task Get()
         {
-            await OeAspQueryParser.Get(_httpContextAccessor.HttpContext, false, 10);
+            await OeAspQueryParser.Get(_httpContextAccessor.HttpContext, 10);
         }
     }
 }

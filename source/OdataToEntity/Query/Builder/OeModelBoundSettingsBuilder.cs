@@ -63,6 +63,10 @@ namespace OdataToEntity.Query.Builder
         {
             GetSettingsOrAdd(navigationProperty).MaxTop = maxTop;
         }
+        public void SetNavigationNextLink(bool navigationNextLink, IEdmNavigationProperty navigationProperty)
+        {
+            GetSettingsOrAdd(navigationProperty).NavigationNextLink = navigationNextLink;
+        }
         public void SetOrderBy(IEdmProperty property, bool orderable)
         {
             SetPropertySetting(property, OeModelBoundKind.OrderBy, orderable ? SelectExpandType.Allowed : SelectExpandType.Disabled);

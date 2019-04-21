@@ -18,7 +18,6 @@ namespace OdataToEntity
         protected OeRequestHeaders(OeRequestHeaders clone) : this(clone.MimeType, clone.MetadataLevel, clone.Streaming, clone.Charset)
         {
             MaxPageSize = clone.MaxPageSize;
-            NavigationNextLink = clone.NavigationNextLink;
         }
         protected OeRequestHeaders(String mimeType, OeMetadataLevel metadataLevel, bool streaming, String charset)
         {
@@ -137,22 +136,12 @@ namespace OdataToEntity
             requestHeaders.MaxPageSize = maxPageSize;
             return requestHeaders;
         }
-        public OeRequestHeaders SetNavigationNextLink(bool navigationNextLink = false)
-        {
-            if (NavigationNextLink == navigationNextLink)
-                return this;
-
-            OeRequestHeaders requestHeaders = Clone();
-            requestHeaders.NavigationNextLink = navigationNextLink;
-            return requestHeaders;
-        }
 
         public String Charset { get; }
         public String ContentType { get; }
         public OeMetadataLevel MetadataLevel { get; }
         public string MimeType { get; }
         public int MaxPageSize { get; private set; }
-        public bool NavigationNextLink { get; private set; }
         public virtual string ResponseContentType { get; set; }
         public bool Streaming { get; }
     }

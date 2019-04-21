@@ -42,7 +42,6 @@ namespace OdataToEntity.AspNetCore
             _queryContext = new OeQueryContext(refModel, odataUri)
             {
                 MaxPageSize = headers.MaxPageSize,
-                NavigationNextLink = headers.NavigationNextLink,
                 MetadataLevel = headers.MetadataLevel
             };
 
@@ -72,9 +71,9 @@ namespace OdataToEntity.AspNetCore
 
             return asyncEnumerator;
         }
-        public IAsyncEnumerable<T> ExecuteReader<T>(IQueryable source = null, bool navigationNextLink = false, int? maxPageSize = null)
+        public IAsyncEnumerable<T> ExecuteReader<T>(IQueryable source = null, int? maxPageSize = null)
         {
-            OeAsyncEnumerator asyncEnumerator = GetAsyncEnumerator(source, navigationNextLink, maxPageSize);
+            OeAsyncEnumerator asyncEnumerator = GetAsyncEnumerator(source, maxPageSize);
             _count = asyncEnumerator.Count;
             if (OeExpressionHelper.IsPrimitiveType(typeof(T)) || !_queryContext.EntryFactory.IsTuple)
                 return new OeAsyncEnumeratorAdapter<T>(asyncEnumerator);
@@ -90,16 +89,16 @@ namespace OdataToEntity.AspNetCore
             _httpContext.Response.ContentType = null;
             return null;
         }
-        public static async Task Get(HttpContext httpContext, bool navigationNextLink = false, int? maxPageSize = null)
+        public static async Task Get(HttpContext httpContext, int? maxPageSize = null)
         {
             var requestHeaders = (HttpRequestHeaders)httpContext.Request.Headers;
-            OeRequestHeaders headers = GetRequestHeaders(requestHeaders, httpContext.Response, navigationNextLink, maxPageSize);
+            OeRequestHeaders headers = GetRequestHeaders(requestHeaders, httpContext.Response, maxPageSize);
 
             var edmModel = (IEdmModel)httpContext.RequestServices.GetService(typeof(IEdmModel));
             var parser = new OeParser(UriHelper.GetBaseUri(httpContext.Request), edmModel);
             await parser.ExecuteGetAsync(UriHelper.GetUri(httpContext.Request), headers, httpContext.Response.Body, httpContext.RequestAborted);
         }
-        private OeAsyncEnumerator GetAsyncEnumerator(IQueryable source = null, bool navigationNextLink = false, int? maxPageSize = null)
+        private OeAsyncEnumerator GetAsyncEnumerator(IQueryable source = null, int? maxPageSize = null)
         {
             _httpContext.Response.RegisterForDispose(this);
 
@@ -110,7 +109,7 @@ namespace OdataToEntity.AspNetCore
                 _dataContext = _dataAdapter.CreateDataContext();
 
             var requestHeaders = (HttpRequestHeaders)_httpContext.Request.Headers;
-            OeRequestHeaders headers = GetRequestHeaders(requestHeaders, _httpContext.Response, navigationNextLink, maxPageSize);
+            OeRequestHeaders headers = GetRequestHeaders(requestHeaders, _httpContext.Response, maxPageSize);
 
             if (odataUri.Path.LastSegment is OperationImportSegment)
                 return ExecutePost(refModel, odataUri, headers, _httpContext.Request.Body);
@@ -129,10 +128,10 @@ namespace OdataToEntity.AspNetCore
             }
             return (TDataContext)_dataContext;
         }
-        private static OeRequestHeaders GetRequestHeaders(HttpRequestHeaders requestHeaders, HttpResponse httpResponse, bool navigationNextLink, int? maxPageSize)
+        private static OeRequestHeaders GetRequestHeaders(HttpRequestHeaders requestHeaders, HttpResponse httpResponse, int? maxPageSize)
         {
             ((IDictionary<String, StringValues>)requestHeaders).TryGetValue("Prefer", out StringValues preferHeader);
-            var headers = OeRequestHeaders.Parse(requestHeaders.HeaderAccept, preferHeader).SetNavigationNextLink(navigationNextLink);
+            var headers = OeRequestHeaders.Parse(requestHeaders.HeaderAccept, preferHeader);
             if (maxPageSize != null)
                 headers = headers.SetMaxPageSize(maxPageSize.Value);
 

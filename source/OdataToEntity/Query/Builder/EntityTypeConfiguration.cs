@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace OdataToEntity.Query.Builder
 {
-    public sealed class EntityTypeConfiguration<TEntityType> where TEntityType : class
+    public sealed class EntityTypeConfiguration<TEntity> where TEntity : class
     {
         private readonly IEdmEntityType _entityType;
         private readonly OeModelBoundFluentBuilder _modelBuilder;
@@ -16,22 +16,22 @@ namespace OdataToEntity.Query.Builder
             _entityType = entityType;
         }
 
-        public EntityTypeConfiguration<TEntityType> Count(QueryOptionSetting setting)
+        public EntityTypeConfiguration<TEntity> Count(QueryOptionSetting setting)
         {
             _modelBuilder.ModelBoundSettingsBuilder.SetCount(setting == QueryOptionSetting.Allowed, _entityType);
             return this;
         }
-        public EntityTypeConfiguration<TEntityType> Expand(SelectExpandType expandType, params String[] propertyNames)
+        public EntityTypeConfiguration<TEntity> Expand(SelectExpandType expandType, params String[] propertyNames)
         {
             return Select(expandType, propertyNames);
         }
-        public EntityTypeConfiguration<TEntityType> Filter(QueryOptionSetting setting)
+        public EntityTypeConfiguration<TEntity> Filter(QueryOptionSetting setting)
         {
             foreach (IEdmProperty edmProperty in _entityType.Properties())
                 _modelBuilder.ModelBoundSettingsBuilder.SetFilter(edmProperty, setting == QueryOptionSetting.Allowed);
             return this;
         }
-        public EntityTypeConfiguration<TEntityType> Filter(QueryOptionSetting setting, params String[] propertyNames)
+        public EntityTypeConfiguration<TEntity> Filter(QueryOptionSetting setting, params String[] propertyNames)
         {
             foreach (String propertyName in propertyNames)
             {
@@ -40,13 +40,13 @@ namespace OdataToEntity.Query.Builder
             }
             return this;
         }
-        public EntityTypeConfiguration<TEntityType> OrderBy(QueryOptionSetting setting)
+        public EntityTypeConfiguration<TEntity> OrderBy(QueryOptionSetting setting)
         {
             foreach (IEdmProperty edmProperty in _entityType.Properties())
                 _modelBuilder.ModelBoundSettingsBuilder.SetOrderBy(edmProperty, setting == QueryOptionSetting.Allowed);
             return this;
         }
-        public EntityTypeConfiguration<TEntityType> OrderBy(QueryOptionSetting setting, params String[] propertyNames)
+        public EntityTypeConfiguration<TEntity> OrderBy(QueryOptionSetting setting, params String[] propertyNames)
         {
             foreach (String propertyName in propertyNames)
             {
@@ -55,20 +55,20 @@ namespace OdataToEntity.Query.Builder
             }
             return this;
         }
-        public EntityTypeConfiguration<TEntityType> Page(int? maxTopValue, int? pageSizeValue)
+        public EntityTypeConfiguration<TEntity> Page(int? maxTopValue, int? pageSizeValue)
         {
             _modelBuilder.ModelBoundSettingsBuilder.SetMaxTop(maxTopValue.GetValueOrDefault(), _entityType);
             _modelBuilder.ModelBoundSettingsBuilder.SetPageSize(pageSizeValue.GetValueOrDefault(), _entityType);
             return this;
         }
-        public PropertyConfiguration Property(Expression<Func<TEntityType, Object>> propertyExpression)
+        public PropertyConfiguration<TEntity> Property(Expression<Func<TEntity, Object>> propertyExpression)
         {
             var property = (MemberExpression)propertyExpression.Body;
             var propertyInfo = (PropertyInfo)property.Member;
             IEdmProperty edmProperty = _entityType.GetPropertyIgnoreCase(propertyInfo.Name);
-            return new PropertyConfiguration(_modelBuilder, edmProperty);
+            return new PropertyConfiguration<TEntity>(_modelBuilder, edmProperty);
         }
-        public EntityTypeConfiguration<TEntityType> Select(SelectExpandType expandType, params String[] propertyNames)
+        public EntityTypeConfiguration<TEntity> Select(SelectExpandType expandType, params String[] propertyNames)
         {
             foreach (String propertyName in propertyNames)
             {

@@ -7,5 +7,6 @@ namespace OdataToEntity.Query
     {
         public int MaxTop { get; set; }
         public int PageSize { get; set; }
+        public bool NavigationNextLink { get; set; }
     }
 }
