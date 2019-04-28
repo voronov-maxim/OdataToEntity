@@ -24,14 +24,16 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
         [HttpGet]
         public ODataResult<Model.Category> Get()
         {
-            var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
+            Query.OeModelBoundProvider modelBoundProvider = _httpContextAccessor.HttpContext.CreateModelBoundProvider();
+            var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext, modelBoundProvider);
             IAsyncEnumerable<Model.Category> categories = parser.ExecuteReader<Model.Category>();
             return parser.OData(categories);
         }
         [HttpGet("{id}")]
         public ODataResult<Model.Category> Get(int id)
         {
-            var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
+            Query.OeModelBoundProvider modelBoundProvider = _httpContextAccessor.HttpContext.CreateModelBoundProvider();
+            var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext, modelBoundProvider);
             IAsyncEnumerable<Model.Category> categories = parser.ExecuteReader<Model.Category>();
             return parser.OData(categories);
         }

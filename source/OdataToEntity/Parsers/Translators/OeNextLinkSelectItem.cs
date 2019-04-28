@@ -3,14 +3,11 @@ using System;
 
 namespace OdataToEntity.Parsers.Translators
 {
-    public sealed class OePageSelectItem : SelectItem
+    public sealed class OeNextLinkSelectItem : SelectItem
     {
-        public OePageSelectItem(int pageSize)
+        public OeNextLinkSelectItem(bool navigationNextLink)
         {
-            if (pageSize <= 0)
-                throw new ArgumentException("Must be greater zero", nameof(PageSize));
-
-            PageSize = pageSize;
+            NavigationNextLink = navigationNextLink;
         }
 
         public override void HandleWith(SelectItemHandler handler)
@@ -22,6 +19,6 @@ namespace OdataToEntity.Parsers.Translators
             throw new NotImplementedException();
         }
 
-        public int PageSize { get; }
+        public bool NavigationNextLink { get; }
     }
 }

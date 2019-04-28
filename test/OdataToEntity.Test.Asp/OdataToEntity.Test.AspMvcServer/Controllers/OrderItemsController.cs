@@ -24,7 +24,8 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
         [HttpGet]
         public ODataResult<Model.OrderItem> Get()
         {
-            var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
+            Query.OeModelBoundProvider modelBoundProvider = _httpContextAccessor.HttpContext.CreateModelBoundProvider();
+            var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext, modelBoundProvider);
             IAsyncEnumerable<Model.OrderItem> orderItems = parser.ExecuteReader<Model.OrderItem>();
             return parser.OData(orderItems);
         }

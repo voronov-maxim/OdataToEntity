@@ -337,8 +337,8 @@ namespace OdataToEntity
         {
             if (selectExpandClause != null)
                 foreach (SelectItem selectItem in selectExpandClause.SelectedItems)
-                    if (selectItem is Parsers.Translators.OePageSelectItem pageSelectItem)
-                        return pageSelectItem.NavigationNextLink;
+                    if (selectItem is Parsers.Translators.OeNextLinkSelectItem nextLinkSelectItem)
+                        return nextLinkSelectItem.NavigationNextLink;
 
             return false;
         }

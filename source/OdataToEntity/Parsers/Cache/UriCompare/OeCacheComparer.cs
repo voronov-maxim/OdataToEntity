@@ -1,7 +1,9 @@
 ﻿using Microsoft.OData;
+using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using Microsoft.OData.UriParser.Aggregation;
 using OdataToEntity.Parsers;
+using OdataToEntity.Parsers.Translators;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -243,88 +245,73 @@ namespace OdataToEntity.Cache.UriCompare
         }
         private bool CompareSelectItem(SelectItem selectItem1, SelectItem selectItem2, ODataPath path)
         {
-            if (selectItem1.GetType() != selectItem2.GetType())
-                return false;
-
-            if (selectItem1 is ExpandedNavigationSelectItem)
+            if (selectItem1 is ExpandedNavigationSelectItem expandItem1 && selectItem2 is ExpandedNavigationSelectItem expandItem2)
             {
-                var expand1 = selectItem1 as ExpandedNavigationSelectItem;
-                var expand2 = selectItem2 as ExpandedNavigationSelectItem;
-
-                if (!CompareLevelsClause(expand1.LevelsOption, expand2.LevelsOption))
+                if (!CompareLevelsClause(expandItem1.LevelsOption, expandItem2.LevelsOption))
                     return false;
 
-                if (expand1.CountOption != expand2.CountOption)
+                if (expandItem1.CountOption != expandItem2.CountOption)
                     return false;
 
-                if (expand1.NavigationSource != expand2.NavigationSource)
+                if (expandItem1.NavigationSource != expandItem2.NavigationSource)
                     return false;
 
-                bool navigationNextLink1 = expand1.SelectAndExpand.IsNavigationNextLink();
-                bool navigationNextLink2 = expand2.SelectAndExpand.IsNavigationNextLink();
+                bool navigationNextLink1 = expandItem1.SelectAndExpand.IsNavigationNextLink();
+                bool navigationNextLink2 = expandItem2.SelectAndExpand.IsNavigationNextLink();
                 if (navigationNextLink1 != navigationNextLink2)
                     return false;
 
-                if (!CompareFilter(expand1.FilterOption, expand2.FilterOption, navigationNextLink1))
+                if (!CompareFilter(expandItem1.FilterOption, expandItem2.FilterOption, navigationNextLink1))
                     return false;
 
-                if (!CompareOrderBy(expand1.OrderByOption, expand2.OrderByOption, navigationNextLink1))
+                if (!CompareOrderBy(expandItem1.OrderByOption, expandItem2.OrderByOption, navigationNextLink1))
                     return false;
 
-                if (!ODataPathComparer.Compare(expand1.PathToNavigationProperty, expand2.PathToNavigationProperty))
+                if (!ODataPathComparer.Compare(expandItem1.PathToNavigationProperty, expandItem2.PathToNavigationProperty))
                     return false;
 
-                path = new ODataPath(path.Union(expand2.PathToNavigationProperty));
+                path = new ODataPath(path.Union(expandItem2.PathToNavigationProperty));
                 if (navigationNextLink1)
                 {
-                    if (expand1.SkipOption == null || expand2.SkipOption == null)
-                        if (expand1.SkipOption != expand2.SkipOption)
+                    if (expandItem1.SkipOption == null || expandItem2.SkipOption == null)
+                        if (expandItem1.SkipOption != expandItem2.SkipOption)
                             return false;
 
-                    if (expand1.TopOption == null || expand2.TopOption == null)
-                        if (expand1.TopOption != expand2.TopOption)
+                    if (expandItem1.TopOption == null || expandItem2.TopOption == null)
+                        if (expandItem1.TopOption != expandItem2.TopOption)
                             return false;
 
-                    return new OeCacheComparer(null).CompareSelectAndExpand(expand1.SelectAndExpand, expand2.SelectAndExpand, path);
+                    return new OeCacheComparer(null).CompareSelectAndExpand(expandItem1.SelectAndExpand, expandItem2.SelectAndExpand, path);
                 }
 
-                return CompareSkip(expand1.SkipOption, expand2.SkipOption, path) &&
-                    CompareTop(expand1.TopOption, expand2.TopOption, path) &&
-                    CompareSelectAndExpand(expand1.SelectAndExpand, expand2.SelectAndExpand, path);
+                return CompareSkip(expandItem1.SkipOption, expandItem2.SkipOption, path) &&
+                    CompareTop(expandItem1.TopOption, expandItem2.TopOption, path) &&
+                    CompareSelectAndExpand(expandItem1.SelectAndExpand, expandItem2.SelectAndExpand, path);
             }
-            else if (selectItem1 is PathSelectItem)
+
+            if (selectItem1 is PathSelectItem pathItem1 && selectItem2 is PathSelectItem pathItem2)
+                return ODataPathComparer.Compare(pathItem1.SelectedPath, pathItem2.SelectedPath);
+
+            if (selectItem1 is OePageSelectItem pageItem1 && selectItem2 is OePageSelectItem pageItem2)
             {
-                if (selectItem2 is PathSelectItem item2)
-                {
-                    var item1 = selectItem1 as PathSelectItem;
-                    return ODataPathComparer.Compare(item1.SelectedPath, item2.SelectedPath);
-                }
-
-                return false;
-            }
-            else if (selectItem1 is Parsers.Translators.OePageSelectItem item1)
-            {
-                if (selectItem2 is Parsers.Translators.OePageSelectItem item2)
-                {
-                    if (item1.NavigationNextLink != item2.NavigationNextLink)
-                        return false;
-
-                    if (item1.PageSize == 0 && item2.PageSize == 0)
-                        return true;
-
-                    if (item1.PageSize == 0 || item2.PageSize == 0)
-                        return false;
-
-                    if (item2.PageSize > 0)
-                        _parameterValues.AddTopParameter(item2.PageSize, path);
-
+                if (pageItem1.PageSize == 0 && pageItem2.PageSize == 0)
                     return true;
-                }
 
-                return false;
+                if (pageItem1.PageSize == 0 || pageItem2.PageSize == 0)
+                    return false;
+
+                if (pageItem2.PageSize > 0)
+                    if (path.LastSegment is EntitySetSegment ||
+                        path.LastSegment is NavigationPropertySegment segment && segment.NavigationProperty.Type.IsCollection())
+                        _parameterValues.AddTopParameter(pageItem2.PageSize, path);
+
+                return true;
             }
-            else
-                throw new InvalidOperationException("Unknown SelectItem " + selectItem1.GetType().ToString());
+
+            if (selectItem1 is OeNextLinkSelectItem nextLinkItem1 && selectItem2 is OeNextLinkSelectItem nextLinkItem2)
+                return nextLinkItem1.NavigationNextLink == nextLinkItem2.NavigationNextLink;
+
+            throw new InvalidOperationException("Unknown SelectItem " + selectItem1.GetType().ToString());
         }
         private bool CompareSkip(long? skip1, long? skip2, ODataPath path)
         {
@@ -485,8 +472,10 @@ namespace OdataToEntity.Cache.UriCompare
                 }
                 else if (selectItem is PathSelectItem pathSelectItem)
                     hash = CombineHashCodes(hash, pathSelectItem.SelectedPath.LastSegment.Identifier.GetHashCode());
-                else if (selectItem is Parsers.Translators.OePageSelectItem)
-                    hash = CombineHashCodes(hash, typeof(Parsers.Translators.OePageSelectItem).GetHashCode());
+                else if (selectItem is OePageSelectItem)
+                    hash = CombineHashCodes(hash, typeof(OePageSelectItem).GetHashCode());
+                else if (selectItem is OeNextLinkSelectItem)
+                    hash = CombineHashCodes(hash, typeof(OeNextLinkSelectItem).GetHashCode());
                 else
                     throw new InvalidOperationException("Unknown SelectItem " + selectItem.GetType().ToString());
             }

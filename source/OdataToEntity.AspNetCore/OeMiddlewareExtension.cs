@@ -25,13 +25,18 @@ namespace OdataToEntity.AspNetCore
         }
         public static IApplicationBuilder UseOdataToEntityMiddleware(this IApplicationBuilder app, PathString pathMatch, IEdmModel edmModel)
         {
+            return app.UseOdataToEntityMiddleware<OeMiddleware>(pathMatch, edmModel);
+        }
+        public static IApplicationBuilder UseOdataToEntityMiddleware<TMiddleware>(this IApplicationBuilder app, PathString pathMatch, IEdmModel edmModel)
+            where TMiddleware : OeMiddleware
+        {
             if (app == null)
                 throw new ArgumentNullException("app");
             if (pathMatch.HasValue && pathMatch.Value.EndsWith("/", StringComparison.Ordinal))
                 throw new ArgumentException("The path must not end with a '/'", "pathMatch");
 
             IApplicationBuilder applicationBuilder = app.New();
-            applicationBuilder.UseMiddleware<OeMiddleware>(pathMatch, edmModel);
+            applicationBuilder.UseMiddleware<TMiddleware>(pathMatch, edmModel);
             RequestDelegate branch = applicationBuilder.Build();
             MapOptions options = new MapOptions
             {

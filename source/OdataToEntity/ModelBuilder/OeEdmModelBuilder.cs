@@ -246,9 +246,9 @@ namespace OdataToEntity.ModelBuilder
                 {
                     ContainsTarget = false,
                     Name = fkeyInfo.PrincipalNavigationProperty.Name,
-                    DependentProperties = dependentEdmProperties,
+                    DependentProperties = edmPrincipal.DeclaredKey,
                     OnDelete = EdmOnDeleteAction.None,
-                    PrincipalProperties = edmPrincipal.DeclaredKey,
+                    PrincipalProperties = dependentEdmProperties,
                     Target = edmDependent,
                     TargetMultiplicity = fkeyInfo.PrincipalMultiplicity
                 };

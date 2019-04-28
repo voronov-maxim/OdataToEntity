@@ -55,11 +55,11 @@ namespace OdataToEntity.Test
             return modelBoundBuilder.BuildProvider();
 
         }
-        public OeParser CreateParser(String request)
+        public OeParser CreateParser(String request, OeModelBoundProvider modelBoundProvider)
         {
             ODataUri odataUri = ParseUri(request);
             IEdmModel edmModel = EdmModel.GetEdmModel(odataUri.Path);
-            return new OeParser(odataUri.ServiceRoot, edmModel, ModelBoundProvider);
+            return new OeParser(odataUri.ServiceRoot, edmModel, modelBoundProvider);
         }
         protected static void EnsureCreated(IEdmModel edmModel)
         {
@@ -121,7 +121,14 @@ namespace OdataToEntity.Test
         }
         public async Task<IList> ExecuteOe<TResult>(String requestUri, bool navigationNextLink, int pageSize)
         {
-            OeParser parser = CreateParser(requestUri);
+            OeModelBoundProvider modelBoundProvider = ModelBoundProvider;
+            if (modelBoundProvider == null)
+            {
+                var modelBoundProviderBuilder = new PageNextLinkModelBoundBuilder(EdmModel, IsSqlite);
+                modelBoundProvider = modelBoundProviderBuilder.BuildProvider(pageSize, navigationNextLink);
+            }
+
+            OeParser parser = CreateParser(requestUri, modelBoundProvider);
             var uri = new Uri(parser.BaseUri, requestUri);
             OeRequestHeaders requestHeaders = OeRequestHeaders.JsonDefault.SetMaxPageSize(pageSize);
 
@@ -131,12 +138,6 @@ namespace OdataToEntity.Test
             do
             {
                 odataUri  = OeParser.ParseUri(parser.EdmModel, parser.BaseUri, uri);
-                if (navigationNextLink)
-                {
-                    var pageSelectItemBuilder = new PageSelectItemBuilder(navigationNextLink, pageSize);
-                    odataUri.SelectAndExpand = pageSelectItemBuilder.Build(odataUri.SelectAndExpand);
-                }
-
                 var response = new MemoryStream();
                 await parser.ExecuteQueryAsync(odataUri, requestHeaders, response, CancellationToken.None).ConfigureAwait(false);
                 response.Position = 0;
@@ -185,6 +186,7 @@ namespace OdataToEntity.Test
         }
 
         public EdmModel EdmModel { get; }
+        protected internal virtual bool IsSqlite => false;
         public OeModelBoundProvider ModelBoundProvider { get; }
     }
 }

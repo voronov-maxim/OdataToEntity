@@ -1,4 +1,5 @@
-﻿using Xunit;
+﻿using System.Threading.Tasks;
+using Xunit;
 
 [assembly: CollectionBehavior(DisableTestParallelization = true)]
 
@@ -6,9 +7,9 @@ namespace OdataToEntity.Test.EfCore.PostgreSql
 {
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main()
         {
-            new AC_RDBNull(new AC_RDBNull_DbFixtureInitDb()).ExpandExpandSkipTop(0, false).GetAwaiter().GetResult();
+            await new RDBNull(new RDBNull_DbFixtureInitDb()).ExpandExpandSkipTop(0, false);
         }
     }
 }

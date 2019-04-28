@@ -18,12 +18,12 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <DefineConstants>IGNORE_AC_PLNull;IGNORE_NC_PLNull</DefineConstants>
+    <DefineConstants>IGNORE_PLNull</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="linq2db" Version="2.6.4" />
-    <PackageReference Include="linq2db.SqlServer" Version="2.6.4" />
+    <PackageReference Include="linq2db" Version="2.7.0" />
+    <PackageReference Include="linq2db.SqlServer" Version="2.7.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$(EfCoreVersion)" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="$(EfCoreVersion)" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />

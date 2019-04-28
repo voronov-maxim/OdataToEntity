@@ -13,10 +13,9 @@ using System.Xml;
 
 namespace OdataToEntity.AspNetCore
 {
-    public sealed class OeMiddleware
+    public class OeMiddleware
     {
         private readonly PathString _apiPath;
-        private readonly IEdmModel _edmModel;
         private readonly RequestDelegate _next;
 
         public OeMiddleware(RequestDelegate next, PathString apiPath, IEdmModel edmModel)
@@ -24,7 +23,7 @@ namespace OdataToEntity.AspNetCore
             _next = next;
             _apiPath = apiPath;
 
-            _edmModel = edmModel;
+            EdmModel = edmModel;
         }
 
         private static bool GetCsdlSchema(IEdmModel edmModel, Stream stream)
@@ -34,6 +33,10 @@ namespace OdataToEntity.AspNetCore
                     return true;
 
             return false;
+        }
+        protected virtual Query.OeModelBoundProvider GetModelBoundProvider(HttpContext httpContext)
+        {
+            return null;
         }
         public async Task Invoke(HttpContext httpContext)
         {
@@ -52,20 +55,22 @@ namespace OdataToEntity.AspNetCore
             ((IDictionary<String, StringValues>)requestHeaders).TryGetValue("Prefer", out StringValues preferHeader);
             OeRequestHeaders headers = OeRequestHeaders.Parse(requestHeaders.HeaderAccept, preferHeader);
 
-            var parser = new OeParser(UriHelper.GetBaseUri(httpContext.Request), _edmModel);
+            var parser = new OeParser(UriHelper.GetBaseUri(httpContext.Request), EdmModel, GetModelBoundProvider(httpContext));
             await parser.ExecuteGetAsync(UriHelper.GetUri(httpContext.Request), new OeHttpRequestHeaders(headers, httpContext.Response), httpContext.Response.Body, CancellationToken.None);
         }
         private async Task InvokeBatch(HttpContext httpContext)
         {
             httpContext.Response.ContentType = httpContext.Request.ContentType;
-            var parser = new OeParser(UriHelper.GetBaseUri(httpContext.Request), _edmModel);
+            var parser = new OeParser(UriHelper.GetBaseUri(httpContext.Request), EdmModel);
             await parser.ExecuteBatchAsync(httpContext.Request.Body, httpContext.Response.Body,
                 httpContext.Request.ContentType, CancellationToken.None);
         }
         private void InvokeMetadata(HttpContext httpContext)
         {
             httpContext.Response.ContentType = "application/xml";
-            GetCsdlSchema(_edmModel, httpContext.Response.Body);
+            GetCsdlSchema(EdmModel, httpContext.Response.Body);
         }
+
+        protected IEdmModel EdmModel { get; }
     }
 }

@@ -7,24 +7,41 @@ using System.Reflection;
 
 namespace OdataToEntity.Parsers.Translators
 {
-    public static class OeCrossApplyBuilder
+    public readonly struct OeCrossApplyBuilder
     {
-        public static MethodCallExpression Build(OeExpressionBuilder expressionBuilder, Expression outer, Expression inner,
-            ODataPath odataPath, OrderByClause orderBy, long? skip, long? top)
+        private readonly IEdmModel _edmModel;
+        private readonly OeExpressionBuilder _expressionBuilder;
+
+        public OeCrossApplyBuilder(IEdmModel edmModel, OeExpressionBuilder expressionBuilder)
         {
+            _edmModel = edmModel;
+            _expressionBuilder = expressionBuilder;
+        }
+
+        public MethodCallExpression Build(Expression outer, Expression inner, ODataPath odataPath, OrderByClause orderBy, long? skip, long? top)
+        {
+            var segment = (NavigationPropertySegment)odataPath.LastSegment;
+            IEdmNavigationProperty navigationProperty = segment.NavigationProperty;
+            if (navigationProperty.ContainsTarget)
+            {
+                ModelBuilder.ManyToManyJoinDescription joinDescription = _edmModel.GetManyToManyJoinDescription(navigationProperty);
+                IEdmEntitySet joinEntitySet = OeEdmClrHelper.GetEntitySet(_edmModel, joinDescription.JoinNavigationProperty);
+                outer = OeEnumerableStub.CreateEnumerableStubExpression(joinDescription.JoinClassType, joinEntitySet);
+                navigationProperty = joinDescription.TargetNavigationProperty;
+            }
+
             Type outerType = OeExpressionHelper.GetCollectionItemType(outer.Type);
             var outerParameter = Expression.Parameter(outerType, outerType.Name);
-            var segment = (NavigationPropertySegment)odataPath.LastSegment;
-            Expression subquery = CreateWhereExpression(outerParameter, inner, segment.NavigationProperty);
-            subquery = expressionBuilder.ApplyOrderBy(subquery, orderBy);
-            subquery = expressionBuilder.ApplySkip(subquery, skip, odataPath);
-            subquery = expressionBuilder.ApplyTake(subquery, top, odataPath);
+            Expression subquery = CreateWhereExpression(outerParameter, inner, navigationProperty);
+            subquery = _expressionBuilder.ApplyOrderBy(subquery, orderBy);
+            subquery = _expressionBuilder.ApplySkip(subquery, skip, odataPath);
+            subquery = _expressionBuilder.ApplyTake(subquery, top, odataPath);
 
             Type innerType = OeExpressionHelper.GetCollectionItemType(inner.Type);
             MethodInfo selectManyMethdoInfo = OeMethodInfoHelper.GetSelectManyMethodInfo(outerType, innerType);
             return Expression.Call(selectManyMethdoInfo, outer, Expression.Lambda(subquery, outerParameter));
         }
-        private static MethodCallExpression CreateWhereExpression(ParameterExpression sourceParameter, Expression subquery, IEdmNavigationProperty edmNavigationProperty)
+        private MethodCallExpression CreateWhereExpression(ParameterExpression sourceParameter, Expression subquery, IEdmNavigationProperty edmNavigationProperty)
         {
             Type subqueryType = OeExpressionHelper.GetCollectionItemType(subquery.Type);
             var subqueryParameter = Expression.Parameter(subqueryType, subqueryType.Name);
@@ -34,7 +51,7 @@ namespace OdataToEntity.Parsers.Translators
             MethodInfo whereMethodInfo = OeMethodInfoHelper.GetWhereMethodInfo(subqueryType);
             return Expression.Call(whereMethodInfo, subquery, predicate);
         }
-        private static BinaryExpression GetJoinExpression(ParameterExpression sourceParameter, ParameterExpression subqueryParameter, IEdmNavigationProperty edmNavigationProperty)
+        private BinaryExpression GetJoinExpression(ParameterExpression sourceParameter, ParameterExpression subqueryParameter, IEdmNavigationProperty edmNavigationProperty)
         {
             IEnumerable<IEdmStructuralProperty> sourceProperties = edmNavigationProperty.DependentProperties();
             if (sourceProperties == null)

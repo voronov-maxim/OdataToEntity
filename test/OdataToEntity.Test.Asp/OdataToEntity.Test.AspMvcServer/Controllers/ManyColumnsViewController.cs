@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.OData.Edm;
 using OdataToEntity.AspNetCore;
 using System.Threading.Tasks;
 
@@ -17,7 +18,9 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
 
         public async Task Get()
         {
-            await OeAspQueryParser.Get(_httpContextAccessor.HttpContext, 10);
+            var edmModel = (IEdmModel)_httpContextAccessor.HttpContext.RequestServices.GetService(typeof(IEdmModel));
+            Query.OeModelBoundProvider modelBoundProvider = OdataToEntityHelper.CreateModelBoundProvider(edmModel, 10);
+            await OeAspQueryParser.Get(_httpContextAccessor.HttpContext, modelBoundProvider);
         }
     }
 }

@@ -155,21 +155,23 @@ namespace OdataToEntity.Test
         {
             String request = "OrderItems?$orderby=Id&$count=true";
 
-            OeParser parser = Fixture.CreateParser(request);
+            const int pageSize = 2;
+            var pageNextLinkModelBoundBuilder = new PageNextLinkModelBoundBuilder(Fixture.EdmModel, Fixture.IsSqlite);
+            Query.OeModelBoundProvider modelBoundProvider = pageNextLinkModelBoundBuilder.BuildProvider(pageSize, false);
+            OeParser parser = Fixture.CreateParser(request, modelBoundProvider);
             var uri = new Uri(parser.BaseUri, request);
-            OeRequestHeaders requestHeaders = OeRequestHeaders.JsonDefault.SetMaxPageSize(2);
 
             long count = -1;
             var fromOe = new List<Object>();
             do
             {
                 var response = new MemoryStream();
-                await parser.ExecuteGetAsync(uri, requestHeaders, response, CancellationToken.None).ConfigureAwait(false);
+                await parser.ExecuteGetAsync(uri, OeRequestHeaders.JsonDefault, response, CancellationToken.None).ConfigureAwait(false);
                 var reader = new ResponseReader(parser.EdmModel);
                 response.Position = 0;
 
                 List<Object> result = reader.Read(response).Cast<Object>().ToList();
-                Assert.InRange(result.Count, 0, requestHeaders.MaxPageSize);
+                Assert.InRange(result.Count, 0, pageSize);
                 fromOe.AddRange(result);
 
                 if (count < 0)
@@ -188,7 +190,14 @@ namespace OdataToEntity.Test
         internal static async Task<List<Object>> OrdersCountItemsCount(DbFixture fixture, String request, Func<Model.OrderItem, bool> orderItemPredicate,
             int maxPageSize, bool navigationNextLink)
         {
-            OeParser parser = fixture.CreateParser(request);
+            Query.OeModelBoundProvider modelBoundProvider = fixture.ModelBoundProvider;
+            if (modelBoundProvider == null)
+            {
+                var modelBoundProviderBuilder = new PageNextLinkModelBoundBuilder(fixture.EdmModel, fixture.IsSqlite);
+                modelBoundProvider = modelBoundProviderBuilder.BuildProvider(maxPageSize, navigationNextLink);
+            }
+
+            OeParser parser = fixture.CreateParser(request, modelBoundProvider);
             Uri uri = new Uri(parser.BaseUri, request);
 
             int expectedCount;
@@ -197,15 +206,7 @@ namespace OdataToEntity.Test
             do
             {
                 var response = new MemoryStream();
-                uri = parser.BaseUri.MakeRelativeUri(uri);
-                ODataUri odataUri = fixture.ParseUri(uri.OriginalString);
-                if (navigationNextLink)
-                {
-                    var pageSelectItemBuilder = new PageSelectItemBuilder(navigationNextLink, maxPageSize);
-                    odataUri.SelectAndExpand = pageSelectItemBuilder.Build(odataUri.SelectAndExpand);
-                }
-
-                await parser.ExecuteQueryAsync(odataUri, OeRequestHeaders.JsonDefault.SetMaxPageSize(maxPageSize), response, CancellationToken.None).ConfigureAwait(false);
+                await parser.ExecuteGetAsync(uri, OeRequestHeaders.JsonDefault.SetMaxPageSize(maxPageSize), response, CancellationToken.None).ConfigureAwait(false);
                 response.Position = 0;
 
                 var reader = new ResponseReader(parser.EdmModel);

@@ -70,7 +70,12 @@ namespace OdataToEntity.Query
             }
             public override QueryNode Visit(ConvertNode nodeIn)
             {
-                return IsFilterable ? nodeIn.Accept(this) : nodeIn;
+                return IsFilterable ? nodeIn.Source.Accept(this) : nodeIn;
+            }
+            public override QueryNode Visit(CountNode nodeIn)
+            {
+                nodeIn.Source.Accept(this);
+                return nodeIn;
             }
             public override QueryNode Visit(InNode nodeIn)
             {
@@ -85,6 +90,13 @@ namespace OdataToEntity.Query
             public override QueryNode Visit(SingleNavigationNode nodeIn)
             {
                 IsFilterable &= Filterable(nodeIn.NavigationProperty);
+                return nodeIn;
+            }
+            public override QueryNode Visit(SingleValueFunctionCallNode nodeIn)
+            {
+                foreach (QueryNode parameter in nodeIn.Parameters)
+                    parameter.Accept(this);
+
                 return nodeIn;
             }
             public override QueryNode Visit(SingleValuePropertyAccessNode nodeIn)
@@ -247,12 +259,12 @@ namespace OdataToEntity.Query
         public bool IsTop(long top, IEdmEntityType entityType)
         {
             OeModelBoundSettings settings = GetSettings(entityType);
-            return top <= (settings == null ? Int32.MaxValue : settings.MaxTop);
+            return top <= (settings == null || settings.MaxTop == 0 ? Int32.MaxValue : settings.MaxTop);
         }
         public bool IsTop(long top, IEdmNavigationProperty navigationProperty)
         {
             OeModelBoundSettings settings = GetSettings(navigationProperty);
-            return top <= (settings == null ? Int32.MaxValue : settings.MaxTop);
+            return top <= (settings == null || settings.MaxTop == 0 ? Int32.MaxValue : settings.MaxTop);
         }
         public void Validate(IEdmModel edmModel, ODataUri odataUri)
         {
@@ -267,7 +279,7 @@ namespace OdataToEntity.Query
             }
             else
             {
-                var pageSelectItemBuilder = new OePageSelectItemBuilder(this);
+                var pageSelectItemBuilder = new OePageNextLinkSelectItemBuilder(this);
                 odataUri.SelectAndExpand = pageSelectItemBuilder.Build(odataUri.SelectAndExpand, entityType);
             }
         }

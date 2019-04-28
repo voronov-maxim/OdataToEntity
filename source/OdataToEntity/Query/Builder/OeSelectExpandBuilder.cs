@@ -22,6 +22,35 @@ namespace OdataToEntity.Query.Builder
             _visited = new HashSet<IEdmNavigationProperty>();
         }
 
+        private static void AddPageNextLinkSelectItems(OeModelBoundSettings settings, List<SelectItem> selectItems)
+        {
+            if (settings.PageSize > 0)
+            {
+                int index = selectItems.FindIndex(i => i is OePageSelectItem);
+                if (settings.NavigationProperty == null)
+                {
+                    if (index < 0)
+                        selectItems.Add(new OePageSelectItem(settings.PageSize));
+                }
+                else
+                {
+                    var pageSelectItem = new OePageSelectItem(settings.PageSize);
+                    if (index >= 0)
+                        selectItems[index] = pageSelectItem;
+                    else
+                        selectItems.Add(pageSelectItem);
+                }
+            }
+            else if (settings.PageSize < 0 && settings.NavigationProperty != null)
+            {
+                int index = selectItems.FindIndex(i => i is OePageSelectItem);
+                if (index >= 0)
+                    selectItems.RemoveAt(index);
+            }
+
+            if (settings.NavigationNextLink)
+                selectItems.Add(new OeNextLinkSelectItem(settings.NavigationNextLink));
+        }
         public SelectExpandClause Build(SelectExpandClause selectExpandClause, IEdmEntityType entityType)
         {
             _visited.Clear();
@@ -43,12 +72,19 @@ namespace OdataToEntity.Query.Builder
                     }
                     else if (selectItem is PathSelectItem pathSelectItem)
                     {
-                        var segment = (PropertySegment)pathSelectItem.SelectedPath.LastSegment;
-                        if (settings != null && settings.GetPropertySetting(segment.Property, OeModelBoundKind.Select) == SelectExpandType.Disabled)
-                            continue;
+                        IEdmProperty property;
+                        if (pathSelectItem.SelectedPath.LastSegment is PropertySegment propertySegment)
+                            property = propertySegment.Property;
+                        else if (pathSelectItem.SelectedPath.LastSegment is NavigationPropertySegment navigationSegment)
+                            property = navigationSegment.NavigationProperty;
+                        else
+                            throw new InvalidOperationException("Unknown segment " + pathSelectItem.SelectedPath.LastSegment.GetType().Name);
 
-                        selectItems.Add(pathSelectItem);
-                        properties.Add(segment.Property);
+                        if (settings == null || settings.GetPropertySetting(property, OeModelBoundKind.Select) != SelectExpandType.Disabled)
+                        {
+                            selectItems.Add(pathSelectItem);
+                            properties.Add(property);
+                        }
                     }
 
             if (settings != null)
@@ -62,8 +98,7 @@ namespace OdataToEntity.Query.Builder
                             selectItems.Add(CreateStructuralSelectItem(structuralProperty));
                     }
 
-                if (settings.PageSize > 0 || settings.NavigationNextLink)
-                    selectItems.Add(new OePageSelectItem(settings.PageSize));
+                AddPageNextLinkSelectItems(settings, selectItems);
             }
 
             return new SelectExpandClause(selectItems, selectItems.Count == 0);
@@ -239,8 +274,7 @@ namespace OdataToEntity.Query.Builder
                         selectItems.RemoveAt(i);
             }
 
-            if (settings.PageSize > 0 || settings.NavigationNextLink)
-                selectItems.Add(new OePageSelectItem(settings.PageSize, settings.NavigationNextLink));
+            AddPageNextLinkSelectItems(settings, selectItems);
         }
     }
 }

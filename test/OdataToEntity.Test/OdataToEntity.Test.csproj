@@ -18,7 +18,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <DefineConstants>IGNORE_AC_PLNull;IGNORE_AC_RDBNull;IGNORE_NC_RDBNull,SQLITE</DefineConstants>
+    <DefineConstants>IGNORE_RDBNull,SQLITE</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,6 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="2.2.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$(EfCoreVersion)" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="$(EfCoreVersion)" />

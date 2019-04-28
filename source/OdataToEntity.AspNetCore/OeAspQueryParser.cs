@@ -23,13 +23,15 @@ namespace OdataToEntity.AspNetCore
         private Object _dataContext;
         private readonly IEdmModel _edmModel;
         private readonly HttpContext _httpContext;
+        private readonly Query.OeModelBoundProvider _modelBoundProvider;
         private OeQueryContext _queryContext;
         private ODataUri _odataUri;
 
-        public OeAspQueryParser(HttpContext httpContext)
+        public OeAspQueryParser(HttpContext httpContext, Query.OeModelBoundProvider modelBoundProvider = null)
         {
             _httpContext = httpContext;
             _edmModel = (IEdmModel)_httpContext.RequestServices.GetService(typeof(IEdmModel));
+            _modelBoundProvider = modelBoundProvider;
         }
 
         public void Dispose()
@@ -39,11 +41,10 @@ namespace OdataToEntity.AspNetCore
         }
         private OeAsyncEnumerator ExecuteGet(IEdmModel refModel, ODataUri odataUri, OeRequestHeaders headers, IQueryable source, CancellationToken cancellationToken)
         {
-            _queryContext = new OeQueryContext(refModel, odataUri)
-            {
-                MaxPageSize = headers.MaxPageSize,
-                MetadataLevel = headers.MetadataLevel
-            };
+            if (_modelBoundProvider != null)
+                _modelBoundProvider.Validate(_edmModel, odataUri);
+
+            _queryContext = new OeQueryContext(refModel, odataUri) { MetadataLevel = headers.MetadataLevel };
 
             if (odataUri.Path.LastSegment is OperationSegment)
                 return OeOperationHelper.ApplyBoundFunction(_queryContext);
@@ -71,9 +72,9 @@ namespace OdataToEntity.AspNetCore
 
             return asyncEnumerator;
         }
-        public IAsyncEnumerable<T> ExecuteReader<T>(IQueryable source = null, int? maxPageSize = null)
+        public IAsyncEnumerable<T> ExecuteReader<T>(IQueryable source = null)
         {
-            OeAsyncEnumerator asyncEnumerator = GetAsyncEnumerator(source, maxPageSize);
+            OeAsyncEnumerator asyncEnumerator = GetAsyncEnumerator(source);
             _count = asyncEnumerator.Count;
             if (OeExpressionHelper.IsPrimitiveType(typeof(T)) || !_queryContext.EntryFactory.IsTuple)
                 return new OeAsyncEnumeratorAdapter<T>(asyncEnumerator);
@@ -89,16 +90,16 @@ namespace OdataToEntity.AspNetCore
             _httpContext.Response.ContentType = null;
             return null;
         }
-        public static async Task Get(HttpContext httpContext, int? maxPageSize = null)
+        public static async Task Get(HttpContext httpContext, Query.OeModelBoundProvider modelBoundProvider = null)
         {
             var requestHeaders = (HttpRequestHeaders)httpContext.Request.Headers;
-            OeRequestHeaders headers = GetRequestHeaders(requestHeaders, httpContext.Response, maxPageSize);
+            OeRequestHeaders headers = GetRequestHeaders(requestHeaders, httpContext.Response);
 
             var edmModel = (IEdmModel)httpContext.RequestServices.GetService(typeof(IEdmModel));
-            var parser = new OeParser(UriHelper.GetBaseUri(httpContext.Request), edmModel);
+            var parser = new OeParser(UriHelper.GetBaseUri(httpContext.Request), edmModel, modelBoundProvider);
             await parser.ExecuteGetAsync(UriHelper.GetUri(httpContext.Request), headers, httpContext.Response.Body, httpContext.RequestAborted);
         }
-        private OeAsyncEnumerator GetAsyncEnumerator(IQueryable source = null, int? maxPageSize = null)
+        private OeAsyncEnumerator GetAsyncEnumerator(IQueryable source = null)
         {
             _httpContext.Response.RegisterForDispose(this);
 
@@ -109,7 +110,7 @@ namespace OdataToEntity.AspNetCore
                 _dataContext = _dataAdapter.CreateDataContext();
 
             var requestHeaders = (HttpRequestHeaders)_httpContext.Request.Headers;
-            OeRequestHeaders headers = GetRequestHeaders(requestHeaders, _httpContext.Response, maxPageSize);
+            OeRequestHeaders headers = GetRequestHeaders(requestHeaders, _httpContext.Response);
 
             if (odataUri.Path.LastSegment is OperationImportSegment)
                 return ExecutePost(refModel, odataUri, headers, _httpContext.Request.Body);
@@ -128,13 +129,10 @@ namespace OdataToEntity.AspNetCore
             }
             return (TDataContext)_dataContext;
         }
-        private static OeRequestHeaders GetRequestHeaders(HttpRequestHeaders requestHeaders, HttpResponse httpResponse, int? maxPageSize)
+        private static OeRequestHeaders GetRequestHeaders(HttpRequestHeaders requestHeaders, HttpResponse httpResponse)
         {
             ((IDictionary<String, StringValues>)requestHeaders).TryGetValue("Prefer", out StringValues preferHeader);
             var headers = OeRequestHeaders.Parse(requestHeaders.HeaderAccept, preferHeader);
-            if (maxPageSize != null)
-                headers = headers.SetMaxPageSize(maxPageSize.Value);
-
             return new OeHttpRequestHeaders(headers, httpResponse);
         }
         public ODataResult<T> OData<T>(IAsyncEnumerable<T> asyncEnumerable, int? count = null)

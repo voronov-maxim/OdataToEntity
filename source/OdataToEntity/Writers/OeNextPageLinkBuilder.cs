@@ -60,18 +60,10 @@ namespace OdataToEntity.Writers
             {
                 IEnumerable<IEdmStructuralProperty> parentKeys;
                 IEnumerable<IEdmStructuralProperty> childKeys;
-                if (navigationProperty.Type.IsCollection())
+                if (navigationProperty.IsPrincipal())
                 {
-                    if (navigationProperty.Partner == null)
-                    {
-                        parentKeys = navigationProperty.PrincipalProperties();
-                        childKeys = navigationProperty.DependentProperties();
-                    }
-                    else
-                    {
-                        parentKeys = navigationProperty.Partner.PrincipalProperties();
-                        childKeys = navigationProperty.Partner.DependentProperties();
-                    }
+                    parentKeys = navigationProperty.Partner.PrincipalProperties();
+                    childKeys = navigationProperty.Partner.DependentProperties();
                 }
                 else
                 {
@@ -218,14 +210,8 @@ namespace OdataToEntity.Writers
             int pageSize = _queryContext.ODataUri.GetPageSize();
             if (pageSize == 0)
             {
-                pageSize = _queryContext.MaxPageSize;
                 if (pageSize == 0 && _queryContext.ODataUri.SkipToken != null && _queryContext.ODataUri.Top.GetValueOrDefault() > 0)
                     pageSize = (int)_queryContext.ODataUri.Top.GetValueOrDefault();
-            }
-            else
-            {
-                if (_queryContext.MaxPageSize > 0 && _queryContext.MaxPageSize < pageSize)
-                    pageSize = _queryContext.MaxPageSize;
             }
 
             return pageSize;

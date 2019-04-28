@@ -38,7 +38,7 @@ namespace OdataToEntity.AspServer
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
             var dataAdapter = new OrderDataAdapter(true, true);
-            app.UseOdataToEntityMiddleware("/api", dataAdapter.BuildEdmModelFromEfCoreModel());
+            app.UseOdataToEntityMiddleware<PageMiddleware>("/api", dataAdapter.BuildEdmModelFromEfCoreModel());
             app.UseMvcWithDefaultRoute();
         }
     }

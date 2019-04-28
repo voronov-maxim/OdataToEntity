@@ -4,8 +4,8 @@ namespace OdataToEntity.Test.Model
 {
     public sealed class OrderDataAdapter : EfCore.OeEfCoreDataAdapter<OrderContext>, ITestDbDataAdapter
     {
-        public OrderDataAdapter(bool allowCache, String databaseName) :
-            base(OrderContextOptions.Create(databaseName), new Cache.OeQueryCache(allowCache))
+        public OrderDataAdapter(String databaseName) :
+            base(OrderContextOptions.Create(databaseName), new Cache.OeQueryCache(false))
         {
         }
 

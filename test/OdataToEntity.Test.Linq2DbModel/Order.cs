@@ -62,27 +62,6 @@ namespace OdataToEntity.Test.Model
 			public T   Key;
 			public int Rank;
 		}
-
-		[FreeTextTableExpression]
-		public ITable<FreeTextKey<TKey>> FreeTextTable<TTable,TKey>(string field, string text)
-		{
-			return this.GetTable<FreeTextKey<TKey>>(
-				this,
-				((MethodInfo)(MethodBase.GetCurrentMethod())).MakeGenericMethod(typeof(TTable), typeof(TKey)),
-				field,
-				text);
-		}
-
-		[FreeTextTableExpression]
-		public ITable<FreeTextKey<TKey>> FreeTextTable<TTable,TKey>(Expression<Func<TTable,string>> fieldSelector, string text)
-		{
-			return this.GetTable<FreeTextKey<TKey>>(
-				this,
-				((MethodInfo)(MethodBase.GetCurrentMethod())).MakeGenericMethod(typeof(TTable), typeof(TKey)),
-				fieldSelector,
-				text);
-		}
-
         #endregion
 
         [Db.OeBoundFunction(CollectionFunctionName = "BoundFunctionCollection", SingleFunctionName = "BoundFunctionSingle")]

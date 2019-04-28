@@ -11,7 +11,7 @@ namespace OdataToEntity.Test
         [Fact]
         public async Task Add()
         {
-            var fixture = new NC_RDBNull_DbFixtureInitDb();
+            var fixture = new RDBNull_DbFixtureInitDb();
             await fixture.Initalize();
 
             using (var orderContext = fixture.CreateContext())
@@ -40,7 +40,7 @@ namespace OdataToEntity.Test
         [Fact]
         public async Task Delete()
         {
-            var fixture = new NC_RDBNull_DbFixtureInitDb();
+            var fixture = new RDBNull_DbFixtureInitDb();
             await fixture.Initalize();
 
             await fixture.ExecuteBatchAsync("Delete").ConfigureAwait(false);
@@ -60,7 +60,7 @@ namespace OdataToEntity.Test
         [Fact]
         public async Task Update()
         {
-            var fixture = new NC_RDBNull_DbFixtureInitDb();
+            var fixture = new RDBNull_DbFixtureInitDb();
             await fixture.Initalize();
 
             await fixture.ExecuteBatchAsync("Update").ConfigureAwait(false);

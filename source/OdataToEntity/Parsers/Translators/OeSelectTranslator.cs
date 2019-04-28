@@ -357,7 +357,9 @@ namespace OdataToEntity.Parsers.Translators
 
             var entitySet = (IEdmEntitySet)navigationItem.Parent.EntitySet;
             Expression source = OeEnumerableStub.CreateEnumerableStubExpression(navigationClrProperty.DeclaringType, entitySet);
-            return OeCrossApplyBuilder.Build(expressionBuilder, source, innerSource, navigationItem.Path, orderByClause, item.SkipOption, top);
+
+            var crossApplyBuilder = new OeCrossApplyBuilder(_edmModel, expressionBuilder);
+            return crossApplyBuilder.Build(source, innerSource, navigationItem.Path, orderByClause, item.SkipOption, top);
         }
         private static OeEntryFactory[] GetNestedNavigationLinks(OeNavigationSelectItem navigationItem)
         {

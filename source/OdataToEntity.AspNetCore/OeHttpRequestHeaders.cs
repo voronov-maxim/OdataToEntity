@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
-using OdataToEntity;
+using System;
 
 namespace OdataToEntity.AspNetCore
 {
@@ -15,7 +15,7 @@ namespace OdataToEntity.AspNetCore
 
         protected override OeRequestHeaders Clone() => new OeHttpRequestHeaders(this, _response);
 
-        public override string ResponseContentType
+        public override String ResponseContentType
         {
             get => _response.ContentType;
             set => _response.ContentType = value;

@@ -152,7 +152,7 @@ namespace OdataToEntity.Parsers.Translators
             if (navigationProperty.IsPrincipal())
                 keyProperties = navigationProperty.Partner.DependentProperties();
             else
-                keyProperties = navigationProperty.Type.IsCollection() ? navigationProperty.DependentProperties() : navigationProperty.PrincipalProperties();
+                keyProperties = navigationProperty.PrincipalProperties();
 
             ParameterExpression parameter = Expression.Parameter(innerType, innerType.Name);
             Expression keySelector = GetGroupJoinKeySelector(parameter, keyProperties);
@@ -172,25 +172,20 @@ namespace OdataToEntity.Parsers.Translators
 
             return OeExpressionHelper.CreateTupleExpression(expressions);
         }
-        private LambdaExpression GetGroupJoinOuterKeySelector(Type outerType, IEdmNavigationProperty edmNavigationProperty, IReadOnlyList<IEdmNavigationProperty> joinPath)
+        private LambdaExpression GetGroupJoinOuterKeySelector(Type outerType, IEdmNavigationProperty navigationProperty, IReadOnlyList<IEdmNavigationProperty> joinPath)
         {
-            IEnumerable<IEdmStructuralProperty> structuralProperties;
-            if (edmNavigationProperty.IsPrincipal())
-                structuralProperties = edmNavigationProperty.Partner.PrincipalProperties();
+            IEnumerable<IEdmStructuralProperty> keyProperties;
+            if (navigationProperty.IsPrincipal())
+                keyProperties = navigationProperty.Partner.PrincipalProperties();
             else
-            {
-                if (edmNavigationProperty.Type.IsCollection())
-                    structuralProperties = edmNavigationProperty.PrincipalProperties();
-                else
-                    structuralProperties = edmNavigationProperty.DependentProperties();
-            }
+                keyProperties = navigationProperty.DependentProperties();
 
             ParameterExpression outerParameter = Expression.Parameter(outerType, outerType.Name);
             Expression instance = GetJoinPropertyExpression(outerParameter, joinPath);
             if (instance == null)
-                throw new InvalidOperationException("Not found group join path + " + edmNavigationProperty.DeclaringType.FullTypeName() + "." + edmNavigationProperty.Name);
+                throw new InvalidOperationException("Not found group join path + " + navigationProperty.DeclaringType.FullTypeName() + "." + navigationProperty.Name);
 
-            Expression keySelector = GetGroupJoinKeySelector(instance, structuralProperties);
+            Expression keySelector = GetGroupJoinKeySelector(instance, keyProperties);
             return Expression.Lambda(keySelector, outerParameter);
         }
         private static LambdaExpression GetGroupJoinResultSelector(Type outerType, Type innerType, bool manyToMany)

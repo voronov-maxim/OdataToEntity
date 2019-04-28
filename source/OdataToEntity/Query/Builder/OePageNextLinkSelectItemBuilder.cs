@@ -1,19 +1,32 @@
-﻿using Microsoft.OData;
-using Microsoft.OData.Edm;
+﻿using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using System.Collections.Generic;
 
 namespace OdataToEntity.Query.Builder
 {
-    public readonly struct OePageSelectItemBuilder
+    public readonly struct OePageNextLinkSelectItemBuilder
     {
         private readonly OeModelBoundProvider _modelBoundProvider;
 
-        public OePageSelectItemBuilder(OeModelBoundProvider modelBoundProvider)
+        public OePageNextLinkSelectItemBuilder(OeModelBoundProvider modelBoundProvider)
         {
             _modelBoundProvider = modelBoundProvider;
         }
 
+        private static void AddPageNextLinkSelectItems(OeModelBoundSettings settings, SelectExpandClause selectExpandClause, ref List<SelectItem> selectItems)
+        {
+            if (settings != null && (settings.PageSize > 0 || settings.NavigationNextLink))
+            {
+                if (selectItems == null)
+                    selectItems = new List<SelectItem>(selectExpandClause.SelectedItems);
+
+                if (settings.PageSize > 0)
+                    selectItems.Add(new Parsers.Translators.OePageSelectItem(settings.PageSize));
+
+                if (settings.NavigationNextLink)
+                    selectItems.Add(new Parsers.Translators.OeNextLinkSelectItem(settings.NavigationNextLink));
+            }
+        }
         public SelectExpandClause Build(SelectExpandClause selectExpandClause, IEdmEntityType entityType)
         {
             return selectExpandClause == null ? null : GetSelectItems(selectExpandClause, _modelBoundProvider.GetSettings(entityType));
@@ -61,13 +74,7 @@ namespace OdataToEntity.Query.Builder
                 i++;
             }
 
-            if (settings != null && (settings.PageSize > 0 || settings.NavigationNextLink))
-            {
-                if (selectItems == null)
-                    selectItems = new List<SelectItem>(selectExpandClause.SelectedItems);
-                selectItems.Add(new Parsers.Translators.OePageSelectItem(settings.PageSize, settings.NavigationNextLink));
-            }
-
+            AddPageNextLinkSelectItems(settings, selectExpandClause, ref selectItems);
             return selectItems == null ? selectExpandClause : new SelectExpandClause(selectItems, selectExpandClause.AllSelected);
         }
     }

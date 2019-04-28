@@ -24,7 +24,8 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
         [HttpGet]
         public ODataResult<Model.ManyColumns> Get()
         {
-            var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
+            Query.OeModelBoundProvider modelBoundProvider = _httpContextAccessor.HttpContext.CreateModelBoundProvider();
+            var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext, modelBoundProvider);
             IAsyncEnumerable<Model.ManyColumns> manyColumns = parser.ExecuteReader<Model.ManyColumns>();
             return parser.OData(manyColumns);
         }

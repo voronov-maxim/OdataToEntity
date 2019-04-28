@@ -1,12 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.OData;
-using Microsoft.OData.Edm;
 using OdataToEntity.Test.Model;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -172,7 +170,7 @@ namespace OdataToEntity.Test
         {
             String request = "Categories?$expand=Children";
 
-            OeParser parser = Fixture.CreateParser(request);
+            OeParser parser = Fixture.CreateParser(request, Fixture.ModelBoundProvider);
             ODataUri odataUri = Fixture.ParseUri(request);
 
             var response = new MemoryStream();

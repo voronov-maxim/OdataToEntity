@@ -47,10 +47,10 @@ namespace OdataToEntity.Test
             }
         }
 
-#if !IGNORE_NC_PLNull
-        private sealed class SelectTestDefinitionFixture : NC_PLNull_DbFixtureInitDb
-#elif IGNORE_NC_PLNull && !IGNORE_NC_RDBNull
-        private sealed class SelectTestDefinitionFixture : NC_RDBNull_DbFixtureInitDb
+#if !IGNORE_PLNull
+        private sealed class SelectTestDefinitionFixture : PLNull_DbFixtureInitDb
+#elif IGNORE_PLNull && !IGNORE_RDBNull
+        private sealed class SelectTestDefinitionFixture : RDBNull_DbFixtureInitDb
 #endif
         {
             private readonly List<SelectTestDefinition> _selectTestDefinitions;
@@ -90,10 +90,10 @@ namespace OdataToEntity.Test
         public static SelectTestDefinition[] GetSelectTestDefinitions()
         {
             var fixture = new SelectTestDefinitionFixture();
-#if !IGNORE_NC_PLNull
-            var selectTest = new NC_PLNull(fixture);
-#elif IGNORE_NC_PLNull && !IGNORE_NC_RDBNull
-            var selectTest = new NC_RDBNull(fixture);
+#if !IGNORE_PLNull
+            var selectTest = new PLNull(fixture);
+#elif IGNORE_PLNull && !IGNORE_RDBNull
+            var selectTest = new RDBNull(fixture);
 #endif
 
             var methodNames = new List<String>();
@@ -174,7 +174,7 @@ namespace OdataToEntity.Test
 
             SelectTestDefinition[] requestMethodNames = SelectTestDefinition.GetSelectTestDefinitions();
 
-            var fixture = new NC_RDBNull_DbFixtureInitDb();
+            var fixture = new RDBNull_DbFixtureInitDb();
             for (int i = 0; i < requestMethodNames.Length; i++)
             {
                 var queryContext = new OeQueryContext(fixture.EdmModel, fixture.ParseUri(requestMethodNames[i].Request));
@@ -194,7 +194,7 @@ namespace OdataToEntity.Test
             SelectTestDefinition[] requestMethodNames = SelectTestDefinition.GetSelectTestDefinitions();
             requestMethodNames = requestMethodNames.Where(t => t.MethodName == "FilterEnum" || t.MethodName == "FilterEnumNull").ToArray();
 
-            var fixture = new NC_RDBNull_DbFixtureInitDb();
+            var fixture = new RDBNull_DbFixtureInitDb();
             for (int i = 0; i < requestMethodNames.Length; i++)
             {
                 var queryContext1 = new OeQueryContext(fixture.EdmModel, fixture.ParseUri(requestMethodNames[i].Request));

@@ -13,8 +13,8 @@ namespace OdataToEntity.Test
         private bool _initialized;
         private readonly bool _useRelationalNulls;
 
-        protected DbFixtureInitDb(bool allowCache, bool useRelationalNulls, ModelBoundTestKind modelBoundTestKind)
-            : base(CreateEdmModel(allowCache, useRelationalNulls), modelBoundTestKind)
+        protected DbFixtureInitDb(bool useRelationalNulls, ModelBoundTestKind modelBoundTestKind)
+            : base(CreateEdmModel(useRelationalNulls), modelBoundTestKind)
         {
             _useRelationalNulls = useRelationalNulls;
         }
@@ -23,9 +23,9 @@ namespace OdataToEntity.Test
         {
             return new OrderContext(OrderContextOptions.Create(_useRelationalNulls));
         }
-        internal static EdmModel CreateEdmModel(bool allowCache, bool useRelationalNulls)
+        internal static EdmModel CreateEdmModel(bool useRelationalNulls)
         {
-            var dataAdapter = new OrderDataAdapter(allowCache, useRelationalNulls);
+            var dataAdapter = new OrderDataAdapter(true, useRelationalNulls);
             OeEdmModelMetadataProvider metadataProvider = OrderDataAdapter.CreateMetadataProvider();
             return OrderContextOptions.BuildEdmModel(dataAdapter, metadataProvider);
         }
@@ -58,8 +58,8 @@ namespace OdataToEntity.Test
         private bool _initialized;
         private readonly bool _useRelationalNulls;
 
-        protected ManyColumnsFixtureInitDb(bool allowCache, bool useRelationalNulls, ModelBoundTestKind modelBoundTestKind)
-            : base(DbFixtureInitDb.CreateEdmModel(allowCache, useRelationalNulls), modelBoundTestKind)
+        protected ManyColumnsFixtureInitDb(bool useRelationalNulls, ModelBoundTestKind modelBoundTestKind)
+            : base(DbFixtureInitDb.CreateEdmModel(useRelationalNulls), modelBoundTestKind)
         {
             _useRelationalNulls = useRelationalNulls;
         }

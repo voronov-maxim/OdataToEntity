@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 
 [assembly: CollectionBehavior(DisableTestParallelization = true)]
@@ -9,10 +10,10 @@ namespace OdataToEntity.Test.EfCore.SqlServer
 {
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main()
         {
             //PerformanceCacheTest.RunTest(100);
-            new AC_RDBNull(new AC_RDBNull_DbFixtureInitDb()).BoundFunctionSingle().GetAwaiter().GetResult();
+            await new PLNull(new PLNull_DbFixtureInitDb()).NextPageLink();
         }
     }
 }

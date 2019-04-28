@@ -41,12 +41,12 @@ namespace OdataToEntity.Linq2Db
         private static List<PropertyInfo> GetDependentProperties(Type clrType, IEdmNavigationProperty navigationProperty)
         {
             var clrProperties = new List<PropertyInfo>();
-            if (navigationProperty.Partner == null)
-                foreach (EdmReferentialConstraintPropertyPair constraintPropertyPair in navigationProperty.ReferentialConstraint.PropertyPairs)
-                    clrProperties.Add(clrType.GetProperty(constraintPropertyPair.DependentProperty.Name));
+            if (navigationProperty.IsPrincipal())
+                foreach (IEdmStructuralProperty keyProperty in navigationProperty.Partner.DependentProperties())
+                    clrProperties.Add(clrType.GetPropertyIgnoreCase(keyProperty.Name));
             else
-                foreach (IEdmStructuralProperty edmProperty in navigationProperty.Partner.DependentProperties())
-                    clrProperties.Add(clrType.GetProperty(edmProperty.Name));
+                foreach (IEdmStructuralProperty keyProperty in navigationProperty.PrincipalProperties())
+                    clrProperties.Add(clrType.GetPropertyIgnoreCase(keyProperty.Name));
             return clrProperties;
         }
         private static List<PropertyInfo> GetDependentProperties(PropertyInfo propertyInfo, ClrTableTypeEdmSet[] clrTypeEdmSets, int lastIndex)

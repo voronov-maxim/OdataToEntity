@@ -1,6 +1,8 @@
 ﻿using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.OData.Edm;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
@@ -64,8 +66,6 @@ namespace OdataToEntity.Test.Model
         }
 
         private static readonly ConcurrentDictionary<String, SqliteConnection> _connections = new ConcurrentDictionary<String, SqliteConnection>();
-        //private static readonly LoggerFactory MyLoggerFactory = new LoggerFactory(new[] {new ConsoleLoggerProvider((category, level)
-        //    => true, true) });
 
         public static EdmModel BuildEdmModel(Db.OeDataAdapter dataAdapter, ModelBuilder.OeEdmModelMetadataProvider metadataProvider)
         {
@@ -82,12 +82,18 @@ namespace OdataToEntity.Test.Model
             var optionsBuilder = new DbContextOptionsBuilder<T>();
             optionsBuilder.UseSqlite(GetConnection(databaseName));
             optionsBuilder.ReplaceService<IEntityQueryModelVisitorFactory, ZQueryModelVisitorFactory>();
-            //optionsBuilder.UseLoggerFactory(MyLoggerFactory);
+            //optionsBuilder.UseLoggerFactory(CreateLoggerFactory());
             return optionsBuilder.Options;
         }
         public static DbContextOptions CreateClientEvaluationWarning(String databaseName)
         {
             return Create(databaseName);
+        }
+        private static ILoggerFactory CreateLoggerFactory()
+        {
+            var serviceCollection = new ServiceCollection();
+            serviceCollection.AddLogging(builder => builder.AddConsole()).Configure<LoggerFilterOptions>(o => o.MinLevel = LogLevel.Information);
+            return serviceCollection.BuildServiceProvider().GetService<ILoggerFactory>();
         }
         private static SqliteConnection GetConnection(String databaseName)
         {

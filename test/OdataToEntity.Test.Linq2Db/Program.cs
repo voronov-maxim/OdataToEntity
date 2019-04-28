@@ -13,10 +13,10 @@ namespace OdataToEntity.Test.Linq2Db
 {
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main()
         {
             //EfCore.SqlServer.PerformanceCacheTest.RunTest(100);
-            new AC_RDBNull(new AC_RDBNull_DbFixtureInitDb()).ReferencedModels().GetAwaiter().GetResult();
+            await new RDBNull(new RDBNull_DbFixtureInitDb()).ReferencedModels();
         }
     }
 }

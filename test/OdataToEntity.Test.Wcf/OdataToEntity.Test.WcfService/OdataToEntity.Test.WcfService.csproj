@@ -35,9 +35,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\OdataToEntity.Test\Common\EfInclude.cs" Link="EfInclude.cs" />
+    <Compile Include="..\..\OdataToEntity.Test\Common\EfInclude.cs" Link="Common\EfInclude.cs" />
     <Compile Include="..\..\OdataToEntity.Test\Common\ITestDbDataAdapter.cs" Link="Common\ITestDbDataAdapter.cs" />
-    <Compile Include="..\..\OdataToEntity.Test\Common\OpenTypeConverter.cs" Link="OpenTypeConverter.cs" />
+    <Compile Include="..\..\OdataToEntity.Test\Common\OpenTypeConverter.cs" Link="Common\OpenTypeConverter.cs" />
+    <Compile Include="..\..\OdataToEntity.Test\Common\PageNextLinkModelBoundBuilder.cs" Link="Common\PageNextLinkModelBoundBuilder.cs" />
     <Compile Include="..\..\OdataToEntity.Test\Model\*.cs" Link="Model\%(FileName).cs" />
     <Compile Include="..\..\OdataToEntity.Test.EfCore.SqlServer\OrderDataAdapter.cs" Link="OrderDataAdapter.cs" />
     <Compile Include="..\..\OdataToEntity.Test.EfCore.SqlServer\OrderContextOptions.cs" Link="OrderContextOptions.cs" />

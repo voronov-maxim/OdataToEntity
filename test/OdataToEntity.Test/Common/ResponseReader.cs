@@ -95,20 +95,20 @@ namespace OdataToEntity.Test
 
         protected virtual void AddItems(Object entity, PropertyInfo propertyInfo, IEnumerable values)
         {
-            var collection = propertyInfo.GetValue(entity);
+            var collection = (IList)propertyInfo.GetValue(entity);
             if (collection == null)
             {
                 collection = CreateCollection(propertyInfo.PropertyType);
                 propertyInfo.SetValue(entity, collection);
             }
 
-            foreach (dynamic value in values)
-                ((dynamic)collection).Add(value);
+            foreach (Object value in values)
+                collection.Add(value);
         }
-        protected static IEnumerable CreateCollection(Type type)
+        protected static IList CreateCollection(Type type)
         {
             Type itemType = OeExpressionHelper.GetCollectionItemTypeOrNull(type);
-            return (IEnumerable)Activator.CreateInstance(typeof(List<>).MakeGenericType(itemType));
+            return (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(itemType));
         }
         protected Object CreateEntity(ODataResource resource, IReadOnlyList<NavigationInfo> navigationProperties)
         {
@@ -158,19 +158,18 @@ namespace OdataToEntity.Test
                 foreach (KeyValuePair<Object, Dictionary<PropertyInfo, NavigationInfo>> navigationPropertyEntity in NavigationInfoEntities)
                     foreach (KeyValuePair<PropertyInfo, NavigationInfo> propertyResourceSet in navigationPropertyEntity.Value)
                     {
-                        response.SetLength(0);
-                        await parser.ExecuteGetAsync(propertyResourceSet.Value.NextPageLink, OeRequestHeaders.JsonDefault, response, token).ConfigureAwait(false);
-                        response.Position = 0;
-
-                        var navigationPropertyReader = new ResponseReader(EdmModel);
-                        AddItems(navigationPropertyEntity.Key, propertyResourceSet.Key, navigationPropertyReader.Read(response));
-
-                        if (navigationPropertyReader.ResourceSet.NextPageLink != null)
+                        Uri requestUri = propertyResourceSet.Value.NextPageLink;
+                        while (requestUri != null)
                         {
                             response.SetLength(0);
-                            await parser.ExecuteGetAsync(navigationPropertyReader.ResourceSet.NextPageLink, OeRequestHeaders.JsonDefault, response, token);
+                            await parser.ExecuteGetAsync(requestUri, OeRequestHeaders.JsonDefault, response, token).ConfigureAwait(false);
                             response.Position = 0;
+
+                            var navigationPropertyReader = new ResponseReader(EdmModel);
                             AddItems(navigationPropertyEntity.Key, propertyResourceSet.Key, navigationPropertyReader.Read(response));
+                            await navigationPropertyReader.FillNextLinkProperties(parser, token);
+
+                            requestUri = navigationPropertyReader.ResourceSet.NextPageLink;
                         }
                     }
         }

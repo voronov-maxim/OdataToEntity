@@ -11,12 +11,12 @@ namespace OdataToEntity.Test
         private readonly String _databaseName;
         private bool _initialized;
 
-        protected DbFixtureInitDb(bool allowCache, bool _, ModelBoundTestKind modelBoundTestKind)
-            : this(allowCache, modelBoundTestKind, OrderContext.GenerateDatabaseName())
+        protected DbFixtureInitDb(bool _, ModelBoundTestKind modelBoundTestKind)
+            : this(modelBoundTestKind, OrderContext.GenerateDatabaseName())
         {
         }
-        private DbFixtureInitDb(bool allowCache, ModelBoundTestKind modelBoundTestKind, String databaseName)
-            : base(CreateEdmModel(allowCache, databaseName), modelBoundTestKind)
+        private DbFixtureInitDb(ModelBoundTestKind modelBoundTestKind, String databaseName)
+            : base(CreateEdmModel(databaseName), modelBoundTestKind)
         {
             _databaseName = databaseName;
         }
@@ -25,9 +25,9 @@ namespace OdataToEntity.Test
         {
             return new OrderContext(OrderContextOptions.Create(_databaseName));
         }
-        internal static EdmModel CreateEdmModel(bool allowCache, String databaseName)
+        internal static EdmModel CreateEdmModel(String databaseName)
         {
-            var dataAdapter = new OrderDataAdapter(allowCache, databaseName);
+            var dataAdapter = new OrderDataAdapter(databaseName);
             OeEdmModelMetadataProvider metadataProvider = OrderDataAdapter.CreateMetadataProvider();
             return OrderContextOptions.BuildEdmModel(dataAdapter, metadataProvider);
         }
@@ -40,6 +40,8 @@ namespace OdataToEntity.Test
             EnsureCreated(EdmModel);
             await base.ExecuteBatchAsync("Add");
         }
+
+        protected internal override bool IsSqlite => true;
     }
 
     public abstract class ManyColumnsFixtureInitDb : DbFixture
@@ -47,12 +49,12 @@ namespace OdataToEntity.Test
         private readonly String _databaseName;
         private bool _initialized;
 
-        protected ManyColumnsFixtureInitDb(bool allowCache, bool _, ModelBoundTestKind modelBoundTestKind)
-            : this(allowCache, modelBoundTestKind, OrderContext.GenerateDatabaseName())
+        protected ManyColumnsFixtureInitDb(bool _, ModelBoundTestKind modelBoundTestKind)
+            : this(modelBoundTestKind, OrderContext.GenerateDatabaseName())
         {
         }
-        private ManyColumnsFixtureInitDb(bool allowCache, ModelBoundTestKind modelBoundTestKind, String databaseName)
-            : base(DbFixtureInitDb.CreateEdmModel(allowCache, databaseName), modelBoundTestKind)
+        private ManyColumnsFixtureInitDb(ModelBoundTestKind modelBoundTestKind, String databaseName)
+            : base(DbFixtureInitDb.CreateEdmModel(databaseName), modelBoundTestKind)
         {
             _databaseName = databaseName;
         }
@@ -70,5 +72,7 @@ namespace OdataToEntity.Test
             EnsureCreated(EdmModel);
             await base.ExecuteBatchAsync("ManyColumns");
         }
+
+        protected internal override bool IsSqlite => true;
     }
 }

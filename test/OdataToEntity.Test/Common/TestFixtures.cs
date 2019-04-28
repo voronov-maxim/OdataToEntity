@@ -3,175 +3,91 @@
 namespace OdataToEntity.Test
 {
     //DbFixtureInitDb -----------------------------------------------------------------------------
-    public sealed class AC_PLNull_DbFixtureInitDb : DbFixtureInitDb
+    public class PLNull_DbFixtureInitDb : DbFixtureInitDb
     {
-        public AC_PLNull_DbFixtureInitDb() : base(true, false, ModelBoundTestKind.No) { }
+        public PLNull_DbFixtureInitDb() : base(false, ModelBoundTestKind.No) { }
     }
 
-    public sealed class AC_RDBNull_DbFixtureInitDb : DbFixtureInitDb
+    public class RDBNull_DbFixtureInitDb : DbFixtureInitDb
     {
-        public AC_RDBNull_DbFixtureInitDb() : base(true, true, ModelBoundTestKind.No) { }
-    }
-
-    public class NC_PLNull_DbFixtureInitDb : DbFixtureInitDb
-    {
-        public NC_PLNull_DbFixtureInitDb() : base(false, false, ModelBoundTestKind.No) { }
-    }
-
-    public class NC_RDBNull_DbFixtureInitDb : DbFixtureInitDb
-    {
-        public NC_RDBNull_DbFixtureInitDb() : base(false, true, ModelBoundTestKind.No) { }
+        public RDBNull_DbFixtureInitDb() : base(true, ModelBoundTestKind.No) { }
     }
 
     //ManyColumns----------------------------------------------------------------------------------
-    public sealed class AC_PLNull_ManyColumnsFixtureInitDb : ManyColumnsFixtureInitDb
+    public sealed class PLNull_ManyColumnsFixtureInitDb : ManyColumnsFixtureInitDb
     {
-        public AC_PLNull_ManyColumnsFixtureInitDb() : base(true, false, ModelBoundTestKind.No) { }
+        public PLNull_ManyColumnsFixtureInitDb() : base(false, ModelBoundTestKind.No) { }
     }
 
-    public sealed class AC_RDBNull_ManyColumnsFixtureInitDb : ManyColumnsFixtureInitDb
+    public sealed class RDBNull_ManyColumnsFixtureInitDb : ManyColumnsFixtureInitDb
     {
-        public AC_RDBNull_ManyColumnsFixtureInitDb() : base(true, true, ModelBoundTestKind.No) { }
-    }
-
-    public sealed class NC_PLNull_ManyColumnsFixtureInitDb : ManyColumnsFixtureInitDb
-    {
-        public NC_PLNull_ManyColumnsFixtureInitDb() : base(false, false, ModelBoundTestKind.No) { }
-    }
-
-    public sealed class NC_RDBNull_ManyColumnsFixtureInitDb : ManyColumnsFixtureInitDb
-    {
-        public NC_RDBNull_ManyColumnsFixtureInitDb() : base(false, true, ModelBoundTestKind.No) { }
+        public RDBNull_ManyColumnsFixtureInitDb() : base(true, ModelBoundTestKind.No) { }
     }
 
     //ModelBoundAttribute--------------------------------------------------------------------------
-    public sealed class AC_PLNull_ModelBoundAttributeDbFixture : DbFixtureInitDb
+    public sealed class PLNull_ModelBoundAttributeDbFixture : DbFixtureInitDb
     {
-        public AC_PLNull_ModelBoundAttributeDbFixture() : base(true, false, ModelBoundTestKind.Attribute) { }
+        public PLNull_ModelBoundAttributeDbFixture() : base(false, ModelBoundTestKind.Attribute) { }
     }
 
-    public sealed class AC_RDBNull_ModelBoundAttributeDbFixture : DbFixtureInitDb
+    public sealed class RDBNull_ModelBoundAttributeDbFixture : DbFixtureInitDb
     {
-        public AC_RDBNull_ModelBoundAttributeDbFixture() : base(true, true, ModelBoundTestKind.Attribute) { }
-    }
-
-    public sealed class NC_PLNull_ModelBoundAttributeDbFixture : DbFixtureInitDb
-    {
-        public NC_PLNull_ModelBoundAttributeDbFixture() : base(false, false, ModelBoundTestKind.Attribute) { }
-    }
-
-    public sealed class NC_RDBNull_ModelBoundAttributeDbFixture : DbFixtureInitDb
-    {
-        public NC_RDBNull_ModelBoundAttributeDbFixture() : base(false, true, ModelBoundTestKind.Attribute) { }
+        public RDBNull_ModelBoundAttributeDbFixture() : base(true, ModelBoundTestKind.Attribute) { }
     }
 
     //ModelBoundFluent-----------------------------------------------------------------------------
-    public sealed class AC_PLNull_ModelBoundFluentDbFixture : DbFixtureInitDb
+    public sealed class PLNull_ModelBoundFluentDbFixture : DbFixtureInitDb
     {
-        public AC_PLNull_ModelBoundFluentDbFixture() : base(true, false, ModelBoundTestKind.Fluent) { }
+        public PLNull_ModelBoundFluentDbFixture() : base(false, ModelBoundTestKind.Fluent) { }
     }
 
-    public sealed class AC_RDBNull_ModelBoundFluentDbFixture : DbFixtureInitDb
+    public sealed class RDBNull_ModelBoundFluentDbFixture : DbFixtureInitDb
     {
-        public AC_RDBNull_ModelBoundFluentDbFixture() : base(true, true, ModelBoundTestKind.Fluent) { }
-    }
-
-    public sealed class NC_PLNull_ModelBoundFluentDbFixture : DbFixtureInitDb
-    {
-        public NC_PLNull_ModelBoundFluentDbFixture() : base(false, false, ModelBoundTestKind.Fluent) { }
-    }
-
-    public sealed class NC_RDBNull_ModelBoundFluentDbFixture : DbFixtureInitDb
-    {
-        public NC_RDBNull_ModelBoundFluentDbFixture() : base(false, true, ModelBoundTestKind.Fluent) { }
+        public RDBNull_ModelBoundFluentDbFixture() : base(true, ModelBoundTestKind.Fluent) { }
     }
 
     //Tests ---------------------------------------------------------------------------------------
-#if !IGNORE_AC_PLNull
-    public sealed class AC_PLNull : SelectTest, IClassFixture<AC_PLNull_DbFixtureInitDb>
+#if !IGNORE_PLNull
+    public sealed class PLNull : SelectTest, IClassFixture<PLNull_DbFixtureInitDb>
     {
-        public AC_PLNull(AC_PLNull_DbFixtureInitDb fixture) : base(fixture) { }
+        public PLNull(PLNull_DbFixtureInitDb fixture) : base(fixture) { }
     }
 
-    public sealed class AC_PLNull_ManyColumns : ManyColumnsTest, IClassFixture<AC_PLNull_ManyColumnsFixtureInitDb>
+    public sealed class PLNull_ManyColumns : ManyColumnsTest, IClassFixture<PLNull_ManyColumnsFixtureInitDb>
     {
-        public AC_PLNull_ManyColumns(AC_PLNull_ManyColumnsFixtureInitDb fixture) : base(fixture) { }
+        public PLNull_ManyColumns(PLNull_ManyColumnsFixtureInitDb fixture) : base(fixture) { }
     }
 
-    public sealed class AC_PLNull_ModelBoundAttributeTest : ModelBoundTest, IClassFixture<AC_PLNull_ModelBoundAttributeDbFixture>
+    public sealed class PLNull_ModelBoundAttributeTest : ModelBoundTest, IClassFixture<PLNull_ModelBoundAttributeDbFixture>
     {
-        public AC_PLNull_ModelBoundAttributeTest(AC_PLNull_ModelBoundAttributeDbFixture fixture) : base(fixture) { }
+        public PLNull_ModelBoundAttributeTest(PLNull_ModelBoundAttributeDbFixture fixture) : base(fixture) { }
     }
 
-    public sealed class AC_PLNull_ModelBoundFluentTest : ModelBoundTest, IClassFixture<AC_PLNull_ModelBoundFluentDbFixture>
+    public sealed class PLNull_ModelBoundFluentTest : ModelBoundTest, IClassFixture<PLNull_ModelBoundFluentDbFixture>
     {
-        public AC_PLNull_ModelBoundFluentTest(AC_PLNull_ModelBoundFluentDbFixture fixture) : base(fixture) { }
-    }
-#endif
-
-#if !IGNORE_AC_RDBNull
-    public sealed class AC_RDBNull : SelectTest, IClassFixture<AC_RDBNull_DbFixtureInitDb>
-    {
-        public AC_RDBNull(AC_RDBNull_DbFixtureInitDb fixture) : base(fixture) { }
-    }
-
-    public sealed class AC_RDBNull_ManyColumns : ManyColumnsTest, IClassFixture<AC_RDBNull_ManyColumnsFixtureInitDb>
-    {
-        public AC_RDBNull_ManyColumns(AC_RDBNull_ManyColumnsFixtureInitDb fixture) : base(fixture) { }
-    }
-
-    public sealed class AC_RDBNull_ModelBoundAttributeTest : ModelBoundTest, IClassFixture<AC_RDBNull_ModelBoundAttributeDbFixture>
-    {
-        public AC_RDBNull_ModelBoundAttributeTest(AC_RDBNull_ModelBoundAttributeDbFixture fixture) : base(fixture) { }
-    }
-
-    public sealed class AC_RDBNull_ModelBoundFluentTest : ModelBoundTest, IClassFixture<AC_RDBNull_ModelBoundFluentDbFixture>
-    {
-        public AC_RDBNull_ModelBoundFluentTest(AC_RDBNull_ModelBoundFluentDbFixture fixture) : base(fixture) { }
+        public PLNull_ModelBoundFluentTest(PLNull_ModelBoundFluentDbFixture fixture) : base(fixture) { }
     }
 #endif
 
-#if !IGNORE_NC_PLNull
-    public sealed class NC_PLNull : SelectTest, IClassFixture<NC_PLNull_DbFixtureInitDb>
+#if !IGNORE_RDBNull
+    public sealed class RDBNull : SelectTest, IClassFixture<RDBNull_DbFixtureInitDb>
     {
-        public NC_PLNull(NC_PLNull_DbFixtureInitDb fixture) : base(fixture) { }
+        public RDBNull(RDBNull_DbFixtureInitDb fixture) : base(fixture) { }
     }
 
-    public sealed class NC_PLNull_ManyColumns : ManyColumnsTest, IClassFixture<NC_PLNull_ManyColumnsFixtureInitDb>
+    public sealed class RDBNull_ManyColumns : ManyColumnsTest, IClassFixture<RDBNull_ManyColumnsFixtureInitDb>
     {
-        public NC_PLNull_ManyColumns(NC_PLNull_ManyColumnsFixtureInitDb fixture) : base(fixture) { }
+        public RDBNull_ManyColumns(RDBNull_ManyColumnsFixtureInitDb fixture) : base(fixture) { }
     }
 
-    public sealed class NC_PLNull_ModelBoundAttributeTest : ModelBoundTest, IClassFixture<NC_PLNull_ModelBoundAttributeDbFixture>
+    public sealed class RDBNull_ModelBoundAttributeTest : ModelBoundTest, IClassFixture<RDBNull_ModelBoundAttributeDbFixture>
     {
-        public NC_PLNull_ModelBoundAttributeTest(NC_PLNull_ModelBoundAttributeDbFixture fixture) : base(fixture) { }
+        public RDBNull_ModelBoundAttributeTest(RDBNull_ModelBoundAttributeDbFixture fixture) : base(fixture) { }
     }
 
-    public sealed class NC_PLNull_ModelBoundFluentTest : ModelBoundTest, IClassFixture<NC_PLNull_ModelBoundFluentDbFixture>
+    public sealed class RDBNull_ModelBoundFluentTest : ModelBoundTest, IClassFixture<RDBNull_ModelBoundFluentDbFixture>
     {
-        public NC_PLNull_ModelBoundFluentTest(NC_PLNull_ModelBoundFluentDbFixture fixture) : base(fixture) { }
-    }
-#endif
-
-#if !IGNORE_NC_RDBNull
-    public sealed class NC_RDBNull : SelectTest, IClassFixture<NC_RDBNull_DbFixtureInitDb>
-    {
-        public NC_RDBNull(NC_RDBNull_DbFixtureInitDb fixture) : base(fixture) { }
-    }
-
-    public sealed class NC_RDBNull_ManyColumns : ManyColumnsTest, IClassFixture<NC_RDBNull_ManyColumnsFixtureInitDb>
-    {
-        public NC_RDBNull_ManyColumns(NC_RDBNull_ManyColumnsFixtureInitDb fixture) : base(fixture) { }
-    }
-
-    public sealed class NC_RDBNull_ModelBoundAttributeTest : ModelBoundTest, IClassFixture<NC_RDBNull_ModelBoundAttributeDbFixture>
-    {
-        public NC_RDBNull_ModelBoundAttributeTest(NC_RDBNull_ModelBoundAttributeDbFixture fixture) : base(fixture) { }
-    }
-
-    public sealed class NC_RDBNull_ModelBoundFluentTest : ModelBoundTest, IClassFixture<NC_RDBNull_ModelBoundFluentDbFixture>
-    {
-        public NC_RDBNull_ModelBoundFluentTest(NC_RDBNull_ModelBoundFluentDbFixture fixture) : base(fixture) { }
+        public RDBNull_ModelBoundFluentTest(RDBNull_ModelBoundFluentDbFixture fixture) : base(fixture) { }
     }
 #endif
 }

@@ -15,34 +15,41 @@ namespace OdataToEntity.Parsers.Translators
             _skipToken = skipToken;
         }
 
-        public void Translate(OeNavigationSelectItem navigationItem, SelectItem item)
+        public void Translate(OeNavigationSelectItem parentNavigationItem, SelectItem item)
         {
             if (item is ExpandedNavigationSelectItem expandedNavigationSelectItem)
-                Translate(navigationItem, expandedNavigationSelectItem);
+                Translate(parentNavigationItem, expandedNavigationSelectItem);
             else if (item is PathSelectItem pathSelectItem)
-                Translate(navigationItem, pathSelectItem);
+                Translate(parentNavigationItem, pathSelectItem);
             else if (item is OePageSelectItem pageSelectItem)
-                Translate(navigationItem, pageSelectItem);
+                Translate(parentNavigationItem, pageSelectItem);
             else
                 throw new InvalidOperationException("Unknown SelectItem type " + item.GetType().Name);
         }
-        private void Translate(OeNavigationSelectItem navigationItem, OePageSelectItem pageSelectItem)
+        private void Translate(OeNavigationSelectItem parentNavigationItem, OePageSelectItem pageSelectItem)
         {
-            navigationItem.PageSize = pageSelectItem.PageSize;
+            if (parentNavigationItem.NavigationSelectItem != null)
+            {
+                var segment = (NavigationPropertySegment)parentNavigationItem.NavigationSelectItem.PathToNavigationProperty.LastSegment;
+                if (!segment.NavigationProperty.Type.IsCollection())
+                    return;
+            }
+
+            parentNavigationItem.PageSize = pageSelectItem.PageSize;
         }
-        private void Translate(OeNavigationSelectItem navigationItem, ExpandedNavigationSelectItem item)
+        private void Translate(OeNavigationSelectItem parentNavigationItem, ExpandedNavigationSelectItem item)
         {
             if (item.SelectAndExpand.IsNavigationNextLink())
                 return;
 
             IEdmEntitySetBase entitySet = OeEdmClrHelper.GetEntitySet(_edmModel, item);
-            var childNavigationSelectItem = new OeNavigationSelectItem(entitySet, navigationItem, item, _skipToken);
-            childNavigationSelectItem = navigationItem.AddOrGetNavigationItem(childNavigationSelectItem);
+            var childNavigationSelectItem = new OeNavigationSelectItem(entitySet, parentNavigationItem, item, _skipToken);
+            childNavigationSelectItem = parentNavigationItem.AddOrGetNavigationItem(childNavigationSelectItem);
 
             foreach (SelectItem selectItemClause in item.SelectAndExpand.SelectedItems)
                 Translate(childNavigationSelectItem, selectItemClause);
         }
-        private void Translate(OeNavigationSelectItem navigationItem, PathSelectItem item)
+        private void Translate(OeNavigationSelectItem parentNavigationItem, PathSelectItem item)
         {
             if (item.SelectedPath.LastSegment is NavigationPropertySegment navigationSegment)
             {
@@ -51,10 +58,10 @@ namespace OdataToEntity.Parsers.Translators
                     navigationSource = OeEdmClrHelper.GetEntitySet(_edmModel, navigationSegment.NavigationProperty);
 
                 var selectItemClause = new ExpandedNavigationSelectItem(new ODataExpandPath(item.SelectedPath), navigationSource, new SelectExpandClause(null, true));
-                Translate(navigationItem, selectItemClause);
+                Translate(parentNavigationItem, selectItemClause);
             }
             else if (item.SelectedPath.LastSegment is PropertySegment propertySegment)
-                navigationItem.AddStructuralItem(propertySegment.Property, _skipToken);
+                parentNavigationItem.AddStructuralItem(propertySegment.Property, _skipToken);
             else
                 throw new InvalidOperationException(item.SelectedPath.LastSegment.GetType().Name + " not supported");
         }

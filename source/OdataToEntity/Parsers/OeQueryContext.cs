@@ -207,10 +207,11 @@ namespace OdataToEntity.Parsers
             {
                 _initialized = true;
 
-                if (MaxPageSize > 0)
+                int pageSize = ODataUri.GetPageSize();
+                if (pageSize > 0)
                 {
                     _restCount = (int?)ODataUri.Top ?? Int32.MaxValue;
-                    ODataUri.Top = MaxPageSize;
+                    ODataUri.Top = pageSize;
                 }
 
                 SkipTokenNameValues = Array.Empty<OeSkipTokenNameValue>();
@@ -242,7 +243,6 @@ namespace OdataToEntity.Parsers
         public OeEntryFactory EntryFactory { get; set; }
         public Translators.OeJoinBuilder JoinBuilder { get; }
         public bool IsDatabaseNullHighestValue => EdmModel.GetDataAdapter(EdmModel.EntityContainer).IsDatabaseNullHighestValue;
-        public int MaxPageSize { get; set; }
         public OeMetadataLevel MetadataLevel { get; set; }
         public ODataUri ODataUri { get; }
         public IReadOnlyList<OeParseNavigationSegment> ParseNavigationSegments { get; }

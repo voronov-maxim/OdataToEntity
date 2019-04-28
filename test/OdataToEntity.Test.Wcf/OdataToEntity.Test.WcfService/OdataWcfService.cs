@@ -22,7 +22,14 @@ namespace OdataToEntity.Test.WcfService
         {
             OeRequestHeaders headers = OeRequestHeaders.Parse(request.ContentType, request.Prefer);
             headers.ResponseContentType = headers.ContentType;
-            var parser = new OeParser(_baseUri, _edmModel);
+
+            Query.OeModelBoundProvider modelBoundProvider = null;
+            if (headers.MaxPageSize > 0)
+            {
+                var pageNextLinkModelBoundBuilder = new PageNextLinkModelBoundBuilder(_edmModel, false);
+                modelBoundProvider = pageNextLinkModelBoundBuilder.BuildProvider(headers.MaxPageSize, false);
+            }
+            var parser = new OeParser(_baseUri, _edmModel, modelBoundProvider);
 
             String query = new StreamReader(request.Content).ReadToEnd();
             var uri = new Uri(_baseUri, new Uri(query, UriKind.Relative));

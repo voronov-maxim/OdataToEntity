@@ -28,11 +28,7 @@ namespace OdataToEntity.Parsers
             if (_modelBoundProvider != null)
                 _modelBoundProvider.Validate(_edmModel, odataUri);
 
-            var queryContext = new OeQueryContext(_edmModel, odataUri)
-            {
-                MaxPageSize = headers.MaxPageSize,
-                MetadataLevel = headers.MetadataLevel,
-            };
+            var queryContext = new OeQueryContext(_edmModel, odataUri) { MetadataLevel = headers.MetadataLevel };
 
             if (queryContext.ODataUri.Path.LastSegment is OperationSegment)
             {
