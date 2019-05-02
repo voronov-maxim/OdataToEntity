@@ -5,7 +5,6 @@ using Microsoft.Extensions.Primitives;
 using Microsoft.OData;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
-using OdataToEntity.Db;
 using OdataToEntity.Parsers;
 using System;
 using System.Collections.Generic;
@@ -18,8 +17,7 @@ namespace OdataToEntity.AspNetCore
 {
     public sealed class OeAspQueryParser : IDisposable
     {
-        private int? _count;
-        private OeDataAdapter _dataAdapter;
+        private Db.OeDataAdapter _dataAdapter;
         private Object _dataContext;
         private readonly IEdmModel _edmModel;
         private readonly HttpContext _httpContext;
@@ -39,7 +37,7 @@ namespace OdataToEntity.AspNetCore
             if (_dataContext != null)
                 _dataAdapter.CloseDataContext(_dataContext);
         }
-        private OeAsyncEnumerator ExecuteGet(IEdmModel refModel, ODataUri odataUri, OeRequestHeaders headers, IQueryable source, CancellationToken cancellationToken)
+        private IAsyncEnumerable<Object> ExecuteGet(IEdmModel refModel, ODataUri odataUri, OeRequestHeaders headers, IQueryable source)
         {
             if (_modelBoundProvider != null)
                 _modelBoundProvider.Validate(_edmModel, odataUri);
@@ -56,36 +54,35 @@ namespace OdataToEntity.AspNetCore
             {
                 headers.ResponseContentType = OeRequestHeaders.TextDefault.ContentType;
                 int count = _dataAdapter.ExecuteScalar<int>(_dataContext, _queryContext);
-                return OeAsyncEnumerator.Create(count, cancellationToken);
+                return (IAsyncEnumerable<Object>)Infrastructure.AsyncEnumeratorHelper.ToAsyncEnumerable(Task.FromResult(count));
             }
 
-            return _dataAdapter.ExecuteEnumerator(_dataContext, _queryContext, cancellationToken);
+            return _dataAdapter.Execute(_dataContext, _queryContext);
         }
-        private OeAsyncEnumerator ExecutePost(IEdmModel refModel, ODataUri odataUri, OeRequestHeaders headers, Stream requestStream)
+        private IAsyncEnumerable<Object> ExecutePost(IEdmModel refModel, ODataUri odataUri, OeRequestHeaders headers, Stream requestStream)
         {
             _odataUri = odataUri;
 
             var parser = new OePostParser(refModel);
-            OeAsyncEnumerator asyncEnumerator = parser.GetAsyncEnumerator(odataUri, requestStream, headers, _dataContext, out bool isScalar);
+            IAsyncEnumerable<Object> asyncEnumerable = parser.GetAsyncEnumerable(odataUri, requestStream, headers, _dataContext, out bool isScalar);
             if (!isScalar)
                 _queryContext = parser.CreateQueryContext(odataUri, headers.MetadataLevel);
 
-            return asyncEnumerator;
+            return asyncEnumerable;
         }
         public IAsyncEnumerable<T> ExecuteReader<T>(IQueryable source = null)
         {
-            OeAsyncEnumerator asyncEnumerator = GetAsyncEnumerator(source);
-            _count = asyncEnumerator.Count;
+            IAsyncEnumerable<Object> asyncEnumerable = GetAsyncEnumerator(source);
             if (OeExpressionHelper.IsPrimitiveType(typeof(T)) || !_queryContext.EntryFactory.IsTuple)
-                return new OeAsyncEnumeratorAdapter<T>(asyncEnumerator);
+                return Infrastructure.AsyncEnumeratorHelper.ToAsyncEnumerable<T>(asyncEnumerable);
 
-            return new OeEntityAsyncEnumeratorAdapter<T>(asyncEnumerator, _queryContext);
+            return new Db.OeEntityAsyncEnumeratorAdapter<T>(asyncEnumerable.GetEnumerator(), _queryContext);
         }
-        public async Task<T?> ExecuteScalar<T>(IQueryable source = null) where T : struct
+        public async Task<T?> ExecuteScalar<T>(IQueryable source = null, CancellationToken cancellationToken = default) where T : struct
         {
-            OeAsyncEnumerator asyncEnumerator = GetAsyncEnumerator(source);
-            if (await asyncEnumerator.MoveNextAsync() && asyncEnumerator.Current != null)
-                return (T)asyncEnumerator.Current;
+            using (IAsyncEnumerator<Object> asyncEnumerator = GetAsyncEnumerator(source).GetEnumerator())
+                if (await asyncEnumerator.MoveNext(cancellationToken) && asyncEnumerator.Current != null)
+                    return (T)asyncEnumerator.Current;
 
             _httpContext.Response.ContentType = null;
             return null;
@@ -99,7 +96,7 @@ namespace OdataToEntity.AspNetCore
             var parser = new OeParser(UriHelper.GetBaseUri(httpContext.Request), edmModel, modelBoundProvider);
             await parser.ExecuteGetAsync(UriHelper.GetUri(httpContext.Request), headers, httpContext.Response.Body, httpContext.RequestAborted);
         }
-        private OeAsyncEnumerator GetAsyncEnumerator(IQueryable source = null)
+        private IAsyncEnumerable<Object> GetAsyncEnumerator(IQueryable source = null)
         {
             _httpContext.Response.RegisterForDispose(this);
 
@@ -115,13 +112,13 @@ namespace OdataToEntity.AspNetCore
             if (odataUri.Path.LastSegment is OperationImportSegment)
                 return ExecutePost(refModel, odataUri, headers, _httpContext.Request.Body);
             else
-                return ExecuteGet(refModel, odataUri, headers, source, _httpContext.RequestAborted);
+                return ExecuteGet(refModel, odataUri, headers, source);
         }
         public TDataContext GetDbContext<TDataContext>() where TDataContext : class
         {
             if (_dataContext == null)
             {
-                OeDataAdapter dataAdapter = _edmModel.GetDataAdapter(typeof(TDataContext));
+                Db.OeDataAdapter dataAdapter = _edmModel.GetDataAdapter(typeof(TDataContext));
                 if (dataAdapter == null)
                     return null;
 
@@ -135,13 +132,9 @@ namespace OdataToEntity.AspNetCore
             var headers = OeRequestHeaders.Parse(requestHeaders.HeaderAccept, preferHeader);
             return new OeHttpRequestHeaders(headers, httpResponse);
         }
-        public ODataResult<T> OData<T>(IAsyncEnumerable<T> asyncEnumerable, int? count = null)
+        public ODataResult<T> OData<T>(IAsyncEnumerable<T> asyncEnumerable)
         {
-            if (count == null)
-                count = (asyncEnumerable as OeAsyncEnumerator)?.Count;
-
-            OeAsyncEnumerator asyncEnumerator = OeAsyncEnumerator.Create<T>(asyncEnumerable, CancellationToken.None);
-            asyncEnumerator.Count = count;
+            IAsyncEnumerator<T> asyncEnumerator = asyncEnumerable.GetEnumerator();
             _httpContext.Response.RegisterForDispose(asyncEnumerator);
 
             if (OeExpressionHelper.IsPrimitiveType(typeof(T)) || _queryContext.ODataUri.Path.LastSegment is CountSegment)
@@ -151,7 +144,7 @@ namespace OdataToEntity.AspNetCore
         }
         public ODataResult<T> OData<T>(IEnumerable<T> enumerable)
         {
-            return OData(enumerable.ToAsyncEnumerable(), _count);
+            return OData(enumerable.ToAsyncEnumerable());
         }
         public IActionResult OData<T>(T? value) where T : struct
         {

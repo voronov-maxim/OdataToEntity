@@ -24,7 +24,7 @@ namespace OdataToEntity.Query.Builder
                     selectItems.Add(new Parsers.Translators.OePageSelectItem(settings.PageSize));
 
                 if (settings.NavigationNextLink)
-                    selectItems.Add(new Parsers.Translators.OeNextLinkSelectItem(settings.NavigationNextLink));
+                    selectItems.Add(Parsers.Translators.OeNextLinkSelectItem.Instance);
             }
         }
         public SelectExpandClause Build(SelectExpandClause selectExpandClause, IEdmEntityType entityType)

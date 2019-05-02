@@ -7,12 +7,12 @@ namespace OdataToEntity.Parsers.Translators
     internal readonly struct OeSelectItemTranslator
     {
         private readonly IEdmModel _edmModel;
-        private readonly bool _skipToken;
+        private readonly bool _notSelected;
 
-        public OeSelectItemTranslator(IEdmModel edmModel, bool skipToken)
+        public OeSelectItemTranslator(IEdmModel edmModel, bool notSelected)
         {
             _edmModel = edmModel;
-            _skipToken = skipToken;
+            _notSelected = notSelected;
         }
 
         public void Translate(OeNavigationSelectItem parentNavigationItem, SelectItem item)
@@ -39,12 +39,20 @@ namespace OdataToEntity.Parsers.Translators
         }
         private void Translate(OeNavigationSelectItem parentNavigationItem, ExpandedNavigationSelectItem item)
         {
-            if (item.SelectAndExpand.IsNavigationNextLink())
-                return;
-
             IEdmEntitySetBase entitySet = OeEdmClrHelper.GetEntitySet(_edmModel, item);
-            var childNavigationSelectItem = new OeNavigationSelectItem(entitySet, parentNavigationItem, item, _skipToken);
+
+            OeNavigationSelectItemKind kind;
+            if (_notSelected)
+                kind = OeNavigationSelectItemKind.NotSelected;
+            else if (item.SelectAndExpand.IsNextLink())
+                kind = OeNavigationSelectItemKind.NextLink;
+            else
+                kind = OeNavigationSelectItemKind.Normal;
+
+            var childNavigationSelectItem = new OeNavigationSelectItem(entitySet, parentNavigationItem, item, kind);
             childNavigationSelectItem = parentNavigationItem.AddOrGetNavigationItem(childNavigationSelectItem);
+            if (childNavigationSelectItem.Kind == OeNavigationSelectItemKind.NextLink)
+                return;
 
             foreach (SelectItem selectItemClause in item.SelectAndExpand.SelectedItems)
                 Translate(childNavigationSelectItem, selectItemClause);
@@ -61,7 +69,7 @@ namespace OdataToEntity.Parsers.Translators
                 Translate(parentNavigationItem, selectItemClause);
             }
             else if (item.SelectedPath.LastSegment is PropertySegment propertySegment)
-                parentNavigationItem.AddStructuralItem(propertySegment.Property, _skipToken);
+                parentNavigationItem.AddStructuralItem(propertySegment.Property, _notSelected);
             else
                 throw new InvalidOperationException(item.SelectedPath.LastSegment.GetType().Name + " not supported");
         }

@@ -3,7 +3,6 @@ using OdataToEntity.Parsers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 
 namespace OdataToEntity.Db
 {
@@ -30,9 +29,9 @@ namespace OdataToEntity.Db
         {
             return _result.EntryFactory.GetEntryFactoryFromTuple(_result.EdmModel, null);
         }
-        protected IAsyncEnumerable<TResult> Materialize<TResult>(IQueryable result, CancellationToken cancellationToken = default)
+        protected IAsyncEnumerable<TResult> Materialize<TResult>(IQueryable result)
         {
-            return _result.Materialize<TResult>(result, cancellationToken);
+            return _result.Materialize<TResult>(result);
         }
 
         protected IEdmModel EdmModel => _source.EdmModel;
@@ -63,9 +62,9 @@ namespace OdataToEntity.Db
             OeDataAdapter dataAdapter = base.EdmModel.GetDataAdapter(typeof(TDataContext));
             return (TDataContext)dataAdapter.CreateDataContext();
         }
-        public IAsyncEnumerable<TResult> Materialize(IQueryable result, CancellationToken cancellationToken = default)
+        public IAsyncEnumerable<TResult> Materialize(IQueryable result)
         {
-            return base.Materialize<TResult>(result, cancellationToken);
+            return base.Materialize<TResult>(result);
         }
     }
 

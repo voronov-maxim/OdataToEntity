@@ -120,7 +120,7 @@ namespace OdataToEntity
         {
             ODataUri odataUri = ParseUri(EdmModel, BaseUri, requestUri);
             if (odataUri.Path.LastSegment is OperationImportSegment)
-                await ExecuteOperationAsync(odataUri, headers, null, responseStream).ConfigureAwait(false);
+                await ExecuteOperationAsync(odataUri, headers, null, responseStream, cancellationToken).ConfigureAwait(false);
             else
                 await ExecuteQueryAsync(odataUri, headers, responseStream, cancellationToken).ConfigureAwait(false);
         }
@@ -129,19 +129,18 @@ namespace OdataToEntity
             var parser = new Parsers.OeGetParser(EdmModel.GetEdmModel(odataUri.Path), ModelBoundProvider);
             await parser.ExecuteAsync(odataUri, headers, responseStream, cancellationToken).ConfigureAwait(false);
         }
-        public async Task ExecuteOperationAsync(ODataUri odataUri, OeRequestHeaders headers, Stream requestStream, Stream responseStream)
+        public async Task ExecuteOperationAsync(ODataUri odataUri, OeRequestHeaders headers, Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
         {
             var parser = new Parsers.OePostParser(EdmModel.GetEdmModel(odataUri.Path));
-            await parser.ExecuteAsync(odataUri, requestStream, headers, responseStream).ConfigureAwait(false);
+            await parser.ExecuteAsync(odataUri, requestStream, headers, responseStream, cancellationToken).ConfigureAwait(false);
         }
         public async Task ExecutePostAsync(Uri requestUri, OeRequestHeaders headers, Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
         {
             ODataUri odataUri = ParseUri(EdmModel, BaseUri, requestUri);
             if (odataUri.Path.LastSegment.Identifier == "$batch")
                 await ExecuteBatchAsync(requestStream, responseStream, headers.ContentType, cancellationToken).ConfigureAwait(false);
-            else
-                if (odataUri.Path.LastSegment is OperationImportSegment)
-                await ExecuteOperationAsync(odataUri, headers, requestStream, responseStream).ConfigureAwait(false);
+            else if (odataUri.Path.LastSegment is OperationImportSegment)
+                await ExecuteOperationAsync(odataUri, headers, requestStream, responseStream, cancellationToken).ConfigureAwait(false);
             else
                 await ExecuteQueryAsync(odataUri, headers, responseStream, cancellationToken).ConfigureAwait(false);
         }

@@ -210,7 +210,7 @@ namespace OdataToEntity.Writers
             int pageSize = _queryContext.ODataUri.GetPageSize();
             if (pageSize == 0)
             {
-                if (pageSize == 0 && _queryContext.ODataUri.SkipToken != null && _queryContext.ODataUri.Top.GetValueOrDefault() > 0)
+                if (_queryContext.ODataUri.SkipToken != null && _queryContext.ODataUri.Top.GetValueOrDefault() > 0)
                     pageSize = (int)_queryContext.ODataUri.Top.GetValueOrDefault();
             }
 

@@ -151,7 +151,7 @@ namespace OdataToEntity.Linq2Db
             var tableAttribute = typeof(TEntity).GetCustomAttribute<LinqToDB.Mapping.TableAttribute>();
             return new TableAdapterImpl<TEntity>(getEntitySet, property.Name, tableAttribute.IsView);
         }
-        public override Db.OeAsyncEnumerator ExecuteEnumerator(Object dataContext, OeQueryContext queryContext, CancellationToken cancellationToken)
+        public override IAsyncEnumerable<Object> Execute(Object dataContext, OeQueryContext queryContext)
         {
             Expression expression;
             MethodCallExpression countExpression = null;
@@ -169,10 +169,10 @@ namespace OdataToEntity.Linq2Db
             }
 
             IQueryable<Object> query = (IQueryable<Object>)entitySet.Provider.CreateQuery(expression);
-            Db.OeAsyncEnumerator asyncEnumerator = Db.OeAsyncEnumerator.Create(query, cancellationToken);
+            IAsyncEnumerable<Object> asyncEnumerator = Infrastructure.AsyncEnumeratorHelper.ToAsyncEnumerable(query);
 
             if (countExpression != null)
-                asyncEnumerator.Count = entitySet.Provider.Execute<int>(countExpression);
+                queryContext.TotalCountOfItems = entitySet.Provider.Execute<int>(countExpression);
 
             return asyncEnumerator;
         }

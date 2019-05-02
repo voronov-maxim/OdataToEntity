@@ -2,6 +2,7 @@
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Threading;
@@ -32,8 +33,8 @@ namespace OdataToEntity.Parsers
 
             if (queryContext.ODataUri.Path.LastSegment is OperationSegment)
             {
-                using (Db.OeAsyncEnumerator asyncEnumerator = OeOperationHelper.ApplyBoundFunction(queryContext))
-                    await Writers.OeGetWriter.SerializeAsync(queryContext, asyncEnumerator, headers.ContentType, stream).ConfigureAwait(false);
+                using (IAsyncEnumerator<Object> asyncEnumerator = OeOperationHelper.ApplyBoundFunction(queryContext).GetEnumerator())
+                    await Writers.OeGetWriter.SerializeAsync(queryContext, asyncEnumerator, headers.ContentType, stream, cancellationToken).ConfigureAwait(false);
 
                 return;
             }
@@ -52,8 +53,8 @@ namespace OdataToEntity.Parsers
                 }
                 else
                 {
-                    using (Db.OeAsyncEnumerator asyncEnumerator = dataAdapter.ExecuteEnumerator(dataContext, queryContext, cancellationToken))
-                        await Writers.OeGetWriter.SerializeAsync(queryContext, asyncEnumerator, headers.ContentType, stream).ConfigureAwait(false);
+                    using (IAsyncEnumerator<Object> asyncEnumerator = dataAdapter.Execute(dataContext, queryContext).GetEnumerator())
+                        await Writers.OeGetWriter.SerializeAsync(queryContext, asyncEnumerator, headers.ContentType, stream, cancellationToken).ConfigureAwait(false);
                 }
             }
             finally

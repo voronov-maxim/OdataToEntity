@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace OdataToEntity.Linq2Db
 {
@@ -16,17 +17,17 @@ namespace OdataToEntity.Linq2Db
         {
         }
 
-        protected override OeAsyncEnumerator ExecuteNonQuery(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters)
+        protected override IAsyncEnumerable<Object> ExecuteNonQuery(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters)
         {
             var dataConnection = (DataConnection)dataContext;
             dataConnection.Execute(sql, GetDataParameters(parameters));
-            return OeAsyncEnumerator.Empty;
+            return Infrastructure.AsyncEnumeratorHelper.Empty;
         }
-        protected override OeAsyncEnumerator ExecuteReader(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, OeEntitySetAdapter entitySetAdapter)
+        protected override IAsyncEnumerable<Object> ExecuteReader(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, OeEntitySetAdapter entitySetAdapter)
         {
             return ExecuteReader(dataContext, sql, parameters, entitySetAdapter.EntityType);
         }
-        private OeAsyncEnumerator ExecuteReader(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type retuenType)
+        private IAsyncEnumerable<Object> ExecuteReader(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type retuenType)
         {
             Func<DataConnection, String, DataParameter[], IEnumerable<Object>> queryMethod;
             if (sql.StartsWith("select "))
@@ -39,15 +40,15 @@ namespace OdataToEntity.Linq2Db
             var queryFunc = (Func<DataConnection, String, DataParameter[], IEnumerable<Object>>)Delegate.CreateDelegate(queryMethodType, queryMethodInfo);
 
             IEnumerable<Object> result = queryFunc((DataConnection)dataContext, sql, GetDataParameters(parameters));
-            return OeAsyncEnumerator.Create(result, CancellationToken.None);
+            return Infrastructure.AsyncEnumeratorHelper.ToAsyncEnumerable(result);
         }
-        protected override OeAsyncEnumerator ExecutePrimitive(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
+        protected override IAsyncEnumerable<Object> ExecutePrimitive(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
         {
             Type itemType = Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(returnType);
             if (itemType == null)
             {
-                Object result = ((DataConnection)dataContext).Execute<Object>(sql, GetDataParameters(parameters));
-                return OeAsyncEnumerator.Create(result, CancellationToken.None);
+                Task<Object> result = ((DataConnection)dataContext).ExecuteAsync<Object>(sql, GetDataParameters(parameters));
+                return Infrastructure.AsyncEnumeratorHelper.ToAsyncEnumerable(result);
             }
 
             return ExecuteReader(dataContext, sql, parameters, itemType);

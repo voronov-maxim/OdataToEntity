@@ -1,18 +1,22 @@
 ﻿using Microsoft.OData;
 using OdataToEntity.Parsers;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace OdataToEntity.Writers
 {
     public static class OeGetWriter
     {
-        public static Task SerializeAsync(OeQueryContext queryContext, Db.OeAsyncEnumerator asyncEnumerator, String contentType, Stream stream)
+        public static Task SerializeAsync(OeQueryContext queryContext, IAsyncEnumerator<Object> asyncEnumerator,
+            String contentType, Stream stream, CancellationToken cancellationToken)
         {
-            return SerializeAsync(queryContext, asyncEnumerator, contentType, stream, queryContext.EntryFactory);
+            return SerializeAsync(queryContext, asyncEnumerator, contentType, stream, queryContext.EntryFactory, cancellationToken);
         }
-        public static async Task SerializeAsync(OeQueryContext queryContext, Db.OeAsyncEnumerator asyncEnumerator, String contentType, Stream stream, OeEntryFactory entryFactory)
+        public static async Task SerializeAsync(OeQueryContext queryContext, IAsyncEnumerator<Object> asyncEnumerator,
+            String contentType, Stream stream, OeEntryFactory entryFactory, CancellationToken cancellationToken)
         {
             var settings = new ODataMessageWriterSettings()
             {
@@ -28,7 +32,7 @@ namespace OdataToEntity.Writers
             {
                 ODataUtils.SetHeadersForPayload(messageWriter, ODataPayloadKind.ResourceSet);
                 ODataWriter writer = messageWriter.CreateODataResourceSetWriter(entryFactory.EntitySet, entryFactory.EdmEntityType);
-                var odataWriter = new OeODataWriter(queryContext, writer);
+                var odataWriter = new OeODataWriter(queryContext, writer, cancellationToken);
                 await odataWriter.WriteAsync(entryFactory, asyncEnumerator).ConfigureAwait(false);
             }
         }

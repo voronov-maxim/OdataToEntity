@@ -49,7 +49,7 @@ namespace OdataToEntity.Query.Builder
             }
 
             if (settings.NavigationNextLink)
-                selectItems.Add(new OeNextLinkSelectItem(settings.NavigationNextLink));
+                selectItems.Add(OeNextLinkSelectItem.Instance);
         }
         public SelectExpandClause Build(SelectExpandClause selectExpandClause, IEdmEntityType entityType)
         {

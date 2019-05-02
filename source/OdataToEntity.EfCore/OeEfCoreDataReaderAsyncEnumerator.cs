@@ -1,22 +1,33 @@
 ﻿using Microsoft.EntityFrameworkCore.Storage;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace OdataToEntity.EfCore
 {
-    public sealed class OeEfCoreDataReaderAsyncEnumerator : Db.OeAsyncEnumerator
+    public sealed class OeEfCoreDataReaderAsyncEnumerator : IAsyncEnumerable<Object>, IAsyncEnumerator<Object>
     {
         private readonly RelationalDataReader _dataReader;
 
-        public OeEfCoreDataReaderAsyncEnumerator(RelationalDataReader dataReader, CancellationToken cancellationToken) : base(cancellationToken)
+        public OeEfCoreDataReaderAsyncEnumerator(RelationalDataReader dataReader)
         {
             _dataReader = dataReader;
         }
 
-        public override void Dispose() => _dataReader.Dispose();
-        public override Task<bool> MoveNextAsync() => _dataReader.ReadAsync();
+        public void Dispose()
+        {
+            _dataReader.Dispose();
+        }
+        public IAsyncEnumerator<Object> GetEnumerator()
+        {
+            return this;
+        }
+        public Task<bool> MoveNext(CancellationToken cancellationToken)
+        {
+            return _dataReader.ReadAsync(cancellationToken);
+        }
 
-        public override Object Current => _dataReader.DbDataReader.GetValue(0);
+        public Object Current => _dataReader.DbDataReader.GetValue(0);
     }
 }

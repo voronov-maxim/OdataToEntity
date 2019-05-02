@@ -245,8 +245,13 @@ namespace OdataToEntity.Cache.UriCompare
         }
         private bool CompareSelectItem(SelectItem selectItem1, SelectItem selectItem2, ODataPath path)
         {
-            if (selectItem1 is ExpandedNavigationSelectItem expandItem1 && selectItem2 is ExpandedNavigationSelectItem expandItem2)
+            if (selectItem1.GetType() != selectItem2.GetType())
+                return false;
+
+            if (selectItem1 is ExpandedNavigationSelectItem expandItem1)
             {
+                var expandItem2 = selectItem2 as ExpandedNavigationSelectItem;
+
                 if (!CompareLevelsClause(expandItem1.LevelsOption, expandItem2.LevelsOption))
                     return false;
 
@@ -256,8 +261,8 @@ namespace OdataToEntity.Cache.UriCompare
                 if (expandItem1.NavigationSource != expandItem2.NavigationSource)
                     return false;
 
-                bool navigationNextLink1 = expandItem1.SelectAndExpand.IsNavigationNextLink();
-                bool navigationNextLink2 = expandItem2.SelectAndExpand.IsNavigationNextLink();
+                bool navigationNextLink1 = expandItem1.SelectAndExpand.IsNextLink();
+                bool navigationNextLink2 = expandItem2.SelectAndExpand.IsNextLink();
                 if (navigationNextLink1 != navigationNextLink2)
                     return false;
 
@@ -289,11 +294,17 @@ namespace OdataToEntity.Cache.UriCompare
                     CompareSelectAndExpand(expandItem1.SelectAndExpand, expandItem2.SelectAndExpand, path);
             }
 
-            if (selectItem1 is PathSelectItem pathItem1 && selectItem2 is PathSelectItem pathItem2)
-                return ODataPathComparer.Compare(pathItem1.SelectedPath, pathItem2.SelectedPath);
-
-            if (selectItem1 is OePageSelectItem pageItem1 && selectItem2 is OePageSelectItem pageItem2)
+            if (selectItem1 is PathSelectItem pathItem1)
             {
+                var pathItem2 = selectItem2 as PathSelectItem;
+
+                return ODataPathComparer.Compare(pathItem1.SelectedPath, pathItem2.SelectedPath);
+            }
+
+            if (selectItem1 is OePageSelectItem pageItem1)
+            {
+                var pageItem2 = selectItem2 as OePageSelectItem;
+
                 if (pageItem1.PageSize == 0 && pageItem2.PageSize == 0)
                     return true;
 
@@ -308,8 +319,12 @@ namespace OdataToEntity.Cache.UriCompare
                 return true;
             }
 
-            if (selectItem1 is OeNextLinkSelectItem nextLinkItem1 && selectItem2 is OeNextLinkSelectItem nextLinkItem2)
-                return nextLinkItem1.NavigationNextLink == nextLinkItem2.NavigationNextLink;
+            if (selectItem1 is OeNextLinkSelectItem nextLinkItem1)
+            {
+                var nextLinkItem2 = selectItem2 as OeNextLinkSelectItem;
+
+                return nextLinkItem1.NextLink == nextLinkItem2.NextLink;
+            }
 
             throw new InvalidOperationException("Unknown SelectItem " + selectItem1.GetType().ToString());
         }

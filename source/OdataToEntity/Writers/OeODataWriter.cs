@@ -4,19 +4,22 @@ using Microsoft.OData.UriParser;
 using OdataToEntity.Parsers;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace OdataToEntity.Writers
 {
     public readonly struct OeODataWriter
     {
+        private readonly CancellationToken _cancellationToken;
         private readonly OeQueryContext _queryContext;
         private readonly ODataWriter _writer;
 
-        public OeODataWriter(OeQueryContext queryContex, ODataWriter writer)
+        public OeODataWriter(OeQueryContext queryContex, ODataWriter writer, in CancellationToken cancellationToken)
         {
             _queryContext = queryContex;
             _writer = writer;
+            _cancellationToken = cancellationToken;
         }
 
         private ODataResource CreateEntry(OeEntryFactory entryFactory, Object entity)
@@ -26,20 +29,9 @@ namespace OdataToEntity.Writers
                 entry.Id = OeUriHelper.ComputeId(_queryContext.ODataUri.ServiceRoot, entryFactory.EntitySet, entry);
             return entry;
         }
-        private static IEnumerable<ExpandedNavigationSelectItem> GetExpandedNavigationSelectItems(SelectExpandClause selectAndExpand)
+        public async Task WriteAsync(OeEntryFactory entryFactory, IAsyncEnumerator<Object> asyncEnumerator)
         {
-            foreach (SelectItem selectItem in selectAndExpand.SelectedItems)
-                if (selectItem is ExpandedNavigationSelectItem item)
-                {
-                    var segment = (NavigationPropertySegment)item.PathToNavigationProperty.LastSegment;
-                    IEdmNavigationProperty navigationEdmProperty = segment.NavigationProperty;
-                    if (item.SelectAndExpand.IsNavigationNextLink())
-                        yield return item;
-                }
-        }
-        public async Task WriteAsync(OeEntryFactory entryFactory, Db.OeAsyncEnumerator asyncEnumerator)
-        {
-            var resourceSet = new ODataResourceSet() { Count = asyncEnumerator.Count };
+            var resourceSet = new ODataResourceSet() { Count = _queryContext.TotalCountOfItems };
             _writer.WriteStart(resourceSet);
 
             Db.IOeDbEnumerator dbEnumerator = entryFactory.IsTuple ?
@@ -47,32 +39,30 @@ namespace OdataToEntity.Writers
 
             Object rawValue = null;
             int readCount = 0;
-            while (await dbEnumerator.MoveNextAsync().ConfigureAwait(false))
+            while (await dbEnumerator.MoveNext(_cancellationToken).ConfigureAwait(false))
             {
-                await WriteEntry(dbEnumerator, dbEnumerator.Current, _queryContext.ODataUri.SelectAndExpand).ConfigureAwait(false);
+                await WriteEntry(dbEnumerator, dbEnumerator.Current).ConfigureAwait(false);
                 readCount++;
                 rawValue = dbEnumerator.RawValue;
                 dbEnumerator.ClearBuffer();
             }
 
             var nextPageLinkBuilder = new OeNextPageLinkBuilder(_queryContext);
-            resourceSet.NextPageLink = nextPageLinkBuilder.GetNextPageLinkRoot(entryFactory, readCount, asyncEnumerator.Count, rawValue);
+            resourceSet.NextPageLink = nextPageLinkBuilder.GetNextPageLinkRoot(entryFactory, readCount, _queryContext.TotalCountOfItems, rawValue);
 
             _writer.WriteEnd();
         }
-        private async Task WriteEntry(Db.IOeDbEnumerator dbEnumerator, Object value, SelectExpandClause selectExpandClause)
+        private async Task WriteEntry(Db.IOeDbEnumerator dbEnumerator, Object value)
         {
             OeEntryFactory entryFactory = dbEnumerator.EntryFactory;
             ODataResource entry = CreateEntry(entryFactory, value);
             _writer.WriteStart(entry);
 
             for (int i = 0; i < entryFactory.NavigationLinks.Count; i++)
-                await WriteNavigation(dbEnumerator.CreateChild(entryFactory.NavigationLinks[i])).ConfigureAwait(false);
-
-            if (selectExpandClause != null)
-                foreach (ExpandedNavigationSelectItem item in GetExpandedNavigationSelectItems(selectExpandClause))
-                    WriteNavigationNextLink(entryFactory, item, value);
-
+                if (entryFactory.NavigationLinks[i].NextLink)
+                    WriteNavigationNextLink(entryFactory, entryFactory.NavigationLinks[i].NavigationSelectItem, value);
+                else
+                    await WriteNavigation(dbEnumerator.CreateChild(entryFactory.NavigationLinks[i])).ConfigureAwait(false);
             _writer.WriteEnd();
         }
         private async Task WriteNavigation(Db.IOeDbEnumerator dbEnumerator)
@@ -110,12 +100,11 @@ namespace OdataToEntity.Writers
                         _writer.WriteStart(resourceSet);
                     }
 
-                    SelectExpandClause selectExpandClause = dbEnumerator.EntryFactory.NavigationSelectItem.SelectAndExpand;
-                    await WriteEntry(dbEnumerator, value, selectExpandClause).ConfigureAwait(false);
+                    await WriteEntry(dbEnumerator, value).ConfigureAwait(false);
                     readCount++;
                 }
             }
-            while (await dbEnumerator.MoveNextAsync().ConfigureAwait(false));
+            while (await dbEnumerator.MoveNext(_cancellationToken).ConfigureAwait(false));
 
             if (readCount == 0)
             {
@@ -167,10 +156,7 @@ namespace OdataToEntity.Writers
                 _writer.WriteEnd();
             }
             else
-            {
-                SelectExpandClause selectExpandClause = dbEnumerator.EntryFactory.NavigationSelectItem.SelectAndExpand;
-                await WriteEntry(dbEnumerator, value, selectExpandClause).ConfigureAwait(false);
-            }
+                await WriteEntry(dbEnumerator, value).ConfigureAwait(false);
         }
     }
 }

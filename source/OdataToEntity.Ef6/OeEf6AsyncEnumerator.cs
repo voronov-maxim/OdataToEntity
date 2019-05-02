@@ -1,23 +1,33 @@
-﻿using OdataToEntity.Db;
-using System;
+﻿using System;
+using System.Collections.Generic;
 using System.Data.Entity.Infrastructure;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace OdataToEntity.Ef6
 {
-    public sealed class OeEf6AsyncEnumerator : OeAsyncEnumerator
+    public sealed class OeEf6AsyncEnumerator : IAsyncEnumerable<Object>, IAsyncEnumerator<Object>
     {
         private readonly IDbAsyncEnumerator _asyncEnumerator;
 
-        public OeEf6AsyncEnumerator(IDbAsyncEnumerator asyncEnumerator, CancellationToken cancellationToken)
-            : base(cancellationToken)
+        public OeEf6AsyncEnumerator(IDbAsyncEnumerable asyncEnumerable)
         {
-            _asyncEnumerator = asyncEnumerator;
+            _asyncEnumerator = asyncEnumerable.GetAsyncEnumerator();
         }
 
-        public override void Dispose() => _asyncEnumerator.Dispose();
-        public override Task<bool> MoveNextAsync() => _asyncEnumerator.MoveNextAsync(base.CancellationToken);
-        public override Object Current => _asyncEnumerator.Current;
+        public void Dispose()
+        {
+            _asyncEnumerator.Dispose();
+        }
+        public IAsyncEnumerator<Object> GetEnumerator()
+        {
+            return this;
+        }
+        public Task<bool> MoveNext(CancellationToken cancellationToken)
+        {
+            return _asyncEnumerator.MoveNextAsync(cancellationToken);
+        }
+
+        public Object Current => _asyncEnumerator.Current;
     }
 }

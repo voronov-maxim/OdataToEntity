@@ -18,21 +18,21 @@ namespace OdataToEntity.Ef6
         {
         }
 
-        protected override OeAsyncEnumerator ExecuteNonQuery(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters)
+        protected override IAsyncEnumerable<Object> ExecuteNonQuery(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters)
         {
             ((DbContext)dataContext).Database.ExecuteSqlCommand(sql, GetParameterValues(parameters));
-            return OeAsyncEnumerator.Empty;
+            return Infrastructure.AsyncEnumeratorHelper.Empty;
         }
-        protected override OeAsyncEnumerator ExecuteReader(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, OeEntitySetAdapter entitySetAdapter)
+        protected override IAsyncEnumerable<Object> ExecuteReader(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, OeEntitySetAdapter entitySetAdapter)
         {
             DbRawSqlQuery query = ((DbContext)dataContext).Database.SqlQuery(entitySetAdapter.EntityType, sql, GetParameterValues(parameters));
-            return OeAsyncEnumerator.Create(query, CancellationToken.None);
+            return Infrastructure.AsyncEnumeratorHelper.ToAsyncEnumerable(query);
         }
-        protected override OeAsyncEnumerator ExecutePrimitive(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
+        protected override IAsyncEnumerable<Object> ExecutePrimitive(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
         {
             returnType = Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(returnType) ?? returnType;
             DbRawSqlQuery query = ((DbContext)dataContext).Database.SqlQuery(returnType, sql, GetParameterValues(parameters));
-            return OeAsyncEnumerator.Create(query, CancellationToken.None);
+            return Infrastructure.AsyncEnumeratorHelper.ToAsyncEnumerable(query);
         }
         private static String GetDbParameterName(DbContext dbContext, int parameterOrder)
         {

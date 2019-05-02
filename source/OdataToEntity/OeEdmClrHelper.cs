@@ -333,12 +333,12 @@ namespace OdataToEntity
 
             return odataValue;
         }
-        public static bool IsNavigationNextLink(this SelectExpandClause selectExpandClause)
+        public static bool IsNextLink(this SelectExpandClause selectExpandClause)
         {
             if (selectExpandClause != null)
                 foreach (SelectItem selectItem in selectExpandClause.SelectedItems)
                     if (selectItem is Parsers.Translators.OeNextLinkSelectItem nextLinkSelectItem)
-                        return nextLinkSelectItem.NavigationNextLink;
+                        return nextLinkSelectItem.NextLink;
 
             return false;
         }

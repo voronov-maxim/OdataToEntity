@@ -1,6 +1,7 @@
 ﻿using Microsoft.OData.Edm;
 using OdataToEntity.Parsers;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -16,7 +17,7 @@ namespace OdataToEntity.Db
 
         public abstract void CloseDataContext(Object dataContext);
         public abstract Object CreateDataContext();
-        public abstract OeAsyncEnumerator ExecuteEnumerator(Object dataContext, OeQueryContext queryContext, CancellationToken cancellationToken);
+        public abstract IAsyncEnumerable<Object> Execute(Object dataContext, OeQueryContext queryContext);
         public abstract TResult ExecuteScalar<TResult>(Object dataContext, OeQueryContext queryContext);
         public abstract Task<int> SaveChangesAsync(Object dataContext, CancellationToken cancellationToken);
         protected internal virtual void SetEdmModel(IEdmModel edmModel) { }

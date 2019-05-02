@@ -10,13 +10,11 @@ namespace OdataToEntity.GraphQL
     public sealed class OeGraphqlAsyncEnumerator : IAsyncEnumerator<Dictionary<String, Object>>
     {
         private readonly Db.OeDbEnumerator _dbEnumerator;
-        private readonly IDisposable _dispose;
         private bool _isFirstMoveNext;
         private bool _isMoveNext;
 
-        public OeGraphqlAsyncEnumerator(Db.OeAsyncEnumerator asyncEnumerator, OeEntryFactory entryFactory)
+        public OeGraphqlAsyncEnumerator(IAsyncEnumerator<Object> asyncEnumerator, OeEntryFactory entryFactory)
         {
-            _dispose = asyncEnumerator;
             _dbEnumerator = new Db.OeDbEnumerator(asyncEnumerator, entryFactory);
             _isFirstMoveNext = true;
         }
@@ -60,7 +58,7 @@ namespace OdataToEntity.GraphQL
                     if (item != null)
                         entityList.Add(await CreateEntity(dbEnumerator, item, item).ConfigureAwait(false));
                 }
-                while (await dbEnumerator.MoveNextAsync().ConfigureAwait(false));
+                while (await dbEnumerator.MoveNext().ConfigureAwait(false));
                 return entityList;
             }
 
@@ -68,14 +66,14 @@ namespace OdataToEntity.GraphQL
         }
         public void Dispose()
         {
-            _dispose.Dispose();
+            _dbEnumerator.Dispose();
         }
         public async Task<bool> MoveNext(CancellationToken cancellationToken)
         {
             if (_isFirstMoveNext)
             {
                 _isFirstMoveNext = false;
-                _isMoveNext = await _dbEnumerator.MoveNextAsync().ConfigureAwait(false);
+                _isMoveNext = await _dbEnumerator.MoveNext().ConfigureAwait(false);
             }
             if (!_isMoveNext)
                 return false;
@@ -83,7 +81,7 @@ namespace OdataToEntity.GraphQL
             Dictionary<String, Object> entity = await CreateEntity(_dbEnumerator, _dbEnumerator.Current, _dbEnumerator.Current).ConfigureAwait(false);
             _dbEnumerator.ClearBuffer();
 
-            _isMoveNext = await _dbEnumerator.MoveNextAsync().ConfigureAwait(false);
+            _isMoveNext = await _dbEnumerator.MoveNext().ConfigureAwait(false);
             Current = entity;
             return true;
         }

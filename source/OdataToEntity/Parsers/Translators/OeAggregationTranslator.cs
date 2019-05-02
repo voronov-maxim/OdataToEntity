@@ -130,7 +130,7 @@ namespace OdataToEntity.Parsers.Translators
                 if (aggExpressionBase is AggregateExpression aggExpression)
                 {
                     LambdaExpression aggLambda = null;
-                    if (aggExpression.Expression.Kind != QueryNodeKind.Count)
+                    if (aggExpression.Method != AggregationMethod.VirtualPropertyCount)
                     {
                         Expression expression = visitor.TranslateNode(aggExpression.Expression);
                         if (isGroupBy && expression is MemberExpression propertyExpression)

@@ -249,5 +249,6 @@ namespace OdataToEntity.Parsers
         public Func<IEdmEntitySet, IQueryable> QueryableSource { get; set; }
         public int? RestCount => _restCount;
         public OeSkipTokenNameValue[] SkipTokenNameValues { get; private set; }
+        public int? TotalCountOfItems { get; set; }
     }
 }

@@ -298,7 +298,7 @@ namespace OdataToEntity.EfCore
             if (_dbContextPool != null)
                 _dbContextPool.Dispose();
         }
-        public override Db.OeAsyncEnumerator ExecuteEnumerator(Object dataContext, OeQueryContext queryContext, CancellationToken cancellationToken)
+        public override IAsyncEnumerable<Object> Execute(Object dataContext, OeQueryContext queryContext)
         {
             IAsyncEnumerable<Object> asyncEnumerable;
             MethodCallExpression countExpression = null;
@@ -315,14 +315,13 @@ namespace OdataToEntity.EfCore
                     countExpression = queryContext.CreateCountExpression(query.Expression);
             }
 
-            Db.OeAsyncEnumerator asyncEnumerator = new OeEfCoreAsyncEnumerator(asyncEnumerable.GetEnumerator(), cancellationToken);
             if (countExpression != null)
             {
                 IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dataContext);
-                asyncEnumerator.Count = query.Provider.Execute<int>(countExpression);
+                queryContext.TotalCountOfItems = query.Provider.Execute<int>(countExpression);
             }
 
-            return asyncEnumerator;
+            return asyncEnumerable;
         }
         public override TResult ExecuteScalar<TResult>(Object dataContext, OeQueryContext queryContext)
         {

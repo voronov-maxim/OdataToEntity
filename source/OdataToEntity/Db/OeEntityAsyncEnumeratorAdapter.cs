@@ -10,34 +10,30 @@ using System.Threading.Tasks;
 
 namespace OdataToEntity.Db
 {
-    public sealed class OeEntityAsyncEnumeratorAdapter<T> : OeAsyncEnumerator, IAsyncEnumerator<T>, IAsyncEnumerable<T>
+    public sealed class OeEntityAsyncEnumeratorAdapter<T> : IAsyncEnumerator<T>, IAsyncEnumerable<T>
     {
-        private readonly IDisposable _asyncEnumerator;
         private T _current;
         private readonly OeDbEnumerator _dbEnumerator;
         private bool _isFirstMoveNext;
         private bool _isMoveNext;
         private readonly OeQueryContext _queryContext;
 
-        public OeEntityAsyncEnumeratorAdapter(OeAsyncEnumerator asyncEnumerator, OeQueryContext queryContext)
+        public OeEntityAsyncEnumeratorAdapter(IAsyncEnumerator<Object> asyncEnumerator, OeQueryContext queryContext)
             : this(asyncEnumerator, queryContext.EntryFactory, queryContext)
         {
         }
-        public OeEntityAsyncEnumeratorAdapter(OeAsyncEnumerator asyncEnumerator, OeEntryFactory entryFactory)
+        public OeEntityAsyncEnumeratorAdapter(IAsyncEnumerator<Object> asyncEnumerator, OeEntryFactory entryFactory)
             : this(asyncEnumerator, entryFactory, null)
         {
         }
-        private OeEntityAsyncEnumeratorAdapter(OeAsyncEnumerator asyncEnumerator, OeEntryFactory entryFactory, OeQueryContext queryContext)
-            : base(asyncEnumerator.CancellationToken)
+        private OeEntityAsyncEnumeratorAdapter(IAsyncEnumerator<Object> asyncEnumerator, OeEntryFactory entryFactory, OeQueryContext queryContext)
         {
-            _asyncEnumerator = asyncEnumerator;
             _dbEnumerator = new OeDbEnumerator(asyncEnumerator, entryFactory);
             _queryContext = queryContext;
             _isFirstMoveNext = true;
-            base.Count = asyncEnumerator.Count;
         }
 
-        private static async Task<Object> CreateEntity(IOeDbEnumerator dbEnumerator, Object value, Object entity, Type entityType)
+        private static async Task<Object> CreateEntity(IOeDbEnumerator dbEnumerator, Object value, Object entity, Type entityType, CancellationToken cancellationToken)
         {
             if (OeExpressionHelper.IsTupleType(entity.GetType()))
             {
@@ -46,7 +42,7 @@ namespace OdataToEntity.Db
             }
 
             foreach (OeEntryFactory navigationLink in dbEnumerator.EntryFactory.NavigationLinks)
-                await SetNavigationProperty(dbEnumerator.CreateChild(navigationLink), value, entity).ConfigureAwait(false);
+                await SetNavigationProperty(dbEnumerator.CreateChild(navigationLink), value, entity, cancellationToken).ConfigureAwait(false);
 
             return entity;
         }
@@ -61,7 +57,7 @@ namespace OdataToEntity.Db
             }
             return entity;
         }
-        private static async Task<Object> CreateNestedEntity(IOeDbEnumerator dbEnumerator, Object value, Type nestedEntityType)
+        private static async Task<Object> CreateNestedEntity(IOeDbEnumerator dbEnumerator, Object value, Type nestedEntityType, CancellationToken cancellationToken)
         {
             Object entity = dbEnumerator.Current;
             if (entity == null)
@@ -76,17 +72,17 @@ namespace OdataToEntity.Db
                 {
                     Object item = dbEnumerator.Current;
                     if (item != null)
-                        list.Add(await CreateEntity(dbEnumerator, item, item, nestedEntityType).ConfigureAwait(false));
+                        list.Add(await CreateEntity(dbEnumerator, item, item, nestedEntityType, cancellationToken).ConfigureAwait(false));
                 }
-                while (await dbEnumerator.MoveNextAsync().ConfigureAwait(false));
+                while (await dbEnumerator.MoveNext(cancellationToken).ConfigureAwait(false));
                 return list;
             }
 
-            return await CreateEntity(dbEnumerator, value, entity, nestedEntityType).ConfigureAwait(false);
+            return await CreateEntity(dbEnumerator, value, entity, nestedEntityType, cancellationToken).ConfigureAwait(false);
         }
-        public override void Dispose()
+        public void Dispose()
         {
-            _asyncEnumerator.Dispose();
+            _dbEnumerator.Dispose();
         }
         IAsyncEnumerator<T> IAsyncEnumerable<T>.GetEnumerator()
         {
@@ -97,33 +93,33 @@ namespace OdataToEntity.Db
         }
         Task<bool> IAsyncEnumerator<T>.MoveNext(CancellationToken cancellationToken)
         {
-            return MoveNextAsync();
+            return MoveNext(cancellationToken);
         }
-        public override async Task<bool> MoveNextAsync()
+        public async Task<bool> MoveNext(CancellationToken cancellationToken)
         {
             if (_isFirstMoveNext)
             {
                 _isFirstMoveNext = false;
-                _isMoveNext = await _dbEnumerator.MoveNextAsync().ConfigureAwait(false);
+                _isMoveNext = await _dbEnumerator.MoveNext(cancellationToken).ConfigureAwait(false);
             }
             if (!_isMoveNext)
                 return false;
 
-            var entity = (T)await CreateEntity(_dbEnumerator, _dbEnumerator.Current, _dbEnumerator.Current, typeof(T)).ConfigureAwait(false);
+            var entity = (T)await CreateEntity(_dbEnumerator, _dbEnumerator.Current, _dbEnumerator.Current, typeof(T), cancellationToken).ConfigureAwait(false);
             Object rawValue = _dbEnumerator.RawValue;
 
-            _isMoveNext = await _dbEnumerator.MoveNextAsync().ConfigureAwait(false);
+            _isMoveNext = await _dbEnumerator.MoveNext(cancellationToken).ConfigureAwait(false);
             if (!_isMoveNext && _queryContext != null && _queryContext.EntryFactory.SkipTokenAccessors.Length > 0)
                 SetOrderByProperties(_queryContext, entity, rawValue);
 
             _current = entity;
             return true;
         }
-        private static async Task SetNavigationProperty(IOeDbEnumerator dbEnumerator, Object value, Object entity)
+        private static async Task SetNavigationProperty(IOeDbEnumerator dbEnumerator, Object value, Object entity, CancellationToken cancellationToken)
         {
             PropertyInfo propertyInfo = entity.GetType().GetProperty(dbEnumerator.EntryFactory.EdmNavigationProperty.Name);
             Type nestedEntityType = OeExpressionHelper.GetCollectionItemTypeOrNull(propertyInfo.PropertyType) ?? propertyInfo.PropertyType;
-            Object navigationValue = await CreateNestedEntity(dbEnumerator, value, nestedEntityType).ConfigureAwait(false);
+            Object navigationValue = await CreateNestedEntity(dbEnumerator, value, nestedEntityType, cancellationToken).ConfigureAwait(false);
             propertyInfo.SetValue(entity, navigationValue);
         }
         private static void SetOrderByProperties(OeQueryContext queryContext, Object entity, Object value)
@@ -166,7 +162,7 @@ namespace OdataToEntity.Db
             clrProperty.SetValue(entity, orderValue);
         }
 
-        public override Object Current => _current;
+        public Object Current => _current;
         T IAsyncEnumerator<T>.Current => _current;
     }
 }

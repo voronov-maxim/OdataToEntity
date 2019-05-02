@@ -36,17 +36,17 @@ namespace OdataToEntity.Parsers
                 MetadataLevel = metadataLevel
             };
         }
-        public async Task ExecuteAsync(ODataUri odataUri, Stream requestStream, OeRequestHeaders headers, Stream responseStream)
+        public async Task ExecuteAsync(ODataUri odataUri, Stream requestStream, OeRequestHeaders headers, Stream responseStream, CancellationToken cancellationToken)
         {
             Object dataContext = null;
             try
             {
                 dataContext = _dataAdapter.CreateDataContext();
-                using (Db.OeAsyncEnumerator asyncEnumerator = GetAsyncEnumerator(odataUri, requestStream, headers, dataContext, out bool isScalar))
+                using (IAsyncEnumerator<Object> asyncEnumerator = GetAsyncEnumerable(odataUri, requestStream, headers, dataContext, out bool isScalar).GetEnumerator())
                 {
                     if (isScalar)
                     {
-                        if (await asyncEnumerator.MoveNextAsync().ConfigureAwait(false) && asyncEnumerator.Current != null)
+                        if (await asyncEnumerator.MoveNext(cancellationToken).ConfigureAwait(false) && asyncEnumerator.Current != null)
                         {
                             headers.ResponseContentType = OeRequestHeaders.TextDefault.ContentType;
                             byte[] buffer = System.Text.Encoding.UTF8.GetBytes(asyncEnumerator.Current.ToString());
@@ -59,9 +59,9 @@ namespace OdataToEntity.Parsers
                     {
                         OeQueryContext queryContext = CreateQueryContext(odataUri, headers.MetadataLevel);
                         if (queryContext == null)
-                            await WriteCollectionAsync(_edmModel, odataUri, asyncEnumerator, responseStream).ConfigureAwait(false);
+                            await WriteCollectionAsync(_edmModel, odataUri, asyncEnumerator, responseStream, cancellationToken).ConfigureAwait(false);
                         else
-                            await Writers.OeGetWriter.SerializeAsync(queryContext, asyncEnumerator, headers.ContentType, responseStream).ConfigureAwait(false);
+                            await Writers.OeGetWriter.SerializeAsync(queryContext, asyncEnumerator, headers.ContentType, responseStream, cancellationToken).ConfigureAwait(false);
                     }
                 }
             }
@@ -71,7 +71,7 @@ namespace OdataToEntity.Parsers
                     _dataAdapter.CloseDataContext(dataContext);
             }
         }
-        public Db.OeAsyncEnumerator GetAsyncEnumerator(ODataUri odataUri, Stream requestStream, OeRequestHeaders headers, Object dataContext, out bool isScalar)
+        public IAsyncEnumerable<Object> GetAsyncEnumerable(ODataUri odataUri, Stream requestStream, OeRequestHeaders headers, Object dataContext, out bool isScalar)
         {
             isScalar = true;
             var importSegment = (OperationImportSegment)odataUri.Path.LastSegment;
@@ -104,7 +104,8 @@ namespace OdataToEntity.Parsers
             else
                 return _dataAdapter.OperationAdapter.ExecuteProcedureReader(dataContext, operationImport.Name, parameters, entitySetAdapter);
         }
-        public static async Task WriteCollectionAsync(IEdmModel edmModel, ODataUri odataUri, Db.OeAsyncEnumerator asyncEnumerator, Stream responseStream)
+        public static async Task WriteCollectionAsync(IEdmModel edmModel, ODataUri odataUri,
+            IAsyncEnumerator<Object> asyncEnumerator, Stream responseStream, CancellationToken cancellationToken)
         {
             var importSegment = (OperationImportSegment)odataUri.Path.LastSegment;
             IEdmOperationImport operationImport = importSegment.OperationImports.Single();
@@ -118,7 +119,7 @@ namespace OdataToEntity.Parsers
                 ODataCollectionWriter writer = messageWriter.CreateODataCollectionWriter(typeRef);
                 writer.WriteStart(new ODataCollectionStart());
 
-                while (await asyncEnumerator.MoveNextAsync().ConfigureAwait(false))
+                while (await asyncEnumerator.MoveNext(cancellationToken).ConfigureAwait(false))
                 {
                     Object value = asyncEnumerator.Current;
                     if (value != null && value.GetType().IsEnum)

@@ -177,7 +177,7 @@ namespace OdataToEntity.Ef6
             var getDbSet = (Func<T, IDbSet<TEntity>>)Delegate.CreateDelegate(typeof(Func<T, IDbSet<TEntity>>), property.GetGetMethod());
             return new DbSetAdapterImpl<TEntity>(getDbSet, property.Name);
         }
-        public override Db.OeAsyncEnumerator ExecuteEnumerator(Object dataContext, OeQueryContext queryContext, CancellationToken cancellationToken)
+        public override IAsyncEnumerable<Object> Execute(Object dataContext, OeQueryContext queryContext)
         {
             Expression expression;
             MethodCallExpression countExpression = null;
@@ -195,11 +195,11 @@ namespace OdataToEntity.Ef6
             }
 
             IDbAsyncEnumerable asyncEnumerable = (IDbAsyncEnumerable)query.Provider.CreateQuery(expression);
-            Db.OeAsyncEnumerator asyncEnumerator = new OeEf6AsyncEnumerator(asyncEnumerable.GetAsyncEnumerator(), cancellationToken);
+            IAsyncEnumerable<Object> asyncEnumerator = new OeEf6AsyncEnumerator(asyncEnumerable);
             if (countExpression != null)
             {
                 query = queryContext.EntitySetAdapter.GetEntitySet(dataContext);
-                asyncEnumerator.Count = query.Provider.Execute<int>(countExpression);
+                queryContext.TotalCountOfItems = query.Provider.Execute<int>(countExpression);
             }
 
             return asyncEnumerator;

@@ -81,7 +81,7 @@ namespace OdataToEntity.Test
             Type itemType = Parsers.OeExpressionHelper.GetCollectionItemType(value.GetType());
             if (itemType.Name.StartsWith("<>"))
             {
-                Type entityType = Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(matched.Property.PropertyType);
+                Type entityType = Parsers.OeExpressionHelper.GetCollectionItemType(matched.Property.PropertyType);
                 value = AnonumousToEntity(entityType, (IEnumerable)value);
             }
             return matched.Filter((IEnumerable)value);

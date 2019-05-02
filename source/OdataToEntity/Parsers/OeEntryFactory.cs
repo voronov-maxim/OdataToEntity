@@ -39,7 +39,7 @@ namespace OdataToEntity.Parsers
             NavigationLinks = Array.Empty<OeEntryFactory>();
             _typeName = EdmEntityType.FullName();
 
-            IsTuple = OeExpressionHelper.IsTupleType(accessors[0].PropertyExpression.Expression.Type);
+            IsTuple = accessors.Length == 0 ? false : OeExpressionHelper.IsTupleType(accessors[0].PropertyExpression.Expression.Type);
         }
         public OeEntryFactory(ref OeEntryFactoryOptions options)
             : this(options.EntitySet, options.Accessors, options.SkipTokenAccessors)
@@ -48,9 +48,13 @@ namespace OdataToEntity.Parsers
             LinkAccessor = options.LinkAccessor == null ? null : (Func<Object, Object>)options.LinkAccessor.Compile();
             NavigationLinks = options.NavigationLinks ?? Array.Empty<OeEntryFactory>();
             NavigationSelectItem = options.NavigationSelectItem;
+            NextLink = options.NextLink;
 
-            EqualityComparer = new Infrastructure.OeEntryEqualityComparer(GetKeyExpressions(options.EntitySet, options.Accessors));
-            IsTuple |= GetIsTuple(options.LinkAccessor);
+            if (!options.NextLink)
+            {
+                EqualityComparer = new Infrastructure.OeEntryEqualityComparer(GetKeyExpressions(options.EntitySet, options.Accessors));
+                IsTuple |= GetIsTuple(options.LinkAccessor);
+            }
         }
 
         public ODataResource CreateEntry(Object entity)
@@ -238,6 +242,7 @@ namespace OdataToEntity.Parsers
         public Func<Object, Object> LinkAccessor { get; }
         public IReadOnlyList<OeEntryFactory> NavigationLinks { get; }
         public ExpandedNavigationSelectItem NavigationSelectItem { get; }
+        public bool NextLink { get; }
         public OePropertyAccessor[] SkipTokenAccessors { get; }
     }
 
@@ -249,6 +254,7 @@ namespace OdataToEntity.Parsers
         public LambdaExpression LinkAccessor { get; set; }
         public IReadOnlyList<OeEntryFactory> NavigationLinks { get; set; }
         public ExpandedNavigationSelectItem NavigationSelectItem { get; set; }
+        public bool NextLink { get; set; }
         public OePropertyAccessor[] SkipTokenAccessors { get; set; }
     }
 }

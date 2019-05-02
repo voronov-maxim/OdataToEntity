@@ -5,9 +5,11 @@ namespace OdataToEntity.Parsers.Translators
 {
     public sealed class OeNextLinkSelectItem : SelectItem
     {
-        public OeNextLinkSelectItem(bool navigationNextLink)
+        public static readonly OeNextLinkSelectItem Instance = new OeNextLinkSelectItem(true);
+
+        private OeNextLinkSelectItem(bool nextLink)
         {
-            NavigationNextLink = navigationNextLink;
+            NextLink = nextLink;
         }
 
         public override void HandleWith(SelectItemHandler handler)
@@ -19,6 +21,6 @@ namespace OdataToEntity.Parsers.Translators
             throw new NotImplementedException();
         }
 
-        public bool NavigationNextLink { get; }
+        public bool NextLink { get; }
     }
 }

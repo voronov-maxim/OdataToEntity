@@ -8,13 +8,13 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Threading;
+using System.Threading.Tasks;
 
 namespace OdataToEntity.Parsers
 {
     public static class OeOperationHelper
     {
-        public static Db.OeAsyncEnumerator ApplyBoundFunction(OeQueryContext queryContext)
+        public static IAsyncEnumerable<Object> ApplyBoundFunction(OeQueryContext queryContext)
         {
             if (queryContext.ODataUri.Path.LastSegment is OperationSegment operationSegment)
             {
@@ -34,9 +34,9 @@ namespace OdataToEntity.Parsers
                 Object result = methodInfo.Invoke(null, parameters);
                 queryContext.EntryFactory = boundFunctionParameter.CreateEntryFactoryFromTuple();
                 if (result is IEnumerable enumerable)
-                    return Db.OeAsyncEnumerator.Create(enumerable, CancellationToken.None);
+                    return Infrastructure.AsyncEnumeratorHelper.ToAsyncEnumerable(enumerable);
 
-                return Db.OeAsyncEnumerator.Create(result, CancellationToken.None);
+                return Infrastructure.AsyncEnumeratorHelper.ToAsyncEnumerable(Task.FromResult(result));
             }
 
             throw new InvalidOperationException("Path last segment not OperationSegment");
