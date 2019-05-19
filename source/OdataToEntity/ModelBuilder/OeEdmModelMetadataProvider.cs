@@ -49,6 +49,16 @@ namespace OdataToEntity.ModelBuilder
             var column = (ColumnAttribute)propertyInfo.GetCustomAttribute(typeof(ColumnAttribute));
             return column == null ? -1 : column.Order;
         }
+        public virtual PropertyInfo[] GetPrincipalToDependentWithoutDependent(PropertyInfo propertyInfo)
+        {
+            Type itemType = OeExpressionHelper.GetCollectionItemTypeOrNull(propertyInfo.PropertyType);
+            if (itemType != null && GetInverseProperty(propertyInfo) == null)
+            { 
+                String dependentPropertyName = propertyInfo.DeclaringType.Name + "id";
+                return new PropertyInfo[] { itemType.GetPropertyIgnoreCase(dependentPropertyName) };
+            }
+            return null;
+        }
         public virtual PropertyInfo[] GetProperties(Type type)
         {
             return type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);

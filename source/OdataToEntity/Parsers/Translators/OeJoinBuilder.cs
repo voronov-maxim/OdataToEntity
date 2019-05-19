@@ -152,7 +152,12 @@ namespace OdataToEntity.Parsers.Translators
             if (navigationProperty.IsPrincipal())
                 keyProperties = navigationProperty.Partner.DependentProperties();
             else
-                keyProperties = navigationProperty.PrincipalProperties();
+            {
+                if (navigationProperty.Type.IsCollection())
+                    keyProperties = navigationProperty.DependentProperties();
+                else
+                    keyProperties = navigationProperty.PrincipalProperties();
+            }
 
             ParameterExpression parameter = Expression.Parameter(innerType, innerType.Name);
             Expression keySelector = GetGroupJoinKeySelector(parameter, keyProperties);
@@ -178,7 +183,12 @@ namespace OdataToEntity.Parsers.Translators
             if (navigationProperty.IsPrincipal())
                 keyProperties = navigationProperty.Partner.PrincipalProperties();
             else
-                keyProperties = navigationProperty.DependentProperties();
+            {
+                if (navigationProperty.Type.IsCollection())
+                    keyProperties = navigationProperty.PrincipalProperties();
+                else
+                    keyProperties = navigationProperty.DependentProperties();
+            }
 
             ParameterExpression outerParameter = Expression.Parameter(outerType, outerType.Name);
             Expression instance = GetJoinPropertyExpression(outerParameter, joinPath);

@@ -258,7 +258,19 @@ namespace OdataToEntity
             {
                 if (String.Compare(declaringType.Name, schemaElement.Name, StringComparison.OrdinalIgnoreCase) == 0 &&
                     String.Compare(declaringType.Namespace, schemaElement.Namespace, StringComparison.OrdinalIgnoreCase) == 0)
-                    return declaringType.GetPropertyIgnoreCase(edmProperty.Name);
+                {
+                    PropertyInfo propertyInfo = declaringType.GetPropertyIgnoreCase(edmProperty.Name);
+                    if (propertyInfo == null)
+                    {
+                        if (edmProperty is OeEdmStructuralShadowProperty structuralShadowProperty)
+                            return Parsers.OeExpressionHelper.IsTupleType(declaringType) ? null : structuralShadowProperty.PropertyInfo;
+
+                        if (edmProperty is OeEdmNavigationShadowProperty navigationShadowProperty)
+                            return Parsers.OeExpressionHelper.IsTupleType(declaringType) ? null : navigationShadowProperty.PropertyInfo;
+                    }
+
+                    return propertyInfo;
+                }
 
                 declaringType = declaringType.BaseType;
             }

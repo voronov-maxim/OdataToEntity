@@ -63,10 +63,10 @@ namespace OdataToEntity.Parsers
             var propertyAccessors = new List<OePropertyAccessor>();
             foreach (IEdmStructuralProperty edmProperty in entitySet.EntityType().StructuralProperties())
             {
-                PropertyInfo propertyInfo = clrType.GetProperty(edmProperty.Name);
+                PropertyInfo propertyInfo = clrType.GetPropertyIgnoreCaseOrNull(edmProperty);
                 if (propertyInfo == null)
                 {
-                    if (!(edmProperty is OeEdmStructuralProperty))
+                    if (!(edmProperty is OeEdmStructuralShadowProperty))
                         throw new InvalidOperationException("Property " + edmProperty.Name + " not found in clr type " + clrType.Name);
                 }
                 else

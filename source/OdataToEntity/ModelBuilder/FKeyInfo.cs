@@ -1,4 +1,5 @@
 ﻿using Microsoft.OData.Edm;
+using OdataToEntity.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -34,6 +35,117 @@ namespace OdataToEntity.ModelBuilder
             }
         }
 
+        private IEdmNavigationProperty AddBidirectionalNavigation(EdmNavigationPropertyInfo edmDependentInfo, EdmNavigationPropertyInfo edmPrincipalInfo)
+        {
+            IEdmNavigationProperty dependentNavigationProperty;
+            if (DependentNavigationProperty is OeShadowPropertyInfo || PrincipalNavigationProperty is OeShadowPropertyInfo)
+            {
+                var dependentShadowProperty = (OeEdmNavigationShadowProperty)AddDependentNavigation(edmDependentInfo, true);
+                var principalShadowProperty = (OeEdmNavigationShadowProperty)AddPrincipalNavigation(edmPrincipalInfo, true);
+
+                dependentShadowProperty.SetPartner(principalShadowProperty);
+                principalShadowProperty.SetPartner(dependentShadowProperty);
+
+                dependentNavigationProperty = dependentShadowProperty;
+            }
+            else
+            {
+                dependentNavigationProperty = Microsoft.OData.Edm.EdmNavigationProperty.CreateNavigationPropertyWithPartner(edmDependentInfo, edmPrincipalInfo);
+                DependentInfo.EdmType.AddProperty(dependentNavigationProperty);
+                PrincipalInfo.EdmType.AddProperty(dependentNavigationProperty.Partner);
+            }
+
+            return dependentNavigationProperty;
+        }
+        private IEdmNavigationProperty AddDependentNavigation(EdmNavigationPropertyInfo edmDependentInfo, bool forceShadow)
+        {
+            IEdmNavigationProperty edmNavigationProperty = Microsoft.OData.Edm.EdmNavigationProperty.CreateNavigationProperty(DependentInfo.EdmType, edmDependentInfo);
+            if (DependentNavigationProperty is OeShadowPropertyInfo || forceShadow)
+            {
+                if (DependentNavigationProperty == null)
+                {
+                    var shadowPropertyInfo = new OeShadowPropertyInfo(DependentInfo.ClrType, PrincipalInfo.ClrType, edmNavigationProperty.Name);
+                    edmNavigationProperty = new OeEdmNavigationShadowProperty(edmNavigationProperty, shadowPropertyInfo);
+                }
+                else
+                    edmNavigationProperty = new OeEdmNavigationShadowProperty(edmNavigationProperty, DependentNavigationProperty);
+            }
+
+            DependentInfo.EdmType.AddProperty(edmNavigationProperty);
+            return edmNavigationProperty;
+        }
+        private IEdmNavigationProperty AddPrincipalNavigation(EdmNavigationPropertyInfo edmPrincipalInfo, bool forceShadow)
+        {
+            IEdmNavigationProperty edmNavigationProperty = Microsoft.OData.Edm.EdmNavigationProperty.CreateNavigationProperty(PrincipalInfo.EdmType, edmPrincipalInfo);
+            if (PrincipalNavigationProperty is OeShadowPropertyInfo || forceShadow)
+            {
+                if (PrincipalNavigationProperty == null)
+                {
+                    Type propertyType = edmNavigationProperty.Type.IsCollection() ? typeof(ICollection<>).MakeGenericType(DependentInfo.ClrType) : DependentInfo.ClrType;
+                    var shadowPropertyInfo = new OeShadowPropertyInfo(PrincipalInfo.ClrType, propertyType, edmNavigationProperty.Name);
+                    edmNavigationProperty = new OeEdmNavigationShadowProperty(edmNavigationProperty, shadowPropertyInfo);
+                }
+                else
+                    edmNavigationProperty = new OeEdmNavigationShadowProperty(edmNavigationProperty, PrincipalNavigationProperty);
+            }
+
+            PrincipalInfo.EdmType.AddProperty(edmNavigationProperty);
+            return edmNavigationProperty;
+        }
+        public void BuildNavigationProperty()
+        {
+            EdmStructuralProperty[] dependentEdmProperties = CreateDependentEdmProperties(DependentInfo.EdmType, DependentStructuralProperties);
+
+            IEdmNavigationProperty edmNavigationProperty;
+            EdmNavigationPropertyInfo edmPrincipalInfo;
+            if (DependentNavigationProperty == null)
+            {
+                if (PrincipalNavigationProperty == null)
+                    throw new InvalidOperationException("If not set DependentNavigationProperty must set PrincipalNavigationProperty");
+
+                edmPrincipalInfo = new EdmNavigationPropertyInfo()
+                {
+                    ContainsTarget = false,
+                    Name = PrincipalNavigationProperty.Name,
+                    DependentProperties = dependentEdmProperties,
+                    OnDelete = EdmOnDeleteAction.None,
+                    PrincipalProperties = PrincipalInfo.EdmType.DeclaredKey,
+                    Target = DependentInfo.EdmType,
+                    TargetMultiplicity = PrincipalMultiplicity
+                };
+                edmNavigationProperty = AddPrincipalNavigation(edmPrincipalInfo, false);
+            }
+            else
+            {
+                var edmDependentInfo = new EdmNavigationPropertyInfo()
+                {
+                    ContainsTarget = false,
+                    Name = DependentNavigationProperty.Name,
+                    DependentProperties = dependentEdmProperties,
+                    OnDelete = EdmOnDeleteAction.None,
+                    PrincipalProperties = PrincipalInfo.EdmType.DeclaredKey,
+                    Target = PrincipalInfo.EdmType,
+                    TargetMultiplicity = DependentMultiplicity
+                };
+                if (PrincipalNavigationProperty == null || PrincipalNavigationProperty == DependentNavigationProperty)
+                    edmNavigationProperty = AddDependentNavigation(edmDependentInfo, false);
+                else
+                {
+                    edmPrincipalInfo = new EdmNavigationPropertyInfo()
+                    {
+                        ContainsTarget = false,
+                        Name = PrincipalNavigationProperty.Name,
+                        DependentProperties = null,
+                        OnDelete = EdmOnDeleteAction.None,
+                        PrincipalProperties = PrincipalInfo.EdmType.DeclaredKey,
+                        Target = DependentInfo.EdmType,
+                        TargetMultiplicity = PrincipalMultiplicity
+                    };
+                    edmNavigationProperty = AddBidirectionalNavigation(edmDependentInfo, edmPrincipalInfo);
+                }
+            }
+            EdmNavigationProperty = edmNavigationProperty;
+        }
         public static FKeyInfo Create(OeEdmModelMetadataProvider metadataProvider,
             Dictionary<Type, EntityTypeInfo> entityTypes, EntityTypeInfo dependentInfo, PropertyInfo dependentNavigationProperty)
         {
@@ -49,14 +161,25 @@ namespace OdataToEntity.ModelBuilder
                 if (principalNavigationProperty != null)
                     return null;
 
-                PropertyInfo dependentProperty = principalInfo.ClrType.GetPropertyIgnoreCase(dependentInfo.ClrType.Name + "id");
-                if (dependentProperty == null)
+                dependentStructuralProperties = metadataProvider.GetPrincipalToDependentWithoutDependent(dependentNavigationProperty);
+                if (dependentStructuralProperties == null)
                     throw new InvalidOperationException("not found dependent structural property " + dependentInfo.ClrType.Name + "Id for navigation property " + dependentNavigationProperty.Name);
 
-                return new FKeyInfo(principalInfo, null, new[] { dependentProperty }, dependentInfo, dependentNavigationProperty);
+                return new FKeyInfo(principalInfo, null, dependentStructuralProperties, dependentInfo, dependentNavigationProperty);
             }
 
             return new FKeyInfo(dependentInfo, dependentNavigationProperty, dependentStructuralProperties, principalInfo, principalNavigationProperty);
+        }
+        private static EdmStructuralProperty[] CreateDependentEdmProperties(EdmEntityType edmDependent, IReadOnlyList<PropertyInfo> dependentStructuralProperties)
+        {
+            if (dependentStructuralProperties.Count == 0)
+                return null;
+
+            EdmStructuralProperty[] dependentEdmProperties;
+            dependentEdmProperties = new EdmStructuralProperty[dependentStructuralProperties.Count];
+            for (int i = 0; i < dependentEdmProperties.Length; i++)
+                dependentEdmProperties[i] = (EdmStructuralProperty)edmDependent.GetPropertyIgnoreCase(dependentStructuralProperties[i].Name);
+            return dependentEdmProperties;
         }
         private static PropertyInfo[] GetDependentStructuralProperties(OeEdmModelMetadataProvider metadataProvider,
             EntityTypeInfo dependentInfo, PropertyInfo dependentProperty)
@@ -124,7 +247,7 @@ namespace OdataToEntity.ModelBuilder
         public EdmMultiplicity DependentMultiplicity => _dependentMultiplicity;
         public PropertyInfo DependentNavigationProperty => _dependentNavigationProperty;
         public PropertyInfo[] DependentStructuralProperties => _dependentStructuralProperties;
-        public IEdmNavigationProperty EdmNavigationProperty { get; set; }
+        public IEdmNavigationProperty EdmNavigationProperty { get; private set; }
         public EntityTypeInfo PrincipalInfo => _principalInfo;
         public EdmMultiplicity PrincipalMultiplicity => _principalMultiplicity;
         public PropertyInfo PrincipalNavigationProperty => _principalNavigationProperty;

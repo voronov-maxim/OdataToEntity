@@ -90,6 +90,25 @@ namespace OdataToEntity.Ef6
 
             return -1;
         }
+        public override PropertyInfo[] GetPrincipalToDependentWithoutDependent(PropertyInfo propertyInfo)
+        {
+            foreach (EntityType efEntityType in GetEntityTypes(propertyInfo))
+                foreach (NavigationProperty navigationProperty in efEntityType.NavigationProperties)
+                    if (navigationProperty.Name == propertyInfo.Name &&
+                        !navigationProperty.GetDependentProperties().Any() &&
+                        navigationProperty.ToEndMember.RelationshipMultiplicity == RelationshipMultiplicity.Many &&
+                        !navigationProperty.ToEndMember.MetadataProperties.Contains("ClrPropertyInfo"))
+                    {
+                        Type itemType = Parsers.OeExpressionHelper.GetCollectionItemType(propertyInfo.PropertyType);
+                        ReferentialConstraint refConstraint = ((AssociationType)navigationProperty.RelationshipType).Constraint;
+                        var properties = new PropertyInfo[refConstraint.ToProperties.Count];
+                        for (int i = 0; i < refConstraint.ToProperties.Count; i++)
+                            properties[i] = itemType.GetPropertyIgnoreCase(refConstraint.ToProperties[i].Name);
+                        return properties;
+                    }
+
+            return null;
+        }
         public override bool IsKey(PropertyInfo propertyInfo)
         {
             foreach (EntityType efEntityType in GetEntityTypes(propertyInfo))

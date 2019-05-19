@@ -67,8 +67,8 @@ namespace OdataToEntity.Writers
                 }
                 else
                 {
-                    parentKeys = navigationProperty.DependentProperties();
-                    childKeys = navigationProperty.PrincipalProperties();
+                    parentKeys = navigationProperty.PrincipalProperties();
+                    childKeys = navigationProperty.DependentProperties();
                 }
 
                 List<KeyValuePair<IEdmStructuralProperty, Object>> keys = GetKeys(parentKeys, childKeys);

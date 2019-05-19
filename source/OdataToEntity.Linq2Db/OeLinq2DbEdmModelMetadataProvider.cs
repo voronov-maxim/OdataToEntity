@@ -69,6 +69,23 @@ namespace OdataToEntity.Linq2Db
             SortClrPropertyByOrder(keys);
             return keys;
         }
+        public override PropertyInfo[] GetPrincipalToDependentWithoutDependent(PropertyInfo propertyInfo)
+        {
+            Type itemType;
+            var association = (AssociationAttribute)propertyInfo.GetCustomAttribute(typeof(AssociationAttribute));
+            if (association != null &&
+                (itemType = OeExpressionHelper.GetCollectionItemTypeOrNull(propertyInfo.PropertyType)) != null &&
+                GetForeignKey(propertyInfo) == null &&
+                GetInverseProperty(propertyInfo) == null)
+            {
+                String[] dependentPropertyNames = association.GetOtherKeys();
+                var dependentProperties = new PropertyInfo[dependentPropertyNames.Length];
+                for (int i = 0; i < dependentProperties.Length; i++)
+                    dependentProperties[i] = itemType.GetPropertyIgnoreCase(dependentPropertyNames[i]);
+                return dependentProperties;
+            }
+            return null;
+        }
         public override bool IsKey(PropertyInfo propertyInfo) => propertyInfo.GetCustomAttribute(typeof(PrimaryKeyAttribute)) != null;
         public override bool IsNotMapped(PropertyInfo propertyInfo)
         {

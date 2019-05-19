@@ -381,6 +381,6 @@ namespace OdataToEntity.EfCore
         }
 
         public override Type DataContextType => typeof(T);
-        public sealed override Db.OeEntitySetAdapterCollection EntitySetAdapters => _entitySetAdapters;
+        public override Db.OeEntitySetAdapterCollection EntitySetAdapters => _entitySetAdapters;
     }
 }

@@ -141,7 +141,13 @@ namespace OdataToEntity.Parsers
 
             foreach (Type iface in type.GetInterfaces())
                 if (iface.IsGenericType && iface.GetGenericTypeDefinition() == typeof(IEnumerable<>))
-                    return iface.GetGenericArguments()[0];
+                {
+                    Type itemType = iface.GetGenericArguments()[0];
+                    if (itemType.IsGenericType && itemType.GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
+                        return null;
+
+                    return itemType;
+                }
 
             return null;
         }

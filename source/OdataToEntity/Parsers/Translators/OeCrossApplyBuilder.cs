@@ -53,13 +53,34 @@ namespace OdataToEntity.Parsers.Translators
         }
         private BinaryExpression GetJoinExpression(ParameterExpression sourceParameter, ParameterExpression subqueryParameter, IEdmNavigationProperty edmNavigationProperty)
         {
-            IEnumerable<IEdmStructuralProperty> sourceProperties = edmNavigationProperty.DependentProperties();
-            if (sourceProperties == null)
+            IEnumerable<IEdmStructuralProperty> sourceProperties;
+            IEnumerable<IEdmStructuralProperty> subqueryProperties;
+            if (edmNavigationProperty.IsPrincipal())
+            {
                 sourceProperties = edmNavigationProperty.Partner.PrincipalProperties();
-
-            IEnumerable<IEdmStructuralProperty> subqueryProperties = edmNavigationProperty.PrincipalProperties();
-            if (subqueryProperties == null)
                 subqueryProperties = edmNavigationProperty.Partner.DependentProperties();
+            }
+            else
+            {
+                if (edmNavigationProperty.Type.IsCollection())
+                {
+                    sourceProperties = edmNavigationProperty.PrincipalProperties();
+                    subqueryProperties = edmNavigationProperty.DependentProperties();
+                }
+                else
+                {
+                    sourceProperties = edmNavigationProperty.DependentProperties();
+                    subqueryProperties = edmNavigationProperty.PrincipalProperties();
+                }
+            }
+
+            //sourceProperties = edmNavigationProperty.DependentProperties();
+            //if (sourceProperties == null)
+            //    sourceProperties = edmNavigationProperty.Partner.PrincipalProperties();
+
+            //subqueryProperties = edmNavigationProperty.PrincipalProperties();
+            //if (subqueryProperties == null)
+            //    subqueryProperties = edmNavigationProperty.Partner.DependentProperties();
 
             BinaryExpression joinExpression = null;
             IEnumerator<IEdmStructuralProperty> sourceEnumerator = null;

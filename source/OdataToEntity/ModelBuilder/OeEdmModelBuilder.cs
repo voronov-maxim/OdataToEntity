@@ -66,7 +66,7 @@ namespace OdataToEntity.ModelBuilder
             foreach (EntityTypeInfo typeInfo in entityTypeInfos.Values)
                 if (!typeInfo.IsRefModel)
                     foreach (FKeyInfo fkeyInfo in typeInfo.NavigationClrProperties)
-                        fkeyInfo.EdmNavigationProperty = CreateNavigationProperty(fkeyInfo);
+                        fkeyInfo.BuildNavigationProperty();
 
             var edmModel = new EdmModel(false);
             edmModel.AddElements(_enumTypes.Values);
@@ -217,69 +217,6 @@ namespace OdataToEntity.ModelBuilder
             }
 
             return edmFunction;
-        }
-        private static EdmStructuralProperty[] CreateDependentEdmProperties(EdmEntityType edmDependent, IReadOnlyList<PropertyInfo> dependentStructuralProperties)
-        {
-            if (dependentStructuralProperties.Count == 0)
-                return null;
-
-            EdmStructuralProperty[] dependentEdmProperties;
-            dependentEdmProperties = new EdmStructuralProperty[dependentStructuralProperties.Count];
-            for (int i = 0; i < dependentEdmProperties.Length; i++)
-                dependentEdmProperties[i] = (EdmStructuralProperty)edmDependent.GetPropertyIgnoreCase(dependentStructuralProperties[i].Name);
-            return dependentEdmProperties;
-        }
-        private static EdmNavigationProperty CreateNavigationProperty(FKeyInfo fkeyInfo)
-        {
-            EdmEntityType edmDependent = fkeyInfo.DependentInfo.EdmType;
-            EdmEntityType edmPrincipal = fkeyInfo.PrincipalInfo.EdmType;
-
-            EdmStructuralProperty[] dependentEdmProperties = CreateDependentEdmProperties(edmDependent, fkeyInfo.DependentStructuralProperties);
-
-            EdmNavigationPropertyInfo edmPrincipalInfo;
-            if (fkeyInfo.DependentNavigationProperty == null)
-            {
-                if (fkeyInfo.PrincipalNavigationProperty == null)
-                    throw new InvalidOperationException("If not set DependentNavigationProperty must set PrincipalNavigationProperty");
-
-                edmPrincipalInfo = new EdmNavigationPropertyInfo()
-                {
-                    ContainsTarget = false,
-                    Name = fkeyInfo.PrincipalNavigationProperty.Name,
-                    DependentProperties = edmPrincipal.DeclaredKey,
-                    OnDelete = EdmOnDeleteAction.None,
-                    PrincipalProperties = dependentEdmProperties,
-                    Target = edmDependent,
-                    TargetMultiplicity = fkeyInfo.PrincipalMultiplicity
-                };
-                return edmPrincipal.AddUnidirectionalNavigation(edmPrincipalInfo);
-            }
-
-            var edmDependentInfo = new EdmNavigationPropertyInfo()
-            {
-                ContainsTarget = false,
-                Name = fkeyInfo.DependentNavigationProperty.Name,
-                DependentProperties = dependentEdmProperties,
-                OnDelete = EdmOnDeleteAction.None,
-                PrincipalProperties = edmPrincipal.DeclaredKey,
-                Target = edmPrincipal,
-                TargetMultiplicity = fkeyInfo.DependentMultiplicity
-            };
-
-            if (fkeyInfo.PrincipalNavigationProperty == null || fkeyInfo.PrincipalNavigationProperty == fkeyInfo.DependentNavigationProperty)
-                return edmDependent.AddUnidirectionalNavigation(edmDependentInfo);
-
-            edmPrincipalInfo = new EdmNavigationPropertyInfo()
-            {
-                ContainsTarget = false,
-                Name = fkeyInfo.PrincipalNavigationProperty.Name,
-                DependentProperties = null,
-                OnDelete = EdmOnDeleteAction.None,
-                PrincipalProperties = edmPrincipal.DeclaredKey,
-                Target = edmDependent,
-                TargetMultiplicity = fkeyInfo.PrincipalMultiplicity
-            };
-            return edmDependent.AddBidirectionalNavigation(edmDependentInfo, edmPrincipalInfo);
         }
         private IEdmTypeReference GetEdmTypeReference(Type clrType, Dictionary<Type, EntityTypeInfo> entityTypeInfos)
         {

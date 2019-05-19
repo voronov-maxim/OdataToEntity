@@ -117,8 +117,8 @@ namespace OdataToEntity.ModelBuilder
                 }
             }
 
-            EdmStructuralProperty edmProperty = clrProperty is OeShadowPropertyInfo ?
-                new OeEdmStructuralProperty(EdmType, clrProperty.Name, typeRef) :
+            EdmStructuralProperty edmProperty = clrProperty is Infrastructure.OeShadowPropertyInfo ?
+                new OeEdmStructuralShadowProperty(EdmType, clrProperty.Name, typeRef, clrProperty) :
                 new EdmStructuralProperty(EdmType, clrProperty.Name, typeRef);
             EdmType.AddProperty(edmProperty);
             if (_metadataProvider.IsKey(clrProperty))
