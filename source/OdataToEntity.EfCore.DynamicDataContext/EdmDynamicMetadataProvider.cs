@@ -1,38 +1,22 @@
 ﻿using Microsoft.OData.Edm;
+using OdataToEntity.ModelBuilder;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Reflection;
 
 namespace OdataToEntity.EfCore.DynamicDataContext
 {
-    public readonly struct DynamicMetadataProvider
+    public sealed class EdmDynamicMetadataProvider : DynamicMetadataProvider
     {
-        public readonly struct DependentInfo
-        {
-            public DependentInfo(String principalEntityName, String dependentEntityName,
-                IReadOnlyList<String> principalPropertyNames, IReadOnlyList<String> dependentPropertyNames, bool isCollection)
-            {
-                PrincipalEntityName = principalEntityName;
-                DependentEntityName = dependentEntityName;
-                PrincipalPropertyNames = principalPropertyNames;
-                DependentPropertyNames = dependentPropertyNames;
-                IsCollection = isCollection;
-            }
-
-            public String DependentEntityName { get; }
-            public IReadOnlyList<String> DependentPropertyNames { get; }
-            public bool IsCollection { get; }
-            public String PrincipalEntityName { get; }
-            public IReadOnlyList<String> PrincipalPropertyNames { get; }
-        }
-
         private readonly IEdmModel _edmModel;
 
-        public DynamicMetadataProvider(IEdmModel edmModel)
+        public EdmDynamicMetadataProvider(IEdmModel edmModel)
         {
             _edmModel = edmModel;
         }
 
-        public DependentInfo GetDependentProperties(String tableName, String navigationPropertyName)
+        public override DynamicDependentPropertyInfo GetDependentProperties(String tableName, String navigationPropertyName)
         {
             IEdmEntityType edmEntityType = OeEdmClrHelper.GetEntitySet(_edmModel, tableName).EntityType();
             var navigationProperty = (IEdmNavigationProperty)edmEntityType.GetPropertyIgnoreCase(navigationPropertyName);
@@ -73,36 +57,51 @@ namespace OdataToEntity.EfCore.DynamicDataContext
             foreach (IEdmStructuralProperty structuralProperty in principalProperties)
                 principalPropertyNames.Add(structuralProperty.Name);
 
-            return new DependentInfo(principalEntityName, dependentEntityName,
+            return new DynamicDependentPropertyInfo(principalEntityName, dependentEntityName,
                 principalPropertyNames, dependentPropertyNames, isCollection);
         }
-
-        public String GetEntityName(String tableName)
+        public override String GetEntityName(String tableName)
         {
             return OeEdmClrHelper.GetEntitySet(_edmModel, tableName).EntityType().Name;
         }
-        public IEnumerable<(String, Type)> GetNavigationProperties(String tableName)
+        public override IEnumerable<(String, String)> GetManyToManyProperties(String tableName)
         {
             IEdmEntityType edmEntityType = OeEdmClrHelper.GetEntitySet(_edmModel, tableName).EntityType();
-            Type clrType = _edmModel.GetClrType(edmEntityType);
+            foreach (IEdmNavigationProperty navigationProperty in edmEntityType.NavigationProperties())
+                if (navigationProperty.ContainsTarget)
+                {
+                    ManyToManyJoinDescription joinDescription = _edmModel.GetManyToManyJoinDescription(navigationProperty);
+                    IEdmEntitySet targetEntitySet = OeEdmClrHelper.GetEntitySet(_edmModel, joinDescription.TargetNavigationProperty);
+                    yield return (navigationProperty.Name, targetEntitySet.Name);
+                }
+        }
+        public override IEnumerable<String> GetNavigationProperties(String tableName)
+        {
+            IEdmEntityType edmEntityType = OeEdmClrHelper.GetEntitySet(_edmModel, tableName).EntityType();
             foreach (IEdmNavigationProperty navigationProperty in edmEntityType.NavigationProperties())
                 if (!navigationProperty.ContainsTarget)
-                    yield return (navigationProperty.Name, clrType.GetProperty(navigationProperty.Name).PropertyType);
+                    yield return navigationProperty.Name;
         }
-        public IEnumerable<String> GetPrimaryKey(String tableName)
+        public override IEnumerable<String> GetPrimaryKey(String tableName)
         {
             IEdmEntityType edmEntityType = OeEdmClrHelper.GetEntitySet(_edmModel, tableName).EntityType();
             foreach (IEdmStructuralProperty structuralProperty in edmEntityType.Key())
                 yield return structuralProperty.Name;
         }
-        public IEnumerable<(String, Type)> GetStructuralProperties(String tableName)
+        public override IEnumerable<DynamicPropertyInfo> GetStructuralProperties(String tableName)
         {
             IEdmEntityType edmEntityType = OeEdmClrHelper.GetEntitySet(_edmModel, tableName).EntityType();
             Type clrType = _edmModel.GetClrType(edmEntityType);
             foreach (IEdmStructuralProperty structuralProperty in edmEntityType.StructuralProperties())
-                yield return (structuralProperty.Name, clrType.GetProperty(structuralProperty.Name).PropertyType);
+            {
+                PropertyInfo property = clrType.GetProperty(structuralProperty.Name);
+                DatabaseGeneratedAttribute attribute = property.GetCustomAttribute<DatabaseGeneratedAttribute>();
+                DatabaseGeneratedOption databaseGeneratedOption = attribute == null ?
+                    DatabaseGeneratedOption.None : databaseGeneratedOption = attribute.DatabaseGeneratedOption;
+                yield return new DynamicPropertyInfo(structuralProperty.Name, property.PropertyType, databaseGeneratedOption);
+            }
         }
-        public String GetTableName(String entityName)
+        public override String GetTableName(String entityName)
         {
             foreach (IEdmEntitySet entitySet in _edmModel.EntityContainer.EntitySets())
                 if (entitySet.EntityType().Name == entityName)
@@ -110,7 +109,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
 
             throw new InvalidOperationException("Table for entity name " + entityName + " not found");
         }
-        public IEnumerable<String> GetTableNames()
+        public override IEnumerable<String> GetTableNames()
         {
             foreach (IEdmEntitySet entitySet in _edmModel.EntityContainer.EntitySets())
                 yield return entitySet.Name;

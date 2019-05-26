@@ -1,18 +1,18 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.OData.Edm;
-using System;
+using OdataToEntity.EfCore;
 
 namespace OdataToEntity.Test.Model
 {
     internal static class OrderContextOptions
     {
-        public static EdmModel BuildEdmModel(Db.OeDataAdapter dataAdapter, ModelBuilder.OeEdmModelMetadataProvider metadataProvider)
+        public static EdmModel BuildDbEdmModel(bool useRelationalNulls)
         {
-            bool allowCache = TestHelper.GetQueryCache(dataAdapter).AllowCache;
-            var order2DataAdapter = new Order2DataAdapter(allowCache, true);
-            var refModel = new ModelBuilder.OeEdmModelBuilder(dataAdapter, metadataProvider).BuildEdmModel();
-            return order2DataAdapter.BuildEdmModel(refModel);
+            var orderDataAdapter = new OeEfCoreDataAdapter<OrderContext>(Create(useRelationalNulls));
+            IEdmModel orderEdmModel = orderDataAdapter.BuildEdmModel();
+            var order2DataAdapter = new OeEfCoreDataAdapter<Order2Context>(Create<Order2Context>(useRelationalNulls));
+            return order2DataAdapter.BuildEdmModel(orderEdmModel);
         }
         public static DbContextOptions Create(bool useRelationalNulls)
         {

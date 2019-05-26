@@ -16,14 +16,16 @@ namespace OdataToEntity.Test
 {
     public abstract class DbFixture
     {
-        protected DbFixture(EdmModel edmModel, ModelBoundTestKind modelBoundTestKind)
+        protected DbFixture(IEdmModel edmModel, ModelBoundTestKind modelBoundTestKind, bool useRelationalNulls)
         {
-            EdmModel = edmModel;
+            OeEdmModel = edmModel;
 
             if (modelBoundTestKind == ModelBoundTestKind.Attribute)
                 ModelBoundProvider = new Query.Builder.OeModelBoundAttributeBuilder(edmModel).BuildProvider();
             else if (modelBoundTestKind == ModelBoundTestKind.Fluent)
                 ModelBoundProvider = CreateModelBoundProvider(edmModel);
+
+            DbEdmModel = OrderContextOptions.BuildDbEdmModel(useRelationalNulls);
         }
 
         public abstract OrderContext CreateContext();
@@ -58,33 +60,16 @@ namespace OdataToEntity.Test
         public OeParser CreateParser(String request, OeModelBoundProvider modelBoundProvider)
         {
             ODataUri odataUri = ParseUri(request);
-            IEdmModel edmModel = EdmModel.GetEdmModel(odataUri.Path);
+            IEdmModel edmModel = OeEdmModel.GetEdmModel(odataUri.Path);
             return new OeParser(odataUri.ServiceRoot, edmModel, modelBoundProvider);
-        }
-        protected static void EnsureCreated(IEdmModel edmModel)
-        {
-            Db.OeDataAdapter dataAdapter = edmModel.GetDataAdapter(edmModel.EntityContainer);
-            var dbContext = (DbContext)dataAdapter.CreateDataContext();
-            dbContext.Database.EnsureCreated();
-
-            if (dataAdapter.EntitySetAdapters.Find(typeof(OrderItemsView)) != null)
-                dbContext.Database.ExecuteSqlCommand(
-                    @"create view OrderItemsView(Name, Product) as select o.Name, i.Product from Orders o inner join OrderItems i on o.Id = i.OrderId");
-
-            dataAdapter.CloseDataContext(dbContext);
-
-            foreach (IEdmModel refModel in edmModel.ReferencedModels)
-                if (refModel.EntityContainer != null && refModel is EdmModel)
-                    EnsureCreated(refModel);
         }
         public virtual async Task Execute<T, TResult>(QueryParametersScalar<T, TResult> parameters)
         {
             IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri, false, 0).ConfigureAwait(false);
 
             ODataUri odataUri = ParseUri(parameters.RequestUri);
-            IEdmModel edmModel = EdmModel.GetEdmModel(odataUri.Path);
-            Db.OeDataAdapter oeDataAdapter = edmModel.GetDataAdapter(edmModel.EntityContainer);
-            Db.OeDataAdapter dbDataAdapter = ((ITestDbDataAdapter)oeDataAdapter).DbDataAdapter;
+            IEdmModel dbEdmModel = TestHelper.GetEdmModel(DbEdmModel, odataUri.Path);
+            Db.OeDataAdapter dbDataAdapter = DbEdmModel.GetDataAdapter(dbEdmModel.EntityContainer);
 
             IList fromDb;
             using (var dataContext = (DbContext)dbDataAdapter.CreateDataContext())
@@ -98,9 +83,8 @@ namespace OdataToEntity.Test
             IList fromOe = await ExecuteOe<TResult>(parameters.RequestUri, parameters.NavigationNextLink, parameters.PageSize).ConfigureAwait(false);
 
             ODataUri odataUri = ParseUri(parameters.RequestUri);
-            IEdmModel edmModel = EdmModel.GetEdmModel(odataUri.Path);
-            Db.OeDataAdapter oeDataAdapter = edmModel.GetDataAdapter(edmModel.EntityContainer);
-            Db.OeDataAdapter dbDataAdapter = ((ITestDbDataAdapter)oeDataAdapter).DbDataAdapter;
+            IEdmModel dbEdmModel = TestHelper.GetEdmModel(DbEdmModel, odataUri.Path);
+            Db.OeDataAdapter dbDataAdapter = DbEdmModel.GetDataAdapter(dbEdmModel.EntityContainer);
 
             IList fromDb;
             IReadOnlyList<EfInclude> includes;
@@ -110,9 +94,9 @@ namespace OdataToEntity.Test
             Console.WriteLine(parameters.RequestUri);
             TestHelper.Compare(fromDb, fromOe, includes);
         }
-        internal async Task ExecuteBatchAsync(String batchName)
+        internal static async Task ExecuteBatchAsync(IEdmModel edmModel, String batchName)
         {
-            var parser = new OeParser(new Uri("http://dummy/"), EdmModel);
+            var parser = new OeParser(new Uri("http://dummy/"), edmModel);
             String fileName = Directory.EnumerateFiles(".", batchName + ".batch", SearchOption.AllDirectories).First();
             byte[] bytes = File.ReadAllBytes(fileName);
             var responseStream = new MemoryStream();
@@ -124,7 +108,7 @@ namespace OdataToEntity.Test
             OeModelBoundProvider modelBoundProvider = ModelBoundProvider;
             if (modelBoundProvider == null)
             {
-                var modelBoundProviderBuilder = new PageNextLinkModelBoundBuilder(EdmModel, IsSqlite);
+                var modelBoundProviderBuilder = new PageNextLinkModelBoundBuilder(OeEdmModel, IsSqlite);
                 modelBoundProvider = modelBoundProviderBuilder.BuildProvider(pageSize, navigationNextLink);
             }
 
@@ -137,7 +121,7 @@ namespace OdataToEntity.Test
             var fromOe = new List<Object>();
             do
             {
-                odataUri  = OeParser.ParseUri(parser.EdmModel, parser.BaseUri, uri);
+                odataUri = OeParser.ParseUri(parser.EdmModel, parser.BaseUri, uri);
                 var response = new MemoryStream();
                 await parser.ExecuteQueryAsync(odataUri, requestHeaders, response, CancellationToken.None).ConfigureAwait(false);
                 response.Position = 0;
@@ -151,12 +135,12 @@ namespace OdataToEntity.Test
                 }
                 else if (typeof(TResult) == typeof(Object) && (requestUri.Contains("$apply=") || requestUri.Contains("$compute=")))
                 {
-                    responseReader = new OpenTypeResponseReader(EdmModel.GetEdmModel(odataUri.Path));
+                    responseReader = new OpenTypeResponseReader(TestHelper.GetEdmModel(DbEdmModel, odataUri.Path));
                     result = responseReader.Read(response).Cast<Object>().ToList();
                 }
                 else
                 {
-                    responseReader = new ResponseReader(EdmModel.GetEdmModel(odataUri.Path));
+                    responseReader = new ResponseReader(TestHelper.GetEdmModel(DbEdmModel, odataUri.Path));
                     result = responseReader.Read(response).Cast<Object>().ToList();
                 }
 
@@ -179,14 +163,18 @@ namespace OdataToEntity.Test
             return fromOe;
         }
         public abstract Task Initalize();
-        public ODataUri ParseUri(String requestRelativeUri)
+        public ODataUri ParseUri(String requestUri)
         {
             var baseUri = new Uri("http://dummy/");
-            return OeParser.ParseUri(EdmModel, baseUri, new Uri(baseUri, requestRelativeUri));
+            if (requestUri.StartsWith(baseUri.OriginalString))
+                return OeParser.ParseUri(OeEdmModel, baseUri, new Uri(requestUri));
+            else
+                return OeParser.ParseUri(OeEdmModel, baseUri, new Uri(baseUri, requestUri));
         }
 
-        public EdmModel EdmModel { get; }
+        protected IEdmModel DbEdmModel { get; }
         protected internal virtual bool IsSqlite => false;
         public OeModelBoundProvider ModelBoundProvider { get; }
+        public IEdmModel OeEdmModel { get; }
     }
 }

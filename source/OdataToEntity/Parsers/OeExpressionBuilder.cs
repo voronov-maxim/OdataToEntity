@@ -77,7 +77,7 @@ namespace OdataToEntity.Parsers
                 else
                 {
                     parameter = Expression.Parameter(sourceItemType);
-                    PropertyInfo navigationClrProperty = sourceItemType.GetProperty(parseNavigationSegment.NavigationSegment.NavigationProperty.Name);
+                    PropertyInfo navigationClrProperty = sourceItemType.GetPropertyIgnoreCase(parseNavigationSegment.NavigationSegment.NavigationProperty);
                     e = Expression.MakeMemberAccess(parameter, navigationClrProperty);
 
                     MethodInfo selectMethodInfo;

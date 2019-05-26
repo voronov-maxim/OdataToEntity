@@ -214,14 +214,14 @@ namespace OdataToEntity.Test
             String entitySetName = GetEntitSetName(response);
             response.Position = 0;
             Db.OeEntitySetAdapter entitySetMetaAdatpter = TestHelper.FindEntitySetAdapterByName(EntitySetAdapters, entitySetName);
-            return ReadImpl(response, entitySetMetaAdatpter);
+            return Read(response, entitySetMetaAdatpter);
         }
         public IEnumerable<T> Read<T>(Stream response)
         {
             Db.OeEntitySetAdapter entitySetMetaAdatpter = TestHelper.FindEntitySetAdapterByClrType(EntitySetAdapters, typeof(T));
-            return ReadImpl(response, entitySetMetaAdatpter).Cast<T>();
+            return Read(response, entitySetMetaAdatpter).Cast<T>();
         }
-        protected IEnumerable ReadImpl(Stream response, Db.OeEntitySetAdapter entitySetMetaAdatpter)
+        protected IEnumerable Read(Stream response, Db.OeEntitySetAdapter entitySetMetaAdatpter)
         {
             ResourceSet = null;
             NavigationProperties.Clear();

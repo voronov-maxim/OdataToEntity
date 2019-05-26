@@ -1,5 +1,6 @@
 ﻿using OdataToEntity.Parsers;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Reflection;
@@ -43,6 +44,20 @@ namespace OdataToEntity.ModelBuilder
 
             Type clrType = OeExpressionHelper.GetCollectionItemTypeOrNull(propertyInfo.PropertyType) ?? propertyInfo.PropertyType;
             return clrType.GetPropertyIgnoreCase(inverse.Property);
+        }
+        public virtual IReadOnlyList<PropertyInfo> GetManyToManyProperties(Type clrType)
+        {
+            List<PropertyInfo> properties = null;
+            foreach (PropertyInfo propertyInfo in clrType.GetProperties())
+                if (IsNotMapped(propertyInfo) &&
+                    !OeExpressionHelper.IsPrimitiveType(propertyInfo.PropertyType) &&
+                    OeExpressionHelper.GetCollectionItemTypeOrNull(propertyInfo.PropertyType) != null)
+                {
+                    if (properties == null)
+                        properties = new List<PropertyInfo>();
+                    properties.Add(propertyInfo);
+                }
+            return properties ?? (IReadOnlyList<PropertyInfo>)Array.Empty<PropertyInfo>();
         }
         public virtual int GetOrder(PropertyInfo propertyInfo)
         {

@@ -43,7 +43,7 @@ namespace OdataToEntity.Test
             var fixture = new RDBNull_DbFixtureInitDb();
             await fixture.Initalize();
 
-            await fixture.ExecuteBatchAsync("Delete").ConfigureAwait(false);
+            await DbFixture.ExecuteBatchAsync(fixture.OeEdmModel, "Delete").ConfigureAwait(false);
             using (var orderContext = fixture.CreateContext())
             {
                 Assert.Equal(5, orderContext.Categories.Count());
@@ -63,7 +63,7 @@ namespace OdataToEntity.Test
             var fixture = new RDBNull_DbFixtureInitDb();
             await fixture.Initalize();
 
-            await fixture.ExecuteBatchAsync("Update").ConfigureAwait(false);
+            await DbFixture.ExecuteBatchAsync(fixture.OeEdmModel, "Update").ConfigureAwait(false);
             using (var orderContext = fixture.CreateContext())
             {
                 var category = orderContext.Categories.Single(t => t.Name == "sombrero jacket");

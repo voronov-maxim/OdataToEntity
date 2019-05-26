@@ -1,4 +1,5 @@
-﻿using Microsoft.OData.Edm;
+﻿using Microsoft.OData;
+using Microsoft.OData.Edm;
 using OdataToEntity.EfCore.DynamicDataContext;
 using OdataToEntity.ModelBuilder;
 using OdataToEntity.Test.Model;
@@ -11,16 +12,11 @@ namespace OdataToEntity.Test
 {
     public abstract class DbFixtureInitDb : DbFixture
     {
-        private readonly DynamicTypeDefinitionManager _typeDefinitionManager;
         private bool _initialized;
-        private readonly bool _useRelationalNulls;
 
         protected DbFixtureInitDb(bool useRelationalNulls, ModelBoundTestKind modelBoundTestKind)
-            : base(CreateEdmModel(useRelationalNulls), modelBoundTestKind)
+            : base(CreateEdmModel(useRelationalNulls), modelBoundTestKind, useRelationalNulls)
         {
-            _useRelationalNulls = useRelationalNulls;
-
-            _typeDefinitionManager = CreateTypeDefinitionManager();
         }
 
         public override OrderContext CreateContext()
@@ -29,14 +25,14 @@ namespace OdataToEntity.Test
         }
         internal static EdmModel CreateEdmModel(bool useRelationalNulls)
         {
-            var dataAdapter = new DynamicDataAdapter(CreateTypeDefinitionManager());
+            var dataAdapter = new DynamicDataAdapter(CreateTypeDefinitionManager(useRelationalNulls));
             return dataAdapter.BuildEdmModel();
         }
-        private static DynamicTypeDefinitionManager CreateTypeDefinitionManager()
+        private static DynamicTypeDefinitionManager CreateTypeDefinitionManager(bool useRelationalNulls)
         {
             IEdmModel edmModel = new OeEdmModelBuilder(new OrderDataAdapter(), new OeEdmModelMetadataProvider()).BuildEdmModel();
-            var metadataProvider = new DynamicMetadataProvider(edmModel);
-            return DynamicTypeDefinitionManager.Create(OrderContextOptions.Create(true), metadataProvider);
+            var metadataProvider = new EdmDynamicMetadataProvider(edmModel);
+            return DynamicTypeDefinitionManager.Create(DynamicDbContext.CreateOptions(useRelationalNulls), metadataProvider);
         }
         public override async Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
         {
@@ -56,21 +52,20 @@ namespace OdataToEntity.Test
                 return;
 
             _initialized = true;
-            //var parser = new OeParser(new Uri("http://dummy/"), base.EdmModel);
-            //await parser.ExecuteOperationAsync(base.ParseUri("ResetDb"), OeRequestHeaders.JsonDefault, null, new MemoryStream(), CancellationToken.None);
-            //await base.ExecuteBatchAsync("Add");
+            var parser = new OeParser(new Uri("http://dummy/"), base.DbEdmModel);
+            ODataUri odataUri = OeParser.ParseUri(base.DbEdmModel, new Uri("ResetDb", UriKind.Relative));
+            await parser.ExecuteOperationAsync(odataUri, OeRequestHeaders.JsonDefault, null, new MemoryStream(), CancellationToken.None);
+            await ExecuteBatchAsync(base.OeEdmModel, "Add");
         }
     }
 
     public abstract class ManyColumnsFixtureInitDb : DbFixture
     {
         private bool _initialized;
-        private readonly bool _useRelationalNulls;
 
         protected ManyColumnsFixtureInitDb(bool useRelationalNulls, ModelBoundTestKind modelBoundTestKind)
-            : base(DbFixtureInitDb.CreateEdmModel(useRelationalNulls), modelBoundTestKind)
+            : base(DbFixtureInitDb.CreateEdmModel(useRelationalNulls), modelBoundTestKind, useRelationalNulls)
         {
-            _useRelationalNulls = useRelationalNulls;
         }
 
         public override OrderContext CreateContext()
@@ -95,9 +90,10 @@ namespace OdataToEntity.Test
                 return;
 
             _initialized = true;
-            var parser = new OeParser(new Uri("http://dummy/"), base.EdmModel);
-            await parser.ExecuteOperationAsync(base.ParseUri("ResetManyColumns"), OeRequestHeaders.JsonDefault, null, new MemoryStream(), CancellationToken.None);
-            await base.ExecuteBatchAsync("ManyColumns");
+            var parser = new OeParser(new Uri("http://dummy/"), base.DbEdmModel);
+            ODataUri odataUri = OeParser.ParseUri(base.DbEdmModel, new Uri("ResetManyColumns", UriKind.Relative));
+            await parser.ExecuteOperationAsync(odataUri, OeRequestHeaders.JsonDefault, null, new MemoryStream(), CancellationToken.None);
+            await DbFixture.ExecuteBatchAsync(base.OeEdmModel, "ManyColumns");
         }
     }
 }

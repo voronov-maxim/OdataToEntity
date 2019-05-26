@@ -19,7 +19,7 @@ namespace OdataToEntity.Test
             var fixture = new RDBNull_DbFixtureInitDb();
             await fixture.Initalize();
 
-            var parser = new OeParser(new Uri("http://dummy/"), fixture.EdmModel);
+            var parser = new OeParser(new Uri("http://dummy/"), fixture.OeEdmModel);
             var responseStream = new MemoryStream();
 
             var requestUri = new Uri(@"http://dummy/" + request);
@@ -32,8 +32,8 @@ namespace OdataToEntity.Test
                 await parser.ExecutePostAsync(requestUri, OeRequestHeaders.JsonDefault, requestStream, responseStream, CancellationToken.None);
             }
 
-            ODataPath path = OeParser.ParsePath(fixture.EdmModel, new Uri("http://dummy/"), requestUri);
-            var reader = new ResponseReader(fixture.EdmModel.GetEdmModel(path));
+            ODataPath path = OeParser.ParsePath(fixture.OeEdmModel, new Uri("http://dummy/"), requestUri);
+            var reader = new ResponseReader(fixture.OeEdmModel.GetEdmModel(path));
             responseStream.Position = 0;
             Object[] fromOe;
             if (typeof(T) == typeof(int))

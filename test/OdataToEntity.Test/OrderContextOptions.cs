@@ -67,11 +67,9 @@ namespace OdataToEntity.Test.Model
 
         private static readonly ConcurrentDictionary<String, SqliteConnection> _connections = new ConcurrentDictionary<String, SqliteConnection>();
 
-        public static EdmModel BuildEdmModel(Db.OeDataAdapter dataAdapter, ModelBuilder.OeEdmModelMetadataProvider metadataProvider)
+        public static IEdmModel BuildDbEdmModel(bool useRelationalNulls)
         {
-            var order2DataAdapter = new Order2DataAdapter(false, "test2");
-            var refModel = new ModelBuilder.OeEdmModelBuilder(dataAdapter, metadataProvider).BuildEdmModel();
-            return order2DataAdapter.BuildEdmModel(refModel);
+            return DbFixtureInitDb.CreateEdmModel();
         }
         public static DbContextOptions Create(String databaseName)
         {

@@ -1,44 +1,53 @@
-﻿using Microsoft.OData.Edm;
-using OdataToEntity.ModelBuilder;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.OData.Edm;
 using OdataToEntity.Test.Model;
-using System;
 using System.Threading.Tasks;
 
 namespace OdataToEntity.Test
 {
     public abstract class DbFixtureInitDb : DbFixture
     {
-        private readonly String _databaseName;
-        private bool _initialized;
-
         protected DbFixtureInitDb(bool _, ModelBoundTestKind modelBoundTestKind)
-            : this(modelBoundTestKind, OrderContext.GenerateDatabaseName())
+            : this(modelBoundTestKind)
         {
         }
-        private DbFixtureInitDb(ModelBoundTestKind modelBoundTestKind, String databaseName)
-            : base(CreateEdmModel(databaseName), modelBoundTestKind)
+        private DbFixtureInitDb(ModelBoundTestKind modelBoundTestKind)
+            : base(CreateEdmModel(), modelBoundTestKind, false)
         {
-            _databaseName = databaseName;
         }
 
         public override OrderContext CreateContext()
         {
-            return new OrderContext(OrderContextOptions.Create(_databaseName));
+            Db.OeDataAdapter dataAdapter = base.OeEdmModel.GetDataAdapter(typeof(OrderContext));
+            return (OrderContext)dataAdapter.CreateDataContext();
         }
-        internal static EdmModel CreateEdmModel(String databaseName)
+        internal static IEdmModel CreateEdmModel()
         {
-            var dataAdapter = new OrderDataAdapter(databaseName);
-            OeEdmModelMetadataProvider metadataProvider = OrderDataAdapter.CreateMetadataProvider();
-            return OrderContextOptions.BuildEdmModel(dataAdapter, metadataProvider);
+            IEdmModel orderEdmModel = new OrderDataAdapter().BuildEdmModel();
+            IEdmModel order2EdmModel = new Order2DataAdapter().BuildEdmModel(orderEdmModel);
+            EnsureCreated(order2EdmModel);
+            ExecuteBatchAsync(order2EdmModel, "Add").GetAwaiter().GetResult();
+            return order2EdmModel;
         }
-        public async override Task Initalize()
+        public override Task Initalize()
         {
-            if (_initialized)
-                return;
+            return Task.CompletedTask;
+        }
+        private static void EnsureCreated(IEdmModel edmModel)
+        {
+            Db.OeDataAdapter dataAdapter = edmModel.GetDataAdapter(edmModel.EntityContainer);
+            var dbContext = (DbContext)dataAdapter.CreateDataContext();
+            dbContext.Database.EnsureCreated();
 
-            _initialized = true;
-            EnsureCreated(EdmModel);
-            await base.ExecuteBatchAsync("Add");
+            if (dataAdapter.EntitySetAdapters.Find(typeof(OrderItemsView)) != null)
+                dbContext.Database.ExecuteSqlCommand(
+                    @"create view OrderItemsView(Name, Product) as select o.Name, i.Product from Orders o inner join OrderItems i on o.Id = i.OrderId");
+
+            dataAdapter.CloseDataContext(dbContext);
+
+            foreach (IEdmModel refModel in edmModel.ReferencedModels)
+                if (refModel.EntityContainer != null && refModel is EdmModel)
+                    EnsureCreated(refModel);
         }
 
         protected internal override bool IsSqlite => true;
@@ -46,31 +55,19 @@ namespace OdataToEntity.Test
 
     public abstract class ManyColumnsFixtureInitDb : DbFixture
     {
-        private readonly String _databaseName;
-        private bool _initialized;
-
         protected ManyColumnsFixtureInitDb(bool _, ModelBoundTestKind modelBoundTestKind)
-            : this(modelBoundTestKind, OrderContext.GenerateDatabaseName())
+            : base(DbFixtureInitDb.CreateEdmModel(), modelBoundTestKind, false)
         {
-        }
-        private ManyColumnsFixtureInitDb(ModelBoundTestKind modelBoundTestKind, String databaseName)
-            : base(DbFixtureInitDb.CreateEdmModel(databaseName), modelBoundTestKind)
-        {
-            _databaseName = databaseName;
         }
 
         public override OrderContext CreateContext()
         {
-            return new OrderContext(OrderContextOptions.Create(_databaseName));
+            Db.OeDataAdapter dataAdapter = base.OeEdmModel.GetDataAdapter(typeof(OrderContext));
+            return (OrderContext)dataAdapter.CreateDataContext();
         }
-        public async override Task Initalize()
+        public override Task Initalize()
         {
-            if (_initialized)
-                return;
-
-            _initialized = true;
-            EnsureCreated(EdmModel);
-            await base.ExecuteBatchAsync("ManyColumns");
+            return Task.CompletedTask;
         }
 
         protected internal override bool IsSqlite => true;

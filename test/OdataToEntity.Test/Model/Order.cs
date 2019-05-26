@@ -11,6 +11,7 @@ namespace OdataToEntity.Test.Model
     {
         [Page(NavigationNextLink = true)]
         public ICollection<Category> Children { get; set; }
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
         [Required]
         public String Name { get; set; }

@@ -17,10 +17,10 @@ namespace OdataToEntity.EfCore.DynamicDataContext
 
         private static Db.OeEntitySetAdapterCollection CreateEntitySetAdapters(DynamicTypeDefinitionManager typeDefinitionManager)
         {
-            var entitySetAdapters = new DynamicEntitySetAdapter[typeDefinitionManager.TypeDefinitions.Count];
+            var entitySetAdapters = new Db.OeEntitySetAdapter[typeDefinitionManager.TypeDefinitions.Count];
             int i = 0;
             foreach (DynamicTypeDefinition typeDefinition in typeDefinitionManager.TypeDefinitions)
-                entitySetAdapters[i++] = new DynamicEntitySetAdapter(typeDefinition);
+                entitySetAdapters[i++] = CreateEntitySetAdapter(typeDefinition.DynamicTypeType, typeDefinition.TableName, false);
             return new Db.OeEntitySetAdapterCollection(entitySetAdapters);
         }
 

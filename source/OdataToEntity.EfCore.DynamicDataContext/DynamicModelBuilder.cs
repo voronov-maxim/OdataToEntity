@@ -1,9 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
+using System.Reflection;
 
 namespace OdataToEntity.EfCore.DynamicDataContext
 {
@@ -33,12 +36,21 @@ namespace OdataToEntity.EfCore.DynamicDataContext
                 var dynamicTypeDefinition = TypeDefinitionManager.GetDynamicTypeDefinition(tableName);
                 EntityTypeBuilder entityTypeBuilder = modelBuilder.Entity(dynamicTypeDefinition.DynamicTypeType).ToTable(tableName);
 
-                foreach (var (propertyName, propertyType) in MetadataProvider.GetStructuralProperties(tableName))
-                    entityTypeBuilder.Property(propertyType, propertyName);
+                entityType = (EntityType)entityTypeBuilder.Metadata;
+                foreach (DynamicPropertyInfo property in MetadataProvider.GetStructuralProperties(tableName))
+                {
+                    String fieldName = dynamicTypeDefinition.AddShadowPropertyFieldInfo(property.Name, property.Type).Name;
+                    PropertyBuilder propertyBuilder = entityTypeBuilder.Property(property.Type, property.Name).HasField(fieldName);
+                    if (property.DatabaseGeneratedOption == DatabaseGeneratedOption.Identity)
+                        propertyBuilder.ValueGeneratedOnAdd();
+                    else if (property.DatabaseGeneratedOption == DatabaseGeneratedOption.Computed)
+                        propertyBuilder.ValueGeneratedOnAddOrUpdate();
+                    else
+                        propertyBuilder.ValueGeneratedNever();
+                }
 
                 entityTypeBuilder.HasKey(MetadataProvider.GetPrimaryKey(tableName).ToArray());
 
-                entityType = (EntityType)entityTypeBuilder.Metadata;
                 _entityTypes.Add(tableName, entityType);
             }
 
@@ -46,9 +58,9 @@ namespace OdataToEntity.EfCore.DynamicDataContext
         }
         private void CreateNavigationProperties(Microsoft.EntityFrameworkCore.ModelBuilder modelBuilder, String tableName)
         {
-            foreach (var (propertyName, propertyType) in MetadataProvider.GetNavigationProperties(tableName))
+            foreach (String propertyName in MetadataProvider.GetNavigationProperties(tableName))
             {
-                DynamicMetadataProvider.DependentInfo dependentInfo = MetadataProvider.GetDependentProperties(tableName, propertyName);
+                DynamicDependentPropertyInfo dependentInfo = MetadataProvider.GetDependentProperties(tableName, propertyName);
 
                 EntityType dependentEntityType = CreateEntityType(modelBuilder, MetadataProvider.GetTableName(dependentInfo.DependentEntityName));
                 EntityType principalEntityType = CreateEntityType(modelBuilder, MetadataProvider.GetTableName(dependentInfo.PrincipalEntityName));

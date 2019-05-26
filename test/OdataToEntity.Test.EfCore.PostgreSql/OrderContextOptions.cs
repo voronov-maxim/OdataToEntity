@@ -5,12 +5,12 @@ namespace OdataToEntity.Test.Model
 {
     public static class OrderContextOptions
     {
-        public static EdmModel BuildEdmModel(Db.OeDataAdapter dataAdapter, ModelBuilder.OeEdmModelMetadataProvider metadataProvider)
+        public static EdmModel BuildDbEdmModel(bool useRelationalNulls)
         {
-            bool allowCache = TestHelper.GetQueryCache(dataAdapter).AllowCache;
-            var order2DataAdapter = new Order2DataAdapter(allowCache, true);
-            var refModel = new ModelBuilder.OeEdmModelBuilder(dataAdapter, metadataProvider).BuildEdmModel();
-            return order2DataAdapter.BuildEdmModel(refModel);
+            var orderDataAdapter = new OrderDataAdapter(false, useRelationalNulls);
+            IEdmModel orderEdmModel = orderDataAdapter.BuildEdmModel();
+            var order2DataAdapter = new Order2DataAdapter(false, useRelationalNulls);
+            return order2DataAdapter.BuildEdmModel(orderEdmModel);
         }
         public static DbContextOptions Create(bool useRelationalNulls)
         {

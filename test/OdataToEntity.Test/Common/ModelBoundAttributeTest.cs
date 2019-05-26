@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.OData;
+using Microsoft.OData.UriParser;
 using OdataToEntity.Test.Model;
 using System;
 using System.Collections.Generic;
@@ -183,7 +184,13 @@ namespace OdataToEntity.Test
             {
                 ResponseReader.NavigationInfo navigationInfo = reader.GetNavigationInfo(category.Children);
                 String actual = Uri.UnescapeDataString(navigationInfo.NextPageLink.OriginalString);
-                String expected = $"http://dummy/Categories?$filter=ParentId eq {category.Id}&$select=Id,Name,ParentId,DateTime";
+                String expected = $"http://dummy/Categories?$filter=ParentId eq {category.Id}&$select=DateTime,Id,Name,ParentId";
+
+                ODataUri actualOdataUri = Fixture.ParseUri(actual);
+                var selectedItems = actualOdataUri.SelectAndExpand.SelectedItems.Cast<PathSelectItem>().OrderBy(i => ((PropertySegment)i.SelectedPath.FirstSegment).Property.Name);
+                actualOdataUri.SelectAndExpand = new SelectExpandClause(selectedItems, actualOdataUri.SelectAndExpand.AllSelected);
+                actual = Uri.UnescapeDataString(actualOdataUri.BuildUri(ODataUrlKeyDelimiter.Parentheses).OriginalString);
+
                 Assert.Equal(expected, actual);
             }
         }

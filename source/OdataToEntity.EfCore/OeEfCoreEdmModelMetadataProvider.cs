@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using OdataToEntity.ModelBuilder;
 using System;
 using System.Collections.Generic;
@@ -19,11 +20,7 @@ namespace OdataToEntity.EfCore
             _entityTypes = _efModel.GetEntityTypes().ToDictionary(e => e.ClrType);
         }
 
-        protected virtual Infrastructure.OeShadowPropertyInfo CreateShadowProperty(INavigation efNavigation)
-        {
-            return new Infrastructure.OeShadowPropertyInfo(efNavigation.DeclaringType.ClrType, efNavigation.ClrType, efNavigation.Name);
-        }
-        protected virtual Infrastructure.OeShadowPropertyInfo CreateShadowProperty(IProperty efProperty)
+        protected virtual Infrastructure.OeShadowPropertyInfo CreateShadowProperty(IPropertyBase efProperty)
         {
             return new Infrastructure.OeShadowPropertyInfo(efProperty.DeclaringType.ClrType, efProperty.ClrType, efProperty.Name);
         }
@@ -48,11 +45,7 @@ namespace OdataToEntity.EfCore
                     {
                         var properties = new PropertyInfo[fkey.Properties.Count];
                         for (int i = 0; i < fkey.Properties.Count; i++)
-                        {
-                            IProperty efProperty = fkey.Properties[i];
-                            properties[i] = efProperty.IsShadowProperty ?
-                                CreateShadowProperty(efProperty) : propertyInfo.DeclaringType.GetPropertyIgnoreCase(efProperty.Name);
-                        }
+                            properties[i] = GetPropertyInfo(fkey.Properties[i]);
                         return properties;
                     }
 
@@ -72,12 +65,7 @@ namespace OdataToEntity.EfCore
                     {
                         INavigation efInverseProperty = fkey.DependentToPrincipal.FindInverse();
                         if (efInverseProperty != null)
-                        {
-                            PropertyInfo clrInverseProperty = efInverseProperty.DeclaringEntityType.ClrType.GetPropertyIgnoreCase(efInverseProperty.Name);
-                            if (clrInverseProperty == null)
-                                clrInverseProperty = CreateShadowProperty(efInverseProperty);
-                            return clrInverseProperty;
-                        }
+                            return GetPropertyInfo(efInverseProperty);
                     }
 
                 foreach (IForeignKey fkey in efEntityType.GetReferencingForeignKeys())
@@ -85,12 +73,7 @@ namespace OdataToEntity.EfCore
                     {
                         INavigation efInverseProperty = fkey.PrincipalToDependent.FindInverse();
                         if (efInverseProperty != null)
-                        {
-                            PropertyInfo clrInverseProperty = efInverseProperty.DeclaringEntityType.ClrType.GetPropertyIgnoreCase(efInverseProperty.Name);
-                            if (clrInverseProperty == null)
-                                clrInverseProperty = CreateShadowProperty(efInverseProperty);
-                            return clrInverseProperty;
-                        }
+                            return GetPropertyInfo(efInverseProperty);
                     }
             }
 
@@ -124,11 +107,7 @@ namespace OdataToEntity.EfCore
                     {
                         var properties = new PropertyInfo[fkey.Properties.Count];
                         for (int i = 0; i < fkey.Properties.Count; i++)
-                        {
-                            IProperty efProperty = fkey.Properties[i];
-                            properties[i] = efProperty.IsShadowProperty ?
-                                CreateShadowProperty(efProperty) : fkey.DeclaringEntityType.ClrType.GetPropertyIgnoreCase(efProperty.Name);
-                        }
+                            properties[i] = GetPropertyInfo(fkey.Properties[i]);
                         return properties;
                     }
 
@@ -136,32 +115,26 @@ namespace OdataToEntity.EfCore
         }
         public override PropertyInfo[] GetProperties(Type type)
         {
-            PropertyInfo[] clrProperties = base.GetProperties(type);
-
             if (_entityTypes.TryGetValue(type, out IEntityType efEntityType))
             {
-                List<PropertyInfo> clrPropertyList = null;
-                foreach (IProperty efProperty in efEntityType.GetProperties())
-                    if (efProperty.IsShadowProperty)
-                    {
-                        if (clrPropertyList == null)
-                            clrPropertyList = new List<PropertyInfo>(clrProperties);
-                        clrPropertyList.Add(CreateShadowProperty(efProperty));
-                    }
-
-                foreach (INavigation navigation in efEntityType.GetNavigations())
-                    if (Array.Find(clrProperties, p => p.Name == navigation.Name) == null)
-                    {
-                        if (clrPropertyList == null)
-                            clrPropertyList = new List<PropertyInfo>(clrProperties);
-                        clrPropertyList.Add(CreateShadowProperty(navigation));
-                    }
-
-                if (clrPropertyList != null)
-                    return clrPropertyList.ToArray();
+                var properties = new List<PropertyInfo>();
+                foreach (IProperty efProperty in efEntityType.GetDeclaredProperties())
+                    if (efProperty.PropertyInfo == null || efProperty.PropertyInfo.DeclaringType == type)
+                        properties.Add(GetPropertyInfo(efProperty));
+                foreach (INavigation navigation in efEntityType.GetDeclaredNavigations())
+                    if (navigation.PropertyInfo == null || navigation.PropertyInfo.DeclaringType == type)
+                        properties.Add(GetPropertyInfo(navigation));
+                return properties.ToArray();
             }
 
-            return clrProperties;
+            return base.GetProperties(type);
+        }
+        private PropertyInfo GetPropertyInfo(IPropertyBase efProperty)
+        {
+            if (efProperty.IsShadowProperty || (efProperty.PropertyInfo == null && efProperty.FieldInfo != null))
+                return CreateShadowProperty(efProperty);
+            else
+                return efProperty.DeclaringType.ClrType.GetPropertyIgnoreCase(efProperty.Name);
         }
         public override bool IsKey(PropertyInfo propertyInfo)
         {

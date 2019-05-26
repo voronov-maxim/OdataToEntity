@@ -22,11 +22,11 @@ namespace OdataToEntity.Test
                     (i.Order.Name == "Order 1" || i.Order.Name == "Order 2") && i.Order.Customer.Sex == Model.Sex.Female)
                     .Select(i => i.Id).ToList();
 
-            Db.OeDataAdapter dataAdapter = Fixture.EdmModel.GetDataAdapter(Fixture.EdmModel.EntityContainer);
+            Db.OeDataAdapter dataAdapter = Fixture.OeEdmModel.GetDataAdapter(Fixture.OeEdmModel.EntityContainer);
             String request = $"Customers/$filter(Sex eq 'Female')/BoundFunctionCollection(orderNames=['Order 1','Order 2'])?$expand=Customer,Items&$select=Name";
 
             ODataUri odataUri = Fixture.ParseUri(request);
-            IEdmModel edmModel = Fixture.EdmModel.GetEdmModel(odataUri.Path);
+            IEdmModel edmModel = Fixture.OeEdmModel.GetEdmModel(odataUri.Path);
             var parser = new OeParser(odataUri.ServiceRoot, edmModel);
 
             var response = new MemoryStream();
@@ -45,11 +45,11 @@ namespace OdataToEntity.Test
                     (i.Order.Name == "Order 1" || i.Order.Name == "Order 2") && i.Order.Customer.Country == "RU" && i.Order.Customer.Id == 1)
                     .Select(i => i.Id).ToList();
 
-            Db.OeDataAdapter dataAdapter = Fixture.EdmModel.GetDataAdapter(Fixture.EdmModel.EntityContainer);
+            Db.OeDataAdapter dataAdapter = Fixture.OeEdmModel.GetDataAdapter(Fixture.OeEdmModel.EntityContainer);
             String request = $"Customers('RU',1)/{dataAdapter.DataContextType.Namespace}.BoundFunctionSingle(orderNames=['Order 1','Order 2'])?$expand=Customer,Items&$select=Name";
 
             ODataUri odataUri = Fixture.ParseUri(request);
-            IEdmModel edmModel = Fixture.EdmModel.GetEdmModel(odataUri.Path);
+            IEdmModel edmModel = Fixture.OeEdmModel.GetEdmModel(odataUri.Path);
             var parser = new OeParser(odataUri.ServiceRoot, edmModel);
 
             var response = new MemoryStream();
@@ -65,7 +65,7 @@ namespace OdataToEntity.Test
             String request = "Orders?$expand=Items($count=true)&orderby=Id";
 
             ODataUri odataUri = Fixture.ParseUri(request);
-            IEdmModel edmModel = Fixture.EdmModel.GetEdmModel(odataUri.Path);
+            IEdmModel edmModel = Fixture.OeEdmModel.GetEdmModel(odataUri.Path);
             var parser = new OeParser(odataUri.ServiceRoot, edmModel);
 
             var response = new MemoryStream();
@@ -92,7 +92,7 @@ namespace OdataToEntity.Test
             String request = "Orders?&$count=true&$top=1";
 
             ODataUri odataUri = Fixture.ParseUri(request);
-            IEdmModel edmModel = Fixture.EdmModel.GetEdmModel(odataUri.Path);
+            IEdmModel edmModel = Fixture.OeEdmModel.GetEdmModel(odataUri.Path);
             var parser = new OeParser(odataUri.ServiceRoot, edmModel);
 
             var response = new MemoryStream();
@@ -114,7 +114,7 @@ namespace OdataToEntity.Test
             String request = "OrderItems?$filter=OrderId eq 1&$count=true&$top=1";
 
             ODataUri odataUri = Fixture.ParseUri(request);
-            IEdmModel edmModel = Fixture.EdmModel.GetEdmModel(odataUri.Path);
+            IEdmModel edmModel = Fixture.OeEdmModel.GetEdmModel(odataUri.Path);
             var parser = new OeParser(odataUri.ServiceRoot, edmModel);
 
             var response = new MemoryStream();
@@ -136,7 +136,7 @@ namespace OdataToEntity.Test
             String request = "Orders?$expand=Items($filter=Count gt 0 or Count eq null;$orderby=Id;$count=true)&$orderby=Id&$count=true";
 
             ODataUri odataUri = Fixture.ParseUri(request);
-            IEdmModel edmModel = Fixture.EdmModel.GetEdmModel(odataUri.Path);
+            IEdmModel edmModel = Fixture.OeEdmModel.GetEdmModel(odataUri.Path);
             var requestUri = new Uri(odataUri.ServiceRoot, request);
 
             var expectedResponse = new MemoryStream();
@@ -156,7 +156,7 @@ namespace OdataToEntity.Test
             String request = "OrderItems?$orderby=Id&$count=true";
 
             const int pageSize = 2;
-            var pageNextLinkModelBoundBuilder = new PageNextLinkModelBoundBuilder(Fixture.EdmModel, Fixture.IsSqlite);
+            var pageNextLinkModelBoundBuilder = new PageNextLinkModelBoundBuilder(Fixture.OeEdmModel, Fixture.IsSqlite);
             Query.OeModelBoundProvider modelBoundProvider = pageNextLinkModelBoundBuilder.BuildProvider(pageSize, false);
             OeParser parser = Fixture.CreateParser(request, modelBoundProvider);
             var uri = new Uri(parser.BaseUri, request);
@@ -193,7 +193,7 @@ namespace OdataToEntity.Test
             Query.OeModelBoundProvider modelBoundProvider = fixture.ModelBoundProvider;
             if (modelBoundProvider == null)
             {
-                var modelBoundProviderBuilder = new PageNextLinkModelBoundBuilder(fixture.EdmModel, fixture.IsSqlite);
+                var modelBoundProviderBuilder = new PageNextLinkModelBoundBuilder(fixture.OeEdmModel, fixture.IsSqlite);
                 modelBoundProvider = modelBoundProviderBuilder.BuildProvider(maxPageSize, navigationNextLink);
             }
 

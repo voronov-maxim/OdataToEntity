@@ -14,7 +14,7 @@ namespace OdataToEntity.Test
         private readonly bool _useRelationalNulls;
 
         protected DbFixtureInitDb(bool useRelationalNulls, ModelBoundTestKind modelBoundTestKind)
-            : base(CreateEdmModel(useRelationalNulls), modelBoundTestKind)
+            : base(CreateOeEdmModel(useRelationalNulls), modelBoundTestKind, useRelationalNulls)
         {
             _useRelationalNulls = useRelationalNulls;
         }
@@ -23,11 +23,14 @@ namespace OdataToEntity.Test
         {
             return new OrderContext(OrderContextOptions.Create(_useRelationalNulls));
         }
-        internal static EdmModel CreateEdmModel(bool useRelationalNulls)
+        internal static EdmModel CreateOeEdmModel(bool useRelationalNulls)
         {
             var dataAdapter = new OrderDataAdapter(true, useRelationalNulls);
             OeEdmModelMetadataProvider metadataProvider = OrderDataAdapter.CreateMetadataProvider();
-            return OrderContextOptions.BuildEdmModel(dataAdapter, metadataProvider);
+            bool allowCache = TestHelper.GetQueryCache(dataAdapter).AllowCache;
+            var order2DataAdapter = new Order2DataAdapter(allowCache, useRelationalNulls);
+            var refModel = new OeEdmModelBuilder(dataAdapter, metadataProvider).BuildEdmModel();
+            return order2DataAdapter.BuildEdmModel(refModel);
         }
         public override async Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
         {
@@ -47,9 +50,9 @@ namespace OdataToEntity.Test
                 return;
 
             _initialized = true;
-            var parser = new OeParser(new Uri("http://dummy/"), base.EdmModel);
+            var parser = new OeParser(new Uri("http://dummy/"), base.OeEdmModel);
             await parser.ExecuteOperationAsync(base.ParseUri("ResetDb"), OeRequestHeaders.JsonDefault, null, new MemoryStream(), CancellationToken.None);
-            await base.ExecuteBatchAsync("Add");
+            await DbFixture.ExecuteBatchAsync(base.OeEdmModel, "Add");
         }
     }
 
@@ -59,7 +62,7 @@ namespace OdataToEntity.Test
         private readonly bool _useRelationalNulls;
 
         protected ManyColumnsFixtureInitDb(bool useRelationalNulls, ModelBoundTestKind modelBoundTestKind)
-            : base(DbFixtureInitDb.CreateEdmModel(useRelationalNulls), modelBoundTestKind)
+            : base(DbFixtureInitDb.CreateOeEdmModel(useRelationalNulls), modelBoundTestKind, useRelationalNulls)
         {
             _useRelationalNulls = useRelationalNulls;
         }
@@ -86,9 +89,9 @@ namespace OdataToEntity.Test
                 return;
 
             _initialized = true;
-            var parser = new OeParser(new Uri("http://dummy/"), base.EdmModel);
+            var parser = new OeParser(new Uri("http://dummy/"), base.OeEdmModel);
             await parser.ExecuteOperationAsync(base.ParseUri("ResetManyColumns"), OeRequestHeaders.JsonDefault, null, new MemoryStream(), CancellationToken.None);
-            await base.ExecuteBatchAsync("ManyColumns");
+            await DbFixture.ExecuteBatchAsync(base.OeEdmModel, "ManyColumns");
         }
     }
 }

@@ -82,7 +82,7 @@ namespace OdataToEntity.Test
             String entitySetName = ResponseReader.GetEntitSetName(response);
             response.Position = 0;
             Db.OeEntitySetAdapter entitySetMetaAdatpter = TestHelper.FindEntitySetAdapterByName(base.EntitySetAdapters, entitySetName);
-            return base.ReadImpl(response, entitySetMetaAdatpter);
+            return base.Read(response, entitySetMetaAdatpter);
         }
     }
 }

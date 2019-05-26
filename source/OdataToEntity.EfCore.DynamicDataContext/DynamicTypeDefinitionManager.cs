@@ -1,9 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
-using Microsoft.OData.Edm;
+using Microsoft.EntityFrameworkCore.Query.Internal;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
 
@@ -12,14 +13,17 @@ namespace OdataToEntity.EfCore.DynamicDataContext
     public sealed class DynamicTypeDefinitionManager
     {
         private readonly Dictionary<Type, DynamicTypeDefinition> _dynamicTypeDefinitions;
-        private static int _dynamicTypeIndex;
-        private readonly DbContextOptions _options;
+        private readonly Func<DynamicDbContext> _dynamicDbContextCtor;
+        private static int _dynamicDbContextIndex;
+        private int _dynamicTypeIndex;
         private readonly Dictionary<String, Type> _tableNameTypes;
 
-        private DynamicTypeDefinitionManager(DbContextOptions options, DynamicMetadataProvider metadataProvider)
+        private DynamicTypeDefinitionManager(DbContextOptions options, DynamicMetadataProvider metadataProvider, ConstructorInfo dynamicDbContextCtor)
         {
-            _options = options;
             MetadataProvider = metadataProvider;
+
+            NewExpression ctor = Expression.New(dynamicDbContextCtor, Expression.Constant(options), Expression.Constant(this));
+            _dynamicDbContextCtor = Expression.Lambda<Func<DynamicDbContext>>(ctor).Compile();
 
             _dynamicTypeDefinitions = new Dictionary<Type, DynamicTypeDefinition>();
             _tableNameTypes = new Dictionary<String, Type>();
@@ -27,14 +31,19 @@ namespace OdataToEntity.EfCore.DynamicDataContext
 
         public static DynamicTypeDefinitionManager Create(DbContextOptions options, DynamicMetadataProvider metadataProvider)
         {
-            var typeDefinitionManager = new DynamicTypeDefinitionManager(options, metadataProvider);
-            var dbContext = new DynamicDbContext(options, new DynamicModelBuilder(typeDefinitionManager));
+            int dynamicDbContextIndex = Interlocked.Increment(ref _dynamicDbContextIndex);
+            Type dynamicDbContextType = Type.GetType(typeof(DynamicDbContext).FullName + dynamicDbContextIndex.ToString("D2"));
+            ConstructorInfo ctor = dynamicDbContextType.GetConstructor(new Type[] { typeof(DbContextOptions), typeof(DynamicTypeDefinitionManager) });
+            var typeDefinitionManager = new DynamicTypeDefinitionManager(options, metadataProvider, ctor);
+
+            ctor = dynamicDbContextType.GetConstructor(new Type[] { typeof(DbContextOptions), typeof(DynamicModelBuilder).MakeByRefType() });
+            var dbContext = (DynamicDbContext)ctor.Invoke(new Object[] { options, new DynamicModelBuilder(typeDefinitionManager) });
             _ = dbContext.Model; //force OnModelCreating
             return typeDefinitionManager;
         }
         public DynamicDbContext CreateDynamicDbContext()
         {
-            return new DynamicDbContext(_options, this);
+            return _dynamicDbContextCtor();
         }
         public IQueryable<DynamicType> GetQueryable(DynamicDbContext dynamicDbContext, String tableName)
         {
@@ -42,9 +51,9 @@ namespace OdataToEntity.EfCore.DynamicDataContext
         }
         public static IQueryable<DynamicType> GetQueryable(DynamicDbContext dynamicDbContext, Type dynamicTypeType)
         {
-            Type dbSetType = typeof(InternalDbSet<>).MakeGenericType(new Type[] { dynamicTypeType });
-            ConstructorInfo ctor = dbSetType.GetConstructor(new Type[] { typeof(DbContext) });
-            return (IQueryable<DynamicType>)ctor.Invoke(new Object[] { dynamicDbContext });
+            Type dbSetType = typeof(EntityQueryable<>).MakeGenericType(new Type[] { dynamicTypeType });
+            ConstructorInfo ctor = dbSetType.GetConstructor(new Type[] { typeof(IAsyncQueryProvider) });
+            return (IQueryable<DynamicType>)ctor.Invoke(new Object[] { dynamicDbContext.GetDependencies().QueryProvider });
         }
         public DynamicTypeDefinition GetDynamicTypeDefinition(String tableName)
         {
@@ -62,10 +71,10 @@ namespace OdataToEntity.EfCore.DynamicDataContext
         {
             return _dynamicTypeDefinitions[dynamicTypeType];
         }
-        private static Type GetDynamicTypeType()
+        private Type GetDynamicTypeType()
         {
-            int dynamicTypeIndex = Interlocked.Increment(ref _dynamicTypeIndex);
-            return Type.GetType(typeof(DynamicType).FullName + dynamicTypeIndex.ToString("D2"));
+            _dynamicTypeIndex++;
+            return Type.GetType(typeof(DynamicType).FullName + _dynamicTypeIndex.ToString("D2"));
         }
 
         public DynamicMetadataProvider MetadataProvider { get; }

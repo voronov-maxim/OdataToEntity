@@ -70,7 +70,7 @@ namespace OdataToEntity.Parsers
         private Expression Lambda(CollectionNavigationNode sourceNode, SingleValueNode body, String methodName)
         {
             Expression source = TranslateNode(sourceNode);
-            PropertyInfo sourceNavigationProperty = Parameter.Type.GetProperty(sourceNode.NavigationProperty.Name);
+            PropertyInfo sourceNavigationProperty = Parameter.Type.GetPropertyIgnoreCase(sourceNode.NavigationProperty);
             Type targetType = OeExpressionHelper.GetCollectionItemType(sourceNavigationProperty.PropertyType);
 
             ParameterExpression parameter = Expression.Parameter(targetType);

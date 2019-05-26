@@ -133,7 +133,7 @@ namespace OdataToEntity.Parsers
         }
         public static Type GetCollectionItemTypeOrNull(Type type)
         {
-            if (type.IsPrimitive)
+            if (type.IsPrimitive || type == typeof(String))
                 return null;
 
             if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IEnumerable<>))

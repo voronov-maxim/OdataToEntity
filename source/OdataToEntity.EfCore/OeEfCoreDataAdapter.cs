@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.Query;
+using Microsoft.EntityFrameworkCore.Query.Internal;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.OData;
 using OdataToEntity.Parsers;
@@ -29,11 +30,8 @@ namespace OdataToEntity.EfCore
     {
         private sealed class DbQueryAdapterImpl<TEntity> : Db.OeEntitySetAdapter, IFromSql where TEntity : class
         {
-            private readonly Func<T, DbQuery<TEntity>> _getDbQuery;
-
-            public DbQueryAdapterImpl(Func<T, DbQuery<TEntity>> getDbQuery, String entitySetName)
+            public DbQueryAdapterImpl(String entitySetName)
             {
-                _getDbQuery = getDbQuery;
                 EntitySetName = entitySetName;
             }
 
@@ -47,12 +45,12 @@ namespace OdataToEntity.EfCore
             }
             public IQueryable FromSql(Object dataContext, String sql, Object[] parameters)
             {
-                DbQuery<TEntity> dbSet = _getDbQuery((T)dataContext);
-                return dbSet.FromSql(sql, parameters);
+                var queryable = (IQueryable<TEntity>)GetEntitySet(dataContext);
+                return queryable.FromSql(sql, parameters);
             }
             public override IQueryable GetEntitySet(Object dataContext)
             {
-                return _getDbQuery((T)dataContext);
+                return new EntityQueryable<TEntity>(((T)dataContext).GetDependencies().QueryProvider);
             }
             public override void RemoveEntity(Object dataContext, ODataResourceBase entry)
             {
@@ -67,22 +65,19 @@ namespace OdataToEntity.EfCore
         private sealed class DbSetAdapterImpl<TEntity> : Db.OeEntitySetAdapter, IFromSql where TEntity : class
         {
             private IEntityType _entityType;
-            private readonly Func<T, DbSet<TEntity>> _getEntitySet;
             private Func<MaterializationContext, Object> _materializer;
             private Func<Object[]> _valueBufferArrayInit;
             private IForeignKey _selfReferenceKey;
 
-            public DbSetAdapterImpl(Func<T, DbSet<TEntity>> getEntitySet, String entitySetName)
+            public DbSetAdapterImpl(String entitySetName)
             {
-                _getEntitySet = getEntitySet;
                 EntitySetName = entitySetName;
             }
 
             public override void AddEntity(Object dataContext, ODataResourceBase entry)
             {
-                var context = (T)dataContext;
-                DbSet<TEntity> dbSet = _getEntitySet(context);
-                EntityEntry<TEntity> entityEntry = dbSet.Add(CreateEntity(context, entry));
+                var context = (DbContext)dataContext;
+                EntityEntry<TEntity> entityEntry = context.Add(CreateEntity(context, entry));
 
                 IReadOnlyList<IProperty> keyProperties = _entityType.FindPrimaryKey().Properties;
                 for (int i = 0; i < keyProperties.Count; i++)
@@ -96,8 +91,7 @@ namespace OdataToEntity.EfCore
                 if (internalEntry == null)
                 {
                     TEntity entity = CreateEntity(context, entry);
-                    _getEntitySet(context).Attach(entity);
-                    internalEntry = _getEntitySet(context).Attach(entity).GetInfrastructure();
+                    internalEntry = context.Attach(entity).GetInfrastructure();
 
                     IKey key = _entityType.FindPrimaryKey();
                     foreach (ODataProperty odataProperty in entry.Properties)
@@ -143,12 +137,12 @@ namespace OdataToEntity.EfCore
             }
             public IQueryable FromSql(Object dataContext, String sql, Object[] parameters)
             {
-                DbSet<TEntity> dbSet = _getEntitySet((T)dataContext);
-                return dbSet.FromSql(sql, parameters);
+                var queryable = (IQueryable<TEntity>)GetEntitySet((T)dataContext);
+                return queryable.FromSql(sql, parameters);
             }
             public override IQueryable GetEntitySet(Object dataContext)
             {
-                return _getEntitySet((T)dataContext);
+                return new EntityQueryable<TEntity>(((T)dataContext).GetDependencies().QueryProvider);
             }
             private InternalEntityEntry GetEntityEntry(T context, ODataResourceBase entity)
             {
@@ -180,11 +174,13 @@ namespace OdataToEntity.EfCore
                 if (entityEntry == null)
                 {
                     TEntity entity = CreateEntity(context, entry);
-                    DbSet<TEntity> dbSet = _getEntitySet(context);
                     if (_selfReferenceKey == null)
-                        dbSet.Attach(entity);
+                        context.Attach(entity);
                     else
-                        entity = dbSet.Find(GetKeyValues(entry));
+                    {
+                        var finder = (IEntityFinder<TEntity>)context.GetDependencies().EntityFinderFactory.Create(_entityType);
+                        entity = finder.Find(GetKeyValues(entry));
+                    }
                     context.Entry(entity).State = EntityState.Deleted;
                 }
                 else
@@ -263,35 +259,25 @@ namespace OdataToEntity.EfCore
             var entitySetAdapters = new List<Db.OeEntitySetAdapter>();
             foreach (PropertyInfo property in typeof(T).GetProperties())
             {
-                Type dbSetType = property.PropertyType.GetInterface(typeof(IQueryable<>).FullName);
-                if (dbSetType != null)
-                    entitySetAdapters.Add(CreateEntitySetAdapter(property, dbSetType));
+                if (typeof(IQueryable).IsAssignableFrom(property.PropertyType))
+                {
+                    Type entityType = property.PropertyType.GetGenericArguments()[0];
+                    bool isDbQuery = property.PropertyType.GetGenericTypeDefinition().IsAssignableFrom(typeof(DbQuery<>));
+                    entitySetAdapters.Add(CreateEntitySetAdapter(entityType, property.Name, isDbQuery));
+                }
             }
 
             return new Db.OeEntitySetAdapterCollection(entitySetAdapters.ToArray());
         }
-        private static Db.OeEntitySetAdapter CreateEntitySetAdapter(PropertyInfo property, Type dbSetType)
+        protected static Db.OeEntitySetAdapter CreateEntitySetAdapter(Type entityType, String entitySetName, bool isDbQuery)
         {
-            MethodInfo mi = ((Func<PropertyInfo, Db.OeEntitySetAdapter>)CreateDbSetInvoker<Object>).GetMethodInfo().GetGenericMethodDefinition();
-            Type entityType = dbSetType.GetGenericArguments()[0];
+            MethodInfo mi = ((Func<String, bool, Db.OeEntitySetAdapter>)CreateEntitySetAdapter<Object>).GetMethodInfo().GetGenericMethodDefinition();
             MethodInfo func = mi.GetGenericMethodDefinition().MakeGenericMethod(entityType);
-            return (Db.OeEntitySetAdapter)func.Invoke(null, new Object[] { property });
+            return (Db.OeEntitySetAdapter)func.Invoke(null, new Object[] { entitySetName, isDbQuery });
         }
-        private static Db.OeEntitySetAdapter CreateDbSetInvoker<TEntity>(PropertyInfo property) where TEntity : class
+        private static Db.OeEntitySetAdapter CreateEntitySetAdapter<TEntity>(String entitySetName, bool isDbQuery) where TEntity : class
         {
-            if (property.PropertyType == typeof(DbSet<TEntity>))
-            {
-                var getDbSet = (Func<T, DbSet<TEntity>>)property.GetGetMethod().CreateDelegate(typeof(Func<T, DbSet<TEntity>>));
-                return new DbSetAdapterImpl<TEntity>(getDbSet, property.Name);
-            }
-
-            if (property.PropertyType == typeof(DbQuery<TEntity>))
-            {
-                var getDbQuery = (Func<T, DbQuery<TEntity>>)property.GetGetMethod().CreateDelegate(typeof(Func<T, DbQuery<TEntity>>));
-                return new DbQueryAdapterImpl<TEntity>(getDbQuery, property.Name);
-            }
-
-            throw new InvalidOperationException("Not suppoerted entity sourse type " + property.PropertyType.Name);
+            return isDbQuery ? (Db.OeEntitySetAdapter)new DbQueryAdapterImpl<TEntity>(entitySetName) : new DbSetAdapterImpl<TEntity>(entitySetName);
         }
         public void DisposeDataContextPool()
         {

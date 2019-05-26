@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.OData.Edm;
 using OdataToEntity.EfCore;
 using OdataToEntity.EfCore.DynamicDataContext;
+using OdataToEntity.EfCore.DynamicDataContext.InformationSchema;
 using OdataToEntity.ModelBuilder;
 using OdataToEntity.Test;
 using OdataToEntity.Test.Model;
@@ -29,12 +30,13 @@ namespace OdataToEntity.Test.EfCore.SqlServer
         static async Task Main()
         {
             //PerformanceCacheTest.RunTest(100);
-            //await new PLNull(new PLNull_DbFixtureInitDb()).Expand(0, false);
+            await new PLNull(new PLNull_DbFixtureInitDb()).OrderByColumnsMissingInSelect(0);
+            //new PLNull_ManyColumns(new PLNull_ManyColumnsFixtureInitDb()).Filter(1).GetAwaiter().GetResult();
 
             IEdmModel edmModel = new OeEdmModelBuilder(new OrderDataAdapter(), new OeEdmModelMetadataProvider()).BuildEdmModel();
-            var metadataProvider = new DynamicMetadataProvider(edmModel);
+            var metadataProvider = new EdmDynamicMetadataProvider(edmModel);
 
-            DbContextOptions options = DynamicDbContext.CreateOptions();
+            DbContextOptions options = DynamicDbContext.CreateOptions(true);
             var typeDefinitionManager = DynamicTypeDefinitionManager.Create(options, metadataProvider);
 
             ////var dbContext = typeDefinitionManager.CreateDynamicDbContext();
@@ -54,7 +56,8 @@ namespace OdataToEntity.Test.EfCore.SqlServer
 
             var parser = new OeParser(new Uri("http://dummy"), dynamicEdmModel);
             var stream = new MemoryStream();
-            await parser.ExecuteGetAsync(new Uri("http://dummy/Orders?$expand=Customer,Items&$orderby=Id"), OeRequestHeaders.JsonDefault, stream, CancellationToken.None);
+            //await parser.ExecuteGetAsync(new Uri("http://dummy/Orders?$expand=Customer,Items&$orderby=Id"), OeRequestHeaders.JsonDefault, stream, CancellationToken.None);
+            await parser.ExecuteGetAsync(new Uri("http://dummy/Orders"), OeRequestHeaders.JsonDefault, stream, CancellationToken.None);
             stream.Position = 0;
             String result = new StreamReader(stream).ReadToEnd();
         }

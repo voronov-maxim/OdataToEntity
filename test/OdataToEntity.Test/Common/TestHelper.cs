@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.OData.Edm;
 using Microsoft.OData.Edm.Csdl;
+using Microsoft.OData.UriParser;
 using Newtonsoft.Json;
 using System;
 using System.Collections;
@@ -11,6 +13,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Xml;
+using System.Xml.Linq;
 using Xunit;
 
 namespace OdataToEntity.Test
@@ -73,10 +76,6 @@ namespace OdataToEntity.Test
 
             Assert.Equal(jsonDb, jsonOe);
         }
-        public static Infrastructure.OeEntryEqualityComparer CreateEntryEqualityComparer(ModelBuilder.OeEdmModelMetadataProvider metadataProvider, Type entityType)
-        {
-            return new Infrastructure.OeEntryEqualityComparer(GetKeyExpressions(metadataProvider, entityType));
-        }
         public static IList ExecuteDb<T, TResult>(Db.OeEntitySetAdapterCollection entitySetAdapters, DbContext dataContext, Expression<Func<IQueryable<T>, TResult>> expression)
         {
             var visitor = new QueryVisitor<T>(entitySetAdapters, dataContext);
@@ -133,38 +132,69 @@ namespace OdataToEntity.Test
                 return Encoding.UTF8.GetString(stream.ToArray());
             }
         }
-        private static MemberExpression[] GetKeyExpressions(ModelBuilder.OeEdmModelMetadataProvider metadataProvider, Type entityType)
+        public static IEdmModel GetEdmModel(IEdmModel edmModel, ODataPath path)
         {
-            var keyPropertyList = new List<PropertyInfo>();
-            foreach (PropertyInfo property in entityType.GetProperties())
-                if (metadataProvider.IsKey(property))
-                    keyPropertyList.Add(property);
-
-            if (keyPropertyList.Count == 0)
+            if (path.FirstSegment is EntitySetSegment entitySetSegment)
             {
-                PropertyInfo keyProperty = entityType.GetPropertyIgnoreCase("Id");
-                if (keyProperty == null)
-                    throw new InvalidOperationException("Key not found in " + entityType.Name);
-
-                keyPropertyList.Add(keyProperty);
+                IEdmEntitySet entitySet = OeEdmClrHelper.GetEntitySet(edmModel, entitySetSegment.EntitySet.Name);
+                return edmModel.GetEdmModel(entitySet.Container);
             }
-            PropertyInfo[] keyProperties = keyPropertyList.ToArray();
-            metadataProvider.SortClrPropertyByOrder(keyProperties);
 
-            var keyExpressions = new MemberExpression[keyProperties.Length];
-            ParameterExpression parameter = Expression.Parameter(entityType);
-            for (int i = 0; i < keyProperties.Length; i++)
-                keyExpressions[i] = Expression.Property(parameter, keyProperties[i]);
-            return keyExpressions;
+            if (path.FirstSegment is OperationImportSegment importSegment)
+            {
+                IEdmOperationImport operationImport = importSegment.OperationImports.Single();
+                operationImport = edmModel.FindDeclaredOperationImports(operationImport.Name).Single();
+                return edmModel.GetEdmModel(operationImport.Container);
+            }
+
+            throw new InvalidOperationException("Not supported segment type " + path.FirstSegment.GetType().FullName);
         }
         public static Cache.OeQueryCache GetQueryCache(Db.OeDataAdapter dataAdapter)
         {
             PropertyInfo propertyInfo = typeof(Db.OeDataAdapter).GetProperty("QueryCache", BindingFlags.Instance | BindingFlags.NonPublic);
             return (Cache.OeQueryCache)propertyInfo.GetValue(dataAdapter);
         }
+        public static bool GetUseRelationalNulls(Db.OeDataAdapter dataAdapter)
+        {
+            var serviceProvider = (IInfrastructure<IServiceProvider>)dataAdapter.CreateDataContext();
+            try
+            {
+                RelationalOptionsExtension options = serviceProvider.GetService<IDbContextOptions>().Extensions.OfType<RelationalOptionsExtension>().Single();
+                return options.UseRelationalNulls;
+            }
+            finally
+            {
+                dataAdapter.CloseDataContext(serviceProvider);
+            }
+        }
         private static IList ToOpenType(IEnumerable entities, IReadOnlyList<EfInclude> includes)
         {
             return new OpenTypeConverter(includes).Convert(entities);
+        }
+        public static String SortCsdlSchema(String xml)
+        {
+            XDocument xdoc = XDocument.Parse(xml);
+            using (var stream = new MemoryStream())
+            using (var xwriter = XmlWriter.Create(stream, new XmlWriterSettings() { Indent = true, Encoding = new UTF8Encoding(false), ConformanceLevel = ConformanceLevel.Fragment }))
+            {
+                SortCsdlSchema(xwriter, xdoc.Root);
+                xwriter.Flush();
+                return Encoding.UTF8.GetString(stream.ToArray());
+            }
+        }
+        private static void SortCsdlSchema(XmlWriter xwriter, XElement xelement)
+        {
+            xwriter.WriteStartElement(xelement.Name.LocalName, xelement.Name.NamespaceName);
+            foreach (XAttribute xattribute in xelement.Attributes())
+                xwriter.WriteAttributeString(xattribute.Name.LocalName, xattribute.Name.NamespaceName, xattribute.Value);
+
+            IEnumerable<XElement> xelements = xelement.Elements();
+            if (xelement.Name.LocalName == "EntityType")
+                xelements = xelements.OrderBy(x => x.Name.LocalName).ThenBy(x => (x.Attribute("Name") ?? new XAttribute("Name", "")).Value);
+            foreach (XElement xchild in xelements)
+                SortCsdlSchema(xwriter, xchild);
+
+            xwriter.WriteEndElement();
         }
     }
 }
