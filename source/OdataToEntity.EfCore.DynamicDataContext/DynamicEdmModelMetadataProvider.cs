@@ -36,7 +36,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
         }
         public override IReadOnlyList<PropertyInfo> GetManyToManyProperties(Type clrType)
         {
-            if (clrType == typeof(DynamicType))
+            if (clrType == typeof(Types.DynamicType))
                 return Array.Empty<PropertyInfo>();
 
             List<PropertyInfo> properties = null;

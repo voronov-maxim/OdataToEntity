@@ -15,11 +15,13 @@ namespace OdataToEntity.Parsers
             private readonly Uri _baseUri;
             private IEdmEntityType _edmEntityType;
             private readonly IEdmModel _edmModel;
+            private readonly IServiceProvider _serviceProvider;
 
-            public ResourceFactory(IEdmModel edmModel, Uri baseUri)
+            public ResourceFactory(IEdmModel edmModel, Uri baseUri, IServiceProvider serviceProvider)
             {
                 _edmModel = edmModel;
                 _baseUri = baseUri;
+                _serviceProvider = serviceProvider;
                 _edmEntityType = null;
             }
 
@@ -44,7 +46,7 @@ namespace OdataToEntity.Parsers
                 IEdmModel edmModel = _edmModel.GetEdmModel(entitySet);
 
                 ODataResource entry = null;
-                IODataRequestMessage requestMessage = new Infrastructure.OeInMemoryMessage(content, contentType);
+                IODataRequestMessage requestMessage = new Infrastructure.OeInMemoryMessage(content, contentType, _serviceProvider);
                 var settings = new ODataMessageReaderSettings
                 {
                     ClientCustomTypeResolver = ClientCustomTypeResolver,
@@ -62,7 +64,6 @@ namespace OdataToEntity.Parsers
 
                 return entry;
             }
-
             private ODataResource ReadEntityFromUrl(Uri requestUrl, out IEdmEntitySet entitySet)
             {
                 ODataPath path = OeParser.ParsePath(_edmModel, _baseUri, requestUrl);
@@ -77,6 +78,7 @@ namespace OdataToEntity.Parsers
                 return entry;
             }
         }
+
         private OeOperationMessage(ODataBatchOperationRequestMessage batchRequest, IEdmEntitySet entitySet, ODataResource entry)
         {
             ContentId = batchRequest.ContentId;
@@ -87,11 +89,10 @@ namespace OdataToEntity.Parsers
             Entry = entry;
         }
 
-
-        public static OeOperationMessage Create(IEdmModel edmModel, Uri baseUri, ODataBatchReader reader)
+        public static OeOperationMessage Create(IEdmModel edmModel, Uri baseUri, ODataBatchReader reader, IServiceProvider serviceProvider)
         {
             ODataBatchOperationRequestMessage batchRequest = reader.CreateOperationRequestMessage();
-            ODataResource entry = new ResourceFactory(edmModel, baseUri).CreateEntry(batchRequest, out IEdmEntitySet entitSet);
+            ODataResource entry = new ResourceFactory(edmModel, baseUri, serviceProvider).CreateEntry(batchRequest, out IEdmEntitySet entitSet);
             return new OeOperationMessage(batchRequest, entitSet, entry);
         }
 

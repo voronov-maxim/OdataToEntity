@@ -14,7 +14,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <StartupObject>OdataToEntity.Test.EfCore.SqlServer.Program</StartupObject>
+    <StartupObject>OdataToEntity.Test.DynamicDataContext.Program</StartupObject>
   </PropertyGroup>
 
   <ItemGroup>

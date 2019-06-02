@@ -90,7 +90,7 @@ namespace OdataToEntity.ModelBuilder
                     Type clrPropertyType = underlyingType ?? clrProperty.PropertyType;
                     if (!enumTypes.TryGetValue(clrPropertyType, out EdmEnumType edmEnumType))
                     {
-                        edmEnumType = CreateEdmEnumType(clrPropertyType);
+                        edmEnumType = OeEdmModelBuilder.CreateEdmEnumType(clrPropertyType);
                         enumTypes.Add(clrPropertyType, edmEnumType);
                     }
                     typeRef = new EdmEnumTypeReference(edmEnumType, underlyingType != null);
@@ -135,17 +135,6 @@ namespace OdataToEntity.ModelBuilder
                 AddDbQueryKeys();
             else
                 AddKeys();
-        }
-        internal static EdmEnumType CreateEdmEnumType(Type clrEnumType)
-        {
-            var edmEnumType = new EdmEnumType(clrEnumType.Namespace, clrEnumType.Name);
-            foreach (Enum clrMember in Enum.GetValues(clrEnumType))
-            {
-                long value = Convert.ToInt64(clrMember, CultureInfo.InvariantCulture);
-                var edmMember = new EdmEnumMember(edmEnumType, clrMember.ToString(), new EdmEnumMemberValue(value));
-                edmEnumType.AddMember(edmMember);
-            }
-            return edmEnumType;
         }
         public override String ToString()
         {

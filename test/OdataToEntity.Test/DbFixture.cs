@@ -61,7 +61,7 @@ namespace OdataToEntity.Test
         {
             ODataUri odataUri = ParseUri(request);
             IEdmModel edmModel = OeEdmModel.GetEdmModel(odataUri.Path);
-            return new OeParser(odataUri.ServiceRoot, edmModel, modelBoundProvider);
+            return new OeParser(odataUri.ServiceRoot, edmModel, modelBoundProvider, ServiceProvider);
         }
         public virtual async Task Execute<T, TResult>(QueryParametersScalar<T, TResult> parameters)
         {
@@ -94,9 +94,9 @@ namespace OdataToEntity.Test
             Console.WriteLine(parameters.RequestUri);
             TestHelper.Compare(fromDb, fromOe, includes);
         }
-        internal static async Task ExecuteBatchAsync(IEdmModel edmModel, String batchName)
+        internal static async Task ExecuteBatchAsync(IEdmModel edmModel, String batchName, IServiceProvider serviceProvider = null)
         {
-            var parser = new OeParser(new Uri("http://dummy/"), edmModel);
+            var parser = new OeParser(new Uri("http://dummy/"), edmModel, null, serviceProvider);
             String fileName = Directory.EnumerateFiles(".", batchName + ".batch", SearchOption.AllDirectories).First();
             byte[] bytes = File.ReadAllBytes(fileName);
             var responseStream = new MemoryStream();
@@ -121,7 +121,7 @@ namespace OdataToEntity.Test
             var fromOe = new List<Object>();
             do
             {
-                odataUri = OeParser.ParseUri(parser.EdmModel, parser.BaseUri, uri);
+                odataUri = ParseUri(uri.OriginalString);
                 var response = new MemoryStream();
                 await parser.ExecuteQueryAsync(odataUri, requestHeaders, response, CancellationToken.None).ConfigureAwait(false);
                 response.Position = 0;
@@ -135,12 +135,12 @@ namespace OdataToEntity.Test
                 }
                 else if (typeof(TResult) == typeof(Object) && (requestUri.Contains("$apply=") || requestUri.Contains("$compute=")))
                 {
-                    responseReader = new OpenTypeResponseReader(TestHelper.GetEdmModel(DbEdmModel, odataUri.Path));
+                    responseReader = new OpenTypeResponseReader(TestHelper.GetEdmModel(DbEdmModel, odataUri.Path), ServiceProvider);
                     result = responseReader.Read(response).Cast<Object>().ToList();
                 }
                 else
                 {
-                    responseReader = new ResponseReader(TestHelper.GetEdmModel(DbEdmModel, odataUri.Path));
+                    responseReader = new ResponseReader(TestHelper.GetEdmModel(DbEdmModel, odataUri.Path), ServiceProvider);
                     result = responseReader.Read(response).Cast<Object>().ToList();
                 }
 
@@ -163,7 +163,7 @@ namespace OdataToEntity.Test
             return fromOe;
         }
         public abstract Task Initalize();
-        public ODataUri ParseUri(String requestUri)
+        public virtual ODataUri ParseUri(String requestUri)
         {
             var baseUri = new Uri("http://dummy/");
             if (requestUri.StartsWith(baseUri.OriginalString))
@@ -176,5 +176,6 @@ namespace OdataToEntity.Test
         protected internal virtual bool IsSqlite => false;
         public OeModelBoundProvider ModelBoundProvider { get; }
         public IEdmModel OeEdmModel { get; }
+        protected virtual IServiceProvider ServiceProvider => null;
     }
 }

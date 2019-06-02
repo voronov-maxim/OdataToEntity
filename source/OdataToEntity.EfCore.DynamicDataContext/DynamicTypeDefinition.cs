@@ -42,11 +42,11 @@ namespace OdataToEntity.EfCore.DynamicDataContext
 
             String shadowPropertyIndex = _shadowPropertyIndex.ToString("D2");
             String shadowPropertyGetName = "ShadowPropertyGet" + shadowPropertyIndex;
-            MethodInfo getMethodInfo = typeof(DynamicType).GetMethod(shadowPropertyGetName, BindingFlags.Instance | BindingFlags.NonPublic);
+            MethodInfo getMethodInfo = typeof(Types.DynamicType).GetMethod(shadowPropertyGetName, BindingFlags.Instance | BindingFlags.NonPublic);
             getMethodInfo = getMethodInfo.GetGenericMethodDefinition().MakeGenericMethod(new Type[] { propertyType });
 
             String shadowPropertyFieldName = "ShadowProperty" + shadowPropertyIndex;
-            FieldInfo fieldInfo = typeof(DynamicType).GetField(shadowPropertyFieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+            FieldInfo fieldInfo = typeof(Types.DynamicType).GetField(shadowPropertyFieldName, BindingFlags.Instance | BindingFlags.NonPublic);
 
             var shadowPropertyDefinition = new ShadowPropertyDefinition(getMethodInfo, fieldInfo);
             _shadowPropertyDefinitions.Add(propertyName, shadowPropertyDefinition);

@@ -1,6 +1,7 @@
 ﻿using Microsoft.OData.Edm;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace OdataToEntity.ModelBuilder
 {
@@ -29,7 +30,7 @@ namespace OdataToEntity.ModelBuilder
         }
         public void AddEnumType(Type enumType)
         {
-            _enumTypes.Add(enumType, EntityTypeInfo.CreateEdmEnumType(enumType));
+            _enumTypes.Add(enumType, CreateEdmEnumType(enumType));
         }
         public void AddOperation(OeOperationConfiguration operationConfiguration)
         {
@@ -216,6 +217,17 @@ namespace OdataToEntity.ModelBuilder
             }
 
             return edmFunction;
+        }
+        public static EdmEnumType CreateEdmEnumType(Type clrEnumType)
+        {
+            var edmEnumType = new EdmEnumType(clrEnumType.Namespace, clrEnumType.Name);
+            foreach (Enum clrMember in Enum.GetValues(clrEnumType))
+            {
+                long value = Convert.ToInt64(clrMember, CultureInfo.InvariantCulture);
+                var edmMember = new EdmEnumMember(edmEnumType, clrMember.ToString(), new EdmEnumMemberValue(value));
+                edmEnumType.AddMember(edmMember);
+            }
+            return edmEnumType;
         }
         private IEdmTypeReference GetEdmTypeReference(Type clrType, Dictionary<Type, EntityTypeInfo> entityTypeInfos)
         {

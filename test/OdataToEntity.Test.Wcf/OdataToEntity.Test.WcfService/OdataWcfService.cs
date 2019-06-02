@@ -29,7 +29,7 @@ namespace OdataToEntity.Test.WcfService
                 var pageNextLinkModelBoundBuilder = new PageNextLinkModelBoundBuilder(_edmModel, false);
                 modelBoundProvider = pageNextLinkModelBoundBuilder.BuildProvider(headers.MaxPageSize, false);
             }
-            var parser = new OeParser(_baseUri, _edmModel, modelBoundProvider);
+            var parser = new OeParser(_baseUri, _edmModel, modelBoundProvider, null);
 
             String query = new StreamReader(request.Content).ReadToEnd();
             var uri = new Uri(_baseUri, new Uri(query, UriKind.Relative));

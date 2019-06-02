@@ -5,17 +5,22 @@ using System.IO;
 
 namespace OdataToEntity.Infrastructure
 {
-    public sealed class OeInMemoryMessage : IODataRequestMessage, IODataResponseMessage
+    public sealed class OeInMemoryMessage : IODataRequestMessage, IODataResponseMessage, IContainerProvider
     {
         private readonly Dictionary<String, String> _headers;
+        private readonly IServiceProvider _serviceProvider;
         private readonly Stream _stream;
 
-        public OeInMemoryMessage(Stream stream, String contentType)
+        public OeInMemoryMessage(Stream stream, String contentType) : this(stream, contentType, null)
+        {
+        }
+        public OeInMemoryMessage(Stream stream, String contentType, IServiceProvider serviceProvider)
         {
             _stream = stream;
             _headers = new Dictionary<String, String>(1);
             if (contentType != null)
                 _headers.Add(ODataConstants.ContentTypeHeader, contentType);
+            _serviceProvider = serviceProvider;
         }
 
         public String GetHeader(String headerName)
@@ -42,5 +47,7 @@ namespace OdataToEntity.Infrastructure
             get => throw new NotImplementedException();
             set => throw new NotImplementedException();
         }
+
+        IServiceProvider IContainerProvider.Container => _serviceProvider;
     }
 }

@@ -1,4 +1,5 @@
-﻿using Microsoft.OData.Edm;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.OData.Edm;
 using OdataToEntity.ModelBuilder;
 using System;
 using System.Collections.Generic;
@@ -64,7 +65,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
         {
             return OeEdmClrHelper.GetEntitySet(_edmModel, tableName).EntityType().Name;
         }
-        public override IEnumerable<(String, String)> GetManyToManyProperties(String tableName)
+        public override IEnumerable<(String NavigationName, String ManyToManyTarget)> GetManyToManyProperties(String tableName)
         {
             IEdmEntityType edmEntityType = OeEdmClrHelper.GetEntitySet(_edmModel, tableName).EntityType();
             foreach (IEdmNavigationProperty navigationProperty in edmEntityType.NavigationProperties())
@@ -114,5 +115,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
             foreach (IEdmEntitySet entitySet in _edmModel.EntityContainer.EntitySets())
                 yield return entitySet.Name;
         }
+
+        public override DbContextOptions DbContextOptions => throw new NotImplementedException();
     }
 }

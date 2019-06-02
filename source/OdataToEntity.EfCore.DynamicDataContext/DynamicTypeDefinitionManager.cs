@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Query.Internal;
+using OdataToEntity.EfCore.DynamicDataContext.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,11 +31,12 @@ namespace OdataToEntity.EfCore.DynamicDataContext
             _tableNameTypes = new Dictionary<String, Type>();
         }
 
-        public static DynamicTypeDefinitionManager Create(DbContextOptions options, DynamicMetadataProvider metadataProvider)
+        public static DynamicTypeDefinitionManager Create(DynamicMetadataProvider metadataProvider)
         {
             int dynamicDbContextIndex = Interlocked.Increment(ref _dynamicDbContextIndex);
             Type dynamicDbContextType = Type.GetType(typeof(DynamicDbContext).FullName + dynamicDbContextIndex.ToString("D2"));
             ConstructorInfo ctor = dynamicDbContextType.GetConstructor(new Type[] { typeof(DbContextOptions), typeof(DynamicTypeDefinitionManager) });
+            DbContextOptions options = CreateOptions(metadataProvider.DbContextOptions, dynamicDbContextType);
             var typeDefinitionManager = new DynamicTypeDefinitionManager(options, metadataProvider, ctor);
 
             ctor = dynamicDbContextType.GetConstructor(new Type[] { typeof(DbContextOptions), typeof(DynamicModelBuilder).MakeByRefType() });
@@ -44,6 +47,15 @@ namespace OdataToEntity.EfCore.DynamicDataContext
         public DynamicDbContext CreateDynamicDbContext()
         {
             return _dynamicDbContextCtor();
+        }
+        private static DbContextOptions CreateOptions(DbContextOptions options, Type dynamicDbContextType)
+        {
+            Type optionsBuilderType = typeof(DbContextOptionsBuilder<>).MakeGenericType(dynamicDbContextType);
+            var optionsBuilder = (DbContextOptionsBuilder)Activator.CreateInstance(optionsBuilderType);
+            DbContextOptions dynamicContextOptions = optionsBuilder.Options;
+            foreach (IDbContextOptionsExtension extension in options.Extensions)
+                dynamicContextOptions = dynamicContextOptions.WithExtension(extension);
+            return dynamicContextOptions;
         }
         public IQueryable<DynamicType> GetQueryable(DynamicDbContext dynamicDbContext, String tableName)
         {

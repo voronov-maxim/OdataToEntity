@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
-namespace OdataToEntity.EfCore.DynamicDataContext
+namespace OdataToEntity.EfCore.DynamicDataContext.Types
 {
     public abstract class DynamicType
     {

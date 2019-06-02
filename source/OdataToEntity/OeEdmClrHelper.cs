@@ -49,7 +49,7 @@ namespace OdataToEntity
                         dateTimeOffset = new DateTimeOffset(dateTime.ToUniversalTime());
                         break;
                     default:
-                        throw new ArgumentOutOfRangeException("unknown DateTimeKind " + dateTime.Kind.ToString());
+                        throw new ArgumentOutOfRangeException("Unknown DateTimeKind " + dateTime.Kind.ToString());
                 }
                 return new ODataPrimitiveValue(dateTimeOffset);
             }

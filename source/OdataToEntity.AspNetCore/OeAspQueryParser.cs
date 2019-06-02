@@ -93,7 +93,7 @@ namespace OdataToEntity.AspNetCore
             OeRequestHeaders headers = GetRequestHeaders(requestHeaders, httpContext.Response);
 
             var edmModel = (IEdmModel)httpContext.RequestServices.GetService(typeof(IEdmModel));
-            var parser = new OeParser(UriHelper.GetBaseUri(httpContext.Request), edmModel, modelBoundProvider);
+            var parser = new OeParser(UriHelper.GetBaseUri(httpContext.Request), edmModel, modelBoundProvider, null);
             await parser.ExecuteGetAsync(UriHelper.GetUri(httpContext.Request), headers, httpContext.Response.Body, httpContext.RequestAborted);
         }
         private IAsyncEnumerable<Object> GetAsyncEnumerator(IQueryable source = null)

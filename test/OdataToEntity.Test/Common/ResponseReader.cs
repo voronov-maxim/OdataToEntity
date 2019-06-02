@@ -85,9 +85,12 @@ namespace OdataToEntity.Test
 
         private static readonly Dictionary<PropertyInfo, NavigationInfo> EmptyNavigationPropertyEntities = new Dictionary<PropertyInfo, NavigationInfo>();
 
-        public ResponseReader(IEdmModel edmModel)
+        private readonly IServiceProvider _serviceProvider;
+
+        public ResponseReader(IEdmModel edmModel, IServiceProvider serviceProvider = null)
         {
             EdmModel = edmModel;
+            _serviceProvider = serviceProvider;
 
             NavigationProperties = new Dictionary<Object, NavigationInfo>();
             NavigationInfoEntities = new Dictionary<Object, Dictionary<PropertyInfo, NavigationInfo>>();
@@ -165,7 +168,7 @@ namespace OdataToEntity.Test
                             await parser.ExecuteGetAsync(requestUri, OeRequestHeaders.JsonDefault, response, token).ConfigureAwait(false);
                             response.Position = 0;
 
-                            var navigationPropertyReader = new ResponseReader(EdmModel);
+                            var navigationPropertyReader = new ResponseReader(EdmModel, _serviceProvider);
                             AddItems(navigationPropertyEntity.Key, propertyResourceSet.Key, navigationPropertyReader.Read(response));
                             await navigationPropertyReader.FillNextLinkProperties(parser, token);
 
@@ -227,7 +230,7 @@ namespace OdataToEntity.Test
             NavigationProperties.Clear();
             NavigationInfoEntities.Clear();
 
-            IODataResponseMessage responseMessage = new Infrastructure.OeInMemoryMessage(response, null);
+            IODataResponseMessage responseMessage = new Infrastructure.OeInMemoryMessage(response, null, _serviceProvider);
             var settings = new ODataMessageReaderSettings() { EnableMessageStreamDisposal = false, Validations = ValidationKinds.None };
             using (var messageReader = new ODataMessageReader(responseMessage, settings, EdmModel))
             {

@@ -216,7 +216,7 @@ namespace OdataToEntity.Test
                 if (maxPageSize > 0)
                     Assert.InRange(result.Count, 0, maxPageSize);
 
-                var navigationPropertyParser = new OeParser(parser.BaseUri, parser.EdmModel, fixture.ModelBoundProvider);
+                var navigationPropertyParser = new OeParser(parser.BaseUri, parser.EdmModel, fixture.ModelBoundProvider, null);
                 foreach (dynamic order in result)
                 {
                     using (var dbContext = fixture.CreateContext())

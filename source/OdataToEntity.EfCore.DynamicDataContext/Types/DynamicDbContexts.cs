@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace OdataToEntity.EfCore.DynamicDataContext
+namespace OdataToEntity.EfCore.DynamicDataContext.Types
 {
     public sealed class DynamicDbContext01 : DynamicDbContext
     {

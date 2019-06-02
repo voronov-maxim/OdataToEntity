@@ -21,9 +21,9 @@ namespace OdataToEntity.Parsers
             Operation = operation;
         }
 
-        public static OeBatchMessage CreateBatchMessage(IEdmModel edmModel, Uri baseUri, Stream requestStream, String contentType)
+        public static OeBatchMessage CreateBatchMessage(IEdmModel edmModel, Uri baseUri, Stream requestStream, String contentType, IServiceProvider serviceProvider = null)
         {
-            IODataRequestMessage requestMessage = new Infrastructure.OeInMemoryMessage(requestStream, contentType);
+            IODataRequestMessage requestMessage = new Infrastructure.OeInMemoryMessage(requestStream, contentType, serviceProvider);
             var settings = new ODataMessageReaderSettings() { EnableMessageStreamDisposal = false };
             using (var messageReader = new ODataMessageReader(requestMessage, settings))
             {
@@ -36,12 +36,12 @@ namespace OdataToEntity.Parsers
                         var operations = new List<OeOperationMessage>();
                         while (batchReader.Read() && batchReader.State != ODataBatchReaderState.ChangesetEnd)
                             if (batchReader.State == ODataBatchReaderState.Operation)
-                                operations.Add(OeOperationMessage.Create(edmModel, baseUri, batchReader));
+                                operations.Add(OeOperationMessage.Create(edmModel, baseUri, batchReader, serviceProvider));
                         return new OeBatchMessage(contentType, operations);
                     }
                     else if (batchReader.State == ODataBatchReaderState.Operation)
                     {
-                        return new OeBatchMessage(contentType, OeOperationMessage.Create(edmModel, baseUri, batchReader));
+                        return new OeBatchMessage(contentType, OeOperationMessage.Create(edmModel, baseUri, batchReader, serviceProvider));
                     }
                 }
             }

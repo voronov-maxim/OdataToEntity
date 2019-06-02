@@ -2,7 +2,7 @@
   <PropertyGroup>
     <AspNetCoreVersion>2.2.0</AspNetCoreVersion>
     <AspNetCoreMvcVersion>2.2.0</AspNetCoreMvcVersion>
-    <AspNetCoreMvcCoreVersion>2.2.2</AspNetCoreMvcCoreVersion>
+    <AspNetCoreMvcCoreVersion>2.2.5</AspNetCoreMvcCoreVersion>
     <CoreFxVersion>4.5.0</CoreFxVersion>
     <CSharpVersion>7.2</CSharpVersion>
     <EfCoreVersion>2.2.4</EfCoreVersion>
@@ -14,7 +14,7 @@
     <ODataLibVersion>7.5.4</ODataLibVersion>
     <OdataToEntityVersion>2.3.0</OdataToEntityVersion>
     <SystemInteractiveAsyncVersion>3.2.0</SystemInteractiveAsyncVersion>
-    <TestSdkVersion>16.1.0</TestSdkVersion>
+    <TestSdkVersion>16.1.1</TestSdkVersion>
     <Version>$(OdataToEntityVersion)</Version>
     <XunitVersion>2.4.1</XunitVersion>
   </PropertyGroup>

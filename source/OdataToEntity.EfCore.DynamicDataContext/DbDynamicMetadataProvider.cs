@@ -11,41 +11,96 @@ namespace OdataToEntity.EfCore.DynamicDataContext
 {
     public sealed class DbDynamicMetadataProvider : DynamicMetadataProvider, IDisposable
     {
-        private readonly DbContextPool<SchemaContext> _dbContextPool;
-
-        public DbDynamicMetadataProvider(DbContextOptions options)
+        private readonly struct FKeyMapping
         {
-            _dbContextPool = new DbContextPool<SchemaContext>(options);
+            public FKeyMapping(NavigationMapping dependent, NavigationMapping principal)
+            {
+                Dependent = dependent;
+                Principal = principal;
+            }
+
+            public NavigationMapping Dependent { get; }
+            public NavigationMapping Principal { get; }
         }
 
+        private readonly DbContextPool<SchemaContext> _dbContextPool;
+        private readonly SchemaCache _schemaCache;
+
+        public DbDynamicMetadataProvider(String connectionString, bool useRelationalNulls)
+        {
+            DbContextOptions = CreateOptions(connectionString, useRelationalNulls);
+            _dbContextPool = new DbContextPool<SchemaContext>(DbContextOptions);
+            _schemaCache = new SchemaCache();
+        }
+
+        private static DbContextOptions CreateOptions(String connectionString, bool useRelationalNulls)
+        {
+            var optionsBuilder = new DbContextOptionsBuilder<SchemaContext>();
+            optionsBuilder.UseSqlServer(connectionString, opt => opt.UseRelationalNulls(useRelationalNulls));
+            return optionsBuilder.Options;
+        }
         public void Dispose()
         {
             _dbContextPool.Dispose();
         }
         public override DynamicDependentPropertyInfo GetDependentProperties(String tableName, String navigationPropertyName)
         {
-            throw new NotImplementedException();
+            SchemaContext schemaContext = _dbContextPool.Rent();
+            try
+            {
+                (String, String) tableFullName = _schemaCache.GetTables(schemaContext)[tableName];
+                if (_schemaCache.GetNavigations(schemaContext).TryGetValue(tableFullName, out List<SchemaCache.Navigation> navigations))
+                    foreach (SchemaCache.Navigation navigation in navigations)
+                        if (navigation.NavigationName == navigationPropertyName)
+                        {
+                            List<KeyColumnUsage> dependent = _schemaCache.GetKeyColumns(schemaContext)[(navigation.ConstraintSchema, navigation.DependentConstraintName)];
+                            List<KeyColumnUsage> principal = _schemaCache.GetKeyColumns(schemaContext)[(navigation.ConstraintSchema, navigation.PrincipalConstraintName)]; ;
+                            List<String> principalPropertyNames = principal.OrderBy(p => p.OrdinalPosition).Select(p => p.ColumnName).ToList();
+                            List<String> dependentPropertyNames = dependent.OrderBy(p => p.OrdinalPosition).Select(p => p.ColumnName).ToList();
+                            return new DynamicDependentPropertyInfo(principal[0].TableName, dependent[0].TableName, principalPropertyNames, dependentPropertyNames, navigation.IsCollection);
+                        }
+            }
+            finally
+            {
+                _dbContextPool.Return(schemaContext);
+            }
+
+            throw new InvalidOperationException("Navigation property " + navigationPropertyName + " not found in table " + tableName);
         }
         public override String GetEntityName(String tableName)
         {
-            throw new NotImplementedException();
+            return tableName;
         }
-        public override IEnumerable<(String, String)> GetManyToManyProperties(String tableName)
+        public override IEnumerable<(String NavigationName, String ManyToManyTarget)> GetManyToManyProperties(String tableEdmName)
         {
-            return Array.Empty<(String, String)>();
+            foreach (NavigationMapping navigationMapping in _schemaCache.GetNavigationMappings(tableEdmName))
+                if (!String.IsNullOrEmpty(navigationMapping.ManyToManyTarget))
+                    yield return (navigationMapping.NavigationName, navigationMapping.ManyToManyTarget);
         }
         public override IEnumerable<String> GetNavigationProperties(String tableName)
         {
-            throw new NotImplementedException();
+            SchemaContext schemaContext = _dbContextPool.Rent();
+            try
+            {
+                (String, String) tableFullName = _schemaCache.GetTables(schemaContext)[tableName];
+                if (_schemaCache.GetNavigations(schemaContext).TryGetValue(tableFullName, out List<SchemaCache.Navigation> navigations))
+                    foreach (SchemaCache.Navigation navigation in navigations)
+                        yield return navigation.NavigationName;
+            }
+            finally
+            {
+                _dbContextPool.Return(schemaContext);
+            }
         }
         public override IEnumerable<String> GetPrimaryKey(String tableName)
         {
-            throw new NotImplementedException();
+            foreach (DbColumn column in _schemaCache.GetColumns(tableName))
+                if (column.IsKey.GetValueOrDefault())
+                    yield return column.ColumnName;
         }
         public override IEnumerable<DynamicPropertyInfo> GetStructuralProperties(String tableName)
         {
-            SchemaContext schemaContext = _dbContextPool.Rent();
-            foreach (DbColumn column in schemaContext.GetColumns(tableName))
+            foreach (DbColumn column in _schemaCache.GetColumns(tableName))
             {
                 DatabaseGeneratedOption databaseGenerated;
                 if (column.IsIdentity.GetValueOrDefault())
@@ -54,9 +109,13 @@ namespace OdataToEntity.EfCore.DynamicDataContext
                     databaseGenerated = DatabaseGeneratedOption.Computed;
                 else
                     databaseGenerated = DatabaseGeneratedOption.None;
-                yield return new DynamicPropertyInfo(column.ColumnName, column.DataType, databaseGenerated);
+
+                Type propertyType = column.DataType;
+                if (column.AllowDBNull.GetValueOrDefault() && column.DataType.IsValueType)
+                    propertyType = typeof(Nullable<>).MakeGenericType(propertyType);
+
+                yield return new DynamicPropertyInfo(column.ColumnName, propertyType, databaseGenerated);
             }
-            _dbContextPool.Return(schemaContext);
         }
         public override String GetTableName(String entityName)
         {
@@ -65,9 +124,22 @@ namespace OdataToEntity.EfCore.DynamicDataContext
         public override IEnumerable<String> GetTableNames()
         {
             SchemaContext schemaContext = _dbContextPool.Rent();
-            foreach (String tableName in schemaContext.Tables.Select(t => t.TableName))
-                yield return tableName;
-            _dbContextPool.Return(schemaContext);
+            try
+            {
+                ICollection<String> tableNames = _schemaCache.GetTables(schemaContext).Keys;
+                return tableNames;
+            }
+            finally
+            {
+                _dbContextPool.Return(schemaContext);
+            }
         }
+
+        public ICollection<TableMapping> TableMappings
+        {
+            get => _schemaCache.TableMappings;
+            set => _schemaCache.TableMappings = value;
+        }
+        public override DbContextOptions DbContextOptions { get; }
     }
 }

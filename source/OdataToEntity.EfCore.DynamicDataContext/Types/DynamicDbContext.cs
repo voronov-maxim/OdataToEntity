@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
-namespace OdataToEntity.EfCore.DynamicDataContext
+namespace OdataToEntity.EfCore.DynamicDataContext.Types
 {
     public abstract class DynamicDbContext : DbContext
     {
@@ -17,18 +17,15 @@ namespace OdataToEntity.EfCore.DynamicDataContext
             TypeDefinitionManager = dynamicModelBuilder.TypeDefinitionManager;
         }
 
-        public static DbContextOptions CreateOptions(bool useRelationalNulls)
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            var optionsBuilder = new DbContextOptionsBuilder<DynamicDbContext>();
             optionsBuilder.ReplaceService<IEntityMaterializerSource, DynamicEntityMaterializerSource>();
-            optionsBuilder = optionsBuilder.UseSqlServer(@"Server=.\sqlexpress;Initial Catalog=OdataToEntity;Trusted_Connection=Yes;", opt => opt.UseRelationalNulls(useRelationalNulls));
-            return optionsBuilder.Options;
+            base.OnConfiguring(optionsBuilder);
         }
         protected override void OnModelCreating(Microsoft.EntityFrameworkCore.ModelBuilder modelBuilder)
         {
             _dynamicModelBuilder.Build(modelBuilder);
         }
-
         public DynamicTypeDefinitionManager TypeDefinitionManager { get; }
     }
 }

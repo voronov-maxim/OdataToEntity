@@ -11,17 +11,19 @@ namespace OdataToEntity.Parsers
     public readonly struct OeBatchParser
     {
         private readonly Uri _baseUri;
-        private readonly IEdmModel _model;
+        private readonly IEdmModel _edmModel;
+        private readonly IServiceProvider _serviceProvider;
 
-        public OeBatchParser(Uri baseUri, IEdmModel model)
+        public OeBatchParser(Uri baseUri, IEdmModel edmModel, IServiceProvider serviceProvider = null)
         {
             _baseUri = baseUri;
-            _model = model;
+            _edmModel = edmModel;
+            _serviceProvider = serviceProvider;
         }
 
         private void AddToEntitySet(Object dataContext, in OeOperationMessage operation)
         {
-            Db.OeEntitySetAdapter entitySetAdapter = _model.GetEntitySetAdapter(operation.EntitySet);
+            Db.OeEntitySetAdapter entitySetAdapter = _edmModel.GetEntitySetAdapter(operation.EntitySet);
             switch (operation.Method)
             {
                 case ODataConstants.MethodDelete:
@@ -39,13 +41,13 @@ namespace OdataToEntity.Parsers
         }
         public async Task ExecuteAsync(Stream requestStream, Stream responseStream, String contentType, CancellationToken cancellationToken)
         {
-            OeBatchMessage batchMessage = OeBatchMessage.CreateBatchMessage(_model, _baseUri, requestStream, contentType);
+            OeBatchMessage batchMessage = OeBatchMessage.CreateBatchMessage(_edmModel, _baseUri, requestStream, contentType, _serviceProvider);
             if (batchMessage.Changeset == null)
                 await ExecuteOperation(batchMessage.Operation, cancellationToken).ConfigureAwait(false);
             else
                 await ExecuteChangeset(batchMessage.Changeset, cancellationToken).ConfigureAwait(false);
 
-            var batchWriter = new Writers.OeBatchWriter(_model, _baseUri);
+            var batchWriter = new Writers.OeBatchWriter(_edmModel, _baseUri);
             batchWriter.Write(responseStream, batchMessage);
         }
         private async Task ExecuteChangeset(IReadOnlyList<OeOperationMessage> changeset, CancellationToken cancellationToken)
@@ -58,7 +60,7 @@ namespace OdataToEntity.Parsers
                 {
                     if (dataAdapter == null)
                     {
-                        dataAdapter = _model.GetDataAdapter(changeset[i].EntitySet.Container);
+                        dataAdapter = _edmModel.GetDataAdapter(changeset[i].EntitySet.Container);
                         dataContext = dataAdapter.CreateDataContext();
                     }
                     AddToEntitySet(dataContext, changeset[i]);
@@ -75,7 +77,7 @@ namespace OdataToEntity.Parsers
         }
         private async Task ExecuteOperation(OeOperationMessage operation, CancellationToken cancellationToken)
         {
-            Db.OeDataAdapter dataAdapter = _model.GetDataAdapter(operation.EntitySet.Container);
+            Db.OeDataAdapter dataAdapter = _edmModel.GetDataAdapter(operation.EntitySet.Container);
             Object dataContext = null;
             try
             {

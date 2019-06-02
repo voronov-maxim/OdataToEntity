@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace OdataToEntity.EfCore.DynamicDataContext
+﻿namespace OdataToEntity.EfCore.DynamicDataContext.Types
 {
     public sealed class DynamicType01 : DynamicType
     {
@@ -98,6 +96,56 @@ namespace OdataToEntity.EfCore.DynamicDataContext
         {
         }
         public DynamicType10(DynamicTypeDefinition dynamicTypeDefinition) : base(dynamicTypeDefinition)
+        {
+        }
+    }
+
+    public sealed class DynamicType11 : DynamicType
+    {
+        private DynamicType11()
+        {
+        }
+        public DynamicType11(DynamicTypeDefinition dynamicTypeDefinition) : base(dynamicTypeDefinition)
+        {
+        }
+    }
+
+    public sealed class DynamicType12 : DynamicType
+    {
+        private DynamicType12()
+        {
+        }
+        public DynamicType12(DynamicTypeDefinition dynamicTypeDefinition) : base(dynamicTypeDefinition)
+        {
+        }
+    }
+
+    public sealed class DynamicType13 : DynamicType
+    {
+        private DynamicType13()
+        {
+        }
+        public DynamicType13(DynamicTypeDefinition dynamicTypeDefinition) : base(dynamicTypeDefinition)
+        {
+        }
+    }
+
+    public sealed class DynamicType14 : DynamicType
+    {
+        private DynamicType14()
+        {
+        }
+        public DynamicType14(DynamicTypeDefinition dynamicTypeDefinition) : base(dynamicTypeDefinition)
+        {
+        }
+    }
+
+    public sealed class DynamicType15 : DynamicType
+    {
+        private DynamicType15()
+        {
+        }
+        public DynamicType15(DynamicTypeDefinition dynamicTypeDefinition) : base(dynamicTypeDefinition)
         {
         }
     }

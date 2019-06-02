@@ -67,15 +67,15 @@ namespace OdataToEntity
             }
         }
 
-        private sealed class ServiceProvider : IServiceProvider
+        private sealed class ServiceProviderImpl : IServiceProvider
         {
             private static readonly ODataUriParserSettings _uriParserSettings = new ODataUriParserSettings();
             private static readonly UriPathParser _uriPathParser = new UriPathParser(_uriParserSettings);
             private static readonly ODataSimplifiedOptions _simplifiedOptions = new ODataSimplifiedOptions();
             private static readonly ODataUriResolver _uriResolver = new RefModelUriResolver();
-            public static readonly ServiceProvider Instance = new ServiceProvider();
+            public static readonly ServiceProviderImpl Instance = new ServiceProviderImpl();
 
-            private ServiceProvider()
+            private ServiceProviderImpl()
             {
             }
 
@@ -94,14 +94,17 @@ namespace OdataToEntity
             }
         }
 
-        public OeParser(Uri baseUri, IEdmModel edmModel) : this(baseUri, edmModel, null)
+        private readonly IServiceProvider _serviceProvider;
+
+        public OeParser(Uri baseUri, IEdmModel edmModel) : this(baseUri, edmModel, null, null)
         {
         }
-        public OeParser(Uri baseUri, IEdmModel edmModel, Query.OeModelBoundProvider modelBoundProvider)
+        public OeParser(Uri baseUri, IEdmModel edmModel, Query.OeModelBoundProvider modelBoundProvider, IServiceProvider serviceProvider)
         {
             BaseUri = baseUri;
             EdmModel = edmModel;
             ModelBoundProvider = modelBoundProvider;
+            _serviceProvider = serviceProvider;
         }
 
         public async Task<String> ExecuteBatchAsync(Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
@@ -113,7 +116,7 @@ namespace OdataToEntity
         }
         public async Task ExecuteBatchAsync(Stream requestStream, Stream responseStream, String contentType, CancellationToken cancellationToken)
         {
-            var paser = new Parsers.OeBatchParser(BaseUri, EdmModel);
+            var paser = new Parsers.OeBatchParser(BaseUri, EdmModel, _serviceProvider);
             await paser.ExecuteAsync(requestStream, responseStream, contentType, cancellationToken).ConfigureAwait(false);
         }
         public async Task ExecuteGetAsync(Uri requestUri, OeRequestHeaders headers, Stream responseStream, CancellationToken cancellationToken)
@@ -178,22 +181,23 @@ namespace OdataToEntity
         }
         public static ODataPath ParsePath(IEdmModel edmModel, Uri serviceRoot, Uri uri)
         {
-            var uriParser = new ODataUriParser(edmModel, serviceRoot, uri, ServiceProvider.Instance);
+            var uriParser = new ODataUriParser(edmModel, serviceRoot, uri, ServiceProviderImpl.Instance);
             return uriParser.ParsePath();
         }
         public static ODataUri ParseUri(IEdmModel edmModel, Uri relativeUri)
         {
-            var uriParser = new ODataUriParser(edmModel, relativeUri, ServiceProvider.Instance);
+            var uriParser = new ODataUriParser(edmModel, relativeUri, ServiceProviderImpl.Instance);
             return uriParser.ParseUri();
         }
         public static ODataUri ParseUri(IEdmModel edmModel, Uri serviceRoot, Uri uri)
         {
-            var uriParser = new ODataUriParser(edmModel, serviceRoot, uri, ServiceProvider.Instance);
+            var uriParser = new ODataUriParser(edmModel, serviceRoot, uri, ServiceProviderImpl.Instance);
             return uriParser.ParseUri();
         }
 
         public Uri BaseUri { get; }
         public IEdmModel EdmModel { get; }
         public Query.OeModelBoundProvider ModelBoundProvider { get; }
+        public static IServiceProvider ServiceProvider => ServiceProviderImpl.Instance;
     }
 }

@@ -10,7 +10,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
 {
     public sealed class DynamicEntityMaterializerSource : EntityMaterializerSource
     {
-        private static readonly MethodInfo _setValueMethodInfo = typeof(DynamicType).GetMethod(nameof(DynamicType.SetValue));
+        private static readonly MethodInfo _setValueMethodInfo = typeof(Types.DynamicType).GetMethod(nameof(Types.DynamicType.SetValue));
 
         public override Expression CreateMaterializeExpression(IEntityType entityType, Expression materializationExpression, int[] indexMap = null)
         {
@@ -36,7 +36,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
         }
         private static DynamicTypeDefinition GetDynamicTypeDefinition(MaterializationContext materializationContext, Type clrEntityType)
         {
-            var dynamicDbContext = (DynamicDbContext)materializationContext.Context;
+            var dynamicDbContext = (Types.DynamicDbContext)materializationContext.Context;
             return dynamicDbContext.TypeDefinitionManager.GetDynamicTypeDefinition(clrEntityType);
         }
     }
