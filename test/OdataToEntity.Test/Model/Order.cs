@@ -158,6 +158,14 @@ namespace OdataToEntity.Test.Model
 
     public sealed class CustomerShippingAddress
     {
+        public CustomerShippingAddress()
+        {
+            CustomerCountry = OpenTypeConverter.NotSetString;
+            CustomerId = Int32.MinValue;
+            ShippingAddressOrderId = Int32.MinValue;
+            ShippingAddressId = Int32.MinValue;
+        }
+
         [ForeignKey("CustomerCountry,CustomerId")]
         public Customer Customer { get; set; }
         [Key, Column(Order = 0)]

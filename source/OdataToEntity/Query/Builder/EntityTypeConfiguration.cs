@@ -63,10 +63,7 @@ namespace OdataToEntity.Query.Builder
         }
         public PropertyConfiguration<TEntity> Property(Expression<Func<TEntity, Object>> propertyExpression)
         {
-            var property = (MemberExpression)propertyExpression.Body;
-            var propertyInfo = (PropertyInfo)property.Member;
-            IEdmProperty edmProperty = _entityType.GetPropertyIgnoreCase(propertyInfo.Name);
-            return new PropertyConfiguration<TEntity>(_modelBuilder, edmProperty);
+            return new PropertyConfiguration<TEntity>(_modelBuilder, _entityType, propertyExpression);
         }
         public EntityTypeConfiguration<TEntity> Select(SelectExpandType expandType, params String[] propertyNames)
         {

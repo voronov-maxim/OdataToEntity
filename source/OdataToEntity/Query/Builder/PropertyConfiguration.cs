@@ -15,6 +15,10 @@ namespace OdataToEntity.Query.Builder
             _modelBuilder = modelBuilder;
             _edmProperty = edmProperty;
         }
+        internal PropertyConfiguration(OeModelBoundFluentBuilder modelBuilder, IEdmEntityType entityType, Expression<Func<TEntity, Object>> propertyExpression)
+            : this(modelBuilder, GetEdmProperty(entityType, propertyExpression))
+        {
+        }
 
         public PropertyConfiguration<TEntity> Count(QueryOptionSetting setting)
         {
@@ -46,6 +50,16 @@ namespace OdataToEntity.Query.Builder
                 _modelBuilder.ModelBoundSettingsBuilder.SetFilter(edmProperty, setting == QueryOptionSetting.Allowed, navigationProperty);
             }
             return this;
+        }
+        private static IEdmProperty GetEdmProperty(IEdmStructuredType entityType, Expression<Func<TEntity, Object>> propertyExpression)
+        {
+            MemberExpression property;
+            if (propertyExpression.Body is UnaryExpression convert)
+                property = (MemberExpression)convert.Operand;
+            else
+                property = (MemberExpression)propertyExpression.Body;
+            var propertyInfo = (PropertyInfo)property.Member;
+            return entityType.GetPropertyIgnoreCase(propertyInfo.Name);
         }
         public PropertyConfiguration<TEntity> NavigationNextLink()
         {
@@ -84,10 +98,7 @@ namespace OdataToEntity.Query.Builder
         }
         public PropertyConfiguration<TEntity> Property(Expression<Func<TEntity, Object>> propertyExpression)
         {
-            var property = (MemberExpression)propertyExpression.Body;
-            var propertyInfo = (PropertyInfo)property.Member;
-            IEdmProperty edmProperty = _edmProperty.DeclaringType.GetPropertyIgnoreCase(propertyInfo.Name);
-            return new PropertyConfiguration<TEntity>(_modelBuilder, edmProperty);
+            return new PropertyConfiguration<TEntity>(_modelBuilder, GetEdmProperty(_edmProperty.DeclaringType, propertyExpression));
         }
         public PropertyConfiguration<TEntity> Select(SelectExpandType expandType)
         {

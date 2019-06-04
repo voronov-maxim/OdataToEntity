@@ -67,14 +67,14 @@ namespace OdataToEntity.EfCore.DynamicDataContext
             ConstructorInfo ctor = dbSetType.GetConstructor(new Type[] { typeof(IAsyncQueryProvider) });
             return (IQueryable<DynamicType>)ctor.Invoke(new Object[] { dynamicDbContext.GetDependencies().QueryProvider });
         }
-        public DynamicTypeDefinition GetDynamicTypeDefinition(String tableName)
+        public DynamicTypeDefinition GetDynamicTypeDefinition(String tableName, bool isQueryType)
         {
             if (_tableNameTypes.TryGetValue(tableName, out Type dynamicTypeType))
                 return GetDynamicTypeDefinition(dynamicTypeType);
 
             dynamicTypeType = GetDynamicTypeType();
             String entityName = MetadataProvider.GetEntityName(tableName);
-            var dynamicTypeDefinition = new DynamicTypeDefinition(dynamicTypeType, entityName, tableName);
+            var dynamicTypeDefinition = new DynamicTypeDefinition(dynamicTypeType, entityName, tableName, isQueryType);
             _tableNameTypes.Add(tableName, dynamicTypeType);
             _dynamicTypeDefinitions.Add(dynamicTypeType, dynamicTypeDefinition);
             return dynamicTypeDefinition;

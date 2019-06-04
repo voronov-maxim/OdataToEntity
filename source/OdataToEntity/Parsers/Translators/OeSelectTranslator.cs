@@ -282,7 +282,7 @@ namespace OdataToEntity.Parsers.Translators
             if (_rootNavigationItem.HasNavigationItems())
                 return (MethodCallExpression)source;
 
-            if (_rootNavigationItem.StructuralItems.Count == 0)
+            if (_rootNavigationItem.AllSelected)
                 return (MethodCallExpression)source;
 
             ParameterExpression parameter = _joinBuilder.Visitor.Parameter;
@@ -322,7 +322,7 @@ namespace OdataToEntity.Parsers.Translators
         }
         private static OePropertyAccessor[] GetAccessors(Type clrEntityType, OeNavigationSelectItem navigationItem)
         {
-            if (navigationItem.StructuralItems.Count == 0)
+            if (navigationItem.AllSelected)
                 return OePropertyAccessor.CreateFromType(clrEntityType, navigationItem.EntitySet);
 
             IReadOnlyList<OeStructuralSelectItem> structuralItems = navigationItem.GetStructuralItemsWithNotSelected();
@@ -396,29 +396,34 @@ namespace OdataToEntity.Parsers.Translators
             var newJoins = new Expression[joins.Count];
 
             List<OeNavigationSelectItem> navigationItems = FlattenNavigationItems(root, false);
+            bool isNavigationNullable = false;
             for (int i = 0; i < navigationItems.Count; i++)
             {
                 newJoins[i] = joins[i];
-                if (navigationItems[i].StructuralItems.Count > 0)
+                isNavigationNullable |= i > 0 && navigationItems[i].EdmProperty.Type.IsNullable;
+                if (!navigationItems[i].AllSelected)
                 {
                     IReadOnlyList<OeStructuralSelectItem> structuralItems = navigationItems[i].GetStructuralItemsWithNotSelected();
-                    var properties = new Expression[structuralItems.Count];
-                    for (int j = 0; j < structuralItems.Count; j++)
-                        if (structuralItems[j].EdmProperty is ComputeProperty computeProperty)
-                            properties[j] = new ReplaceParameterVisitor(joins[i]).Visit(computeProperty.Expression);
-                        else
-                        {
-                            PropertyInfo property = joins[i].Type.GetPropertyIgnoreCase(structuralItems[j].EdmProperty);
-                            properties[j] = Expression.Property(joins[i], property);
-                        }
-                    Expression newTupleExpression = OeExpressionHelper.CreateTupleExpression(properties);
-
-                    if (i > 0 && navigationItems[i].EdmProperty.Type.IsNullable)
+                    if (structuralItems.Count > 0)
                     {
-                        UnaryExpression nullConstant = Expression.Convert(OeConstantToVariableVisitor.NullConstantExpression, newTupleExpression.Type);
-                        newTupleExpression = Expression.Condition(Expression.Equal(joins[i], OeConstantToVariableVisitor.NullConstantExpression), nullConstant, newTupleExpression);
+                        var properties = new Expression[structuralItems.Count];
+                        for (int j = 0; j < structuralItems.Count; j++)
+                            if (structuralItems[j].EdmProperty is ComputeProperty computeProperty)
+                                properties[j] = new ReplaceParameterVisitor(joins[i]).Visit(computeProperty.Expression);
+                            else
+                            {
+                                PropertyInfo property = joins[i].Type.GetPropertyIgnoreCase(structuralItems[j].EdmProperty);
+                                properties[j] = Expression.Property(joins[i], property);
+                            }
+                        Expression newTupleExpression = OeExpressionHelper.CreateTupleExpression(properties);
+
+                        if (isNavigationNullable)
+                        {
+                            UnaryExpression nullConstant = Expression.Convert(OeConstantToVariableVisitor.NullConstantExpression, newTupleExpression.Type);
+                            newTupleExpression = Expression.Condition(Expression.Equal(joins[i], OeConstantToVariableVisitor.NullConstantExpression), nullConstant, newTupleExpression);
+                        }
+                        newJoins[i] = newTupleExpression;
                     }
-                    newJoins[i] = newTupleExpression;
                 }
             }
 

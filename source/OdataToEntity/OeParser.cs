@@ -99,7 +99,7 @@ namespace OdataToEntity
         public OeParser(Uri baseUri, IEdmModel edmModel) : this(baseUri, edmModel, null, null)
         {
         }
-        public OeParser(Uri baseUri, IEdmModel edmModel, Query.OeModelBoundProvider modelBoundProvider, IServiceProvider serviceProvider)
+        public OeParser(Uri baseUri, IEdmModel edmModel, Query.OeModelBoundProvider modelBoundProvider, IServiceProvider serviceProvider = null)
         {
             BaseUri = baseUri;
             EdmModel = edmModel;

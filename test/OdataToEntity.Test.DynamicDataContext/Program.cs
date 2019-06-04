@@ -31,7 +31,7 @@ namespace OdataToEntity.Test.DynamicDataContext
         static async Task Main()
         {
             //PerformanceCacheTest.RunTest(100);
-            await new PLNull(new PLNull_DbFixtureInitDb()).Table(0);
+            await new PLNull(new PLNull_DbFixtureInitDb()).DbQuery(0);
             //new PLNull_ManyColumns(new PLNull_ManyColumnsFixtureInitDb()).Filter(1).GetAwaiter().GetResult();
 
             //IEdmModel edmModel = new OeEdmModelBuilder(new OrderDataAdapter(), new OeEdmModelMetadataProvider()).BuildEdmModel();
@@ -77,6 +77,7 @@ namespace OdataToEntity.Test.DynamicDataContext
                     {
                         new NavigationMapping("FK_Orders_Customers", "Orders"),
                         new NavigationMapping("FK_Orders_AltCustomers", "AltOrders"),
+                        new NavigationMapping("FK_CustomerShippingAddress_Customers", "CustomerShippingAddresses"),
                         new NavigationMapping(null, "ShippingAddresses") { ManyToManyTarget = "ShippingAddresses" }
                     }
                 },
@@ -111,7 +112,8 @@ namespace OdataToEntity.Test.DynamicDataContext
                     {
                         new NavigationMapping("FK_CustomerShippingAddress_ShippingAddresses", "CustomerShippingAddresses"),
                     }
-                }
+                },
+                new TableMapping("dbo.OrderItemsView")
             };
         }
     }

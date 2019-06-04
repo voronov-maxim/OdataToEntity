@@ -46,7 +46,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
                 if (properties == null)
                     properties = new List<PropertyInfo>();
 
-                Type itemType = _typeDefinitionManager.GetDynamicTypeDefinition(targetTableName).DynamicTypeType;
+                Type itemType = _typeDefinitionManager.GetDynamicTypeDefinition(targetTableName, false).DynamicTypeType;
                 Type propertyType = typeof(ICollection<>).MakeGenericType(itemType);
                 properties.Add(new OeShadowPropertyInfo(clrType, propertyType, propertyName));
             }

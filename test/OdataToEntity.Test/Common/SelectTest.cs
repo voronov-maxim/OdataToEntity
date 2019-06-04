@@ -301,6 +301,33 @@ namespace OdataToEntity.Test
         [InlineData(1, false)]
         [InlineData(0, true)]
         [InlineData(1, true)]
+        public async Task ExpandCollectionSingleSelectNestedName(int pageSize, bool navigationNextLink)
+        {
+            var parameters = new QueryParameters<Customer, Object>()
+            {
+                RequestUri = "Customers?$expand=CustomerShippingAddresses($select=ShippingAddress;$expand=ShippingAddress($select=Address))&$select=Name&$orderby=Country,Id",
+                Expression = t => t.Include(c => c.CustomerShippingAddresses).ThenInclude(s => s.ShippingAddress)
+                .OrderBy(c => c.Country).ThenBy(c => c.Id).Select(c => new
+                {
+                    CustomerShippingAddresses = c.CustomerShippingAddresses.Select(s => new
+                    {
+                        ShippingAddress = new
+                        {
+                            s.ShippingAddress.Address
+                        }
+                    }),
+                    c.Name
+                }),
+                NavigationNextLink = navigationNextLink,
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters).ConfigureAwait(false);
+        }
+        [Theory]
+        [InlineData(0, false)]
+        [InlineData(1, false)]
+        [InlineData(0, true)]
+        [InlineData(1, true)]
         public async Task ExpandManyToMany(int pageSize, bool navigationNextLink)
         {
             var parameters = new QueryParameters<Customer, Object>()

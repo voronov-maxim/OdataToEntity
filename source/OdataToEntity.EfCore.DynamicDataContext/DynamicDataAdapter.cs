@@ -20,7 +20,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
             var entitySetAdapters = new Db.OeEntitySetAdapter[typeDefinitionManager.TypeDefinitions.Count];
             int i = 0;
             foreach (DynamicTypeDefinition typeDefinition in typeDefinitionManager.TypeDefinitions)
-                entitySetAdapters[i++] = CreateEntitySetAdapter(typeDefinition.DynamicTypeType, typeDefinition.TableName, false);
+                entitySetAdapters[i++] = CreateEntitySetAdapter(typeDefinition.DynamicTypeType, typeDefinition.TableName, typeDefinition.IsQueryType);
             return new Db.OeEntitySetAdapterCollection(entitySetAdapters);
         }
 

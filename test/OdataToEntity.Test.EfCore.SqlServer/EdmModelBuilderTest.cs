@@ -3,12 +3,6 @@ using Microsoft.OData.Edm;
 using OdataToEntity.EfCore;
 using OdataToEntity.Test.Model;
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Xml;
-using System.Xml.Linq;
 using Xunit;
 
 namespace OdataToEntity.Test

@@ -110,10 +110,10 @@ namespace OdataToEntity.EfCore.DynamicDataContext
 
             throw new InvalidOperationException("Table for entity name " + entityName + " not found");
         }
-        public override IEnumerable<String> GetTableNames()
+        public override IEnumerable<(String tableEdmName, bool isQueryType)> GetTableNames()
         {
             foreach (IEdmEntitySet entitySet in _edmModel.EntityContainer.EntitySets())
-                yield return entitySet.Name;
+                yield return (entitySet.Name, false);
         }
 
         public override DbContextOptions DbContextOptions => throw new NotImplementedException();

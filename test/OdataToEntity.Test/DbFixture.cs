@@ -35,7 +35,7 @@ namespace OdataToEntity.Test
             modelBoundBuilder.EntitySet<Customer>("Customers").EntityType
                 .Expand(SelectExpandType.Disabled, "AltOrders")
                 .Expand(SelectExpandType.Automatic, "Orders")
-                .Property(c => c.Orders).Count(QueryOptionSetting.Disabled);
+                .Property(c => c.Orders).Count(QueryOptionSetting.Disabled).Property(c => c.Id);
 
             modelBoundBuilder.EntitySet<Order>("Orders").EntityType
                 .Count(QueryOptionSetting.Allowed)

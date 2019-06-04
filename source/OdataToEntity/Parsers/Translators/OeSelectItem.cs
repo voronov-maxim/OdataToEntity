@@ -15,8 +15,8 @@ namespace OdataToEntity.Parsers.Translators
 
     internal sealed class OeNavigationSelectItem
     {
+        private bool _allSelected;
         private readonly List<OeNavigationSelectItem> _navigationItems;
-        private bool _selectAll;
         private readonly List<OeStructuralSelectItem> _structuralItems;
         private readonly List<OeStructuralSelectItem> _structuralItemsNotSelected;
 
@@ -25,6 +25,7 @@ namespace OdataToEntity.Parsers.Translators
             _navigationItems = new List<OeNavigationSelectItem>();
             _structuralItems = new List<OeStructuralSelectItem>();
             _structuralItemsNotSelected = new List<OeStructuralSelectItem>();
+            _allSelected = true;
         }
         public OeNavigationSelectItem(ODataUri odataUri) : this()
         {
@@ -49,15 +50,16 @@ namespace OdataToEntity.Parsers.Translators
 
         internal void AddKeyRecursive(bool notSelected)
         {
-            if (StructuralItems.Count > 0)
+            if (!AllSelected)
                 foreach (IEdmStructuralProperty keyProperty in EntitySet.EntityType().Key())
                     AddStructuralItem(keyProperty, notSelected);
 
             foreach (OeNavigationSelectItem childNavigationItem in _navigationItems)
                 childNavigationItem.AddKeyRecursive(notSelected);
         }
-        internal OeNavigationSelectItem AddOrGetNavigationItem(OeNavigationSelectItem navigationItem)
+        internal OeNavigationSelectItem AddOrGetNavigationItem(OeNavigationSelectItem navigationItem, bool isExpand)
         {
+            _allSelected &= isExpand;
             OeNavigationSelectItem existingNavigationItem = FindChildrenNavigationItem(navigationItem.EdmProperty);
             if (existingNavigationItem == null)
             {
@@ -67,16 +69,11 @@ namespace OdataToEntity.Parsers.Translators
 
             if (existingNavigationItem.Kind == OeNavigationSelectItemKind.NotSelected && navigationItem.Kind == OeNavigationSelectItemKind.Normal)
                 existingNavigationItem.Kind = OeNavigationSelectItemKind.Normal;
-            else if (existingNavigationItem.StructuralItems.Count == 0)
-                existingNavigationItem._selectAll = true;
 
             return existingNavigationItem;
         }
         public bool AddStructuralItem(IEdmStructuralProperty structuralProperty, bool notSelected)
         {
-            if (_selectAll)
-                return false;
-
             if (notSelected)
             {
                 if (FindStructuralItemIndex(_structuralItemsNotSelected, structuralProperty) != -1)
@@ -155,7 +152,7 @@ namespace OdataToEntity.Parsers.Translators
         }
         public IReadOnlyList<OeStructuralSelectItem> GetStructuralItemsWithNotSelected()
         {
-            if (_structuralItems.Count == 0)
+            if (AllSelected)
                 throw new InvalidOperationException("StructuralItems.Count > 0");
 
             if (_structuralItemsNotSelected.Count == 0)
@@ -183,13 +180,13 @@ namespace OdataToEntity.Parsers.Translators
         public IEdmNavigationProperty EdmProperty { get; }
         public IEdmEntitySetBase EntitySet { get; }
         public OeEntryFactory EntryFactory { get; set; }
-        public OeNavigationSelectItemKind Kind { get; private set; } 
+        public OeNavigationSelectItemKind Kind { get; private set; }
         public IReadOnlyList<OeNavigationSelectItem> NavigationItems => _navigationItems;
         public ExpandedNavigationSelectItem NavigationSelectItem { get; }
         public int PageSize { get; set; }
         public OeNavigationSelectItem Parent { get; }
         public ODataPath Path { get; }
-        public IReadOnlyList<OeStructuralSelectItem> StructuralItems => _structuralItems;
+        public bool AllSelected => _allSelected && _structuralItems.Count == 0;
     }
 
     internal readonly struct OeStructuralSelectItem

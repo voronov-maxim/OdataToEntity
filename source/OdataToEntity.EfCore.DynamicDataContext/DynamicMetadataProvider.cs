@@ -13,7 +13,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
         public abstract IEnumerable<String> GetPrimaryKey(String tableEdmName);
         public abstract IEnumerable<DynamicPropertyInfo> GetStructuralProperties(String tableEdmName);
         public abstract String GetTableName(String entityName);
-        public abstract IEnumerable<String> GetTableNames();
+        public abstract IEnumerable<(String tableEdmName, bool isQueryType)> GetTableNames();
 
         public abstract DbContextOptions DbContextOptions { get; }
     }

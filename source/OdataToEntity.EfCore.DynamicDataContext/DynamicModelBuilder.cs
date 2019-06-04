@@ -21,17 +21,17 @@ namespace OdataToEntity.EfCore.DynamicDataContext
 
         public void Build(Microsoft.EntityFrameworkCore.ModelBuilder modelBuilder)
         {
-            foreach (String tableName in MetadataProvider.GetTableNames())
+            foreach ((String tableEdmName, bool isQueryType) in MetadataProvider.GetTableNames())
             {
-                CreateEntityType(modelBuilder, tableName);
-                CreateNavigationProperties(modelBuilder, tableName);
+                CreateEntityType(modelBuilder, tableEdmName, isQueryType);
+                CreateNavigationProperties(modelBuilder, tableEdmName);
             }
         }
-        private EntityType CreateEntityType(Microsoft.EntityFrameworkCore.ModelBuilder modelBuilder, String tableName)
+        private EntityType CreateEntityType(Microsoft.EntityFrameworkCore.ModelBuilder modelBuilder, String tableName, bool isQueryType)
         {
             if (!_entityTypes.TryGetValue(tableName, out EntityType entityType))
             {
-                var dynamicTypeDefinition = TypeDefinitionManager.GetDynamicTypeDefinition(tableName);
+                var dynamicTypeDefinition = TypeDefinitionManager.GetDynamicTypeDefinition(tableName, isQueryType);
                 EntityTypeBuilder entityTypeBuilder = modelBuilder.Entity(dynamicTypeDefinition.DynamicTypeType).ToTable(tableName);
 
                 entityType = (EntityType)entityTypeBuilder.Metadata;
@@ -47,7 +47,10 @@ namespace OdataToEntity.EfCore.DynamicDataContext
                         propertyBuilder.ValueGeneratedNever();
                 }
 
-                entityTypeBuilder.HasKey(MetadataProvider.GetPrimaryKey(tableName).ToArray());
+                if (isQueryType)
+                    entityTypeBuilder.Metadata.IsQueryType = true;
+                else
+                    entityTypeBuilder.HasKey(MetadataProvider.GetPrimaryKey(tableName).ToArray());
 
                 _entityTypes.Add(tableName, entityType);
             }
@@ -60,8 +63,8 @@ namespace OdataToEntity.EfCore.DynamicDataContext
             {
                 DynamicDependentPropertyInfo dependentInfo = MetadataProvider.GetDependentProperties(tableName, propertyName);
 
-                EntityType dependentEntityType = CreateEntityType(modelBuilder, MetadataProvider.GetTableName(dependentInfo.DependentEntityName));
-                EntityType principalEntityType = CreateEntityType(modelBuilder, MetadataProvider.GetTableName(dependentInfo.PrincipalEntityName));
+                EntityType dependentEntityType = CreateEntityType(modelBuilder, MetadataProvider.GetTableName(dependentInfo.DependentEntityName), false);
+                EntityType principalEntityType = CreateEntityType(modelBuilder, MetadataProvider.GetTableName(dependentInfo.PrincipalEntityName), false);
 
                 var dependentProperties = new List<Property>();
                 foreach (String dependentPropertyName in dependentInfo.DependentPropertyNames)
@@ -81,7 +84,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
                     fkey = dependentEntityType.AddForeignKey(dependentProperties, pkey, principalEntityType);
                 }
 
-                DynamicTypeDefinition dynamicTypeDefinition = TypeDefinitionManager.GetDynamicTypeDefinition(tableName);
+                DynamicTypeDefinition dynamicTypeDefinition = TypeDefinitionManager.GetDynamicTypeDefinition(tableName, false);
                 if (dependentInfo.IsCollection)
                 {
                     Navigation navigation = fkey.HasPrincipalToDependent(propertyName);

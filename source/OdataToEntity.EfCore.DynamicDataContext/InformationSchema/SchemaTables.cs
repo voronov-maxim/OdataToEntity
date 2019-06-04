@@ -65,6 +65,21 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         public String TableType { get; set; }
     }
 
+    [Table("TABLE_CONSTRAINTS", Schema = "INFORMATION_SCHEMA")]
+    public sealed class TableConstraint
+    {
+        [Column("CONSTRAINT_SCHEMA")]
+        public String ConstraintSchema { get; set; }
+        [Column("CONSTRAINT_NAME")]
+        public String ConstraintName { get; set; }
+        [Column("TABLE_SCHEMA")]
+        public String TableSchema { get; set; }
+        [Column("TABLE_NAME")]
+        public String TableName { get; set; }
+        [Column("CONSTRAINT_TYPE")]
+        public String ConstraintType { get; set; }
+    }
+
     public sealed class SchemaContext : DbContext
     {
         public SchemaContext(DbContextOptions options) : base(options)
@@ -82,7 +97,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                 try
                 {
                     command.CommandText = "select * from " + tableSchema + "." + tableName;
-                    using (DbDataReader dataReader = command.ExecuteReader(CommandBehavior.SchemaOnly | CommandBehavior.KeyInfo))
+                    using (DbDataReader dataReader = command.ExecuteReader(CommandBehavior.SchemaOnly))
                         return dataReader.GetColumnSchema();
                 }
                 finally
@@ -95,6 +110,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         public DbQuery<Column> Columns { get; set; }
         public DbQuery<KeyColumnUsage> KeyColumnUsage { get; set; }
         public DbQuery<ReferentialConstraint> ReferentialConstraints { get; set; }
+        public DbQuery<TableConstraint> TableConstraints { get; set; }
         public DbQuery<Table> Tables { get; set; }
     }
 }

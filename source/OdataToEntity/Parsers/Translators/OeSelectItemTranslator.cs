@@ -15,6 +15,21 @@ namespace OdataToEntity.Parsers.Translators
             _notSelected = notSelected;
         }
 
+        private OeNavigationSelectItem AddOrGetNavigationItem(OeNavigationSelectItem parentNavigationItem, ExpandedNavigationSelectItem item, bool isExpand)
+        {
+            IEdmEntitySetBase entitySet = OeEdmClrHelper.GetEntitySet(_edmModel, item);
+
+            OeNavigationSelectItemKind kind;
+            if (_notSelected)
+                kind = OeNavigationSelectItemKind.NotSelected;
+            else if (item.SelectAndExpand.IsNextLink())
+                kind = OeNavigationSelectItemKind.NextLink;
+            else
+                kind = OeNavigationSelectItemKind.Normal;
+
+            var childNavigationSelectItem = new OeNavigationSelectItem(entitySet, parentNavigationItem, item, kind);
+            return parentNavigationItem.AddOrGetNavigationItem(childNavigationSelectItem, isExpand);
+        }
         public void Translate(OeNavigationSelectItem parentNavigationItem, SelectItem item)
         {
             if (item is ExpandedNavigationSelectItem expandedNavigationSelectItem)
@@ -39,18 +54,7 @@ namespace OdataToEntity.Parsers.Translators
         }
         private void Translate(OeNavigationSelectItem parentNavigationItem, ExpandedNavigationSelectItem item)
         {
-            IEdmEntitySetBase entitySet = OeEdmClrHelper.GetEntitySet(_edmModel, item);
-
-            OeNavigationSelectItemKind kind;
-            if (_notSelected)
-                kind = OeNavigationSelectItemKind.NotSelected;
-            else if (item.SelectAndExpand.IsNextLink())
-                kind = OeNavigationSelectItemKind.NextLink;
-            else
-                kind = OeNavigationSelectItemKind.Normal;
-
-            var childNavigationSelectItem = new OeNavigationSelectItem(entitySet, parentNavigationItem, item, kind);
-            childNavigationSelectItem = parentNavigationItem.AddOrGetNavigationItem(childNavigationSelectItem);
+            OeNavigationSelectItem childNavigationSelectItem = AddOrGetNavigationItem(parentNavigationItem, item, true);
             if (childNavigationSelectItem.Kind == OeNavigationSelectItemKind.NextLink)
                 return;
 
@@ -65,8 +69,8 @@ namespace OdataToEntity.Parsers.Translators
                 if (navigationSource == null)
                     navigationSource = OeEdmClrHelper.GetEntitySet(_edmModel, navigationSegment.NavigationProperty);
 
-                var selectItemClause = new ExpandedNavigationSelectItem(new ODataExpandPath(item.SelectedPath), navigationSource, new SelectExpandClause(null, true));
-                Translate(parentNavigationItem, selectItemClause);
+                var expandedItem = new ExpandedNavigationSelectItem(new ODataExpandPath(item.SelectedPath), navigationSource, new SelectExpandClause(null, true));
+                AddOrGetNavigationItem(parentNavigationItem, expandedItem, false);
             }
             else if (item.SelectedPath.LastSegment is PropertySegment propertySegment)
                 parentNavigationItem.AddStructuralItem(propertySegment.Property, _notSelected);

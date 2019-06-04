@@ -25,11 +25,12 @@ namespace OdataToEntity.EfCore.DynamicDataContext
         private readonly Dictionary<String, FieldInfo> _shadowPropertyFieldInfoByGetName;
         private int _singleFieldIndex;
 
-        public DynamicTypeDefinition(Type dynamicTypeType, String entityName, String tableName)
+        public DynamicTypeDefinition(Type dynamicTypeType, String entityName, String tableName, bool isQueryType)
         {
             DynamicTypeType = dynamicTypeType;
             EntityName = entityName;
             TableName = tableName;
+            IsQueryType = isQueryType;
 
             _navigationPropertyNames = new Dictionary<String, String>();
             _shadowPropertyDefinitions = new Dictionary<String, ShadowPropertyDefinition>();
@@ -98,6 +99,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
 
         public Type DynamicTypeType { get; }
         public String EntityName { get; }
+        public bool IsQueryType { get; }
         public IReadOnlyCollection<String> PropertyNames => _navigationPropertyNames.Keys;
         public String TableName { get; }
     }
