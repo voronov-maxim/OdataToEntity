@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace OdataToEntity.EfCore.DynamicDataContext.Types
 {
@@ -19,7 +18,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.Types
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.ReplaceService<IEntityMaterializerSource, DynamicEntityMaterializerSource>();
+            //optionsBuilder.ReplaceService<IEntityMaterializerSource, DynamicEntityMaterializerSource>();
             base.OnConfiguring(optionsBuilder);
         }
         protected override void OnModelCreating(Microsoft.EntityFrameworkCore.ModelBuilder modelBuilder)

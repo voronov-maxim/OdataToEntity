@@ -25,7 +25,8 @@ namespace OdataToEntity.Test
             else if (modelBoundTestKind == ModelBoundTestKind.Fluent)
                 ModelBoundProvider = CreateModelBoundProvider(edmModel);
 
-            DbEdmModel = OrderContextOptions.BuildDbEdmModel(useRelationalNulls);
+            Db.OeDataAdapter dataAdapter = OeEdmModel.GetDataAdapter(OeEdmModel.EntityContainer);
+            DbEdmModel = OrderContextOptions.BuildDbEdmModel(useRelationalNulls, dataAdapter.IsDatabaseNullHighestValue);
         }
 
         public abstract OrderContext CreateContext();

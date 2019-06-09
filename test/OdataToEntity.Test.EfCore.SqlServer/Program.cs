@@ -13,7 +13,7 @@ namespace OdataToEntity.Test.EfCore.SqlServer
         static async Task Main()
         {
             //PerformanceCacheTest.RunTest(100);
-            await new PLNull(new PLNull_DbFixtureInitDb()).NextPageLink();
+            await new PLNull(new PLNull_DbFixtureInitDb()).Expand(0, false);
         }
     }
 }

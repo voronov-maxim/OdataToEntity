@@ -67,7 +67,7 @@ namespace OdataToEntity.Test.Model
 
         private static readonly ConcurrentDictionary<String, SqliteConnection> _connections = new ConcurrentDictionary<String, SqliteConnection>();
 
-        public static IEdmModel BuildDbEdmModel(bool useRelationalNulls)
+        public static IEdmModel BuildDbEdmModel(bool useRelationalNulls, bool isDatabaseNullHighestValue)
         {
             return DbFixtureInitDb.CreateEdmModel();
         }

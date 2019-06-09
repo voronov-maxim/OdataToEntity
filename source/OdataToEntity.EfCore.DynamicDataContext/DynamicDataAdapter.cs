@@ -13,6 +13,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
         {
             _typeDefinitionManager = typeDefinitionManager;
             _dynamicEntitySetAdapters = CreateEntitySetAdapters(typeDefinitionManager);
+            base.IsDatabaseNullHighestValue = typeDefinitionManager.MetadataProvider.IsDatabaseNullHighestValue;
         }
 
         private static Db.OeEntitySetAdapterCollection CreateEntitySetAdapters(DynamicTypeDefinitionManager typeDefinitionManager)

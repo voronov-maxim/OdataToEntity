@@ -9,9 +9,9 @@ namespace OdataToEntity.EfCore.DynamicDataContext.Types
     {
         private readonly DynamicTypeDefinition _dynamicTypeDefinition;
 
-        protected DynamicType()
+        protected DynamicType(DynamicDbContext dynamicDbContext)
         {
-            throw new InvalidOperationException("Fake constructor");
+            _dynamicTypeDefinition = dynamicDbContext.TypeDefinitionManager.GetDynamicTypeDefinition(base.GetType());
         }
         protected DynamicType(DynamicTypeDefinition dynamicTypeDefinition)
         {

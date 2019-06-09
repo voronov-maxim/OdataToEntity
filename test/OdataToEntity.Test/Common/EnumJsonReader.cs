@@ -34,6 +34,7 @@ namespace OdataToEntity.Test
 
             _jsonTextReader = new JsonTextReader(textReader)
             {
+                DateTimeZoneHandling = DateTimeZoneHandling.Utc,
                 FloatParseHandling = isIeee754Compatible ? FloatParseHandling.Double : FloatParseHandling.Decimal
             };
             IsIeee754Compatible = isIeee754Compatible;

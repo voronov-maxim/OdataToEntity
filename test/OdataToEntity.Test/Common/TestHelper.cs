@@ -60,8 +60,9 @@ namespace OdataToEntity.Test
 
         public static void Compare(IList fromDb, IList fromOe, IReadOnlyList<EfInclude> includes)
         {
+            includes = includes ?? Array.Empty<EfInclude>();
             fromDb = ToOpenType(fromDb, includes);
-            fromOe = ToOpenType(fromOe, null);
+            fromOe = ToOpenType(fromOe, includes.Select(i => new EfInclude(i.Property, null, i.IsOrdered, i.ParentProperty)).ToList());
 
             var settings = new JsonSerializerSettings()
             {

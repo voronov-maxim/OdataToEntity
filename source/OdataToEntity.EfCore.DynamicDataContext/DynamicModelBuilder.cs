@@ -27,15 +27,16 @@ namespace OdataToEntity.EfCore.DynamicDataContext
                 CreateNavigationProperties(modelBuilder, tableEdmName);
             }
         }
-        private EntityType CreateEntityType(Microsoft.EntityFrameworkCore.ModelBuilder modelBuilder, String tableName, bool isQueryType)
+        private EntityType CreateEntityType(Microsoft.EntityFrameworkCore.ModelBuilder modelBuilder, String tableEdmName, bool isQueryType)
         {
-            if (!_entityTypes.TryGetValue(tableName, out EntityType entityType))
+            if (!_entityTypes.TryGetValue(tableEdmName, out EntityType entityType))
             {
-                var dynamicTypeDefinition = TypeDefinitionManager.GetDynamicTypeDefinition(tableName, isQueryType);
-                EntityTypeBuilder entityTypeBuilder = modelBuilder.Entity(dynamicTypeDefinition.DynamicTypeType).ToTable(tableName);
+                var dynamicTypeDefinition = TypeDefinitionManager.GetDynamicTypeDefinition(tableEdmName, isQueryType);
+                String tableSchema = MetadataProvider.GetTableSchema(tableEdmName);
+                EntityTypeBuilder entityTypeBuilder = modelBuilder.Entity(dynamicTypeDefinition.DynamicTypeType).ToTable(tableEdmName, tableSchema);
 
                 entityType = (EntityType)entityTypeBuilder.Metadata;
-                foreach (DynamicPropertyInfo property in MetadataProvider.GetStructuralProperties(tableName))
+                foreach (DynamicPropertyInfo property in MetadataProvider.GetStructuralProperties(tableEdmName))
                 {
                     String fieldName = dynamicTypeDefinition.AddShadowPropertyFieldInfo(property.Name, property.Type).Name;
                     PropertyBuilder propertyBuilder = entityTypeBuilder.Property(property.Type, property.Name).HasField(fieldName);
@@ -50,9 +51,9 @@ namespace OdataToEntity.EfCore.DynamicDataContext
                 if (isQueryType)
                     entityTypeBuilder.Metadata.IsQueryType = true;
                 else
-                    entityTypeBuilder.HasKey(MetadataProvider.GetPrimaryKey(tableName).ToArray());
+                    entityTypeBuilder.HasKey(MetadataProvider.GetPrimaryKey(tableEdmName).ToArray());
 
-                _entityTypes.Add(tableName, entityType);
+                _entityTypes.Add(tableEdmName, entityType);
             }
 
             return entityType;

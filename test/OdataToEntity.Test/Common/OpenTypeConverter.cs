@@ -9,14 +9,14 @@ namespace OdataToEntity.Test
     public readonly struct OpenTypeConverter
     {
         private readonly IReadOnlyList<EfInclude> _includes;
-        private readonly List<String> _navigationProperties;
+        private readonly List<PropertyInfo> _navigationProperties;
         private readonly Dictionary<Object, Object> _visited;
         public static readonly String NotSetString = Guid.NewGuid().ToString();
 
         public OpenTypeConverter(IReadOnlyList<EfInclude> includes)
         {
             _includes = includes;
-            _navigationProperties = new List<String>();
+            _navigationProperties = new List<PropertyInfo>();
             _visited = new Dictionary<Object, Object>();
         }
 
@@ -42,36 +42,42 @@ namespace OdataToEntity.Test
         {
             return ToOpenType(entities);
         }
-        private Object FilterNavigation(Object value, String propertyName)
+        private EfInclude FindInclude(PropertyInfo property)
         {
-            if (_includes == null)
-                return value;
-
-            List<EfInclude> includes = _includes.Where(t => t.Property.Name == propertyName).ToList();
-            if (includes.Count == 0)
-                return null;
-
-            EfInclude matched = default;
-            foreach (EfInclude include in includes)
+            List<PropertyInfo> navigationProperties;
+            if (property == null)
             {
-                int i = _navigationProperties.Count - 1;
-                PropertyInfo parentProperty = include.ParentProperty;
-                while (parentProperty != null && i >= 0)
+                if (_navigationProperties.Count == 0)
+                    return default;
+
+                navigationProperties = _navigationProperties;
+            }
+            else
+                navigationProperties = new List<PropertyInfo>(_navigationProperties) { property };
+
+            for (int i = 0; i < _includes.Count; i++)
+            {
+                EfInclude include = _includes[i];
+                int j = navigationProperties.Count - 1;
+                do
                 {
-                    EfInclude parentInclude = _includes.FirstOrDefault(t => t.Property.Name == parentProperty.Name);
-                    if (_navigationProperties[i] != parentInclude.Property.Name)
+                    if (include.Property.Name != navigationProperties[j].Name)
                         break;
 
-                    i--;
-                    parentProperty = parentInclude.ParentProperty;
+                    if (include.ParentProperty == null && j == 0)
+                        return _includes[i];
+
+                    include = _includes.FirstOrDefault(n => n.Property == include.ParentProperty);
+                    j--;
                 }
-                if (parentProperty == null && i < 0)
-                {
-                    matched = include;
-                    break;
-                }
+                while (include.Property != null && j >= 0);
             }
 
+            return default;
+        }
+        private Object FilterNavigation(Object value, PropertyInfo property)
+        {
+            EfInclude matched = FindInclude(property);
             if (matched.Property == null)
                 return null;
 
@@ -93,10 +99,21 @@ namespace OdataToEntity.Test
             {
                 Object value = ToOpenType(entity);
                 if (value != null)
-                    openTypes.Add(ToOpenType(entity));
+                    openTypes.Add(value);
             }
 
-            return openTypes.Count == 0 ? null : openTypes;
+            if (openTypes.Count == 0)
+                return null;
+
+            if (_navigationProperties.Count > 0)
+            {
+                EfInclude matched = FindInclude(null);
+                if (matched.Property != null && !matched.IsOrdered)
+                    openTypes = new List<Object>(openTypes.Cast<IReadOnlyDictionary<String, Object>>().OrderBy(
+                        i => i.ContainsKey("Id") ? i["Id"] : (i.Values.First() is IComparable comparable ? comparable : 0)));
+            }
+
+            return openTypes;
         }
         private Object ToOpenType(Object entity)
         {
@@ -118,10 +135,13 @@ namespace OdataToEntity.Test
                     if (value is Decimal d)
                         value = Math.Round(d, 2);
 
+                    if (value is DateTimeOffset dateTimeOffset)
+                        value = dateTimeOffset.ToUniversalTime();
+
                     if (value is ICollection collection && collection.Count == 0)
                         continue;
 
-                    _navigationProperties.Add(pair.Key);
+                    _navigationProperties.Add(new Infrastructure.OeShadowPropertyInfo(typeof(Object), typeof(Object), pair.Key));
                     openType.Add(pair.Key, ToOpenType(value));
                     _navigationProperties.RemoveAt(_navigationProperties.Count - 1);
                 }
@@ -161,11 +181,11 @@ namespace OdataToEntity.Test
                         {
                             if (isEntityType)
                             {
-                                value = FilterNavigation(value, property.Name);
+                                value = FilterNavigation(value, property);
                                 if (value == null)
                                     continue;
 
-                                _navigationProperties.Add(property.Name);
+                                _navigationProperties.Add(property);
                                 if (type == null)
                                     value = ToOpenType(value);
                                 else
@@ -183,6 +203,10 @@ namespace OdataToEntity.Test
 
                                 if (value is Decimal d)
                                     value = Math.Round(d, 2);
+
+                                if (value is DateTimeOffset dateTimeOffset)
+                                    value = dateTimeOffset.ToUniversalTime();
+
                             }
                             openType.Add(property.Name, value);
                         }

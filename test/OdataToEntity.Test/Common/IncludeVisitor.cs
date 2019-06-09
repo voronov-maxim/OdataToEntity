@@ -77,19 +77,22 @@ namespace OdataToEntity.Test
                 UnaryExpression convert = Expression.Convert(source, node.Arguments[0].Type);
 
                 MethodCallExpression call = Expression.Call(node.Method, convert, node.Arguments[1]);
-                if (_isDatabaseNullHighestValue && (
-                    node.Method.Name == nameof(Enumerable.OrderBy) || node.Method.Name == nameof(Enumerable.OrderByDescending) ||
-                    node.Method.Name == nameof(Enumerable.ThenBy) || node.Method.Name == nameof(Enumerable.ThenByDescending)))
+                if (node.Method.Name == nameof(Enumerable.OrderBy) || node.Method.Name == nameof(Enumerable.OrderByDescending) ||
+                    node.Method.Name == nameof(Enumerable.ThenBy) || node.Method.Name == nameof(Enumerable.ThenByDescending))
                 {
-                    Type keyType = ((LambdaExpression)node.Arguments[1]).ReturnType;
+                    IsOrdered = true;
+                    if (_isDatabaseNullHighestValue)
+                    {
+                        Type keyType = ((LambdaExpression)node.Arguments[1]).ReturnType;
 
-                    Type sourceType = Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(node.Arguments[0].Type);
-                    MethodInfo method = typeof(Enumerable).GetMethods().Single(m => m.Name == node.Method.Name && m.GetParameters().Length == 3);
-                    MethodInfo sortMethod = method.GetGenericMethodDefinition().MakeGenericMethod(new Type[] { sourceType, keyType });
+                        Type sourceType = Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(node.Arguments[0].Type);
+                        MethodInfo method = typeof(Enumerable).GetMethods().Single(m => m.Name == node.Method.Name && m.GetParameters().Length == 3);
+                        MethodInfo sortMethod = method.GetGenericMethodDefinition().MakeGenericMethod(new Type[] { sourceType, keyType });
 
-                    Type comparerType = typeof(DatabaseNullHighestValueComparer<>).MakeGenericType(keyType);
-                    Object keyComparer = Activator.CreateInstance(comparerType);
-                    call = Expression.Call(sortMethod, convert, node.Arguments[1], Expression.Constant(keyComparer));
+                        Type comparerType = typeof(DatabaseNullHighestValueComparer<>).MakeGenericType(keyType);
+                        Object keyComparer = Activator.CreateInstance(comparerType);
+                        call = Expression.Call(sortMethod, convert, node.Arguments[1], Expression.Constant(keyComparer));
+                    }
                 }
 
                 Type itemType = node.Arguments[0].Type.GetGenericArguments()[0];
@@ -108,6 +111,7 @@ namespace OdataToEntity.Test
             }
 
             public Func<IEnumerable, IList> Filter { get; private set; }
+            public bool IsOrdered { get; private set; }
             public ParameterExpression Parameter { get; private set; }
             public MemberExpression PropertyExpression { get; private set; }
         }
@@ -137,7 +141,7 @@ namespace OdataToEntity.Test
 
                     if (_metadataProvider.IsNotMapped((PropertyInfo)visitor.PropertyExpression.Member))
                     {
-                        _includes.Add(new EfInclude(visitor.PropertyExpression.Member as PropertyInfo, visitor.Filter));
+                        _includes.Add(new EfInclude(visitor.PropertyExpression.Member as PropertyInfo, visitor.Filter, visitor.IsOrdered));
                         return node.Arguments[0];
                     }
 
@@ -166,7 +170,7 @@ namespace OdataToEntity.Test
                         parentProperty = parentVisitor.PropertyExpression.Member as PropertyInfo;
                     }
 
-                    _includes.Add(new EfInclude(visitor.PropertyExpression.Member as PropertyInfo, visitor.Filter, parentProperty));
+                    _includes.Add(new EfInclude(visitor.PropertyExpression.Member as PropertyInfo, visitor.Filter, visitor.IsOrdered, parentProperty));
                     return node;
                 }
             }
@@ -174,7 +178,7 @@ namespace OdataToEntity.Test
             {
                 var visitor = new NewVisitor();
                 visitor.Visit(node.Arguments[1]);
-                _includes.AddRange(visitor.SelectProperties.Select(p => new EfInclude(p, null)));
+                _includes.AddRange(visitor.SelectProperties.Select(p => new EfInclude(p, null, false)));
             }
             else if (node.Method.DeclaringType == typeof(Queryable) && node.Method.Name == nameof(Queryable.GroupJoin))
             {
@@ -186,11 +190,11 @@ namespace OdataToEntity.Test
                 {
                     Type collectionType = typeof(IEnumerable<>).MakeGenericType(innerType);
                     PropertyInfo navigationProperty = outerType.GetProperties().Where(p => collectionType.IsAssignableFrom(p.PropertyType)).Single();
-                    _includes.Add(new EfInclude(navigationProperty, null));
+                    _includes.Add(new EfInclude(navigationProperty, null, false));
                 }
                 else if (navigationProperties.Count == 1)
                 {
-                    _includes.Add(new EfInclude(navigationProperties[0], null));
+                    _includes.Add(new EfInclude(navigationProperties[0], null, false));
                 }
                 else
                 {
@@ -203,7 +207,7 @@ namespace OdataToEntity.Test
                     if (outerKeySelector.Body is MemberExpression propertyExpression)
                     {
                         PropertyInfo navigationProperty = _metadataProvider.GetForeignKey((PropertyInfo)propertyExpression.Member).Single();
-                        _includes.Add(new EfInclude(navigationProperty, null));
+                        _includes.Add(new EfInclude(navigationProperty, null, false));
                     }
                     else if (outerKeySelector.Body is NewExpression newExpression)
                     {
@@ -213,7 +217,7 @@ namespace OdataToEntity.Test
                             PropertyInfo[] structuralProperties = _metadataProvider.GetForeignKey(navigationProperty);
                             if (!structuralProperties.Except(properties).Any())
                             {
-                                _includes.Add(new EfInclude(navigationProperty, null));
+                                _includes.Add(new EfInclude(navigationProperty, null, false));
                                 break;
                             }
                         }

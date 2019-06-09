@@ -1,9 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Internal;
 using System;
-using System.Collections.ObjectModel;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Data;
-using System.Data.Common;
+using System.Linq;
 
 namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 {
@@ -18,10 +19,19 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         public String ColumnName { get; set; }
         [Column("ORDINAL_POSITION")]
         public int OrdinalPosition { get; set; }
+        [Column("COLUMN_DEFAULT")]
+        public String ColumnDefault { get; set; }
         [Column("IS_NULLABLE")]
         public String IsNullable { get; set; }
         [Column("DATA_TYPE")]
         public String DataType { get; set; }
+
+        [NotMapped]
+        public Type ClrType { get; set; }
+        [NotMapped]
+        public bool IsComputed { get; set; }
+        [NotMapped]
+        public bool IsIdentity { get; set; }
     }
 
     [Table("KEY_COLUMN_USAGE", Schema = "INFORMATION_SCHEMA")]
@@ -80,6 +90,20 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         public String ConstraintType { get; set; }
     }
 
+    public sealed class DbGeneratedColumn
+    {
+        [Column("TABLE_SCHEMA")]
+        public String TableSchema { get; set; }
+        [Column("TABLE_NAME")]
+        public String TableName { get; set; }
+        [Column("COLUMN_NAME")]
+        public String ColumnName { get; set; }
+        [Column("is_identity")]
+        public bool IsIdentity { get; set; }
+        [Column("is_computed")]
+        public bool IsComputed { get; set; }
+    }
+
     public sealed class SchemaContext : DbContext
     {
         public SchemaContext(DbContextOptions options) : base(options)
@@ -88,26 +112,8 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             base.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
         }
 
-        public ReadOnlyCollection<DbColumn> GetColumns(String tableSchema, String tableName)
-        {
-            DbConnection connection = base.Database.GetDbConnection();
-            using (DbCommand command = connection.CreateCommand())
-            {
-                connection.Open();
-                try
-                {
-                    command.CommandText = "select * from " + tableSchema + "." + tableName;
-                    using (DbDataReader dataReader = command.ExecuteReader(CommandBehavior.SchemaOnly))
-                        return dataReader.GetColumnSchema();
-                }
-                finally
-                {
-                    connection.Close();
-                }
-            }
-        }
-
         public DbQuery<Column> Columns { get; set; }
+        public DbQuery<DbGeneratedColumn> DbGeneratedColumns { get; set; }
         public DbQuery<KeyColumnUsage> KeyColumnUsage { get; set; }
         public DbQuery<ReferentialConstraint> ReferentialConstraints { get; set; }
         public DbQuery<TableConstraint> TableConstraints { get; set; }

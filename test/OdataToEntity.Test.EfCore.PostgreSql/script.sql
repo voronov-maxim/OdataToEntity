@@ -16,6 +16,8 @@ drop table if exists dbo."Orders";
 drop table if exists dbo."Customers";
 drop table if exists dbo."Categories";
 drop table if exists dbo."ManyColumns";
+drop table if exists dbo."Sex";
+drop table if exists dbo."OrderStatus";
 
 drop sequence if exists dbo."Categories_Id_seq";
 drop sequence if exists dbo."Orders_Id_seq";
@@ -32,6 +34,18 @@ create type dbo."string_list" as (item character varying(256));
 create sequence dbo."Categories_Id_seq";
 create sequence dbo."Orders_Id_seq";
 create sequence dbo."OrderItems_Id_seq";
+
+create table dbo."OrderStatus"(
+    "Id" integer not null,
+    "Name" character varying(128) not null,
+    constraint "PK_OrderStatus" primary key ("Id")
+);
+
+create table dbo."Sex"(
+    "Id" integer not null,
+    "Name" character varying(128) not null,
+    constraint "PK_Sex" primary key ("Id")
+);
 
 create table dbo."Categories"
 (
@@ -50,7 +64,8 @@ create table dbo."Customers"
     "Id" integer not null,
     "Name" character varying(128) not null,
     "Sex" integer,
-    constraint "PK_Customer" primary key ("Country", "Id")
+    constraint "PK_Customer" primary key ("Country", "Id"),
+    constraint "FK_Customers_Sex" foreign key ("Sex") references dbo."Sex"("Id")
 );
 
 create table dbo."Orders"
@@ -66,7 +81,8 @@ create table dbo."Orders"
     "Status" integer not null,
     constraint "PK_Orders" primary key ("Id"),
     constraint "FK_Orders_AltCustomers" foreign key ("AltCustomerCountry", "AltCustomerId") references dbo."Customers"("Country", "Id"),
-    constraint "FK_Orders_Customers" foreign key ("CustomerCountry", "CustomerId") references dbo."Customers"("Country", "Id")
+    constraint "FK_Orders_Customers" foreign key ("CustomerCountry", "CustomerId") references dbo."Customers"("Country", "Id"),
+    constraint "FK_Orders_OrderStatus" foreign key ("Status") references dbo."OrderStatus"("Id")
 );
 
 create table dbo."OrderItems"
@@ -96,7 +112,7 @@ create table dbo."CustomerShippingAddress"
     "ShippingAddressOrderId" integer not null,
     "ShippingAddressId" integer not null,
     constraint "PK_CustomerShippingAddress" primary key ("CustomerCountry", "CustomerId", "ShippingAddressOrderId", "ShippingAddressId"),
-    constraint "FK_CustomerShippingAddress_Customer" foreign key ("CustomerCountry", "CustomerId") references dbo."Customers"("Country", "Id"),
+    constraint "FK_CustomerShippingAddress_Customers" foreign key ("CustomerCountry", "CustomerId") references dbo."Customers"("Country", "Id"),
     constraint "FK_CustomerShippingAddress_ShippingAddresses" foreign key ("ShippingAddressOrderId", "ShippingAddressId") references dbo."ShippingAddresses"("OrderId", "Id")
 );
 
@@ -224,3 +240,13 @@ $$ language sql;
 
 create view dbo."OrderItemsView" as
 	select o."Name", i."Product" from dbo."Orders" o inner join dbo."OrderItems" i on o."Id" = i."OrderId";
+
+
+insert into dbo."Sex" ("Id", "Name") values(0, 'Male');
+insert into dbo."Sex" ("Id", "Name") values(1, 'Female');
+
+insert into dbo."OrderStatus" ("Id", "Name") values(0, 'Unknown');
+insert into dbo."OrderStatus" ("Id", "Name") values(1, 'Processing');
+insert into dbo."OrderStatus" ("Id", "Name") values(2, 'Shipped');
+insert into dbo."OrderStatus" ("Id", "Name") values(3, 'Delivering');
+insert into dbo."OrderStatus" ("Id", "Name") values(4, 'Cancelled');

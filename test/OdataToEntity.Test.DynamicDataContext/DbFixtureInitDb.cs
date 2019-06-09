@@ -1,14 +1,13 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.OData;
 using Microsoft.OData.Edm;
 using OdataToEntity.EfCore.DynamicDataContext;
+using OdataToEntity.EfCore.DynamicDataContext.InformationSchema;
 using OdataToEntity.EfCore.DynamicDataContext.Types;
 using OdataToEntity.ModelBuilder;
 using OdataToEntity.Test.Model;
 using System;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -39,13 +38,12 @@ namespace OdataToEntity.Test
         }
         private static DynamicTypeDefinitionManager CreateTypeDefinitionManager(bool useRelationalNulls)
         {
-            //IEdmModel edmModel = new OeEdmModelBuilder(new OrderDataAdapter(), new OeEdmModelMetadataProvider()).BuildEdmModel();
-            //var metadataProvider = new EdmDynamicMetadataProvider(edmModel);
-
-            DbContextOptions options = OrderContextOptions.Create<DynamicDbContext>(useRelationalNulls);
-            var relationalOptions = options.Extensions.OfType<RelationalOptionsExtension>().Single();
-            var metadataProvider = new DbDynamicMetadataProvider(relationalOptions.ConnectionString, useRelationalNulls);
-            metadataProvider.TableMappings = DynamicDataContext.Program.GetMappings();
+            DbContextOptions<DynamicDbContext> options = OrderContextOptions.Create<DynamicDbContext>(useRelationalNulls);
+            //DbContextOptions<DynamicDbContext> options = DynamicDataContext.Program.CreateOptionsPostgreSql(useRelationalNulls);
+            var metadataProvider = new DynamicMetadataProvider(new SqlServerSchema(options))
+            {
+                TableMappings = DynamicDataContext.Program.GetMappings()
+            };
             return DynamicTypeDefinitionManager.Create(metadataProvider);
         }
         public override async Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)

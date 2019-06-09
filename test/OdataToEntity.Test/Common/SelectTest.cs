@@ -361,7 +361,7 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<Order, Object>()
             {
-                RequestUri = "Orders?$expand=AltCustomer,Customer,Items,ShippingAddresses&$select=AltCustomerCountry,AltCustomerId,CustomerCountry,CustomerId,Date,Id,Name,Status&$orderby=Id",
+                RequestUri = "Orders?$expand=AltCustomer,Customer,Items($orderby=Id),ShippingAddresses($orderby=Id)&$select=AltCustomerCountry,AltCustomerId,CustomerCountry,CustomerId,Date,Id,Name,Status&$orderby=Id",
                 Expression = t => t.Select(o => new { o.AltCustomer, o.Customer, o.Items, o.AltCustomerCountry, o.AltCustomerId, o.CustomerCountry, o.CustomerId, o.Date, o.Id, o.Name, o.ShippingAddresses, o.Status }).OrderBy(o => o.Id),
                 NavigationNextLink = navigationNextLink,
                 PageSize = pageSize
@@ -1350,8 +1350,8 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<Order>()
             {
-                RequestUri = "Orders",
-                Expression = t => t,
+                RequestUri = "Orders?$=orderby=Id",
+                Expression = t => t.OrderBy(o => o.Id),
                 PageSize = pageSize,
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);

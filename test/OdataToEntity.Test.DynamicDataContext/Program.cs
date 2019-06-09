@@ -37,7 +37,8 @@ namespace OdataToEntity.Test.DynamicDataContext
             //IEdmModel edmModel = new OeEdmModelBuilder(new OrderDataAdapter(), new OeEdmModelMetadataProvider()).BuildEdmModel();
             //var metadataProvider = new EdmDynamicMetadataProvider(edmModel);
             DbContextOptions options = OrderContextOptions.Create<DynamicDbContext>(true);
-            var metadataProvider = new DbDynamicMetadataProvider(@"Server=.\sqlexpress;Initial Catalog=OdataToEntity;Trusted_Connection=Yes;", true);
+            var sqlServerSchema = new SqlServerSchema(CreateOptionsSqlServer(true));
+            var metadataProvider = new DynamicMetadataProvider(sqlServerSchema);
             //metadataProvider.EnumMappings = GetEnums();
             metadataProvider.TableMappings = GetMappings();
 
@@ -64,6 +65,19 @@ namespace OdataToEntity.Test.DynamicDataContext
             await parser.ExecuteGetAsync(new Uri("http://dummy/Orders"), OeRequestHeaders.JsonDefault, stream, CancellationToken.None);
             stream.Position = 0;
             String result = new StreamReader(stream).ReadToEnd();
+        }
+
+        public static DbContextOptions<DynamicDbContext> CreateOptionsSqlServer(bool useRelationalNulls)
+        {
+            var optionsBuilder = new DbContextOptionsBuilder<DynamicDbContext>();
+            optionsBuilder = optionsBuilder.UseSqlServer(@"Server=.\sqlexpress;Initial Catalog=OdataToEntity;Trusted_Connection=Yes;", opt => opt.UseRelationalNulls(useRelationalNulls));
+            return optionsBuilder.Options;
+        }
+        public static DbContextOptions<DynamicDbContext> CreateOptionsPostgreSql(bool useRelationalNulls)
+        {
+            var optionsBuilder = new DbContextOptionsBuilder<DynamicDbContext>();
+            optionsBuilder.UseNpgsql(@"Host=localhost;Port=5432;Database=OdataToEntity;Pooling=true;User Id=mvoronov", opt => opt.UseRelationalNulls(useRelationalNulls));
+            return optionsBuilder.Options;
         }
 
         public static TableMapping[] GetMappings()

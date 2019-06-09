@@ -16,6 +16,7 @@ namespace OdataToEntity.Test.Model
 
         protected override void OnModelCreating(Microsoft.EntityFrameworkCore.ModelBuilder modelBuilder)
         {
+            modelBuilder.HasDefaultSchema("dbo");
             modelBuilder.Entity<Customer>().HasKey(c => new { c.Country, c.Id });
             modelBuilder.Entity<ShippingAddress>().HasKey(s => new { s.OrderId, s.Id });
             modelBuilder.Entity<CustomerShippingAddress>().HasKey(t => new { t.CustomerCountry, t.CustomerId, t.ShippingAddressOrderId, t.ShippingAddressId });

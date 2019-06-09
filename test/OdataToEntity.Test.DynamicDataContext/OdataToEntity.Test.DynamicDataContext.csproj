@@ -50,6 +50,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$(EfCoreVersion)" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="$(EfCoreVersion)" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="$(EfCoreVersion)" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="2.2.0" />
     <PackageReference Include="xunit" Version="$(XunitVersion)" />
     <PackageReference Include="xunit.runner.visualstudio" Version="$(XunitVersion)" />
   </ItemGroup>

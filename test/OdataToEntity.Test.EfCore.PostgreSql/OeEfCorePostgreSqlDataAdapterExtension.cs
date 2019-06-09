@@ -8,6 +8,7 @@ namespace OdataToEntity.EfCore
 {
     public static class OeEfCorePostgreSqlDataAdapterExtension
     {
+        [Obsolete("Use modelBuilder.HasDefaultSchema(\"dbo\")")]
         public static EdmModel BuildEdmModelFromEfCorePgSqlModel(this Db.OeDataAdapter dataAdapter, String schema, params IEdmModel[] refModels)
         {
             var context = (DbContext)dataAdapter.CreateDataContext();
