@@ -218,17 +218,19 @@ namespace OdataToEntity.Query
         {
             while (orderByClause != null)
             {
-                var propertyNode = (SingleValuePropertyAccessNode)orderByClause.Expression;
-                if (!IsAllowed(propertyNode.Property, entitySettings, OeModelBoundKind.OrderBy))
-                    return false;
+                if (orderByClause.Expression is SingleValuePropertyAccessNode propertyNode)
+                {
+                    if (!IsAllowed(propertyNode.Property, entitySettings, OeModelBoundKind.OrderBy))
+                        return false;
 
-                if (propertyNode.Source is SingleNavigationNode navigationNode)
-                    do
-                    {
-                        if (!IsAllowed(navigationNode.NavigationProperty, null, OeModelBoundKind.OrderBy))
-                            return false;
-                    }
-                    while ((navigationNode = navigationNode.Source as SingleNavigationNode) != null);
+                    if (propertyNode.Source is SingleNavigationNode navigationNode)
+                        do
+                        {
+                            if (!IsAllowed(navigationNode.NavigationProperty, null, OeModelBoundKind.OrderBy))
+                                return false;
+                        }
+                        while ((navigationNode = navigationNode.Source as SingleNavigationNode) != null);
+                }
 
                 orderByClause = orderByClause.ThenBy;
             }

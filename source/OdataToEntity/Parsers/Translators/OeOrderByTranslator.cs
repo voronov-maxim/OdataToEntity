@@ -14,11 +14,10 @@ namespace OdataToEntity.Parsers.Translators
         {
             while (orderByClause != null)
             {
-                var propertyNode = (SingleValuePropertyAccessNode)orderByClause.Expression;
-                Expression keySelector = joinBuilder.GetJoinPropertyExpression(source, parameterExpression, propertyNode);
-                LambdaExpression lambda = Expression.Lambda(keySelector, parameterExpression);
+                MemberExpression propertyExpression = GetPropertyExpression(joinBuilder, source, parameterExpression, orderByClause.Expression);
+                LambdaExpression lambda = Expression.Lambda(propertyExpression, parameterExpression);
 
-                MethodInfo orderByMethodInfo = GetOrderByMethodInfo(source, orderByClause.Direction, parameterExpression.Type, keySelector.Type);
+                MethodInfo orderByMethodInfo = GetOrderByMethodInfo(source, orderByClause.Direction, parameterExpression.Type, propertyExpression.Type);
                 source = Expression.Call(orderByMethodInfo, source, lambda);
 
                 orderByClause = orderByClause.ThenBy;
@@ -44,6 +43,20 @@ namespace OdataToEntity.Parsers.Translators
             }
 
             return source;
+        }
+        public static MemberExpression GetPropertyExpression(OeJoinBuilder joinBuilder, Expression source, Expression parameterExpression, SingleValueNode sortProperty)
+        {
+            if (sortProperty is SingleValuePropertyAccessNode propertyNode)
+                return joinBuilder.GetJoinPropertyExpression(source, parameterExpression, propertyNode);
+
+            if (sortProperty is SingleValueOpenPropertyAccessNode openPropertyNode)
+            {
+                var propertyExpression = (MemberExpression)joinBuilder.Visitor.TranslateNode(openPropertyNode);
+                var replaceParameterVisitor = new ReplaceParameterVisitor(joinBuilder.Visitor.Parameter, parameterExpression);
+                return (MemberExpression)replaceParameterVisitor.Visit(propertyExpression);
+            }
+
+            throw new InvalidOperationException("Unknown type order by expression " + sortProperty.GetType().Name);
         }
         private static MethodInfo GetOrderByMethodInfo(Expression source, OrderByDirection direction, Type sourceType, Type keyType)
         {

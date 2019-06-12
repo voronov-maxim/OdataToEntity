@@ -9,23 +9,6 @@ namespace OdataToEntity.Parsers.Translators
 {
     public sealed class OeJoinBuilder
     {
-        private sealed class ReplaceParameterVisitor : ExpressionVisitor
-        {
-            private readonly ParameterExpression _parameter;
-            private readonly Expression _source;
-
-            public ReplaceParameterVisitor(ParameterExpression parameter, Expression source)
-            {
-                _parameter = parameter;
-                _source = source;
-            }
-
-            protected override Expression VisitParameter(ParameterExpression node)
-            {
-                return node == _parameter ? _source : base.VisitParameter(node);
-            }
-        }
-
         private readonly List<IEdmNavigationProperty[]> _joinPaths;
 
         public OeJoinBuilder(OeQueryNodeVisitor visitor)

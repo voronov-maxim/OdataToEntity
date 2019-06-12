@@ -187,11 +187,13 @@ namespace OdataToEntity
         public static ODataUri ParseUri(IEdmModel edmModel, Uri relativeUri)
         {
             var uriParser = new ODataUriParser(edmModel, relativeUri, ServiceProviderImpl.Instance);
+            uriParser.ParseApply(); //fix test ApplyGroupByAggregateOrderBy
             return uriParser.ParseUri();
         }
         public static ODataUri ParseUri(IEdmModel edmModel, Uri serviceRoot, Uri uri)
         {
             var uriParser = new ODataUriParser(edmModel, serviceRoot, uri, ServiceProviderImpl.Instance);
+            uriParser.ParseApply(); //fix test ApplyGroupByAggregateOrderBy
             return uriParser.ParseUri();
         }
 

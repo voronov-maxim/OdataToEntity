@@ -11,19 +11,19 @@ namespace OdataToEntity.Parsers.Translators
     {
         private readonly struct OrderProperty
         {
-            public OrderProperty(SingleValuePropertyAccessNode propertyNode, OrderByDirection direction,
+            public OrderProperty(IEdmProperty edmProperty, OrderByDirection direction,
                 MemberExpression propertyExpression, ConstantExpression parameterExpression)
             {
-                PropertyNode = propertyNode;
+                EdmProperty = edmProperty;
                 Direction = direction;
                 PropertyExpression = propertyExpression;
                 ParameterExpression = parameterExpression;
             }
 
             public OrderByDirection Direction { get; }
+            public IEdmProperty EdmProperty { get; }
             public ConstantExpression ParameterExpression { get; }
             public MemberExpression PropertyExpression { get; }
-            public SingleValuePropertyAccessNode PropertyNode { get; }
         }
 
         private readonly OeJoinBuilder _joinBuilder;
@@ -77,7 +77,7 @@ namespace OdataToEntity.Parsers.Translators
             else
                 compare = Expression.MakeBinary(binaryType, propertyExpression, parameterExpression);
 
-            if (orderProperty.PropertyNode.TypeReference.IsNullable)
+            if (orderProperty.EdmProperty.Type.IsNullable)
             {
                 if (GetDatabaseNullHighestValueDirection(orderProperty.Direction, isDatabaseNullHighestValue) == OrderByDirection.Descending)
                 {
@@ -124,8 +124,7 @@ namespace OdataToEntity.Parsers.Translators
             for (int i = 0; i < skipTokenNameValues.Count; i++)
             {
                 OrderByClause orderBy = GetOrderBy(uniqueOrderBy, skipTokenNameValues[i].Name);
-                var propertyNode = (SingleValuePropertyAccessNode)orderBy.Expression;
-                MemberExpression propertyExpression = _joinBuilder.GetJoinPropertyExpression(source, _visitor.Parameter, propertyNode);
+                MemberExpression propertyExpression = OeOrderByTranslator.GetPropertyExpression(_joinBuilder, source, _visitor.Parameter, orderBy.Expression);
 
                 ConstantExpression parameterExpression;
                 if (skipTokenNameValues[i].Value == null)
@@ -136,7 +135,8 @@ namespace OdataToEntity.Parsers.Translators
                     _visitor.AddSkipTokenConstant(parameterExpression, OeSkipTokenParser.GetPropertyName((PropertyInfo)propertyExpression.Member));
                 }
 
-                orderProperties[i] = new OrderProperty(propertyNode, orderBy.Direction, propertyExpression, parameterExpression);
+                IEdmStructuralProperty edmProperty = OeSkipTokenParser.GetEdmProperty(orderBy.Expression, propertyExpression.Type);
+                orderProperties[i] = new OrderProperty(edmProperty, orderBy.Direction, propertyExpression, parameterExpression);
             }
             return orderProperties;
         }
@@ -150,7 +150,7 @@ namespace OdataToEntity.Parsers.Translators
         {
             while (orderByClause != null)
             {
-                IEdmProperty edmProperty = ((SingleValuePropertyAccessNode)orderByClause.Expression).Property;
+                IEdmProperty edmProperty =  OeSkipTokenParser.GetEdmProperty(orderByClause.Expression, typeof(Decimal));
                 if (String.Compare(OeSkipTokenParser.GetPropertyName(edmProperty), propertyName, StringComparison.OrdinalIgnoreCase) == 0)
                     return orderByClause;
 

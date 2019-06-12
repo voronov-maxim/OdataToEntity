@@ -142,6 +142,20 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
+        [Fact(Skip = SkipTest)]
+        public async Task ApplyGroupByAggregateOrderBy()
+        {
+            var parameters = new QueryParameters<OrderItem, Object>()
+            {
+                RequestUri = "OrderItems?$apply=groupby((OrderId), aggregate(Price with sum as sum))&$orderby=sum",
+                Expression = t => t.GroupBy(i => i.OrderId).Select(g => new
+                {
+                    OrderId = g.Key,
+                    sum = g.Sum(i => i.Price)
+                }).OrderBy(a => a.sum)
+            };
+            await Fixture.Execute(parameters).ConfigureAwait(false);
+        }
         [Theory]
         [InlineData(0)]
         [InlineData(1)]
