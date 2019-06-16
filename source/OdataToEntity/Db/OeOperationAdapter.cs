@@ -108,13 +108,22 @@ namespace OdataToEntity.Db
 
                 var operations = new List<OeOperationConfiguration>(2);
                 if (boundFunction.CollectionFunctionName != null)
-                    operations.Add(new OeOperationConfiguration(boundFunction.CollectionFunctionName, methodInfo, true, true));
+                    operations.Add(new OeOperationConfiguration(null, boundFunction.CollectionFunctionName, methodInfo, true, true));
                 if (boundFunction.SingleFunctionName != null)
-                    operations.Add(new OeOperationConfiguration(boundFunction.SingleFunctionName, methodInfo, true, false));
+                    operations.Add(new OeOperationConfiguration(null, boundFunction.SingleFunctionName, methodInfo, true, false));
                 return operations;
             }
 
-            return new[] { new OeOperationConfiguration(description.Description, methodInfo, null) };
+            String schema = null;
+            String name = description.Description;
+            int i = name.IndexOf('.');
+            if (i != -1)
+            {
+                schema = name.Substring(0, i);
+                name = name.Substring(i + 1, name.Length - i - 1);
+            }
+
+            return new[] { new OeOperationConfiguration(schema, name, methodInfo, null) };
         }
         protected virtual IReadOnlyList<OeOperationConfiguration> GetOperationsCore(Type dataContextType)
         {

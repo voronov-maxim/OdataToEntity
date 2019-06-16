@@ -99,7 +99,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
             }
         }
 
-        public DynamicTypeDefinitionManager TypeDefinitionManager { get; }
         public DynamicMetadataProvider MetadataProvider => TypeDefinitionManager.MetadataProvider;
+        public DynamicTypeDefinitionManager TypeDefinitionManager { get; }
     }
 }

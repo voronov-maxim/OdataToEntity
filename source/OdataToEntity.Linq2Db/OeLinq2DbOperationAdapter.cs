@@ -83,8 +83,7 @@ namespace OdataToEntity.Linq2Db
             if (dbFunction == null)
                 return base.GetOperationConfigurations(methodInfo);
 
-            String functionName = String.IsNullOrEmpty(dbFunction.Configuration) ? dbFunction.Name : dbFunction.Configuration + "." + dbFunction.Name;
-            return new[] { new OeOperationConfiguration(functionName, methodInfo, true) };
+            return new[] { new OeOperationConfiguration(dbFunction.Configuration, dbFunction.Name, methodInfo, true) };
         }
     }
 }

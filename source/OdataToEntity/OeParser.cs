@@ -186,15 +186,29 @@ namespace OdataToEntity
         }
         public static ODataUri ParseUri(IEdmModel edmModel, Uri relativeUri)
         {
-            var uriParser = new ODataUriParser(edmModel, relativeUri, ServiceProviderImpl.Instance);
-            uriParser.ParseApply(); //fix test ApplyGroupByAggregateOrderBy
-            return uriParser.ParseUri();
+            return ParseUri(edmModel, null, relativeUri);
         }
         public static ODataUri ParseUri(IEdmModel edmModel, Uri serviceRoot, Uri uri)
         {
-            var uriParser = new ODataUriParser(edmModel, serviceRoot, uri, ServiceProviderImpl.Instance);
-            uriParser.ParseApply(); //fix test ApplyGroupByAggregateOrderBy
-            return uriParser.ParseUri();
+            ODataUriParser uriParser;
+            if (serviceRoot == null)
+                uriParser = new ODataUriParser(edmModel, uri, ServiceProviderImpl.Instance);
+            else
+                uriParser = new ODataUriParser(edmModel, serviceRoot, uri, ServiceProviderImpl.Instance);
+            try
+            {
+                return uriParser.ParseUri();
+            }
+            catch (ODataException e) when (e.Message.StartsWith("Could not find a property named"))
+            {
+                //fix test ApplyGroupByAggregateOrderBy bug #703
+                if (serviceRoot == null)
+                    uriParser = new ODataUriParser(edmModel, uri, ServiceProviderImpl.Instance);
+                else
+                    uriParser = new ODataUriParser(edmModel, serviceRoot, uri, ServiceProviderImpl.Instance);
+                uriParser.ParseApply();
+                return uriParser.ParseUri();
+            }
         }
 
         public Uri BaseUri { get; }

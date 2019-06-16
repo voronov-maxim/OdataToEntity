@@ -17,16 +17,18 @@ namespace OdataToEntity.Test
     {
         private bool _initialized;
         private readonly IServiceProvider _serviceProvider;
+        private readonly bool _useRelationalNulls;
 
         protected DbFixtureInitDb(bool useRelationalNulls, ModelBoundTestKind modelBoundTestKind)
             : base(CreateEdmModel(useRelationalNulls), modelBoundTestKind, useRelationalNulls)
         {
+            _useRelationalNulls = useRelationalNulls;
             _serviceProvider = new DynamicDataContext.EnumServiceProvider(base.DbEdmModel);
         }
 
         public override OrderContext CreateContext()
         {
-            throw new NotImplementedException();
+            return new OrderContext(OrderContextOptions.Create<OrderContext>(_useRelationalNulls));
         }
         internal static EdmModel CreateEdmModel(bool useRelationalNulls)
         {
@@ -64,8 +66,8 @@ namespace OdataToEntity.Test
                 return;
 
             _initialized = true;
-            var parser = new OeParser(new Uri("http://dummy/"), base.DbEdmModel);
-            ODataUri odataUri = OeParser.ParseUri(base.DbEdmModel, new Uri("ResetDb", UriKind.Relative));
+            var parser = new OeParser(new Uri("http://dummy/"), base.OeEdmModel);
+            ODataUri odataUri = OeParser.ParseUri(base.OeEdmModel, new Uri("dbo.ResetDb", UriKind.Relative));
             await parser.ExecuteOperationAsync(odataUri, OeRequestHeaders.JsonDefault, null, new MemoryStream(), CancellationToken.None);
             await ExecuteBatchAsync(base.OeEdmModel, "Add", new DynamicDataContext.EnumServiceProvider(base.OeEdmModel));
         }
@@ -132,8 +134,8 @@ namespace OdataToEntity.Test
                 return;
 
             _initialized = true;
-            var parser = new OeParser(new Uri("http://dummy/"), base.DbEdmModel);
-            ODataUri odataUri = OeParser.ParseUri(base.DbEdmModel, new Uri("ResetManyColumns", UriKind.Relative));
+            var parser = new OeParser(new Uri("http://dummy/"), base.OeEdmModel);
+            ODataUri odataUri = OeParser.ParseUri(base.OeEdmModel, new Uri("dbo.ResetManyColumns", UriKind.Relative));
             await parser.ExecuteOperationAsync(odataUri, OeRequestHeaders.JsonDefault, null, new MemoryStream(), CancellationToken.None);
             await DbFixture.ExecuteBatchAsync(base.OeEdmModel, "ManyColumns", null);
         }

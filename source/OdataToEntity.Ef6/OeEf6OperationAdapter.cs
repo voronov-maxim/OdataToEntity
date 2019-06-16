@@ -52,10 +52,8 @@ namespace OdataToEntity.Ef6
                 return base.GetOperationConfigurations(methodInfo);
 
             String functionName = dbFunction.FunctionName ?? methodInfo.Name;
-            if (!String.IsNullOrEmpty(dbFunction.NamespaceName) && dbFunction.NamespaceName != ".")
-                functionName = dbFunction.NamespaceName + "." + functionName;
-
-            return new[] { new OeOperationConfiguration(functionName, methodInfo, true) };
+            String schema = !String.IsNullOrEmpty(dbFunction.NamespaceName) && dbFunction.NamespaceName != "." ? dbFunction.NamespaceName : null;
+            return new[] { new OeOperationConfiguration(schema, functionName, methodInfo, true) };
         }
         protected override String[] GetParameterNames(Object dataContext, IReadOnlyList<KeyValuePair<String, Object>> parameters)
         {

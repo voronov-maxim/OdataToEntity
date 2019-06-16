@@ -1,9 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System;
 using OdataToEntity.Db;
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Data;
 
 namespace OdataToEntity.EfCore
 {

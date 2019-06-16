@@ -27,6 +27,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
         {
             DynamicDbContextOptions = informationSchema.DynamicDbContextOptions;
             IsDatabaseNullHighestValue = informationSchema.IsDatabaseNullHighestValue;
+            OperationAdapter = informationSchema.OperationAdapter;
             _schemaCache = new SchemaCache(informationSchema);
         }
 
@@ -107,11 +108,13 @@ namespace OdataToEntity.EfCore.DynamicDataContext
             return _schemaCache.GetTables()[tableEdmName].tableSchema;
         }
 
-        public ICollection<TableMapping> TableMappings {
+        public DbContextOptions<Types.DynamicDbContext> DynamicDbContextOptions { get; }
+        public bool IsDatabaseNullHighestValue { get; }
+        public OeEfCoreOperationAdapter OperationAdapter { get; }
+        public ICollection<TableMapping> TableMappings
+        {
             get => _schemaCache.TableMappings;
             set => _schemaCache.TableMappings = value;
         }
-        public DbContextOptions<Types.DynamicDbContext> DynamicDbContextOptions { get; }
-        public bool IsDatabaseNullHighestValue { get; }
     }
 }

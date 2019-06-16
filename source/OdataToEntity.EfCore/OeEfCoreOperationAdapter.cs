@@ -77,10 +77,7 @@ namespace OdataToEntity.EfCore
                 return base.GetOperationConfigurations(methodInfo);
 
             String functionName = dbFunction.FunctionName ?? methodInfo.Name;
-            if (!String.IsNullOrEmpty(dbFunction.Schema))
-                functionName = dbFunction.Schema + "." + functionName;
-
-            return new[] { new OeOperationConfiguration(functionName, methodInfo, true) };
+            return new[] { new OeOperationConfiguration(dbFunction.Schema, functionName, methodInfo, true) };
         }
         protected override String[] GetParameterNames(Object dataContext, IReadOnlyList<KeyValuePair<String, Object>> parameters)
         {

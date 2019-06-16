@@ -6,25 +6,42 @@ namespace OdataToEntity.ModelBuilder
 {
     public sealed class OeOperationConfiguration
     {
-        public OeOperationConfiguration(String name, MethodInfo methodInfo, bool? isDbFunction)
+        private OeOperationConfiguration(String schema, String name, String namespaceName, OeOperationParameterConfiguration[] parameters, Type returnType)
         {
-            MethodInfo = methodInfo;
-            Parameters = GetParameters(methodInfo);
-
-            bool parentheses = name.EndsWith("()");
-            ImportName = parentheses ? name.Substring(0, name.Length - 2) : name;
-            IsDbFunction = isDbFunction ?? parentheses;
-            Name = methodInfo.Name;
-        }
-
-        public OeOperationConfiguration(String name, MethodInfo methodInfo, bool isBound, bool isCollection)
-        {
-            MethodInfo = methodInfo;
-            Parameters = GetBoundParameters(methodInfo, isCollection);
-
-            IsBound = isBound;
+            Schema = schema;
+            NamespaceName = namespaceName;
             Name = name;
+            Parameters = parameters;
+            ReturnType = returnType;
         }
+        public OeOperationConfiguration(String schema, String name, MethodInfo methodInfo, bool? isDbFunction) : this(
+            schema,
+            name.EndsWith("()") ? name.Substring(0, name.Length - 2) : name,
+            methodInfo.DeclaringType.Namespace,
+            GetParameters(methodInfo),
+            methodInfo.ReturnType)
+        {
+            ImportName = schema == null ? Name : schema + "." + Name;
+            IsDbFunction = isDbFunction ?? name.EndsWith("()");
+            MethodInfo = methodInfo;
+        }
+        public OeOperationConfiguration(String schema, String name, MethodInfo methodInfo, bool isBound, bool isCollection) : this(
+            schema,
+            name,
+            methodInfo.DeclaringType.Namespace,
+            GetBoundParameters(methodInfo, isCollection),
+            methodInfo.ReturnType)
+        {
+            IsBound = isBound;
+            MethodInfo = methodInfo;
+        }
+        public OeOperationConfiguration(String schema, String name, String namespaceName, OeOperationParameterConfiguration[] parameters, Type returnType, bool isDbFunction)
+            : this(schema, name, namespaceName, parameters, returnType)
+        {
+            ImportName = schema == null ? name : schema + "." + name;
+            IsDbFunction = isDbFunction;
+        }
+
         private static OeOperationParameterConfiguration[] GetBoundParameters(MethodInfo methodInfo, bool isCollection)
         {
             ParameterInfo[] parameterInfos = methodInfo.GetParameters();
@@ -57,9 +74,10 @@ namespace OdataToEntity.ModelBuilder
         public MethodInfo MethodInfo { get; }
         public String Name { get; }
         public String ImportName { get; }
-        public String NamespaceName => MethodInfo.DeclaringType.Namespace;
+        public String NamespaceName { get; }
         public OeOperationParameterConfiguration[] Parameters { get; }
-        public Type ReturnType => MethodInfo.ReturnType;
+        public Type ReturnType { get; }
+        public String Schema { get; }
     }
 
     public readonly struct OeOperationParameterConfiguration

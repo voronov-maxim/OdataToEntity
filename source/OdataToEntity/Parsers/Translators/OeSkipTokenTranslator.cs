@@ -132,7 +132,7 @@ namespace OdataToEntity.Parsers.Translators
                 else
                 {
                     parameterExpression = Expression.Constant(skipTokenNameValues[i].Value, propertyExpression.Type);
-                    _visitor.AddSkipTokenConstant(parameterExpression, OeSkipTokenParser.GetPropertyName((PropertyInfo)propertyExpression.Member));
+                    _visitor.AddSkipTokenConstant(parameterExpression, skipTokenNameValues[i].Name);
                 }
 
                 IEdmStructuralProperty edmProperty = OeSkipTokenParser.GetEdmProperty(orderBy.Expression, propertyExpression.Type);
@@ -150,7 +150,7 @@ namespace OdataToEntity.Parsers.Translators
         {
             while (orderByClause != null)
             {
-                IEdmProperty edmProperty =  OeSkipTokenParser.GetEdmProperty(orderByClause.Expression, typeof(Decimal));
+                IEdmProperty edmProperty = OeSkipTokenParser.GetEdmProperty(orderByClause.Expression, typeof(Decimal));
                 if (String.Compare(OeSkipTokenParser.GetPropertyName(edmProperty), propertyName, StringComparison.OrdinalIgnoreCase) == 0)
                     return orderByClause;
 

@@ -7,11 +7,11 @@ using System.Reflection;
 
 namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 {
-    public sealed class LowercaseModelCustomizer : IModelCustomizer
+    public sealed class PostgreSqlModelCustomizer : IModelCustomizer
     {
         private readonly ModelCustomizer _modelCustomizer;
 
-        public LowercaseModelCustomizer(ModelCustomizerDependencies dependencies)
+        public PostgreSqlModelCustomizer(ModelCustomizerDependencies dependencies)
         {
             _modelCustomizer = new ModelCustomizer(dependencies);
         }
@@ -32,6 +32,12 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                 foreach (IMutableProperty property in entityType.GetProperties())
                     property.Relational().ColumnName = property.Relational().ColumnName.ToLowerInvariant();
             }
+
+            Expression<Func<Parameter, bool>> parameterFilter = t => t.SpecificSchema != "pg_catalog" && t.SpecificSchema != "information_schema" && t.DataType != "ARRAY";
+            modelBuilder.Model.FindEntityType(typeof(Parameter)).QueryFilter = parameterFilter;
+
+            Expression<Func<Routine, bool>> routineFilter = t => t.SpecificSchema != "pg_catalog" && t.SpecificSchema != "information_schema" && t.DataType != "USER-DEFINED";
+            modelBuilder.Model.FindEntityType(typeof(Routine)).QueryFilter = routineFilter;
         }
         private static LambdaExpression GetFilter(Type entityType)
         {

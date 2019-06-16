@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Internal;
 using System;
 using System.Collections.Generic;
@@ -9,10 +10,20 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
     public sealed class SqlServerSchema : ProviderSpecificSchema
     {
         public SqlServerSchema(DbContextOptions<Types.DynamicDbContext> dynamicDbContextOptions)
-            : base(dynamicDbContextOptions)
+            : base(dynamicDbContextOptions, CreatePool(dynamicDbContextOptions))
         {
+            OperationAdapter = new DynamicOperationAdapter(this);
         }
 
+        private static DbContextPool<SchemaContext> CreatePool(DbContextOptions<Types.DynamicDbContext> dynamicDbContextOptions)
+        {
+            var optionsBuilder = new DbContextOptionsBuilder<SchemaContext>();
+            optionsBuilder.ReplaceService<IModelCustomizer, SqlServerModelCustomizer>();
+            DbContextOptions schemaOptions = optionsBuilder.Options;
+            foreach (IDbContextOptionsExtension extension in dynamicDbContextOptions.Extensions)
+                schemaOptions = schemaOptions.WithExtension(extension);
+            return new DbContextPool<SchemaContext>(schemaOptions);
+        }
         public override Type GetColumnClrType(String dataType)
         {
             switch (dataType)
@@ -92,5 +103,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                 base.SchemaContextPool.Return(schemaContext);
             }
         }
+
+        public override DynamicOperationAdapter OperationAdapter { get; }
     }
 }

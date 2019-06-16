@@ -31,15 +31,14 @@ namespace OdataToEntity.Test.DynamicDataContext
         static async Task Main()
         {
             //PerformanceCacheTest.RunTest(100);
-            await new PLNull(new PLNull_DbFixtureInitDb()).DbQuery(0);
+            //await new PLNull(new PLNull_DbFixtureInitDb()).Table(0);
+            //new ProcedureTest().ScalarFunctionWithParameters_get().GetAwaiter().GetResult();
             //new PLNull_ManyColumns(new PLNull_ManyColumnsFixtureInitDb()).Filter(1).GetAwaiter().GetResult();
 
             //IEdmModel edmModel = new OeEdmModelBuilder(new OrderDataAdapter(), new OeEdmModelMetadataProvider()).BuildEdmModel();
             //var metadataProvider = new EdmDynamicMetadataProvider(edmModel);
-            DbContextOptions options = OrderContextOptions.Create<DynamicDbContext>(true);
-            var sqlServerSchema = new SqlServerSchema(CreateOptionsSqlServer(true));
-            var metadataProvider = new DynamicMetadataProvider(sqlServerSchema);
-            //metadataProvider.EnumMappings = GetEnums();
+            var schema = new SqlServerSchema(CreateOptionsSqlServer(true));
+            var metadataProvider = new DynamicMetadataProvider(schema);
             metadataProvider.TableMappings = GetMappings();
 
             var typeDefinitionManager = DynamicTypeDefinitionManager.Create(metadataProvider);
@@ -57,7 +56,7 @@ namespace OdataToEntity.Test.DynamicDataContext
             var dataAdapter = new DynamicDataAdapter(typeDefinitionManager);
             var dynamicEdmModel = dataAdapter.BuildEdmModel();
 
-            String schema = TestHelper.GetCsdlSchema(dynamicEdmModel);
+            String csdlSchema = TestHelper.GetCsdlSchema(dynamicEdmModel);
 
             var parser = new OeParser(new Uri("http://dummy"), dynamicEdmModel);
             var stream = new MemoryStream();

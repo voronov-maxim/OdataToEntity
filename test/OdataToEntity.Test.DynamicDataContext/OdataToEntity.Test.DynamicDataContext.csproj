@@ -22,6 +22,7 @@
     <Compile Include="..\OdataToEntity.Test.EfCore.SqlServer\OeEfCoreSqlServerDataAdapter.cs" Link="OeEfCoreSqlServerDataAdapter.cs" />
     <Compile Include="..\OdataToEntity.Test.EfCore.SqlServer\OrderContextOptions.cs" Link="OrderContextOptions.cs" />
     <Compile Include="..\OdataToEntity.Test.EfCore.SqlServer\OrderDataAdapter.cs" Link="OrderDataAdapter.cs" />
+    <Compile Include="..\OdataToEntity.Test.EfCore.SqlServer\ProcedureTest.cs" Link="ProcedureTest.cs" />
     <Compile Include="..\OdataToEntity.Test\QueryComparerTest.cs" Link="QueryComparerTest.cs" />
     <Compile Include="..\OdataToEntity.Test\DbFixture.cs" Link="DbFixture.cs" />
     <Compile Include="..\OdataToEntity.Test\Model\*.cs" Link="Model\%(FileName).cs" />
@@ -50,7 +51,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$(EfCoreVersion)" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="$(EfCoreVersion)" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="$(EfCoreVersion)" />
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="2.2.0" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="2.2.4" />
     <PackageReference Include="xunit" Version="$(XunitVersion)" />
     <PackageReference Include="xunit.runner.visualstudio" Version="$(XunitVersion)" />
   </ItemGroup>

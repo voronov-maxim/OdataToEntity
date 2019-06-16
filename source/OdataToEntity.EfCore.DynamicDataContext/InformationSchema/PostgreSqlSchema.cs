@@ -9,16 +9,37 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 {
     public sealed class PostgreSqlSchema : ProviderSpecificSchema
     {
+        private sealed class PostgreSqlDynamicOperationAdapter : DynamicOperationAdapter
+        {
+            public PostgreSqlDynamicOperationAdapter(PostgreSqlSchema postgreSqlSchema) : base(postgreSqlSchema)
+            {
+            }
+
+            public override IAsyncEnumerable<Object> ExecuteProcedureNonQuery(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters)
+            {
+                return base.ExecuteFunctionNonQuery(dataContext, operationName, parameters);
+            }
+            public override IAsyncEnumerable<Object> ExecuteProcedureReader(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters, Db.OeEntitySetAdapter entitySetAdapter)
+            {
+                return base.ExecuteFunctionReader(dataContext, operationName, parameters, entitySetAdapter);
+            }
+            public override IAsyncEnumerable<Object> ExecuteProcedurePrimitive(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
+            {
+                return base.ExecuteFunctionPrimitive(dataContext, operationName, parameters, returnType);
+            }
+        }
+
         public PostgreSqlSchema(DbContextOptions<Types.DynamicDbContext> dynamicDbContextOptions)
             : base(dynamicDbContextOptions, CreatePool(dynamicDbContextOptions))
         {
             base.IsDatabaseNullHighestValue = true;
+            OperationAdapter = new PostgreSqlDynamicOperationAdapter(this);
         }
 
         private static DbContextPool<SchemaContext> CreatePool(DbContextOptions<Types.DynamicDbContext> dynamicDbContextOptions)
         {
             var optionsBuilder = new DbContextOptionsBuilder<SchemaContext>();
-            optionsBuilder.ReplaceService<IModelCustomizer, LowercaseModelCustomizer>();
+            optionsBuilder.ReplaceService<IModelCustomizer, PostgreSqlModelCustomizer>();
             DbContextOptions schemaOptions = optionsBuilder.Options;
             foreach (IDbContextOptionsExtension extension in dynamicDbContextOptions.Extensions)
                 schemaOptions = schemaOptions.WithExtension(extension);
@@ -50,6 +71,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                 case "xml":
                     return typeof(String);
                 case "bit(1)":
+                case "boolean":
                     return typeof(bool);
                 case "bit(n)":
                 case "bit varying":
@@ -78,6 +100,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                 case "time with time zone":
                     return typeof(DateTimeOffset);
                 case "bytea":
+                case "cstring":
                     return typeof(byte[]);
                 case "oid":
                 case "xid":
@@ -91,6 +114,8 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                     return typeof(char);
                 case "record":
                     return typeof(Object[]);
+                case "void":
+                    return typeof(void);
                 default:
                     throw new InvalidOperationException("Unknown data type " + dataType);
             }
@@ -124,5 +149,6 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                 base.SchemaContextPool.Return(schemaContext);
             }
         }
+        public override DynamicOperationAdapter OperationAdapter { get; }
     }
 }

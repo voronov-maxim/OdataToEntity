@@ -51,6 +51,21 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         public int OrdinalPosition { get; set; }
     }
 
+    [Table("PARAMETERS", Schema = "INFORMATION_SCHEMA")]
+    public sealed class Parameter
+    {
+        [Column("SPECIFIC_SCHEMA")]
+        public String SpecificSchema { get; set; }
+        [Column("SPECIFIC_NAME")]
+        public String SpecificName { get; set; }
+        [Column("ORDINAL_POSITION")]
+        public int OrdinalPosition { get; set; }
+        [Column("PARAMETER_NAME")]
+        public String ParameterName { get; set; }
+        [Column("DATA_TYPE")]
+        public String DataType { get; set; }
+    }
+
     [Table("REFERENTIAL_CONSTRAINTS", Schema = "INFORMATION_SCHEMA")]
     public sealed class ReferentialConstraint
     {
@@ -62,6 +77,21 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         public String UniqueConstraintSchema { get; set; }
         [Column("UNIQUE_CONSTRAINT_NAME")]
         public String UniqueConstraintName { get; set; }
+    }
+
+    [Table("ROUTINES", Schema = "INFORMATION_SCHEMA")]
+    public sealed class Routine
+    {
+        [Column("SPECIFIC_SCHEMA")]
+        public String SpecificSchema { get; set; }
+        [Column("SPECIFIC_NAME")]
+        public String SpecificName { get; set; }
+        [Column("ROUTINE_SCHEMA")]
+        public String RoutineSchema { get; set; }
+        [Column("ROUTINE_NAME")]
+        public String RoutineName { get; set; }
+        [Column("DATA_TYPE")]
+        public String DataType { get; set; }
     }
 
     [Table("TABLES", Schema = "INFORMATION_SCHEMA")]
@@ -115,7 +145,9 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         public DbQuery<Column> Columns { get; set; }
         public DbQuery<DbGeneratedColumn> DbGeneratedColumns { get; set; }
         public DbQuery<KeyColumnUsage> KeyColumnUsage { get; set; }
+        public DbQuery<Parameter> Parameters { get; set; }
         public DbQuery<ReferentialConstraint> ReferentialConstraints { get; set; }
+        public DbQuery<Routine> Routines { get; set; }
         public DbQuery<TableConstraint> TableConstraints { get; set; }
         public DbQuery<Table> Tables { get; set; }
     }

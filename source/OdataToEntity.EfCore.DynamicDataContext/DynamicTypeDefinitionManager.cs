@@ -35,6 +35,9 @@ namespace OdataToEntity.EfCore.DynamicDataContext
         {
             int dynamicDbContextIndex = Interlocked.Increment(ref _dynamicDbContextIndex);
             Type dynamicDbContextType = Type.GetType(typeof(DynamicDbContext).FullName + dynamicDbContextIndex.ToString("D2"));
+            if (dynamicDbContextType == null)
+                throw new InvalidOperationException("DynamicDbContext out range " + dynamicDbContextIndex.ToString());
+
             ConstructorInfo ctor = dynamicDbContextType.GetConstructor(new Type[] { typeof(DbContextOptions), typeof(DynamicTypeDefinitionManager) });
             DbContextOptions options = CreateOptions(metadataProvider.DynamicDbContextOptions, dynamicDbContextType);
             var typeDefinitionManager = new DynamicTypeDefinitionManager(options, metadataProvider, ctor);

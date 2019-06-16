@@ -143,10 +143,6 @@ namespace OdataToEntity.Parsers
                 }
             return keys;
         }
-        public static String GetPropertyName(PropertyInfo clrProperty)
-        {
-            return clrProperty.DeclaringType.Name + "_" + clrProperty.Name;
-        }
         public static String GetPropertyName(IEdmProperty edmProperty)
         {
             return ((IEdmNamedElement)edmProperty.DeclaringType).Name + "_" + edmProperty.Name;
