@@ -3,10 +3,12 @@ using Microsoft.OData;
 using Microsoft.OData.Edm;
 using OdataToEntity.EfCore.DynamicDataContext;
 using OdataToEntity.EfCore.DynamicDataContext.InformationSchema;
+using OdataToEntity.EfCore.DynamicDataContext.ModelBuilder;
 using OdataToEntity.EfCore.DynamicDataContext.Types;
 using OdataToEntity.ModelBuilder;
 using OdataToEntity.Test.Model;
 using System;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,9 +20,10 @@ namespace OdataToEntity.Test
         private bool _initialized;
         private readonly IServiceProvider _serviceProvider;
         private readonly bool _useRelationalNulls;
+        private static readonly ConcurrentDictionary<Type, EdmModel> _edmModels = new ConcurrentDictionary<Type, EdmModel>();
 
-        protected DbFixtureInitDb(bool useRelationalNulls, ModelBoundTestKind modelBoundTestKind)
-            : base(CreateEdmModel(useRelationalNulls), modelBoundTestKind, useRelationalNulls)
+        protected DbFixtureInitDb(Type fixtureType, bool useRelationalNulls, ModelBoundTestKind modelBoundTestKind)
+            : base(CreateEdmModel(fixtureType, useRelationalNulls), modelBoundTestKind, useRelationalNulls)
         {
             _useRelationalNulls = useRelationalNulls;
             _serviceProvider = new DynamicDataContext.EnumServiceProvider(base.DbEdmModel);
@@ -28,25 +31,43 @@ namespace OdataToEntity.Test
 
         public override OrderContext CreateContext()
         {
-            return new OrderContext(OrderContextOptions.Create<OrderContext>(_useRelationalNulls));
+            Db.OeDataAdapter dataAdapter = OeEdmModel.GetDataAdapter(OeEdmModel.EntityContainer);
+            var dbContext = (DbContext)dataAdapter.CreateDataContext();
+            try
+            {
+                DbContextOptions options = OrderContextOptions.CreateOptions<OrderContext>(dbContext);
+                return new OrderContext(options);
+            }
+            finally
+            {
+                dataAdapter.CloseDataContext(dbContext);
+            }
         }
-        internal static EdmModel CreateEdmModel(bool useRelationalNulls)
+        internal static EdmModel CreateEdmModel(Type fixtureType, bool useRelationalNulls)
         {
-            var dataAdapter = new DynamicDataAdapter(CreateTypeDefinitionManager(useRelationalNulls));
-            EdmModel edmModel = dataAdapter.BuildEdmModel();
+            return _edmModels.GetOrAdd(fixtureType, t => CreateEdmModel(useRelationalNulls));
+        }
+        private static EdmModel CreateEdmModel(bool useRelationalNulls)
+        {
+            EdmModel edmModel = CreateDynamicEdmModel(useRelationalNulls);
             edmModel.AddElement(OeEdmModelBuilder.CreateEdmEnumType(typeof(Sex)));
             edmModel.AddElement(OeEdmModelBuilder.CreateEdmEnumType(typeof(OrderStatus)));
             return edmModel;
         }
-        private static DynamicTypeDefinitionManager CreateTypeDefinitionManager(bool useRelationalNulls)
+        private static EdmModel CreateDynamicEdmModel(bool useRelationalNulls)
         {
-            DbContextOptions<DynamicDbContext> options = OrderContextOptions.Create<DynamicDbContext>(useRelationalNulls);
-            //DbContextOptions<DynamicDbContext> options = DynamicDataContext.Program.CreateOptionsPostgreSql(useRelationalNulls);
-            var metadataProvider = new DynamicMetadataProvider(new SqlServerSchema(options))
+            //DbContextOptions<DynamicDbContext> options = OrderContextOptions.Create<DynamicDbContext>(useRelationalNulls);
+            //var informationSchema = new SqlServerSchema(options);
+            DbContextOptions<DynamicDbContext> options = DynamicDataContext.Program.CreateOptionsPostgreSql(useRelationalNulls);
+            var informationSchema = new PostgreSqlSchema(options);
+
+            InformationSchemaMapping informationSchemaMapping = DynamicDataContext.Program.GetMappings();
+            using (var metadataProvider = new DynamicMetadataProvider(informationSchema, informationSchemaMapping))
             {
-                TableMappings = DynamicDataContext.Program.GetMappings()
-            };
-            return DynamicTypeDefinitionManager.Create(metadataProvider);
+                var typeDefinitionManager = DynamicTypeDefinitionManager.Create(metadataProvider);
+                var dataAdapter = new DynamicDataAdapter(typeDefinitionManager);
+                return dataAdapter.BuildEdmModel(metadataProvider);
+            }
         }
         public override async Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
         {
@@ -73,15 +94,21 @@ namespace OdataToEntity.Test
         }
         public override ODataUri ParseUri(String requestUri)
         {
-            requestUri = ReplaceEnum(typeof(Sex), requestUri);
-            requestUri = ReplaceEnum(typeof(OrderStatus), requestUri);
-            return base.ParseUri(requestUri);
+            if (requestUri == "ResetDb" || requestUri == "TableFunction" || requestUri.StartsWith("TableFunctionWithParameters"))
+                return base.ParseUri("dbo." + requestUri);
+
+            return base.ParseUri(ReplaceEnum(requestUri, '\''));
         }
-        private static String ReplaceEnum(Type enumType, String requestUri)
+        private static String ReplaceEnum(String requestUri, Char quotationMark)
+        {
+            requestUri = ReplaceEnum(typeof(Sex), requestUri, quotationMark);
+            return ReplaceEnum(typeof(OrderStatus), requestUri, quotationMark);
+        }
+        private static String ReplaceEnum(Type enumType, String requestUri, Char quotationMark)
         {
             foreach (String name in Enum.GetNames(enumType))
             {
-                int i = requestUri.IndexOf("'" + name + "'");
+                int i = requestUri.IndexOf(quotationMark.ToString() + name + quotationMark.ToString());
                 if (i != -1)
                 {
                     int j = i - enumType.FullName.Length;
@@ -99,16 +126,20 @@ namespace OdataToEntity.Test
 
             return requestUri;
         }
+        public override String SerializeRequestData(Object requestData)
+        {
+            return ReplaceEnum(base.SerializeRequestData(requestData), '"');
+        }
 
-        protected override IServiceProvider ServiceProvider => _serviceProvider;
+        public override IServiceProvider ServiceProvider => _serviceProvider;
     }
 
     public abstract class ManyColumnsFixtureInitDb : DbFixture
     {
         private bool _initialized;
 
-        protected ManyColumnsFixtureInitDb(bool useRelationalNulls, ModelBoundTestKind modelBoundTestKind)
-            : base(DbFixtureInitDb.CreateEdmModel(useRelationalNulls), modelBoundTestKind, useRelationalNulls)
+        protected ManyColumnsFixtureInitDb(Type fixtureType, bool useRelationalNulls, ModelBoundTestKind modelBoundTestKind)
+            : base(DbFixtureInitDb.CreateEdmModel(fixtureType, useRelationalNulls), modelBoundTestKind, useRelationalNulls)
         {
         }
 

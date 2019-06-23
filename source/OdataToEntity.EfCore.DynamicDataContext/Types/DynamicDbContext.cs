@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using OdataToEntity.EfCore.DynamicDataContext.ModelBuilder;
 
 namespace OdataToEntity.EfCore.DynamicDataContext.Types
 {

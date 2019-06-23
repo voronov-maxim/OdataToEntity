@@ -28,6 +28,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.OData.Core" Version="$(ODataLibVersion)" />
     <PackageReference Include="Microsoft.OData.Edm" Version="$(ODataLibVersion)" />
+    <PackageReference Include="Pluralize.NET" Version="0.1.84" />
   </ItemGroup>
 
 </Project>

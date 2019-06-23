@@ -25,8 +25,7 @@ namespace OdataToEntity.Test
             else if (modelBoundTestKind == ModelBoundTestKind.Fluent)
                 ModelBoundProvider = CreateModelBoundProvider(edmModel);
 
-            Db.OeDataAdapter dataAdapter = OeEdmModel.GetDataAdapter(OeEdmModel.EntityContainer);
-            DbEdmModel = OrderContextOptions.BuildDbEdmModel(useRelationalNulls, dataAdapter.IsDatabaseNullHighestValue);
+            DbEdmModel = OrderContextOptions.BuildDbEdmModel(OeEdmModel, useRelationalNulls);
         }
 
         public abstract OrderContext CreateContext();
@@ -172,11 +171,15 @@ namespace OdataToEntity.Test
             else
                 return OeParser.ParseUri(OeEdmModel, baseUri, new Uri(baseUri, requestUri));
         }
+        public virtual String SerializeRequestData(Object requestData)
+        {
+            return Newtonsoft.Json.JsonConvert.SerializeObject(requestData);
+        }
 
-        protected IEdmModel DbEdmModel { get; }
+        public IEdmModel DbEdmModel { get; }
         protected internal virtual bool IsSqlite => false;
         public OeModelBoundProvider ModelBoundProvider { get; }
         public IEdmModel OeEdmModel { get; }
-        protected virtual IServiceProvider ServiceProvider => null;
+        public virtual IServiceProvider ServiceProvider => null;
     }
 }

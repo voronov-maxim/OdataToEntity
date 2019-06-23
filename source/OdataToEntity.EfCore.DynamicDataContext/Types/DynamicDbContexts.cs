@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using OdataToEntity.EfCore.DynamicDataContext.ModelBuilder;
 
 namespace OdataToEntity.EfCore.DynamicDataContext.Types
 {
@@ -50,7 +51,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.Types
         }
     }
 
-    public sealed class DynamicDbContext05 : DynamicDbContext
+    /*public sealed class DynamicDbContext05 : DynamicDbContext
     {
         public DynamicDbContext05(DbContextOptions options, DynamicTypeDefinitionManager typeDefinitionManager)
             : base(options, typeDefinitionManager)
@@ -276,5 +277,5 @@ namespace OdataToEntity.EfCore.DynamicDataContext.Types
             : base(options, dynamicModelBuilder)
         {
         }
-    }
+    }*/
 }

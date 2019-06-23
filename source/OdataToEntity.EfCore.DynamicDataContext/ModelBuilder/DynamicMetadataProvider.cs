@@ -1,34 +1,24 @@
-﻿using Microsoft.EntityFrameworkCore;
-using OdataToEntity.EfCore.DynamicDataContext.InformationSchema;
+﻿using OdataToEntity.EfCore.DynamicDataContext.InformationSchema;
+using OdataToEntity.ModelBuilder;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 
-namespace OdataToEntity.EfCore.DynamicDataContext
+namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
 {
     public sealed class DynamicMetadataProvider : IDisposable
     {
-        private readonly struct FKeyMapping
-        {
-            public FKeyMapping(NavigationMapping dependent, NavigationMapping principal)
-            {
-                Dependent = dependent;
-                Principal = principal;
-            }
-
-            public NavigationMapping Dependent { get; }
-            public NavigationMapping Principal { get; }
-        }
-
         private readonly SchemaCache _schemaCache;
+        private readonly InformationSchemaMapping _informationSchemaMapping;
 
-        public DynamicMetadataProvider(ProviderSpecificSchema informationSchema)
+        public DynamicMetadataProvider(ProviderSpecificSchema informationSchema, InformationSchemaMapping informationSchemaMapping)
         {
-            DynamicDbContextOptions = informationSchema.DynamicDbContextOptions;
-            IsDatabaseNullHighestValue = informationSchema.IsDatabaseNullHighestValue;
-            OperationAdapter = informationSchema.OperationAdapter;
+            InformationSchema = informationSchema;
+            _informationSchemaMapping = informationSchemaMapping;
+
             _schemaCache = new SchemaCache(informationSchema);
+            _schemaCache.Initialize(_informationSchemaMapping.Tables);
         }
 
         public void Dispose()
@@ -51,15 +41,13 @@ namespace OdataToEntity.EfCore.DynamicDataContext
 
             throw new InvalidOperationException("Navigation property " + navigationPropertyName + " not found in table " + tableName);
         }
-        public String GetEntityName(String tableName)
+        public IReadOnlyList<(String NavigationName, String ManyToManyTarget)> GetManyToManyProperties(String tableEdmName)
         {
-            return tableName;
-        }
-        public IEnumerable<(String NavigationName, String ManyToManyTarget)> GetManyToManyProperties(String tableEdmName)
-        {
-            foreach (NavigationMapping navigationMapping in _schemaCache.GetNavigationMappings(tableEdmName))
-                if (!String.IsNullOrEmpty(navigationMapping.ManyToManyTarget))
-                    yield return (navigationMapping.NavigationName, navigationMapping.ManyToManyTarget);
+            var manyToManyProperties = _schemaCache.GetManyToManyProperties();
+            if (manyToManyProperties.TryGetValue(tableEdmName, out IReadOnlyList<(String NavigationName, String ManyToManyTarget)> tableManyToManyProperties))
+                return tableManyToManyProperties;
+
+            return Array.Empty<(String NavigationName, String ManyToManyTarget)>();
         }
         public IEnumerable<String> GetNavigationProperties(String tableEdmName)
         {
@@ -74,6 +62,10 @@ namespace OdataToEntity.EfCore.DynamicDataContext
             String constraintName = _schemaCache.GetPrimaryKeyConstraintNames()[tableFullName];
             List<KeyColumnUsage> keyColumns = _schemaCache.GetKeyColumns()[(tableFullName.tableSchema, constraintName)];
             return keyColumns.OrderBy(c => c.OrdinalPosition).Select(c => c.ColumnName);
+        }
+        public IReadOnlyList<OeOperationConfiguration> GetRoutines(DynamicTypeDefinitionManager typeDefinitionManager)
+        {
+            return _schemaCache.GetRoutines(typeDefinitionManager, _informationSchemaMapping);
         }
         public IEnumerable<DynamicPropertyInfo> GetStructuralProperties(String tableName)
         {
@@ -98,7 +90,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
         {
             return entityName;
         }
-        public IEnumerable<(String tableEdmName, bool isQueryType)> GetTableNames()
+        public IEnumerable<(String tableEdmName, bool isQueryType)> GetTableEdmNames()
         {
             foreach (var pair in _schemaCache.GetTables())
                 yield return (pair.Key, pair.Value.isQueryType);
@@ -108,13 +100,6 @@ namespace OdataToEntity.EfCore.DynamicDataContext
             return _schemaCache.GetTables()[tableEdmName].tableSchema;
         }
 
-        public DbContextOptions<Types.DynamicDbContext> DynamicDbContextOptions { get; }
-        public bool IsDatabaseNullHighestValue { get; }
-        public OeEfCoreOperationAdapter OperationAdapter { get; }
-        public ICollection<TableMapping> TableMappings
-        {
-            get => _schemaCache.TableMappings;
-            set => _schemaCache.TableMappings = value;
-        }
+        public ProviderSpecificSchema InformationSchema { get; }
     }
 }

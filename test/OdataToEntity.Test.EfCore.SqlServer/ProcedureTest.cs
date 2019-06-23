@@ -1,4 +1,5 @@
-﻿using Microsoft.OData.UriParser;
+﻿using Microsoft.OData;
+using Microsoft.OData.UriParser;
 using Newtonsoft.Json;
 using OdataToEntity.Test.Model;
 using System;
@@ -19,21 +20,22 @@ namespace OdataToEntity.Test
             var fixture = new RDBNull_DbFixtureInitDb();
             await fixture.Initalize();
 
-            var parser = new OeParser(new Uri("http://dummy/"), fixture.OeEdmModel);
             var responseStream = new MemoryStream();
 
-            var requestUri = new Uri(@"http://dummy/" + request);
+            OeParser parser = fixture.CreateParser(request, null);
+            ODataUri odataUri = fixture.ParseUri(request);
+            var requestUri = new Uri(parser.BaseUri, request);
             if (requestData == null)
-                await parser.ExecuteGetAsync(requestUri, OeRequestHeaders.JsonDefault, responseStream, CancellationToken.None);
+                await parser.ExecuteOperationAsync(odataUri, OeRequestHeaders.JsonDefault, null, responseStream, CancellationToken.None);
             else
             {
-                String data = JsonConvert.SerializeObject(requestData);
+                String data = fixture.SerializeRequestData(requestData);
                 var requestStream = new MemoryStream(Encoding.UTF8.GetBytes(data));
-                await parser.ExecutePostAsync(requestUri, OeRequestHeaders.JsonDefault, requestStream, responseStream, CancellationToken.None);
+                await parser.ExecuteOperationAsync(odataUri, OeRequestHeaders.JsonDefault, requestStream, responseStream, CancellationToken.None);
             }
 
-            ODataPath path = OeParser.ParsePath(fixture.OeEdmModel, new Uri("http://dummy/"), requestUri);
-            var reader = new ResponseReader(fixture.OeEdmModel.GetEdmModel(path));
+            ODataPath path = OeParser.ParsePath(fixture.DbEdmModel, parser.BaseUri, requestUri);
+            var reader = new ResponseReader(fixture.DbEdmModel.GetEdmModel(path), fixture.ServiceProvider);
             responseStream.Position = 0;
             Object[] fromOe;
             if (typeof(T) == typeof(int))
@@ -58,19 +60,7 @@ namespace OdataToEntity.Test
             using (OrderContext orderContext = fixture.CreateContext())
                 fromDb = fromDbFunc(orderContext).ToArray();
 
-            var settings = new JsonSerializerSettings()
-            {
-                DateFormatString = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'ffffff",
-                DateTimeZoneHandling = DateTimeZoneHandling.Utc,
-                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-                NullValueHandling = NullValueHandling.Ignore
-            };
-            String jsonOe = JsonConvert.SerializeObject(fromOe, settings);
-            String jsonDb = JsonConvert.SerializeObject(fromDb, settings);
-
-            Console.WriteLine(requestUri);
-            Assert.Equal(jsonDb, jsonOe);
-
+            TestHelper.Compare(fromOe, fromDb, null);
             return fromOe;
         }
         [Fact]

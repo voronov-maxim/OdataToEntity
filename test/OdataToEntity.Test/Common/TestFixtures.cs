@@ -5,45 +5,45 @@ namespace OdataToEntity.Test
     //DbFixtureInitDb -----------------------------------------------------------------------------
     public class PLNull_DbFixtureInitDb : DbFixtureInitDb
     {
-        public PLNull_DbFixtureInitDb() : base(false, ModelBoundTestKind.No) { }
+        public PLNull_DbFixtureInitDb() : base(typeof(PLNull_DbFixtureInitDb), false, ModelBoundTestKind.No) { }
     }
 
     public class RDBNull_DbFixtureInitDb : DbFixtureInitDb
     {
-        public RDBNull_DbFixtureInitDb() : base(true, ModelBoundTestKind.No) { }
+        public RDBNull_DbFixtureInitDb() : base(typeof(RDBNull_DbFixtureInitDb), true, ModelBoundTestKind.No) { }
     }
 
     //ManyColumns----------------------------------------------------------------------------------
     public sealed class PLNull_ManyColumnsFixtureInitDb : ManyColumnsFixtureInitDb
     {
-        public PLNull_ManyColumnsFixtureInitDb() : base(false, ModelBoundTestKind.No) { }
+        public PLNull_ManyColumnsFixtureInitDb() : base(typeof(PLNull_ManyColumnsFixtureInitDb), false, ModelBoundTestKind.No) { }
     }
 
     public sealed class RDBNull_ManyColumnsFixtureInitDb : ManyColumnsFixtureInitDb
     {
-        public RDBNull_ManyColumnsFixtureInitDb() : base(true, ModelBoundTestKind.No) { }
+        public RDBNull_ManyColumnsFixtureInitDb() : base(typeof(RDBNull_ManyColumnsFixtureInitDb), true, ModelBoundTestKind.No) { }
     }
 
     //ModelBoundAttribute--------------------------------------------------------------------------
     public sealed class PLNull_ModelBoundAttributeDbFixture : DbFixtureInitDb
     {
-        public PLNull_ModelBoundAttributeDbFixture() : base(false, ModelBoundTestKind.Attribute) { }
+        public PLNull_ModelBoundAttributeDbFixture() : base(typeof(PLNull_ModelBoundAttributeDbFixture), false, ModelBoundTestKind.Attribute) { }
     }
 
     public sealed class RDBNull_ModelBoundAttributeDbFixture : DbFixtureInitDb
     {
-        public RDBNull_ModelBoundAttributeDbFixture() : base(true, ModelBoundTestKind.Attribute) { }
+        public RDBNull_ModelBoundAttributeDbFixture() : base(typeof(RDBNull_ModelBoundAttributeDbFixture), true, ModelBoundTestKind.Attribute) { }
     }
 
     //ModelBoundFluent-----------------------------------------------------------------------------
     public sealed class PLNull_ModelBoundFluentDbFixture : DbFixtureInitDb
     {
-        public PLNull_ModelBoundFluentDbFixture() : base(false, ModelBoundTestKind.Fluent) { }
+        public PLNull_ModelBoundFluentDbFixture() : base(typeof(PLNull_ModelBoundFluentDbFixture), false, ModelBoundTestKind.Fluent) { }
     }
 
     public sealed class RDBNull_ModelBoundFluentDbFixture : DbFixtureInitDb
     {
-        public RDBNull_ModelBoundFluentDbFixture() : base(true, ModelBoundTestKind.Fluent) { }
+        public RDBNull_ModelBoundFluentDbFixture() : base(typeof(RDBNull_ModelBoundFluentDbFixture), true, ModelBoundTestKind.Fluent) { }
     }
 
     //Tests ---------------------------------------------------------------------------------------

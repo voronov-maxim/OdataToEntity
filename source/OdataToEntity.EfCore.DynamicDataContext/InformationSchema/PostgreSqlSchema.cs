@@ -9,9 +9,9 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 {
     public sealed class PostgreSqlSchema : ProviderSpecificSchema
     {
-        private sealed class PostgreSqlDynamicOperationAdapter : DynamicOperationAdapter
+        private sealed class PostgreSqlDynamicOperationAdapter : OeEfCoreOperationAdapter
         {
-            public PostgreSqlDynamicOperationAdapter(PostgreSqlSchema postgreSqlSchema) : base(postgreSqlSchema)
+            public PostgreSqlDynamicOperationAdapter() : base(typeof(Types.DynamicDbContext))
             {
             }
 
@@ -33,7 +33,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             : base(dynamicDbContextOptions, CreatePool(dynamicDbContextOptions))
         {
             base.IsDatabaseNullHighestValue = true;
-            OperationAdapter = new PostgreSqlDynamicOperationAdapter(this);
+            OperationAdapter = new PostgreSqlDynamicOperationAdapter();
         }
 
         private static DbContextPool<SchemaContext> CreatePool(DbContextOptions<Types.DynamicDbContext> dynamicDbContextOptions)
@@ -116,6 +116,8 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                     return typeof(Object[]);
                 case "void":
                     return typeof(void);
+                case "USER-DEFINED":
+                    return null;
                 default:
                     throw new InvalidOperationException("Unknown data type " + dataType);
             }
@@ -149,6 +151,11 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                 base.SchemaContextPool.Return(schemaContext);
             }
         }
-        public override DynamicOperationAdapter OperationAdapter { get; }
+        public override String GetParameterName(String parameterName)
+        {
+            return parameterName;
+        }
+
+        public override OeEfCoreOperationAdapter OperationAdapter { get; }
     }
 }

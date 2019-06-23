@@ -1,5 +1,7 @@
 ﻿using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -67,13 +69,17 @@ namespace OdataToEntity.Test.Model
 
         private static readonly ConcurrentDictionary<String, SqliteConnection> _connections = new ConcurrentDictionary<String, SqliteConnection>();
 
-        public static IEdmModel BuildDbEdmModel(bool useRelationalNulls, bool isDatabaseNullHighestValue)
+        public static IEdmModel BuildDbEdmModel(IEdmModel _, bool __)
         {
             return DbFixtureInitDb.CreateEdmModel();
         }
         public static DbContextOptions Create(String databaseName)
         {
             return Create<OrderContext>(databaseName);
+        }
+        public static DbContextOptions Create(bool _)
+        {
+            throw new NotSupportedException();
         }
         public static DbContextOptions Create<T>(String databaseName) where T : DbContext
         {
@@ -82,6 +88,17 @@ namespace OdataToEntity.Test.Model
             optionsBuilder.ReplaceService<IEntityQueryModelVisitorFactory, ZQueryModelVisitorFactory>();
             //optionsBuilder.UseLoggerFactory(CreateLoggerFactory());
             return optionsBuilder.Options;
+        }
+        public static DbContextOptions<T> CreateOptions<T>(DbContext dbContext) where T : DbContext
+        {
+            var serviceProvider = (IInfrastructure<IServiceProvider>)dbContext;
+            IDbContextOptions options = serviceProvider.GetService<IDbContextServices>().ContextOptions;
+
+            var optionsBuilder = new DbContextOptionsBuilder<T>();
+            DbContextOptions contextOptions = optionsBuilder.Options;
+            foreach (IDbContextOptionsExtension extension in options.Extensions)
+                contextOptions = contextOptions.WithExtension(extension);
+            return (DbContextOptions<T>)contextOptions;
         }
         public static DbContextOptions CreateClientEvaluationWarning(String databaseName)
         {

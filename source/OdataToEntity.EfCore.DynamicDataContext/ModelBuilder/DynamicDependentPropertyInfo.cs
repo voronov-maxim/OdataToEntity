@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace OdataToEntity.EfCore.DynamicDataContext
+namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
 {
     public readonly struct DynamicDependentPropertyInfo
     {

@@ -1,13 +1,14 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.OData.Edm;
 using OdataToEntity.Test.Model;
+using System;
 using System.Threading.Tasks;
 
 namespace OdataToEntity.Test
 {
     public abstract class DbFixtureInitDb : DbFixture
     {
-        protected DbFixtureInitDb(bool _, ModelBoundTestKind modelBoundTestKind)
+        protected DbFixtureInitDb(Type _, bool __, ModelBoundTestKind modelBoundTestKind)
             : this(modelBoundTestKind)
         {
         }
@@ -55,7 +56,7 @@ namespace OdataToEntity.Test
 
     public abstract class ManyColumnsFixtureInitDb : DbFixture
     {
-        protected ManyColumnsFixtureInitDb(bool _, ModelBoundTestKind modelBoundTestKind)
+        protected ManyColumnsFixtureInitDb(Type _, bool __, ModelBoundTestKind modelBoundTestKind)
             : base(DbFixtureInitDb.CreateEdmModel(), modelBoundTestKind, false)
         {
         }

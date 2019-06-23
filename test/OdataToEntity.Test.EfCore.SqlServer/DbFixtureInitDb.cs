@@ -13,7 +13,7 @@ namespace OdataToEntity.Test
         private bool _initialized;
         private readonly bool _useRelationalNulls;
 
-        protected DbFixtureInitDb(bool useRelationalNulls, ModelBoundTestKind modelBoundTestKind)
+        protected DbFixtureInitDb(Type _, bool useRelationalNulls, ModelBoundTestKind modelBoundTestKind)
             : base(CreateOeEdmModel(useRelationalNulls), modelBoundTestKind, useRelationalNulls)
         {
             _useRelationalNulls = useRelationalNulls;
@@ -61,7 +61,7 @@ namespace OdataToEntity.Test
         private bool _initialized;
         private readonly bool _useRelationalNulls;
 
-        protected ManyColumnsFixtureInitDb(bool useRelationalNulls, ModelBoundTestKind modelBoundTestKind)
+        protected ManyColumnsFixtureInitDb(Type _, bool useRelationalNulls, ModelBoundTestKind modelBoundTestKind)
             : base(DbFixtureInitDb.CreateOeEdmModel(useRelationalNulls), modelBoundTestKind, useRelationalNulls)
         {
             _useRelationalNulls = useRelationalNulls;

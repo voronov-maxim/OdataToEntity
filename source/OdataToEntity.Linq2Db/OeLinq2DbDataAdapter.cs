@@ -122,8 +122,21 @@ namespace OdataToEntity.Linq2Db
         public override Object CreateDataContext()
         {
             var dataContext = Infrastructure.FastActivator.CreateInstance<T>();
-            dataContext.DataContext = new OeLinq2DbDataContext(_edmModel, _entitySetAdapters);
+            dataContext.DataContext = new OeLinq2DbDataContext(GetEdmModel(_edmModel), _entitySetAdapters);
             return dataContext;
+
+            IEdmModel GetEdmModel(IEdmModel edmModel)
+            {
+                Db.OeDataAdapter dataAdapter = edmModel.GetAnnotationValue<Db.OeDataAdapter>(edmModel.EntityContainer);
+                if (dataAdapter.DataContextType == typeof(T))
+                    return edmModel;
+
+                foreach (IEdmModel refModel in edmModel.ReferencedModels)
+                    if (refModel.EntityContainer != null && refModel is EdmModel)
+                        return GetEdmModel(edmModel);
+
+                throw new InvalidOperationException("EdmModel not found for data context type " + typeof(T).FullName);
+            }
         }
         private static Db.OeEntitySetAdapterCollection CreateEntitySetAdapters()
         {

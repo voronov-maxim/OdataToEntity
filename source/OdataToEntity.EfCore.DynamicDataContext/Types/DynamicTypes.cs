@@ -104,4 +104,11 @@
         {
         }
     }
+
+    public sealed class DynamicType16 : DynamicType
+    {
+        public DynamicType16(DynamicDbContext dynamicDbContext) : base(dynamicDbContext)
+        {
+        }
+    }
 }

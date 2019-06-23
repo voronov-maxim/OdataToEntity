@@ -121,7 +121,7 @@ namespace OdataToEntity
         }
         public async Task ExecuteGetAsync(Uri requestUri, OeRequestHeaders headers, Stream responseStream, CancellationToken cancellationToken)
         {
-            ODataUri odataUri = ParseUri(EdmModel, BaseUri, requestUri);
+            ODataUri odataUri = ParseUri(EdmModel, BaseUri, requestUri, _serviceProvider);
             if (odataUri.Path.LastSegment is OperationImportSegment)
                 await ExecuteOperationAsync(odataUri, headers, null, responseStream, cancellationToken).ConfigureAwait(false);
             else
@@ -139,7 +139,7 @@ namespace OdataToEntity
         }
         public async Task ExecutePostAsync(Uri requestUri, OeRequestHeaders headers, Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
         {
-            ODataUri odataUri = ParseUri(EdmModel, BaseUri, requestUri);
+            ODataUri odataUri = ParseUri(EdmModel, BaseUri, requestUri, _serviceProvider);
             if (odataUri.Path.LastSegment.Identifier == "$batch")
                 await ExecuteBatchAsync(requestStream, responseStream, headers.ContentType, cancellationToken).ConfigureAwait(false);
             else if (odataUri.Path.LastSegment is OperationImportSegment)
@@ -184,17 +184,18 @@ namespace OdataToEntity
             var uriParser = new ODataUriParser(edmModel, serviceRoot, uri, ServiceProviderImpl.Instance);
             return uriParser.ParsePath();
         }
-        public static ODataUri ParseUri(IEdmModel edmModel, Uri relativeUri)
+        public static ODataUri ParseUri(IEdmModel edmModel, Uri relativeUri, IServiceProvider serviceProvider = null)
         {
-            return ParseUri(edmModel, null, relativeUri);
+            return ParseUri(edmModel, null, relativeUri, serviceProvider);
         }
-        public static ODataUri ParseUri(IEdmModel edmModel, Uri serviceRoot, Uri uri)
+        public static ODataUri ParseUri(IEdmModel edmModel, Uri serviceRoot, Uri uri, IServiceProvider serviceProvider = null)
         {
+            serviceProvider = serviceProvider ?? ServiceProviderImpl.Instance;
             ODataUriParser uriParser;
             if (serviceRoot == null)
-                uriParser = new ODataUriParser(edmModel, uri, ServiceProviderImpl.Instance);
+                uriParser = new ODataUriParser(edmModel, uri, serviceProvider);
             else
-                uriParser = new ODataUriParser(edmModel, serviceRoot, uri, ServiceProviderImpl.Instance);
+                uriParser = new ODataUriParser(edmModel, serviceRoot, uri, serviceProvider);
             try
             {
                 return uriParser.ParseUri();
@@ -203,9 +204,9 @@ namespace OdataToEntity
             {
                 //fix test ApplyGroupByAggregateOrderBy bug #703
                 if (serviceRoot == null)
-                    uriParser = new ODataUriParser(edmModel, uri, ServiceProviderImpl.Instance);
+                    uriParser = new ODataUriParser(edmModel, uri, serviceProvider);
                 else
-                    uriParser = new ODataUriParser(edmModel, serviceRoot, uri, ServiceProviderImpl.Instance);
+                    uriParser = new ODataUriParser(edmModel, serviceRoot, uri, serviceProvider);
                 uriParser.ParseApply();
                 return uriParser.ParseUri();
             }

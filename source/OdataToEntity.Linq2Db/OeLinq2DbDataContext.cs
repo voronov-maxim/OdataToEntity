@@ -2,6 +2,7 @@
 using Microsoft.OData.Edm;
 using OdataToEntity.Db;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -27,13 +28,17 @@ namespace OdataToEntity.Linq2Db
             public IEdmEntitySet EdmEntitySet { get; }
         }
 
-        private static ClrTableTypeEdmSet[] _orderedTableTypes;
+        private static readonly ConcurrentDictionary<IEdmModel, ClrTableTypeEdmSet[]> _edmModelOrderedTableTypes = new ConcurrentDictionary<IEdmModel, ClrTableTypeEdmSet[]>();
+        private readonly ClrTableTypeEdmSet[] _orderedTableTypes;
         private readonly Dictionary<Type, OeLinq2DbTable> _tables;
 
         public OeLinq2DbDataContext(IEdmModel edmModel, OeEntitySetAdapterCollection entitySetAdapters)
         {
-            if (_orderedTableTypes == null)
+            if (!_edmModelOrderedTableTypes.TryGetValue(edmModel, out _orderedTableTypes))
+            {
                 _orderedTableTypes = GetOrderedTableTypes(edmModel, entitySetAdapters);
+                _edmModelOrderedTableTypes.TryAdd(edmModel, _orderedTableTypes);
+            }
 
             _tables = new Dictionary<Type, OeLinq2DbTable>(_orderedTableTypes.Length);
         }

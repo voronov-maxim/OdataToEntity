@@ -12,7 +12,6 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         public SqlServerSchema(DbContextOptions<Types.DynamicDbContext> dynamicDbContextOptions)
             : base(dynamicDbContextOptions, CreatePool(dynamicDbContextOptions))
         {
-            OperationAdapter = new DynamicOperationAdapter(this);
         }
 
         private static DbContextPool<SchemaContext> CreatePool(DbContextOptions<Types.DynamicDbContext> dynamicDbContextOptions)
@@ -85,6 +84,8 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                 case "varchar":
                 case "xml":
                     return typeof(String);
+                case "TABLE":
+                    return null;
                 default:
                     throw new InvalidOperationException("Unknown data type " + dataType);
             }
@@ -103,7 +104,9 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                 base.SchemaContextPool.Return(schemaContext);
             }
         }
-
-        public override DynamicOperationAdapter OperationAdapter { get; }
+        public override String GetParameterName(String parameterName)
+        {
+            return parameterName[0] == '@' ? parameterName.Substring(1) : parameterName;
+        }
     }
 }

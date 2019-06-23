@@ -21,8 +21,8 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             Expression<Func<Parameter, bool>> parameterFilter = t => t.DataType != "table type";
             modelBuilder.Model.FindEntityType(typeof(Parameter)).QueryFilter = parameterFilter;
 
-            Expression<Func<Routine, bool>> routineFilter = t => t.DataType != "TABLE" || t.DataType == null;
-            modelBuilder.Model.FindEntityType(typeof(Routine)).QueryFilter = routineFilter;
+            //Expression<Func<Routine, bool>> routineFilter = t => t.DataType != "TABLE" || t.DataType == null;
+            //modelBuilder.Model.FindEntityType(typeof(Routine)).QueryFilter = routineFilter;
         }
     }
 }

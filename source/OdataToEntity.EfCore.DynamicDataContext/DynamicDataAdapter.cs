@@ -9,18 +9,23 @@ namespace OdataToEntity.EfCore.DynamicDataContext
         private readonly Db.OeEntitySetAdapterCollection _dynamicEntitySetAdapters;
 
         public DynamicDataAdapter(DynamicTypeDefinitionManager typeDefinitionManager)
-            : base(null, null, typeDefinitionManager.MetadataProvider.OperationAdapter)
+            : base(null, null, typeDefinitionManager.OperationAdapter)
         {
             TypeDefinitionManager = typeDefinitionManager;
             _dynamicEntitySetAdapters = CreateEntitySetAdapters(typeDefinitionManager);
-            base.IsDatabaseNullHighestValue = typeDefinitionManager.MetadataProvider.IsDatabaseNullHighestValue;
+            base.IsDatabaseNullHighestValue = typeDefinitionManager.IsDatabaseNullHighestValue;
         }
 
-        public EdmModel BuildEdmModel()
+        public EdmModel BuildEdmModel(ModelBuilder.DynamicMetadataProvider metadataProvider)
         {
             using (Types.DynamicDbContext context = TypeDefinitionManager.CreateDynamicDbContext())
             {
-                var modelBuilder = new OeEdmModelBuilder(this, new DynamicEdmModelMetadataProvider(context.Model, TypeDefinitionManager));
+                var edmModelMetadataProvider = new ModelBuilder.DynamicEdmModelMetadataProvider(context.Model, metadataProvider, TypeDefinitionManager);
+                var modelBuilder = new OeEdmModelBuilder(this, edmModelMetadataProvider);
+
+                foreach (OeOperationConfiguration operationConfiguration in metadataProvider.GetRoutines(TypeDefinitionManager))
+                    modelBuilder.AddOperation(operationConfiguration);
+
                 return modelBuilder.BuildEdmModel();
             }
         }
@@ -29,7 +34,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
             var entitySetAdapters = new Db.OeEntitySetAdapter[typeDefinitionManager.TypeDefinitions.Count];
             int i = 0;
             foreach (DynamicTypeDefinition typeDefinition in typeDefinitionManager.TypeDefinitions)
-                entitySetAdapters[i++] = CreateEntitySetAdapter(typeDefinition.DynamicTypeType, typeDefinition.TableName, typeDefinition.IsQueryType);
+                entitySetAdapters[i++] = CreateEntitySetAdapter(typeDefinition.DynamicTypeType, typeDefinition.TableEdmName, typeDefinition.IsQueryType);
             return new Db.OeEntitySetAdapterCollection(entitySetAdapters);
         }
         public override Object CreateDataContext()
