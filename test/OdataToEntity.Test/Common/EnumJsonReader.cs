@@ -115,7 +115,7 @@ namespace OdataToEntity.Test
                 }
                 else if (_jsonTextReader.Depth > 1)
                 {
-                    _property = _entityTypes.Peek().EntityType.FindProperty((String)_jsonTextReader.Value);
+                    _property = _entityTypes.Peek().EntityType.GetPropertyIgnoreCaseOrNull((String)_jsonTextReader.Value);
                     if (_property != null)
                     {
                         if (_property.Type.IsEnum())

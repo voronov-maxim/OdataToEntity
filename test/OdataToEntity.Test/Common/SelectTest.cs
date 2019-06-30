@@ -769,8 +769,8 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<Order>()
             {
-                RequestUri = "Orders?$filter=Status ge OdataToEntity.Test.Model.OrderStatus'Unknown'",
-                Expression = t => t.Where(o => o.Status >= OrderStatus.Unknown),
+                RequestUri = "Orders?$filter=Status ge OdataToEntity.Test.Model.OrderStatus'Unknown'&$orderby=Id",
+                Expression = t => t.Where(o => o.Status >= OrderStatus.Unknown).OrderBy(o => o.Id),
                 PageSize = pageSize
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);

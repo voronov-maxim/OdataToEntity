@@ -77,6 +77,8 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         public String UniqueConstraintSchema { get; set; }
         [Column("UNIQUE_CONSTRAINT_NAME")]
         public String UniqueConstraintName { get; set; }
+        [NotMapped]
+        public String ReferencedTableName { get; set; }
     }
 
     [Table("ROUTINES", Schema = "INFORMATION_SCHEMA")]

@@ -3,7 +3,6 @@ using Microsoft.OData;
 using Microsoft.OData.Edm;
 using OdataToEntity.EfCore.DynamicDataContext;
 using OdataToEntity.EfCore.DynamicDataContext.InformationSchema;
-using OdataToEntity.EfCore.DynamicDataContext.ModelBuilder;
 using OdataToEntity.EfCore.DynamicDataContext.Types;
 using OdataToEntity.ModelBuilder;
 using OdataToEntity.Test.Model;
@@ -19,13 +18,11 @@ namespace OdataToEntity.Test
     {
         private bool _initialized;
         private readonly IServiceProvider _serviceProvider;
-        private readonly bool _useRelationalNulls;
         private static readonly ConcurrentDictionary<Type, EdmModel> _edmModels = new ConcurrentDictionary<Type, EdmModel>();
 
         protected DbFixtureInitDb(Type fixtureType, bool useRelationalNulls, ModelBoundTestKind modelBoundTestKind)
             : base(CreateEdmModel(fixtureType, useRelationalNulls), modelBoundTestKind, useRelationalNulls)
         {
-            _useRelationalNulls = useRelationalNulls;
             _serviceProvider = new DynamicDataContext.EnumServiceProvider(base.DbEdmModel);
         }
 
@@ -56,13 +53,15 @@ namespace OdataToEntity.Test
         }
         private static EdmModel CreateDynamicEdmModel(bool useRelationalNulls)
         {
-            //DbContextOptions<DynamicDbContext> options = OrderContextOptions.Create<DynamicDbContext>(useRelationalNulls);
-            //var informationSchema = new SqlServerSchema(options);
-            DbContextOptions<DynamicDbContext> options = DynamicDataContext.Program.CreateOptionsPostgreSql(useRelationalNulls);
-            var informationSchema = new PostgreSqlSchema(options);
+            DbContextOptions<DynamicDbContext> options = OrderContextOptions.Create<DynamicDbContext>(useRelationalNulls);
+            var informationSchema = new SqlServerSchema(options);
+            //DbContextOptions<DynamicDbContext> options = DynamicDataContext.Program.CreateOptionsPostgreSql(useRelationalNulls);
+            //var informationSchema = new PostgreSqlSchema(options);
+            //DbContextOptions<DynamicDbContext> options = DynamicDataContext.Program.CreateOptionsMySql(useRelationalNulls);
+            //var informationSchema = new MySqlSchema(options);
 
             InformationSchemaMapping informationSchemaMapping = DynamicDataContext.Program.GetMappings();
-            using (var metadataProvider = new DynamicMetadataProvider(informationSchema, informationSchemaMapping))
+            using (var metadataProvider = informationSchema.CreateMetadataProvider(informationSchemaMapping))
             {
                 var typeDefinitionManager = DynamicTypeDefinitionManager.Create(metadataProvider);
                 var dataAdapter = new DynamicDataAdapter(typeDefinitionManager);

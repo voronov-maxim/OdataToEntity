@@ -24,6 +24,11 @@ namespace OdataToEntity.Db
 
         public abstract Type DataContextType { get; }
         public abstract OeEntitySetAdapterCollection EntitySetAdapters { get; }
+        public bool IsCaseSensitive
+        {
+            get => OperationAdapter.IsCaseSensitive;
+            set => OperationAdapter.IsCaseSensitive = value;
+        }
         public bool IsDatabaseNullHighestValue { get; set; }
         public OeOperationAdapter OperationAdapter { get; }
         protected Cache.OeQueryCache QueryCache { get; }

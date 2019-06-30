@@ -33,8 +33,11 @@ namespace OdataToEntity.Infrastructure
 
         public int Compare(Object x, Object y)
         {
-            if (Object.ReferenceEquals(x, y))
+            if (x == y)
                 return 0;
+
+            if (x == null || y == null)
+                return x == null ? -1 : 1;
 
             Func<Object, Object, int>[] propertyComparers = _propertyComparers;
             for (int i = 0; i < propertyComparers.Length; i++)

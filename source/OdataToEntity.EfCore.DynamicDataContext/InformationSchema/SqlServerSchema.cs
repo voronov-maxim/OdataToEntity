@@ -12,6 +12,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         public SqlServerSchema(DbContextOptions<Types.DynamicDbContext> dynamicDbContextOptions)
             : base(dynamicDbContextOptions, CreatePool(dynamicDbContextOptions))
         {
+            OperationAdapter = new OeEfCoreOperationAdapter(typeof(Types.DynamicDbContext));
         }
 
         private static DbContextPool<SchemaContext> CreatePool(DbContextOptions<Types.DynamicDbContext> dynamicDbContextOptions)
@@ -108,5 +109,8 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         {
             return parameterName[0] == '@' ? parameterName.Substring(1) : parameterName;
         }
+
+        public override bool IsCaseSensitive => false;
+        public override OeEfCoreOperationAdapter OperationAdapter { get; }
     }
 }

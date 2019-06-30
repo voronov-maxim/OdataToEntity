@@ -9,16 +9,16 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
 {
     public sealed class DynamicMetadataProvider : IDisposable
     {
-        private readonly SchemaCache _schemaCache;
         private readonly InformationSchemaMapping _informationSchemaMapping;
+        private readonly SchemaCache _schemaCache;
 
-        public DynamicMetadataProvider(ProviderSpecificSchema informationSchema, InformationSchemaMapping informationSchemaMapping)
+        internal DynamicMetadataProvider(ProviderSpecificSchema informationSchema, InformationSchemaMapping informationSchemaMapping)
         {
             InformationSchema = informationSchema;
             _informationSchemaMapping = informationSchemaMapping;
 
             _schemaCache = new SchemaCache(informationSchema);
-            _schemaCache.Initialize(_informationSchemaMapping.Tables);
+            _schemaCache.Initialize(_informationSchemaMapping?.Tables);
         }
 
         public void Dispose()
@@ -36,7 +36,10 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
                         List<KeyColumnUsage> principal = _schemaCache.GetKeyColumns()[(navigation.ConstraintSchema, navigation.PrincipalConstraintName)]; ;
                         List<String> principalPropertyNames = principal.OrderBy(p => p.OrdinalPosition).Select(p => p.ColumnName).ToList();
                         List<String> dependentPropertyNames = dependent.OrderBy(p => p.OrdinalPosition).Select(p => p.ColumnName).ToList();
-                        return new DynamicDependentPropertyInfo(principal[0].TableName, dependent[0].TableName, principalPropertyNames, dependentPropertyNames, navigation.IsCollection);
+
+                        String principalEdmName = _schemaCache.GetTableEdmName(principal[0].TableSchema, principal[0].TableName);
+                        String dependentEdmName = _schemaCache.GetTableEdmName(dependent[0].TableSchema, dependent[0].TableName);
+                        return new DynamicDependentPropertyInfo(principalEdmName, dependentEdmName, principalPropertyNames, dependentPropertyNames, navigation.IsCollection);
                     }
 
             throw new InvalidOperationException("Navigation property " + navigationPropertyName + " not found in table " + tableName);
@@ -86,7 +89,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
                 yield return new DynamicPropertyInfo(column.ColumnName, propertyType, databaseGenerated);
             }
         }
-        public String GetTableName(String entityName)
+        public String GetTableEdmName(String entityName)
         {
             return entityName;
         }

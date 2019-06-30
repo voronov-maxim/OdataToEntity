@@ -24,6 +24,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
 
         private DynamicTypeDefinitionManager(Type dynamicDbContextType, ProviderSpecificSchema informationSchema)
         {
+            IsCaseSensitive = informationSchema.IsCaseSensitive;
             IsDatabaseNullHighestValue = informationSchema.IsDatabaseNullHighestValue;
             OperationAdapter = informationSchema.OperationAdapter;
 
@@ -33,7 +34,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
             _dynamicDbContextCtor = Expression.Lambda<Func<DynamicDbContext>>(ctor).Compile();
 
             _dynamicTypeDefinitions = new Dictionary<Type, DynamicTypeDefinition>();
-            _tableEdmNameTypes = new Dictionary<String, Type>();
+            _tableEdmNameTypes = new Dictionary<String, Type>(informationSchema.IsCaseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase);
         }
 
         public static DynamicTypeDefinitionManager Create(DynamicMetadataProvider metadataProvider)
@@ -95,6 +96,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
             return dynamicTypeDefinition;
         }
 
+        public bool IsCaseSensitive { get; }
         public bool IsDatabaseNullHighestValue { get; }
         public OeEfCoreOperationAdapter OperationAdapter { get; }
         public ICollection<DynamicTypeDefinition> TypeDefinitions => _dynamicTypeDefinitions.Values;

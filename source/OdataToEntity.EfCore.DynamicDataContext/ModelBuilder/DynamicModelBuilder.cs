@@ -65,8 +65,8 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
             {
                 DynamicDependentPropertyInfo dependentInfo = MetadataProvider.GetDependentProperties(tableName, propertyName);
 
-                EntityType dependentEntityType = CreateEntityType(modelBuilder, MetadataProvider.GetTableName(dependentInfo.DependentEntityName), false);
-                EntityType principalEntityType = CreateEntityType(modelBuilder, MetadataProvider.GetTableName(dependentInfo.PrincipalEntityName), false);
+                EntityType dependentEntityType = CreateEntityType(modelBuilder, MetadataProvider.GetTableEdmName(dependentInfo.DependentEntityName), false);
+                EntityType principalEntityType = CreateEntityType(modelBuilder, MetadataProvider.GetTableEdmName(dependentInfo.PrincipalEntityName), false);
 
                 var dependentProperties = new List<Property>();
                 foreach (String dependentPropertyName in dependentInfo.DependentPropertyNames)

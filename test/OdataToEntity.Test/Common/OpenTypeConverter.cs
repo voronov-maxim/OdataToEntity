@@ -92,6 +92,20 @@ namespace OdataToEntity.Test
             }
             return matched.Filter((IEnumerable)value);
         }
+        private static Object OrderKeySelector(IReadOnlyDictionary<String, Object> value)
+        {
+            if (value.ContainsKey("Id"))
+                return value["Id"];
+
+            Object firstValue = value.Values.First();
+            if (firstValue is IComparable comparable)
+                return comparable;
+
+            if (firstValue is IReadOnlyDictionary<String, Object> dictionary)
+                return dictionary.Values.First();
+
+            return 0;
+        }
         private IList ToOpenType(IEnumerable entities)
         {
             var openTypes = new List<Object>();
@@ -109,8 +123,7 @@ namespace OdataToEntity.Test
             {
                 EfInclude matched = FindInclude(null);
                 if (matched.Property != null && !matched.IsOrdered)
-                    openTypes = new List<Object>(openTypes.Cast<IReadOnlyDictionary<String, Object>>().OrderBy(
-                        i => i.ContainsKey("Id") ? i["Id"] : (i.Values.First() is IComparable comparable ? comparable : 0)));
+                    openTypes = new List<Object>(openTypes.Cast<IReadOnlyDictionary<String, Object>>().OrderBy(OrderKeySelector));
             }
 
             return openTypes;

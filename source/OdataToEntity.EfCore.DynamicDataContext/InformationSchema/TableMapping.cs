@@ -14,9 +14,13 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         public TableMapping()
         {
         }
-        public TableMapping(String dbName)
+        public TableMapping(String dbName) : this(dbName, null)
+        {
+        }
+        public TableMapping(String dbName, String edmName)
         {
             DbName = dbName;
+            EdmName = edmName;
         }
 
         public String DbName { get; set; }

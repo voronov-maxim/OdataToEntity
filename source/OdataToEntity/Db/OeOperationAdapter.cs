@@ -14,9 +14,13 @@ namespace OdataToEntity.Db
         protected readonly Type _dataContextType;
         private IReadOnlyList<OeOperationConfiguration> _operations;
 
-        public OeOperationAdapter(Type dataContextType)
+        protected OeOperationAdapter(Type dataContextType) : this(dataContextType, false)
+        {
+        }
+        protected OeOperationAdapter(Type dataContextType, bool isCaseSensitive)
         {
             _dataContextType = dataContextType;
+            IsCaseSensitive = isCaseSensitive;
         }
 
         public virtual IAsyncEnumerable<Object> ExecuteFunctionNonQuery(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters)
@@ -56,7 +60,10 @@ namespace OdataToEntity.Db
         }
         protected abstract IAsyncEnumerable<Object> ExecuteReader(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, OeEntitySetAdapter entitySetAdapter);
         protected abstract IAsyncEnumerable<Object> ExecutePrimitive(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType);
-        private static String GetCaseSensitivityName(String name) => name[0] == '"' ? name : "\"" + name + "\"";
+        private String GetCaseSensitivityName(String name)
+        {
+            return !IsCaseSensitive || name[0] == '"' ? name : "\"" + name + "\"";
+        }
         protected virtual String GetDefaultSchema(Object dataContext) => null;
         protected IReadOnlyList<MethodInfo> GetMethodInfos()
         {
@@ -71,7 +78,7 @@ namespace OdataToEntity.Db
                 }
             return methodInfos;
         }
-        protected static String GetOperationCaseSensitivityName(String operationName, String defaultSchema)
+        protected String GetOperationCaseSensitivityName(String operationName, String defaultSchema)
         {
             int i = operationName.IndexOf('.');
             if (i == -1)
@@ -154,7 +161,11 @@ namespace OdataToEntity.Db
         }
         protected virtual String GetProcedureName(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters)
         {
-            var sql = new StringBuilder(GetOperationCaseSensitivityName(operationName, GetDefaultSchema(dataContext)));
+            String operationCaseSensitivityName = GetOperationCaseSensitivityName(operationName, GetDefaultSchema(dataContext));
+            if (parameters.Count == 0)
+                return operationCaseSensitivityName;
+
+            var sql = new StringBuilder(operationCaseSensitivityName);
             sql.Append(' ');
             String[] parameterNames = GetParameterNames(dataContext, parameters);
             sql.Append(String.Join(",", parameterNames));
@@ -170,5 +181,7 @@ namespace OdataToEntity.Db
 
             return sql.ToString();
         }
+
+        public bool IsCaseSensitive { get; protected internal set; }
     }
 }

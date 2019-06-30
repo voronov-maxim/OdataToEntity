@@ -22,7 +22,7 @@ namespace OdataToEntity.Test.Model
             Npgsql.NpgsqlConnection.GlobalTypeMapper.MapComposite<StringList>("dbo.string_list");
 
             var optionsBuilder = new DbContextOptionsBuilder<T>();
-            optionsBuilder.UseNpgsql(@"Host=localhost;Port=5432;Database=OdataToEntity;Pooling=true;User Id=mvoronov", opt => opt.UseRelationalNulls(useRelationalNulls));
+            optionsBuilder.UseNpgsql(@"Host=localhost;Port=5432;Database=OdataToEntity;Pooling=true", opt => opt.UseRelationalNulls(useRelationalNulls));
             return optionsBuilder.Options;
         }
     }

@@ -43,7 +43,11 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         {
             PropertyInfo propertyInfo = entityType.GetProperty("TableSchema");
             if (propertyInfo == null)
-                return null;
+            {
+                propertyInfo = entityType.GetProperty("ConstraintSchema");
+                if (propertyInfo == null)
+                    propertyInfo = entityType.GetProperty("SpecificSchema");
+            }
 
             ParameterExpression parameter = Expression.Parameter(entityType);
             MemberExpression property = Expression.Property(parameter, propertyInfo);

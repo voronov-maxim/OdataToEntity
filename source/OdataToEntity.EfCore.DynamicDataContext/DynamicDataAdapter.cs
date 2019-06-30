@@ -14,6 +14,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
             TypeDefinitionManager = typeDefinitionManager;
             _dynamicEntitySetAdapters = CreateEntitySetAdapters(typeDefinitionManager);
             base.IsDatabaseNullHighestValue = typeDefinitionManager.IsDatabaseNullHighestValue;
+            base.IsCaseSensitive = typeDefinitionManager.IsCaseSensitive;
         }
 
         public EdmModel BuildEdmModel(ModelBuilder.DynamicMetadataProvider metadataProvider)

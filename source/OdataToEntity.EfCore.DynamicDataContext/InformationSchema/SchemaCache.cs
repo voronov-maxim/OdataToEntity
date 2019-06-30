@@ -188,11 +188,13 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                     foreach (ReferentialConstraint fkey in schemaContext.ReferentialConstraints)
                     {
                         KeyColumnUsage dependentKeyColumn = keyColumns[(fkey.ConstraintSchema, fkey.ConstraintName)][0];
-                        if (GetTableEdmName(dependentKeyColumn.TableSchema, dependentKeyColumn.TableName) == null)
+                        String principalEdmName = GetTableEdmName(dependentKeyColumn.TableSchema, dependentKeyColumn.TableName);
+                        if (principalEdmName == null)
                             continue;
 
                         KeyColumnUsage principalKeyColumn = keyColumns[(fkey.UniqueConstraintSchema, fkey.UniqueConstraintName)][0];
-                        if (GetTableEdmName(principalKeyColumn.TableSchema, principalKeyColumn.TableName) == null)
+                        String dependentEdmName = GetTableEdmName(principalKeyColumn.TableSchema, principalKeyColumn.TableName);
+                        if (dependentEdmName == null)
                             continue;
 
                         String dependentNavigationName = GetNavigationMappingName(fkey, dependentKeyColumn);
@@ -201,7 +203,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                             if (dependentKeyColumn.TableSchema == principalKeyColumn.TableSchema && dependentKeyColumn.TableName == principalKeyColumn.TableName)
                                 dependentNavigationName = "Parent";
                             else
-                                dependentNavigationName = _pluralizer.Singularize(principalKeyColumn.TableName);
+                                dependentNavigationName = _pluralizer.Singularize(dependentEdmName);
 
                             (String, String, String) dependentKey = (fkey.ConstraintSchema, dependentKeyColumn.TableName, principalKeyColumn.TableName);
                             if (navigationCounter.TryGetValue(dependentKey, out int counter))
@@ -223,7 +225,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                             if (dependentKeyColumn.TableSchema == principalKeyColumn.TableSchema && dependentKeyColumn.TableName == principalKeyColumn.TableName)
                                 principalNavigationName = "Children";
                             else
-                                principalNavigationName = _pluralizer.Pluralize(dependentKeyColumn.TableName);
+                                principalNavigationName = _pluralizer.Pluralize(principalEdmName);
 
                             (String, String, String) principalKey = (fkey.ConstraintSchema, principalKeyColumn.TableName, dependentKeyColumn.TableName);
                             if (navigationCounter.TryGetValue(principalKey, out int counter))
@@ -313,18 +315,32 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                         parameterList.Add(parameter);
                     }
 
-                    var operationMappings = new Dictionary<(String schema, String name), OperationMapping>(informationSchemaMapping.Operations.Count);
-                    for (int i = 0; i < informationSchemaMapping.Operations.Count; i++)
+                    Dictionary<(String schema, String name), OperationMapping> operationMappings = null;
+                    if (informationSchemaMapping != null && informationSchemaMapping.Operations != null)
                     {
-                        OperationMapping operationMapping = informationSchemaMapping.Operations[i];
-                        String[] nameParsed = operationMapping.DbName.Split('.');
-                        operationMappings.Add((nameParsed[0], nameParsed[1]), operationMapping);
+                        operationMappings = new Dictionary<(String schema, String name), OperationMapping>(informationSchemaMapping.Operations.Count);
+                        for (int i = 0; i < informationSchemaMapping.Operations.Count; i++)
+                        {
+                            OperationMapping operationMapping = informationSchemaMapping.Operations[i];
+                            int index = operationMapping.DbName.IndexOf('.');
+                            if (index == -1)
+                                operationMappings.Add(("", operationMapping.DbName), operationMapping);
+                            else
+                            {
+                                String schema = operationMapping.DbName.Substring(0, index);
+                                String name = operationMapping.DbName.Substring(index + 1);
+                                operationMappings.Add((schema, name), operationMapping);
+                            }
+                        }
                     }
 
                     _routines = new List<OeOperationConfiguration>();
                     foreach (Routine routine in schemaContext.Routines)
                     {
-                        if (operationMappings.TryGetValue((routine.RoutineSchema, routine.RoutineName), out OperationMapping operationMapping) && operationMapping.Exclude)
+                        OperationMapping operationMapping = null;
+                        if (operationMappings != null &&
+                            operationMappings.TryGetValue((routine.RoutineSchema, routine.RoutineName), out operationMapping) &&
+                            operationMapping.Exclude)
                             continue;
 
                         OeOperationParameterConfiguration[] parameterConfigurations = Array.Empty<OeOperationParameterConfiguration>();
@@ -382,7 +398,9 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         }
         public void Initialize(IReadOnlyCollection<TableMapping> tableMappings)
         {
-            _tableEdmNameFullNames = new Dictionary<String, (String tableSchema, String tableName, bool isQueryType)>();
+            IEqualityComparer<String> comparer = _informationSchema.IsCaseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
+
+            _tableEdmNameFullNames = new Dictionary<String, (String tableSchema, String tableName, bool isQueryType)>(comparer);
             _tableFullNameEdmNames = new Dictionary<(String tableSchema, String tableName), String>();
             _navigationMappings = new Dictionary<(String tableSchema, String tableName), IReadOnlyList<NavigationMapping>>();
 
@@ -391,7 +409,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             {
                 Dictionary<String, TableMapping> dbNameTableMappings = null;
                 if (tableMappings != null)
-                    dbNameTableMappings = tableMappings.ToDictionary(t => t.DbName, StringComparer.InvariantCultureIgnoreCase);
+                    dbNameTableMappings = tableMappings.ToDictionary(t => t.DbName, StringComparer.OrdinalIgnoreCase);
 
                 var fixTableNames = new List<String>();
                 List<Table> tables = schemaContext.Tables.ToList();

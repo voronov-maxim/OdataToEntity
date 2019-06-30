@@ -179,21 +179,17 @@ namespace OdataToEntity
 
             throw new InvalidOperationException("EntitySet for navigation property " + navigationProperty.Name + " not found");
         }
-        public static IEdmEntitySet GetEntitySet(IEdmModel edmModel, String entitySetName)
+        public static IEdmEntitySet GetEntitySet(IEdmModel edmModel, String entitySetName, StringComparison comparison = StringComparison.OrdinalIgnoreCase)
         {
-            IEdmEntitySet entitySet = edmModel.EntityContainer.FindEntitySet(entitySetName);
-            if (entitySet != null)
-                return entitySet;
-
             foreach (IEdmEntityContainerElement element in edmModel.EntityContainer.Elements)
                 if (element is IEdmEntitySet edmEntitySet &&
-                    String.Compare(edmEntitySet.Name, entitySetName, StringComparison.OrdinalIgnoreCase) == 0)
+                    String.Compare(edmEntitySet.Name, entitySetName, comparison) == 0)
                     return edmEntitySet;
 
             foreach (IEdmModel refModel in edmModel.ReferencedModels)
                 if (refModel.EntityContainer != null && refModel is EdmModel)
                 {
-                    entitySet = GetEntitySet(refModel, entitySetName);
+                    IEdmEntitySet entitySet = GetEntitySet(refModel, entitySetName);
                     if (entitySet != null)
                         return entitySet;
                 }
@@ -237,11 +233,11 @@ namespace OdataToEntity
         }
         public static IEdmProperty GetPropertyIgnoreCase(this IEdmStructuredType entityType, String propertyName)
         {
-            foreach (IEdmProperty edmProperty in entityType.Properties())
-                if (String.Compare(edmProperty.Name, propertyName, StringComparison.OrdinalIgnoreCase) == 0)
-                    return edmProperty;
+            IEdmProperty edmProperty = entityType.GetPropertyIgnoreCaseOrNull(propertyName);
+            if (edmProperty == null)
+                throw new InvalidOperationException("Property " + propertyName + " not found in IEdmStructuredType" + entityType.FullTypeName());
 
-            throw new InvalidOperationException("Property " + propertyName + " not found in IEdmStructuredType" + entityType.FullTypeName());
+            return edmProperty;
         }
         public static PropertyInfo GetPropertyIgnoreCase(this Type declaringType, String propertyName)
         {
@@ -250,6 +246,14 @@ namespace OdataToEntity
         public static PropertyInfo GetPropertyIgnoreCase(this Type declaringType, IEdmProperty edmProperty)
         {
             return declaringType.GetPropertyIgnoreCaseOrNull(edmProperty) ?? throw new InvalidOperationException("EdmProperty " + edmProperty.Name + " not found in type " + declaringType.FullName);
+        }
+        public static IEdmProperty GetPropertyIgnoreCaseOrNull(this IEdmStructuredType entityType, String propertyName)
+        {
+            foreach (IEdmProperty edmProperty in entityType.Properties())
+                if (String.Compare(edmProperty.Name, propertyName, StringComparison.OrdinalIgnoreCase) == 0)
+                    return edmProperty;
+
+            return null;
         }
         public static PropertyInfo GetPropertyIgnoreCaseOrNull(this Type declaringType, IEdmProperty edmProperty)
         {

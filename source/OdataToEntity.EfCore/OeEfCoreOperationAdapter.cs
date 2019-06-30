@@ -18,6 +18,9 @@ namespace OdataToEntity.EfCore
             : base(dataContextType)
         {
         }
+        public OeEfCoreOperationAdapter(Type dataContextType, bool isCaseSensitive) : base(dataContextType, isCaseSensitive)
+        {
+        }
 
         private IRelationalCommand CreateCommand(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, out Dictionary<String, Object> parameterValues)
         {

@@ -16,7 +16,7 @@ namespace OdataToEntity.EfCore
         private sealed class OeEfCorePostgreSqlOperationAdapter : OeEfCoreOperationAdapter
         {
             public OeEfCorePostgreSqlOperationAdapter(Type dataContextType)
-                : base(dataContextType)
+                : base(dataContextType, true)
             {
             }
 

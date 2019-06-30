@@ -11,7 +11,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
     {
         private sealed class PostgreSqlDynamicOperationAdapter : OeEfCoreOperationAdapter
         {
-            public PostgreSqlDynamicOperationAdapter() : base(typeof(Types.DynamicDbContext))
+            public PostgreSqlDynamicOperationAdapter() : base(typeof(Types.DynamicDbContext), true)
             {
             }
 
@@ -156,6 +156,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             return parameterName;
         }
 
+        public override bool IsCaseSensitive => true;
         public override OeEfCoreOperationAdapter OperationAdapter { get; }
     }
 }

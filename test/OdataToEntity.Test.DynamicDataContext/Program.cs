@@ -1,5 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using JetBrains.Annotations;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.EntityFrameworkCore.Query;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.OData.Edm;
 using OdataToEntity.EfCore;
 using OdataToEntity.EfCore.DynamicDataContext;
@@ -12,6 +17,7 @@ using OdataToEntity.Test.Model;
 using System;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -32,7 +38,7 @@ namespace OdataToEntity.Test.DynamicDataContext
         static async Task Main()
         {
             //PerformanceCacheTest.RunTest(100);
-            await new PLNull(new PLNull_DbFixtureInitDb()).ExpandExpandMany(0, false);
+            new PLNull(new PLNull_DbFixtureInitDb()).Table(0).GetAwaiter().GetResult();
             //new ProcedureTest().TableFunction_get().GetAwaiter().GetResult();
             //new PLNull_ManyColumns(new PLNull_ManyColumnsFixtureInitDb()).Filter(1).GetAwaiter().GetResult();
 
@@ -40,10 +46,11 @@ namespace OdataToEntity.Test.DynamicDataContext
             //var metadataProvider = new EdmDynamicMetadataProvider(edmModel);
             InformationSchemaMapping informationSchemaMapping = GetMappings();
             //var informationSchema = new SqlServerSchema(CreateOptionsSqlServer(true));
-            var informationSchema = new PostgreSqlSchema(CreateOptionsPostgreSql(true));
+            //var informationSchema = new PostgreSqlSchema(CreateOptionsPostgreSql(true));
+            var informationSchema = new MySqlSchema(CreateOptionsMySql(true));
 
             EdmModel dynamicEdmModel;
-            using (var metadataProvider = new DynamicMetadataProvider(informationSchema, informationSchemaMapping))
+            using (var metadataProvider = informationSchema.CreateMetadataProvider(informationSchemaMapping))
             {
                 DynamicTypeDefinitionManager typeDefinitionManager = DynamicTypeDefinitionManager.Create(metadataProvider);
                 var dataAdapter = new DynamicDataAdapter(typeDefinitionManager);
@@ -69,6 +76,12 @@ namespace OdataToEntity.Test.DynamicDataContext
             String result = new StreamReader(stream).ReadToEnd();
         }
 
+        private static ILoggerFactory CreateLoggerFactory()
+        {
+            var serviceCollection = new ServiceCollection();
+            serviceCollection.AddLogging(builder => builder.AddConsole()).Configure<LoggerFilterOptions>(o => o.MinLevel = LogLevel.Debug);
+            return serviceCollection.BuildServiceProvider().GetService<ILoggerFactory>();
+        }
         public static DbContextOptions<DynamicDbContext> CreateOptionsSqlServer(bool useRelationalNulls)
         {
             var optionsBuilder = new DbContextOptionsBuilder<DynamicDbContext>();
@@ -79,6 +92,13 @@ namespace OdataToEntity.Test.DynamicDataContext
         {
             var optionsBuilder = new DbContextOptionsBuilder<DynamicDbContext>();
             optionsBuilder.UseNpgsql(@"Host=localhost;Port=5432;Database=OdataToEntity;Pooling=true", opt => opt.UseRelationalNulls(useRelationalNulls));
+            return optionsBuilder.Options;
+        }
+        public static DbContextOptions<DynamicDbContext> CreateOptionsMySql(bool useRelationalNulls)
+        {
+            var optionsBuilder = new DbContextOptionsBuilder<DynamicDbContext>();
+            optionsBuilder.UseMySql(@"server=localhost;database=dbo;user=root;password=123456", opt => opt.UseRelationalNulls(useRelationalNulls));
+            //optionsBuilder.UseLoggerFactory(CreateLoggerFactory());
             return optionsBuilder.Options;
         }
 
@@ -92,16 +112,16 @@ namespace OdataToEntity.Test.DynamicDataContext
                     new OperationMapping("dbo.TableFunction", "dbo.Orders"),
                     new OperationMapping("dbo.TableFunctionWithParameters", "dbo.Orders")
                 },
-                Tables = new TableMapping[]
+                Tables = new EfCore.DynamicDataContext.InformationSchema.TableMapping[]
                 {
-                    new TableMapping("dbo.Categories")
+                    new EfCore.DynamicDataContext.InformationSchema.TableMapping("dbo.Categories", "Categories")
                     {
                         Navigations = new[]
                         {
                             new NavigationMapping("FK_Categories_Categories", "Parent")
                         }
                     },
-                    new TableMapping("dbo.Customers")
+                    new EfCore.DynamicDataContext.InformationSchema.TableMapping("dbo.Customers", "Customers")
                     {
                         Navigations = new []
                         {
@@ -109,9 +129,9 @@ namespace OdataToEntity.Test.DynamicDataContext
                             new NavigationMapping(null, "ShippingAddresses") { ManyToManyTarget = "ShippingAddresses" }
                         }
                     },
-                    new TableMapping("dbo.CustomerShippingAddress"),
-                    new TableMapping("dbo.ManyColumns"),
-                    new TableMapping("dbo.Orders")
+                    new EfCore.DynamicDataContext.InformationSchema.TableMapping("dbo.CustomerShippingAddress", "CustomerShippingAddress"),
+                    new EfCore.DynamicDataContext.InformationSchema.TableMapping("dbo.ManyColumns", "ManyColumns"),
+                    new EfCore.DynamicDataContext.InformationSchema.TableMapping("dbo.Orders", "Orders")
                     {
                         Navigations = new []
                         {
@@ -119,9 +139,9 @@ namespace OdataToEntity.Test.DynamicDataContext
                             new NavigationMapping("FK_Orders_AltCustomers", "AltCustomer"),
                         }
                     },
-                    new TableMapping("dbo.OrderItems"),
-                    new TableMapping("dbo.ShippingAddresses"),
-                    new TableMapping("dbo.OrderItemsView")
+                    new EfCore.DynamicDataContext.InformationSchema.TableMapping("dbo.OrderItems", "OrderItems"),
+                    new EfCore.DynamicDataContext.InformationSchema.TableMapping("dbo.ShippingAddresses", "ShippingAddresses"),
+                    new EfCore.DynamicDataContext.InformationSchema.TableMapping("dbo.OrderItemsView", "OrderItemsView")
                 }
             };
         }
