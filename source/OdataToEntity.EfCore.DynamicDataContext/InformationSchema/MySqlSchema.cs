@@ -6,6 +6,7 @@ using OdataToEntity.EfCore.DynamicDataContext.ModelBuilder;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 {
@@ -19,7 +20,16 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 
             protected override String GetProcedureName(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters)
             {
-                return "call " + base.GetProcedureName(dataContext, operationName, parameters);
+                var sql = new StringBuilder("call ");
+                sql.Append(operationName);
+                if (parameters.Count > 0)
+                {
+                    sql.Append('(');
+                    String[] parameterNames = GetParameterNames(dataContext, parameters);
+                    sql.Append(String.Join(",", parameterNames));
+                    sql.Append(')');
+                }
+                return sql.ToString();
             }
         }
 
@@ -68,7 +78,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                 case "decimal":
                     return typeof(Decimal);
                 case "":
-                    return typeof(void);
+                    return null;
                 default:
                     throw new InvalidOperationException("Unknown data type " + dataType);
             }

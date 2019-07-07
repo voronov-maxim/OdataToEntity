@@ -32,8 +32,8 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                     tableConstraint.ConstraintName = "PK_" + tableConstraint.TableName;
                 else if (entity is ReferentialConstraint referentialConstraint && referentialConstraint.UniqueConstraintName == "PRIMARY")
                     referentialConstraint.UniqueConstraintName = "PK_" + referentialConstraint.ReferencedTableName;
-                else if (entity is Routine routine)
-                    routine.RoutineSchema = null;
+                else if (entity is Routine routine && routine.DataType == "")
+                    routine.DataType = null;
             }
         }
 
@@ -71,6 +71,9 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 
             IMutableEntityType referentialConstraint = modelBuilder.Model.FindEntityType(typeof(ReferentialConstraint));
             referentialConstraint.AddProperty(nameof(ReferentialConstraint.ReferencedTableName), typeof(String)).Relational().ColumnName = "REFERENCED_TABLE_NAME";
+
+            Expression<Func<Parameter, bool>> parameterFilter = t => t.SpecificSchema == databaseName && t.OrdinalPosition > 0;
+            modelBuilder.Model.FindEntityType(typeof(Parameter)).QueryFilter = parameterFilter;
         }
         private static LambdaExpression GetFilter(Type entityType, String databaseName)
         {

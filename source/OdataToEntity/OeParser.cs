@@ -1,5 +1,6 @@
 ﻿using Microsoft.OData;
 using Microsoft.OData.Edm;
+using Microsoft.OData.Json;
 using Microsoft.OData.UriParser;
 using System;
 using System.Collections.Generic;
@@ -69,9 +70,11 @@ namespace OdataToEntity
 
         private sealed class ServiceProviderImpl : IServiceProvider
         {
+            private static readonly ODataMediaTypeResolver _mediaTypeResolver = new ODataMediaTypeResolver();
+            private static readonly ODataPayloadValueConverter _payloadValueConverter = new ODataPayloadValueConverter();
+            private static readonly ODataSimplifiedOptions _simplifiedOptions = new ODataSimplifiedOptions();
             private static readonly ODataUriParserSettings _uriParserSettings = new ODataUriParserSettings();
             private static readonly UriPathParser _uriPathParser = new UriPathParser(_uriParserSettings);
-            private static readonly ODataSimplifiedOptions _simplifiedOptions = new ODataSimplifiedOptions();
             private static readonly ODataUriResolver _uriResolver = new RefModelUriResolver();
             public static readonly ServiceProviderImpl Instance = new ServiceProviderImpl();
 
@@ -89,6 +92,14 @@ namespace OdataToEntity
                     return _uriParserSettings;
                 if (serviceType == typeof(UriPathParser))
                     return _uriPathParser;
+                if (serviceType == typeof(ODataMediaTypeResolver))
+                    return _mediaTypeResolver;
+                if (serviceType == typeof(ODataMessageInfo))
+                    return new ODataMessageInfo();
+                if (serviceType == typeof(ODataPayloadValueConverter))
+                    return _payloadValueConverter;
+                if (serviceType == typeof(IJsonWriterFactory))
+                    return new DefaultJsonWriterFactory(ODataStringEscapeOption.EscapeOnlyControls);
 
                 throw new InvalidOperationException("ServiceProvider not found type " + serviceType.FullName);
             }
@@ -129,12 +140,12 @@ namespace OdataToEntity
         }
         public async Task ExecuteQueryAsync(ODataUri odataUri, OeRequestHeaders headers, Stream responseStream, CancellationToken cancellationToken)
         {
-            var parser = new Parsers.OeGetParser(EdmModel.GetEdmModel(odataUri.Path), ModelBoundProvider);
+            var parser = new Parsers.OeGetParser(EdmModel.GetEdmModel(odataUri.Path), _serviceProvider, ModelBoundProvider);
             await parser.ExecuteAsync(odataUri, headers, responseStream, cancellationToken).ConfigureAwait(false);
         }
         public async Task ExecuteOperationAsync(ODataUri odataUri, OeRequestHeaders headers, Stream requestStream, Stream responseStream, CancellationToken cancellationToken)
         {
-            var parser = new Parsers.OePostParser(EdmModel.GetEdmModel(odataUri.Path));
+            var parser = new Parsers.OePostParser(EdmModel.GetEdmModel(odataUri.Path), _serviceProvider);
             await parser.ExecuteAsync(odataUri, requestStream, headers, responseStream, cancellationToken).ConfigureAwait(false);
         }
         public async Task ExecutePostAsync(Uri requestUri, OeRequestHeaders headers, Stream requestStream, Stream responseStream, CancellationToken cancellationToken)

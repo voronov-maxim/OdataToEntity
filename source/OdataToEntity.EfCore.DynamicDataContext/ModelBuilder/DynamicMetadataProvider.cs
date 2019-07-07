@@ -62,9 +62,13 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
         public IEnumerable<String> GetPrimaryKey(String tableEdmName)
         {
             (String tableSchema, String tableName) tableFullName = _schemaCache.GetTableFullName(tableEdmName);
-            String constraintName = _schemaCache.GetPrimaryKeyConstraintNames()[tableFullName];
-            List<KeyColumnUsage> keyColumns = _schemaCache.GetKeyColumns()[(tableFullName.tableSchema, constraintName)];
-            return keyColumns.OrderBy(c => c.OrdinalPosition).Select(c => c.ColumnName);
+            if (_schemaCache.GetPrimaryKeyConstraintNames().TryGetValue(tableFullName, out String constraintName))
+            {
+                List<KeyColumnUsage> keyColumns = _schemaCache.GetKeyColumns()[(tableFullName.tableSchema, constraintName)];
+                return keyColumns.OrderBy(c => c.OrdinalPosition).Select(c => c.ColumnName);
+            }
+
+            return Array.Empty<String>();
         }
         public IReadOnlyList<OeOperationConfiguration> GetRoutines(DynamicTypeDefinitionManager typeDefinitionManager)
         {

@@ -7,6 +7,7 @@ using OdataToEntity.EfCore.DynamicDataContext.ModelBuilder;
 using OdataToEntity.EfCore.DynamicDataContext.Types;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -89,7 +90,10 @@ namespace OdataToEntity.EfCore.DynamicDataContext
                 return GetDynamicTypeDefinition(dynamicTypeType);
 
             _dynamicTypeIndex++;
-            dynamicTypeType = Type.GetType(typeof(DynamicType).FullName + _dynamicTypeIndex.ToString("D2"));
+            dynamicTypeType = Type.GetType(typeof(DynamicType).FullName + _dynamicTypeIndex.ToString(CultureInfo.InvariantCulture));
+            if (dynamicTypeType == null)
+                throw new InvalidProgramException("Cannot create DynamicType index " + _dynamicTypeIndex.ToString(CultureInfo.InvariantCulture) + " out of range");
+
             var dynamicTypeDefinition = new DynamicTypeDefinition(dynamicTypeType, tableEdmName, tableEdmName, isQueryType);
             _tableEdmNameTypes.Add(tableEdmName, dynamicTypeType);
             _dynamicTypeDefinitions.Add(dynamicTypeType, dynamicTypeDefinition);

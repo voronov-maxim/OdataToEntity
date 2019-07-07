@@ -38,7 +38,7 @@ namespace OdataToEntity.ModelBuilder
         public OeOperationConfiguration(String schema, String name, String namespaceName, OeOperationParameterConfiguration[] parameters, Type returnType, bool isDbFunction)
             : this(schema, name, namespaceName, parameters, returnType)
         {
-            ImportName = schema == null ? name : schema + "." + name;
+            ImportName = String.IsNullOrEmpty(schema) ? name : schema + "." + name;
             IsDbFunction = isDbFunction;
         }
 

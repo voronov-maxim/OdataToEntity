@@ -14,6 +14,10 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             SchemaContextPool = schemaContextPool;
         }
 
+        public DynamicMetadataProvider CreateMetadataProvider()
+        {
+            return CreateMetadataProvider(null);
+        }
         public virtual DynamicMetadataProvider CreateMetadataProvider(InformationSchemaMapping informationSchemaMapping)
         {
             return new DynamicMetadataProvider(this, informationSchemaMapping);

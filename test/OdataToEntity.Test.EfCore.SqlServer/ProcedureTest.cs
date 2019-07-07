@@ -60,7 +60,7 @@ namespace OdataToEntity.Test
             using (OrderContext orderContext = fixture.CreateContext())
                 fromDb = fromDbFunc(orderContext).ToArray();
 
-            TestHelper.Compare(fromOe, fromDb, null);
+            TestHelper.Compare(fromDb, fromOe, null);
             return fromOe;
         }
         [Fact]

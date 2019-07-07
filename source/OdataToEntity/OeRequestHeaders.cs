@@ -52,6 +52,9 @@ namespace OdataToEntity
         {
             valueLength = 0;
 
+            if (acceptHeader == null)
+                return -1;
+
             int i = acceptHeader.IndexOf(parameterName, StringComparison.OrdinalIgnoreCase);
             if (i == -1)
                 return -1;

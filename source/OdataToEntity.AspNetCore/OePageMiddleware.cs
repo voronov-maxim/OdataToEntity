@@ -2,11 +2,11 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.OData.Edm;
 using OdataToEntity.Query;
 
-namespace OdataToEntity.AspServer
+namespace OdataToEntity.AspNetCore
 {
-    public sealed class PageMiddleware : AspNetCore.OeMiddleware
+    public sealed class OePageMiddleware : OeMiddleware
     {
-        public PageMiddleware(RequestDelegate next, PathString apiPath, IEdmModel edmModel)
+        public OePageMiddleware(RequestDelegate next, PathString apiPath, IEdmModel edmModel)
             : base(next, apiPath, edmModel)
         {
         }

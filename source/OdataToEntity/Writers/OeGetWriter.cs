@@ -10,13 +10,33 @@ namespace OdataToEntity.Writers
 {
     public static class OeGetWriter
     {
-        public static Task SerializeAsync(OeQueryContext queryContext, IAsyncEnumerator<Object> asyncEnumerator,
-            String contentType, Stream stream, CancellationToken cancellationToken)
+        private sealed class ServiceProvider : IServiceProvider
         {
-            return SerializeAsync(queryContext, asyncEnumerator, contentType, stream, queryContext.EntryFactory, cancellationToken);
+            private readonly IServiceProvider _parentServiceProvider;
+            private readonly ODataMessageWriterSettings _writerSettings;
+
+            public ServiceProvider(IServiceProvider parentServiceProvider, ODataMessageWriterSettings writerSettings)
+            {
+                _parentServiceProvider = parentServiceProvider;
+                _writerSettings = writerSettings;
+            }
+
+            public Object GetService(Type serviceType)
+            {
+                if (serviceType == typeof(ODataMessageWriterSettings))
+                    return _writerSettings;
+
+                return _parentServiceProvider.GetService(serviceType);
+            }
+        }
+
+        public static Task SerializeAsync(OeQueryContext queryContext, IAsyncEnumerator<Object> asyncEnumerator,
+            String contentType, Stream stream, IServiceProvider serviceProvider, CancellationToken cancellationToken)
+        {
+            return SerializeAsync(queryContext, asyncEnumerator, contentType, stream, queryContext.EntryFactory, serviceProvider, cancellationToken);
         }
         public static async Task SerializeAsync(OeQueryContext queryContext, IAsyncEnumerator<Object> asyncEnumerator,
-            String contentType, Stream stream, OeEntryFactory entryFactory, CancellationToken cancellationToken)
+            String contentType, Stream stream, OeEntryFactory entryFactory, IServiceProvider serviceProvider, CancellationToken cancellationToken)
         {
             var settings = new ODataMessageWriterSettings()
             {
@@ -27,7 +47,10 @@ namespace OdataToEntity.Writers
                 Version = ODataVersion.V4
             };
 
-            IODataResponseMessage responseMessage = new Infrastructure.OeInMemoryMessage(stream, contentType);
+            if (serviceProvider != null)
+                serviceProvider = new ServiceProvider(serviceProvider, settings);
+
+            IODataResponseMessage responseMessage = new Infrastructure.OeInMemoryMessage(stream, contentType, serviceProvider);
             using (ODataMessageWriter messageWriter = new ODataMessageWriter(responseMessage, settings, queryContext.EdmModel))
             {
                 ODataUtils.SetHeadersForPayload(messageWriter, ODataPayloadKind.ResourceSet);

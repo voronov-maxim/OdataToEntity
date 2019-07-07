@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "OdataToEntity.Test.DynamicDataContext": {
+      "commandName": "Project",
+      "commandLineArgs": "provider=mysql"
+    }
+  }
+}

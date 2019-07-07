@@ -63,7 +63,7 @@ namespace OdataToEntity.AspNetCore
         {
             _odataUri = odataUri;
 
-            var parser = new OePostParser(refModel);
+            var parser = new OePostParser(refModel, null);
             IAsyncEnumerable<Object> asyncEnumerable = parser.GetAsyncEnumerable(odataUri, requestStream, headers, _dataContext, out bool isScalar);
             if (!isScalar)
                 _queryContext = parser.CreateQueryContext(odataUri, headers.MetadataLevel);

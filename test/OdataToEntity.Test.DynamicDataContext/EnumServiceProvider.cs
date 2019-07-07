@@ -69,8 +69,6 @@ namespace OdataToEntity.Test.DynamicDataContext
                 return new ODataMediaTypeResolver();
             if (serviceType == typeof(IEdmModel))
                 return EdmCoreModel.Instance;
-            if (serviceType == typeof(ODataMessageInfo))
-                return new ODataMessageInfo();
             if (serviceType == typeof(ODataPayloadValueConverter))
                 return new EnumPayloadValueConverter();
             if (serviceType == typeof(IJsonReaderFactory))

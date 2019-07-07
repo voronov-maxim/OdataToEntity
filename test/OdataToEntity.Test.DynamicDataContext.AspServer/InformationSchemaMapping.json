@@ -1,0 +1,97 @@
+﻿{
+  "Operations": [
+    {
+      "DbName": "dbo.GetOrders",
+      "Exclude": false,
+      "ResultTableDbName": "dbo.Orders"
+    },
+    {
+      "DbName": "dbo.TableFunction",
+      "Exclude": false,
+      "ResultTableDbName": "dbo.Orders"
+    },
+    {
+      "DbName": "dbo.TableFunctionWithParameters",
+      "Exclude": false,
+      "ResultTableDbName": "dbo.Orders"
+    }
+  ],
+  "Tables": [
+    {
+      "DbName": "dbo.Categories",
+      "EdmName": "Categories",
+      "Exclude": false,
+      "Navigations": [
+        {
+          "ConstraintName": "FK_Categories_Categories",
+          "NavigationName": "Parent",
+          "ManyToManyTarget": null
+        }
+      ]
+    },
+    {
+      "DbName": "dbo.Customers",
+      "EdmName": "Customers",
+      "Exclude": false,
+      "Navigations": [
+        {
+          "ConstraintName": "FK_Orders_AltCustomers",
+          "NavigationName": "AltOrders",
+          "ManyToManyTarget": null
+        },
+        {
+          "ConstraintName": null,
+          "NavigationName": "ShippingAddresses",
+          "ManyToManyTarget": "ShippingAddresses"
+        }
+      ]
+    },
+    {
+      "DbName": "dbo.CustomerShippingAddress",
+      "EdmName": "CustomerShippingAddress",
+      "Exclude": false,
+      "Navigations": null
+    },
+    {
+      "DbName": "dbo.ManyColumns",
+      "EdmName": "ManyColumns",
+      "Exclude": false,
+      "Navigations": null
+    },
+    {
+      "DbName": "dbo.Orders",
+      "EdmName": "Orders",
+      "Exclude": false,
+      "Navigations": [
+        {
+          "ConstraintName": "FK_OrderItem_Order",
+          "NavigationName": "Items",
+          "ManyToManyTarget": null
+        },
+        {
+          "ConstraintName": "FK_Orders_AltCustomers",
+          "NavigationName": "AltCustomer",
+          "ManyToManyTarget": null
+        }
+      ]
+    },
+    {
+      "DbName": "dbo.OrderItems",
+      "EdmName": "OrderItems",
+      "Exclude": false,
+      "Navigations": null
+    },
+    {
+      "DbName": "dbo.ShippingAddresses",
+      "EdmName": "ShippingAddresses",
+      "Exclude": false,
+      "Navigations": null
+    },
+    {
+      "DbName": "dbo.OrderItemsView",
+      "EdmName": "OrderItemsView",
+      "Exclude": false,
+      "Navigations": null
+    }
+  ]
+}

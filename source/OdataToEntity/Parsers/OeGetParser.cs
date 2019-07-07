@@ -14,13 +14,15 @@ namespace OdataToEntity.Parsers
     {
         private readonly IEdmModel _edmModel;
         private readonly Query.OeModelBoundProvider _modelBoundProvider;
+        private readonly IServiceProvider _serviceProvider;
 
-        public OeGetParser(IEdmModel edmModel) : this(edmModel, null)
+        public OeGetParser(IEdmModel edmModel, IServiceProvider serviceProvider) : this(edmModel, serviceProvider, null)
         {
         }
-        public OeGetParser(IEdmModel model, Query.OeModelBoundProvider modelBoundProvider)
+        public OeGetParser(IEdmModel model, IServiceProvider serviceProvider, Query.OeModelBoundProvider modelBoundProvider)
         {
             _edmModel = model;
+            _serviceProvider = serviceProvider;
             _modelBoundProvider = modelBoundProvider;
         }
 
@@ -34,7 +36,7 @@ namespace OdataToEntity.Parsers
             if (queryContext.ODataUri.Path.LastSegment is OperationSegment)
             {
                 using (IAsyncEnumerator<Object> asyncEnumerator = OeOperationHelper.ApplyBoundFunction(queryContext).GetEnumerator())
-                    await Writers.OeGetWriter.SerializeAsync(queryContext, asyncEnumerator, headers.ContentType, stream, cancellationToken).ConfigureAwait(false);
+                    await Writers.OeGetWriter.SerializeAsync(queryContext, asyncEnumerator, headers.ContentType, stream, _serviceProvider, cancellationToken).ConfigureAwait(false);
 
                 return;
             }
@@ -54,7 +56,7 @@ namespace OdataToEntity.Parsers
                 else
                 {
                     using (IAsyncEnumerator<Object> asyncEnumerator = dataAdapter.Execute(dataContext, queryContext).GetEnumerator())
-                        await Writers.OeGetWriter.SerializeAsync(queryContext, asyncEnumerator, headers.ContentType, stream, cancellationToken).ConfigureAwait(false);
+                        await Writers.OeGetWriter.SerializeAsync(queryContext, asyncEnumerator, headers.ContentType, stream, _serviceProvider, cancellationToken).ConfigureAwait(false);
                 }
             }
             finally

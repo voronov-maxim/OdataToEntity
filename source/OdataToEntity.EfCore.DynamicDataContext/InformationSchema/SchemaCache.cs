@@ -27,6 +27,29 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             public String PrincipalConstraintName { get; }
         }
 
+        private sealed class TupleStringComparer : IEqualityComparer<(String, String)>
+        {
+            private readonly StringComparer _stringComparer;
+            public static readonly TupleStringComparer Ordinal = new TupleStringComparer(StringComparer.Ordinal);
+            public static readonly TupleStringComparer OrdinalIgnoreCase = new TupleStringComparer(StringComparer.OrdinalIgnoreCase);
+
+            private TupleStringComparer(StringComparer stringComparer)
+            {
+                _stringComparer = stringComparer;
+            }
+
+            public bool Equals((String, String) x, (String, String) y)
+            {
+                return _stringComparer.Compare(x.Item1, y.Item1) == 0 && _stringComparer.Compare(x.Item2, y.Item2) == 0;
+            }
+            public int GetHashCode((String, String) obj)
+            {
+                int h1 = _stringComparer.GetHashCode(obj.Item1);
+                int h2 = _stringComparer.GetHashCode(obj.Item2);
+                return (h1 << 5) + h1 ^ h2;
+            }
+        }
+
         private Dictionary<(String constraintSchema, String constraintName), List<KeyColumnUsage>> _keyColumns;
         private Dictionary<String, IReadOnlyList<(String NavigationName, String ManyToManyTarget)>> _manyToManyProperties;
         private Dictionary<(String tableSchema, String tableName), IReadOnlyList<NavigationMapping>> _navigationMappings;
@@ -285,7 +308,9 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                 SchemaContext schemaContext = _informationSchema.SchemaContextPool.Rent();
                 try
                 {
-                    _primaryKeys = schemaContext.TableConstraints.Where(t => t.ConstraintType == "PRIMARY KEY").ToDictionary(t => (t.TableSchema, t.TableName), t => t.ConstraintName);
+                    _primaryKeys = schemaContext.TableConstraints.Where(t => t.ConstraintType == "PRIMARY KEY" || t.ConstraintName == "UNIQUE")
+                        .GroupBy(t => new { t.TableSchema, t.TableName }).SelectMany(a => a.OrderBy(t => t.ConstraintName).Take(1))
+                        .ToDictionary(t => (t.TableSchema, t.TableName), t => t.ConstraintName);
                 }
                 finally
                 {
@@ -364,8 +389,11 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 
                         if (returnType == null && operationMapping != null && operationMapping.ResultTableDbName != null)
                         {
-                            String[] nameParsed = operationMapping.ResultTableDbName.Split('.');
-                            String edmName = GetTableEdmName(nameParsed[0], nameParsed[1]);
+                            int i = operationMapping.ResultTableDbName.IndexOf('.');
+                            if (i == -1)
+                                throw new InvalidOperationException("ResultTableDbName " + operationMapping.ResultTableDbName + " must contains schema");
+
+                            String edmName = GetTableEdmName(operationMapping.ResultTableDbName.Substring(0, i), operationMapping.ResultTableDbName.Substring(i + 1));
                             returnType = typeDefinitionManager.GetDynamicTypeDefinition(edmName).DynamicTypeType;
                             returnType = typeof(IEnumerable<>).MakeGenericType(returnType);
                         }
@@ -399,10 +427,11 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         public void Initialize(IReadOnlyCollection<TableMapping> tableMappings)
         {
             IEqualityComparer<String> comparer = _informationSchema.IsCaseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
+            TupleStringComparer tupleComparer = _informationSchema.IsCaseSensitive ? TupleStringComparer.Ordinal : TupleStringComparer.OrdinalIgnoreCase;
 
             _tableEdmNameFullNames = new Dictionary<String, (String tableSchema, String tableName, bool isQueryType)>(comparer);
-            _tableFullNameEdmNames = new Dictionary<(String tableSchema, String tableName), String>();
-            _navigationMappings = new Dictionary<(String tableSchema, String tableName), IReadOnlyList<NavigationMapping>>();
+            _tableFullNameEdmNames = new Dictionary<(String tableSchema, String tableName), String>(tupleComparer);
+            _navigationMappings = new Dictionary<(String tableSchema, String tableName), IReadOnlyList<NavigationMapping>>(tupleComparer);
 
             SchemaContext schemaContext = _informationSchema.SchemaContextPool.Rent();
             try

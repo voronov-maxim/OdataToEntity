@@ -3,7 +3,6 @@ using Microsoft.OData;
 using Microsoft.OData.Edm;
 using OdataToEntity.EfCore.DynamicDataContext;
 using OdataToEntity.EfCore.DynamicDataContext.InformationSchema;
-using OdataToEntity.EfCore.DynamicDataContext.Types;
 using OdataToEntity.ModelBuilder;
 using OdataToEntity.Test.Model;
 using System;
@@ -53,15 +52,12 @@ namespace OdataToEntity.Test
         }
         private static EdmModel CreateDynamicEdmModel(bool useRelationalNulls)
         {
-            DbContextOptions<DynamicDbContext> options = OrderContextOptions.Create<DynamicDbContext>(useRelationalNulls);
-            var informationSchema = new SqlServerSchema(options);
-            //DbContextOptions<DynamicDbContext> options = DynamicDataContext.Program.CreateOptionsPostgreSql(useRelationalNulls);
-            //var informationSchema = new PostgreSqlSchema(options);
-            //DbContextOptions<DynamicDbContext> options = DynamicDataContext.Program.CreateOptionsMySql(useRelationalNulls);
-            //var informationSchema = new MySqlSchema(options);
+            //ProviderSpecificSchema providerSchema = DynamicDataContext.Program.CreateSchemaSqlServer(useRelationalNulls);
+            //ProviderSpecificSchema providerSchema = DynamicDataContext.Program.CreateOptionsPostgreSql(useRelationalNulls);
+            ProviderSpecificSchema providerSchema = DynamicDataContext.Program.CreateOptionsMySql(useRelationalNulls);
 
             InformationSchemaMapping informationSchemaMapping = DynamicDataContext.Program.GetMappings();
-            using (var metadataProvider = informationSchema.CreateMetadataProvider(informationSchemaMapping))
+            using (var metadataProvider = providerSchema.CreateMetadataProvider(informationSchemaMapping))
             {
                 var typeDefinitionManager = DynamicTypeDefinitionManager.Create(metadataProvider);
                 var dataAdapter = new DynamicDataAdapter(typeDefinitionManager);
@@ -87,13 +83,13 @@ namespace OdataToEntity.Test
 
             _initialized = true;
             var parser = new OeParser(new Uri("http://dummy/"), base.OeEdmModel);
-            ODataUri odataUri = OeParser.ParseUri(base.OeEdmModel, new Uri("dbo.ResetDb", UriKind.Relative));
+            ODataUri odataUri = ParseUri("ResetDb");
             await parser.ExecuteOperationAsync(odataUri, OeRequestHeaders.JsonDefault, null, new MemoryStream(), CancellationToken.None);
             await ExecuteBatchAsync(base.OeEdmModel, "Add", new DynamicDataContext.EnumServiceProvider(base.OeEdmModel));
         }
         public override ODataUri ParseUri(String requestUri)
         {
-            if (requestUri == "ResetDb" || requestUri == "TableFunction" || requestUri.StartsWith("TableFunctionWithParameters"))
+            if (requestUri == "ResetDb" || requestUri == "TableFunction" || requestUri.StartsWith("GetOrders") || requestUri.StartsWith("TableFunctionWithParameters"))
                 return base.ParseUri("dbo." + requestUri);
 
             return base.ParseUri(ReplaceEnum(requestUri, '\''));

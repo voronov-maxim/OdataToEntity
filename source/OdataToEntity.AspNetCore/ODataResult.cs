@@ -26,7 +26,7 @@ namespace OdataToEntity.AspNetCore
             HttpContext httpContext = context.HttpContext;
             OeEntryFactory entryFactoryFromTuple = _queryContext.EntryFactory.GetEntryFactoryFromTuple(_queryContext.EdmModel, _queryContext.ODataUri.OrderBy);
             await Writers.OeGetWriter.SerializeAsync(_queryContext, (IAsyncEnumerator<Object>)_entities,
-                httpContext.Request.ContentType, httpContext.Response.Body, entryFactoryFromTuple, httpContext.RequestAborted);
+                httpContext.Request.ContentType, httpContext.Response.Body, entryFactoryFromTuple, null, httpContext.RequestAborted);
         }
     }
 }

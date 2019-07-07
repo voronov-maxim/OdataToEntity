@@ -223,6 +223,11 @@ ENGINE = InnoDB;
 USE `dbo` ;
 
 -- -----------------------------------------------------
+-- Placeholder table for view `OrderItemsView`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `OrderItemsView` (`Name` INT, `Product` INT);
+
+-- -----------------------------------------------------
 -- procedure ResetDb
 -- -----------------------------------------------------
 
@@ -231,15 +236,19 @@ DROP procedure IF EXISTS `ResetDb`;
 
 DELIMITER $$
 USE `dbo`$$
-CREATE PROCEDURE ResetDb ()
-BEGIN
+create procedure ResetDb ()
+begin
 	delete from CustomerShippingAddress;
 	delete from ShippingAddresses;
 	delete from OrderItems;
 	delete from Orders;
 	delete from Customers;
 	delete from Categories;
-END$$
+
+	alter table OrderItems auto_increment = 0;
+	alter table Orders auto_increment = 0;
+	alter table Categories auto_increment = 0;
+end$$
 
 DELIMITER ;
 
@@ -252,12 +261,96 @@ DROP procedure IF EXISTS `ResetManyColumns`;
 
 DELIMITER $$
 USE `dbo`$$
-CREATE PROCEDURE ResetManyColumns ()
-BEGIN
+create procedure ResetManyColumns ()
+begin
 	delete from ManyColumns;
-END$$
+end$$
 
 DELIMITER ;
+
+-- -----------------------------------------------------
+-- procedure GetOrders
+-- -----------------------------------------------------
+
+USE `dbo`;
+DROP procedure IF EXISTS `GetOrders`;
+
+DELIMITER $$
+USE `dbo`$$
+create procedure GetOrders (id int, name varchar(256), status int)
+begin
+	if id is null and name is null and status is null then
+		select * from Orders;
+	elseif not id is null then
+		select * from Orders o where o.Id = id;
+	elseif not name is null then
+		select * from Orders o where o.Name like concat('%', name, '%');
+    elseif not status is null then
+		select * from Orders o where o.Status = status;
+	end if;
+end$$
+
+DELIMITER ;
+
+-- -----------------------------------------------------
+-- procedure TableFunction
+-- -----------------------------------------------------
+
+USE `dbo`;
+DROP procedure IF EXISTS `TableFunction`;
+
+DELIMITER $$
+USE `dbo`$$
+create procedure TableFunction ()
+begin
+	select * from Orders;
+end$$
+
+DELIMITER ;
+
+-- -----------------------------------------------------
+-- procedure TableFunctionWithParameters
+-- -----------------------------------------------------
+
+USE `dbo`;
+DROP procedure IF EXISTS `TableFunctionWithParameters`;
+
+DELIMITER $$
+USE `dbo`$$
+create procedure TableFunctionWithParameters (id int, name varchar(256), status int)
+begin
+	select * from Orders o where o.Id = id or o.Name like concat('%', name, '%') or o.Status = status;
+end$$
+
+DELIMITER ;
+
+-- -----------------------------------------------------
+-- function ScalarFunction
+-- -----------------------------------------------------
+
+USE `dbo`;
+DROP function IF EXISTS `ScalarFunction`;
+
+DELIMITER $$
+USE `dbo`$$
+create function ScalarFunction () returns integer
+reads sql data deterministic
+begin
+	declare zcount int;
+	select count(*) into zcount from Orders;
+    return zcount;
+end$$
+
+DELIMITER ;
+
+-- -----------------------------------------------------
+-- View `OrderItemsView`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `OrderItemsView`;
+DROP VIEW IF EXISTS `OrderItemsView` ;
+USE `dbo`;
+create  OR REPLACE view OrderItemsView as
+	select o.Name, i.Product from Orders o inner join OrderItems i on o.Id = i.OrderId;
 
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;

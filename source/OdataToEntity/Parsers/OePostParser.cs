@@ -12,12 +12,14 @@ namespace OdataToEntity.Parsers
 {
     public readonly struct OePostParser
     {
-        private readonly IEdmModel _edmModel;
         private readonly Db.OeDataAdapter _dataAdapter;
+        private readonly IEdmModel _edmModel;
+        private readonly IServiceProvider _serviceProvider;
 
-        public OePostParser(IEdmModel edmModel)
+        public OePostParser(IEdmModel edmModel, IServiceProvider serviceProvider)
         {
             _edmModel = edmModel;
+            _serviceProvider = serviceProvider;
             _dataAdapter = edmModel.GetDataAdapter(edmModel.EntityContainer);
         }
 
@@ -61,7 +63,7 @@ namespace OdataToEntity.Parsers
                         if (queryContext == null)
                             await WriteCollectionAsync(_edmModel, odataUri, asyncEnumerator, responseStream, cancellationToken).ConfigureAwait(false);
                         else
-                            await Writers.OeGetWriter.SerializeAsync(queryContext, asyncEnumerator, headers.ContentType, responseStream, cancellationToken).ConfigureAwait(false);
+                            await Writers.OeGetWriter.SerializeAsync(queryContext, asyncEnumerator, headers.ContentType, responseStream, _serviceProvider, cancellationToken).ConfigureAwait(false);
                     }
                 }
             }

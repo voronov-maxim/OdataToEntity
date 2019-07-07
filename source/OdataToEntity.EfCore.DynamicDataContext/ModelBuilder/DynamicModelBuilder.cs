@@ -32,6 +32,10 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
         {
             if (!_entityTypes.TryGetValue(tableEdmName, out EntityType entityType))
             {
+                String[] primaryKeys = MetadataProvider.GetPrimaryKey(tableEdmName).ToArray();
+                if (primaryKeys.Length == 0)
+                    isQueryType = true;
+
                 var dynamicTypeDefinition = TypeDefinitionManager.GetOrAddDynamicTypeDefinition(tableEdmName, isQueryType);
                 String tableSchema = MetadataProvider.GetTableSchema(tableEdmName);
                 EntityTypeBuilder entityTypeBuilder = modelBuilder.Entity(dynamicTypeDefinition.DynamicTypeType).ToTable(tableEdmName, tableSchema);
@@ -52,7 +56,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
                 if (isQueryType)
                     entityTypeBuilder.Metadata.IsQueryType = true;
                 else
-                    entityTypeBuilder.HasKey(MetadataProvider.GetPrimaryKey(tableEdmName).ToArray());
+                    entityTypeBuilder.HasKey(primaryKeys);
 
                 _entityTypes.Add(tableEdmName, entityType);
             }

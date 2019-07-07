@@ -108,6 +108,7 @@ namespace OdataToEntity.Query.Builder
             var segment = (NavigationPropertySegment)navigationSelectItem.PathToNavigationProperty.LastSegment;
             IEdmNavigationProperty navigationProperty = segment.NavigationProperty;
 
+            bool allSelected = false;
             List<SelectItem> selectItems;
             if (navigationSelectItem.SelectAndExpand == null)
                 selectItems = GetSelectItems(navigationProperty, 3);
@@ -115,10 +116,14 @@ namespace OdataToEntity.Query.Builder
             {
                 IEdmEntityType entityType = navigationProperty.ToEntityType();
 
+                int propertiesCount = 0;
                 selectItems = new List<SelectItem>(navigationSelectItem.SelectAndExpand.SelectedItems);
                 if (selectItems.Count == 0 && navigationSelectItem.SelectAndExpand.AllSelected)
+                {
                     foreach (IEdmStructuralProperty structuralProperty in entityType.StructuralProperties())
                         selectItems.Add(CreateStructuralSelectItem(structuralProperty));
+                    propertiesCount = selectItems.Count;
+                }
 
                 OeModelBoundSettings settings = _modelBoundProvider.GetSettings(entityType);
                 if (settings != null)
@@ -127,12 +132,38 @@ namespace OdataToEntity.Query.Builder
                 settings = _modelBoundProvider.GetSettings(navigationProperty);
                 if (settings != null)
                     MergeSelectItems(selectItems, settings, 3);
+
+                if (propertiesCount > 0 && propertiesCount <= selectItems.Count)
+                {
+                    int i = 0;
+                    while (i < propertiesCount && selectItems[i] is PathSelectItem)
+                        i++;
+
+                    if (i == selectItems.Count)
+                        return navigationSelectItem;
+
+                    if (i < selectItems.Count)
+                    {
+                        int j = i;
+                        while (j < selectItems.Count && (selectItems[j] is OePageSelectItem || selectItems[j] is OeNextLinkSelectItem))
+                            j++;
+
+                        if (j == selectItems.Count)
+                        {
+                            var temp = new List<SelectItem>();
+                            for (; i < selectItems.Count; i++)
+                                temp.Add(selectItems[i]);
+                            selectItems = temp;
+                            allSelected = true;
+                        }
+                    }
+                }
             }
 
             return new ExpandedNavigationSelectItem(
                 navigationSelectItem.PathToNavigationProperty,
                 navigationSelectItem.NavigationSource,
-                new SelectExpandClause(selectItems, selectItems.Count == 0),
+                new SelectExpandClause(selectItems, selectItems.Count == 0 || allSelected),
                 navigationSelectItem.FilterOption,
                 navigationSelectItem.OrderByOption,
                 navigationSelectItem.TopOption,
