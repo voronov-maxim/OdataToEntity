@@ -41,7 +41,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
         public static DynamicTypeDefinitionManager Create(DynamicMetadataProvider metadataProvider)
         {
             int dynamicDbContextIndex = Interlocked.Increment(ref _dynamicDbContextIndex);
-            Type dynamicDbContextType = Type.GetType(typeof(DynamicDbContext).FullName + dynamicDbContextIndex.ToString("D2"));
+            Type dynamicDbContextType = Type.GetType(typeof(DynamicDbContext).FullName + dynamicDbContextIndex.ToString(CultureInfo.InvariantCulture));
             if (dynamicDbContextType == null)
                 throw new InvalidOperationException("DynamicDbContext out range " + dynamicDbContextIndex.ToString());
 

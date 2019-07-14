@@ -50,10 +50,11 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             }
         }
 
-        private Dictionary<(String constraintSchema, String constraintName), List<KeyColumnUsage>> _keyColumns;
+        private List<ReferentialConstraint> _referentialConstraints;
+        private Dictionary<(String constraintSchema, String constraintName), IReadOnlyList<KeyColumnUsage>> _keyColumns;
+        private Dictionary<(String tableSchema, String tableName), IReadOnlyList<(String constraintName, bool isPrimary)>> _keys;
         private Dictionary<String, IReadOnlyList<(String NavigationName, String ManyToManyTarget)>> _manyToManyProperties;
         private Dictionary<(String tableSchema, String tableName), IReadOnlyList<NavigationMapping>> _navigationMappings;
-        private Dictionary<(String tableSchema, String tableName), String> _primaryKeys;
         private List<OeOperationConfiguration> _routines;
         private Dictionary<(String tableSchema, String tableName), List<Column>> _tableColumns;
         private Dictionary<(String tableSchema, String tableName), List<Navigation>> _tableNavigations;
@@ -130,24 +131,34 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 
             return _tableColumns[(tableSchema, tableName)];
         }
-        public IReadOnlyDictionary<(String constraintSchema, String constraintName), List<KeyColumnUsage>> GetKeyColumns()
+        public IReadOnlyDictionary<(String constraintSchema, String constraintName), IReadOnlyList<KeyColumnUsage>> GetKeyColumns()
         {
             if (_keyColumns == null)
             {
-                var keyColumns = new Dictionary<(String constraintSchema, String constraintName), List<KeyColumnUsage>>();
+                var keyColumns = new Dictionary<(String constraintSchema, String constraintName), IReadOnlyList<KeyColumnUsage>>();
                 SchemaContext schemaContext = _informationSchema.SchemaContextPool.Rent();
                 try
                 {
-                    foreach (KeyColumnUsage keyColumn in schemaContext.KeyColumnUsage)
+                    String constraintSchema = null;
+                    String constraintName = null;
+                    List<KeyColumnUsage> columns = null;
+                    foreach (KeyColumnUsage keyColumn in schemaContext.KeyColumnUsage
+                        .OrderBy(t => t.TableSchema).ThenBy(t => t.TableName).ThenBy(t => t.ConstraintName).ThenBy(t => t.OrdinalPosition))
                     {
-                        var key = (keyColumn.ConstraintSchema, keyColumn.ConstraintName);
-                        if (!keyColumns.TryGetValue(key, out List<KeyColumnUsage> columns))
+                        if (constraintSchema != keyColumn.ConstraintSchema || constraintName != keyColumn.ConstraintName)
                         {
+                            if (columns != null)
+                                keyColumns.Add((constraintSchema, constraintName), columns);
+
+                            constraintSchema = keyColumn.ConstraintSchema;
+                            constraintName = keyColumn.ConstraintName;
                             columns = new List<KeyColumnUsage>();
-                            keyColumns.Add(key, columns);
                         }
                         columns.Add(keyColumn);
                     }
+
+                    if (columns != null)
+                        keyColumns.Add((constraintSchema, constraintName), columns);
                 }
                 finally
                 {
@@ -157,6 +168,66 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                 _keyColumns = keyColumns;
             }
             return _keyColumns;
+        }
+        public String GetFKeyConstraintName(String tableSchema, String tableName1, String tableName2)
+        {
+            IReadOnlyDictionary<(String constraintSchema, String constraintName), IReadOnlyList<KeyColumnUsage>> keyColumns = GetKeyColumns();
+            foreach (ReferentialConstraint fkey in _referentialConstraints)
+            {
+                KeyColumnUsage dependentKeyColumns = keyColumns[(fkey.ConstraintSchema, fkey.ConstraintName)][0];
+                KeyColumnUsage principalKeyColumn = keyColumns[(fkey.UniqueConstraintSchema, fkey.UniqueConstraintName)][0];
+
+                if (String.Compare(dependentKeyColumns.TableSchema, tableSchema, StringComparison.OrdinalIgnoreCase) == 0)
+                {
+                    if (String.Compare(dependentKeyColumns.TableName, tableName1, StringComparison.OrdinalIgnoreCase) == 0 &&
+                        String.Compare(principalKeyColumn.TableName, tableName2, StringComparison.OrdinalIgnoreCase) == 0)
+                        return fkey.ConstraintName;
+
+                    if (String.Compare(dependentKeyColumns.TableName, tableName2, StringComparison.OrdinalIgnoreCase) == 0 &&
+                        String.Compare(principalKeyColumn.TableName, tableName1, StringComparison.OrdinalIgnoreCase) == 0)
+                        return fkey.ConstraintName;
+                }
+            }
+
+            return null;
+        }
+        public IReadOnlyDictionary<(String tableSchema, String tableName), IReadOnlyList<(String constraintName, bool isPrimary)>> GetKeyConstraintNames()
+        {
+            if (_keys == null)
+            {
+                SchemaContext schemaContext = _informationSchema.SchemaContextPool.Rent();
+                try
+                {
+                    var tableConstraints = schemaContext.TableConstraints.Where(t => t.ConstraintType == "PRIMARY KEY" || t.ConstraintType == "UNIQUE")
+                        .OrderBy(t => t.TableSchema).ThenBy(t => t.TableName).ThenBy(t => t.ConstraintType);
+
+                    _keys = new Dictionary<(String tableSchema, String tableName), IReadOnlyList<(String constraintName, bool isPrimary)>>();
+                    String tableSchema = null;
+                    String tableName = null;
+                    List<(String constraintName, bool isPrimary)> constraints = null;
+                    foreach (TableConstraint tableConstraint in tableConstraints)
+                    {
+                        if (tableSchema != tableConstraint.TableSchema || tableName != tableConstraint.TableName)
+                        {
+                            if (constraints != null)
+                                _keys.Add((tableSchema, tableName), constraints);
+
+                            tableSchema = tableConstraint.TableSchema;
+                            tableName = tableConstraint.TableName;
+                            constraints = new List<(String constraintName, bool isPrimary)>();
+                        }
+                        constraints.Add((tableConstraint.ConstraintName, constraints.Count == 0));
+                    }
+
+                    if (constraints != null)
+                        _keys.Add((tableSchema, tableName), constraints);
+                }
+                finally
+                {
+                    _informationSchema.SchemaContextPool.Return(schemaContext);
+                }
+            }
+            return _keys;
         }
         public IReadOnlyDictionary<String, IReadOnlyList<(String NavigationName, String ManyToManyTarget)>> GetManyToManyProperties()
         {
@@ -201,123 +272,124 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         {
             if (_tableNavigations == null)
             {
-                SchemaContext schemaContext = _informationSchema.SchemaContextPool.Rent();
-                try
-                {
-                    _tableNavigations = new Dictionary<(String tableSchema, String tableName), List<Navigation>>();
-                    var keyColumns = GetKeyColumns();
+                _tableNavigations = new Dictionary<(String tableSchema, String tableName), List<Navigation>>();
+                IReadOnlyDictionary<(String constraintSchema, String constraintName), IReadOnlyList<KeyColumnUsage>> keyColumns = GetKeyColumns();
 
-                    var navigationCounter = new Dictionary<(String, String, String), int>();
-                    foreach (ReferentialConstraint fkey in schemaContext.ReferentialConstraints)
+                var navigationCounter = new Dictionary<(String, String, String), List<IReadOnlyList<KeyColumnUsage>>>();
+                foreach (ReferentialConstraint fkey in _referentialConstraints)
+                {
+                    IReadOnlyList<KeyColumnUsage> dependentKeyColumns = keyColumns[(fkey.ConstraintSchema, fkey.ConstraintName)];
+
+                    KeyColumnUsage dependentKeyColumn = dependentKeyColumns[0];
+                    String principalEdmName = GetTableEdmName(dependentKeyColumn.TableSchema, dependentKeyColumn.TableName);
+                    if (principalEdmName == null)
+                        continue;
+
+                    KeyColumnUsage principalKeyColumn = keyColumns[(fkey.UniqueConstraintSchema, fkey.UniqueConstraintName)][0];
+                    String dependentEdmName = GetTableEdmName(principalKeyColumn.TableSchema, principalKeyColumn.TableName);
+                    if (dependentEdmName == null)
+                        continue;
+
+                    bool selfReferences = false;
+                    String dependentNavigationName = GetNavigationMappingName(fkey, dependentKeyColumn);
+                    if (dependentNavigationName == null)
                     {
-                        KeyColumnUsage dependentKeyColumn = keyColumns[(fkey.ConstraintSchema, fkey.ConstraintName)][0];
-                        String principalEdmName = GetTableEdmName(dependentKeyColumn.TableSchema, dependentKeyColumn.TableName);
-                        if (principalEdmName == null)
-                            continue;
+                        selfReferences = dependentKeyColumn.TableSchema == principalKeyColumn.TableSchema && dependentKeyColumn.TableName == principalKeyColumn.TableName;
+                        if (selfReferences)
+                            dependentNavigationName = "Parent";
+                        else
+                            dependentNavigationName = _pluralizer.Singularize(dependentEdmName);
 
-                        KeyColumnUsage principalKeyColumn = keyColumns[(fkey.UniqueConstraintSchema, fkey.UniqueConstraintName)][0];
-                        String dependentEdmName = GetTableEdmName(principalKeyColumn.TableSchema, principalKeyColumn.TableName);
-                        if (dependentEdmName == null)
-                            continue;
-
-                        String dependentNavigationName = GetNavigationMappingName(fkey, dependentKeyColumn);
-                        if (dependentNavigationName == null)
+                        (String, String, String) dependentKey = (fkey.ConstraintSchema, dependentKeyColumn.TableName, principalKeyColumn.TableName);
+                        if (navigationCounter.TryGetValue(dependentKey, out List<IReadOnlyList<KeyColumnUsage>> columnsList))
                         {
-                            if (dependentKeyColumn.TableSchema == principalKeyColumn.TableSchema && dependentKeyColumn.TableName == principalKeyColumn.TableName)
-                                dependentNavigationName = "Parent";
-                            else
-                                dependentNavigationName = _pluralizer.Singularize(dependentEdmName);
+                            if (FKeyExist(columnsList, dependentKeyColumns))
+                                continue;
 
-                            (String, String, String) dependentKey = (fkey.ConstraintSchema, dependentKeyColumn.TableName, principalKeyColumn.TableName);
-                            if (navigationCounter.TryGetValue(dependentKey, out int counter))
-                                counter++;
-                            else
-                                counter = 1;
-                            navigationCounter[dependentKey] = counter;
-
-                            IReadOnlyList<Column> dependentColumns = GetColumns(dependentKeyColumn.TableSchema, dependentKeyColumn.TableName);
-                            counter = GetCount(dependentColumns, dependentNavigationName, counter);
-
-                            if (counter > 1)
-                                dependentNavigationName += counter.ToString(CultureInfo.InvariantCulture);
+                            columnsList.Add(dependentKeyColumns);
+                        }
+                        else
+                        {
+                            columnsList = new List<IReadOnlyList<KeyColumnUsage>>() { dependentKeyColumns };
+                            navigationCounter[dependentKey] = columnsList;
                         }
 
-                        String principalNavigationName = GetNavigationMappingName(fkey, principalKeyColumn);
-                        if (principalNavigationName == null)
-                        {
-                            if (dependentKeyColumn.TableSchema == principalKeyColumn.TableSchema && dependentKeyColumn.TableName == principalKeyColumn.TableName)
-                                principalNavigationName = "Children";
-                            else
-                                principalNavigationName = _pluralizer.Pluralize(principalEdmName);
-
-                            (String, String, String) principalKey = (fkey.ConstraintSchema, principalKeyColumn.TableName, dependentKeyColumn.TableName);
-                            if (navigationCounter.TryGetValue(principalKey, out int counter))
-                                counter++;
-                            else
-                                counter = 1;
-                            navigationCounter[principalKey] = counter;
-
-                            IReadOnlyList<Column> principalColumns = GetColumns(principalKeyColumn.TableSchema, principalKeyColumn.TableName);
-                            counter = GetCount(principalColumns, principalNavigationName, counter);
-
-                            if (counter > 1)
-                                principalNavigationName += counter.ToString(CultureInfo.InvariantCulture);
-                        }
-
-                        AddNavigation(fkey, dependentKeyColumn, dependentNavigationName, false);
-                        AddNavigation(fkey, principalKeyColumn, principalNavigationName, true);
+                        IReadOnlyList<Column> dependentColumns = GetColumns(dependentKeyColumn.TableSchema, dependentKeyColumn.TableName);
+                        dependentNavigationName = GetUniqueName(dependentColumns, dependentNavigationName, columnsList.Count);
                     }
-                }
-                finally
-                {
-                    _informationSchema.SchemaContextPool.Return(schemaContext);
+
+                    String principalNavigationName = GetNavigationMappingName(fkey, principalKeyColumn);
+                    if (principalNavigationName == null)
+                    {
+                        if (dependentKeyColumn.TableSchema == principalKeyColumn.TableSchema && dependentKeyColumn.TableName == principalKeyColumn.TableName)
+                            principalNavigationName = "Children";
+                        else
+                            principalNavigationName = _pluralizer.Pluralize(principalEdmName);
+
+                        (String, String, String) principalKey = (fkey.ConstraintSchema, principalKeyColumn.TableName, dependentKeyColumn.TableName);
+                        if (navigationCounter.TryGetValue(principalKey, out List<IReadOnlyList<KeyColumnUsage>> columnsList))
+                        {
+                            if (!selfReferences)
+                            {
+                                if (FKeyExist(columnsList, dependentKeyColumns))
+                                    continue;
+
+                                columnsList.Add(dependentKeyColumns);
+                            }
+                        }
+                        else
+                        {
+                            columnsList = new List<IReadOnlyList<KeyColumnUsage>>() { dependentKeyColumns };
+                            navigationCounter[principalKey] = columnsList;
+                        }
+
+                        IReadOnlyList<Column> principalColumns = GetColumns(principalKeyColumn.TableSchema, principalKeyColumn.TableName);
+                        principalNavigationName = GetUniqueName(principalColumns, principalNavigationName, columnsList.Count);
+                    }
+
+                    AddNavigation(fkey, dependentKeyColumn, dependentNavigationName, false);
+                    AddNavigation(fkey, principalKeyColumn, principalNavigationName, true);
                 }
             }
             return _tableNavigations;
 
-            int GetCount(IReadOnlyList<Column> columns, String navigationName, int counter)
+            bool FKeyExist(List<IReadOnlyList<KeyColumnUsage>> keyColumnsList, IReadOnlyList<KeyColumnUsage> keyColumns)
             {
-                bool match;
-                do
-                {
-                    match = false;
-                    String scounter = counter == 1 ? "" : counter.ToString(CultureInfo.InvariantCulture);
-                    for (int i = 0; i < columns.Count && !match; i++)
+                for (int i = 0; i < keyColumnsList.Count; i++)
+                    if (keyColumnsList[i].Count == keyColumns.Count)
                     {
-                        String columnName = columns[i].ColumnName;
-                        if (columnName.StartsWith(navigationName, StringComparison.InvariantCultureIgnoreCase))
-                        {
-                            int length = columnName.Length - navigationName.Length;
-                            if (String.Compare(columnName, navigationName.Length, scounter, 0, length, StringComparison.InvariantCultureIgnoreCase) == 0)
-                                match = scounter.Length == length;
-                        }
+                        int j = 0;
+                        for (; j < keyColumns.Count; j++)
+                            if (keyColumnsList[i][j].ColumnName != keyColumns[j].ColumnName)
+                                break;
+
+                        if (j == keyColumns.Count)
+                            return true;
                     }
 
-                    if (match)
+                return false;
+            }
+            int GetCountName(IReadOnlyList<Column> columns, String navigationName)
+            {
+                int counter = 0;
+                for (int i = 0; i < columns.Count; i++)
+                    if (String.Compare(navigationName, columns[i].ColumnName, StringComparison.OrdinalIgnoreCase) == 0)
                         counter++;
-                }
-                while (match);
-
                 return counter;
             }
-        }
-        public IReadOnlyDictionary<(String tableSchema, String tableName), String> GetPrimaryKeyConstraintNames()
-        {
-            if (_primaryKeys == null)
+            String GetUniqueName(IReadOnlyList<Column> columns, String navigationName, int counter)
             {
-                SchemaContext schemaContext = _informationSchema.SchemaContextPool.Rent();
-                try
+                int counter2;
+                String navigationName2 = navigationName;
+                do
                 {
-                    _primaryKeys = schemaContext.TableConstraints.Where(t => t.ConstraintType == "PRIMARY KEY" || t.ConstraintName == "UNIQUE")
-                        .GroupBy(t => new { t.TableSchema, t.TableName }).SelectMany(a => a.OrderBy(t => t.ConstraintName).Take(1))
-                        .ToDictionary(t => (t.TableSchema, t.TableName), t => t.ConstraintName);
+                    counter2 = GetCountName(columns, navigationName2);
+                    counter += counter2;
+                    navigationName2 = counter > 1 ? navigationName + counter.ToString(CultureInfo.InvariantCulture) : navigationName;
                 }
-                finally
-                {
-                    _informationSchema.SchemaContextPool.Return(schemaContext);
-                }
+                while (counter2 > 0 && GetCountName(columns, navigationName2) > 0);
+                return navigationName2;
             }
-            return _primaryKeys;
         }
         public IReadOnlyList<OeOperationConfiguration> GetRoutines(DynamicTypeDefinitionManager typeDefinitionManager, InformationSchemaMapping informationSchemaMapping)
         {
@@ -436,6 +508,8 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             SchemaContext schemaContext = _informationSchema.SchemaContextPool.Rent();
             try
             {
+                _referentialConstraints = schemaContext.ReferentialConstraints.ToList();
+
                 Dictionary<String, TableMapping> dbNameTableMappings = null;
                 if (tableMappings != null)
                     dbNameTableMappings = tableMappings.ToDictionary(t => t.DbName, StringComparer.OrdinalIgnoreCase);
@@ -467,7 +541,23 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                             }
 
                             if (tableMapping.Navigations != null && tableMapping.Navigations.Count > 0)
+                            {
+                                foreach (NavigationMapping navigationMapping in tableMapping.Navigations)
+                                    if (!String.IsNullOrEmpty(navigationMapping.NavigationName) && String.IsNullOrEmpty(navigationMapping.ConstraintName))
+                                    {
+                                        String tableName2 = navigationMapping.TargetTableName;
+                                        if (tableName2 != null)
+                                        {
+                                            int i = tableName2.IndexOf('.');
+                                            if (i != -1)
+                                                tableName2 = tableName2.Substring(i + 1);
+
+                                            navigationMapping.ConstraintName = GetFKeyConstraintName(table.TableSchema, table.TableName, tableName2);
+                                        }
+                                    }
+
                                 _navigationMappings.Add((table.TableSchema, table.TableName), tableMapping.Navigations);
+                            }
                         }
                         else
                             continue;

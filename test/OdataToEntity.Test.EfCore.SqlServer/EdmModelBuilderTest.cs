@@ -3,6 +3,7 @@ using Microsoft.OData.Edm;
 using OdataToEntity.EfCore;
 using OdataToEntity.Test.Model;
 using System;
+using System.Linq;
 using Xunit;
 
 namespace OdataToEntity.Test
@@ -13,6 +14,14 @@ namespace OdataToEntity.Test
         {
             public MyFinanceDbContext1() : base(Create<MyFinanceDbContext1>())
             {
+            }
+
+            protected override void OnModelCreating(Microsoft.EntityFrameworkCore.ModelBuilder modelBuilder)
+            {
+                base.OnModelCreating(modelBuilder);
+
+                modelBuilder.Entity<Dept>().HasAlternateKey(d => d.Ref);
+                modelBuilder.Entity<Acct>().HasOne(a => a.DeptRefNavigation).WithMany(d => d.AcctRefs).HasForeignKey(a => a.DeptRef).HasPrincipalKey(d => d.Ref);
             }
 
             public DbSet<Acct> Accts { get; set; }
@@ -61,6 +70,16 @@ namespace OdataToEntity.Test
         {
             var da = new OeEfCoreDataAdapter<MyFinanceDbContext1>();
             da.BuildEdmModelFromEfCoreModel();
+        }
+        [Fact]
+        public void AlternativeKey()
+        {
+            var da = new OeEfCoreDataAdapter<MyFinanceDbContext1>();
+            IEdmModel edmModel = da.BuildEdmModelFromEfCoreModel();
+            var acct = (IEdmStructuredType)edmModel.FindType(typeof(Acct).FullName);
+            var deptRefNavigation = acct.NavigationProperties().Single(p => p.Name == nameof(Acct.DeptRefNavigation));
+            var key = deptRefNavigation.PrincipalProperties().Single();
+            Assert.Equal(nameof(Dept.Ref), key.Name);
         }
         [Fact]
         public void ShadowProperty()

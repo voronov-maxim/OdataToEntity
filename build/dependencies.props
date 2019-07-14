@@ -5,7 +5,7 @@
     <AspNetCoreMvcCoreVersion>2.2.5</AspNetCoreMvcCoreVersion>
     <CoreFxVersion>4.5.0</CoreFxVersion>
     <CSharpVersion>7.2</CSharpVersion>
-    <EfCoreVersion>2.2.4</EfCoreVersion>
+    <EfCoreVersion>2.2.6</EfCoreVersion>
     <FrameworkVersion>net461</FrameworkVersion>
     <MicrosoftExtensionsVersion>2.0.0</MicrosoftExtensionsVersion>
     <JsonNetVersion>10.0.3</JsonNetVersion>

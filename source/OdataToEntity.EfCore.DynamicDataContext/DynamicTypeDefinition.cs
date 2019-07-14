@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Reflection;
 
 namespace OdataToEntity.EfCore.DynamicDataContext
@@ -41,7 +42,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
         {
             _shadowPropertyIndex++;
 
-            String shadowPropertyIndex = _shadowPropertyIndex.ToString("D2");
+            String shadowPropertyIndex = _shadowPropertyIndex.ToString(CultureInfo.InvariantCulture);
             String shadowPropertyGetName = "ShadowPropertyGet" + shadowPropertyIndex;
             MethodInfo getMethodInfo = typeof(Types.DynamicType).GetMethod(shadowPropertyGetName, BindingFlags.Instance | BindingFlags.NonPublic);
             getMethodInfo = getMethodInfo.GetGenericMethodDefinition().MakeGenericMethod(new Type[] { propertyType });
@@ -74,7 +75,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
                 return fieldName;
 
             _collectionFieldIndex++;
-            fieldName = "CollectionNavigation" + _collectionFieldIndex.ToString("D2");
+            fieldName = "CollectionNavigation" + _collectionFieldIndex.ToString(CultureInfo.InvariantCulture);
             _navigationPropertyNames.Add(navigationPropertyName, fieldName);
             return fieldName;
         }
@@ -92,7 +93,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
                 return fieldName;
 
             _singleFieldIndex++;
-            fieldName = "SingleNavigation" + _singleFieldIndex.ToString("D2");
+            fieldName = "SingleNavigation" + _singleFieldIndex.ToString(CultureInfo.InvariantCulture);
             _navigationPropertyNames.Add(navigationPropertyName, fieldName);
             return fieldName;
         }

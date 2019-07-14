@@ -2,45 +2,31 @@
   "Operations": [
     {
       "DbName": "dbo.GetOrders",
-      "Exclude": false,
       "ResultTableDbName": "dbo.Orders"
     },
     {
       "DbName": "dbo.TableFunction",
-      "Exclude": false,
       "ResultTableDbName": "dbo.Orders"
     },
     {
       "DbName": "dbo.TableFunctionWithParameters",
-      "Exclude": false,
       "ResultTableDbName": "dbo.Orders"
     }
   ],
   "Tables": [
     {
       "DbName": "dbo.Categories",
-      "EdmName": "Categories",
-      "Exclude": false,
-      "Navigations": [
-        {
-          "ConstraintName": "FK_Categories_Categories",
-          "NavigationName": "Parent",
-          "ManyToManyTarget": null
-        }
-      ]
+      "EdmName": "Categories"
     },
     {
       "DbName": "dbo.Customers",
       "EdmName": "Customers",
-      "Exclude": false,
       "Navigations": [
         {
           "ConstraintName": "FK_Orders_AltCustomers",
-          "NavigationName": "AltOrders",
-          "ManyToManyTarget": null
+          "NavigationName": "AltOrders"
         },
         {
-          "ConstraintName": null,
           "NavigationName": "ShippingAddresses",
           "ManyToManyTarget": "ShippingAddresses"
         }
@@ -48,50 +34,37 @@
     },
     {
       "DbName": "dbo.CustomerShippingAddress",
-      "EdmName": "CustomerShippingAddress",
-      "Exclude": false,
-      "Navigations": null
+      "EdmName": "CustomerShippingAddress"
     },
     {
       "DbName": "dbo.ManyColumns",
-      "EdmName": "ManyColumns",
-      "Exclude": false,
-      "Navigations": null
+      "EdmName": "ManyColumns"
     },
     {
       "DbName": "dbo.Orders",
       "EdmName": "Orders",
-      "Exclude": false,
       "Navigations": [
         {
-          "ConstraintName": "FK_OrderItem_Order",
           "NavigationName": "Items",
-          "ManyToManyTarget": null
+          "TargetTableName": "dbo.OrderItems"
         },
         {
           "ConstraintName": "FK_Orders_AltCustomers",
-          "NavigationName": "AltCustomer",
-          "ManyToManyTarget": null
+          "NavigationName": "AltCustomer"
         }
       ]
     },
     {
       "DbName": "dbo.OrderItems",
-      "EdmName": "OrderItems",
-      "Exclude": false,
-      "Navigations": null
+      "EdmName": "OrderItems"
     },
     {
       "DbName": "dbo.ShippingAddresses",
-      "EdmName": "ShippingAddresses",
-      "Exclude": false,
-      "Navigations": null
+      "EdmName": "ShippingAddresses"
     },
     {
       "DbName": "dbo.OrderItemsView",
-      "EdmName": "OrderItemsView",
-      "Exclude": false,
-      "Navigations": null
+      "EdmName": "OrderItemsView"
     }
   ]
 }

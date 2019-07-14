@@ -22,8 +22,20 @@ namespace OdataToEntity.Test
             public DbSet<Dept> Depts { get; set; }
             public DbSet<Stat> Stats { get; set; }
 
+            static MyFinanceDbContext()
+            {
+                Database.SetInitializer<MyFinanceDbContext>(null);
+            }
             public MyFinanceDbContext() : base(@"Server =.\sqlexpress; Initial Catalog = OdataToEntity; Trusted_Connection=Yes;")
             {
+            }
+
+            protected override void OnModelCreating(DbModelBuilder modelBuilder)
+            {
+                base.OnModelCreating(modelBuilder);
+
+                modelBuilder.Entity<Dept>().HasIndex(d => d.Ref).IsUnique();
+                modelBuilder.Entity<Dept>().HasKey(d => d.Ref).HasMany(d => d.AcctRefs).WithRequired(a => a.DeptRefNavigation).HasForeignKey(a => a.DeptRef);
             }
         }
 

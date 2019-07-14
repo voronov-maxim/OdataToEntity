@@ -20,6 +20,9 @@ namespace OdataToEntity.Writers
         private static ODataUri GetCountODataUri(IEdmModel edmModel, OeEntryFactory entryFactory, ExpandedNavigationSelectItem item, Object value)
         {
             FilterClause filterClause = GetFilter(edmModel, entryFactory, item, value);
+            if (filterClause == null)
+                throw new InvalidOperationException("Cannot create count expression");
+
             var entitytSet = (IEdmEntitySet)(filterClause.RangeVariable as ResourceRangeVariable).NavigationSource;
             var pathSegments = new ODataPathSegment[] { new EntitySetSegment(entitytSet) { Identifier = entitytSet.Name }, CountSegment.Instance };
 

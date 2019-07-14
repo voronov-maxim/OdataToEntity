@@ -114,7 +114,7 @@ namespace OdataToEntity.AspNetCore
                     for (int i = 0; i < actionDescriptors.Count; i++)
                     {
                         ActionDescriptor actionDescriptor = actionDescriptors[i];
-                        if (actionDescriptor.AttributeRouteInfo != null
+                        if (actionDescriptor.AttributeRouteInfo != null && path != null
                             && path.IndexOf(actionDescriptor.AttributeRouteInfo.Template, StringComparison.OrdinalIgnoreCase) == 1
                             && path[actionDescriptor.AttributeRouteInfo.Template.Length + 1] == '/'
                             && ActionConstaint(actionDescriptor, httpMethod))

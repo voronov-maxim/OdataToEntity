@@ -8,30 +8,23 @@ namespace OdataToEntity.ModelBuilder
 {
     internal sealed class FKeyInfo
     {
-        private readonly EntityTypeInfo _dependentInfo;
-        private readonly PropertyInfo _dependentNavigationProperty;
-        private readonly EdmMultiplicity _dependentMultiplicity;
-        private readonly PropertyInfo[] _dependentStructuralProperties;
-        private readonly EntityTypeInfo _principalInfo;
-        private readonly EdmMultiplicity _principalMultiplicity;
-        private readonly PropertyInfo _principalNavigationProperty;
-
         private FKeyInfo(EntityTypeInfo dependentInfo, PropertyInfo dependentNavigationProperty, PropertyInfo[] dependentStructuralProperties,
-            EntityTypeInfo principalInfo, PropertyInfo principalNavigationProperty)
+            EntityTypeInfo principalInfo, PropertyInfo principalNavigationProperty, PropertyInfo[] principalStructuralProperties)
         {
-            _dependentInfo = dependentInfo;
-            _dependentNavigationProperty = dependentNavigationProperty;
-            _principalInfo = principalInfo;
+            DependentInfo = dependentInfo;
+            DependentStructuralProperties = dependentStructuralProperties;
+            DependentNavigationProperty = dependentNavigationProperty;
+            PrincipalInfo = principalInfo;
 
-            _dependentStructuralProperties = dependentStructuralProperties;
-            _dependentMultiplicity = GetEdmMultiplicity(dependentNavigationProperty?.PropertyType, dependentStructuralProperties);
+            DependentMultiplicity = GetEdmMultiplicity(dependentNavigationProperty?.PropertyType, dependentStructuralProperties);
 
             if (principalNavigationProperty == null)
-                _principalMultiplicity = EdmMultiplicity.Unknown;
+                PrincipalMultiplicity = EdmMultiplicity.Unknown;
             else
             {
-                _principalNavigationProperty = principalNavigationProperty;
-                _principalMultiplicity = GetEdmMultiplicity(principalNavigationProperty.PropertyType, dependentStructuralProperties);
+                PrincipalNavigationProperty = principalNavigationProperty;
+                PrincipalStructuralProperties = principalStructuralProperties;
+                PrincipalMultiplicity = GetEdmMultiplicity(principalNavigationProperty.PropertyType, dependentStructuralProperties);
             }
         }
 
@@ -94,7 +87,12 @@ namespace OdataToEntity.ModelBuilder
         }
         public void BuildNavigationProperty()
         {
-            EdmStructuralProperty[] dependentEdmProperties = CreateDependentEdmProperties(DependentInfo.EdmType, DependentStructuralProperties);
+            EdmStructuralProperty[] dependentEdmProperties = CreateEdmProperties(DependentInfo.EdmType, DependentStructuralProperties);
+            IEnumerable<IEdmStructuralProperty> principalEdmProperties;
+            if (PrincipalStructuralProperties == null)
+                principalEdmProperties = PrincipalInfo.EdmType.DeclaredKey;
+            else
+                principalEdmProperties = CreateEdmProperties(PrincipalInfo.EdmType, PrincipalStructuralProperties);
 
             IEdmNavigationProperty edmNavigationProperty;
             EdmNavigationPropertyInfo edmPrincipalInfo;
@@ -109,7 +107,7 @@ namespace OdataToEntity.ModelBuilder
                     Name = PrincipalNavigationProperty.Name,
                     DependentProperties = dependentEdmProperties,
                     OnDelete = EdmOnDeleteAction.None,
-                    PrincipalProperties = PrincipalInfo.EdmType.DeclaredKey,
+                    PrincipalProperties = principalEdmProperties,
                     Target = DependentInfo.EdmType,
                     TargetMultiplicity = PrincipalMultiplicity
                 };
@@ -123,7 +121,7 @@ namespace OdataToEntity.ModelBuilder
                     Name = DependentNavigationProperty.Name,
                     DependentProperties = dependentEdmProperties,
                     OnDelete = EdmOnDeleteAction.None,
-                    PrincipalProperties = PrincipalInfo.EdmType.DeclaredKey,
+                    PrincipalProperties = principalEdmProperties,
                     Target = PrincipalInfo.EdmType,
                     TargetMultiplicity = DependentMultiplicity
                 };
@@ -137,7 +135,7 @@ namespace OdataToEntity.ModelBuilder
                         Name = PrincipalNavigationProperty.Name,
                         DependentProperties = null,
                         OnDelete = EdmOnDeleteAction.None,
-                        PrincipalProperties = PrincipalInfo.EdmType.DeclaredKey,
+                        PrincipalProperties = principalEdmProperties,
                         Target = DependentInfo.EdmType,
                         TargetMultiplicity = PrincipalMultiplicity
                     };
@@ -156,6 +154,7 @@ namespace OdataToEntity.ModelBuilder
             PropertyInfo[] dependentStructuralProperties = GetDependentStructuralProperties(metadataProvider, dependentInfo, dependentNavigationProperty);
             PropertyInfo principalNavigationProperty = GetPrincipalNavigationProperty(metadataProvider, principalInfo, dependentInfo, dependentNavigationProperty);
 
+            PropertyInfo[] principalStructuralProperties;
             if (dependentStructuralProperties.Length == 0)
             {
                 if (principalNavigationProperty != null)
@@ -165,20 +164,22 @@ namespace OdataToEntity.ModelBuilder
                 if (dependentStructuralProperties == null)
                     throw new InvalidOperationException("not found dependent structural property " + dependentInfo.ClrType.Name + "Id for navigation property " + dependentNavigationProperty.Name);
 
-                return new FKeyInfo(principalInfo, null, dependentStructuralProperties, dependentInfo, dependentNavigationProperty);
+                principalStructuralProperties = metadataProvider.GetPrincipalStructuralProperties(dependentNavigationProperty);
+                return new FKeyInfo(principalInfo, null, dependentStructuralProperties, dependentInfo, dependentNavigationProperty, principalStructuralProperties);
             }
 
-            return new FKeyInfo(dependentInfo, dependentNavigationProperty, dependentStructuralProperties, principalInfo, principalNavigationProperty);
+            principalStructuralProperties = metadataProvider.GetPrincipalStructuralProperties(principalNavigationProperty);
+            return new FKeyInfo(dependentInfo, dependentNavigationProperty, dependentStructuralProperties, principalInfo, principalNavigationProperty, principalStructuralProperties);
         }
-        private static EdmStructuralProperty[] CreateDependentEdmProperties(EdmEntityType edmDependent, IReadOnlyList<PropertyInfo> dependentStructuralProperties)
+        private static EdmStructuralProperty[] CreateEdmProperties(EdmEntityType entitytType, IReadOnlyList<PropertyInfo> structuralProperties)
         {
-            if (dependentStructuralProperties.Count == 0)
+            if (structuralProperties.Count == 0)
                 return null;
 
             EdmStructuralProperty[] dependentEdmProperties;
-            dependentEdmProperties = new EdmStructuralProperty[dependentStructuralProperties.Count];
+            dependentEdmProperties = new EdmStructuralProperty[structuralProperties.Count];
             for (int i = 0; i < dependentEdmProperties.Length; i++)
-                dependentEdmProperties[i] = (EdmStructuralProperty)edmDependent.GetPropertyIgnoreCase(dependentStructuralProperties[i].Name);
+                dependentEdmProperties[i] = (EdmStructuralProperty)entitytType.GetPropertyIgnoreCase(structuralProperties[i].Name);
             return dependentEdmProperties;
         }
         private static PropertyInfo[] GetDependentStructuralProperties(OeEdmModelMetadataProvider metadataProvider,
@@ -243,13 +244,14 @@ namespace OdataToEntity.ModelBuilder
             return null;
         }
 
-        public EntityTypeInfo DependentInfo => _dependentInfo;
-        public EdmMultiplicity DependentMultiplicity => _dependentMultiplicity;
-        public PropertyInfo DependentNavigationProperty => _dependentNavigationProperty;
-        public PropertyInfo[] DependentStructuralProperties => _dependentStructuralProperties;
+        public EntityTypeInfo DependentInfo { get; }
+        public EdmMultiplicity DependentMultiplicity { get; }
+        public PropertyInfo DependentNavigationProperty { get; }
+        public PropertyInfo[] DependentStructuralProperties { get; }
         public IEdmNavigationProperty EdmNavigationProperty { get; private set; }
-        public EntityTypeInfo PrincipalInfo => _principalInfo;
-        public EdmMultiplicity PrincipalMultiplicity => _principalMultiplicity;
-        public PropertyInfo PrincipalNavigationProperty => _principalNavigationProperty;
+        public EntityTypeInfo PrincipalInfo { get; }
+        public EdmMultiplicity PrincipalMultiplicity { get; }
+        public PropertyInfo PrincipalNavigationProperty { get; }
+        public PropertyInfo[] PrincipalStructuralProperties { get; }
     }
 }

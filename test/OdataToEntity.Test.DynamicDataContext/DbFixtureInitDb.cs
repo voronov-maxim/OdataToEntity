@@ -52,9 +52,9 @@ namespace OdataToEntity.Test
         }
         private static EdmModel CreateDynamicEdmModel(bool useRelationalNulls)
         {
-            //ProviderSpecificSchema providerSchema = DynamicDataContext.Program.CreateSchemaSqlServer(useRelationalNulls);
+            ProviderSpecificSchema providerSchema = DynamicDataContext.Program.CreateSchemaSqlServer(useRelationalNulls);
             //ProviderSpecificSchema providerSchema = DynamicDataContext.Program.CreateOptionsPostgreSql(useRelationalNulls);
-            ProviderSpecificSchema providerSchema = DynamicDataContext.Program.CreateOptionsMySql(useRelationalNulls);
+            //ProviderSpecificSchema providerSchema = DynamicDataContext.Program.CreateOptionsMySql(useRelationalNulls);
 
             InformationSchemaMapping informationSchemaMapping = DynamicDataContext.Program.GetMappings();
             using (var metadataProvider = providerSchema.CreateMetadataProvider(informationSchemaMapping))
@@ -67,14 +67,14 @@ namespace OdataToEntity.Test
         public override async Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
         {
             Task t1 = base.Execute(parameters);
-            //Task t2 = base.Execute(parameters);zzz
-            await Task.WhenAll(t1, Task.CompletedTask);
+            Task t2 = base.Execute(parameters);
+            await Task.WhenAll(t1, t2);
         }
         public override async Task Execute<T, TResult>(QueryParametersScalar<T, TResult> parameters)
         {
             Task t1 = base.Execute(parameters);
-            //Task t2 = base.Execute(parameters);zzz
-            await Task.WhenAll(t1, Task.CompletedTask);
+            Task t2 = base.Execute(parameters);
+            await Task.WhenAll(t1, t2);
         }
         public async override Task Initalize()
         {

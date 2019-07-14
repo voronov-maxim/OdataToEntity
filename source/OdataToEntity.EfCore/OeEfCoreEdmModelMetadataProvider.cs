@@ -13,14 +13,25 @@ namespace OdataToEntity.EfCore
     {
         private readonly IModel _efModel;
         private readonly Dictionary<Type, IEntityType> _entityTypes;
+        private readonly Dictionary<IPropertyBase, Infrastructure.OeShadowPropertyInfo> _shadowProperties;
 
         public OeEfCoreEdmModelMetadataProvider(IModel model)
         {
             _efModel = model;
             _entityTypes = _efModel.GetEntityTypes().ToDictionary(e => e.ClrType);
+            _shadowProperties = new Dictionary<IPropertyBase, Infrastructure.OeShadowPropertyInfo>();
         }
 
-        protected virtual Infrastructure.OeShadowPropertyInfo CreateShadowProperty(IPropertyBase efProperty)
+        private Infrastructure.OeShadowPropertyInfo CreateShadowProperty(IPropertyBase efProperty)
+        {
+            if (!_shadowProperties.TryGetValue(efProperty, out Infrastructure.OeShadowPropertyInfo shadowProperty))
+            {
+                shadowProperty = CreateShadowPropertyCore(efProperty);
+                _shadowProperties.Add(efProperty, shadowProperty);
+            }
+            return shadowProperty;
+        }
+        protected virtual Infrastructure.OeShadowPropertyInfo CreateShadowPropertyCore(IPropertyBase efProperty)
         {
             return new Infrastructure.OeShadowPropertyInfo(efProperty.DeclaringType.ClrType, efProperty.ClrType, efProperty.Name);
         }
@@ -95,6 +106,25 @@ namespace OdataToEntity.EfCore
             }
 
             return -1;
+        }
+        public override PropertyInfo[] GetPrincipalStructuralProperties(PropertyInfo principalNavigation)
+        {
+            if (principalNavigation == null)
+                return null;
+
+            foreach (EntityType efEntityType in GetEntityTypes(principalNavigation))
+            {
+                Navigation navigation = efEntityType.FindNavigation(principalNavigation);
+                if (navigation != null)
+                {
+                    var propertyInfos = new PropertyInfo[navigation.ForeignKey.PrincipalKey.Properties.Count];
+                    for (int i = 0; i < propertyInfos.Length; i++)
+                        propertyInfos[i] = GetPropertyInfo(navigation.ForeignKey.PrincipalKey.Properties[i]);
+                    return propertyInfos;
+                }
+            }
+
+            throw new InvalidOperationException("Not found key for principal navigation property " + principalNavigation.DeclaringType.Name + "." + principalNavigation.Name);
         }
         public override PropertyInfo[] GetPrincipalToDependentWithoutDependent(PropertyInfo propertyInfo)
         {

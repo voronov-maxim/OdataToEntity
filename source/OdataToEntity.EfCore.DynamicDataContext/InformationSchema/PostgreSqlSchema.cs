@@ -87,14 +87,13 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                 case "macaddr":
                     return typeof(System.Net.NetworkInformation.PhysicalAddress);
                 case "date":
+                case "timestamp without time zone":
                     return typeof(DateTime);
                 case "interval":
                     return typeof(TimeSpan);
                 case "timestamp":
                 case "timestamp with time zone":
                     return typeof(DateTimeOffset);
-                case "timestamp without time zone":
-                    return typeof(DateTime);
                 case "time":
                     return typeof(TimeSpan);
                 case "time with time zone":

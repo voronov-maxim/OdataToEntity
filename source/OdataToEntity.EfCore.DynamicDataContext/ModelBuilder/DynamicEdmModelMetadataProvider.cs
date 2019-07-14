@@ -19,7 +19,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
             _typeDefinitionManager = typeDefinitionManager;
         }
 
-        protected override OeShadowPropertyInfo CreateShadowProperty(IPropertyBase efProperty)
+        protected override OeShadowPropertyInfo CreateShadowPropertyCore(IPropertyBase efProperty)
         {
             if (efProperty is INavigation efNavigation)
             {

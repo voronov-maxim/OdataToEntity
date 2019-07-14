@@ -40,10 +40,11 @@ namespace OdataToEntity.Test.DynamicDataContext.AspServer
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app)
         {
-            String provider = Configuration.GetValue<String>("provider");
-            String connectionString = Configuration.GetValue<String>("connectionString");
-            bool useRelationalNulls = Configuration.GetValue<bool>("useRelationalNulls");
-            String informationSchemaMappingFileName = Configuration.GetValue<String>("InformationSchemaMappingFileName");
+            String basePath = Configuration.GetValue<String>("OdataToEntity:BasePath");
+            String provider = Configuration.GetValue<String>("OdataToEntity:Provider");
+            String connectionString = Configuration.GetValue<String>("OdataToEntity:ConnectionString");
+            bool useRelationalNulls = Configuration.GetValue<bool>("OdataToEntity:UseRelationalNulls");
+            String informationSchemaMappingFileName = Configuration.GetValue<String>("OdataToEntity:InformationSchemaMappingFileName");
 
             InformationSchemaMapping informationSchemaMapping = null;
             if (informationSchemaMappingFileName != null)
@@ -62,7 +63,10 @@ namespace OdataToEntity.Test.DynamicDataContext.AspServer
                 dynamicEdmModel = dataAdapter.BuildEdmModel(metadataProvider);
             }
 
-            app.UseOdataToEntityMiddleware<OePageMiddleware>("/api", dynamicEdmModel);
+            if (!String.IsNullOrEmpty(basePath) && basePath[0] != '/')
+                basePath = "/" + basePath;
+
+            app.UseOdataToEntityMiddleware<OePageMiddleware>(basePath, dynamicEdmModel);
             app.UseMvcWithDefaultRoute();
         }
     }

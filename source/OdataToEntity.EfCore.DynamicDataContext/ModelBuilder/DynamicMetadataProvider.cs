@@ -32,10 +32,10 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
                 foreach (SchemaCache.Navigation navigation in navigations)
                     if (navigation.NavigationName == navigationPropertyName)
                     {
-                        List<KeyColumnUsage> dependent = _schemaCache.GetKeyColumns()[(navigation.ConstraintSchema, navigation.DependentConstraintName)];
-                        List<KeyColumnUsage> principal = _schemaCache.GetKeyColumns()[(navigation.ConstraintSchema, navigation.PrincipalConstraintName)]; ;
-                        List<String> principalPropertyNames = principal.OrderBy(p => p.OrdinalPosition).Select(p => p.ColumnName).ToList();
-                        List<String> dependentPropertyNames = dependent.OrderBy(p => p.OrdinalPosition).Select(p => p.ColumnName).ToList();
+                        IReadOnlyList<KeyColumnUsage> dependent = _schemaCache.GetKeyColumns()[(navigation.ConstraintSchema, navigation.DependentConstraintName)];
+                        IReadOnlyList<KeyColumnUsage> principal = _schemaCache.GetKeyColumns()[(navigation.ConstraintSchema, navigation.PrincipalConstraintName)]; ;
+                        var principalPropertyNames = new List<String>(principal.Select(p => p.ColumnName));
+                        var dependentPropertyNames = new List<String>(dependent.Select(p => p.ColumnName));
 
                         String principalEdmName = _schemaCache.GetTableEdmName(principal[0].TableSchema, principal[0].TableName);
                         String dependentEdmName = _schemaCache.GetTableEdmName(dependent[0].TableSchema, dependent[0].TableName);
@@ -59,16 +59,25 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
                 foreach (SchemaCache.Navigation navigation in navigations)
                     yield return navigation.NavigationName;
         }
-        public IEnumerable<String> GetPrimaryKey(String tableEdmName)
+        public (String[] propertyNames, bool isPrimary)[] GetKeys(String tableEdmName)
         {
             (String tableSchema, String tableName) tableFullName = _schemaCache.GetTableFullName(tableEdmName);
-            if (_schemaCache.GetPrimaryKeyConstraintNames().TryGetValue(tableFullName, out String constraintName))
+            if (_schemaCache.GetKeyConstraintNames().TryGetValue(tableFullName, out IReadOnlyList<(String constraintName, bool isPrimary)> constraints))
             {
-                List<KeyColumnUsage> keyColumns = _schemaCache.GetKeyColumns()[(tableFullName.tableSchema, constraintName)];
-                return keyColumns.OrderBy(c => c.OrdinalPosition).Select(c => c.ColumnName);
+                var keys = new (String[] propertyNames, bool isPrimary)[constraints.Count];
+                for (int i = 0; i < constraints.Count; i++)
+                {
+                    IReadOnlyList<KeyColumnUsage> keyColumns = _schemaCache.GetKeyColumns()[(tableFullName.tableSchema, constraints[i].constraintName)];
+                    var key = new String[keyColumns.Count];
+                    for (int j = 0; j < key.Length; j++)
+                        key[j] = keyColumns[j].ColumnName;
+                    keys[i] = (key, constraints[i].isPrimary);
+                }
+
+                return keys;
             }
 
-            return Array.Empty<String>();
+            return Array.Empty<(String[] propertyNames, bool isPrimary)>();
         }
         public IReadOnlyList<OeOperationConfiguration> GetRoutines(DynamicTypeDefinitionManager typeDefinitionManager)
         {
@@ -87,10 +96,11 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
                     databaseGenerated = DatabaseGeneratedOption.None;
 
                 Type propertyType = column.ClrType;
-                if (column.IsNullable == "YES" && propertyType.IsValueType)
+                bool isNullabe = column.IsNullable == "YES";
+                if (isNullabe && propertyType.IsValueType)
                     propertyType = typeof(Nullable<>).MakeGenericType(propertyType);
 
-                yield return new DynamicPropertyInfo(column.ColumnName, propertyType, databaseGenerated);
+                yield return new DynamicPropertyInfo(column.ColumnName, propertyType, isNullabe, databaseGenerated);
             }
         }
         public String GetTableEdmName(String entityName)

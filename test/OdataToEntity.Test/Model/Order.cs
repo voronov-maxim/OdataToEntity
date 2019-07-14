@@ -262,9 +262,11 @@ namespace OdataToEntity.Test.Model
     internal class Dept
     {
         public int Id { get; set; }
+        public byte[] Ref { get; set; }
 
         //public virtual ICollection<Acct> Accts { get; set; } // Adding fixes issue
         public virtual ICollection<Stat> Stats { get; set; }
+        public ICollection<Acct> AcctRefs { get; set; }
     }
 
     internal class Acct
@@ -273,6 +275,9 @@ namespace OdataToEntity.Test.Model
 
         public int? DeptId { get; set; }
         public virtual Dept Dept { get; set; }
+
+        public byte[] DeptRef { get; set; }
+        public Dept DeptRefNavigation { get; set; }
     }
 
     internal class Stat

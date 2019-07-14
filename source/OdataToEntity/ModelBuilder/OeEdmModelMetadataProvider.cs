@@ -64,12 +64,16 @@ namespace OdataToEntity.ModelBuilder
             var column = (ColumnAttribute)propertyInfo.GetCustomAttribute(typeof(ColumnAttribute));
             return column == null ? -1 : column.Order;
         }
-        public virtual PropertyInfo[] GetPrincipalToDependentWithoutDependent(PropertyInfo propertyInfo)
+        public virtual PropertyInfo[] GetPrincipalStructuralProperties(PropertyInfo principalNavigation)
         {
-            Type itemType = OeExpressionHelper.GetCollectionItemTypeOrNull(propertyInfo.PropertyType);
-            if (itemType != null && GetInverseProperty(propertyInfo) == null)
+            return null;
+        }
+        public virtual PropertyInfo[] GetPrincipalToDependentWithoutDependent(PropertyInfo principalNavigation)
+        {
+            Type itemType = OeExpressionHelper.GetCollectionItemTypeOrNull(principalNavigation.PropertyType);
+            if (itemType != null && GetInverseProperty(principalNavigation) == null)
             { 
-                String dependentPropertyName = propertyInfo.DeclaringType.Name + "id";
+                String dependentPropertyName = principalNavigation.DeclaringType.Name + "id";
                 return new PropertyInfo[] { itemType.GetPropertyIgnoreCase(dependentPropertyName) };
             }
             return null;

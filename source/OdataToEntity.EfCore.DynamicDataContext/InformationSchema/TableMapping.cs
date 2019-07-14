@@ -34,15 +34,16 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         public NavigationMapping()
         {
         }
-        public NavigationMapping(String constraintName, String navigationName)
+        public NavigationMapping(String targetTableName, String navigationName)
         {
-            ConstraintName = constraintName;
+            TargetTableName = targetTableName;
             NavigationName = navigationName;
         }
 
         public String ConstraintName { get; set; }
         public String NavigationName { get; set; }
         public String ManyToManyTarget { get; set; }
+        public String TargetTableName { get; set; }
     }
 
     public sealed class OperationMapping

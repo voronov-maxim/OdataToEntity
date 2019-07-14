@@ -75,18 +75,12 @@ namespace OdataToEntity.Test.DynamicDataContext
                 },
                 Tables = new TableMapping[]
                 {
-                    new TableMapping("dbo.Categories", "Categories")
-                    {
-                        Navigations = new[]
-                        {
-                            new NavigationMapping("FK_Categories_Categories", "Parent")
-                        }
-                    },
+                    new TableMapping("dbo.Categories", "Categories"),
                     new TableMapping("dbo.Customers", "Customers")
                     {
                         Navigations = new []
                         {
-                            new NavigationMapping("FK_Orders_AltCustomers", "AltOrders"),
+                            new NavigationMapping(null, "AltOrders") { ConstraintName = "FK_Orders_AltCustomers" },
                             new NavigationMapping(null, "ShippingAddresses") { ManyToManyTarget = "ShippingAddresses" }
                         }
                     },
@@ -96,8 +90,8 @@ namespace OdataToEntity.Test.DynamicDataContext
                     {
                         Navigations = new []
                         {
-                            new NavigationMapping("FK_OrderItem_Order", "Items"),
-                            new NavigationMapping("FK_Orders_AltCustomers", "AltCustomer"),
+                            new NavigationMapping("dbo.OrderItems", "Items"),
+                            new NavigationMapping(null, "AltCustomer") { ConstraintName = "FK_Orders_AltCustomers" },
                         }
                     },
                     new TableMapping("dbo.OrderItems", "OrderItems"),
