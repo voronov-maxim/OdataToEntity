@@ -9,13 +9,13 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 {
     public sealed class SqlServerSchema : ProviderSpecificSchema
     {
-        public SqlServerSchema(DbContextOptions<Types.DynamicDbContext> dynamicDbContextOptions)
+        public SqlServerSchema(DbContextOptions<DynamicDbContext> dynamicDbContextOptions)
             : base(dynamicDbContextOptions, CreatePool(dynamicDbContextOptions))
         {
-            OperationAdapter = new OeEfCoreOperationAdapter(typeof(Types.DynamicDbContext));
+            OperationAdapter = new OeEfCoreOperationAdapter(typeof(DynamicDbContext));
         }
 
-        private static DbContextPool<SchemaContext> CreatePool(DbContextOptions<Types.DynamicDbContext> dynamicDbContextOptions)
+        private static DbContextPool<SchemaContext> CreatePool(DbContextOptions<DynamicDbContext> dynamicDbContextOptions)
         {
             var optionsBuilder = new DbContextOptionsBuilder<SchemaContext>();
             optionsBuilder.ReplaceService<IModelCustomizer, SqlServerModelCustomizer>();

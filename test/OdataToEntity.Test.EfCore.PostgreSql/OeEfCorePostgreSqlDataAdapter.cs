@@ -13,25 +13,12 @@ namespace OdataToEntity.EfCore
 
     public class OeEfCorePostgreSqlDataAdapter<T> : OeEfCoreDataAdapter<T> where T : DbContext
     {
-        private sealed class OeEfCorePostgreSqlOperationAdapter : OeEfCoreOperationAdapter
+        private sealed class EfCorePostgreSqlOperationAdapter : OePostgreSqlEfCoreOperationAdapter
         {
-            public OeEfCorePostgreSqlOperationAdapter(Type dataContextType)
-                : base(dataContextType, true)
+            public EfCorePostgreSqlOperationAdapter(Type dataContextType) : base(dataContextType)
             {
             }
 
-            public override IAsyncEnumerable<Object> ExecuteProcedureNonQuery(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters)
-            {
-                return base.ExecuteFunctionNonQuery(dataContext, operationName, parameters);
-            }
-            public override IAsyncEnumerable<Object> ExecuteProcedureReader(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters, OeEntitySetAdapter entitySetAdapter)
-            {
-                return base.ExecuteFunctionReader(dataContext, operationName, parameters, entitySetAdapter);
-            }
-            public override IAsyncEnumerable<Object> ExecuteProcedurePrimitive(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
-            {
-                return base.ExecuteFunctionPrimitive(dataContext, operationName, parameters, returnType);
-            }
             protected override Object GetParameterCore(KeyValuePair<String, Object> parameter, String parameterName, int parameterIndex)
             {
                 if (!(parameter.Value is String) && parameter.Value is IEnumerable list)
@@ -53,7 +40,7 @@ namespace OdataToEntity.EfCore
         {
         }
         public OeEfCorePostgreSqlDataAdapter(DbContextOptions options, Cache.OeQueryCache queryCache)
-            : base(options, queryCache, new OeEfCorePostgreSqlOperationAdapter(typeof(T)))
+            : base(options, queryCache, new EfCorePostgreSqlOperationAdapter(typeof(T)))
         {
             base.IsDatabaseNullHighestValue = true;
         }

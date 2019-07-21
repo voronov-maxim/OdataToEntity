@@ -1,5 +1,6 @@
 ﻿using Microsoft.OData;
 using Microsoft.OData.Edm;
+using Microsoft.OData.UriParser;
 using Newtonsoft.Json;
 using OdataToEntity.Parsers;
 using System;
@@ -68,7 +69,31 @@ namespace OdataToEntity.Test
             }
             public void AddLink(ODataNestedResourceInfo link, Object value, ODataResourceSetBase resourceSet)
             {
-                _navigationProperties.Add(new NavigationInfo(link.Name, resourceSet != null, resourceSet?.NextPageLink, resourceSet?.Count, value));
+                if (resourceSet == null)
+                {
+                    Uri nextPageLink = null;
+                    try
+                    {
+                        if (value == null && !link.AssociationLinkUrl.OriginalString.StartsWith(link.Url.OriginalString))
+                            nextPageLink = link.Url;
+                    }
+                    catch (ODataException)
+                    {
+                        try
+                        {
+                            nextPageLink = link.Url;
+                        }
+                        catch (ODataException)
+                        {
+                            return;
+                        }
+                    }
+
+                    if (value != null || nextPageLink != null)
+                        _navigationProperties.Add(new NavigationInfo(link.Name, false, nextPageLink, null, value));
+                }
+                else
+                    _navigationProperties.Add(new NavigationInfo(link.Name, true, resourceSet.NextPageLink, resourceSet.Count, value));
             }
             private void AddToList(Object value)
             {
@@ -98,15 +123,24 @@ namespace OdataToEntity.Test
 
         protected virtual void AddItems(Object entity, PropertyInfo propertyInfo, IEnumerable values)
         {
-            var collection = (IList)propertyInfo.GetValue(entity);
-            if (collection == null)
+            if (OeExpressionHelper.GetCollectionItemTypeOrNull(propertyInfo.PropertyType) == null)
             {
-                collection = CreateCollection(propertyInfo.PropertyType);
-                propertyInfo.SetValue(entity, collection);
+                IEnumerator enumerator = values.GetEnumerator();
+                if (enumerator.MoveNext())
+                    propertyInfo.SetValue(entity, enumerator.Current);
             }
+            else
+            {
+                var collection = (IList)propertyInfo.GetValue(entity);
+                if (collection == null)
+                {
+                    collection = CreateCollection(propertyInfo.PropertyType);
+                    propertyInfo.SetValue(entity, collection);
+                }
 
-            foreach (Object value in values)
-                collection.Add(value);
+                foreach (Object value in values)
+                    collection.Add(value);
+            }
         }
         protected static IList CreateCollection(Type type)
         {
@@ -170,7 +204,7 @@ namespace OdataToEntity.Test
 
                             var navigationPropertyReader = new ResponseReader(EdmModel, _serviceProvider);
                             AddItems(navigationPropertyEntity.Key, propertyResourceSet.Key, navigationPropertyReader.Read(response));
-                            await navigationPropertyReader.FillNextLinkProperties(parser, token);
+                            await navigationPropertyReader.FillNextLinkProperties(parser, token).ConfigureAwait(false);
 
                             requestUri = navigationPropertyReader.ResourceSet.NextPageLink;
                         }

@@ -55,7 +55,13 @@ namespace OdataToEntity.Parsers.Translators
                     AddStructuralItem(keyProperty, notSelected);
 
             foreach (OeNavigationSelectItem childNavigationItem in _navigationItems)
+            {
+                if (!AllSelected && childNavigationItem.Kind == OeNavigationSelectItemKind.NextLink && !childNavigationItem.EdmProperty.Type.IsCollection())
+                    foreach (IEdmStructuralProperty fkeyProperty in childNavigationItem.EdmProperty.DependentProperties())
+                        AddStructuralItem(fkeyProperty, notSelected);
+
                 childNavigationItem.AddKeyRecursive(notSelected);
+            }
         }
         internal OeNavigationSelectItem AddOrGetNavigationItem(OeNavigationSelectItem navigationItem, bool isExpand)
         {

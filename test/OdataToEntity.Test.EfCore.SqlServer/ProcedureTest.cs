@@ -18,7 +18,7 @@ namespace OdataToEntity.Test
         private static async Task<Object[]> Execute<T>(String request, Object requestData, Func<OrderContext, IEnumerable<T>> fromDbFunc)
         {
             var fixture = new RDBNull_DbFixtureInitDb();
-            await fixture.Initalize();
+            await fixture.Initalize().ConfigureAwait(false);
 
             var responseStream = new MemoryStream();
 
@@ -26,12 +26,12 @@ namespace OdataToEntity.Test
             ODataUri odataUri = fixture.ParseUri(request);
             var requestUri = new Uri(parser.BaseUri, request);
             if (requestData == null)
-                await parser.ExecuteOperationAsync(odataUri, OeRequestHeaders.JsonDefault, null, responseStream, CancellationToken.None);
+                await parser.ExecuteOperationAsync(odataUri, OeRequestHeaders.JsonDefault, null, responseStream, CancellationToken.None).ConfigureAwait(false);
             else
             {
                 String data = fixture.SerializeRequestData(requestData);
                 var requestStream = new MemoryStream(Encoding.UTF8.GetBytes(data));
-                await parser.ExecuteOperationAsync(odataUri, OeRequestHeaders.JsonDefault, requestStream, responseStream, CancellationToken.None);
+                await parser.ExecuteOperationAsync(odataUri, OeRequestHeaders.JsonDefault, requestStream, responseStream, CancellationToken.None).ConfigureAwait(false);
             }
 
             ODataPath path = OeParser.ParsePath(fixture.DbEdmModel, parser.BaseUri, requestUri);
@@ -67,46 +67,46 @@ namespace OdataToEntity.Test
         public async Task GetOrders_id_get()
         {
             String request = "dbo.GetOrders(name='Order 1',id=1,status=null)";
-            await Execute<Order>(request, null, c => c.GetOrders(1, "Order 1", null));
+            await Execute<Order>(request, null, c => c.GetOrders(1, "Order 1", null)).ConfigureAwait(false);
         }
         [Fact]
         public async Task GetOrders_id_post()
         {
             String request = "dbo.GetOrders";
             var requestData = new { id = 1, name = "Order 1", status = "Unknown" };
-            await Execute<Order>(request, requestData, c => c.GetOrders(1, "Order 1", null));
+            await Execute<Order>(request, requestData, c => c.GetOrders(1, "Order 1", null)).ConfigureAwait(false);
         }
         [Fact]
         public async Task GetOrders_name_get()
         {
             String request = "dbo.GetOrders(name='Order',id=null,status=null)";
-            await Execute<Order>(request, null, c => c.GetOrders(null, "Order", null));
+            await Execute<Order>(request, null, c => c.GetOrders(null, "Order", null)).ConfigureAwait(false);
         }
         [Fact]
         public async Task GetOrders_name_post()
         {
             String request = "dbo.GetOrders";
             var requestData = new { id = (int?)null, name = "Order", status = (OrderStatus?)null };
-            await Execute<Order>(request, requestData, c => c.GetOrders(null, "Order", null));
+            await Execute<Order>(request, requestData, c => c.GetOrders(null, "Order", null)).ConfigureAwait(false);
         }
         [Fact]
         public async Task GetOrders_status_get()
         {
             String request = "dbo.GetOrders(name=null,id=null,status='Processing')";
-            await Execute<Order>(request, null, c => c.GetOrders(null, null, OrderStatus.Processing));
+            await Execute<Order>(request, null, c => c.GetOrders(null, null, OrderStatus.Processing)).ConfigureAwait(false);
         }
         [Fact]
         public async Task GetOrders_status_post()
         {
             String request = "dbo.GetOrders";
             var requestData = new { id = (int?)null, name = (String)null, status = OrderStatus.Processing.ToString() };
-            await Execute<Order>(request, requestData, c => c.GetOrders(null, null, OrderStatus.Processing));
+            await Execute<Order>(request, requestData, c => c.GetOrders(null, null, OrderStatus.Processing)).ConfigureAwait(false);
         }
         [Fact]
         public async Task ResetDb_get()
         {
             String request = "ResetDb";
-            await Execute<int>(request, null, null);
+            await Execute<int>(request, null, null).ConfigureAwait(false);
 
             var fixture = new RDBNull_DbFixtureInitDb();
             using (OrderContext orderContext = fixture.CreateContext())
@@ -122,7 +122,7 @@ namespace OdataToEntity.Test
         public async Task ResetDb_post()
         {
             String request = "ResetDb";
-            await Execute<int>(request, "", null);
+            await Execute<int>(request, "", null).ConfigureAwait(false);
 
             var fixture = new RDBNull_DbFixtureInitDb();
             using (OrderContext orderContext = fixture.CreateContext())
@@ -138,7 +138,7 @@ namespace OdataToEntity.Test
         public async Task ScalarFunction_get()
         {
             String request = "dbo.ScalarFunction";
-            Object[] result = await Execute<int>(request, null, null);
+            Object[] result = await Execute<int>(request, null, null).ConfigureAwait(false);
 
             var fixture = new RDBNull_DbFixtureInitDb();
             using (OrderContext orderContext = fixture.CreateContext())
@@ -151,7 +151,7 @@ namespace OdataToEntity.Test
         public async Task ScalarFunctionWithParameters_get()
         {
             String request = "dbo.ScalarFunctionWithParameters(name='Order 1',id=1,status=null)";
-            Object[] result = await Execute<int>(request, null, null);
+            Object[] result = await Execute<int>(request, null, null).ConfigureAwait(false);
 
             var fixture = new RDBNull_DbFixtureInitDb();
             using (OrderContext orderContext = fixture.CreateContext())
@@ -165,7 +165,7 @@ namespace OdataToEntity.Test
         {
             String request = "dbo.ScalarFunctionWithParameters";
             var requestData = new { id = (int?)1, name = "Order 1", status = (OrderStatus?)null };
-            Object[] result = await Execute<int>(request, requestData, null);
+            Object[] result = await Execute<int>(request, requestData, null).ConfigureAwait(false);
 
             var fixture = new RDBNull_DbFixtureInitDb();
             using (OrderContext orderContext = fixture.CreateContext())
@@ -178,26 +178,26 @@ namespace OdataToEntity.Test
         public async Task TableFunction_get()
         {
             String request = "TableFunction";
-            await Execute(request, null, c => c.TableFunction());
+            await Execute(request, null, c => c.TableFunction()).ConfigureAwait(false);
         }
         [Fact]
         public async Task TableFunctionWithCollectionParameter_get()
         {
             String request = "TableFunctionWithCollectionParameter(string_list=['Foo','Bar','Baz'])";
-            await Execute(request, null, c => c.TableFunctionWithCollectionParameter(new[] { "Foo", "Bar", "Baz" }));
+            await Execute(request, null, c => c.TableFunctionWithCollectionParameter(new[] { "Foo", "Bar", "Baz" })).ConfigureAwait(false);
         }
         [Fact]
         public async Task TableFunctionWithParameters_get()
         {
             String request = "TableFunctionWithParameters(name='Order 1',id=1,status=null)";
-            await Execute(request, null, c => c.TableFunctionWithParameters(1, "Order 1", null));
+            await Execute(request, null, c => c.TableFunctionWithParameters(1, "Order 1", null)).ConfigureAwait(false);
         }
         [Fact]
         public async Task TableFunctionWithParameters_post()
         {
             String request = "TableFunctionWithParameters";
             var requestData = new { id = (int?)1, name = "Order 1", status = (OrderStatus?)null };
-            await Execute(request, requestData, c => c.TableFunctionWithParameters(1, "Order 1", null));
+            await Execute(request, requestData, c => c.TableFunctionWithParameters(1, "Order 1", null)).ConfigureAwait(false);
         }
     }
 }

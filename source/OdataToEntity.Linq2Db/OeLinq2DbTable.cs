@@ -2,9 +2,9 @@
 using LinqToDB.Data;
 using LinqToDB.Linq;
 using LinqToDB.Mapping;
-using OdataToEntity.ModelBuilder;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 
@@ -12,7 +12,7 @@ namespace OdataToEntity.Linq2Db
 {
     public abstract class OeLinq2DbTable
     {
-        public readonly struct UpdatableEntity<T> where T : class
+        protected readonly struct UpdatableEntity<T> where T : class
         {
             public UpdatableEntity(T entity, IReadOnlyList<String> updatedPropertyNames)
             {
@@ -133,7 +133,7 @@ namespace OdataToEntity.Linq2Db
             {
                 T entity = _inserted[i];
                 Object identity = dc.InsertWithIdentity(entity);
-                identity = Convert.ChangeType(identity, identityProperties[0].PropertyType);
+                identity = Convert.ChangeType(identity, identityProperties[0].PropertyType, CultureInfo.InvariantCulture);
                 Object old = identityProperties[0].GetValue(entity);
                 identityProperties[0].SetValue(entity, identity);
                 _identities.Add(old, identity);
@@ -145,16 +145,16 @@ namespace OdataToEntity.Linq2Db
         }
         public override int SaveUpdated(DataConnection dc)
         {
-            if (Updated.Count == 0)
+            if (_updated.Count == 0)
                 return 0;
 
             ITable<T> table = dc.GetTable<T>();
-            foreach (UpdatableEntity<T> updatableEntity in Updated)
+            foreach (UpdatableEntity<T> updatableEntity in _updated)
                 if (updatableEntity.UpdatedPropertyNames == null)
                     dc.Update(updatableEntity.Entity);
                 else
                     Updatable(table, updatableEntity.Entity, updatableEntity.UpdatedPropertyNames).Update();
-            return Updated.Count;
+            return _updated.Count;
         }
         private IUpdatable<T> Updatable(ITable<T> table, T entity, IReadOnlyList<String> updatedPropertyNames)
         {
@@ -198,6 +198,5 @@ namespace OdataToEntity.Linq2Db
         public override IReadOnlyDictionary<Object, Object> Identities => _identities;
         public IReadOnlyList<T> Inserted => _inserted;
         public static PropertyInfo SelfRefProperty { get; set; }
-        public IReadOnlyList<UpdatableEntity<T>> Updated => _updated;
     }
 }

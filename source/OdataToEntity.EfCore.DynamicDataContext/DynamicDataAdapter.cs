@@ -4,7 +4,7 @@ using System;
 
 namespace OdataToEntity.EfCore.DynamicDataContext
 {
-    public sealed class DynamicDataAdapter : OeEfCoreDataAdapter<Types.DynamicDbContext>
+    public sealed class DynamicDataAdapter : OeEfCoreDataAdapter<DynamicDbContext>
     {
         private readonly Db.OeEntitySetAdapterCollection _dynamicEntitySetAdapters;
 
@@ -19,7 +19,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
 
         public EdmModel BuildEdmModel(ModelBuilder.DynamicMetadataProvider metadataProvider)
         {
-            using (Types.DynamicDbContext context = TypeDefinitionManager.CreateDynamicDbContext())
+            using (DynamicDbContext context = TypeDefinitionManager.CreateDynamicDbContext())
             {
                 var edmModelMetadataProvider = new ModelBuilder.DynamicEdmModelMetadataProvider(context.Model, metadataProvider, TypeDefinitionManager);
                 var modelBuilder = new OeEdmModelBuilder(this, edmModelMetadataProvider);

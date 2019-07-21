@@ -90,7 +90,7 @@ namespace OdataToEntity.AspNetCore
 
                     var actionContext = new ActionContext(base.HttpContext, base.HttpContext.GetRouteData(), candidates[0], modelState);
                     IActionInvoker actionInvoker = actionInvokerFactory.CreateInvoker(actionContext);
-                    await actionInvoker.InvokeAsync();
+                    await actionInvoker.InvokeAsync().ConfigureAwait(false);
                 }
 
                 await SaveChangesAsync(dataContext).ConfigureAwait(false);

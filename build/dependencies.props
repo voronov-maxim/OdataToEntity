@@ -18,4 +18,8 @@
     <Version>$(OdataToEntityVersion)</Version>
     <XunitVersion>2.4.1</XunitVersion>
   </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)OdataToEnity.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
 </Project>

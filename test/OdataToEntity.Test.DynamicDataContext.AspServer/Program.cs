@@ -7,7 +7,7 @@ namespace OdataToEntity.Test.DynamicDataContext.AspServer
 {
     class Program
     {
-        static void Main(string[] args)
+        static void Main(String[] args)
         {
             var host = WebHost.CreateDefaultBuilder(args)
                 .UseStartup<Startup>()

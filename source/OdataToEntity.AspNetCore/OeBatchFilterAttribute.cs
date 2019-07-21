@@ -19,6 +19,7 @@ namespace OdataToEntity.AspNetCore
         }
     }
 
+    [AttributeUsage(AttributeTargets.Method)]
     public sealed class OeBatchFilterAttributeAttribute : Attribute, IActionFilter
     {
         internal sealed class BatchModelStateDictionary : ModelStateDictionary

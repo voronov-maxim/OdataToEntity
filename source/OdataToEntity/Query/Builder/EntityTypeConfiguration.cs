@@ -1,7 +1,6 @@
 ﻿using Microsoft.OData.Edm;
 using System;
 using System.Linq.Expressions;
-using System.Reflection;
 
 namespace OdataToEntity.Query.Builder
 {

@@ -1,5 +1,4 @@
 ﻿using Microsoft.OData;
-using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using OdataToEntity.Parsers;
 using System.Collections.Generic;

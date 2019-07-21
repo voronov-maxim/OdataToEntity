@@ -1,18 +1,19 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using System;
 using System.IO;
 
 namespace OdataToEntity.AspServer
 {
-    public class Program
+    public static class Program
     {
-        public static void Main(string[] args)
+        public static void Main(String[] args)
         {
-            var host = new WebHostBuilder()
+            var host = WebHost.CreateDefaultBuilder(args)
+                .UseStartup<Startup>()
                 .UseKestrel()
                 .UseContentRoot(Directory.GetCurrentDirectory())
-                .UseUrls(@"http://localhost:5000")
-                .UseStartup<Startup>()
                 .Build();
 
             host.Run();

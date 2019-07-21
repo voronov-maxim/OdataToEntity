@@ -212,12 +212,11 @@ namespace OdataToEntity.Parsers
         }
         private static ODataResource ReadResource(ODataReader reader)
         {
-            ODataResource resource = null;
             while (reader.Read())
                 if (reader.State == ODataReaderState.ResourceEnd)
-                    resource = (ODataResource)reader.Item;
+                    return (ODataResource)reader.Item;
 
-            return resource ?? throw new InvalidOperationException("ResourceEnd not found");
+            throw new InvalidOperationException("ResourceEnd not found");
         }
         private static ODataCollectionValue ReadResourceSet(ODataReader reader)
         {

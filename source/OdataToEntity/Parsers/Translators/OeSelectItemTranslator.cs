@@ -41,7 +41,7 @@ namespace OdataToEntity.Parsers.Translators
             else
                 throw new InvalidOperationException("Unknown SelectItem type " + item.GetType().Name);
         }
-        private void Translate(OeNavigationSelectItem parentNavigationItem, OePageSelectItem pageSelectItem)
+        private static void Translate(OeNavigationSelectItem parentNavigationItem, OePageSelectItem pageSelectItem)
         {
             if (parentNavigationItem.NavigationSelectItem != null)
             {

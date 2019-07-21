@@ -43,11 +43,11 @@ namespace OdataToEntity.AspNetCore
             if (httpContext.Request.Path == "/$metadata")
                 InvokeMetadata(httpContext);
             else if (httpContext.Request.Path == "/$batch")
-                await InvokeBatch(httpContext);
+                await InvokeBatch(httpContext).ConfigureAwait(false);
             else if (httpContext.Request.PathBase == _apiPath)
-                await InvokeApi(httpContext);
+                await InvokeApi(httpContext).ConfigureAwait(false);
             else
-                await _next(httpContext);
+                await _next(httpContext).ConfigureAwait(false);
         }
         private async Task InvokeApi(HttpContext httpContext)
         {
@@ -56,14 +56,15 @@ namespace OdataToEntity.AspNetCore
             OeRequestHeaders headers = OeRequestHeaders.Parse(requestHeaders.HeaderAccept, preferHeader);
 
             var parser = new OeParser(UriHelper.GetBaseUri(httpContext.Request), EdmModel, GetModelBoundProvider(httpContext), OeParser.ServiceProvider);
-            await parser.ExecuteGetAsync(UriHelper.GetUri(httpContext.Request), new OeHttpRequestHeaders(headers, httpContext.Response), httpContext.Response.Body, CancellationToken.None);
+            await parser.ExecuteGetAsync(UriHelper.GetUri(httpContext.Request), new OeHttpRequestHeaders(headers, httpContext.Response),
+                httpContext.Response.Body, CancellationToken.None).ConfigureAwait(false);
         }
         private async Task InvokeBatch(HttpContext httpContext)
         {
             httpContext.Response.ContentType = httpContext.Request.ContentType;
             var parser = new OeParser(UriHelper.GetBaseUri(httpContext.Request), EdmModel);
             await parser.ExecuteBatchAsync(httpContext.Request.Body, httpContext.Response.Body,
-                httpContext.Request.ContentType, CancellationToken.None);
+                httpContext.Request.ContentType, CancellationToken.None).ConfigureAwait(false);
         }
         private void InvokeMetadata(HttpContext httpContext)
         {

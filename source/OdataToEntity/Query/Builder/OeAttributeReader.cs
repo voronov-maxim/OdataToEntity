@@ -66,7 +66,7 @@ namespace OdataToEntity.Query.Builder
                 }
             }
         }
-        private Dictionary<String, SelectExpandType> GetConfigurations(T attribure)
+        private static Dictionary<String, SelectExpandType> GetConfigurations(T attribure)
         {
             if (attribure is ExpandAttribute expandAttribute)
                 return expandAttribute.ExpandConfigurations;

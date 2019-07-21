@@ -3,6 +3,7 @@ using OdataToEntity.EfCore.DynamicDataContext;
 using OdataToEntity.EfCore.DynamicDataContext.InformationSchema;
 using OdataToEntity.Test;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,12 +25,14 @@ namespace OdataToEntity.Test.DynamicDataContext
         static async Task Main(String[] args)
         {
             //PerformanceCacheTest.RunTest(100);
-            new PLNull(new PLNull_DbFixtureInitDb()).DbQuery(0).GetAwaiter().GetResult();
+            //new PLNull(new PLNull_DbFixtureInitDb()).DbQuery(0).GetAwaiter().GetResult();
             //new ProcedureTest().ScalarFunction_get().GetAwaiter().GetResult();
             //new PLNull_ManyColumns(new PLNull_ManyColumnsFixtureInitDb()).Filter(1).GetAwaiter().GetResult();
 
+            var sw = new Stopwatch();
+            sw.Start();
             InformationSchemaMapping informationSchemaMapping = GetMappings();
-            ProviderSpecificSchema providerSchema = CreateOptionsPostgreSql(true);
+            ProviderSpecificSchema providerSchema = CreateSchemaSqlServer(true);
 
             EdmModel dynamicEdmModel;
             using (var metadataProvider = providerSchema.CreateMetadataProvider(informationSchemaMapping))
@@ -38,6 +41,9 @@ namespace OdataToEntity.Test.DynamicDataContext
                 var dataAdapter = new DynamicDataAdapter(typeDefinitionManager);
                 dynamicEdmModel = dataAdapter.BuildEdmModel(metadataProvider);
             }
+            sw.Stop();
+            var zzz = sw.Elapsed;
+            Console.WriteLine(zzz);
             String csdlSchema = TestHelper.GetCsdlSchema(dynamicEdmModel);
 
             var parser = new OeParser(new Uri("http://dummy"), dynamicEdmModel);

@@ -24,14 +24,17 @@ namespace OdataToEntity.Test
                     modelBoundSettingsBuilder.SetPageSize(pageSize, entityType);
 
                     foreach (IEdmNavigationProperty navigationProperty in entityType.NavigationProperties())
+                    {
+                        if (navigationNextLink)
+                            modelBoundSettingsBuilder.SetNavigationNextLink(navigationNextLink, navigationProperty);
+
                         if (navigationProperty.Type.IsCollection())
                         {
-                            if (navigationNextLink)
-                                modelBoundSettingsBuilder.SetNavigationNextLink(navigationNextLink, navigationProperty);
 
                             if (_sqlite)
                                 modelBoundSettingsBuilder.SetPageSize(-1, navigationProperty);
                         }
+                    }
                 }
 
             foreach (IEdmModel refModel in edmModel.ReferencedModels)

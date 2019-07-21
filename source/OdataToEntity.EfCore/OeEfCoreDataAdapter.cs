@@ -26,7 +26,7 @@ namespace OdataToEntity.EfCore
         IQueryable FromSql(Object dataContext, String sql, Object[] parameters);
     }
 
-    public class OeEfCoreDataAdapter<T> : Db.OeDataAdapter where T : DbContext
+    public class OeEfCoreDataAdapter<T> : Db.OeDataAdapter, IDisposable where T : DbContext
     {
         private sealed class DbQueryAdapterImpl<TEntity> : Db.OeEntitySetAdapter, IFromSql where TEntity : class
         {
@@ -212,7 +212,7 @@ namespace OdataToEntity.EfCore
         }
 
         private readonly DbContextPool<T> _dbContextPool;
-        protected readonly static Db.OeEntitySetAdapterCollection _entitySetAdapters = CreateEntitySetAdapters();
+        private readonly static Db.OeEntitySetAdapterCollection _entitySetAdapters = CreateEntitySetAdapters();
 
         public OeEfCoreDataAdapter() : this(null, null)
         {
@@ -279,7 +279,7 @@ namespace OdataToEntity.EfCore
         {
             return isDbQuery ? (Db.OeEntitySetAdapter)new DbQueryAdapterImpl<TEntity>(entitySetName) : new DbSetAdapterImpl<TEntity>(entitySetName);
         }
-        public void DisposeDataContextPool()
+        public void Dispose()
         {
             if (_dbContextPool != null)
                 _dbContextPool.Dispose();

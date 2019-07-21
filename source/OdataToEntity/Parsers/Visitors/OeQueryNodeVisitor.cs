@@ -1,5 +1,4 @@
-﻿using Microsoft.OData.Edm;
-using Microsoft.OData.UriParser;
+﻿using Microsoft.OData.UriParser;
 using OdataToEntity.Cache.UriCompare;
 using System;
 using System.Collections.Generic;

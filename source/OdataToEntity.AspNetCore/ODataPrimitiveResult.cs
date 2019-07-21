@@ -23,7 +23,7 @@ namespace OdataToEntity.AspNetCore
         public override async Task ExecuteResultAsync(ActionContext context)
         {
             await Parsers.OePostParser.WriteCollectionAsync(_edmModel, _odataUri,
-                (IAsyncEnumerator<Object>)_items, context.HttpContext.Response.Body, context.HttpContext.RequestAborted);
+                (IAsyncEnumerator<Object>)_items, context.HttpContext.Response.Body, context.HttpContext.RequestAborted).ConfigureAwait(false);
         }
     }
 }

@@ -23,25 +23,25 @@ namespace OdataToEntity.AspNetCore
             routeBuilder.Routes.Add(router);
             return routeBuilder;
         }
-        public static IApplicationBuilder UseOdataToEntityMiddleware(this IApplicationBuilder app, PathString pathMatch, IEdmModel edmModel)
+        public static IApplicationBuilder UseOdataToEntityMiddleware(this IApplicationBuilder app, PathString apiPath, IEdmModel edmModel)
         {
-            return app.UseOdataToEntityMiddleware<OeMiddleware>(pathMatch, edmModel);
+            return app.UseOdataToEntityMiddleware<OeMiddleware>(apiPath, edmModel);
         }
-        public static IApplicationBuilder UseOdataToEntityMiddleware<TMiddleware>(this IApplicationBuilder app, PathString pathMatch, IEdmModel edmModel)
+        public static IApplicationBuilder UseOdataToEntityMiddleware<TMiddleware>(this IApplicationBuilder app, PathString apiPath, IEdmModel edmModel)
             where TMiddleware : OeMiddleware
         {
             if (app == null)
-                throw new ArgumentNullException("app");
-            if (pathMatch.HasValue && pathMatch.Value.EndsWith("/", StringComparison.Ordinal))
-                throw new ArgumentException("The path must not end with a '/'", "pathMatch");
+                throw new ArgumentNullException(nameof(app));
+            if (apiPath.HasValue && apiPath.Value.EndsWith("/", StringComparison.Ordinal))
+                throw new ArgumentException("The path must not end with a '/'", nameof(apiPath));
 
             IApplicationBuilder applicationBuilder = app.New();
-            applicationBuilder.UseMiddleware<TMiddleware>(pathMatch, edmModel);
+            applicationBuilder.UseMiddleware<TMiddleware>(apiPath, edmModel);
             RequestDelegate branch = applicationBuilder.Build();
             MapOptions options = new MapOptions
             {
                 Branch = branch,
-                PathMatch = pathMatch
+                PathMatch = apiPath
             };
             return app.Use((RequestDelegate next) => new RequestDelegate(new MapMiddleware(next, options).Invoke));
         }

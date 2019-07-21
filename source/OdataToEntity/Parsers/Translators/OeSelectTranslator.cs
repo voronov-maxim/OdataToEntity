@@ -203,7 +203,7 @@ namespace OdataToEntity.Parsers.Translators
         {
             return CreateEntryFactory(_rootNavigationItem, clrType, skipTokenAccessors);
         }
-        private OeEntryFactory CreateEntryFactory(OeNavigationSelectItem root, Type clrType, OePropertyAccessor[] skipTokenAccessors)
+        private static OeEntryFactory CreateEntryFactory(OeNavigationSelectItem root, Type clrType, OePropertyAccessor[] skipTokenAccessors)
         {
             ParameterExpression parameter = Expression.Parameter(typeof(Object));
             UnaryExpression typedParameter = Expression.Convert(parameter, clrType);
@@ -289,10 +289,13 @@ namespace OdataToEntity.Parsers.Translators
             IReadOnlyList<OeStructuralSelectItem> structuralItems = _rootNavigationItem.GetStructuralItemsWithNotSelected();
             var expressions = new Expression[structuralItems.Count];
             for (int i = 0; i < expressions.Length; i++)
-            {
-                PropertyInfo clrProperty = parameter.Type.GetPropertyIgnoreCase(structuralItems[i].EdmProperty);
-                expressions[i] = Expression.MakeMemberAccess(parameter, clrProperty);
-            }
+                if (structuralItems[i].EdmProperty is ComputeProperty computeProperty)
+                    expressions[i] = computeProperty.Expression;
+                else
+                {
+                    PropertyInfo clrProperty = parameter.Type.GetPropertyIgnoreCase(structuralItems[i].EdmProperty);
+                    expressions[i] = Expression.MakeMemberAccess(parameter, clrProperty);
+                }
             NewExpression newTupleExpression = OeExpressionHelper.CreateTupleExpression(expressions);
 
             LambdaExpression lambda = Expression.Lambda(newTupleExpression, parameter);
@@ -379,7 +382,7 @@ namespace OdataToEntity.Parsers.Translators
                     nestedEntryFactories.Add(navigationItem.NavigationItems[i].EntryFactory);
             return nestedEntryFactories.ToArray();
         }
-        private long? GetTop(OeNavigationSelectItem navigationItem, long? top)
+        private static long? GetTop(OeNavigationSelectItem navigationItem, long? top)
         {
             if (navigationItem.PageSize > 0 && (top == null || navigationItem.PageSize < top.GetValueOrDefault()))
                 top = navigationItem.PageSize;

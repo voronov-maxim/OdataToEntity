@@ -2,6 +2,7 @@
 
 namespace OdataToEntity.Test
 {
+    [AttributeUsage(AttributeTargets.Method)]
     public class DbFunctionAttribute : Attribute
     {
         public DbFunctionAttribute()

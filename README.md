@@ -68,3 +68,5 @@ var response = new MemoryStream();
 //Execute query
 await parser.ExecuteGetAsync(uri, OeRequestHeaders.JsonDefault, response, CancellationToken.None);
 ```
+### Dynamic data context ###
+[Create server from only connection string](https://github.com/voronov-maxim/OdataToEntity/wiki/Automatically-building-OData-APIs-(Dynamic-data-context))

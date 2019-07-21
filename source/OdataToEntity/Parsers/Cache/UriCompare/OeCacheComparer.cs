@@ -322,7 +322,6 @@ namespace OdataToEntity.Cache.UriCompare
             if (selectItem1 is OeNextLinkSelectItem nextLinkItem1)
             {
                 var nextLinkItem2 = selectItem2 as OeNextLinkSelectItem;
-
                 return nextLinkItem1.NextLink == nextLinkItem2.NextLink;
             }
 

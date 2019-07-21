@@ -19,7 +19,7 @@ namespace OdataToEntity.Cache.UriCompare
             {
                 enumerator1 = items1.GetEnumerator();
                 enumerator2 = items2.GetEnumerator();
-                for (;;)
+                for (; ; )
                 {
                     bool eof1 = enumerator1.MoveNext();
                     bool eof2 = enumerator2.MoveNext();
@@ -56,7 +56,7 @@ namespace OdataToEntity.Cache.UriCompare
             {
                 enumerator1 = items1.GetEnumerator();
                 enumerator2 = items2.GetEnumerator();
-                for (;;)
+                for (; ; )
                 {
                     bool eof1 = enumerator1.MoveNext();
                     bool eof2 = enumerator2.MoveNext();

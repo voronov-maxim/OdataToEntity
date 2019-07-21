@@ -21,7 +21,8 @@ namespace OdataToEntity.Query
         }
 
         internal Dictionary<String, SelectExpandType> ExpandConfigurations { get; }
-        public SelectExpandType ExpandType {
+        public SelectExpandType ExpandType
+        {
             get
             {
                 return _expandType;

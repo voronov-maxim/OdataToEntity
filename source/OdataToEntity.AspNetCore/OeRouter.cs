@@ -44,7 +44,7 @@ namespace OdataToEntity.AspNetCore
         {
             int pos1, pos2;
 
-            if ((pos2 = path.IndexOf(")/")) != -1)
+            if ((pos2 = path.IndexOf(")/", StringComparison.Ordinal)) != -1)
             {
                 pos1 = path.LastIndexOf('(', pos2);
                 if (pos1 == -1)
@@ -62,7 +62,7 @@ namespace OdataToEntity.AspNetCore
                 return path.Substring(0, pos1) + "/" + path.Substring(pos1 + 1, path.Length - pos1 - 2);
             }
 
-            if ((pos1 = path.IndexOf("/$")) != -1)
+            if ((pos1 = path.IndexOf("/$", StringComparison.Ordinal)) != -1)
                 return path.Substring(0, pos1);
 
             return path;
@@ -87,7 +87,7 @@ namespace OdataToEntity.AspNetCore
                 if (actionInvoker == null)
                     return;
 
-                await actionInvoker.InvokeAsync();
+                await actionInvoker.InvokeAsync().ConfigureAwait(false);
             };
 
             return Task.CompletedTask;

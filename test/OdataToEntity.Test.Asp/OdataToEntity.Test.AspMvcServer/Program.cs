@@ -1,20 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
+using System;
+using System.IO;
 
 namespace OdataToEntity.Test.AspMvcServer
 {
-    public class Program
+    public static class Program
     {
-        public static void Main(string[] args)
+        public static void Main(String[] args)
         {
-            var host = new WebHostBuilder()
+            var host = WebHost.CreateDefaultBuilder(args)
+                .UseStartup<Startup>()
                 .UseKestrel()
                 .UseContentRoot(Directory.GetCurrentDirectory())
-                .UseStartup<Startup>()
                 .Build();
 
             host.Run();

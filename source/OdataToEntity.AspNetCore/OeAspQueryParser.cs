@@ -81,7 +81,7 @@ namespace OdataToEntity.AspNetCore
         public async Task<T?> ExecuteScalar<T>(IQueryable source = null, CancellationToken cancellationToken = default) where T : struct
         {
             using (IAsyncEnumerator<Object> asyncEnumerator = GetAsyncEnumerator(source).GetEnumerator())
-                if (await asyncEnumerator.MoveNext(cancellationToken) && asyncEnumerator.Current != null)
+                if (await asyncEnumerator.MoveNext(cancellationToken).ConfigureAwait(false) && asyncEnumerator.Current != null)
                     return (T)asyncEnumerator.Current;
 
             _httpContext.Response.ContentType = null;
@@ -94,7 +94,7 @@ namespace OdataToEntity.AspNetCore
 
             var edmModel = (IEdmModel)httpContext.RequestServices.GetService(typeof(IEdmModel));
             var parser = new OeParser(UriHelper.GetBaseUri(httpContext.Request), edmModel, modelBoundProvider, null);
-            await parser.ExecuteGetAsync(UriHelper.GetUri(httpContext.Request), headers, httpContext.Response.Body, httpContext.RequestAborted);
+            await parser.ExecuteGetAsync(UriHelper.GetUri(httpContext.Request), headers, httpContext.Response.Body, httpContext.RequestAborted).ConfigureAwait(false);
         }
         private IAsyncEnumerable<Object> GetAsyncEnumerator(IQueryable source = null)
         {

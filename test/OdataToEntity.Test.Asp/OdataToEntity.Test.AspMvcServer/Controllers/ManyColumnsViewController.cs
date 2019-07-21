@@ -20,7 +20,7 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
         {
             var edmModel = (IEdmModel)_httpContextAccessor.HttpContext.RequestServices.GetService(typeof(IEdmModel));
             Query.OeModelBoundProvider modelBoundProvider = OeAspHelper.CreateModelBoundProvider(edmModel, 10, false);
-            await OeAspQueryParser.Get(_httpContextAccessor.HttpContext, modelBoundProvider);
+            await OeAspQueryParser.Get(_httpContextAccessor.HttpContext, modelBoundProvider).ConfigureAwait(false);
         }
     }
 }

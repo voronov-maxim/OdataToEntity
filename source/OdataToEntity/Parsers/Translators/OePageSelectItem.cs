@@ -8,7 +8,7 @@ namespace OdataToEntity.Parsers.Translators
         public OePageSelectItem(int pageSize)
         {
             if (pageSize <= 0)
-                throw new ArgumentException("Must be greater zero", nameof(PageSize));
+                throw new ArgumentException("Must be greater zero", nameof(pageSize));
 
             PageSize = pageSize;
         }

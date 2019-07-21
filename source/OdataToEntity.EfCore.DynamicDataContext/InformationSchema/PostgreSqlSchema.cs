@@ -9,34 +9,14 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 {
     public sealed class PostgreSqlSchema : ProviderSpecificSchema
     {
-        private sealed class PostgreSqlDynamicOperationAdapter : OeEfCoreOperationAdapter
-        {
-            public PostgreSqlDynamicOperationAdapter() : base(typeof(Types.DynamicDbContext), true)
-            {
-            }
-
-            public override IAsyncEnumerable<Object> ExecuteProcedureNonQuery(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters)
-            {
-                return base.ExecuteFunctionNonQuery(dataContext, operationName, parameters);
-            }
-            public override IAsyncEnumerable<Object> ExecuteProcedureReader(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters, Db.OeEntitySetAdapter entitySetAdapter)
-            {
-                return base.ExecuteFunctionReader(dataContext, operationName, parameters, entitySetAdapter);
-            }
-            public override IAsyncEnumerable<Object> ExecuteProcedurePrimitive(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
-            {
-                return base.ExecuteFunctionPrimitive(dataContext, operationName, parameters, returnType);
-            }
-        }
-
-        public PostgreSqlSchema(DbContextOptions<Types.DynamicDbContext> dynamicDbContextOptions)
+        public PostgreSqlSchema(DbContextOptions<DynamicDbContext> dynamicDbContextOptions)
             : base(dynamicDbContextOptions, CreatePool(dynamicDbContextOptions))
         {
             base.IsDatabaseNullHighestValue = true;
-            OperationAdapter = new PostgreSqlDynamicOperationAdapter();
+            OperationAdapter = new OePostgreSqlEfCoreOperationAdapter(typeof(DynamicDbContext));
         }
 
-        private static DbContextPool<SchemaContext> CreatePool(DbContextOptions<Types.DynamicDbContext> dynamicDbContextOptions)
+        private static DbContextPool<SchemaContext> CreatePool(DbContextOptions<DynamicDbContext> dynamicDbContextOptions)
         {
             var optionsBuilder = new DbContextOptionsBuilder<SchemaContext>();
             optionsBuilder.ReplaceService<IModelCustomizer, PostgreSqlModelCustomizer>();

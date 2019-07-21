@@ -24,7 +24,7 @@ namespace OdataToEntity.Test
         public async Task Count()
         {
             String request = "Orders?$expand=Items($count=true)&$count=true";
-            await SelectTest.OrdersCountItemsCount(Fixture, request, i => true, 0, false);
+            await SelectTest.OrdersCountItemsCount(Fixture, request, i => true, 0, false).ConfigureAwait(false);
         }
         [Fact]
         public async Task CountFailed()

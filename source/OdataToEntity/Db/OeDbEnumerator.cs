@@ -73,7 +73,7 @@ namespace OdataToEntity.Db
         public void ClearBuffer()
         {
             if (ParentEnumerator != null)
-                throw new InvalidOperationException($"ClearBuffer can not from child {nameof(OeDbEnumerator)}");
+                throw new InvalidOperationException("ClearBuffer can not from child " + nameof(OeDbEnumerator));
 
             Object lastValue = Context.Buffer[Context.Buffer.Count - 1];
             int bufferCount = Context.Buffer.Count;

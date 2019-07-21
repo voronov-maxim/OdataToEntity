@@ -211,7 +211,7 @@ namespace OdataToEntity
             {
                 return uriParser.ParseUri();
             }
-            catch (ODataException e) when (e.Message.StartsWith("Could not find a property named"))
+            catch (ODataException e) when (e.Message.StartsWith("Could not find a property named", StringComparison.Ordinal))
             {
                 //fix test ApplyGroupByAggregateOrderBy bug #703
                 if (serviceRoot == null)

@@ -30,7 +30,7 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
             var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext, modelBoundProvider);
             Model.OrderContext orderContext = parser.GetDbContext<Model.OrderContext>();
             IAsyncEnumerable<Model.Order> orders = parser.ExecuteReader<Model.Order>(orderContext.Orders.Where(o => o.Id > 0));
-            List<Model.Order> orderList = await orders.OrderBy(o => o.Id).ToList();
+            List<Model.Order> orderList = await orders.OrderBy(o => o.Id).ToList().ConfigureAwait(false);
             return parser.OData(orderList);
         }
         [HttpGet("{id}")]

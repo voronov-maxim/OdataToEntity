@@ -14,8 +14,7 @@ namespace OdataToEntity.EfCore
 {
     public class OeEfCoreOperationAdapter : OeOperationAdapter
     {
-        public OeEfCoreOperationAdapter(Type dataContextType)
-            : base(dataContextType)
+        public OeEfCoreOperationAdapter(Type dataContextType) : base(dataContextType)
         {
         }
         public OeEfCoreOperationAdapter(Type dataContextType, bool isCaseSensitive) : base(dataContextType, isCaseSensitive)

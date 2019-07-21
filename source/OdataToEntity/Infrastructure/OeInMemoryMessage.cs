@@ -34,8 +34,8 @@ namespace OdataToEntity.Infrastructure
         public IEnumerable<KeyValuePair<String, String>> Headers => _headers;
         public String Method
         {
-            get => throw new NotImplementedException();
-            set => throw new NotImplementedException();
+            get => throw new NotSupportedException();
+            set => throw new NotSupportedException();
         }
         public int StatusCode
         {
@@ -44,8 +44,8 @@ namespace OdataToEntity.Infrastructure
         }
         public Uri Url
         {
-            get => throw new NotImplementedException();
-            set => throw new NotImplementedException();
+            get => throw new NotSupportedException();
+            set => throw new NotSupportedException();
         }
 
         IServiceProvider IContainerProvider.Container => _serviceProvider;

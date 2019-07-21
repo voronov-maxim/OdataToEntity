@@ -36,13 +36,13 @@ namespace OdataToEntity.Test
         {
             Task t1 = base.Execute(parameters);
             Task t2 = base.Execute(parameters);
-            await Task.WhenAll(t1, t2);
+            await Task.WhenAll(t1, t2).ConfigureAwait(false);
         }
         public override async Task Execute<T, TResult>(QueryParametersScalar<T, TResult> parameters)
         {
             Task t1 = base.Execute(parameters);
             Task t2 = base.Execute(parameters);
-            await Task.WhenAll(t1, t2);
+            await Task.WhenAll(t1, t2).ConfigureAwait(false);
         }
         public async override Task Initalize()
         {
@@ -51,8 +51,8 @@ namespace OdataToEntity.Test
 
             _initialized = true;
             var parser = new OeParser(new Uri("http://dummy/"), base.OeEdmModel);
-            await parser.ExecuteOperationAsync(base.ParseUri("ResetDb"), OeRequestHeaders.JsonDefault, null, new MemoryStream(), CancellationToken.None);
-            await DbFixture.ExecuteBatchAsync(base.OeEdmModel, "Add");
+            await parser.ExecuteOperationAsync(base.ParseUri("ResetDb"), OeRequestHeaders.JsonDefault, null, new MemoryStream(), CancellationToken.None).ConfigureAwait(false);
+            await DbFixture.ExecuteBatchAsync(base.OeEdmModel, "Add").ConfigureAwait(false);
         }
     }
 
@@ -75,13 +75,13 @@ namespace OdataToEntity.Test
         {
             Task t1 = base.Execute(parameters);
             Task t2 = base.Execute(parameters);
-            await Task.WhenAll(t1, t2);
+            await Task.WhenAll(t1, t2).ConfigureAwait(false);
         }
         public override async Task Execute<T, TResult>(QueryParametersScalar<T, TResult> parameters)
         {
             Task t1 = base.Execute(parameters);
             Task t2 = base.Execute(parameters);
-            await Task.WhenAll(t1, t2);
+            await Task.WhenAll(t1, t2).ConfigureAwait(false);
         }
         public async override Task Initalize()
         {
@@ -90,8 +90,8 @@ namespace OdataToEntity.Test
 
             _initialized = true;
             var parser = new OeParser(new Uri("http://dummy/"), base.OeEdmModel);
-            await parser.ExecuteOperationAsync(base.ParseUri("ResetManyColumns"), OeRequestHeaders.JsonDefault, null, new MemoryStream(), CancellationToken.None);
-            await DbFixture.ExecuteBatchAsync(base.OeEdmModel, "ManyColumns");
+            await parser.ExecuteOperationAsync(base.ParseUri("ResetManyColumns"), OeRequestHeaders.JsonDefault, null, new MemoryStream(), CancellationToken.None).ConfigureAwait(false);
+            await DbFixture.ExecuteBatchAsync(base.OeEdmModel, "ManyColumns").ConfigureAwait(false);
         }
     }
 }

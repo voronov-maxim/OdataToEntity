@@ -115,7 +115,7 @@ namespace OdataToEntity.Parsers
                     case ODataConstants.MethodPost:
                         return HttpStatusCode.Created;
                     default:
-                        throw new NotImplementedException(Method);
+                        throw new NotSupportedException(Method);
                 }
             }
         }

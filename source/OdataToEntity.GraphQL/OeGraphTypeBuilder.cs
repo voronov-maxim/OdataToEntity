@@ -4,6 +4,7 @@ using GraphQL.Types;
 using Microsoft.OData.Edm;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 
@@ -196,7 +197,7 @@ namespace OdataToEntity.GraphQL
 
             return null;
         }
-        private Type GetEntityTypeFromResolvedType(IGraphType resolvedType)
+        private static Type GetEntityTypeFromResolvedType(IGraphType resolvedType)
         {
             return resolvedType.GetType().GetGenericArguments()[0];
         }
@@ -217,7 +218,7 @@ namespace OdataToEntity.GraphQL
         private static String NameFirstCharLower(String name)
         {
             if (Char.IsUpper(name, 0))
-                return Char.ToLowerInvariant(name[0]).ToString() + name.Substring(1);
+                return Char.ToLowerInvariant(name[0]).ToString(CultureInfo.InvariantCulture) + name.Substring(1);
             return name;
         }
     }

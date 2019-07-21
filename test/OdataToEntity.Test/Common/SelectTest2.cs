@@ -147,7 +147,7 @@ namespace OdataToEntity.Test
             var exprectedReader = new ResponseReader(edmModel);
             List<Object> expectedResult = exprectedReader.Read(expectedResponse).Cast<Object>().ToList();
 
-            List<Object> fromOe = await OrdersCountItemsCount(Fixture, request, i => i.Count == null || i.Count > 0, 1, true);
+            List<Object> fromOe = await OrdersCountItemsCount(Fixture, request, i => i.Count == null || i.Count > 0, 1, true).ConfigureAwait(false);
             TestHelper.Compare(expectedResult, fromOe, null);
         }
         [Fact]

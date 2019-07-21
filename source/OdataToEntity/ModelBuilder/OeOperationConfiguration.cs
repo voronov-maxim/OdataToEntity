@@ -16,13 +16,13 @@ namespace OdataToEntity.ModelBuilder
         }
         public OeOperationConfiguration(String schema, String name, MethodInfo methodInfo, bool? isDbFunction) : this(
             schema,
-            name.EndsWith("()") ? name.Substring(0, name.Length - 2) : name,
+            name.EndsWith("()", StringComparison.Ordinal) ? name.Substring(0, name.Length - 2) : name,
             methodInfo.DeclaringType.Namespace,
             GetParameters(methodInfo),
             methodInfo.ReturnType)
         {
             ImportName = schema == null ? Name : schema + "." + Name;
-            IsDbFunction = isDbFunction ?? name.EndsWith("()");
+            IsDbFunction = isDbFunction ?? name.EndsWith("()", StringComparison.Ordinal);
             MethodInfo = methodInfo;
         }
         public OeOperationConfiguration(String schema, String name, MethodInfo methodInfo, bool isBound, bool isCollection) : this(

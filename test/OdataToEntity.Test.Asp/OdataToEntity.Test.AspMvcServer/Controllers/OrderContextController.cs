@@ -28,26 +28,26 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
         public async Task<IActionResult> ScalarFunction()
         {
             var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
-            int? result = await parser.ExecuteScalar<int>();
+            int? result = await parser.ExecuteScalar<int>().ConfigureAwait(false);
             return parser.OData(result);
         }
         [HttpPost("ResetDb")]
         public async Task ResetDb()
         {
             var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
-            await parser.ExecuteScalar<int>();
+            await parser.ExecuteScalar<int>().ConfigureAwait(false);
         }
         [HttpPost("ResetManyColumns")]
         public async Task ResetManyColumns()
         {
             var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
-            await parser.ExecuteScalar<int>();
+            await parser.ExecuteScalar<int>().ConfigureAwait(false);
         }
         [HttpGet("dbo.ScalarFunctionWithParameters/{id},{name},{status}")]
         public async Task<IActionResult> ScalarFunctionWithParameters(String id, String name, String status)
         {
             var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
-            int? result = await parser.ExecuteScalar<int>();
+            int? result = await parser.ExecuteScalar<int>().ConfigureAwait(false);
             return parser.OData(result);
         }
         [HttpGet("TableFunction")]

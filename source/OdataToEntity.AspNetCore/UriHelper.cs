@@ -17,7 +17,7 @@ namespace OdataToEntity.AspNetCore
                     int i = request.Path.Value.IndexOf('(');
                     if (i == -1)
                     {
-                        i = request.Path.Value.IndexOf("/$");
+                        i = request.Path.Value.IndexOf("/$", StringComparison.Ordinal);
                         if (i == -1)
                             i = request.Path.Value.Length;
                         else if (request.Path.Value.EndsWith("/$batch", StringComparison.OrdinalIgnoreCase))

@@ -70,15 +70,23 @@ namespace OdataToEntity.Writers
                 }
                 else
                 {
-                    parentKeys = navigationProperty.PrincipalProperties();
-                    childKeys = navigationProperty.DependentProperties();
+                    if (navigationProperty.Type.IsCollection())
+                    {
+                        parentKeys = navigationProperty.PrincipalProperties();
+                        childKeys = navigationProperty.DependentProperties();
+                    }
+                    else
+                    {
+                        parentKeys = navigationProperty.DependentProperties();
+                        childKeys = navigationProperty.PrincipalProperties();
+                    }
                 }
 
+                refNode = OeEdmClrHelper.CreateRangeVariableReferenceNode((IEdmEntitySetBase)segment.NavigationSource);
                 List<KeyValuePair<IEdmStructuralProperty, Object>> keys = GetKeys(parentKeys, childKeys);
-                if (keys == null)
+                if (IsNullKeys(keys))
                     return null;
 
-                refNode = OeEdmClrHelper.CreateRangeVariableReferenceNode((IEdmEntitySetBase)segment.NavigationSource);
                 filterExpression = OeExpressionHelper.CreateFilterExpression(refNode, keys);
             }
 
@@ -89,7 +97,6 @@ namespace OdataToEntity.Writers
 
             List<KeyValuePair<IEdmStructuralProperty, Object>> GetKeys(IEnumerable<IEdmStructuralProperty> parentKeys, IEnumerable<IEdmStructuralProperty> childKeys)
             {
-                bool isNotNullValue = false;
                 var keys = new List<KeyValuePair<IEdmStructuralProperty, Object>>();
                 IEnumerator<IEdmStructuralProperty> childKeyEnumerator = childKeys.GetEnumerator();
                 foreach (IEdmStructuralProperty parentKey in parentKeys)
@@ -97,9 +104,15 @@ namespace OdataToEntity.Writers
                     childKeyEnumerator.MoveNext();
                     Object keyValue = entryFactory.GetAccessorByName(parentKey.Name).GetValue(value);
                     keys.Add(new KeyValuePair<IEdmStructuralProperty, Object>(childKeyEnumerator.Current, keyValue));
-                    isNotNullValue |= keyValue != null;
                 }
-                return isNotNullValue ? keys : null;
+                return keys;
+            }
+            bool IsNullKeys(List<KeyValuePair<IEdmStructuralProperty, Object>> keys)
+            {
+                foreach (KeyValuePair<IEdmStructuralProperty, Object> key in keys)
+                    if (key.Value != null)
+                        return false;
+                return true;
             }
         }
         private static KeyValuePair<String, Object>[] GetNavigationSkipTokenKeys(OeEntryFactory entryFactory, OrderByClause orderByClause, Object value)

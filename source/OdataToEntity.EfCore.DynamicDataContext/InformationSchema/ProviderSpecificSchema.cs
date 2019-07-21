@@ -8,7 +8,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 {
     public abstract class ProviderSpecificSchema : IDisposable
     {
-        protected ProviderSpecificSchema(DbContextOptions<Types.DynamicDbContext> dynamicDbContextOptions, DbContextPool<SchemaContext> schemaContextPool)
+        protected ProviderSpecificSchema(DbContextOptions<DynamicDbContext> dynamicDbContextOptions, DbContextPool<SchemaContext> schemaContextPool)
         {
             DynamicDbContextOptions = dynamicDbContextOptions;
             SchemaContextPool = schemaContextPool;
@@ -31,7 +31,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         public abstract String GetParameterName(String parameterName);
 
         public abstract bool IsCaseSensitive { get; }
-        public DbContextOptions<Types.DynamicDbContext> DynamicDbContextOptions { get; }
+        public DbContextOptions<DynamicDbContext> DynamicDbContextOptions { get; }
         public bool IsDatabaseNullHighestValue { get; protected set; }
         public abstract OeEfCoreOperationAdapter OperationAdapter { get; }
         public DbContextPool<SchemaContext> SchemaContextPool { get; }

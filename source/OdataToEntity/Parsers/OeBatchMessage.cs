@@ -40,9 +40,7 @@ namespace OdataToEntity.Parsers
                         return new OeBatchMessage(contentType, operations);
                     }
                     else if (batchReader.State == ODataBatchReaderState.Operation)
-                    {
                         return new OeBatchMessage(contentType, OeOperationMessage.Create(edmModel, baseUri, batchReader, serviceProvider));
-                    }
                 }
             }
 
@@ -51,6 +49,6 @@ namespace OdataToEntity.Parsers
 
         public IReadOnlyList<OeOperationMessage> Changeset { get; }
         public String ContentType { get; }
-        public readonly OeOperationMessage Operation;
+        public OeOperationMessage Operation { get; }
     }
 }

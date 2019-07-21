@@ -471,7 +471,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                         }
 
                         _routines.Add(new OeOperationConfiguration(routine.RoutineSchema, routine.RoutineName,
-                            typeof(Types.DynamicDbContext).Namespace, parameterConfigurations, returnType, routine.DataType != null));
+                            typeof(DynamicDbContext).Namespace, parameterConfigurations, returnType, routine.DataType != null));
                     }
                 }
                 finally

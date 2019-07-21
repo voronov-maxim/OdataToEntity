@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal;
 using OdataToEntity.EfCore.DynamicDataContext.ModelBuilder;
 using System.Collections;
 
-namespace OdataToEntity.EfCore.DynamicDataContext.Types
+namespace OdataToEntity.EfCore.DynamicDataContext
 {
     public abstract class DynamicDbContext : DbContext
     {

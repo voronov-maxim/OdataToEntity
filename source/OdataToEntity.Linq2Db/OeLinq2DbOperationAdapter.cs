@@ -30,7 +30,7 @@ namespace OdataToEntity.Linq2Db
         private IAsyncEnumerable<Object> ExecuteReader(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type retuenType)
         {
             Func<DataConnection, String, DataParameter[], IEnumerable<Object>> queryMethod;
-            if (sql.StartsWith("select "))
+            if (sql.StartsWith("select ", StringComparison.Ordinal))
                 queryMethod = DataConnectionExtensions.Query<Object>;
             else
                 queryMethod = DataConnectionExtensions.QueryProc<Object>;

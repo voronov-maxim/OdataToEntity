@@ -52,7 +52,7 @@ namespace OdataToEntity.Db
         {
             return base.ApplySelect(result, dataContext);
         }
-        public void CloseDataContext<TDataContext>(TDataContext  dataContext)
+        public void CloseDataContext<TDataContext>(TDataContext dataContext)
         {
             OeDataAdapter dataAdapter = base.EdmModel.GetDataAdapter(typeof(TDataContext));
             dataAdapter.CloseDataContext(dataContext);

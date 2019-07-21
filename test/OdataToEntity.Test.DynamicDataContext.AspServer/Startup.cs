@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -7,6 +8,7 @@ using Microsoft.OData.Edm;
 using OdataToEntity.AspNetCore;
 using OdataToEntity.EfCore.DynamicDataContext;
 using OdataToEntity.EfCore.DynamicDataContext.InformationSchema;
+using OdataToEntity.EfCore.DynamicDataContext.Types;
 using System;
 using System.IO;
 
@@ -46,6 +48,9 @@ namespace OdataToEntity.Test.DynamicDataContext.AspServer
             bool useRelationalNulls = Configuration.GetValue<bool>("OdataToEntity:UseRelationalNulls");
             String informationSchemaMappingFileName = Configuration.GetValue<String>("OdataToEntity:InformationSchemaMappingFileName");
 
+            if (!String.IsNullOrEmpty(basePath) && basePath[0] != '/')
+                basePath = "/" + basePath;
+
             InformationSchemaMapping informationSchemaMapping = null;
             if (informationSchemaMappingFileName != null)
             {
@@ -54,20 +59,8 @@ namespace OdataToEntity.Test.DynamicDataContext.AspServer
             }
 
             var schemaFactory = new DynamicSchemaFactory(provider, connectionString);
-            ProviderSpecificSchema providerSchema = schemaFactory.CreateSchema(useRelationalNulls);
-            IEdmModel dynamicEdmModel;
-            using (var metadataProvider = providerSchema.CreateMetadataProvider(informationSchemaMapping))
-            {
-                DynamicTypeDefinitionManager typeDefinitionManager = DynamicTypeDefinitionManager.Create(metadataProvider);
-                var dataAdapter = new DynamicDataAdapter(typeDefinitionManager);
-                dynamicEdmModel = dataAdapter.BuildEdmModel(metadataProvider);
-            }
-
-            if (!String.IsNullOrEmpty(basePath) && basePath[0] != '/')
-                basePath = "/" + basePath;
-
-            app.UseOdataToEntityMiddleware<OePageMiddleware>(basePath, dynamicEdmModel);
-            app.UseMvcWithDefaultRoute();
+            using (ProviderSpecificSchema providerSchema = schemaFactory.CreateSchema(useRelationalNulls))
+                app.DynamicMiddleware(basePath, providerSchema, informationSchemaMapping);
         }
     }
 }

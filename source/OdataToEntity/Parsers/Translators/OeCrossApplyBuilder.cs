@@ -41,7 +41,7 @@ namespace OdataToEntity.Parsers.Translators
             MethodInfo selectManyMethdoInfo = OeMethodInfoHelper.GetSelectManyMethodInfo(outerType, innerType);
             return Expression.Call(selectManyMethdoInfo, outer, Expression.Lambda(subquery, outerParameter));
         }
-        private MethodCallExpression CreateWhereExpression(ParameterExpression sourceParameter, Expression subquery, IEdmNavigationProperty edmNavigationProperty)
+        private static MethodCallExpression CreateWhereExpression(ParameterExpression sourceParameter, Expression subquery, IEdmNavigationProperty edmNavigationProperty)
         {
             Type subqueryType = OeExpressionHelper.GetCollectionItemType(subquery.Type);
             var subqueryParameter = Expression.Parameter(subqueryType, subqueryType.Name);
@@ -51,7 +51,7 @@ namespace OdataToEntity.Parsers.Translators
             MethodInfo whereMethodInfo = OeMethodInfoHelper.GetWhereMethodInfo(subqueryType);
             return Expression.Call(whereMethodInfo, subquery, predicate);
         }
-        private BinaryExpression GetJoinExpression(ParameterExpression sourceParameter, ParameterExpression subqueryParameter, IEdmNavigationProperty edmNavigationProperty)
+        private static BinaryExpression GetJoinExpression(ParameterExpression sourceParameter, ParameterExpression subqueryParameter, IEdmNavigationProperty edmNavigationProperty)
         {
             IEnumerable<IEdmStructuralProperty> sourceProperties;
             IEnumerable<IEdmStructuralProperty> subqueryProperties;

@@ -226,7 +226,7 @@ namespace OdataToEntity.Test
                     }
 
                     _visited[entity] = openType;
-                    return openType;
+                    return openType.Count == 0 ? null : openType;
                 }
 
                 return entity;

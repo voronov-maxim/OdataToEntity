@@ -181,7 +181,7 @@ namespace OdataToEntity.Query.Builder
             var selectExpandClause = new SelectExpandClause(selectItems, selectItems.Count == 0);
             return new ExpandedNavigationSelectItem(expandPath, entitySet, selectExpandClause);
         }
-        private IEdmProperty GetProperty(SelectItem selectItem)
+        private static IEdmProperty GetProperty(SelectItem selectItem)
         {
             if (selectItem is PathSelectItem pathSelectItem)
             {

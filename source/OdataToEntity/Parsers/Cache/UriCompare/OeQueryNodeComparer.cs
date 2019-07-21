@@ -133,7 +133,7 @@ namespace OdataToEntity.Cache.UriCompare
         {
             return node1.TypeReference.IsEqual(node2.TypeReference) && Compare(node1.Source, node2.Source);
         }
-        private bool Visit(CountVirtualPropertyNode node1, CountVirtualPropertyNode node2)
+        private static bool Visit(CountVirtualPropertyNode node1, CountVirtualPropertyNode node2)
         {
             return node1.TypeReference.IsEqual(node2.TypeReference);
         }
@@ -201,7 +201,7 @@ namespace OdataToEntity.Cache.UriCompare
             {
                 e1 = node1.Parameters.GetEnumerator();
                 e2 = node2.Parameters.GetEnumerator();
-                for (;;)
+                for (; ; )
                 {
                     bool f1 = e1.MoveNext();
                     bool f2 = e2.MoveNext();

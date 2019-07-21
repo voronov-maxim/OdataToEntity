@@ -18,9 +18,16 @@ namespace OdataToEntity.Test
         protected override void AddItems(Object entity, PropertyInfo propertyInfo, IEnumerable values)
         {
             var openType = (SortedDictionary<String, Object>)entity;
-            var list = (IList)openType[propertyInfo.Name];
-            foreach (Object value in values)
-                list.Add(value);
+            Object propertyValue = openType[propertyInfo.Name];
+            if (propertyValue is IList list)
+                foreach (Object value in values)
+                    list.Add(value);
+            else
+            {
+                IEnumerator enumerator = values.GetEnumerator();
+                if (enumerator.MoveNext())
+                    openType[propertyInfo.Name] = enumerator.Current;
+            }
         }
         protected override Object CreateRootEntity(ODataResource resource, IReadOnlyList<NavigationInfo> navigationProperties, Type entityType)
         {
@@ -46,19 +53,20 @@ namespace OdataToEntity.Test
                 {
                     PropertyInfo clrProperty = entityType.GetProperty(navigationInfo.Name);
                     if (value == null && navigationInfo.NextPageLink != null)
-                        value = ResponseReader.CreateCollection(clrProperty.PropertyType);
-
-                    if (value is IEnumerable collection)
                     {
-                        base.NavigationProperties.Add(collection, navigationInfo);
-
-                        if (propertyInfos == null)
-                        {
-                            propertyInfos = new Dictionary<PropertyInfo, NavigationInfo>(navigationProperties.Count);
-                            base.NavigationInfoEntities.Add(openType, propertyInfos);
-                        }
-                        propertyInfos.Add(clrProperty, navigationInfo);
+                        if (navigationInfo.IsCollection)
+                            value = ResponseReader.CreateCollection(clrProperty.PropertyType);
+                        else
+                            value = Activator.CreateInstance(clrProperty.PropertyType);
                     }
+                    base.NavigationProperties.Add(value, navigationInfo);
+
+                    if (propertyInfos == null)
+                    {
+                        propertyInfos = new Dictionary<PropertyInfo, NavigationInfo>(navigationProperties.Count);
+                        base.NavigationInfoEntities.Add(openType, propertyInfos);
+                    }
+                    propertyInfos.Add(clrProperty, navigationInfo);
                 }
 
                 if (value == null)

@@ -3,6 +3,7 @@ using OdataToEntity.Parsers;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.Reflection;
 using System.Text;
 using System.Threading;
@@ -11,7 +12,7 @@ namespace OdataToEntity.Db
 {
     public abstract class OeOperationAdapter
     {
-        protected readonly Type _dataContextType;
+        private readonly Type _dataContextType;
         private IReadOnlyList<OeOperationConfiguration> _operations;
 
         protected OeOperationAdapter(Type dataContextType) : this(dataContextType, false)
@@ -27,20 +28,20 @@ namespace OdataToEntity.Db
         {
             String sql = GetSql(dataContext, parameters);
             String functionName = GetOperationCaseSensitivityName(operationName, GetDefaultSchema(dataContext));
-            return ExecuteNonQuery(dataContext, "select " + functionName + sql.ToString(), parameters);
+            return ExecuteNonQuery(dataContext, "select " + functionName + sql, parameters);
         }
         public virtual IAsyncEnumerable<Object> ExecuteFunctionPrimitive(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
         {
             String sql = GetSql(dataContext, parameters);
             String functionName = GetOperationCaseSensitivityName(operationName, GetDefaultSchema(dataContext));
-            String selectSql = (OeExpressionHelper.GetCollectionItemTypeOrNull(returnType) == null ? "select " : "select * from ") + functionName + sql.ToString();
+            String selectSql = (OeExpressionHelper.GetCollectionItemTypeOrNull(returnType) == null ? "select " : "select * from ") + functionName + sql;
             return ExecutePrimitive(dataContext, selectSql, parameters, returnType);
         }
         public virtual IAsyncEnumerable<Object> ExecuteFunctionReader(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters, OeEntitySetAdapter entitySetAdapter)
         {
             String sql = GetSql(dataContext, parameters);
             String functionName = GetOperationCaseSensitivityName(operationName, GetDefaultSchema(dataContext));
-            return ExecuteReader(dataContext, "select * from " + functionName + sql.ToString(), parameters, entitySetAdapter);
+            return ExecuteReader(dataContext, "select * from " + functionName + sql, parameters, entitySetAdapter);
         }
         protected abstract IAsyncEnumerable<Object> ExecuteNonQuery(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters);
         public virtual IAsyncEnumerable<Object> ExecuteProcedureNonQuery(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters)

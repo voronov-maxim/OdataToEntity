@@ -6,44 +6,22 @@ using OdataToEntity.EfCore.DynamicDataContext.ModelBuilder;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 {
     public sealed class MySqlSchema : ProviderSpecificSchema
     {
-        private sealed class MySqlDynamicOperationAdapter : OeEfCoreOperationAdapter
-        {
-            public MySqlDynamicOperationAdapter() : base(typeof(Types.DynamicDbContext))
-            {
-            }
-
-            protected override String GetProcedureName(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters)
-            {
-                var sql = new StringBuilder("call ");
-                sql.Append(operationName);
-                if (parameters.Count > 0)
-                {
-                    sql.Append('(');
-                    String[] parameterNames = GetParameterNames(dataContext, parameters);
-                    sql.Append(String.Join(",", parameterNames));
-                    sql.Append(')');
-                }
-                return sql.ToString();
-            }
-        }
-
-        public MySqlSchema(DbContextOptions<Types.DynamicDbContext> dynamicDbContextOptions)
+        public MySqlSchema(DbContextOptions<DynamicDbContext> dynamicDbContextOptions)
             : base(dynamicDbContextOptions, CreatePool(dynamicDbContextOptions))
         {
-            OperationAdapter = new MySqlDynamicOperationAdapter();
+            OperationAdapter = new OeMySqlEfCoreOperationAdapter(typeof(DynamicDbContext));
         }
 
         public override DynamicMetadataProvider CreateMetadataProvider(InformationSchemaMapping informationSchemaMapping)
         {
             return new DynamicMetadataProvider(this, informationSchemaMapping);
         }
-        private static DbContextPool<SchemaContext> CreatePool(DbContextOptions<Types.DynamicDbContext> dynamicDbContextOptions)
+        private static DbContextPool<SchemaContext> CreatePool(DbContextOptions<DynamicDbContext> dynamicDbContextOptions)
         {
             var optionsBuilder = new DbContextOptionsBuilder<SchemaContext>();
             optionsBuilder.ReplaceService<IModelCustomizer, MySqlModelCustomizer>();
