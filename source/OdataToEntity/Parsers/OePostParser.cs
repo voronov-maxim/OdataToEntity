@@ -44,11 +44,13 @@ namespace OdataToEntity.Parsers
             try
             {
                 dataContext = _dataAdapter.CreateDataContext();
-                using (IAsyncEnumerator<Object> asyncEnumerator = GetAsyncEnumerable(odataUri, requestStream, headers, dataContext, out bool isScalar).GetEnumerator())
+                IAsyncEnumerator<Object> asyncEnumerator = null;
+                try
                 {
+                    asyncEnumerator = GetAsyncEnumerable(odataUri, requestStream, headers, dataContext, cancellationToken, out bool isScalar).GetAsyncEnumerator(cancellationToken);
                     if (isScalar)
                     {
-                        if (await asyncEnumerator.MoveNext(cancellationToken).ConfigureAwait(false) && asyncEnumerator.Current != null)
+                        if (await asyncEnumerator.MoveNextAsync().ConfigureAwait(false) && asyncEnumerator.Current != null)
                         {
                             headers.ResponseContentType = OeRequestHeaders.TextDefault.ContentType;
                             byte[] buffer = System.Text.Encoding.UTF8.GetBytes(asyncEnumerator.Current.ToString());
@@ -61,10 +63,15 @@ namespace OdataToEntity.Parsers
                     {
                         OeQueryContext queryContext = CreateQueryContext(odataUri, headers.MetadataLevel);
                         if (queryContext == null)
-                            await WriteCollectionAsync(_edmModel, odataUri, asyncEnumerator, responseStream, cancellationToken).ConfigureAwait(false);
+                            await WriteCollectionAsync(_edmModel, odataUri, asyncEnumerator, responseStream).ConfigureAwait(false);
                         else
                             await Writers.OeGetWriter.SerializeAsync(queryContext, asyncEnumerator, headers.ContentType, responseStream, _serviceProvider, cancellationToken).ConfigureAwait(false);
                     }
+                }
+                finally
+                {
+                    if (asyncEnumerator != null)
+                        await asyncEnumerator.DisposeAsync().ConfigureAwait(false);
                 }
             }
             finally
@@ -73,7 +80,7 @@ namespace OdataToEntity.Parsers
                     _dataAdapter.CloseDataContext(dataContext);
             }
         }
-        public IAsyncEnumerable<Object> GetAsyncEnumerable(ODataUri odataUri, Stream requestStream, OeRequestHeaders headers, Object dataContext, out bool isScalar)
+        public IAsyncEnumerable<Object> GetAsyncEnumerable(ODataUri odataUri, Stream requestStream, OeRequestHeaders headers, Object dataContext, CancellationToken cancellationToken, out bool isScalar)
         {
             isScalar = true;
             var importSegment = (OperationImportSegment)odataUri.Path.LastSegment;
@@ -94,9 +101,9 @@ namespace OdataToEntity.Parsers
                 }
 
                 if (_edmModel.IsDbFunction(operationImport.Operation))
-                    return _dataAdapter.OperationAdapter.ExecuteFunctionPrimitive(dataContext, operationImport.Name, parameters, returnType);
+                    return _dataAdapter.OperationAdapter.ExecuteFunctionPrimitive(dataContext, operationImport.Name, parameters, returnType, cancellationToken);
                 else
-                    return _dataAdapter.OperationAdapter.ExecuteProcedurePrimitive(dataContext, operationImport.Name, parameters, returnType);
+                    return _dataAdapter.OperationAdapter.ExecuteProcedurePrimitive(dataContext, operationImport.Name, parameters, returnType, cancellationToken);
             }
 
             isScalar = false;
@@ -106,8 +113,7 @@ namespace OdataToEntity.Parsers
             else
                 return _dataAdapter.OperationAdapter.ExecuteProcedureReader(dataContext, operationImport.Name, parameters, entitySetAdapter);
         }
-        public static async Task WriteCollectionAsync(IEdmModel edmModel, ODataUri odataUri,
-            IAsyncEnumerator<Object> asyncEnumerator, Stream responseStream, CancellationToken cancellationToken)
+        public static async Task WriteCollectionAsync(IEdmModel edmModel, ODataUri odataUri, IAsyncEnumerator<Object> asyncEnumerator, Stream responseStream)
         {
             var importSegment = (OperationImportSegment)odataUri.Path.LastSegment;
             IEdmOperationImport operationImport = importSegment.OperationImports.Single();
@@ -121,7 +127,7 @@ namespace OdataToEntity.Parsers
                 ODataCollectionWriter writer = messageWriter.CreateODataCollectionWriter(typeRef);
                 writer.WriteStart(new ODataCollectionStart());
 
-                while (await asyncEnumerator.MoveNext(cancellationToken).ConfigureAwait(false))
+                while (await asyncEnumerator.MoveNextAsync().ConfigureAwait(false))
                 {
                     Object value = asyncEnumerator.Current;
                     if (value != null && value.GetType().IsEnum)

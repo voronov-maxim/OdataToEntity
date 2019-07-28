@@ -18,7 +18,7 @@ namespace OdataToEntity.Test
         {
             List<int> expectedResult;
             using (var dbContext = Fixture.CreateContext())
-                expectedResult = dbContext.OrderItems.Where(i =>
+                expectedResult = dbContext.OrderItems.AsQueryable().Where(i =>
                     (i.Order.Name == "Order 1" || i.Order.Name == "Order 2") && i.Order.Customer.Sex == Model.Sex.Female)
                     .Select(i => i.Id).ToList();
 
@@ -41,7 +41,7 @@ namespace OdataToEntity.Test
         {
             List<int> expectedResult;
             using (var dbContext = Fixture.CreateContext())
-                expectedResult = dbContext.OrderItems.Where(i =>
+                expectedResult = dbContext.OrderItems.AsQueryable().Where(i =>
                     (i.Order.Name == "Order 1" || i.Order.Name == "Order 2") && i.Order.Customer.Country == "RU" && i.Order.Customer.Id == 1)
                     .Select(i => i.Id).ToList();
 
@@ -82,7 +82,7 @@ namespace OdataToEntity.Test
 
             List<long> expectedCounts;
             using (var dbContext = Fixture.CreateContext())
-                expectedCounts = dbContext.Orders.OrderBy(o => o.Id).Select(i => (long)i.Items.Count()).ToList();
+                expectedCounts = dbContext.Orders.AsQueryable().OrderBy(o => o.Id).Select(i => (long)i.Items.Count()).ToList();
 
             Assert.Equal(expectedCounts, actualCounts);
         }
@@ -183,7 +183,7 @@ namespace OdataToEntity.Test
 
             IList fromDb;
             using (var context = Fixture.CreateContext())
-                fromDb = context.OrderItems.OrderBy(i => i.Id).ToList();
+                fromDb = context.OrderItems.AsQueryable().OrderBy(i => i.Id).ToList();
 
             TestHelper.Compare(fromDb, fromOe, null);
         }
@@ -222,7 +222,7 @@ namespace OdataToEntity.Test
                     using (var dbContext = fixture.CreateContext())
                     {
                         String orderName = order.Name;
-                        expectedCount = dbContext.OrderItems.Where(i => i.Order.Name == orderName).ToList().Where(orderItemPredicate).Count();
+                        expectedCount = dbContext.OrderItems.AsQueryable().Where(i => i.Order.Name == orderName).ToList().Where(orderItemPredicate).Count();
                     }
 
                     var navigationProperty = (IEnumerable)order.Items;

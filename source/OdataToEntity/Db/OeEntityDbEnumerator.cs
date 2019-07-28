@@ -26,7 +26,7 @@ namespace OdataToEntity.Db
         public void ClearBuffer()
         {
         }
-        public IOeDbEnumerator CreateChild(OeEntryFactory entryFactory)
+        public IOeDbEnumerator CreateChild(OeEntryFactory entryFactory, CancellationToken cancellationToken)
         {
             IAsyncEnumerable<Object> asyncEnumerable;
             Object navigationValue = entryFactory.GetValue(Current);
@@ -35,17 +35,17 @@ namespace OdataToEntity.Db
             else
                 asyncEnumerable = Infrastructure.AsyncEnumeratorHelper.ToAsyncEnumerable(Task.FromResult(navigationValue));
 
-            IAsyncEnumerator<Object> asyncEnumerator = asyncEnumerable.GetEnumerator();
-            asyncEnumerator.MoveNext(CancellationToken.None).GetAwaiter().GetResult();
+            IAsyncEnumerator<Object> asyncEnumerator = asyncEnumerable.GetAsyncEnumerator(cancellationToken);
+            asyncEnumerator.MoveNextAsync().GetAwaiter().GetResult();
             return new OeEntityDbEnumerator(asyncEnumerator, entryFactory, this);
         }
-        public void Dispose()
+        public ValueTask DisposeAsync()
         {
-            _asyncEnumerator.Dispose();
+            return _asyncEnumerator.DisposeAsync();
         }
-        public Task<bool> MoveNext(CancellationToken cancellationToken)
+        public ValueTask<bool> MoveNextAsync()
         {
-            return _asyncEnumerator.MoveNext(cancellationToken);
+            return _asyncEnumerator.MoveNextAsync();
         }
 
         public Object Current => _asyncEnumerator.Current;

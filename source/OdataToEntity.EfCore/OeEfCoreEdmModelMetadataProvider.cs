@@ -161,7 +161,7 @@ namespace OdataToEntity.EfCore
         }
         private PropertyInfo GetPropertyInfo(IPropertyBase efProperty)
         {
-            if (efProperty.IsShadowProperty || (efProperty.PropertyInfo == null && efProperty.FieldInfo != null))
+            if (efProperty.IsShadowProperty() || (efProperty.PropertyInfo == null && efProperty.FieldInfo != null))
                 return CreateShadowProperty(efProperty);
             else
                 return efProperty.DeclaringType.ClrType.GetPropertyIgnoreCase(efProperty.Name);
@@ -170,13 +170,11 @@ namespace OdataToEntity.EfCore
         {
             foreach (IEntityType efEntityType in GetEntityTypes(propertyInfo))
             {
-                if (efEntityType.IsQueryType)
-                    continue;
-
                 IKey key = efEntityType.FindPrimaryKey();
-                for (int i = 0; i < key.Properties.Count; i++)
-                    if (key.Properties[i].Name == propertyInfo.Name)
-                        return true;
+                if (key != null)
+                    for (int i = 0; i < key.Properties.Count; i++)
+                        if (key.Properties[i].Name == propertyInfo.Name)
+                            return true;
             }
 
             return false;

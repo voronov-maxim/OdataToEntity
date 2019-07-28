@@ -12,22 +12,22 @@ namespace OdataToEntity.Infrastructure
         {
             private readonly IAsyncEnumerator<Object> _asyncEnumerator;
 
-            public AsyncEnumerableAdapter(IAsyncEnumerable<Object> asyncEnumerable)
+            public AsyncEnumerableAdapter(IAsyncEnumerable<Object> asyncEnumerable, CancellationToken cancellationToken)
             {
-                _asyncEnumerator = asyncEnumerable.GetEnumerator();
+                _asyncEnumerator = asyncEnumerable.GetAsyncEnumerator(cancellationToken);
             }
 
-            public void Dispose()
+            public ValueTask DisposeAsync()
             {
-                _asyncEnumerator.Dispose();
+                return _asyncEnumerator.DisposeAsync();
             }
-            public IAsyncEnumerator<T> GetEnumerator()
+            public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken)
             {
                 return this;
             }
-            public Task<bool> MoveNext(CancellationToken cancellationToken)
+            public ValueTask<bool> MoveNextAsync()
             {
-                return _asyncEnumerator.MoveNext(cancellationToken);
+                return _asyncEnumerator.MoveNextAsync();
             }
 
             public T Current => (T)_asyncEnumerator.Current;
@@ -35,19 +35,20 @@ namespace OdataToEntity.Infrastructure
 
         private sealed class EmptyAsyncEnumerator : IAsyncEnumerable<Object>, IAsyncEnumerator<Object>
         {
-            public void Dispose()
+            public ValueTask DisposeAsync()
             {
+                return new ValueTask();
             }
-            public IAsyncEnumerator<Object> GetEnumerator()
+            public IAsyncEnumerator<Object> GetAsyncEnumerator(CancellationToken cancellationToken)
             {
                 return this;
             }
-            public Task<bool> MoveNext(CancellationToken cancellationToken)
+            public ValueTask<bool> MoveNextAsync()
             {
-                return Task.FromResult(false);
+                return new ValueTask<bool>(false);
             }
 
-            public object Current => null;
+            public Object Current => null;
         }
 
         private sealed class EnumeratorAdapter : IAsyncEnumerable<Object>, IAsyncEnumerator<Object>
@@ -59,19 +60,19 @@ namespace OdataToEntity.Infrastructure
                 _enumerator = enumerable.GetEnumerator();
             }
 
-            public void Dispose()
+            public ValueTask DisposeAsync()
             {
                 if (_enumerator is IDisposable dispose)
                     dispose.Dispose();
+                return new ValueTask();
             }
-            public IAsyncEnumerator<Object> GetEnumerator()
+            public IAsyncEnumerator<Object> GetAsyncEnumerator(CancellationToken cancellationToken)
             {
                 return this;
             }
-            public Task<bool> MoveNext(CancellationToken cancellationToken)
+            public ValueTask<bool> MoveNextAsync()
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                return Task.FromResult<bool>(_enumerator.MoveNext());
+                return new ValueTask<bool>(_enumerator.MoveNext());
             }
 
             public Object Current => _enumerator.Current;
@@ -88,16 +89,16 @@ namespace OdataToEntity.Infrastructure
                 _scalarTask = scalarTask;
             }
 
-            public void Dispose()
+            public ValueTask DisposeAsync()
             {
+                return new ValueTask();
             }
-            public IAsyncEnumerator<T> GetEnumerator()
+            public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken)
             {
                 return this;
             }
-            public async Task<bool> MoveNext(CancellationToken cancellationToken)
+            public async ValueTask<bool> MoveNextAsync()
             {
-                cancellationToken.ThrowIfCancellationRequested();
                 if (_state != 0)
                     return false;
 
@@ -119,9 +120,9 @@ namespace OdataToEntity.Infrastructure
         {
             return new ScalarEnumeratorAdapter<T>(scalarResult);
         }
-        public static IAsyncEnumerable<T> ToAsyncEnumerable<T>(IAsyncEnumerable<Object> asyncEnumerable)
+        public static IAsyncEnumerable<T> ToAsyncEnumerable<T>(IAsyncEnumerable<Object> asyncEnumerable, CancellationToken cancellationToken)
         {
-            return new AsyncEnumerableAdapter<T>(asyncEnumerable);
+            return new AsyncEnumerableAdapter<T>(asyncEnumerable, cancellationToken);
         }
     }
 }

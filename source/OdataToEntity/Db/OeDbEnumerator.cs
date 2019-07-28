@@ -10,7 +10,7 @@ namespace OdataToEntity.Db
     public interface IOeDbEnumerator : IAsyncEnumerator<Object>
     {
         void ClearBuffer();
-        IOeDbEnumerator CreateChild(OeEntryFactory entryFactory);
+        IOeDbEnumerator CreateChild(OeEntryFactory entryFactory, CancellationToken cancellationToken);
 
         OeEntryFactory EntryFactory { get; }
         IOeDbEnumerator ParentEnumerator { get; }
@@ -84,13 +84,13 @@ namespace OdataToEntity.Db
             if (!Context.Eof)
                 _bufferPosition = -1;
         }
-        public IOeDbEnumerator CreateChild(OeEntryFactory entryFactory)
+        public IOeDbEnumerator CreateChild(OeEntryFactory entryFactory, CancellationToken cancellationToken)
         {
             return Context.GetFromPool(this, entryFactory);
         }
-        public void Dispose()
+        public ValueTask DisposeAsync()
         {
-            Context.AsyncEnumerator.Dispose();
+            return Context.AsyncEnumerator.DisposeAsync();
         }
         private void Initialize()
         {
@@ -134,7 +134,7 @@ namespace OdataToEntity.Db
             Object currentParentValue = ParentEnumerator.EntryFactory.GetValue(Context.Buffer[_bufferPosition]);
             return IsEquals(ParentEnumerator.EntryFactory, ParentEnumerator.Current, currentParentValue);
         }
-        public async Task<bool> MoveNext(CancellationToken cancellationToken)
+        public async ValueTask<bool> MoveNextAsync()
         {
             if (ParentEnumerator == null && Context.Eof)
                 return false;
@@ -145,7 +145,7 @@ namespace OdataToEntity.Db
                 _bufferPosition++;
                 if (_bufferPosition >= Context.Buffer.Count)
                 {
-                    if (!await Context.AsyncEnumerator.MoveNext(cancellationToken).ConfigureAwait(false))
+                    if (!await Context.AsyncEnumerator.MoveNextAsync().ConfigureAwait(false))
                     {
                         Context.Eof = true;
                         return false;

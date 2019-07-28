@@ -30,12 +30,13 @@ namespace OdataToEntity.Db
             String functionName = GetOperationCaseSensitivityName(operationName, GetDefaultSchema(dataContext));
             return ExecuteNonQuery(dataContext, "select " + functionName + sql, parameters);
         }
-        public virtual IAsyncEnumerable<Object> ExecuteFunctionPrimitive(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
+        public virtual IAsyncEnumerable<Object> ExecuteFunctionPrimitive(Object dataContext, String operationName,
+            IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType, CancellationToken cancellationToken)
         {
             String sql = GetSql(dataContext, parameters);
             String functionName = GetOperationCaseSensitivityName(operationName, GetDefaultSchema(dataContext));
             String selectSql = (OeExpressionHelper.GetCollectionItemTypeOrNull(returnType) == null ? "select " : "select * from ") + functionName + sql;
-            return ExecutePrimitive(dataContext, selectSql, parameters, returnType);
+            return ExecutePrimitive(dataContext, selectSql, parameters, returnType, cancellationToken);
         }
         public virtual IAsyncEnumerable<Object> ExecuteFunctionReader(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters, OeEntitySetAdapter entitySetAdapter)
         {
@@ -49,18 +50,20 @@ namespace OdataToEntity.Db
             String procedureName = GetProcedureName(dataContext, operationName, parameters);
             return ExecuteNonQuery(dataContext, procedureName, parameters);
         }
-        public virtual IAsyncEnumerable<Object> ExecuteProcedurePrimitive(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
+        public virtual IAsyncEnumerable<Object> ExecuteProcedurePrimitive(Object dataContext, String operationName,
+            IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType, CancellationToken cancellationToken)
         {
             String procedureName = GetProcedureName(dataContext, operationName, parameters);
-            return ExecutePrimitive(dataContext, procedureName, parameters, returnType);
+            return ExecutePrimitive(dataContext, procedureName, parameters, returnType, cancellationToken);
         }
-        public virtual IAsyncEnumerable<Object> ExecuteProcedureReader(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters, OeEntitySetAdapter entitySetAdapter)
+        public virtual IAsyncEnumerable<Object> ExecuteProcedureReader(Object dataContext, String operationName,
+            IReadOnlyList<KeyValuePair<String, Object>> parameters, OeEntitySetAdapter entitySetAdapter)
         {
             String procedureName = GetProcedureName(dataContext, operationName, parameters);
             return ExecuteReader(dataContext, procedureName, parameters, entitySetAdapter);
         }
         protected abstract IAsyncEnumerable<Object> ExecuteReader(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, OeEntitySetAdapter entitySetAdapter);
-        protected abstract IAsyncEnumerable<Object> ExecutePrimitive(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType);
+        protected abstract IAsyncEnumerable<Object> ExecutePrimitive(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType, CancellationToken cancellationToken);
         private String GetCaseSensitivityName(String name)
         {
             return !IsCaseSensitive || name[0] == '"' ? name : "\"" + name + "\"";

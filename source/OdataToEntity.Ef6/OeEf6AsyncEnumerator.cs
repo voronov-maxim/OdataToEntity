@@ -9,23 +9,26 @@ namespace OdataToEntity.Ef6
     public sealed class OeEf6AsyncEnumerator : IAsyncEnumerable<Object>, IAsyncEnumerator<Object>
     {
         private readonly IDbAsyncEnumerator _asyncEnumerator;
+        private CancellationToken _cancellationToken;
 
         public OeEf6AsyncEnumerator(IDbAsyncEnumerable asyncEnumerable)
         {
             _asyncEnumerator = asyncEnumerable.GetAsyncEnumerator();
         }
 
-        public void Dispose()
+        public ValueTask DisposeAsync()
         {
             _asyncEnumerator.Dispose();
+            return new ValueTask();
         }
-        public IAsyncEnumerator<Object> GetEnumerator()
+        public IAsyncEnumerator<Object> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
+            _cancellationToken = cancellationToken;
             return this;
         }
-        public Task<bool> MoveNext(CancellationToken cancellationToken)
+        public ValueTask<bool> MoveNextAsync()
         {
-            return _asyncEnumerator.MoveNextAsync(cancellationToken);
+            return new ValueTask<bool>(_asyncEnumerator.MoveNextAsync(_cancellationToken));
         }
 
         public Object Current => _asyncEnumerator.Current;

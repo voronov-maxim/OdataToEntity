@@ -149,6 +149,7 @@ namespace OdataToEntity.Test.Model
         public ICollection<Customer> Customers { get; set; }
         public ICollection<CustomerShippingAddress> CustomerShippingAddresses { get; set; }
         [Key, Column(Order = 1)]
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public int Id { get; set; }
         [Key, Column(Order = 0)]
         public int OrderId { get; set; }

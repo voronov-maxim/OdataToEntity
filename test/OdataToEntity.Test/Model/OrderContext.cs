@@ -31,7 +31,7 @@ namespace OdataToEntity.Test.Model
             IQueryable<Customer> customers = boundParameter.ApplyFilter(orderContext.Customers, orderContext);
             IQueryable<Order> orders = customers.SelectMany(c => c.Orders).Where(o => orderNames.Contains(o.Name));
             IQueryable result = boundParameter.ApplySelect(orders, orderContext);
-            List<Order> orderList = boundParameter.Materialize(result).ToList().GetAwaiter().GetResult();
+            List<Order> orderList = boundParameter.Materialize(result).ToListAsync().GetAwaiter().GetResult();
 
             boundParameter.CloseDataContext(orderContext);
             return orderList;
@@ -44,13 +44,13 @@ namespace OdataToEntity.Test.Model
                 return Orders;
 
             if (id != null)
-                return Orders.Where(o => o.Id == id);
+                return Orders.AsQueryable().Where(o => o.Id == id);
 
             if (name != null)
-                return Orders.Where(o => o.Name.Contains(name));
+                return Orders.AsQueryable().Where(o => o.Name.Contains(name));
 
             if (status != null)
-                return Orders.Where(o => o.Status == status);
+                return Orders.AsQueryable().Where(o => o.Status == status);
 
             return Enumerable.Empty<Order>();
         }
@@ -61,13 +61,13 @@ namespace OdataToEntity.Test.Model
         [DbFunction("ScalarFunction", Schema = "dbo")]
         public int ScalarFunction() => Orders.Count();
         [DbFunction(Schema = "dbo")]
-        public int ScalarFunctionWithParameters(int? id, String name, OrderStatus? status) => Orders.Where(o => o.Id == id || o.Name.Contains(name) || o.Status == status).Count();
+        public int ScalarFunctionWithParameters(int? id, String name, OrderStatus? status) => Orders.AsQueryable().Where(o => o.Id == id || o.Name.Contains(name) || o.Status == status).Count();
         [Description("TableFunction()")]
         public IEnumerable<Order> TableFunction() => Orders;
         [Description("TableFunctionWithCollectionParameter()")]
         public IEnumerable<String> TableFunctionWithCollectionParameter(IEnumerable<String> string_list) => string_list;
         [Description("TableFunctionWithParameters()")]
-        public IEnumerable<Order> TableFunctionWithParameters(int? id, String name, OrderStatus? status) => Orders.Where(o => (o.Id == id) || EF.Functions.Like(o.Name, "%" + name + "%") || (o.Status == status));
+        public IEnumerable<Order> TableFunctionWithParameters(int? id, String name, OrderStatus? status) => Orders.AsQueryable().Where(o => (o.Id == id) || EF.Functions.Like(o.Name, "%" + name + "%") || (o.Status == status));
 
         public DbSet<Category> Categories { get; set; }
         public DbSet<Customer> Customers { get; set; }

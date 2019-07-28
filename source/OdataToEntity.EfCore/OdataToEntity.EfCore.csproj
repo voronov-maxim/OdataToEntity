@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Description>Classes bridge from ODataToEntity to Entity Framework Core. Abstraction layer access to DataContext Entity Framework Core. Targets .NET Core with support for .NET 4.6.1</Description>
     <Authors>Maxim Voronov</Authors>
-    <TargetFrameworks>$(NetStandardVersion);$(FrameworkVersion)</TargetFrameworks>
+    <TargetFrameworks>$(NetStandardVersion)</TargetFrameworks>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity.EfCore</AssemblyName>
@@ -25,6 +25,10 @@
     <PackageTags>odata;data;services;odatatoentity;ef;entity framework core;entity;core</PackageTags>
     <PackageProjectUrl>https://github.com/voronov-maxim/OdataToEntity</PackageProjectUrl>
     <PackageVersion>$(OdataToEntityVersion)</PackageVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.1|AnyCPU'">
+    <NoWarn>EF1001</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

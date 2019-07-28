@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace OdataToEntity.EfCore
@@ -54,23 +55,24 @@ namespace OdataToEntity.EfCore
             var query = (IQueryable<Object>)fromSql.FromSql((DbContext)dataContext, sql, GetParameterValues(parameters));
             return Infrastructure.AsyncEnumeratorHelper.ToAsyncEnumerable(query);
         }
-        protected override IAsyncEnumerable<Object> ExecutePrimitive(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
+        protected override IAsyncEnumerable<Object> ExecutePrimitive(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType, CancellationToken cancellationToken)
         {
             var dbContext = (DbContext)dataContext;
             var connection = dbContext.GetService<IRelationalConnection>();
             IRelationalCommand command = CreateCommand(dataContext, sql, parameters, out Dictionary<String, Object> parameterValues);
 
+            var commandParameters = new RelationalCommandParameterObject(connection, parameterValues, dbContext, null);
             if (Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(returnType) == null)
             {
-                Task<Object> scalarResult = command.ExecuteScalarAsync(connection, parameterValues);
+                Task<Object> scalarResult = command.ExecuteScalarAsync(commandParameters);
                 return Infrastructure.AsyncEnumeratorHelper.ToAsyncEnumerable(scalarResult);
             }
 
-            return new OeEfCoreDataReaderAsyncEnumerator(command.ExecuteReader(connection, parameterValues));
+            return new OeEfCoreDataReaderAsyncEnumerator(command.ExecuteReader(commandParameters));
         }
         protected override String GetDefaultSchema(Object dataContext)
         {
-            return ((Model)((DbContext)dataContext).Model).Relational().DefaultSchema;
+            return ((Model)((DbContext)dataContext).Model).GetDefaultSchema();
         }
         protected override IReadOnlyList<OeOperationConfiguration> GetOperationConfigurations(MethodInfo methodInfo)
         {
@@ -78,7 +80,7 @@ namespace OdataToEntity.EfCore
             if (dbFunction == null)
                 return base.GetOperationConfigurations(methodInfo);
 
-            String functionName = dbFunction.FunctionName ?? methodInfo.Name;
+            String functionName = dbFunction.Name ?? methodInfo.Name;
             return new[] { new OeOperationConfiguration(dbFunction.Schema, functionName, methodInfo, true) };
         }
         protected override String[] GetParameterNames(Object dataContext, IReadOnlyList<KeyValuePair<String, Object>> parameters)

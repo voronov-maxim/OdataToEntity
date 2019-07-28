@@ -42,7 +42,8 @@ namespace OdataToEntity.Linq2Db
             IEnumerable<Object> result = queryFunc((DataConnection)dataContext, sql, GetDataParameters(parameters));
             return Infrastructure.AsyncEnumeratorHelper.ToAsyncEnumerable(result);
         }
-        protected override IAsyncEnumerable<Object> ExecutePrimitive(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
+        protected override IAsyncEnumerable<Object> ExecutePrimitive(Object dataContext, String sql,
+            IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType, CancellationToken cancellationToken)
         {
             Type itemType = Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(returnType);
             if (itemType == null)

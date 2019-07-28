@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading;
 
 namespace OdataToEntity.Parsers
 {
@@ -67,12 +68,12 @@ namespace OdataToEntity.Parsers
             Db.OeDataAdapter dataAdapter = EdmModel.GetDataAdapter(_entitySet.Container);
             return dataAdapter.EntitySetAdapters.Find(_entitySet).GetEntitySet(dataContext);
         }
-        public IAsyncEnumerable<TResult> Materialize<TResult>(IQueryable result)
+        public IAsyncEnumerable<TResult> Materialize<TResult>(IQueryable result, CancellationToken cancellationToken = default)
         {
             if (EntryFactory == null)
                 throw new InvalidOperationException("Must set OeEntryFactory via constructor");
 
-            IAsyncEnumerator<Object> asyncEnumerator = Infrastructure.AsyncEnumeratorHelper.ToAsyncEnumerable(result).GetEnumerator();
+            IAsyncEnumerator<Object> asyncEnumerator = Infrastructure.AsyncEnumeratorHelper.ToAsyncEnumerable(result).GetAsyncEnumerator(cancellationToken);
             return new Db.OeEntityAsyncEnumeratorAdapter<TResult>(asyncEnumerator, EntryFactory);
         }
 

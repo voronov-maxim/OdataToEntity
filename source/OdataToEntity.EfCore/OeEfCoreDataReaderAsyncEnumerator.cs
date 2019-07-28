@@ -8,6 +8,7 @@ namespace OdataToEntity.EfCore
 {
     public sealed class OeEfCoreDataReaderAsyncEnumerator : IAsyncEnumerable<Object>, IAsyncEnumerator<Object>
     {
+        private CancellationToken _cancellationToken;
         private readonly RelationalDataReader _dataReader;
 
         public OeEfCoreDataReaderAsyncEnumerator(RelationalDataReader dataReader)
@@ -15,17 +16,18 @@ namespace OdataToEntity.EfCore
             _dataReader = dataReader;
         }
 
-        public void Dispose()
+        public ValueTask DisposeAsync()
         {
-            _dataReader.Dispose();
+            return _dataReader.DisposeAsync();
         }
-        public IAsyncEnumerator<Object> GetEnumerator()
+        public IAsyncEnumerator<Object> GetAsyncEnumerator(CancellationToken cancellationToken)
         {
+            _cancellationToken = cancellationToken;
             return this;
         }
-        public Task<bool> MoveNext(CancellationToken cancellationToken)
+        public ValueTask<bool> MoveNextAsync()
         {
-            return _dataReader.ReadAsync(cancellationToken);
+            return new ValueTask<bool>(_dataReader.ReadAsync(_cancellationToken));
         }
 
         public Object Current => _dataReader.DbDataReader.GetValue(0);

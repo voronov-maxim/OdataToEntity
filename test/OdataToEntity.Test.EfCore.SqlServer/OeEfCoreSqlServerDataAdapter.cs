@@ -1,10 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using OdataToEntity.Db;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
 
 namespace OdataToEntity.EfCore
 {
@@ -24,7 +22,7 @@ namespace OdataToEntity.EfCore
                     DataTable table = Infrastructure.OeDataTableHelper.GetDataTable(list);
                     if (parameterName == null)
                         parameterName = "@p" + parameterIndex.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                    return new SqlParameter(parameterName, table) { TypeName = parameter.Key };
+                    return new Microsoft.Data.SqlClient.SqlParameter(parameterName, table) { TypeName = parameter.Key };
                 }
 
                 return parameter.Value;

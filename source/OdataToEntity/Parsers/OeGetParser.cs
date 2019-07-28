@@ -35,8 +35,17 @@ namespace OdataToEntity.Parsers
 
             if (queryContext.ODataUri.Path.LastSegment is OperationSegment)
             {
-                using (IAsyncEnumerator<Object> asyncEnumerator = OeOperationHelper.ApplyBoundFunction(queryContext).GetEnumerator())
+                IAsyncEnumerator<Object> asyncEnumerator = null;
+                try
+                {
+                    asyncEnumerator = OeOperationHelper.ApplyBoundFunction(queryContext).GetAsyncEnumerator(cancellationToken);
                     await Writers.OeGetWriter.SerializeAsync(queryContext, asyncEnumerator, headers.ContentType, stream, _serviceProvider, cancellationToken).ConfigureAwait(false);
+                }
+                finally
+                {
+                    if (asyncEnumerator != null)
+                        await asyncEnumerator.DisposeAsync().ConfigureAwait(false);
+                }
 
                 return;
             }
@@ -55,8 +64,17 @@ namespace OdataToEntity.Parsers
                 }
                 else
                 {
-                    using (IAsyncEnumerator<Object> asyncEnumerator = dataAdapter.Execute(dataContext, queryContext).GetEnumerator())
+                    IAsyncEnumerator<Object> asyncEnumerator = null;
+                    try
+                    {
+                        asyncEnumerator = dataAdapter.Execute(dataContext, queryContext).GetAsyncEnumerator(cancellationToken);
                         await Writers.OeGetWriter.SerializeAsync(queryContext, asyncEnumerator, headers.ContentType, stream, _serviceProvider, cancellationToken).ConfigureAwait(false);
+                    }
+                    finally
+                    {
+                        if (asyncEnumerator != null)
+                            await asyncEnumerator.DisposeAsync().ConfigureAwait(false);
+                    }
                 }
             }
             finally

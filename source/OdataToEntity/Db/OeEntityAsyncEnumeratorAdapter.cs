@@ -12,6 +12,7 @@ namespace OdataToEntity.Db
 {
     public sealed class OeEntityAsyncEnumeratorAdapter<T> : IAsyncEnumerator<T>, IAsyncEnumerable<T>
     {
+        private CancellationToken _cancellationToken;
         private T _current;
         private readonly OeDbEnumerator _dbEnumerator;
         private bool _isFirstMoveNext;
@@ -42,7 +43,7 @@ namespace OdataToEntity.Db
             }
 
             foreach (OeEntryFactory navigationLink in dbEnumerator.EntryFactory.NavigationLinks)
-                await SetNavigationProperty(dbEnumerator.CreateChild(navigationLink), value, entity, cancellationToken).ConfigureAwait(false);
+                await SetNavigationProperty(dbEnumerator.CreateChild(navigationLink, cancellationToken), value, entity, cancellationToken).ConfigureAwait(false);
 
             return entity;
         }
@@ -74,41 +75,42 @@ namespace OdataToEntity.Db
                     if (item != null)
                         list.Add(await CreateEntity(dbEnumerator, item, item, nestedEntityType, cancellationToken).ConfigureAwait(false));
                 }
-                while (await dbEnumerator.MoveNext(cancellationToken).ConfigureAwait(false));
+                while (await dbEnumerator.MoveNextAsync().ConfigureAwait(false));
                 return list;
             }
 
             return await CreateEntity(dbEnumerator, value, entity, nestedEntityType, cancellationToken).ConfigureAwait(false);
         }
-        public void Dispose()
+        public ValueTask DisposeAsync()
         {
-            _dbEnumerator.Dispose();
+            return _dbEnumerator.DisposeAsync();
         }
-        IAsyncEnumerator<T> IAsyncEnumerable<T>.GetEnumerator()
+        IAsyncEnumerator<T> IAsyncEnumerable<T>.GetAsyncEnumerator(CancellationToken cancellationToken)
         {
+            _cancellationToken = cancellationToken;
             if (_isFirstMoveNext)
                 return this;
 
             throw new InvalidOperationException("Already iterated");
         }
-        Task<bool> IAsyncEnumerator<T>.MoveNext(CancellationToken cancellationToken)
+        ValueTask<bool> IAsyncEnumerator<T>.MoveNextAsync()
         {
-            return MoveNext(cancellationToken);
+            return MoveNextAsync();
         }
-        public async Task<bool> MoveNext(CancellationToken cancellationToken)
+        public async ValueTask<bool> MoveNextAsync()
         {
             if (_isFirstMoveNext)
             {
                 _isFirstMoveNext = false;
-                _isMoveNext = await _dbEnumerator.MoveNext(cancellationToken).ConfigureAwait(false);
+                _isMoveNext = await _dbEnumerator.MoveNextAsync().ConfigureAwait(false);
             }
             if (!_isMoveNext)
                 return false;
 
-            var entity = (T)await CreateEntity(_dbEnumerator, _dbEnumerator.Current, _dbEnumerator.Current, typeof(T), cancellationToken).ConfigureAwait(false);
+            var entity = (T)await CreateEntity(_dbEnumerator, _dbEnumerator.Current, _dbEnumerator.Current, typeof(T), _cancellationToken).ConfigureAwait(false);
             Object rawValue = _dbEnumerator.RawValue;
 
-            _isMoveNext = await _dbEnumerator.MoveNext(cancellationToken).ConfigureAwait(false);
+            _isMoveNext = await _dbEnumerator.MoveNextAsync().ConfigureAwait(false);
             if (!_isMoveNext && _queryContext != null && _queryContext.EntryFactory.SkipTokenAccessors.Length > 0)
                 SetOrderByProperties(_queryContext, entity, rawValue);
 

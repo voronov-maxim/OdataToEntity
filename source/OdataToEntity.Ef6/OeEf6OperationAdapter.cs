@@ -28,7 +28,8 @@ namespace OdataToEntity.Ef6
             DbRawSqlQuery query = ((DbContext)dataContext).Database.SqlQuery(entitySetAdapter.EntityType, sql, GetParameterValues(parameters));
             return Infrastructure.AsyncEnumeratorHelper.ToAsyncEnumerable(query);
         }
-        protected override IAsyncEnumerable<Object> ExecutePrimitive(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
+        protected override IAsyncEnumerable<Object> ExecutePrimitive(Object dataContext, String sql,
+            IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType, CancellationToken cancellationToken)
         {
             returnType = Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(returnType) ?? returnType;
             DbRawSqlQuery query = ((DbContext)dataContext).Database.SqlQuery(returnType, sql, GetParameterValues(parameters));

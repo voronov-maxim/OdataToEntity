@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
-using Microsoft.EntityFrameworkCore.Extensions.Internal;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -45,11 +44,12 @@ namespace OdataToEntity.EfCore
             }
             public IQueryable FromSql(Object dataContext, String sql, Object[] parameters)
             {
-                var queryable = (IQueryable<TEntity>)GetEntitySet(dataContext);
-                return queryable.FromSql(sql, parameters);
+                var queryable = (DbSet<TEntity>)GetEntitySet(dataContext);
+                return queryable.FromSqlRaw(sql, parameters);
             }
             public override IQueryable GetEntitySet(Object dataContext)
             {
+                var dbContext = (T)dataContext;
                 return new EntityQueryable<TEntity>(((T)dataContext).GetDependencies().QueryProvider);
             }
             public override void RemoveEntity(Object dataContext, ODataResourceBase entry)
@@ -78,11 +78,15 @@ namespace OdataToEntity.EfCore
             {
                 var context = (DbContext)dataContext;
                 EntityEntry<TEntity> entityEntry = context.Add(CreateEntity(context, entry));
+                InternalEntityEntry internalEntityEntry = entityEntry.GetInfrastructure();
 
                 IReadOnlyList<IProperty> keyProperties = _entityType.FindPrimaryKey().Properties;
                 for (int i = 0; i < keyProperties.Count; i++)
                     if (keyProperties[i].ValueGenerated == ValueGenerated.OnAdd)
-                        entityEntry.GetInfrastructure().MarkAsTemporary(keyProperties[i]);
+                    {
+                        Object value = internalEntityEntry.GetCurrentValue(keyProperties[i]);
+                        internalEntityEntry.SetTemporaryValue(keyProperties[i], value, false);
+                    }
             }
             public override void AttachEntity(Object dataContext, ODataResourceBase entry)
             {
@@ -137,8 +141,8 @@ namespace OdataToEntity.EfCore
             }
             public IQueryable FromSql(Object dataContext, String sql, Object[] parameters)
             {
-                var queryable = (IQueryable<TEntity>)GetEntitySet((T)dataContext);
-                return queryable.FromSql(sql, parameters);
+                var dbSet = new InternalDbSet<TEntity>((T)dataContext);
+                return dbSet.FromSqlRaw(sql, parameters);
             }
             public override IQueryable GetEntitySet(Object dataContext)
             {
@@ -147,9 +151,8 @@ namespace OdataToEntity.EfCore
             private InternalEntityEntry GetEntityEntry(T context, ODataResourceBase entity)
             {
                 Initialize(context);
-                var buffer = new ValueBuffer(GetKeyValues(entity));
-                var stateManager = (IInfrastructure<IStateManager>)context.ChangeTracker;
-                return stateManager.Instance.TryGetEntry(_entityType.FindPrimaryKey(), buffer, false);
+                IStateManager stateManager = ((IDbContextDependencies)context).StateManager;
+                return stateManager.TryGetEntry(_entityType.FindPrimaryKey(), GetKeyValues(entity));
             }
             private Object[] GetKeyValues(ODataResourceBase entity)
             {
@@ -312,7 +315,7 @@ namespace OdataToEntity.EfCore
         public override TResult ExecuteScalar<TResult>(Object dataContext, OeQueryContext queryContext)
         {
             if (base.QueryCache.AllowCache)
-                return GetFromCache<TResult>(queryContext, (T)dataContext, base.QueryCache, out _).Single().GetAwaiter().GetResult();
+                return GetFromCache<TResult>(queryContext, (T)dataContext, base.QueryCache, out _).SingleAsync().GetAwaiter().GetResult();
 
             IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dataContext);
             Expression expression = queryContext.CreateExpression(new OeConstantToVariableVisitor());
@@ -348,7 +351,7 @@ namespace OdataToEntity.EfCore
             var queryContextFactory = dbContext.GetService<IQueryContextFactory>();
             QueryContext efQueryContext = queryContextFactory.Create();
             foreach (Cache.OeQueryCacheDbParameterValue parameterValue in parameterValues)
-                efQueryContext.AddParameter(parameterValue.ParameterName, parameterValue.ParameterValue);
+                efQueryContext.Add(parameterValue.ParameterName, parameterValue.ParameterValue);
 
             if (queryContext.IsQueryCount())
             {

@@ -15,7 +15,7 @@ namespace OdataToEntity.Writers
         private readonly OeQueryContext _queryContext;
         private readonly ODataWriter _writer;
 
-        public OeODataWriter(OeQueryContext queryContex, ODataWriter writer, in CancellationToken cancellationToken)
+        public OeODataWriter(OeQueryContext queryContex, ODataWriter writer, CancellationToken cancellationToken)
         {
             _queryContext = queryContex;
             _writer = writer;
@@ -36,15 +36,15 @@ namespace OdataToEntity.Writers
 
             Object rawValue = null;
             int readCount = 0;
-            using (Db.IOeDbEnumerator dbEnumerator = entryFactory.IsTuple ?
-                (Db.IOeDbEnumerator)new Db.OeDbEnumerator(asyncEnumerator, entryFactory) : new Db.OeEntityDbEnumerator(asyncEnumerator, entryFactory))
-                while (await dbEnumerator.MoveNext(_cancellationToken).ConfigureAwait(false))
-                {
-                    await WriteEntry(dbEnumerator, dbEnumerator.Current).ConfigureAwait(false);
-                    readCount++;
-                    rawValue = dbEnumerator.RawValue;
-                    dbEnumerator.ClearBuffer();
-                }
+            Db.IOeDbEnumerator dbEnumerator = entryFactory.IsTuple ?
+                (Db.IOeDbEnumerator)new Db.OeDbEnumerator(asyncEnumerator, entryFactory) : new Db.OeEntityDbEnumerator(asyncEnumerator, entryFactory);
+            while (await dbEnumerator.MoveNextAsync().ConfigureAwait(false))
+            {
+                await WriteEntry(dbEnumerator, dbEnumerator.Current).ConfigureAwait(false);
+                readCount++;
+                rawValue = dbEnumerator.RawValue;
+                dbEnumerator.ClearBuffer();
+            }
 
             var nextPageLinkBuilder = new OeNextPageLinkBuilder(_queryContext);
             resourceSet.NextPageLink = nextPageLinkBuilder.GetNextPageLinkRoot(entryFactory, readCount, _queryContext.TotalCountOfItems, rawValue);
@@ -61,7 +61,7 @@ namespace OdataToEntity.Writers
                 if (entryFactory.NavigationLinks[i].NextLink)
                     WriteNavigationNextLink(entryFactory, entryFactory.NavigationLinks[i].NavigationSelectItem, value);
                 else
-                    await WriteNavigation(dbEnumerator.CreateChild(entryFactory.NavigationLinks[i])).ConfigureAwait(false);
+                    await WriteNavigation(dbEnumerator.CreateChild(entryFactory.NavigationLinks[i], _cancellationToken)).ConfigureAwait(false);
             _writer.WriteEnd();
         }
         private async Task WriteNavigation(Db.IOeDbEnumerator dbEnumerator)
@@ -103,7 +103,7 @@ namespace OdataToEntity.Writers
                     readCount++;
                 }
             }
-            while (await dbEnumerator.MoveNext(_cancellationToken).ConfigureAwait(false));
+            while (await dbEnumerator.MoveNextAsync().ConfigureAwait(false));
 
             if (readCount == 0)
             {

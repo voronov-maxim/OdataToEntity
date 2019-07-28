@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace OdataToEntity.EfCore
 {
@@ -17,9 +18,10 @@ namespace OdataToEntity.EfCore
         {
             return base.ExecuteFunctionReader(dataContext, operationName, parameters, entitySetAdapter);
         }
-        public override IAsyncEnumerable<Object> ExecuteProcedurePrimitive(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType)
+        public override IAsyncEnumerable<Object> ExecuteProcedurePrimitive(Object dataContext, String operationName,
+            IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType, CancellationToken cancellationToken)
         {
-            return base.ExecuteFunctionPrimitive(dataContext, operationName, parameters, returnType);
+            return base.ExecuteFunctionPrimitive(dataContext, operationName, parameters, returnType, cancellationToken);
         }
     }
 }
