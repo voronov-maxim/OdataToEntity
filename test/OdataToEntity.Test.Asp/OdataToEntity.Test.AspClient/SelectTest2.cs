@@ -15,7 +15,7 @@ namespace OdataToEntity.Test
         {
             List<int> expectedResult;
             using (var dbContext = new OrderContext(OrderContextOptions.Create(true)))
-                expectedResult = dbContext.OrderItems.Where(i => i.Order.Name == "Order 1" || i.Order.Name == "Order 2").Select(i => i.Id).ToList();
+                expectedResult = dbContext.OrderItems.AsQueryable().Where(i => i.Order.Name == "Order 1" || i.Order.Name == "Order 2").Select(i => i.Id).ToList();
 
             String request = $"Customers/BoundFunctionCollection(orderNames=['Order 1','Order 2'])?$expand=Customer,Items&$select=Name";
 
@@ -29,7 +29,7 @@ namespace OdataToEntity.Test
         {
             List<int> expectedResult;
             using (var dbContext = new OrderContext(OrderContextOptions.Create(true)))
-                expectedResult = dbContext.OrderItems.Where(i =>
+                expectedResult = dbContext.OrderItems.AsQueryable().Where(i =>
                     (i.Order.Name == "Order 1" || i.Order.Name == "Order 2") && i.Order.Customer.Country == "RU" && i.Order.Customer.Id == 1)
                     .Select(i => i.Id).ToList();
 

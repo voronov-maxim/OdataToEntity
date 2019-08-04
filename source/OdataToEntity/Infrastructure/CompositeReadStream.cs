@@ -35,7 +35,34 @@ namespace OdataToEntity.Infrastructure
         }
         public override int Read(byte[] buffer, int offset, int count)
         {
-            int readCount = 0;
+            if (!ReadFromArray(buffer, offset, count, out int readCount))
+            {
+                offset += readCount;
+                count -= readCount;
+                readCount += _requestStream.Read(buffer, offset, count);
+            }
+
+            return readCount;
+        }
+        public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        {
+            if (!ReadFromArray(buffer, offset, count, out int readCount))
+            {
+                offset += readCount;
+                count -= readCount;
+                readCount += await _requestStream.ReadAsync(buffer, offset, count);
+            }
+
+            return readCount;
+        }
+        public override int ReadByte()
+        {
+            var buffer = new byte[1];
+            return Read(buffer, 0, 1);
+        }
+        private bool ReadFromArray(byte[] buffer, int offset, int count, out int readCount)
+        {
+            readCount = 0;
             if (_arrayPosition < _array.Count)
             {
                 readCount = _array.Count - _arrayPosition;
@@ -43,25 +70,14 @@ namespace OdataToEntity.Infrastructure
                 {
                     Buffer.BlockCopy(_array.Array, _array.Offset + _arrayPosition, buffer, offset, count);
                     _arrayPosition += count;
-                    return count;
+                    readCount = count;
+                    return true;
                 }
 
                 Buffer.BlockCopy(_array.Array, _array.Offset + _arrayPosition, buffer, offset, readCount);
                 _arrayPosition += readCount;
-                offset += readCount;
-                count -= readCount;
             }
-
-            return readCount + _requestStream.Read(buffer, offset, count);
-        }
-        public override int ReadByte()
-        {
-            var buffer = new byte[1];
-            return Read(buffer, 0, 1);
-        }
-        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
-        {
-            throw new NotSupportedException();
+            return false;
         }
         public override long Seek(long offset, SeekOrigin origin)
         {

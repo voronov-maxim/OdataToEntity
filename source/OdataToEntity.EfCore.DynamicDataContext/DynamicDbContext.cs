@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
-using Microsoft.EntityFrameworkCore.Metadata.Conventions.Internal;
+using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
 using OdataToEntity.EfCore.DynamicDataContext.ModelBuilder;
 using System.Collections;
 
@@ -8,22 +8,25 @@ namespace OdataToEntity.EfCore.DynamicDataContext
 {
     public abstract class DynamicDbContext : DbContext
     {
-        private sealed class FixConventionSetBuilder : IConventionSetBuilder
+        private sealed class FixProviderConventionSetBuilder : IProviderConventionSetBuilder
         {
-            private readonly RelationalConventionSetBuilderDependencies _dependencies;
+            private readonly ProviderConventionSetBuilderDependencies _dependencies;
+            private readonly ProviderConventionSetBuilder _providerConventionSetBuilder;
 
-            public FixConventionSetBuilder(RelationalConventionSetBuilderDependencies dependencies)
+            public FixProviderConventionSetBuilder(ProviderConventionSetBuilderDependencies dependencies)
             {
                 _dependencies = dependencies;
+                _providerConventionSetBuilder = new ProviderConventionSetBuilder(dependencies);
             }
 
-            public ConventionSet AddConventions(ConventionSet conventionSet)
+            public ConventionSet CreateConventionSet()
             {
-                if (_dependencies.Context.Context is DynamicDbContext)
+                ConventionSet conventionSet = _providerConventionSetBuilder.CreateConventionSet();
+                if (typeof(DynamicDbContext).IsAssignableFrom(_dependencies.ContextType))
                 {
                     Remove((IList)conventionSet.ForeignKeyAddedConventions);
                     Remove((IList)conventionSet.EntityTypeAddedConventions);
-                    Remove((IList)conventionSet.BaseEntityTypeChangedConventions);
+                    Remove((IList)conventionSet.EntityTypeBaseTypeChangedConventions);
                     Remove((IList)conventionSet.KeyRemovedConventions);
                     Remove((IList)conventionSet.ForeignKeyRemovedConventions);
                     Remove((IList)conventionSet.ForeignKeyUniquenessChangedConventions);
@@ -60,7 +63,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.ReplaceService<IConventionSetBuilder, FixConventionSetBuilder>();
+            //optionsBuilder.ReplaceService<IProviderConventionSetBuilder, FixProviderConventionSetBuilder>();zzz
             base.OnConfiguring(optionsBuilder);
         }
         protected override void OnModelCreating(Microsoft.EntityFrameworkCore.ModelBuilder modelBuilder)

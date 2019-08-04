@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http;
 using Microsoft.Extensions.Primitives;
 using Microsoft.OData.Edm;
 using OdataToEntity.Query;
@@ -40,8 +39,7 @@ namespace OdataToEntity.AspNetCore
         }
         public static OeModelBoundProvider CreateModelBoundProvider(this HttpContext httpContext, IEdmModel edmModel)
         {
-            var requestHeaders = (HttpRequestHeaders)httpContext.Request.Headers;
-            int maxPageSize = GetMaxPageSize(requestHeaders);
+            int maxPageSize = GetMaxPageSize(httpContext.Request.Headers);
             if (maxPageSize <= 0)
                 return null;
 
@@ -63,10 +61,10 @@ namespace OdataToEntity.AspNetCore
 
             return null;
         }
-        public static int GetMaxPageSize(HttpRequestHeaders requestHeaders)
+        public static int GetMaxPageSize(IDictionary<String, StringValues> requestHeaders)
         {
-            ((IDictionary<String, StringValues>)requestHeaders).TryGetValue("Prefer", out StringValues preferHeader);
-            var headers = OeRequestHeaders.Parse(requestHeaders.HeaderAccept, preferHeader);
+            requestHeaders.TryGetValue("Prefer", out StringValues preferHeader);
+            var headers = OeRequestHeaders.Parse(requestHeaders["Accept"], preferHeader);
             return headers.MaxPageSize;
         }
     }

@@ -20,6 +20,7 @@ namespace OdataToEntity.Test.Model
             modelBuilder.Entity<Customer>().HasKey(c => new { c.Country, c.Id });
             modelBuilder.Entity<ShippingAddress>().HasKey(s => new { s.OrderId, s.Id });
             modelBuilder.Entity<CustomerShippingAddress>().HasKey(t => new { t.CustomerCountry, t.CustomerId, t.ShippingAddressOrderId, t.ShippingAddressId });
+            modelBuilder.Entity<OrderItemsView>().HasNoKey();
             base.OnModelCreating(modelBuilder);
         }
 
@@ -76,7 +77,7 @@ namespace OdataToEntity.Test.Model
         public DbSet<ManyColumnsView> ManyColumnsView { get; set; }
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
-        public DbQuery<OrderItemsView> OrderItemsView { get; set; }
+        public DbSet<OrderItemsView> OrderItemsView { get; set; }
         public DbSet<ShippingAddress> ShippingAddresses { get; set; }
     }
 
@@ -94,7 +95,7 @@ namespace OdataToEntity.Test.Model
             modelBuilder.Entity<ShippingAddress>().HasKey(s => new { s.OrderId, s.Id });
             modelBuilder.Entity<CustomerShippingAddress>().HasKey(t => new { t.CustomerCountry, t.CustomerId, t.ShippingAddressOrderId, t.ShippingAddressId });
 
-            modelBuilder.Query<CustomerOrdersCount>();
+            modelBuilder.Entity<CustomerOrdersCount>().HasNoKey();
 
             modelBuilder.Entity<Order>().HasData(
                 new Order() { Id = 1, Name = "Order from Order2 context", AltCustomerCountry = null, AltCustomerId = null, CustomerCountry = "AL", CustomerId = 42, Status = OrderStatus.Cancelled }

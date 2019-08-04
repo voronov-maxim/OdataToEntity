@@ -1,11 +1,11 @@
 ﻿<Project>
   <PropertyGroup>
-    <AspNetCoreVersion>2.2.0</AspNetCoreVersion>
-    <AspNetCoreMvcVersion>2.2.0</AspNetCoreMvcVersion>
-    <AspNetCoreMvcCoreVersion>2.2.5</AspNetCoreMvcCoreVersion>
-    <CoreFxVersion>4.6.0-preview7.19362.9</CoreFxVersion>
+    <AspNetCoreVersion>3.0.0-preview4.19121-14</AspNetCoreVersion>
+    <AspNetCoreMvcVersion>3.0.0-preview4.19121-14</AspNetCoreMvcVersion>
+    <AspNetCoreMvcCoreVersion>3.0.0-preview4.19121-14</AspNetCoreMvcCoreVersion>
+    <CoreFxVersion>4.6.0-preview8.19379.7</CoreFxVersion>
     <CSharpVersion>7.2</CSharpVersion>
-    <EfCoreVersion>3.0.0-preview8.19375.6</EfCoreVersion>
+    <EfCoreVersion>3.0.0-preview9.19404.1</EfCoreVersion>
     <FrameworkVersion>net48</FrameworkVersion>
     <MicrosoftExtensionsVersion>2.0.0</MicrosoftExtensionsVersion>
     <JsonNetVersion>10.0.3</JsonNetVersion>

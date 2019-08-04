@@ -22,22 +22,21 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 
             foreach (IMutableEntityType entityType in modelBuilder.Model.GetEntityTypes())
             {
-                entityType.QueryFilter = GetFilter(entityType.ClrType);
+                entityType.SetQueryFilter(GetFilter(entityType.ClrType));
 
-                RelationalEntityTypeAnnotations relational = entityType.Relational();
-                if (relational.Schema != null)
-                    relational.Schema = relational.Schema.ToLowerInvariant();
-                relational.TableName = entityType.Relational().TableName.ToLowerInvariant();
+                if (entityType.GetSchema() != null)
+                    entityType.SetSchema(entityType.GetSchema().ToLowerInvariant());
+                entityType.SetTableName(entityType.GetTableName().ToLowerInvariant());
 
                 foreach (IMutableProperty property in entityType.GetProperties())
-                    property.Relational().ColumnName = property.Relational().ColumnName.ToLowerInvariant();
+                    property.SetColumnName(property.GetColumnName().ToLowerInvariant());
             }
 
             Expression<Func<Parameter, bool>> parameterFilter = t => t.SpecificSchema != "pg_catalog" && t.SpecificSchema != "information_schema" && t.DataType != "ARRAY";
-            modelBuilder.Model.FindEntityType(typeof(Parameter)).QueryFilter = parameterFilter;
+            modelBuilder.Model.FindEntityType(typeof(Parameter)).SetQueryFilter(parameterFilter);
 
             Expression<Func<Routine, bool>> routineFilter = t => t.SpecificSchema != "pg_catalog" && t.SpecificSchema != "information_schema";
-            modelBuilder.Model.FindEntityType(typeof(Routine)).QueryFilter = routineFilter;
+            modelBuilder.Model.FindEntityType(typeof(Routine)).SetQueryFilter(routineFilter);
         }
         private static LambdaExpression GetFilter(Type entityType)
         {

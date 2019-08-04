@@ -107,7 +107,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             try
             {
                 var dbGeneratedColumns = new List<DbGeneratedColumn>();
-                foreach (Column column in schemaContext.Columns.Where(c => c.ColumnDefault != null))
+                foreach (Column column in schemaContext.Columns.AsQueryable().Where(c => c.ColumnDefault != null))
                 {
                     var dbGeneratedColumn = new DbGeneratedColumn()
                     {

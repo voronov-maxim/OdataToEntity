@@ -68,12 +68,5 @@ namespace OdataToEntity.Test.Model
                 contextOptions = contextOptions.WithExtension(extension);
             return (DbContextOptions<T>)contextOptions;
         }
-        public static DbContextOptions CreateClientEvaluationWarning(bool useRelationalNulls)
-        {
-            var optionsBuilder = new DbContextOptionsBuilder<OrderContext>();
-            optionsBuilder = optionsBuilder.UseSqlServer(@"Server=.\sqlexpress;Initial Catalog=OdataToEntity;Trusted_Connection=Yes;", opt => opt.UseRelationalNulls(useRelationalNulls))
-                .ConfigureWarnings(warnings => warnings.Throw(RelationalEventId.QueryClientEvaluationWarning));
-            return optionsBuilder.Options;
-        }
     }
 }

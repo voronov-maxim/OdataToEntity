@@ -142,7 +142,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                     String constraintSchema = null;
                     String constraintName = null;
                     List<KeyColumnUsage> columns = null;
-                    foreach (KeyColumnUsage keyColumn in schemaContext.KeyColumnUsage
+                    foreach (KeyColumnUsage keyColumn in schemaContext.KeyColumnUsage.AsQueryable()
                         .OrderBy(t => t.TableSchema).ThenBy(t => t.TableName).ThenBy(t => t.ConstraintName).ThenBy(t => t.OrdinalPosition))
                     {
                         if (constraintSchema != keyColumn.ConstraintSchema || constraintName != keyColumn.ConstraintName)
@@ -198,7 +198,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                 SchemaContext schemaContext = _informationSchema.SchemaContextPool.Rent();
                 try
                 {
-                    var tableConstraints = schemaContext.TableConstraints.Where(t => t.ConstraintType == "PRIMARY KEY" || t.ConstraintType == "UNIQUE")
+                    var tableConstraints = schemaContext.TableConstraints.AsQueryable().Where(t => t.ConstraintType == "PRIMARY KEY" || t.ConstraintType == "UNIQUE")
                         .OrderBy(t => t.TableSchema).ThenBy(t => t.TableName).ThenBy(t => t.ConstraintType);
 
                     _keys = new Dictionary<(String tableSchema, String tableName), IReadOnlyList<(String constraintName, bool isPrimary)>>();
@@ -399,7 +399,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                 try
                 {
                     var routineParameters = new Dictionary<(String specificSchema, String specificName), IReadOnlyList<Parameter>>();
-                    foreach (Parameter parameter in schemaContext.Parameters.Where(p => p.ParameterName != ""))
+                    foreach (Parameter parameter in schemaContext.Parameters.AsQueryable().Where(p => p.ParameterName != ""))
                     {
                         List<Parameter> parameterList;
                         if (routineParameters.TryGetValue((parameter.SpecificSchema, parameter.SpecificName), out IReadOnlyList<Parameter> parameters))
@@ -443,16 +443,23 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                         OeOperationParameterConfiguration[] parameterConfigurations = Array.Empty<OeOperationParameterConfiguration>();
                         if (routineParameters.TryGetValue((routine.SpecificSchema, routine.SpecificName), out IReadOnlyList<Parameter> parameters))
                         {
+                            Type clrType = null;
                             parameterConfigurations = new OeOperationParameterConfiguration[parameters.Count];
                             for (int i = 0; i < parameters.Count; i++)
                             {
-                                Type clrType = _informationSchema.GetColumnClrType(parameters[i].DataType);
+                                clrType = _informationSchema.GetColumnClrType(parameters[i].DataType);
+                                if (clrType == null)
+                                    break;
+
                                 if (clrType.IsValueType)
                                     clrType = typeof(Nullable<>).MakeGenericType(clrType);
 
                                 String parameterName = _informationSchema.GetParameterName(parameters[i].ParameterName);
                                 parameterConfigurations[parameters[i].OrdinalPosition - 1] = new OeOperationParameterConfiguration(parameterName, clrType);
                             }
+
+                            if (parameters.Count > 0 && clrType == null)
+                                continue;
                         }
 
                         Type returnType = null;

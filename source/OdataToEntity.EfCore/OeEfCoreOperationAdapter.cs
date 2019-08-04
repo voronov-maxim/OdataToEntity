@@ -46,7 +46,7 @@ namespace OdataToEntity.EfCore
         }
         protected override IAsyncEnumerable<Object> ExecuteNonQuery(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters)
         {
-            ((DbContext)dataContext).Database.ExecuteSqlCommand(sql, GetParameterValues(parameters));
+            ((DbContext)dataContext).Database.ExecuteSqlRaw(sql, GetParameterValues(parameters));
             return Infrastructure.AsyncEnumeratorHelper.Empty;
         }
         protected override IAsyncEnumerable<Object> ExecuteReader(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, OeEntitySetAdapter entitySetAdapter)

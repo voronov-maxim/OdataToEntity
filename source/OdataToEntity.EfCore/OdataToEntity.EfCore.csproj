@@ -27,7 +27,7 @@
     <PackageVersion>$(OdataToEntityVersion)</PackageVersion>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.1|AnyCPU'">
+  <PropertyGroup>
     <NoWarn>EF1001</NoWarn>
   </PropertyGroup>
 

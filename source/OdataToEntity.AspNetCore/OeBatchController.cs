@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
-using Microsoft.AspNetCore.Mvc.Internal;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.OData;
 using Microsoft.OData.Edm;
@@ -43,7 +42,7 @@ namespace OdataToEntity.AspNetCore
             }
             Uri baseUri = UriHelper.GetBaseUri(base.Request);
 
-            OeBatchMessage batchMessage = OeBatchMessage.CreateBatchMessage(EdmModel, baseUri, base.HttpContext.Request.Body, base.HttpContext.Request.ContentType);
+            OeBatchMessage batchMessage = await OeBatchMessage.CreateBatchMessage(EdmModel, baseUri, base.HttpContext.Request.Body, base.HttpContext.Request.ContentType);
             OeDataAdapter dataAdapter = null;
             Object dataContext = null;
             try
@@ -63,7 +62,7 @@ namespace OdataToEntity.AspNetCore
 
                     List<ActionDescriptor> candidates = OeRouter.SelectCandidates(actionDescriptors.Items, base.RouteData.Values, path, operation.Method);
                     if (candidates.Count > 1)
-                        throw new AmbiguousActionException(String.Join(Environment.NewLine, candidates.Select(c => c.DisplayName)));
+                        throw new InvalidOperationException("Ambiguous action " + String.Join(Environment.NewLine, candidates.Select(c => c.DisplayName)));
                     if (candidates.Count == 0)
                         throw new InvalidOperationException("Action " + operation.Method + " for controller " + basePath + " not found");
 
@@ -103,7 +102,7 @@ namespace OdataToEntity.AspNetCore
 
             base.HttpContext.Response.ContentType = base.HttpContext.Request.ContentType;
             var batchWriter = new OeBatchWriter(EdmModel, baseUri);
-            batchWriter.Write(base.HttpContext.Response.Body, batchMessage);
+            await batchWriter.Write(base.HttpContext.Response.Body, batchMessage);
         }
         protected virtual void OnBeforeInvokeController(OeDataContext dataContext, ODataResource entry)
         {

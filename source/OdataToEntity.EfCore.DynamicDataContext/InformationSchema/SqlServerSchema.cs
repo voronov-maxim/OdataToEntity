@@ -86,6 +86,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                 case "xml":
                     return typeof(String);
                 case "TABLE":
+                case "table type":
                     return null;
                 default:
                     throw new InvalidOperationException("Unknown data type " + dataType);
@@ -96,7 +97,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             SchemaContext schemaContext = base.SchemaContextPool.Rent();
             try
             {
-                return schemaContext.DbGeneratedColumns.FromSql(
+                return schemaContext.DbGeneratedColumns.FromSqlRaw(
                     "select OBJECT_SCHEMA_NAME(object_id) TABLE_SCHEMA, OBJECT_NAME(object_id) TABLE_NAME, name COLUMN_NAME, is_identity, is_computed from sys.columns where is_identity = 1 or is_computed = 1;")
                     .ToList();
             }

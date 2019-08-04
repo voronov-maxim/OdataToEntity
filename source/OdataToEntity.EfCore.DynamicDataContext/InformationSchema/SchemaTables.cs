@@ -140,13 +140,25 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             base.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
         }
 
-        public DbQuery<Column> Columns { get; set; }
-        public DbQuery<DbGeneratedColumn> DbGeneratedColumns { get; set; }
-        public DbQuery<KeyColumnUsage> KeyColumnUsage { get; set; }
-        public DbQuery<Parameter> Parameters { get; set; }
-        public DbQuery<ReferentialConstraint> ReferentialConstraints { get; set; }
-        public DbQuery<Routine> Routines { get; set; }
-        public DbQuery<TableConstraint> TableConstraints { get; set; }
-        public DbQuery<Table> Tables { get; set; }
+        protected override void OnModelCreating(Microsoft.EntityFrameworkCore.ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Column>().HasNoKey();
+            modelBuilder.Entity<DbGeneratedColumn>().HasNoKey();
+            modelBuilder.Entity<KeyColumnUsage>().HasNoKey();
+            modelBuilder.Entity<Parameter>().HasNoKey();
+            modelBuilder.Entity<ReferentialConstraint>().HasNoKey();
+            modelBuilder.Entity<Routine>().HasNoKey();
+            modelBuilder.Entity<TableConstraint>().HasNoKey();
+            modelBuilder.Entity<Table>().HasNoKey();
+        }
+
+        public DbSet<Column> Columns { get; set; }
+        public DbSet<DbGeneratedColumn> DbGeneratedColumns { get; set; }
+        public DbSet<KeyColumnUsage> KeyColumnUsage { get; set; }
+        public DbSet<Parameter> Parameters { get; set; }
+        public DbSet<ReferentialConstraint> ReferentialConstraints { get; set; }
+        public DbSet<Routine> Routines { get; set; }
+        public DbSet<TableConstraint> TableConstraints { get; set; }
+        public DbSet<Table> Tables { get; set; }
     }
 }

@@ -87,7 +87,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
         {
             return _shadowPropertyFieldInfoByGetName[shadowPropertyGetName];
         }
-        public String GetSingleFiledName(String navigationPropertyName)
+        public String GetSingleFieldName(String navigationPropertyName)
         {
             if (_navigationPropertyNames.TryGetValue(navigationPropertyName, out String fieldName))
                 return fieldName;

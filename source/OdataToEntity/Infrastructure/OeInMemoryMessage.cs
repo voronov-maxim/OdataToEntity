@@ -2,10 +2,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace OdataToEntity.Infrastructure
 {
-    public sealed class OeInMemoryMessage : IODataRequestMessage, IODataResponseMessage, IContainerProvider
+    public sealed class OeInMemoryMessage : IODataRequestMessage, IODataRequestMessageAsync, IODataResponseMessage, IODataResponseMessageAsync, IContainerProvider
     {
         private readonly Dictionary<String, String> _headers;
         private readonly IServiceProvider _serviceProvider;
@@ -28,8 +29,16 @@ namespace OdataToEntity.Infrastructure
             _headers.TryGetValue(headerName, out String result);
             return result;
         }
-        public Stream GetStream() => _stream;
+        public Stream GetStream()
+        {
+            return _stream;
+        }
         public void SetHeader(String headerName, String headerValue) => _headers[headerName] = headerValue;
+
+        public Task<Stream> GetStreamAsync()
+        {
+            return Task.FromResult(_stream);
+        }
 
         public IEnumerable<KeyValuePair<String, String>> Headers => _headers;
         public String Method

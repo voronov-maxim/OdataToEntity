@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace OdataToEntity.Parsers
 {
@@ -89,9 +90,9 @@ namespace OdataToEntity.Parsers
             Entry = entry;
         }
 
-        public static OeOperationMessage Create(IEdmModel edmModel, Uri baseUri, ODataBatchReader reader, IServiceProvider serviceProvider)
+        public static async ValueTask<OeOperationMessage> Create(IEdmModel edmModel, Uri baseUri, ODataBatchReader reader, IServiceProvider serviceProvider)
         {
-            ODataBatchOperationRequestMessage batchRequest = reader.CreateOperationRequestMessage();
+            ODataBatchOperationRequestMessage batchRequest = await reader.CreateOperationRequestMessageAsync();
             ODataResource entry = new ResourceFactory(edmModel, baseUri, serviceProvider).CreateEntry(batchRequest, out IEdmEntitySet entitSet);
             return new OeOperationMessage(batchRequest, entitSet, entry);
         }

@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace OdataToEntity.Writers
 {
@@ -26,60 +27,55 @@ namespace OdataToEntity.Writers
             };
         }
 
-        public void Write(Stream stream, in OeBatchMessage batchMessage)
+        public async Task Write(Stream stream, OeBatchMessage batchMessage)
         {
-            IODataResponseMessage responseMessage = new Infrastructure.OeInMemoryMessage(stream, batchMessage.ContentType);
-            var settings = new ODataMessageWriterSettings()
+            var syncToAsyncStream = new Infrastructure.SyncToAsyncStream(stream);//fix invoke Flush throw exception in kestrel 3.0
+            IODataResponseMessage responseMessage = new Infrastructure.OeInMemoryMessage(syncToAsyncStream, batchMessage.ContentType);
+            using (var messageWriter = new ODataMessageWriter(responseMessage, _settings))
             {
-                Version = ODataVersion.V4,
-                EnableMessageStreamDisposal = false,
-                MessageQuotas = new ODataMessageQuotas()
-            };
-            using (var messageWriter = new ODataMessageWriter(responseMessage, settings))
-            {
-                ODataBatchWriter writer = messageWriter.CreateODataBatchWriter();
+                ODataBatchWriter writer = await messageWriter.CreateODataBatchWriterAsync().ConfigureAwait(false);
 
-                writer.WriteStartBatch();
-                WriteBatch(writer, batchMessage);
-                writer.WriteEndBatch();
+                await writer.WriteStartBatchAsync().ConfigureAwait(false);
+                await WriteBatch(writer, batchMessage).ConfigureAwait(false);
+                await writer.WriteEndBatchAsync().ConfigureAwait(false);
             }
         }
-        private void WriteBatch(ODataBatchWriter writer, in OeBatchMessage batchMessage)
+        private async Task WriteBatch(ODataBatchWriter writer, OeBatchMessage batchMessage)
         {
             if (batchMessage.Changeset == null)
-                WriteOperation(writer, batchMessage.Operation);
+                await WriteOperation(writer, batchMessage.Operation);
             else
-                WriteChangeset(writer, batchMessage.Changeset);
+                await WriteChangeset(writer, batchMessage.Changeset);
         }
-        private void WriteChangeset(ODataBatchWriter writer, IReadOnlyList<OeOperationMessage> changeset)
+        private async Task WriteChangeset(ODataBatchWriter writer, IReadOnlyList<OeOperationMessage> changeset)
         {
-            writer.WriteStartChangeset();
+            await writer.WriteStartChangesetAsync();
             foreach (OeOperationMessage operation in changeset)
-                WriteOperation(writer, operation);
-            writer.WriteEndChangeset();
+                await WriteOperation(writer, operation);
+            await writer.WriteEndChangesetAsync();
         }
-        private void WriteEntity(IEdmEntitySet entitySet, ODataResource entry, Stream stream)
+        private async Task WriteEntity(IEdmEntitySet entitySet, ODataResource entry, Stream stream)
         {
             IODataResponseMessage responseMessage = new Infrastructure.OeInMemoryMessage(stream, null);
             using (ODataMessageWriter messageWriter = new ODataMessageWriter(responseMessage, _settings, _model.GetEdmModel(entitySet)))
             {
                 ODataUtils.SetHeadersForPayload(messageWriter, ODataPayloadKind.Resource);
-                ODataWriter writer = messageWriter.CreateODataResourceWriter(entitySet, entitySet.EntityType());
+                ODataWriter writer = await messageWriter.CreateODataResourceWriterAsync(entitySet, entitySet.EntityType());
 
-                writer.WriteStart(entry);
-                writer.WriteEnd();
+                await writer.WriteStartAsync(entry);
+                await writer.WriteEndAsync();
             }
         }
-        private void WriteOperation(ODataBatchWriter writer, in OeOperationMessage operation)
+        private async Task WriteOperation(ODataBatchWriter writer, OeOperationMessage operation)
         {
-            ODataBatchOperationResponseMessage operationMessage = writer.CreateOperationResponseMessage(operation.ContentId);
+            ODataBatchOperationResponseMessage operationMessage = await writer.CreateOperationResponseMessageAsync(operation.ContentId);
             operationMessage.SetHeader("Location", operation.RequestUrl.AbsoluteUri);
             operationMessage.SetHeader(ODataConstants.ContentTypeHeader, operation.ContentType);
             operationMessage.StatusCode = (int)operation.StatusCode;
 
             if (operation.StatusCode != HttpStatusCode.NoContent)
-                using (Stream stream = operationMessage.GetStream())
-                    WriteEntity(operation.EntitySet, operation.Entry, stream);
+                using (Stream stream = await operationMessage.GetStreamAsync())
+                    await WriteEntity(operation.EntitySet, operation.Entry, stream);
         }
     }
 }

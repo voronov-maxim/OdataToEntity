@@ -111,7 +111,7 @@ namespace OdataToEntity.EfCore
                     {
                         IProperty property = _entityType.FindProperty(odataProperty.Name);
                         Object value = OeEdmClrHelper.GetClrValue(property.ClrType, odataProperty.Value);
-                        internalEntry.SetProperty(property, value);
+                        internalEntry.SetProperty(property, value, false);
                     }
                 }
             }
@@ -215,7 +215,7 @@ namespace OdataToEntity.EfCore
         }
 
         private readonly DbContextPool<T> _dbContextPool;
-        private readonly static Db.OeEntitySetAdapterCollection _entitySetAdapters = CreateEntitySetAdapters();
+        private static Db.OeEntitySetAdapterCollection _entitySetAdapters;
 
         public OeEfCoreDataAdapter() : this(null, null)
         {
@@ -257,7 +257,7 @@ namespace OdataToEntity.EfCore
             dbContext.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
             return dbContext;
         }
-        private static Db.OeEntitySetAdapterCollection CreateEntitySetAdapters()
+        private static Db.OeEntitySetAdapterCollection CreateEntitySetAdapters(IModel efModel)
         {
             var entitySetAdapters = new List<Db.OeEntitySetAdapter>();
             foreach (PropertyInfo property in typeof(T).GetProperties())
@@ -265,7 +265,7 @@ namespace OdataToEntity.EfCore
                 if (typeof(IQueryable).IsAssignableFrom(property.PropertyType))
                 {
                     Type entityType = property.PropertyType.GetGenericArguments()[0];
-                    bool isDbQuery = property.PropertyType.GetGenericTypeDefinition().IsAssignableFrom(typeof(DbQuery<>));
+                    bool isDbQuery = efModel.FindEntityType(entityType).FindPrimaryKey() == null;
                     entitySetAdapters.Add(CreateEntitySetAdapter(entityType, property.Name, isDbQuery));
                 }
             }
@@ -321,6 +321,23 @@ namespace OdataToEntity.EfCore
             Expression expression = queryContext.CreateExpression(new OeConstantToVariableVisitor());
             return query.Provider.Execute<TResult>(queryContext.TranslateSource(dataContext, expression));
         }
+        private static Db.OeEntitySetAdapterCollection GetEntitySetAdapters(Db.OeDataAdapter dataAdapter)
+        {
+            Db.OeEntitySetAdapterCollection entitySetAdapters = Volatile.Read(ref _entitySetAdapters);
+            if (entitySetAdapters != null)
+                return entitySetAdapters;
+
+            var context = (DbContext)dataAdapter.CreateDataContext();
+            try
+            {
+                Interlocked.CompareExchange(ref _entitySetAdapters, CreateEntitySetAdapters(context.Model), null);
+                return Volatile.Read(ref _entitySetAdapters);
+            }
+            finally
+            {
+                dataAdapter.CloseDataContext(context);
+            }
+        }
         private static IAsyncEnumerable<TResult> GetFromCache<TResult>(OeQueryContext queryContext, T dbContext, Cache.OeQueryCache queryCache,
             out MethodCallExpression countExpression)
         {
@@ -370,6 +387,6 @@ namespace OdataToEntity.EfCore
         }
 
         public override Type DataContextType => typeof(T);
-        public override Db.OeEntitySetAdapterCollection EntitySetAdapters => _entitySetAdapters;
+        public override Db.OeEntitySetAdapterCollection EntitySetAdapters => GetEntitySetAdapters(this);
     }
 }

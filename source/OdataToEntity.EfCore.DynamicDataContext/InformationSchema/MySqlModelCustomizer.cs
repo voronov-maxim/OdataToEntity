@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.EntityFrameworkCore.Query;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -14,9 +15,13 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
     {
         internal sealed class MySqlEntityMaterializerSource : EntityMaterializerSource
         {
-            public override Expression CreateMaterializeExpression(IEntityType entityType, Expression materializationExpression, int[] indexMap = null)
+            public MySqlEntityMaterializerSource(EntityMaterializerSourceDependencies dependencies) : base(dependencies)
             {
-                var block = (BlockExpression)base.CreateMaterializeExpression(entityType, materializationExpression, indexMap);
+            }
+
+            public override Expression CreateMaterializeExpression(IEntityType entityType, String entityInstanceName, Expression materializationContextExpression)
+            {
+                var block = (BlockExpression)base.CreateMaterializeExpression(entityType, entityInstanceName, materializationContextExpression);
                 var expressions = new List<Expression>(block.Expressions);
 
                 expressions[expressions.Count - 1] = Expression.Call(((Action<Object>)Initialize).Method, block.Variables);
@@ -61,18 +66,17 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             _modelCustomizer.Customize(modelBuilder, context);
 
             String databaseName = context.Database.GetDbConnection().Database;
-            modelBuilder.Query<MySqlDbGeneratedColumn>();
             foreach (IMutableEntityType entityType in modelBuilder.Model.GetEntityTypes())
-                entityType.QueryFilter = GetFilter(entityType.ClrType, databaseName);
+                entityType.SetQueryFilter(GetFilter(entityType.ClrType, databaseName));
 
             IMutableProperty specificSchema = (Property)modelBuilder.Model.FindEntityType(typeof(Routine)).FindProperty(nameof(Routine.SpecificSchema));
-            specificSchema.Relational().ColumnName = "ROUTINE_SCHEMA";
+            specificSchema.SetColumnName("ROUTINE_SCHEMA");
 
             IMutableEntityType referentialConstraint = modelBuilder.Model.FindEntityType(typeof(ReferentialConstraint));
-            referentialConstraint.AddProperty(nameof(ReferentialConstraint.ReferencedTableName), typeof(String)).Relational().ColumnName = "REFERENCED_TABLE_NAME";
+            referentialConstraint.AddProperty(nameof(ReferentialConstraint.ReferencedTableName), typeof(String)).SetColumnName("REFERENCED_TABLE_NAME");
 
             Expression<Func<Parameter, bool>> parameterFilter = t => t.SpecificSchema == databaseName && t.OrdinalPosition > 0;
-            modelBuilder.Model.FindEntityType(typeof(Parameter)).QueryFilter = parameterFilter;
+            modelBuilder.Model.FindEntityType(typeof(Parameter)).SetQueryFilter(parameterFilter);
         }
         private static LambdaExpression GetFilter(Type entityType, String databaseName)
         {

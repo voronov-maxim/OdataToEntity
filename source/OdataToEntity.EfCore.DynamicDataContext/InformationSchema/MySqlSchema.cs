@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Internal;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.EntityFrameworkCore.Query;
 using OdataToEntity.EfCore.DynamicDataContext.ModelBuilder;
 using System;
 using System.Collections.Generic;
@@ -67,8 +67,8 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             try
             {
                 var dbGeneratedColumns = new List<DbGeneratedColumn>();
-                var dbSet = new InternalDbQuery<MySqlModelCustomizer.MySqlDbGeneratedColumn>(schemaContext);
-                foreach (MySqlModelCustomizer.MySqlDbGeneratedColumn column in dbSet.Where(c => c.Extra != ""))
+                var dbSet = new InternalDbSet<MySqlModelCustomizer.MySqlDbGeneratedColumn>(schemaContext);
+                foreach (MySqlModelCustomizer.MySqlDbGeneratedColumn column in dbSet.AsQueryable().Where(c => c.Extra != ""))
                 {
                     var dbGeneratedColumn = new DbGeneratedColumn()
                     {

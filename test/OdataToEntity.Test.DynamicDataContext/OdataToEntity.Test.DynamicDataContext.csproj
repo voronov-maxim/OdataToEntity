@@ -14,6 +14,10 @@
   </PropertyGroup>
 
   <PropertyGroup>
+    <NoWarn>EF1001</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <StartupObject>OdataToEntity.Test.DynamicDataContext.Program</StartupObject>
   </PropertyGroup>
 

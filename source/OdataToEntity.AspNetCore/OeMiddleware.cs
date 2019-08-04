@@ -1,10 +1,8 @@
 ﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http;
 using Microsoft.Extensions.Primitives;
 using Microsoft.OData.Edm;
 using Microsoft.OData.Edm.Csdl;
 using Microsoft.OData.Edm.Validation;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -51,9 +49,8 @@ namespace OdataToEntity.AspNetCore
         }
         private async Task InvokeApi(HttpContext httpContext)
         {
-            var requestHeaders = (HttpRequestHeaders)httpContext.Request.Headers;
-            ((IDictionary<String, StringValues>)requestHeaders).TryGetValue("Prefer", out StringValues preferHeader);
-            OeRequestHeaders headers = OeRequestHeaders.Parse(requestHeaders.HeaderAccept, preferHeader);
+            httpContext.Request.Headers.TryGetValue("Prefer", out StringValues preferHeader);
+            OeRequestHeaders headers = OeRequestHeaders.Parse(httpContext.Request.Headers["Accept"], preferHeader);
 
             var parser = new OeParser(UriHelper.GetBaseUri(httpContext.Request), EdmModel, GetModelBoundProvider(httpContext), OeParser.ServiceProvider);
             await parser.ExecuteGetAsync(UriHelper.GetUri(httpContext.Request), new OeHttpRequestHeaders(headers, httpContext.Response),

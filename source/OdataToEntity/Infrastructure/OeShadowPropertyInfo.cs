@@ -37,6 +37,7 @@ namespace OdataToEntity.Infrastructure
         public override bool CanRead => _getMethodInfo != null;
         public override bool CanWrite => _setMethodInfo != null;
         public override Type DeclaringType { get; }
+        public override Module Module => DeclaringType.Module;
         public override String Name { get; }
         public override Type PropertyType { get; }
         public override Type ReflectedType => throw new NotSupportedException();

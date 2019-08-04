@@ -11,7 +11,7 @@ namespace OdataToEntity.Test.AspMvcServer
 {
     public class Startup
     {
-        public Startup(IHostingEnvironment env)
+        public Startup(IWebHostEnvironment env)
         {
             var builder = new ConfigurationBuilder()
                 .SetBasePath(env.ContentRootPath)
@@ -38,7 +38,7 @@ namespace OdataToEntity.Test.AspMvcServer
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app)
         {
             app.UseMvc(routes => routes.AddOdataToEntityRoute());
         }

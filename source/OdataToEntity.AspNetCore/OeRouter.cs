@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
+using Microsoft.AspNetCore.Mvc.ActionConstraints;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
-using Microsoft.AspNetCore.Mvc.Internal;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Routing.Template;
 using System;
@@ -32,11 +32,11 @@ namespace OdataToEntity.AspNetCore
                 else
                     return false;
 
+            var candidate = new ActionSelectorCandidate(actionDescriptor, null);
+            var constraintContext = new ActionConstraintContext() { CurrentCandidate = candidate };
             for (int i = 0; i < actionDescriptor.ActionConstraints.Count; i++)
-                if (actionDescriptor.ActionConstraints[i] is HttpMethodActionConstraint httpMethodActionConstraint)
-                    foreach (String constraintMethod in httpMethodActionConstraint.HttpMethods)
-                        if (String.Compare(constraintMethod, httpMethod, StringComparison.InvariantCultureIgnoreCase) == 0)
-                            return true;
+                if (actionDescriptor.ActionConstraints[i] is IActionConstraint actionConstraint && actionConstraint.Accept(constraintContext))
+                    return true;
 
             return false;
         }
@@ -78,7 +78,7 @@ namespace OdataToEntity.AspNetCore
             if (candidates.Count == 0)
                 return Task.CompletedTask;
             if (candidates.Count > 1)
-                throw new AmbiguousActionException(path + " " + String.Join(";", candidates.Select(c => c.DisplayName)));
+                throw new InvalidOperationException("Ambiguous action " + path + " " + String.Join(";", candidates.Select(c => c.DisplayName)));
 
             context.Handler = async ctx =>
             {

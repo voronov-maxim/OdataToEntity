@@ -3,6 +3,7 @@ using Microsoft.OData.Edm;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace OdataToEntity.Parsers
 {
@@ -21,26 +22,26 @@ namespace OdataToEntity.Parsers
             Operation = operation;
         }
 
-        public static OeBatchMessage CreateBatchMessage(IEdmModel edmModel, Uri baseUri, Stream requestStream, String contentType, IServiceProvider serviceProvider = null)
+        public static async ValueTask<OeBatchMessage> CreateBatchMessage(IEdmModel edmModel, Uri baseUri, Stream requestStream, String contentType, IServiceProvider serviceProvider = null)
         {
             IODataRequestMessage requestMessage = new Infrastructure.OeInMemoryMessage(requestStream, contentType, serviceProvider);
             var settings = new ODataMessageReaderSettings() { EnableMessageStreamDisposal = false };
             using (var messageReader = new ODataMessageReader(requestMessage, settings))
             {
                 var batchMessage = new List<OeBatchMessage>();
-                ODataBatchReader batchReader = messageReader.CreateODataBatchReader();
-                while (batchReader.Read())
+                ODataBatchReader batchReader = await messageReader.CreateODataBatchReaderAsync();
+                while (await batchReader.ReadAsync())
                 {
                     if (batchReader.State == ODataBatchReaderState.ChangesetStart)
                     {
                         var operations = new List<OeOperationMessage>();
-                        while (batchReader.Read() && batchReader.State != ODataBatchReaderState.ChangesetEnd)
+                        while (await batchReader.ReadAsync() && batchReader.State != ODataBatchReaderState.ChangesetEnd)
                             if (batchReader.State == ODataBatchReaderState.Operation)
-                                operations.Add(OeOperationMessage.Create(edmModel, baseUri, batchReader, serviceProvider));
+                                operations.Add(await OeOperationMessage.Create(edmModel, baseUri, batchReader, serviceProvider));
                         return new OeBatchMessage(contentType, operations);
                     }
                     else if (batchReader.State == ODataBatchReaderState.Operation)
-                        return new OeBatchMessage(contentType, OeOperationMessage.Create(edmModel, baseUri, batchReader, serviceProvider));
+                        return new OeBatchMessage(contentType, await OeOperationMessage.Create(edmModel, baseUri, batchReader, serviceProvider));
                 }
             }
 

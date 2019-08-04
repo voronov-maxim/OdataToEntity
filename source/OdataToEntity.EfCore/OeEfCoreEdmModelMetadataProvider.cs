@@ -26,14 +26,10 @@ namespace OdataToEntity.EfCore
         {
             if (!_shadowProperties.TryGetValue(efProperty, out Infrastructure.OeShadowPropertyInfo shadowProperty))
             {
-                shadowProperty = CreateShadowPropertyCore(efProperty);
+                shadowProperty = new Infrastructure.OeShadowPropertyInfo(efProperty.DeclaringType.ClrType, efProperty.ClrType, efProperty.Name);
                 _shadowProperties.Add(efProperty, shadowProperty);
             }
             return shadowProperty;
-        }
-        protected virtual Infrastructure.OeShadowPropertyInfo CreateShadowPropertyCore(IPropertyBase efProperty)
-        {
-            return new Infrastructure.OeShadowPropertyInfo(efProperty.DeclaringType.ClrType, efProperty.ClrType, efProperty.Name);
         }
         private IEnumerable<IEntityType> GetEntityTypes(PropertyInfo propertyInfo)
         {
@@ -161,10 +157,13 @@ namespace OdataToEntity.EfCore
         }
         private PropertyInfo GetPropertyInfo(IPropertyBase efProperty)
         {
-            if (efProperty.IsShadowProperty() || (efProperty.PropertyInfo == null && efProperty.FieldInfo != null))
+            if (efProperty.IsShadowProperty())
                 return CreateShadowProperty(efProperty);
-            else
+
+            if (efProperty.PropertyInfo == null)
                 return efProperty.DeclaringType.ClrType.GetPropertyIgnoreCase(efProperty.Name);
+
+            return efProperty.PropertyInfo;
         }
         public override bool IsKey(PropertyInfo propertyInfo)
         {

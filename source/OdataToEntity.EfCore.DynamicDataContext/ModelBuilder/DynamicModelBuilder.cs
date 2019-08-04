@@ -1,9 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Reflection;
 
 namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
 {
@@ -42,18 +44,25 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
                 entityType = (EntityType)entityTypeBuilder.Metadata;
                 foreach (DynamicPropertyInfo property in MetadataProvider.GetStructuralProperties(tableEdmName))
                 {
-                    String fieldName = dynamicTypeDefinition.AddShadowPropertyFieldInfo(property.Name, property.Type).Name;
-                    PropertyBuilder propertyBuilder = entityTypeBuilder.Property(property.Type, property.Name).IsRequired(!property.IsNullable).HasField(fieldName);
+                    DynamicTypeDefinition typeDefinition = TypeDefinitionManager.GetDynamicTypeDefinition(entityType.ClrType);
+                    MethodInfo getMethodInfo = typeDefinition.AddShadowPropertyGetMethodInfo(property.Name, property.Type);
+                    var propertyInfo = new Infrastructure.OeShadowPropertyInfo(entityType.ClrType, property.Type, property.Name, getMethodInfo);
+
+                    var efProperty = (Property)entityType.AddProperty(propertyInfo);
+                    efProperty.FieldInfo = dynamicTypeDefinition.AddShadowPropertyFieldInfo(property.Name, property.Type);
+                    efProperty.SetIsNullable(property.IsNullable, ConfigurationSource.Explicit);
+                    efProperty.SetPropertyAccessMode(PropertyAccessMode.Field);
+
                     if (property.DatabaseGeneratedOption == DatabaseGeneratedOption.Identity)
-                        propertyBuilder.ValueGeneratedOnAdd();
+                        efProperty.SetValueGenerated(ValueGenerated.OnAdd, ConfigurationSource.Explicit);
                     else if (property.DatabaseGeneratedOption == DatabaseGeneratedOption.Computed)
-                        propertyBuilder.ValueGeneratedOnAddOrUpdate();
+                        efProperty.SetValueGenerated(ValueGenerated.OnAddOrUpdate, ConfigurationSource.Explicit);
                     else
-                        propertyBuilder.ValueGeneratedNever();
+                        efProperty.SetValueGenerated(ValueGenerated.Never, ConfigurationSource.Explicit);
                 }
 
                 if (isQueryType)
-                    entityTypeBuilder.Metadata.IsQueryType = true;
+                    entityTypeBuilder.Metadata.IsKeyless = true;
                 else
                     foreach ((String[] propertyNames, bool isPrimary) in keys)
                         if (isPrimary)
@@ -88,26 +97,28 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
 
                     Key pkey = principalEntityType.FindKey(principalProperties);
                     if (pkey == null)
-                        pkey = principalEntityType.AddKey(principalProperties);
+                        pkey = principalEntityType.AddKey(principalProperties, ConfigurationSource.Explicit);
 
                     fkey = dependentEntityType.FindForeignKey(dependentProperties, pkey, principalEntityType);
                     if (fkey == null)
-                        fkey = dependentEntityType.AddForeignKey(dependentProperties, pkey, principalEntityType);
+                        fkey = dependentEntityType.AddForeignKey(dependentProperties, pkey, principalEntityType, ConfigurationSource.Explicit, ConfigurationSource.Explicit);
                 }
 
                 DynamicTypeDefinition dynamicTypeDefinition = TypeDefinitionManager.GetDynamicTypeDefinition(tableEdmName);
                 if (dependentInfo.IsCollection)
                 {
-                    if (!dependentEntityType.IsQueryType)
+                    if (!dependentEntityType.IsKeyless)
                     {
-                        Navigation navigation = fkey.HasPrincipalToDependent(propertyName);
+                        var shadowProperty = new Infrastructure.OeShadowPropertyInfo(principalEntityType.ClrType, typeof(ICollection<Types.DynamicType>), propertyName);
+                        Navigation navigation = fkey.HasPrincipalToDependent(shadowProperty, ConfigurationSource.Explicit);
                         navigation.SetField(dynamicTypeDefinition.GetCollectionFiledName(propertyName));
                     }
                 }
                 else
                 {
-                    Navigation navigation = fkey.HasDependentToPrincipal(propertyName);
-                    navigation.SetField(dynamicTypeDefinition.GetSingleFiledName(propertyName));
+                    var shadowProperty = new Infrastructure.OeShadowPropertyInfo(dependentEntityType.ClrType, principalEntityType.ClrType, propertyName);
+                    Navigation navigation = fkey.HasDependentToPrincipal(shadowProperty, ConfigurationSource.Explicit);
+                    navigation.SetField(dynamicTypeDefinition.GetSingleFieldName(propertyName));
                 }
             }
         }

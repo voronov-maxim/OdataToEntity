@@ -59,30 +59,39 @@ namespace OdataToEntity.AspNetCore
 
             return _dataAdapter.Execute(_dataContext, _queryContext);
         }
-        private IAsyncEnumerable<Object> ExecutePost(IEdmModel refModel, ODataUri odataUri, OeRequestHeaders headers, Stream requestStream)
+        private IAsyncEnumerable<Object> ExecutePost(IEdmModel refModel, ODataUri odataUri, OeRequestHeaders headers, Stream requestStream, CancellationToken cancellationToken)
         {
             _odataUri = odataUri;
 
             var parser = new OePostParser(refModel, null);
-            IAsyncEnumerable<Object> asyncEnumerable = parser.GetAsyncEnumerable(odataUri, requestStream, headers, _dataContext, out bool isScalar);
+            IAsyncEnumerable<Object> asyncEnumerable = parser.GetAsyncEnumerable(odataUri, requestStream, headers, _dataContext, cancellationToken, out bool isScalar);
             if (!isScalar)
                 _queryContext = parser.CreateQueryContext(odataUri, headers.MetadataLevel);
 
             return asyncEnumerable;
         }
-        public IAsyncEnumerable<T> ExecuteReader<T>(IQueryable source = null)
+        public IAsyncEnumerable<T> ExecuteReader<T>(IQueryable source = null, CancellationToken cancellationToken = default)
         {
             IAsyncEnumerable<Object> asyncEnumerable = GetAsyncEnumerator(source);
             if (OeExpressionHelper.IsPrimitiveType(typeof(T)) || !_queryContext.EntryFactory.IsTuple)
-                return Infrastructure.AsyncEnumeratorHelper.ToAsyncEnumerable<T>(asyncEnumerable);
+                return Infrastructure.AsyncEnumeratorHelper.ToAsyncEnumerable<T>(asyncEnumerable, cancellationToken);
 
-            return new Db.OeEntityAsyncEnumeratorAdapter<T>(asyncEnumerable.GetEnumerator(), _queryContext);
+            return new Db.OeEntityAsyncEnumeratorAdapter<T>(asyncEnumerable.GetAsyncEnumerator(), _queryContext);
         }
         public async Task<T?> ExecuteScalar<T>(IQueryable source = null, CancellationToken cancellationToken = default) where T : struct
         {
-            using (IAsyncEnumerator<Object> asyncEnumerator = GetAsyncEnumerator(source).GetEnumerator())
-                if (await asyncEnumerator.MoveNext(cancellationToken).ConfigureAwait(false) && asyncEnumerator.Current != null)
+            IAsyncEnumerator<Object> asyncEnumerator = null;
+            try
+            {
+                asyncEnumerator = GetAsyncEnumerator(source).GetAsyncEnumerator();
+                if (await asyncEnumerator.MoveNextAsync().ConfigureAwait(false) && asyncEnumerator.Current != null)
                     return (T)asyncEnumerator.Current;
+            }
+            finally
+            {
+                if (asyncEnumerator != null)
+                    await asyncEnumerator.DisposeAsync();
+            }
 
             _httpContext.Response.ContentType = null;
             return null;
@@ -110,7 +119,7 @@ namespace OdataToEntity.AspNetCore
             OeRequestHeaders headers = GetRequestHeaders(requestHeaders, _httpContext.Response);
 
             if (odataUri.Path.LastSegment is OperationImportSegment)
-                return ExecutePost(refModel, odataUri, headers, _httpContext.Request.Body);
+                return ExecutePost(refModel, odataUri, headers, _httpContext.Request.Body, _httpContext.RequestAborted);
             else
                 return ExecuteGet(refModel, odataUri, headers, source);
         }
@@ -134,8 +143,8 @@ namespace OdataToEntity.AspNetCore
         }
         public ODataResult<T> OData<T>(IAsyncEnumerable<T> asyncEnumerable)
         {
-            IAsyncEnumerator<T> asyncEnumerator = asyncEnumerable.GetEnumerator();
-            _httpContext.Response.RegisterForDispose(asyncEnumerator);
+            IAsyncEnumerator<T> asyncEnumerator = asyncEnumerable.GetAsyncEnumerator();
+            _httpContext.Response.OnCompleted(() => asyncEnumerator.DisposeAsync().AsTask());
 
             if (OeExpressionHelper.IsPrimitiveType(typeof(T)) || _queryContext.ODataUri.Path.LastSegment is CountSegment)
                 return new ODataPrimitiveResult<T>(_edmModel, _odataUri, asyncEnumerator);

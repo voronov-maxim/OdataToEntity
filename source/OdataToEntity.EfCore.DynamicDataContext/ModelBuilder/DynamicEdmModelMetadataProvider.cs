@@ -1,6 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.OData.Edm;
+﻿using Microsoft.EntityFrameworkCore.Metadata;
 using OdataToEntity.Infrastructure;
 using System;
 using System.Collections.Generic;
@@ -19,23 +17,6 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
             _typeDefinitionManager = typeDefinitionManager;
         }
 
-        protected override OeShadowPropertyInfo CreateShadowPropertyCore(IPropertyBase efProperty)
-        {
-            if (efProperty is INavigation efNavigation)
-            {
-                Type propertyType = efNavigation.IsDependentToPrincipal() ?
-                    efNavigation.ForeignKey.PrincipalEntityType.ClrType : efNavigation.ForeignKey.DeclaringEntityType.ClrType;
-
-                if (efNavigation.IsCollection())
-                    propertyType = typeof(ICollection<>).MakeGenericType(new Type[] { propertyType });
-
-                return new OeShadowPropertyInfo(efNavigation.DeclaringType.ClrType, propertyType, efNavigation.Name);
-            }
-
-            DynamicTypeDefinition typeDefinition = _typeDefinitionManager.GetDynamicTypeDefinition(efProperty.DeclaringType.ClrType);
-            MethodInfo getMethodInfo = typeDefinition.AddShadowPropertyGetMethodInfo(efProperty.Name, efProperty.ClrType);
-            return new OeShadowPropertyInfo(efProperty.DeclaringType.ClrType, efProperty.ClrType, efProperty.Name, getMethodInfo);
-        }
         public override IReadOnlyList<PropertyInfo> GetManyToManyProperties(Type clrType)
         {
             if (clrType == typeof(Types.DynamicType))

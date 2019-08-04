@@ -27,7 +27,7 @@ namespace OdataToEntity.Test
         {
             _clear = clear;
 
-            DataAdapter = new EfCore.OeEfCoreDataAdapter<OrderContext>();
+            DataAdapter = new EfCore.OeEfCoreDataAdapter<OrderContext>(OrderContextOptions.Create(true));
             MetadataProvider = new ModelBuilder.OeEdmModelMetadataProvider();
             var modelBuilder = new ModelBuilder.OeEdmModelBuilder(DataAdapter, MetadataProvider);
             EdmModel = modelBuilder.BuildEdmModel();
