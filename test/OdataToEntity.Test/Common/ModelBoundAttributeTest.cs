@@ -103,7 +103,7 @@ namespace OdataToEntity.Test
                                     z.Customer.Name,
                                     z.Customer.Sex
                                 },
-                                Items = o.Items.Select(i => new
+                                Items = z.Items.Select(i => new
                                 {
                                     i.Count,
                                     i.Price,
@@ -208,7 +208,7 @@ namespace OdataToEntity.Test
                                     z.Customer.Name,
                                     z.Customer.Sex
                                 },
-                                Items = o.Items.Select(i => new
+                                Items = z.Items.Select(i => new
                                 {
                                     i.Count,
                                     i.Price,
@@ -290,7 +290,7 @@ namespace OdataToEntity.Test
                                     z.Customer.Name,
                                     z.Customer.Sex
                                 },
-                                Items = o.Items.Select(i => new
+                                Items = z.Items.Select(i => new
                                 {
                                     i.Count,
                                     i.Price,

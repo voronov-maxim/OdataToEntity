@@ -6,8 +6,6 @@ using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.OData.Edm;
-using Remotion.Linq;
-using Remotion.Linq.Clauses;
 using System;
 using System.Collections.Concurrent;
 using System.Linq.Expressions;
@@ -38,34 +36,34 @@ namespace OdataToEntity.Test.Model
             }
         }
 
-        private sealed class ZQueryModelVisitor : RelationalQueryModelVisitor
-        {
-            public ZQueryModelVisitor(EntityQueryModelVisitorDependencies dependencies, RelationalQueryModelVisitorDependencies relationalDependencies, RelationalQueryCompilationContext queryCompilationContext, RelationalQueryModelVisitor parentQueryModelVisitor)
-                : base(dependencies, relationalDependencies, queryCompilationContext, parentQueryModelVisitor)
-            {
-            }
+        //private sealed class ZQueryModelVisitor : RelationalQueryModelVisitor
+        //{
+        //    public ZQueryModelVisitor(EntityQueryModelVisitorDependencies dependencies, RelationalQueryModelVisitorDependencies relationalDependencies, RelationalQueryCompilationContext queryCompilationContext, RelationalQueryModelVisitor parentQueryModelVisitor)
+        //        : base(dependencies, relationalDependencies, queryCompilationContext, parentQueryModelVisitor)
+        //    {
+        //    }
 
-            public override void VisitWhereClause(WhereClause whereClause, QueryModel queryModel, int index)
-            {
-                var substringVisitor = new PatcherVisitor();
-                whereClause.Predicate = substringVisitor.Visit(whereClause.Predicate);
-                base.VisitWhereClause(whereClause, queryModel, index);
-            }
-        }
+        //    public override void VisitWhereClause(WhereClause whereClause, QueryModel queryModel, int index)
+        //    {
+        //        var substringVisitor = new PatcherVisitor();
+        //        whereClause.Predicate = substringVisitor.Visit(whereClause.Predicate);
+        //        base.VisitWhereClause(whereClause, queryModel, index);
+        //    }
+        //}
 
-        private sealed class ZQueryModelVisitorFactory : RelationalQueryModelVisitorFactory
-        {
-            public ZQueryModelVisitorFactory(EntityQueryModelVisitorDependencies dependencies, RelationalQueryModelVisitorDependencies relationalDependencies) :
-                base(dependencies, relationalDependencies)
-            {
-            }
+        //private sealed class ZQueryModelVisitorFactory : RelationalQueryModelVisitorFactory
+        //{
+        //    public ZQueryModelVisitorFactory(EntityQueryModelVisitorDependencies dependencies, RelationalQueryModelVisitorDependencies relationalDependencies) :
+        //        base(dependencies, relationalDependencies)
+        //    {
+        //    }
 
-            public override EntityQueryModelVisitor Create(QueryCompilationContext queryCompilationContext, EntityQueryModelVisitor parentEntityQueryModelVisitor)
-            {
-                return new ZQueryModelVisitor(base.Dependencies, base.RelationalDependencies,
-                    (RelationalQueryCompilationContext)queryCompilationContext, (RelationalQueryModelVisitor)parentEntityQueryModelVisitor);
-            }
-        }
+        //    public override EntityQueryModelVisitor Create(QueryCompilationContext queryCompilationContext, EntityQueryModelVisitor parentEntityQueryModelVisitor)
+        //    {
+        //        return new ZQueryModelVisitor(base.Dependencies, base.RelationalDependencies,
+        //            (RelationalQueryCompilationContext)queryCompilationContext, (RelationalQueryModelVisitor)parentEntityQueryModelVisitor);
+        //    }
+        //}
 
         private static readonly ConcurrentDictionary<String, SqliteConnection> _connections = new ConcurrentDictionary<String, SqliteConnection>();
 
@@ -85,7 +83,7 @@ namespace OdataToEntity.Test.Model
         {
             var optionsBuilder = new DbContextOptionsBuilder<T>();
             optionsBuilder.UseSqlite(GetConnection(databaseName));
-            optionsBuilder.ReplaceService<IEntityQueryModelVisitorFactory, ZQueryModelVisitorFactory>();
+            //optionsBuilder.ReplaceService<IEntityQueryModelVisitorFactory, ZQueryModelVisitorFactory>();
             //optionsBuilder.UseLoggerFactory(CreateLoggerFactory());
             return optionsBuilder.Options;
         }

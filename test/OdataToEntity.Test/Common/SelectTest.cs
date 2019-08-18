@@ -46,7 +46,7 @@ namespace OdataToEntity.Test
             var parameters = new QueryParameters<Order, Object>()
             {
                 RequestUri = "Orders?$apply=filter(Status eq OdataToEntity.Test.Model.OrderStatus'Unknown')/groupby((Name), aggregate(Id with countdistinct as cnt))",
-                Expression = t => t.Where(o => o.Status == OrderStatus.Unknown).GroupBy(o => o.Name).Select(g => new { Name = g.Key, cnt = g.Count() }),
+                Expression = t => t.Where(o => o.Status == OrderStatus.Unknown).GroupBy(o => o.Name).Select(g => new { Name = g.Key, cnt = g.Select(o => o.Id).Distinct().Count() }),
                 PageSize = pageSize
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
@@ -543,8 +543,8 @@ namespace OdataToEntity.Test
                 Expression = t => t.GroupJoin(customers.Where(c => c.Sex == Sex.Male),
                     o => new { Country = o.AltCustomerCountry, Id = o.AltCustomerId },
                     c => new { c.Country, Id = (int?)c.Id },
-                    (o, c) => new { Order = o, Customer = c.DefaultIfEmpty() })
-                    .SelectMany(z => z.Customer, (o, c) => new { o.Order, Customer = c }).Select(a =>
+                    (o, c) => new { Order = o, Customer = c })
+                    .SelectMany(z => z.Customer.DefaultIfEmpty(), (o, c) => new { o.Order, Customer = c }).Select(a =>
                     new Order()
                     {
                         AltCustomerCountry = a.Order.AltCustomerCountry,
@@ -626,7 +626,7 @@ namespace OdataToEntity.Test
             var parameters = new QueryParameters<Order, Object>()
             {
                 RequestUri = "Orders?$filter=Status eq OdataToEntity.Test.Model.OrderStatus'Unknown'&$apply=groupby((Name), aggregate(Id with countdistinct as cnt))",
-                Expression = t => t.Where(o => o.Status == OrderStatus.Unknown).GroupBy(o => o.Name).Select(g => new { Name = g.Key, cnt = g.Count() }),
+                Expression = t => t.Where(o => o.Status == OrderStatus.Unknown).GroupBy(o => o.Name).Select(g => new { Name = g.Key, cnt = g.Select(o => o.Id).Distinct().Count() }),
                 PageSize = pageSize
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
@@ -705,7 +705,7 @@ namespace OdataToEntity.Test
             var parameters = new QueryParameters<Order>()
             {
                 RequestUri = "Orders?$filter=year(Date) eq 2016 and month(Date) gt 3 and day(Date) lt 20",
-                Expression = t => t.Where(o => o.Date.GetValueOrDefault().Year == 2016 && o.Date.GetValueOrDefault().Month > 3 && o.Date.GetValueOrDefault().Day < 20),
+                Expression = t => t.Where(o => o.Date.Value.Year == 2016 && o.Date.Value.Month > 3 && o.Date.Value.Day < 20),
                 PageSize = pageSize
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
@@ -718,7 +718,7 @@ namespace OdataToEntity.Test
             var parameters = new QueryParameters<Category>()
             {
                 RequestUri = "Categories?$filter=year(DateTime) eq 2016 and month(DateTime) gt 3 and day(DateTime) lt 20",
-                Expression = t => t.Where(c => c.DateTime.GetValueOrDefault().Year == 2016 && c.DateTime.GetValueOrDefault().Month > 3 && c.DateTime.GetValueOrDefault().Day < 20),
+                Expression = t => t.Where(c => c.DateTime.Value.Year == 2016 && c.DateTime.Value.Month > 3 && c.DateTime.Value.Day < 20),
                 PageSize = pageSize
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
@@ -1300,7 +1300,7 @@ namespace OdataToEntity.Test
             {
                 RequestUri = @"Orders?$filter=AltCustomerId eq 3 and CustomerId eq 4 and ((year(Date) eq 2016 and month(Date) gt 11 and day(Date) lt 20) or Date eq null) and contains(Name,'unknown') and Status eq OdataToEntity.Test.Model.OrderStatus'Unknown'
 &$expand=Items($filter=(Count eq 0 or Count eq null) and (Price eq 0 or Price eq null) and (contains(Product,'unknown') or contains(Product,'null')) and OrderId gt -1 and Id ne 1)",
-                Expression = t => t.Where(o => o.AltCustomerId == 3 && o.CustomerId == 4 && ((o.Date.GetValueOrDefault().Year == 2016 && o.Date.GetValueOrDefault().Month > 11 && o.Date.GetValueOrDefault().Day < 20)) && o.Name.Contains("unknown") && o.Status == OrderStatus.Unknown)
+                Expression = t => t.Where(o => o.AltCustomerId == 3 && o.CustomerId == 4 && ((o.Date.Value.Year == 2016 && o.Date.Value.Month > 11 && o.Date.Value.Day < 20)) && o.Name.Contains("unknown") && o.Status == OrderStatus.Unknown)
                 .Include(o => o.Items.Where(i => (i.Count == 0 || i.Count == null) && (i.Price == 0 || i.Price == null) && (i.Product.Contains("unknown") || i.Product.Contains("null")) && i.OrderId > -1 && i.Id != 1)),
                 NavigationNextLink = navigationNextLink,
                 PageSize = pageSize

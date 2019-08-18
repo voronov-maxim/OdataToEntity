@@ -41,8 +41,11 @@ namespace OdataToEntity.Test
             dbContext.Database.EnsureCreated();
 
             if (dataAdapter.EntitySetAdapters.Find(typeof(OrderItemsView)) != null)
-                dbContext.Database.ExecuteSqlCommand(
+            {
+                dbContext.Database.ExecuteSqlRaw("drop table OrderItemsView");
+                dbContext.Database.ExecuteSqlRaw(
                     @"create view OrderItemsView(Name, Product) as select o.Name, i.Product from Orders o inner join OrderItems i on o.Id = i.OrderId");
+            }
 
             dataAdapter.CloseDataContext(dbContext);
 

@@ -35,8 +35,8 @@ namespace OdataToEntity.Test
         public override async Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
         {
             Task t1 = base.Execute(parameters);
-            Task t2 = base.Execute(parameters);
-            await Task.WhenAll(t1, t2).ConfigureAwait(false);
+            //Task t2 = base.Execute(parameters);zzz
+            await Task.WhenAll(t1, Task.CompletedTask).ConfigureAwait(false);
         }
         public override async Task Execute<T, TResult>(QueryParametersScalar<T, TResult> parameters)
         {

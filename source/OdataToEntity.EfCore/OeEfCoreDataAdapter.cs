@@ -49,7 +49,6 @@ namespace OdataToEntity.EfCore
             }
             public override IQueryable GetEntitySet(Object dataContext)
             {
-                var dbContext = (T)dataContext;
                 return new EntityQueryable<TEntity>(((T)dataContext).GetDependencies().QueryProvider);
             }
             public override void RemoveEntity(Object dataContext, ODataResourceBase entry)
@@ -296,12 +295,16 @@ namespace OdataToEntity.EfCore
             else
             {
                 Expression expression = queryContext.CreateExpression(new OeConstantToVariableVisitor());
+                expression = OeEnumerableToQuerableVisitor.Translate(expression);
                 IQueryable entitySet = queryContext.EntitySetAdapter.GetEntitySet(dataContext);
                 IQueryable query = entitySet.Provider.CreateQuery(queryContext.TranslateSource(dataContext, expression));
                 asyncEnumerable = ((IQueryable<Object>)query).AsAsyncEnumerable();
 
                 if (queryContext.IsQueryCount())
-                    countExpression = queryContext.CreateCountExpression(query.Expression);
+                {
+                    expression = queryContext.CreateCountExpression(query.Expression);
+                    countExpression = (MethodCallExpression)OeEnumerableToQuerableVisitor.Translate(expression);
+                }
             }
 
             if (countExpression != null)
@@ -319,6 +322,7 @@ namespace OdataToEntity.EfCore
 
             IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dataContext);
             Expression expression = queryContext.CreateExpression(new OeConstantToVariableVisitor());
+            expression = OeEnumerableToQuerableVisitor.Translate(expression);
             return query.Provider.Execute<TResult>(queryContext.TranslateSource(dataContext, expression));
         }
         private static Db.OeEntitySetAdapterCollection GetEntitySetAdapters(Db.OeDataAdapter dataAdapter)
@@ -354,6 +358,8 @@ namespace OdataToEntity.EfCore
 
                 queryExecutor = dbContext.CreateAsyncQueryExecutor<TResult>(expression);
                 countExpression = queryContext.CreateCountExpression(expression);
+                countExpression = (MethodCallExpression)OeEnumerableToQuerableVisitor.Translate(countExpression);
+
                 queryCache.AddQuery(queryContext.CreateCacheContext(parameterVisitor.ConstantToParameterMapper), queryExecutor, countExpression, queryContext.EntryFactory);
                 parameterValues = parameterVisitor.ParameterValues;
             }
@@ -368,7 +374,7 @@ namespace OdataToEntity.EfCore
             var queryContextFactory = dbContext.GetService<IQueryContextFactory>();
             QueryContext efQueryContext = queryContextFactory.Create();
             foreach (Cache.OeQueryCacheDbParameterValue parameterValue in parameterValues)
-                efQueryContext.Add(parameterValue.ParameterName, parameterValue.ParameterValue);
+                efQueryContext.AddParameter(parameterValue.ParameterName, parameterValue.ParameterValue);
 
             if (queryContext.IsQueryCount())
             {

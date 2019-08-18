@@ -289,19 +289,7 @@ namespace OdataToEntity.Parsers
         }
         public static bool IsTupleType(Type type)
         {
-            if (!type.IsGenericType)
-                return false;
-
-            Type tupleType = type.GetGenericTypeDefinition();
-            return
-                tupleType == typeof(Tuple<>) ||
-                tupleType == typeof(Tuple<,>) ||
-                tupleType == typeof(Tuple<,,>) ||
-                tupleType == typeof(Tuple<,,,>) ||
-                tupleType == typeof(Tuple<,,,,>) ||
-                tupleType == typeof(Tuple<,,,,,>) ||
-                tupleType == typeof(Tuple<,,,,,,>) ||
-                tupleType == typeof(Tuple<,,,,,,,>);
+            return typeof(System.Runtime.CompilerServices.ITuple).IsAssignableFrom(type);
         }
         public static MemberExpression ReplaceParameter(MemberExpression propertyExpression, Expression newParameter)
         {

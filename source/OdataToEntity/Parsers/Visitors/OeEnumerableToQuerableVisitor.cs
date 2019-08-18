@@ -9,6 +9,13 @@ namespace OdataToEntity.Parsers
 {
     public class OeEnumerableToQuerableVisitor : ExpressionVisitor
     {
+        private static readonly Dictionary<String, MethodInfo[]> _queryableMethods =
+            typeof(Queryable).GetMethods().GroupBy(m => m.Name).ToDictionary(g => g.Key, g => g.ToArray());
+
+        protected OeEnumerableToQuerableVisitor()
+        {
+        }
+
         private static MethodInfo GetQuerableMethodInfo(MethodInfo enumerableMethodInfo, ReadOnlyCollection<Expression> arguments)
         {
             var enumerableTypes = new Type[arguments.Count - 1];
@@ -18,41 +25,38 @@ namespace OdataToEntity.Parsers
                 else
                     enumerableTypes[i - 1] = arguments[i].Type;
 
-            foreach (MethodInfo methodInfo in typeof(Queryable).GetMethods())
+            foreach (MethodInfo methodInfo in _queryableMethods[enumerableMethodInfo.Name])
             {
-                if (methodInfo.Name == enumerableMethodInfo.Name)
+                ParameterInfo[] queryableParameters = methodInfo.GetParameters();
+                if (queryableParameters.Length == arguments.Count)
                 {
-                    ParameterInfo[] querableParameters = methodInfo.GetParameters();
-                    if (querableParameters.Length == arguments.Count)
-                    {
-                        bool matched = true;
-                        for (int i = 1; i < querableParameters.Length && matched; i++)
-                            if (querableParameters[i].ParameterType.IsGenericType)
+                    bool matched = true;
+                    for (int i = 1; i < queryableParameters.Length && matched; i++)
+                        if (queryableParameters[i].ParameterType.IsGenericType)
+                        {
+                            if (queryableParameters[i].ParameterType.IsSubclassOf(typeof(LambdaExpression)))
                             {
-                                if (querableParameters[i].ParameterType.IsSubclassOf(typeof(LambdaExpression)))
-                                {
-                                    Type lambdaType = querableParameters[i].ParameterType.GetGenericArguments()[0];
-                                    matched = lambdaType.GetGenericTypeDefinition() == enumerableTypes[i - 1];
-                                }
-                                else
-                                {
-                                    Type queryableParameter = querableParameters[i].ParameterType.GetGenericTypeDefinition();
-                                    if (queryableParameter == typeof(IEnumerable<>) && enumerableTypes[i - 1] == typeof(IQueryable<>))
-                                        matched = true;
-                                    else
-                                        matched = queryableParameter == enumerableTypes[i - 1];
-                                }
+                                Type lambdaType = queryableParameters[i].ParameterType.GetGenericArguments()[0];
+                                matched = lambdaType.GetGenericTypeDefinition() == enumerableTypes[i - 1];
                             }
                             else
-                                matched = querableParameters[i].ParameterType == enumerableTypes[i - 1];
+                            {
+                                Type queryableParameter = queryableParameters[i].ParameterType.GetGenericTypeDefinition();
+                                if (queryableParameter == typeof(IEnumerable<>) && typeof(IQueryable).IsAssignableFrom(enumerableTypes[i - 1]))
+                                    matched = true;
+                                else
+                                    matched = queryableParameter == enumerableTypes[i - 1];
+                            }
+                        }
+                        else
+                            matched = queryableParameters[i].ParameterType == enumerableTypes[i - 1];
 
-                        if (matched)
-                            if (methodInfo.ReturnType == enumerableMethodInfo.ReturnType ||
-                                (methodInfo.ReturnType.IsGenericType && (
-                                methodInfo.ReturnType.GetGenericTypeDefinition() == typeof(IQueryable<>)) ||
-                                methodInfo.ReturnType.GetGenericTypeDefinition() == typeof(IOrderedQueryable<>)))
-                                return methodInfo.GetGenericMethodDefinition().MakeGenericMethod(enumerableMethodInfo.GetGenericArguments());
-                    }
+                    if (matched)
+                        if (methodInfo.ReturnType == enumerableMethodInfo.ReturnType ||
+                            (methodInfo.ReturnType.IsGenericType && (
+                            methodInfo.ReturnType.GetGenericTypeDefinition() == typeof(IQueryable<>)) ||
+                            methodInfo.ReturnType.GetGenericTypeDefinition() == typeof(IOrderedQueryable<>)))
+                            return methodInfo.GetGenericMethodDefinition().MakeGenericMethod(enumerableMethodInfo.GetGenericArguments());
                 }
             }
 
@@ -62,7 +66,10 @@ namespace OdataToEntity.Parsers
 
             throw new InvalidOperationException("method " + enumerableMethodInfo.Name + " not found in Querable");
         }
-
+        public static Expression Translate(Expression expression)
+        {
+            return new OeEnumerableToQuerableVisitor().Visit(expression);
+        }
         protected override Expression VisitConstant(ConstantExpression node)
         {
             if (node.Value is OeEnumerableStub enumerableStub)
@@ -74,8 +81,10 @@ namespace OdataToEntity.Parsers
             node = (Expression<T>)base.VisitLambda(node);
             if (node.ReturnType.IsGenericType && node.ReturnType.GetGenericTypeDefinition() == typeof(ICollection<>))
             {
-                Expression body = Expression.Convert(node.Body, typeof(IEnumerable<>).MakeGenericType(node.ReturnType.GetGenericArguments()));
-                return Expression.Lambda(body, node.Parameters);
+                Type[] arguments = node.Type.GetGenericArguments();
+                arguments[arguments.Length - 1] = typeof(IEnumerable<>).MakeGenericType(node.ReturnType.GetGenericArguments());
+                Type delegateType = node.Type.GetGenericTypeDefinition().MakeGenericType(arguments);
+                return Expression.Lambda(delegateType, node.Body, node.Parameters);
             }
             return node;
         }

@@ -135,7 +135,9 @@ namespace OdataToEntity.Parsers
                         ConstantExpression newConstant = OeExpressionHelper.ConstantChangeType(oldConstant, rightType);
                         if (oldConstant != newConstant)
                             ReplaceConstant(oldConstant, newConstant);
-                        left = Expression.Convert(newConstant, right.Type);
+
+                        if (newConstant.Value != null)
+                            left = Expression.Convert(newConstant, right.Type);
                     }
                     else if (right is ConstantExpression)
                     {
@@ -143,7 +145,9 @@ namespace OdataToEntity.Parsers
                         ConstantExpression newConstant = OeExpressionHelper.ConstantChangeType(oldConstant, leftType);
                         if (oldConstant != newConstant)
                             ReplaceConstant(oldConstant, newConstant);
-                        right = Expression.Convert(newConstant, left.Type);
+
+                        if (newConstant.Value != null)
+                            right = Expression.Convert(newConstant, left.Type);
                     }
                     else
                     {

@@ -23,7 +23,7 @@ namespace OdataToEntity.Parsers
 
             var queryContext = new OeQueryContext(edmModel, odataUri);
             Expression expression = queryContext.CreateExpression(out _);
-            _expression = new OeEnumerableToQuerableVisitor().Visit(expression);
+            _expression = OeEnumerableToQuerableVisitor.Translate(expression);
 
             EntryFactory = queryContext.EntryFactory;
         }
@@ -31,7 +31,7 @@ namespace OdataToEntity.Parsers
         {
             EdmModel = edmModel;
             _entitySet = entitySet;
-            _expression = new OeEnumerableToQuerableVisitor().Visit(expression);
+            _expression = OeEnumerableToQuerableVisitor.Translate(expression);
             EntryFactory = entryFactory;
         }
 
