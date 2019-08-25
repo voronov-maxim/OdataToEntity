@@ -1,10 +1,18 @@
-﻿namespace OdataToEntity.Test.Model
+﻿using System.Linq.Expressions;
+
+namespace OdataToEntity.Test.Model
 {
     public sealed class OrderDataAdapter : EfCore.OeEfCoreDataAdapter<OrderContext>
     {
         public OrderDataAdapter() :
             base(OrderContextOptions.Create(OrderContext.GenerateDatabaseName()), new Cache.OeQueryCache(false))
         {
+        }
+
+        protected override Expression TranslateExpression(Expression expression)
+        {
+            //return new SQLiteVisitor().Visit(expression);
+            return expression;
         }
     }
 

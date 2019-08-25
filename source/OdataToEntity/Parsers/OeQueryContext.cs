@@ -92,7 +92,7 @@ namespace OdataToEntity.Parsers
                         query = entitySetAdapter.GetEntitySet(_dataContext);
                     }
 
-                    return Expression.Constant(query);
+                    return query.Expression;
                 }
 
                 return node;

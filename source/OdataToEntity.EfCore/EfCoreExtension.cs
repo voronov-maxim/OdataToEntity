@@ -13,7 +13,6 @@ namespace OdataToEntity.EfCore
     {
         public static Func<QueryContext, IAsyncEnumerable<T>> CreateAsyncQueryExecutor<T>(this DbContext dbContext, Expression expression)
         {
-            expression = Parsers.OeEnumerableToQuerableVisitor.Translate(expression);
             var queryCompilationContextFactory = dbContext.GetService<IQueryCompilationContextFactory>();
             if (Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(expression.Type) == null)
             {

@@ -165,6 +165,19 @@ namespace OdataToEntity.Parsers
             }
             return expressions;
         }
+        public static Type[] GetTupleArguments(Type tupleType)
+        {
+            Type[] arguments = tupleType.GetGenericArguments();
+            if (arguments.Length == 8 && IsTupleType(arguments[7]))
+            {
+                Type[] restArguments = GetTupleArguments(arguments[7]);
+                var allArguments = new Type[7 + restArguments.Length];
+                Array.Copy(arguments, 0, allArguments, 0, 7);
+                Array.Copy(restArguments, 0, allArguments, 7, restArguments.Length);
+                return allArguments;
+            }
+            return arguments;
+        }
         public static Type GetTupleType(Type[] typeArguments)
         {
             Type tupleType;
@@ -195,7 +208,16 @@ namespace OdataToEntity.Parsers
                     tupleType = typeof(Tuple<,,,,,,,>);
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(typeArguments), "Tuple out of range");
+                    {
+                        tupleType = typeof(Tuple<,,,,,,,>);
+
+                        Type[] restTypeArguments = new Type[typeArguments.Length - 7];
+                        Array.Copy(typeArguments, 7, restTypeArguments, 0, restTypeArguments.Length);
+                        Type restType = GetTupleType(restTypeArguments);
+                        Array.Resize(ref typeArguments, 8);
+                        typeArguments[7] = restType;
+                        break;
+                    }
             }
 
             return tupleType.MakeGenericType(typeArguments);
