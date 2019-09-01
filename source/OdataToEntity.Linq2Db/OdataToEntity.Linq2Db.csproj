@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Description>Classes bridge from OdataToEntity to Linq2Db. Abstraction layer access to DataContext Entity Linq2Db</Description>
     <Authors>Maxim Voronov</Authors>
-    <TargetFrameworks>$(NetStandardVersion)</TargetFrameworks>
+    <TargetFramework>$(NetStandardVersion)</TargetFramework>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity.Linq2Db</AssemblyName>

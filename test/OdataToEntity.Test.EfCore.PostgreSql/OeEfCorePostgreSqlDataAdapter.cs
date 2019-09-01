@@ -1,10 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using OdataToEntity.Db;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace OdataToEntity.EfCore
+namespace OdataToEntity.EfCore.Postgresql
 {
     public sealed class StringList
     {
@@ -13,7 +12,7 @@ namespace OdataToEntity.EfCore
 
     public class OeEfCorePostgreSqlDataAdapter<T> : OeEfCoreDataAdapter<T> where T : DbContext
     {
-        private sealed class EfCorePostgreSqlOperationAdapter : OePostgreSqlEfCoreOperationAdapter
+        private sealed class EfCorePostgreSqlOperationAdapter : Postgresql.OePostgreSqlEfCoreOperationAdapter
         {
             public EfCorePostgreSqlOperationAdapter(Type dataContextType) : base(dataContextType)
             {

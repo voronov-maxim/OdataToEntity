@@ -5,7 +5,7 @@
     <Description>Test Ef core PostgreSql for OdataToEntity</Description>
     <AssemblyTitle>Test Ef core PostgreSql for OdataToEntity</AssemblyTitle>
     <Authors>Maxim Voronov</Authors>
-    <TargetFrameworks>$(NetCoreAppVersion)</TargetFrameworks>
+    <TargetFramework>$(NetCoreAppVersion)</TargetFramework>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity.Test.EfCore.PostgreSql</AssemblyName>
@@ -14,11 +14,10 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <StartupObject>OdataToEntity.Test.EfCore.PostgreSql.Program</StartupObject>
+    <StartupObject>OdataToEntity.Test.Postgresql.Program</StartupObject>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\OdataToEntity.Test.EfCore.SqlServer\DbFixtureInitDb.cs" Link="DbFixtureInitDb.cs" />
     <Compile Include="..\OdataToEntity.Test.EfCore.SqlServer\ProcedureTest.cs" Link="ProcedureTest.cs" />
     <Compile Include="..\OdataToEntity.Test\DbFixture.cs" Link="DbFixture.cs" />
     <Compile Include="..\OdataToEntity.Test\Common\*.cs" Link="Common\%(Filename).cs" />
@@ -44,7 +43,7 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$(EfCoreVersion)" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="$(EfCoreVersion)" />
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="3.0.0-*" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="3.0.0-ci.20190826.2" />
     <PackageReference Include="xunit" Version="$(XunitVersion)" />
     <PackageReference Include="xunit.runner.visualstudio" Version="$(XunitVersion)" />
   </ItemGroup>

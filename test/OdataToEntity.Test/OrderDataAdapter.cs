@@ -11,8 +11,7 @@ namespace OdataToEntity.Test.Model
 
         protected override Expression TranslateExpression(Expression expression)
         {
-            //return new SQLiteVisitor().Visit(expression);
-            return expression;
+            return new SQLiteVisitor().Visit(expression);
         }
     }
 

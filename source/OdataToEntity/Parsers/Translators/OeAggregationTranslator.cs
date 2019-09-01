@@ -85,25 +85,10 @@ namespace OdataToEntity.Parsers.Translators
 
             MethodInfo closeMethod;
             MethodInfo openMethod = OeMethodInfoHelper.GetAggMethodInfo(methodName, lambda.ReturnType);
-            if (openMethod == null)
-            {
-                Func<IEnumerable<Object>, Func<Object, Object>, Object> aggFunc;
-                switch (aggMethod)
-                {
-                    case AggregationMethod.Max:
-                        aggFunc = Enumerable.Max;
-                        break;
-                    case AggregationMethod.Min:
-                        aggFunc = Enumerable.Min;
-                        break;
-                    default:
-                        throw new InvalidOperationException($"Enumerable.{methodName} not found"); ;
-                }
-                openMethod = aggFunc.GetMethodInfo().GetGenericMethodDefinition();
-                closeMethod = openMethod.MakeGenericMethod(lambda.Parameters[0].Type, lambda.ReturnType);
-            }
-            else
+            if (openMethod.GetGenericArguments().Length == 1)
                 closeMethod = openMethod.MakeGenericMethod(lambda.Parameters[0].Type);
+            else
+                closeMethod = openMethod.MakeGenericMethod(lambda.Parameters[0].Type, lambda.ReturnType);
 
             return Expression.Call(closeMethod, sourceParameter, lambda);
         }

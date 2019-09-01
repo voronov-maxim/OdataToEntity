@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Description>Access database without data context. Targets .NET Core with support for .NET 4.6.1</Description>
     <Authors>Maxim Voronov</Authors>
-    <TargetFrameworks>$(NetStandardVersion)</TargetFrameworks>
+    <TargetFramework>$(NetStandardVersion)</TargetFramework>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity.EfCore.DynamicDataContext</AssemblyName>

@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Description>Classes bridge from OdataToEntity to Entity Framework 6.2.0. Abstraction layer access to DataContext Entity Framework 6.2.0. Targets .NET 4.6.1</Description>
     <Authors>Maxim Voronov</Authors>
-    <TargetFrameworks>$(NetStandardVersion)</TargetFrameworks>
+    <TargetFramework>$(NetStandardVersion)</TargetFramework>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity.Ef6</AssemblyName>

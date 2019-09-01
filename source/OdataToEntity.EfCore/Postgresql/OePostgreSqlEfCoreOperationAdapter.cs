@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 
-namespace OdataToEntity.EfCore
+namespace OdataToEntity.EfCore.Postgresql
 {
     public class OePostgreSqlEfCoreOperationAdapter : OeEfCoreOperationAdapter
     {

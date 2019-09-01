@@ -3,6 +3,8 @@ using OdataToEntity.ModelBuilder;
 using OdataToEntity.Test.Model;
 using System;
 using System.IO;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -34,6 +36,7 @@ namespace OdataToEntity.Test
         }
         public override async Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
         {
+            parameters.Expression = (Expression<Func<IQueryable<T>, IQueryable<TResult>>>)new EfCore.Postgresql.OeDateTimeOffsetMembersVisitor().Visit(parameters.Expression);
             Task t1 = base.Execute(parameters);
             //Task t2 = base.Execute(parameters);zzz
             await Task.WhenAll(t1, Task.CompletedTask).ConfigureAwait(false);

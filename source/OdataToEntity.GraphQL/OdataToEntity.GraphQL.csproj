@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Description>Translate and execute GraphQL query via OData</Description>
     <Authors>Maxim Voronov</Authors>
-    <TargetFrameworks>$(NetStandardVersion);$(FrameworkVersion)</TargetFrameworks>
+    <TargetFramework>$(NetStandardVersion)</TargetFramework>
     <AssemblyName>OdataToEntity.GraphQL</AssemblyName>
     <AssemblyVersion>$(OdataToEntityVersion)</AssemblyVersion>
     <Title>Translate GraphQL to OData</Title>

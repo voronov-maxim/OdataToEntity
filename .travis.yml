@@ -1,9 +1,22 @@
-language: csharp  
-sudo: required  
-dist: xenial  
+dist: xenial
+addons:
+  snaps:
+    - name: dotnet-sdk
+      confinement: classic
+      channel: latest/beta
+sudo: required
+language: csharp
 mono: none
-dotnet: 2.2
+services:
+  - postgresql
 before_script:
-  - dotnet restore ./test/OdataToEntity.Test 
-script:  
-  - dotnet test ./test/OdataToEntity.Test/OdataToEntity.Test.csproj -c Release -f netcoreapp2.1
+  - psql -c 'create database "OdataToEntity";' -U postgres
+  - psql -d OdataToEntity -f ./test/sql_scripts/postgresql.sql -U postgres
+
+  - sudo snap alias dotnet-sdk.dotnet dotnet
+  - dotnet restore ./test/OdataToEntity.Test.EfCore.PostgreSql
+script:
+  - dotnet test ./test/OdataToEntity.Test.EfCore.PostgreSql/OdataToEntity.Test.EfCore.PostgreSql.csproj -c Release
+global:
+  - DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+  - DOTNET_CLI_TELEMETRY_OPTOUT=1

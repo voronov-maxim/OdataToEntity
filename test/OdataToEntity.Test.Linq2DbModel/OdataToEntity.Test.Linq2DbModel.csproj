@@ -5,7 +5,7 @@
     <Description>Test Linq2Db Sql Server for OdataToEntity</Description>
     <AssemblyTitle>Test Linq2Db Sql Server for OdataToEntity</AssemblyTitle>
     <Authors>Maxim Voronov</Authors>
-    <TargetFrameworks>$(NetStandardVersion);$(FrameworkVersion)</TargetFrameworks>
+    <TargetFramework>$(NetStandardVersion)</TargetFramework>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity.Test.Linq2DbModel</AssemblyName>

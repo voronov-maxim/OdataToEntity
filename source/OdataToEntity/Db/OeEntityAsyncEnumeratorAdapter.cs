@@ -120,7 +120,7 @@ namespace OdataToEntity.Db
         private static async Task SetNavigationProperty(IOeDbEnumerator dbEnumerator, Object value, Object entity, CancellationToken cancellationToken)
         {
             PropertyInfo propertyInfo = entity.GetType().GetProperty(dbEnumerator.EntryFactory.EdmNavigationProperty.Name);
-            Type nestedEntityType = OeExpressionHelper. GetCollectionItemTypeOrNull(propertyInfo.PropertyType) ?? propertyInfo.PropertyType;
+            Type nestedEntityType = OeExpressionHelper.GetCollectionItemTypeOrNull(propertyInfo.PropertyType) ?? propertyInfo.PropertyType;
             Object navigationValue = await CreateNestedEntity(dbEnumerator, value, nestedEntityType, cancellationToken).ConfigureAwait(false);
             propertyInfo.SetValue(entity, navigationValue);
         }

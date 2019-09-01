@@ -1,9 +1,11 @@
 ﻿using OdataToEntity.Parsers;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace OdataToEntity.Test
 {
@@ -21,6 +23,48 @@ namespace OdataToEntity.Test
             _newParameters = newParameters;
         }
 
+        private ITuple ChangeTupleConstant(ITuple tuple)
+        {
+            Object[] allArguments = null;
+            Type type = ChangeType(tuple.GetType());
+            if (type != tuple.GetType())
+            {
+                allArguments = new Object[tuple.Length];
+                for (int i = 0; i < tuple.Length; i++)
+                {
+                    Object value = tuple[i];
+                    if (value is DateTimeOffset dateTimeOffset)
+                        allArguments[i] = dateTimeOffset.UtcDateTime;
+                    else if (value is Decimal d)
+                        allArguments[i] = (double)d;
+                    else
+                        allArguments[i] = value;
+                }
+
+                return CreateTuple(type, 0);
+            }
+
+            return tuple;
+
+            ITuple CreateTuple(Type tupleType, int index)
+            {
+                Type[] typeArguments = tupleType.GetGenericArguments();
+                ITuple restTuple = null;
+                if (typeArguments.Length == 8)
+                    restTuple = CreateTuple(typeArguments[7], index + 7);
+
+                var arguments = new Object[typeArguments.Length];
+                if (restTuple == null)
+                    Array.Copy(allArguments, index, arguments, 0, typeArguments.Length);
+                else
+                {
+                    Array.Copy(allArguments, index, arguments, 0, 7);
+                    arguments[7] = restTuple;
+                }
+
+                return (ITuple)tupleType.GetConstructor(tupleType.GetGenericArguments()).Invoke(arguments);
+            }
+        }
         private static Type ChangeType(Type type)
         {
             if (type == typeof(DateTimeOffset))
@@ -32,22 +76,28 @@ namespace OdataToEntity.Test
             if (type == typeof(Decimal?))
                 return typeof(double?);
 
+            Type[] arguments;
             if (OeExpressionHelper.IsTupleType(type))
+                arguments = OeExpressionHelper.GetTupleArguments(type);
+            else if (IsAnonymousType(type))
             {
-                Type[] arguments = OeExpressionHelper.GetTupleArguments(type);
-                bool changed = false;
+                PropertyInfo[] properties = type.GetProperties();
+                arguments = new Type[properties.Length];
                 for (int i = 0; i < arguments.Length; i++)
-                {
-                    Type argumentType = ChangeType(arguments[i]);
-                    changed |= argumentType != arguments[i];
-                    arguments[i] = argumentType;
-                }
+                    arguments[i] = properties[i].PropertyType;
+            }
+            else
+                return type;
 
-                if (changed)
-                    return OeExpressionHelper.GetTupleType(arguments);
+            bool changed = false;
+            for (int i = 0; i < arguments.Length; i++)
+            {
+                Type argumentType = ChangeType(arguments[i]);
+                changed |= argumentType != arguments[i];
+                arguments[i] = argumentType;
             }
 
-            return type;
+            return changed ? OeExpressionHelper.GetTupleType(arguments) : type;
         }
         private ParameterExpression GetParameter(ParameterExpression parameter)
         {
@@ -60,12 +110,42 @@ namespace OdataToEntity.Test
 
             throw new InvalidOperationException("Parameter mapping not found");
         }
+        private static bool IsAnonymousType(Type type)
+        {
+            return type.Name.StartsWith("<>", StringComparison.Ordinal) && type.Name.Contains("AnonymousType", StringComparison.Ordinal);
+        }
         protected override Expression VisitBinary(BinaryExpression node)
         {
             Expression left = base.Visit(node.Left);
             Expression right = base.Visit(node.Right);
             if (node.Left != left || node.Right != right)
-                return Expression.MakeBinary(node.NodeType, left, right);
+            {
+                MethodInfo method = node.Method;
+                if (method != null)
+                {
+                    Type nodeType = Nullable.GetUnderlyingType(left.Type) ?? left.Type;
+                    if (nodeType != method.DeclaringType)
+                        method = nodeType.GetMethod(method.Name);
+                }
+
+                return Expression.MakeBinary(node.NodeType, left, right, node.IsLiftedToNull, method);
+            }
+
+            return node;
+        }
+        protected override Expression VisitConstant(ConstantExpression node)
+        {
+            if (node.Type == typeof(DateTimeOffset))
+                return Expression.Constant(((DateTimeOffset)node.Value).UtcDateTime);
+            if (node.Type == typeof(DateTimeOffset?))
+                return Expression.Constant(node.Value == null ? (DateTime?)null : ((DateTimeOffset)node.Value).UtcDateTime, typeof(DateTime?));
+            if (node.Type == typeof(Decimal))
+                return Expression.Constant((double)(Decimal)node.Value);
+            if (node.Type == typeof(Decimal?))
+                return Expression.Constant(node.Value == null ? (double?)null : (double)(Decimal)node.Value, typeof(double?));
+
+            if (node.Value is ITuple tuple)
+                return Expression.Constant(ChangeTupleConstant(tuple));
 
             return node;
         }
@@ -117,10 +197,13 @@ namespace OdataToEntity.Test
         {
             Expression expression = base.Visit(node.Expression);
             PropertyInfo property = node.Member as PropertyInfo;
-            if (property != null)
+            if (property != null && expression.Type == node.Expression.Type)
             {
                 if (property.PropertyType == typeof(DateTimeOffset))
                 {
+                    if (property.DeclaringType == typeof(DateTimeOffset?) && property.Name == nameof(Nullable<DateTimeOffset>.Value))
+                        return Expression.MakeMemberAccess(expression, expression.Type.GetMember(node.Member.Name).Single());
+
                     var propertyInfo = new Infrastructure.OeShadowPropertyInfo(property.DeclaringType, typeof(DateTime), property.Name);
                     return Expression.Property(expression, propertyInfo);
                 }
@@ -132,7 +215,12 @@ namespace OdataToEntity.Test
             }
 
             if (expression != node.Expression)
-                node = Expression.MakeMemberAccess(expression, expression.Type.GetMember(node.Member.Name).Single());
+            {
+                if (IsAnonymousType(node.Expression.Type))
+                    node = MapPropertyAnonymousTypeToTuple(expression, (PropertyInfo)node.Member);
+                else
+                    node = Expression.MakeMemberAccess(expression, expression.Type.GetMember(node.Member.Name).Single());
+            }
 
             if (property != null && property.PropertyType == typeof(Decimal))
                 return Expression.Convert(node, typeof(double));
@@ -140,45 +228,46 @@ namespace OdataToEntity.Test
                 return Expression.Convert(node, typeof(double?));
 
             return node;
+
+            MemberExpression MapPropertyAnonymousTypeToTuple(Expression tupleInstance, PropertyInfo anonymousProperty)
+            {
+                Type tupleType = expression.Type;
+                PropertyInfo[] anonymousProperties = anonymousProperty.DeclaringType.GetProperties();
+                int index = Array.IndexOf(anonymousProperties, anonymousProperty);
+
+                MemberExpression memberAccess = null;
+                while (OeExpressionHelper.IsTupleType(tupleType))
+                {
+                    int offset = index > 7 ? 7 : index;
+                    PropertyInfo tupleProperty = tupleType.GetProperties()[offset];
+                    if (memberAccess == null)
+                        memberAccess = Expression.Property(tupleInstance, tupleProperty);
+                    else
+                        memberAccess = Expression.Property(memberAccess, tupleProperty);
+                    tupleType = tupleProperty.PropertyType;
+
+                    index -= offset;
+                }
+                return memberAccess;
+            }
         }
         protected override Expression VisitMethodCall(MethodCallExpression node)
         {
+            var zzz = OeMethodInfoHelper.MakeGenericMethod(node.Method, node.Arguments);
+            Expression.Call(node.Object, zzz, node.Arguments);
+
+            IReadOnlyList<Expression> arguments;
+            if (node.Method.Name == nameof(Enumerable.Select))
+                arguments = new Expression[] { base.Visit(node.Arguments[0]), node.Arguments[1] };
+            else
+                arguments = base.Visit(node.Arguments);
+
             Expression expression = base.Visit(node.Object);
-            ReadOnlyCollection<Expression> arguments = base.Visit(node.Arguments);
             if (expression == node.Object && arguments == node.Arguments)
                 return node;
 
-            if (node.Method.DeclaringType == typeof(Enumerable) && node.Method.Name == nameof(Enumerable.Sum))
-            {
-                Type returnType = ((LambdaExpression)arguments[1]).ReturnType;
-                MethodInfo openMethod = OeMethodInfoHelper.GetAggMethodInfo(node.Method.Name, returnType);
-                MethodInfo closeMethod = openMethod.MakeGenericMethod(node.Method.GetGenericArguments());
-                return Expression.Call(node.Object, closeMethod, arguments);
-            }
-
-            if (node.Method.DeclaringType == typeof(Queryable))
-            {
-                Type[] genericArguments = node.Method.GetGenericArguments();
-                if (node.Method.Name == nameof(Queryable.Select))
-                {
-                    if (arguments[1] is UnaryExpression quote)
-                        genericArguments[1] = ((LambdaExpression)quote.Operand).ReturnType;
-                    else
-                        genericArguments[1] = ((LambdaExpression)arguments[1]).ReturnType;
-
-                    MethodInfo closeMethod = node.Method.GetGenericMethodDefinition().MakeGenericMethod(genericArguments);
-                    return Expression.Call(node.Object, closeMethod, arguments);
-                }
-
-                if (node.Method.Name == nameof(Queryable.OrderBy))
-                {
-                    genericArguments[0] = genericArguments[0].GetGenericTypeDefinition().MakeGenericType(arguments[0].Type.GetGenericArguments()[0].GetGenericArguments());
-                    MethodInfo closeMethod = node.Method.GetGenericMethodDefinition().MakeGenericMethod(genericArguments);
-                    return Expression.Call(node.Object, closeMethod, arguments);
-                }
-            }
-
-            return node;
+            MethodInfo closeMethod = OeMethodInfoHelper.MakeGenericMethod(node.Method, arguments);
+            return Expression.Call(node.Object, closeMethod, arguments);
         }
         protected override Expression VisitNew(NewExpression node)
         {
@@ -210,7 +299,12 @@ namespace OdataToEntity.Test
                 if (node.Type == typeof(DateTimeOffset))
                     return Expression.Convert(base.Visit(node.Operand), typeof(DateTime));
                 if (node.Type == typeof(DateTimeOffset?))
-                    return Expression.Convert(base.Visit(node.Operand), typeof(DateTime?));
+                {
+                    Expression operand = base.Visit(node.Operand);
+                    if (operand.Type == typeof(DateTimeOffset))
+                        operand = Expression.Property(operand, nameof(DateTimeOffset.UtcDateTime));
+                    return Expression.Convert(operand, typeof(DateTime?));
+                }
                 if (node.Type == typeof(Decimal))
                     return Expression.Convert(base.Visit(node.Operand), typeof(double));
                 if (node.Type == typeof(Decimal?))

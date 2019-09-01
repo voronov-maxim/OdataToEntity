@@ -5,7 +5,7 @@
     <Description>Test Ef6 Sql Server for OdataToEntity</Description>
     <AssemblyTitle>Test Ef6 Sql Server for OdataToEntity</AssemblyTitle>
     <Authors>Maxim Voronov</Authors>
-    <TargetFrameworks>$(FrameworkVersion)</TargetFrameworks>
+    <TargetFramework>$(FrameworkVersion)</TargetFramework>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity.Test.Ef6.SqlServer</AssemblyName>

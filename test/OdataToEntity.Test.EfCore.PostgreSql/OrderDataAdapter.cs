@@ -1,4 +1,6 @@
-﻿using OdataToEntity.EfCore;
+﻿using System.Linq.Expressions;
+using OdataToEntity.EfCore;
+using OdataToEntity.EfCore.Postgresql;
 
 namespace OdataToEntity.Test.Model
 {
@@ -13,6 +15,10 @@ namespace OdataToEntity.Test.Model
         {
             using (var dbContext = new OrderContext(OrderContextOptions.Create<OrderContext>(true)))
                 return new OeEfCoreEdmModelMetadataProvider(dbContext.Model);
+        }
+        protected override Expression TranslateExpression(Expression expression)
+        {
+            return new EfCore.Postgresql.OeDateTimeOffsetMembersVisitor().Visit(expression);
         }
     }
 

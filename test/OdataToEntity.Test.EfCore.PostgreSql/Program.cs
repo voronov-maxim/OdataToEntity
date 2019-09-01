@@ -3,13 +3,13 @@ using Xunit;
 
 [assembly: CollectionBehavior(DisableTestParallelization = true)]
 
-namespace OdataToEntity.Test.EfCore.PostgreSql
+namespace OdataToEntity.Test.Postgresql
 {
     class Program
     {
         static async Task Main()
         {
-            await new RDBNull(new RDBNull_DbFixtureInitDb()).ExpandExpandSkipTop(0, false);
+            await new RDBNull(new RDBNull_DbFixtureInitDb()).FilterDateTimeOffsetYearMonthDay(0);
         }
     }
 }

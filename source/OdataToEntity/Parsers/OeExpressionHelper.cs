@@ -204,18 +204,17 @@ namespace OdataToEntity.Parsers
                 case 7:
                     tupleType = typeof(Tuple<,,,,,,>);
                     break;
-                case 8:
-                    tupleType = typeof(Tuple<,,,,,,,>);
-                    break;
                 default:
                     {
                         tupleType = typeof(Tuple<,,,,,,,>);
-
-                        Type[] restTypeArguments = new Type[typeArguments.Length - 7];
-                        Array.Copy(typeArguments, 7, restTypeArguments, 0, restTypeArguments.Length);
-                        Type restType = GetTupleType(restTypeArguments);
-                        Array.Resize(ref typeArguments, 8);
-                        typeArguments[7] = restType;
+                        if (typeArguments.Length > 8 || !IsTupleType(typeArguments[7]))
+                        {
+                            Type[] restTypeArguments = new Type[typeArguments.Length - 7];
+                            Array.Copy(typeArguments, 7, restTypeArguments, 0, restTypeArguments.Length);
+                            Type restType = GetTupleType(restTypeArguments);
+                            Array.Resize(ref typeArguments, 8);
+                            typeArguments[7] = restType;
+                        }
                         break;
                     }
             }

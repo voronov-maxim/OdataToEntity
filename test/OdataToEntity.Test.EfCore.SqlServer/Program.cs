@@ -1,4 +1,5 @@
-﻿using System;
+﻿using OdataToEntity.Test.Model;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,7 +14,12 @@ namespace OdataToEntity.Test.EfCore.SqlServer
         static async Task Main()
         {
             //PerformanceCacheTest.RunTest(100);
-            await new PLNull(new PLNull_DbFixtureInitDb()).Expand(0, false);
+            var ctx = new OrderContext(OrderContextOptions.Create(true));
+            var zzz = ctx.Orders.AsQueryable()
+                .Where(o => o.Status == OrderStatus.Unknown).GroupBy(o => o.Name).Select(g => new { Name = g.Key, cnt = g.GroupBy(o => o.Id).Count() }).ToArray();
+
+
+            await new PLNull(new PLNull_DbFixtureInitDb()).ApplyGroupByFilter(0);
         }
     }
 }

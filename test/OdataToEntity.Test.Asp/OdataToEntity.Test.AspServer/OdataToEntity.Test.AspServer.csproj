@@ -5,7 +5,7 @@
     <Description>Test Asp sertver for OdataToEntity</Description>
     <AssemblyTitle>Test Asp server for OdataToEntity</AssemblyTitle>
     <Authors>Maxim Voronov</Authors>
-    <TargetFrameworks>$(NetCoreAppVersion)</TargetFrameworks>
+    <TargetFramework>$(NetCoreAppVersion)</TargetFramework>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity.Test.AspServer</AssemblyName>

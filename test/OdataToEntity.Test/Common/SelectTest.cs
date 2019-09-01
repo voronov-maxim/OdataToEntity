@@ -45,8 +45,10 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<Order, Object>()
             {
-                RequestUri = "Orders?$apply=filter(Status eq OdataToEntity.Test.Model.OrderStatus'Unknown')/groupby((Name), aggregate(Id with countdistinct as cnt))",
-                Expression = t => t.Where(o => o.Status == OrderStatus.Unknown).GroupBy(o => o.Name).Select(g => new { Name = g.Key, cnt = g.Select(o => o.Id).Distinct().Count() }),
+                //RequestUri = "Orders?$apply=filter(Status eq OdataToEntity.Test.Model.OrderStatus'Unknown')/groupby((Name), aggregate(Id with countdistinct as cnt))",
+                RequestUri = "Orders?$apply=filter(Status eq OdataToEntity.Test.Model.OrderStatus'Unknown')/groupby((Name), aggregate(Id with sum as cnt))",
+                //Expression = t => t.Where(o => o.Status == OrderStatus.Unknown).GroupBy(o => o.Name).Select(g => new { Name = g.Key, cnt = g.Select(o => o.Id).Distinct().Count() }),
+                Expression = t => t.Where(o => o.Status == OrderStatus.Unknown).GroupBy(o => o.Name).Select(g => new { Name = g.Key, cnt = g.Sum(o => o.Id) }),
                 PageSize = pageSize
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
@@ -71,19 +73,21 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<OrderItem, Object>()
             {
-                RequestUri = "OrderItems?$apply=groupby((OrderId, Order/Status), aggregate(Price with average as avg, Product with countdistinct as dcnt, Price with max as max, Order/Status with max as max_status, Price with min as min, Price with sum as sum, $count as cnt))",
+                //RequestUri = "OrderItems?$apply=groupby((OrderId, Order/Status), aggregate(Price with average as avg, Product with countdistinct as dcnt, Price with max as max, Order/Status with max as max_status, Price with min as min, Price with sum as sum, $count as cnt))&$orderby=OrderId",
+                RequestUri = "OrderItems?$apply=groupby((OrderId, Order/Status), aggregate(Price with average as avg, length(Product) with sum as dcnt, Price with max as max, Order/Status with max as max_status, Price with min as min, Price with sum as sum, $count as cnt))&$orderby=OrderId",
                 Expression = t => t.GroupBy(i => new { i.OrderId, i.Order.Status }).Select(g => new
                 {
                     OrderId = g.Key.OrderId,
                     Order_Status = g.Key.Status,
                     avg = g.Average(i => i.Price),
-                    dcnt = g.Select(i => i.Product).Distinct().Count(),
+                    //dcnt = g.Select(i => i.Product).Distinct().Count(),
+                    dcnt = g.Sum(i => i.Product.Length),
                     max = g.Max(i => i.Price),
-                    max_status = g.Max(i => i.Order.Status),
+                    max_status = g.Max(_ => g.Key.Status),
                     min = g.Min(i => i.Price),
                     sum = g.Sum(i => i.Price),
                     cnt = g.Count()
-                }),
+                }).OrderBy(a => a.OrderId),
                 PageSize = pageSize
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
@@ -96,14 +100,14 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<OrderItem, Object>()
             {
-                RequestUri = "OrderItems?$apply=groupby((Order/Id, Order/Name),aggregate(Price with sum as sum))/compute(length(Order/Name) as nameLength)",
+                RequestUri = "OrderItems?$apply=groupby((Order/Id, Order/Name),aggregate(Price with sum as sum))/compute(length(Order/Name) as nameLength)&$orderby=Order/Id",
                 Expression = t => t.GroupBy(i => new { i.Order.Id, i.Order.Name }).Select(g => new
                 {
                     Order_Id = g.Key.Id,
                     Order_Name = g.Key.Name,
                     sum = g.Sum(i => i.Price),
                     nameLength = g.Key.Name.Length
-                }),
+                }).OrderBy(g => g.Order_Id),
                 PageSize = pageSize
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
@@ -181,8 +185,8 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<OrderItem, Object>()
             {
-                RequestUri = "OrderItems?$apply=groupby((OrderId), aggregate(Price mul Count with sum as sum))",
-                Expression = t => t.GroupBy(i => i.OrderId).Select(g => new { OrderId = g.Key, sum = g.Sum(i => i.Price * i.Count) }),
+                RequestUri = "OrderItems?$apply=groupby((OrderId), aggregate(Price mul Count with sum as sum))&$orderby=OrderId",
+                Expression = t => t.GroupBy(i => i.OrderId).Select(g => new { OrderId = g.Key, sum = g.Sum(i => i.Price * i.Count) }).OrderBy(a => a.OrderId),
                 PageSize = pageSize
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
@@ -233,7 +237,7 @@ namespace OdataToEntity.Test
             var parameters = new QueryParameters<OrderItem, Object>()
             {
                 RequestUri = "OrderItems?$apply=groupby((OrderId))&$top=1&$orderby=OrderId",
-                Expression = t => t.GroupBy(i => i.OrderId).Take(1).Select(g => new { OrderId = g.Key }).OrderBy(g => g.OrderId)
+                Expression = t => t.GroupBy(i => i.OrderId).OrderBy(g => g.Key).Take(1).Select(g => new { OrderId = g.Key })
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
@@ -244,13 +248,15 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<OrderItem, Object>()
             {
-                RequestUri = "OrderItems?$apply=groupby((OrderId), aggregate(substring(Product, 0, 10) with countdistinct as dcnt, $count as cnt))/filter(dcnt ne cnt)",
+                //RequestUri = "OrderItems?$apply=groupby((OrderId), aggregate(substring(Product, 0, 10) with countdistinct as dcnt, $count as cnt))/filter(dcnt ne cnt)&$orderby=OrderId",
+                RequestUri = "OrderItems?$apply=groupby((OrderId), aggregate(length(Product) with sum as dcnt, $count as cnt))/filter(dcnt ne cnt)&$orderby=OrderId",
                 Expression = t => t.GroupBy(i => i.OrderId).Select(g => new
                 {
                     OrderId = g.Key,
-                    dcnt = g.Select(i => i.Product.Substring(0, 10)).Distinct().Count(),
+                    //dcnt = g.Select(i => i.Product.Substring(0, 10)).Distinct().Count(),
+                    dcnt = g.Sum(i => i.Product.Length),
                     cnt = g.Count()
-                }).Where(a => a.dcnt != a.cnt),
+                }).Where(a => a.dcnt != a.cnt).OrderBy(a => a.OrderId),
                 PageSize = pageSize
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
@@ -625,8 +631,9 @@ namespace OdataToEntity.Test
         {
             var parameters = new QueryParameters<Order, Object>()
             {
-                RequestUri = "Orders?$filter=Status eq OdataToEntity.Test.Model.OrderStatus'Unknown'&$apply=groupby((Name), aggregate(Id with countdistinct as cnt))",
-                Expression = t => t.Where(o => o.Status == OrderStatus.Unknown).GroupBy(o => o.Name).Select(g => new { Name = g.Key, cnt = g.Select(o => o.Id).Distinct().Count() }),
+                //RequestUri = "Orders?$filter=Status eq OdataToEntity.Test.Model.OrderStatus'Unknown'&$apply=groupby((Name), aggregate(Id with countdistinct as cnt))",
+                RequestUri = "Orders?$filter=Status eq OdataToEntity.Test.Model.OrderStatus'Unknown'&$apply=groupby((Name), aggregate(Id with sum as cnt))",
+                Expression = t => t.Where(o => o.Status == OrderStatus.Unknown).GroupBy(o => o.Name).Select(g => new { Name = g.Key, cnt = g.Sum(o => o.Id) }),
                 PageSize = pageSize
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
@@ -1326,7 +1333,7 @@ namespace OdataToEntity.Test
             var parameters = new QueryParameters<Order, Object>()
             {
                 RequestUri = "Orders?$select=AltCustomer,AltCustomerCountry,AltCustomerId,Customer,CustomerCountry,CustomerId,Date,Id,Items,Name,ShippingAddresses,Status&$orderby=Id",
-                Expression = t => t.Select(o => new { o.AltCustomer, o.AltCustomerCountry, o.AltCustomerId, o.Customer, o.CustomerCountry, o.CustomerId, o.Date, o.Id, o.Items, o.Name, o.ShippingAddresses, o.Status }).OrderBy(o => o.Id),
+                Expression = t => t.OrderBy(o => o.Id).Select(o => new { o.AltCustomer, o.AltCustomerCountry, o.AltCustomerId, o.Customer, o.CustomerCountry, o.CustomerId, o.Date, o.Id, o.Items, o.Name, o.ShippingAddresses, o.Status }),
                 PageSize = pageSize
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
