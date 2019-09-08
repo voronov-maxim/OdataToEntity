@@ -5,10 +5,11 @@ using Microsoft.OData.Edm;
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace OdataToEntity.GraphQL
 {
-    public sealed class OeEntitySetResolver : IFieldResolver<IEnumerable<Dictionary<String, Object>>>
+    public sealed class OeEntitySetResolver : IFieldResolver<Task<IEnumerable<Dictionary<String, Object>>>>
     {
         private readonly IEdmModel _edmModel;
 
@@ -16,7 +17,7 @@ namespace OdataToEntity.GraphQL
         {
             _edmModel = edmModel;
         }
-        public IEnumerable<Dictionary<String, Object>> Resolve(ResolveFieldContext context)
+        public async Task<IEnumerable<Dictionary<String, Object>>> Resolve(ResolveFieldContext context)
         {
             var results = new List<Dictionary<String, Object>>();
 
@@ -24,22 +25,22 @@ namespace OdataToEntity.GraphQL
             ODataUri odataUri = translator.Translate(context.Document.OriginalQuery);
             IEdmModel refModel = _edmModel.GetEdmModel(odataUri.Path);
             Db.OeDataAdapter dataAdapter = refModel.GetDataAdapter(refModel.EntityContainer);
-            context.UserContext = dataAdapter.CreateDataContext();
-
+            Object dataContext = dataAdapter.CreateDataContext();
+            OeGraphqlAsyncEnumerator entityAsyncEnumerator = null;
             try
             {
                 var queryContext = new Parsers.OeQueryContext(refModel, odataUri);
-                IAsyncEnumerator<Object> asyncEnumerator = dataAdapter.Execute(context.UserContext, queryContext).GetEnumerator();
-                using (var entityAsyncEnumerator = new OeGraphqlAsyncEnumerator(asyncEnumerator, queryContext.EntryFactory))
-                {
-                    while (entityAsyncEnumerator.MoveNext().GetAwaiter().GetResult())
-                        results.Add(entityAsyncEnumerator.Current);
-                }
+                IAsyncEnumerator<Object> asyncEnumerator = dataAdapter.Execute(dataContext, queryContext).GetAsyncEnumerator();
+                entityAsyncEnumerator = new OeGraphqlAsyncEnumerator(asyncEnumerator, queryContext.EntryFactory, CancellationToken.None);
+                while (await entityAsyncEnumerator.MoveNextAsync())
+                    results.Add(entityAsyncEnumerator.Current);
             }
             finally
             {
-                if (context.UserContext != null)
-                    dataAdapter.CloseDataContext(context.UserContext);
+                if (dataContext != null)
+                    dataAdapter.CloseDataContext(dataContext);
+                if (entityAsyncEnumerator != null)
+                    await entityAsyncEnumerator.DisposeAsync().ConfigureAwait(false);
             }
 
             return results;

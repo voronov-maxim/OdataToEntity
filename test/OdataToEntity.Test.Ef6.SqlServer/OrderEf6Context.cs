@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace OdataToEntity.Test.Ef6.SqlServer
 {
-    public sealed class OrderEf6Context : DbContext
+    public class OrderEf6Context : DbContext
     {
         static OrderEf6Context()
         {
@@ -52,7 +52,7 @@ namespace OdataToEntity.Test.Ef6.SqlServer
                 IQueryable<Order> orders = customers.SelectMany(c => c.Orders).Where(o => orderNames.Contains(o.Name));
 
                 IQueryable result = boundParameter.ApplySelect(orders, orderContext);
-                List<Order> orderList = boundParameter.Materialize(result).ToList().GetAwaiter().GetResult();
+                List<Order> orderList = boundParameter.Materialize(result).ToListAsync().GetAwaiter().GetResult();
                 return orderList;
             }
         }

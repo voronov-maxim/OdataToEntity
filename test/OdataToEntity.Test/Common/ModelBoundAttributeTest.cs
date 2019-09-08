@@ -20,7 +20,7 @@ namespace OdataToEntity.Test
             Fixture = fixture;
         }
 
-        [Fact(Skip = SelectTest.SkipTest)]
+        [Fact]
         public async Task Count()
         {
             String request = "Orders?$expand=Items($count=true)&$count=true";
@@ -83,7 +83,7 @@ namespace OdataToEntity.Test
             }
             Assert.Throws<ODataErrorException>(() => { });
         }
-        [Fact(Skip = SelectTest.SkipTest)]
+        [Fact]
         public async Task Filter()
         {
             var parameters = new QueryParameters<Order, Object>()
@@ -188,7 +188,7 @@ namespace OdataToEntity.Test
                 Assert.Equal(expected, actual);
             }
         }
-        [Fact(Skip = SelectTest.SkipTest)]
+        [Fact]
         public async Task OrderBy()
         {
             var parameters = new QueryParameters<Order, Object>()
@@ -270,7 +270,7 @@ namespace OdataToEntity.Test
             }
             Assert.Throws<ODataErrorException>(() => { });
         }
-        [Fact(Skip = SelectTest.SkipTest)]
+        [Fact]
         public async Task SelectExpand()
         {
             var parameters = new QueryParameters<Order, Object>()

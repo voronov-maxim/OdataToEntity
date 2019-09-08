@@ -8,6 +8,8 @@ using OdataToEntity.Test.Model;
 using System;
 using System.Collections.Concurrent;
 using System.IO;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -53,8 +55,8 @@ namespace OdataToEntity.Test
         private static EdmModel CreateDynamicEdmModel(bool useRelationalNulls)
         {
             ProviderSpecificSchema providerSchema = DynamicDataContext.Program.CreateSchemaSqlServer(useRelationalNulls);
-            //ProviderSpecificSchema providerSchema = DynamicDataContext.Program.CreateOptionsPostgreSql(useRelationalNulls);
-            //ProviderSpecificSchema providerSchema = DynamicDataContext.Program.CreateOptionsMySql(useRelationalNulls);
+            //ProviderSpecificSchema providerSchema = DynamicDataContext.Program.CreateSchemaPostgreSql(useRelationalNulls);
+            //ProviderSpecificSchema providerSchema = DynamicDataContext.Program.CreateSchemaMySql(useRelationalNulls);
 
             InformationSchemaMapping informationSchemaMapping = DynamicDataContext.Program.GetMappings();
             using (var metadataProvider = providerSchema.CreateMetadataProvider(informationSchemaMapping))
@@ -66,6 +68,10 @@ namespace OdataToEntity.Test
         }
         public override async Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
         {
+            var dataAdapter = (DynamicDataAdapter)base.OeEdmModel.GetDataAdapter(base.OeEdmModel.EntityContainer);
+            if (dataAdapter.TypeDefinitionManager.ExpressionVisitor != null)
+                parameters.Expression = (Expression<Func<IQueryable<T>, IQueryable<TResult>>>)dataAdapter.TypeDefinitionManager.ExpressionVisitor.Visit(parameters.Expression);
+
             Task t1 = base.Execute(parameters);
             Task t2 = base.Execute(parameters);
             await Task.WhenAll(t1, t2);

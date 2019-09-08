@@ -1,4 +1,5 @@
-﻿using Microsoft.OData.Client;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.OData.Client;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using OdataToEntity.Test.Model;
@@ -28,7 +29,10 @@ namespace OdataToEntity.Test
             _clear = clear;
 
             DataAdapter = new EfCore.OeEfCoreDataAdapter<OrderContext>(OrderContextOptions.Create(true));
-            MetadataProvider = new ModelBuilder.OeEdmModelMetadataProvider();
+            var dbContext = (DbContext)DataAdapter.CreateDataContext();
+            MetadataProvider = new EfCore.OeEfCoreEdmModelMetadataProvider(dbContext.Model);
+            DataAdapter.CloseDataContext(dbContext);
+
             var modelBuilder = new ModelBuilder.OeEdmModelBuilder(DataAdapter, MetadataProvider);
             EdmModel = modelBuilder.BuildEdmModel();
         }
@@ -75,9 +79,7 @@ namespace OdataToEntity.Test
                     throw;
 
                 fromOe = await ExecuteOeViaHttpClient(parameters, null);
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine(e.Message);
-                Console.ResetColor();
+                TestWriteException(e, ConsoleColor.Green);
             }
 
             IReadOnlyList<EfInclude> includes;
@@ -152,12 +154,24 @@ namespace OdataToEntity.Test
                     foreach (LambdaExpression navigationPropertyAccessor in navigationPropertyAccessors)
                     {
                         var propertyExpression = (MemberExpression)navigationPropertyAccessor.Body;
-                        if (((PropertyInfo)propertyExpression.Member).GetValue(item) is IEnumerable property)
+                        var propertyInfo = (PropertyInfo)propertyExpression.Member;
+                        if (propertyInfo.DeclaringType != item.GetType())
+                            propertyInfo = item.GetType().GetProperty(propertyInfo.Name);
+
+                        if (propertyInfo.GetValue(item) is IEnumerable property)
                         {
                             DataServiceQueryContinuation itemsContinuation = response.GetContinuation(property);
                             while (itemsContinuation != null)
                             {
-                                QueryOperationResponse itemsResponse = await newQuery.Context.LoadPropertyAsync(item, propertyExpression.Member.Name, itemsContinuation);
+                                QueryOperationResponse itemsResponse;
+                                try
+                                {
+                                    itemsResponse = await newQuery.Context.LoadPropertyAsync(item, propertyExpression.Member.Name, itemsContinuation);
+                                }
+                                catch (InvalidOperationException e)
+                                {
+                                    throw new NotSupportedException(e.Message);
+                                }
                                 itemsContinuation = itemsResponse.GetContinuation();
                             }
                         }

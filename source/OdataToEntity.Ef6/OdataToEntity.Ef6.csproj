@@ -2,9 +2,9 @@
   <Import Project="..\..\build\dependencies.props" />
 
   <PropertyGroup>
-    <Description>Classes bridge from OdataToEntity to Entity Framework 6.2.0. Abstraction layer access to DataContext Entity Framework 6.2.0. Targets .NET 4.6.1</Description>
+    <Description>Classes bridge from OdataToEntity to Entity Framework 6.3.0. Abstraction layer access to DataContext Entity Framework 6.3.0. Targets .NET 4.8</Description>
     <Authors>Maxim Voronov</Authors>
-    <TargetFramework>$(NetStandardVersion)</TargetFramework>
+    <TargetFrameworks>$(NetStandardVersion);$(FrameworkVersion)</TargetFrameworks>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity.Ef6</AssemblyName>
@@ -25,24 +25,8 @@
     <PackageVersion>$(OdataToEntityVersion)</PackageVersion>
   </PropertyGroup>
   
-  <PropertyGroup>
-    <OutputType>Library</OutputType>
-    <OutputPath>bin\Debug\</OutputPath>
-  </PropertyGroup>
-
   <ItemGroup>
-    <None Include="App.config" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.ComponentModel.DataAnnotations" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Data" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <PackageReference Include="EntityFramework" Version="6.3.0-preview7-19363-02" />
+    <PackageReference Include="EntityFramework" Version="6.3.0-*" />
   </ItemGroup>
 
   <ItemGroup>

@@ -55,7 +55,7 @@ namespace OdataToEntity.Test.WcfClient
             return container;
         }
 
-        static void Main(string[] args)
+        static void Main(String[] args)
         {
             DbFixtureInitDb.ContainerFactory = ContainerFactory;
 

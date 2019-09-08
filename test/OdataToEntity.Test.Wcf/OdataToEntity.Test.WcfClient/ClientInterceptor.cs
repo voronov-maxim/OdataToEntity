@@ -97,16 +97,5 @@ namespace OdataToEntity.Test.WcfClient
             _requestStream = new NonClosedStream();
             return _requestStream;
         }
-        public override IODataResponseMessage GetResponse()
-        {
-            String contentType = base.GetHeader(ODataConstants.ContentTypeHeader);
-            if (contentType == null)
-                contentType = base.GetHeader("Accept");
-
-            OdataWcfQuery response = _interceptor.OnGetResponse(this, _requestStream).GetAwaiter().GetResult();
-
-            var headers = new Dictionary<String, String>(1) { { ODataConstants.ContentTypeHeader, response.ContentType } };
-            return new HttpWebResponseMessage(headers, 200, () => response.Content);
-        }
     }
 }

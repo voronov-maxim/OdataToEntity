@@ -30,7 +30,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
                     properties = new List<PropertyInfo>();
 
                 Type itemType = _typeDefinitionManager.GetDynamicTypeDefinition(manyToManyTarget).DynamicTypeType;
-                Type propertyType = typeof(ICollection<>).MakeGenericType(itemType);
+                Type propertyType = typeof(IEnumerable<>).MakeGenericType(itemType);
                 properties.Add(new OeShadowPropertyInfo(clrType, propertyType, navigationName));
             }
             return properties ?? (IReadOnlyList<PropertyInfo>)Array.Empty<PropertyInfo>();

@@ -54,7 +54,7 @@ namespace OdataToEntity.Parsers
                         {
                             headers.ResponseContentType = OeRequestHeaders.TextDefault.ContentType;
                             byte[] buffer = System.Text.Encoding.UTF8.GetBytes(asyncEnumerator.Current.ToString());
-                            responseStream.Write(buffer, 0, buffer.Length);
+                            await responseStream.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
                         }
                         else
                             headers.ResponseContentType = null;
@@ -119,13 +119,14 @@ namespace OdataToEntity.Parsers
             IEdmOperationImport operationImport = importSegment.OperationImports.Single();
             Type returnType = edmModel.GetClrType(operationImport.Operation.ReturnType.Definition);
 
-            IODataRequestMessage requestMessage = new Infrastructure.OeInMemoryMessage(responseStream, null);
+            var syncToAsyncStream = new Infrastructure.SyncToAsyncStream(responseStream);//fix invoke Flush throw exception in kestrel 3.0
+            IODataRequestMessage requestMessage = new Infrastructure.OeInMemoryMessage(syncToAsyncStream, null);
             using (ODataMessageWriter messageWriter = new ODataMessageWriter(requestMessage,
                 new ODataMessageWriterSettings() { EnableMessageStreamDisposal = false, ODataUri = odataUri }, edmModel))
             {
                 IEdmTypeReference typeRef = OeEdmClrHelper.GetEdmTypeReference(edmModel, returnType);
-                ODataCollectionWriter writer = messageWriter.CreateODataCollectionWriter(typeRef);
-                writer.WriteStart(new ODataCollectionStart());
+                ODataCollectionWriter writer = await messageWriter.CreateODataCollectionWriterAsync(typeRef).ConfigureAwait(false);
+                await writer.WriteStartAsync(new ODataCollectionStart()).ConfigureAwait(false);
 
                 while (await asyncEnumerator.MoveNextAsync().ConfigureAwait(false))
                 {
@@ -133,10 +134,10 @@ namespace OdataToEntity.Parsers
                     if (value != null && value.GetType().IsEnum)
                         value = value.ToString();
 
-                    writer.WriteItem(value);
+                    await writer.WriteItemAsync(value).ConfigureAwait(false);
                 }
 
-                writer.WriteEnd();
+                await writer.WriteEndAsync().ConfigureAwait(false);
             }
         }
     }

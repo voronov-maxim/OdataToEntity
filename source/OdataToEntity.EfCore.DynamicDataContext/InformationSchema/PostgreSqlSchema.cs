@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Internal;
+using OdataToEntity.EfCore.Postgresql;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,8 +13,10 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         public PostgreSqlSchema(DbContextOptions<DynamicDbContext> dynamicDbContextOptions)
             : base(dynamicDbContextOptions, CreatePool(dynamicDbContextOptions))
         {
+            base.ExpressionVisitor = new OeDateTimeOffsetMembersVisitor();
             base.IsDatabaseNullHighestValue = true;
-            OperationAdapter = new OePostgreSqlEfCoreOperationAdapter(typeof(DynamicDbContext));
+            base.IsCaseSensitive = true;
+            base.OperationAdapter = new OePostgreSqlEfCoreOperationAdapter(typeof(DynamicDbContext));
         }
 
         private static DbContextPool<SchemaContext> CreatePool(DbContextOptions<DynamicDbContext> dynamicDbContextOptions)
@@ -134,8 +137,5 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         {
             return parameterName;
         }
-
-        public override bool IsCaseSensitive => true;
-        public override OeEfCoreOperationAdapter OperationAdapter { get; }
     }
 }

@@ -109,7 +109,8 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
                 {
                     if (!dependentEntityType.IsKeyless)
                     {
-                        var shadowProperty = new Infrastructure.OeShadowPropertyInfo(principalEntityType.ClrType, typeof(ICollection<Types.DynamicType>), propertyName);
+                        Type propertyType = typeof(IEnumerable<>).MakeGenericType(dependentEntityType.ClrType);
+                        var shadowProperty = new Infrastructure.OeShadowPropertyInfo(principalEntityType.ClrType, propertyType, propertyName);
                         Navigation navigation = fkey.HasPrincipalToDependent(shadowProperty, ConfigurationSource.Explicit);
                         navigation.SetField(dynamicTypeDefinition.GetCollectionFiledName(propertyName));
                     }

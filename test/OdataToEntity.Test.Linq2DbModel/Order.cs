@@ -73,7 +73,7 @@ namespace OdataToEntity.Test.Model
                 IQueryable<Order> orders = customers.SelectMany(c => c.Orders).Where(o => orderNames.Contains(o.Name));
 
                 IQueryable result = boundParameter.ApplySelect(orders, orderContext);
-                List<Order> orderList = boundParameter.Materialize(result).ToList().GetAwaiter().GetResult();
+                List<Order> orderList = boundParameter.Materialize(result).ToListAsync().GetAwaiter().GetResult();
                 return orderList;
             }
         }

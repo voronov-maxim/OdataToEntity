@@ -18,6 +18,7 @@ namespace OdataToEntity.Infrastructure
         {
             _stream.Close();
         }
+#if NETSTANDARD2_1
         public override void CopyTo(Stream destination, int bufferSize)
         {
             _stream.CopyToAsync(destination, bufferSize).GetAwaiter().GetResult();
@@ -26,14 +27,17 @@ namespace OdataToEntity.Infrastructure
         {
             return _stream.CopyToAsync(destination, bufferSize, cancellationToken);
         }
+#endif
         protected override void Dispose(bool disposing)
         {
             _stream.Dispose();
         }
+#if NETSTANDARD2_1
         public override ValueTask DisposeAsync()
         {
             return _stream.DisposeAsync();
         }
+#endif
         public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
         {
             return _stream.BeginRead(buffer, offset, count, callback, state);
@@ -62,10 +66,12 @@ namespace OdataToEntity.Infrastructure
         {
             return _stream.InitializeLifetimeService();
         }
+#if NETSTANDARD2_1
         public override int Read(Span<byte> buffer)
         {
             return _stream.Read(buffer);
         }
+#endif
         public override int Read(byte[] buffer, int offset, int count)
         {
             return _stream.ReadAsync(buffer, offset, count).GetAwaiter().GetResult();
@@ -74,10 +80,12 @@ namespace OdataToEntity.Infrastructure
         {
             return _stream.ReadAsync(buffer, offset, count, cancellationToken);
         }
+#if NETSTANDARD2_1
         public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
         {
             return _stream.ReadAsync(buffer, cancellationToken);
         }
+#endif
         public override int ReadByte()
         {
             return _stream.ReadByte();
@@ -90,10 +98,12 @@ namespace OdataToEntity.Infrastructure
         {
             _stream.SetLength(value);
         }
+#if NETSTANDARD2_1
         public override void Write(ReadOnlySpan<byte> buffer)
         {
             _stream.Write(buffer);
         }
+#endif
         public override void Write(byte[] buffer, int offset, int count)
         {
             _stream.WriteAsync(buffer, offset, count).GetAwaiter().GetResult();
@@ -102,10 +112,12 @@ namespace OdataToEntity.Infrastructure
         {
             return _stream.WriteAsync(buffer, offset, count, cancellationToken);
         }
+#if NETSTANDARD2_1
         public override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
         {
             return _stream.WriteAsync(buffer, cancellationToken);
         }
+#endif
         public override void WriteByte(byte value)
         {
             _stream.WriteByte(value);

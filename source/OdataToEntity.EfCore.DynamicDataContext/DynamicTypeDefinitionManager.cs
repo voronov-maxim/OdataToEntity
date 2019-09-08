@@ -25,6 +25,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
 
         private DynamicTypeDefinitionManager(Type dynamicDbContextType, ProviderSpecificSchema informationSchema)
         {
+            ExpressionVisitor = informationSchema.ExpressionVisitor;
             IsCaseSensitive = informationSchema.IsCaseSensitive;
             IsDatabaseNullHighestValue = informationSchema.IsDatabaseNullHighestValue;
             OperationAdapter = informationSchema.OperationAdapter;
@@ -101,6 +102,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
             return dynamicTypeDefinition;
         }
 
+        public ExpressionVisitor ExpressionVisitor { get; }
         public bool IsCaseSensitive { get; }
         public bool IsDatabaseNullHighestValue { get; }
         public OeEfCoreOperationAdapter OperationAdapter { get; }

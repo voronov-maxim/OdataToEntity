@@ -25,13 +25,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\OdataToEntity.AspNetCore\OdataToEntity.AspNetCore.csproj" />
     <ProjectReference Include="..\OdataToEntity\OdataToEntity.csproj" />
     <ProjectReference Include="..\OdataToEntity.EfCore\OdataToEntity.EfCore.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="$(AspNetCoreMvcVersion)" />
     <PackageReference Include="Microsoft.OData.Core" Version="$(ODataLibVersion)" />
     <PackageReference Include="Microsoft.OData.Edm" Version="$(ODataLibVersion)" />
     <PackageReference Include="Pluralize.NET" Version="0.1.84" />

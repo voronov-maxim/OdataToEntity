@@ -17,6 +17,7 @@ namespace OdataToEntity.EfCore
 
             protected override Object GetParameterCore(KeyValuePair<String, Object> parameter, String parameterName, int parameterIndex)
             {
+
                 if (!(parameter.Value is String) && parameter.Value is IEnumerable list)
                 {
                     DataTable table = Infrastructure.OeDataTableHelper.GetDataTable(list);

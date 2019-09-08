@@ -14,11 +14,6 @@ namespace OdataToEntity.Test
 
     public abstract partial class SelectTest
     {
-#if SQLITE
-        public const string SkipTest = "Sqlite";
-#else
-        public const string SkipTest = null;
-#endif
         protected SelectTest(DbFixtureInitDb fixture)
         {
             fixture.Initalize().GetAwaiter().GetResult();
@@ -92,7 +87,7 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
-        [Theory(Skip = SkipTest)]
+        [Theory]
         [InlineData(0)]
         [InlineData(1)]
         [NotPerformanceCahe]
@@ -112,7 +107,7 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
-        [Theory(Skip = SkipTest)]
+        [Theory]
         [InlineData(0)]
         [InlineData(1)]
         public async Task ApplyGroupByAggregateFilter(int pageSize)
@@ -146,7 +141,7 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
-        [Theory(Skip = SkipTest)]
+        [Theory]
         [InlineData(0)]
         [InlineData(1)]
         public async Task ApplyGroupByAggregateOrderBy(int pageSize)
@@ -455,7 +450,7 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
-        [Theory(Skip = SkipTest)]
+        [Theory]
         [InlineData(0, false)]
         [InlineData(1, false)]
         [InlineData(0, true)]

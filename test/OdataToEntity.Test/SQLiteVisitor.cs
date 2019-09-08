@@ -253,9 +253,6 @@ namespace OdataToEntity.Test
         }
         protected override Expression VisitMethodCall(MethodCallExpression node)
         {
-            var zzz = OeMethodInfoHelper.MakeGenericMethod(node.Method, node.Arguments);
-            Expression.Call(node.Object, zzz, node.Arguments);
-
             IReadOnlyList<Expression> arguments;
             if (node.Method.Name == nameof(Enumerable.Select))
                 arguments = new Expression[] { base.Visit(node.Arguments[0]), node.Arguments[1] };

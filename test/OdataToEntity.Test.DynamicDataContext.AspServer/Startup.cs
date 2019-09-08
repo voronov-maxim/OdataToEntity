@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -8,7 +7,6 @@ using Microsoft.OData.Edm;
 using OdataToEntity.AspNetCore;
 using OdataToEntity.EfCore.DynamicDataContext;
 using OdataToEntity.EfCore.DynamicDataContext.InformationSchema;
-using OdataToEntity.EfCore.DynamicDataContext.Types;
 using System;
 using System.IO;
 
@@ -16,7 +14,7 @@ namespace OdataToEntity.Test.DynamicDataContext.AspServer
 {
     public class Startup
     {
-        public Startup(IHostingEnvironment env)
+        public Startup(IWebHostEnvironment env)
         {
             var builder = new ConfigurationBuilder()
                 .SetBasePath(env.ContentRootPath)
@@ -60,7 +58,10 @@ namespace OdataToEntity.Test.DynamicDataContext.AspServer
 
             var schemaFactory = new DynamicSchemaFactory(provider, connectionString);
             using (ProviderSpecificSchema providerSchema = schemaFactory.CreateSchema(useRelationalNulls))
-                app.DynamicMiddleware(basePath, providerSchema, informationSchemaMapping);
+            {
+                IEdmModel edmModel = DynamicMiddlewareHelper.CreateEdmModel(providerSchema, informationSchemaMapping);
+                app.UseOdataToEntityMiddleware<OePageMiddleware>(basePath, edmModel);
+            }
         }
     }
 }

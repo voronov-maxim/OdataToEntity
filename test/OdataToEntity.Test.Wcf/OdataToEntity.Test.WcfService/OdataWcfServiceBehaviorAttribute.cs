@@ -1,11 +1,11 @@
-﻿using Microsoft.OData.Edm;
+﻿using CoreWCF;
+using CoreWCF.Channels;
+using CoreWCF.Description;
+using CoreWCF.Dispatcher;
+using Microsoft.OData.Edm;
 using OdataToEntity.Db;
 using System;
 using System.Collections.ObjectModel;
-using System.ServiceModel;
-using System.ServiceModel.Channels;
-using System.ServiceModel.Description;
-using System.ServiceModel.Dispatcher;
 
 namespace OdataToEntity.Test.WcfService
 {

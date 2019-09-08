@@ -5,28 +5,21 @@
     <Description>Test Wcf service for OdataToEntity</Description>
     <AssemblyTitle>Test Wcf service for OdataToEntity</AssemblyTitle>
     <Authors>Maxim Voronov</Authors>
-    <TargetFramework>$(FrameworkVersion)</TargetFramework>
+    <TargetFramework>$(NetCoreAppVersion)</TargetFramework>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity.Test.WcfService</AssemblyName>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <LangVersion>$(CSharpVersion)</LangVersion>
-  </PropertyGroup>
-
-  <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <OutputPath>bin\Debug\</OutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>WCF_SERVICE</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.ComponentModel.DataAnnotations" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.ServiceModel" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore" Version="$(AspNetCoreVersion)" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$(EfCoreVersion)" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="$(EfCoreVersion)" />
     <PackageReference Include="Microsoft.OData.Core" version="$(ODataLibVersion)" />
@@ -47,5 +40,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\source\OdataToEntity.EfCore\OdataToEntity.EfCore.csproj" />
     <ProjectReference Include="..\..\..\source\OdataToEntity\OdataToEntity.csproj" />
+    <ProjectReference Include="..\CoreWcf\src\CoreWCF.NetTcp\src\CoreWCF.NetTcp.csproj" />
+    <ProjectReference Include="..\CoreWcf\src\CoreWCF.Primitives\src\CoreWCF.Primitives.csproj" />
   </ItemGroup>
+
 </Project>

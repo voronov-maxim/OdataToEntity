@@ -17,14 +17,14 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
             _httpContextAccessor = httpContextAccessor;
         }
 
-        [HttpGet("dbo.GetOrders")]
+        [HttpGet("dbo.GetOrders({id})")]
         public ODataResult<Model.Order> GetOrders()
         {
             var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
             IAsyncEnumerable<Model.Order> orders = parser.ExecuteReader<Model.Order>();
             return parser.OData(orders);
         }
-        [HttpGet("dbo.ScalarFunction")]
+        [HttpGet("dbo.ScalarFunction()")]
         public async Task<IActionResult> ScalarFunction()
         {
             var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
@@ -43,28 +43,28 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
             var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
             await parser.ExecuteScalar<int>().ConfigureAwait(false);
         }
-        [HttpGet("dbo.ScalarFunctionWithParameters/{id},{name},{status}")]
+        [HttpGet("dbo.ScalarFunctionWithParameters({id},{name},{status})")]
         public async Task<IActionResult> ScalarFunctionWithParameters(String id, String name, String status)
         {
             var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
             int? result = await parser.ExecuteScalar<int>().ConfigureAwait(false);
             return parser.OData(result);
         }
-        [HttpGet("TableFunction")]
+        [HttpGet("TableFunction()")]
         public ODataResult<Model.Order> TableFunction()
         {
             var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
             IAsyncEnumerable<Model.Order> orders = parser.ExecuteReader<Model.Order>();
             return parser.OData(orders);
         }
-        [HttpGet("TableFunctionWithParameters/{id},{name},{status}")]
+        [HttpGet("TableFunctionWithParameters({id},{name},{status})")]
         public ODataResult<Model.Order> TableFunctionWithParameters(String id, String name, String status)
         {
             var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
             IAsyncEnumerable<Model.Order> orders = parser.ExecuteReader<Model.Order>();
             return parser.OData(orders);
         }
-        [HttpGet("TableFunctionWithCollectionParameter")]
+        [HttpGet("TableFunctionWithCollectionParameter({id})")]
         public ODataResult<String> TableFunctionWithCollectionParameter()
         {
             var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);

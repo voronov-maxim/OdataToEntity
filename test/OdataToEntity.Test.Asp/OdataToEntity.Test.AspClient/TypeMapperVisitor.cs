@@ -158,6 +158,14 @@ namespace OdataToEntity.Test.Model
         protected override Expression VisitNew(NewExpression node)
         {
             ReadOnlyCollection<Expression> arguments = base.Visit(node.Arguments);
+            for (int i = 0; i < arguments.Count; i++)
+                if (arguments[i] is MemberExpression memberExpression && Parsers.OeExpressionHelper.IsEntityType(arguments[i].Type))
+                {
+                    Type delegateType = typeof(Func<,>).MakeGenericType(memberExpression.Expression.Type, memberExpression.Type);
+                    LambdaExpression lambda = Expression.Lambda(delegateType, memberExpression, (ParameterExpression)memberExpression.Expression);
+                    _navigationPropertyAccessors.Add(lambda);
+                }
+
             ConstructorInfo ctor = Map(node.Type).GetConstructors().Single(c => c.GetParameters().Length == arguments.Count);
             return Expression.New(ctor, arguments);
         }

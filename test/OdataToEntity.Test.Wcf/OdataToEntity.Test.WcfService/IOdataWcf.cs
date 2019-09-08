@@ -1,7 +1,12 @@
 ﻿using System;
 using System.IO;
-using System.ServiceModel;
 using System.Threading.Tasks;
+
+#if WCF_SERVICE
+using CoreWCF;
+#else
+using System.ServiceModel;
+#endif
 
 namespace OdataToEntity.Test.WcfService
 {

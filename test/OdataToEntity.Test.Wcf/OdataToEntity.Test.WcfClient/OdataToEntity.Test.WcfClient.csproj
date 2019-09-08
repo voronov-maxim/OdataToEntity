@@ -5,28 +5,14 @@
     <Description>Test Wcf client for OdataToEntity</Description>
     <AssemblyTitle>Test Wcf client for OdataToEntity</AssemblyTitle>
     <Authors>Maxim Voronov</Authors>
-    <TargetFramework>$(FrameworkVersion)</TargetFramework>
+    <TargetFramework>$(NetCoreAppVersion)</TargetFramework>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity.Test.WcfClient</AssemblyName>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <LangVersion>$(CSharpVersion)</LangVersion>
-  </PropertyGroup>
-
-  <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>ODATA6</DefineConstants>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System" />
-    <Reference Include="System.ComponentModel.DataAnnotations" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.ServiceModel" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$(EfCoreVersion)" />
@@ -36,6 +22,8 @@
     <PackageReference Include="Microsoft.OData.Edm" version="$(ODataLibVersion)" />
     <PackageReference Include="Microsoft.Spatial" version="$(ODataLibVersion)" />
     <PackageReference Include="Newtonsoft.Json" version="$(JsonNetVersion)" />
+    <PackageReference Include="System.ServiceModel.NetTcp" Version="4.5.3" />
+    <PackageReference Include="System.ServiceModel.Primitives" Version="4.5.3" />
   </ItemGroup>
 
   <ItemGroup>
@@ -64,4 +52,5 @@
     <ProjectReference Include="..\..\..\source\OdataToEntity.EfCore\OdataToEntity.EfCore.csproj" />
     <ProjectReference Include="..\..\..\source\OdataToEntity\OdataToEntity.csproj" />
   </ItemGroup>
+
 </Project>

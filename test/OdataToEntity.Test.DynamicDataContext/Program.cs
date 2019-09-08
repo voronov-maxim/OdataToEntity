@@ -25,12 +25,10 @@ namespace OdataToEntity.Test.DynamicDataContext
         static async Task Main(String[] args)
         {
             //PerformanceCacheTest.RunTest(100);
-            //new PLNull(new PLNull_DbFixtureInitDb()).DbQuery(0).GetAwaiter().GetResult();
+            new PLNull(new PLNull_DbFixtureInitDb()).FilterDateTimeOffsetYearMonthDay(0).GetAwaiter().GetResult();
             //new ProcedureTest().ScalarFunction_get().GetAwaiter().GetResult();
             //new PLNull_ManyColumns(new PLNull_ManyColumnsFixtureInitDb()).Filter(1).GetAwaiter().GetResult();
 
-            var sw = new Stopwatch();
-            sw.Start();
             InformationSchemaMapping informationSchemaMapping = GetMappings();
             ProviderSpecificSchema providerSchema = CreateSchemaSqlServer(true);
 
@@ -41,9 +39,6 @@ namespace OdataToEntity.Test.DynamicDataContext
                 var dataAdapter = new DynamicDataAdapter(typeDefinitionManager);
                 dynamicEdmModel = dataAdapter.BuildEdmModel(metadataProvider);
             }
-            sw.Stop();
-            var zzz = sw.Elapsed;
-            Console.WriteLine(zzz);
             String csdlSchema = TestHelper.GetCsdlSchema(dynamicEdmModel);
 
             var parser = new OeParser(new Uri("http://dummy"), dynamicEdmModel);
@@ -58,12 +53,12 @@ namespace OdataToEntity.Test.DynamicDataContext
             var optionsFactory = new DynamicSchemaFactory("sqlserver", @"Server=.\sqlexpress;Initial Catalog=OdataToEntity;Trusted_Connection=Yes;");
             return optionsFactory.CreateSchema(useRelationalNulls);
         }
-        public static ProviderSpecificSchema CreateOptionsPostgreSql(bool useRelationalNulls)
+        public static ProviderSpecificSchema CreateSchemaPostgreSql(bool useRelationalNulls)
         {
             var optionsFactory = new DynamicSchemaFactory("postgresql", "Host=localhost;Port=5432;Database=OdataToEntity;Pooling=true");
             return optionsFactory.CreateSchema(useRelationalNulls);
         }
-        public static ProviderSpecificSchema CreateOptionsMySql(bool useRelationalNulls)
+        public static ProviderSpecificSchema CreateSchemaMySql(bool useRelationalNulls)
         {
             var optionsFactory = new DynamicSchemaFactory("mysql", "server=localhost;database=dbo;user=root;password=123456");
             return optionsFactory.CreateSchema(useRelationalNulls);

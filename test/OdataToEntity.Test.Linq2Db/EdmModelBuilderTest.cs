@@ -43,7 +43,7 @@ namespace OdataToEntity.Test
         [Fact]
         public void FluentApi()
         {
-            var ethalonDataAdapter = new OeEfCoreDataAdapter<OrderContext>();
+            var ethalonDataAdapter = new OeEfCoreDataAdapter<OrderContext>(OrderContextOptions.Create(true));
             EdmModel ethalonEdmModel = ethalonDataAdapter.BuildEdmModel();
             String ethalonSchema = TestHelper.GetCsdlSchema(ethalonEdmModel);
             if (ethalonSchema == null)

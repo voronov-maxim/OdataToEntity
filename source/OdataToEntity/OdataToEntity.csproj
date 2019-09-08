@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Description>Classes to serialize, deserialize OData JSON payloads. Supports OData v4 only. Enables construction of OData services via Entity Framework (Linq2Db) DataContext (without controller). Targets .NET Core with support for .NET 4.6.1</Description>
     <Authors>Maxim Voronov</Authors>
-    <TargetFramework>$(NetStandardVersion)</TargetFramework>
+    <TargetFrameworks>$(NetStandardVersion);$(FrameworkVersion)</TargetFrameworks>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>portable</DebugType>
     <AssemblyName>OdataToEntity</AssemblyName>

@@ -26,9 +26,15 @@ namespace OdataToEntity.AspNetCore
 
         private static bool GetCsdlSchema(IEdmModel edmModel, Stream stream)
         {
-            using (XmlWriter xmlWriter = XmlWriter.Create(stream))
-                if (CsdlWriter.TryWriteCsdl(edmModel, xmlWriter, CsdlTarget.OData, out IEnumerable<EdmError> errors))
-                    return true;
+            using (var memoryStream = new MemoryStream()) //kestrel allow only async operation
+            {
+                using (XmlWriter xmlWriter = XmlWriter.Create(memoryStream))
+                    if (!CsdlWriter.TryWriteCsdl(edmModel, xmlWriter, CsdlTarget.OData, out IEnumerable<EdmError> errors))
+                        return false;
+
+                memoryStream.Position = 0;
+                memoryStream.CopyToAsync(stream);
+            }
 
             return false;
         }

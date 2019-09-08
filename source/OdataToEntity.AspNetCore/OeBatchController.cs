@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Routing;
@@ -60,12 +61,6 @@ namespace OdataToEntity.AspNetCore
                     OeEntitySetAdapter entitySetAdapter = refModel.GetEntitySetAdapter(operation.EntitySet);
                     String path = basePath + "/" + entitySetAdapter.EntitySetName;
 
-                    List<ActionDescriptor> candidates = OeRouter.SelectCandidates(actionDescriptors.Items, base.RouteData.Values, path, operation.Method);
-                    if (candidates.Count > 1)
-                        throw new InvalidOperationException("Ambiguous action " + String.Join(Environment.NewLine, candidates.Select(c => c.DisplayName)));
-                    if (candidates.Count == 0)
-                        throw new InvalidOperationException("Action " + operation.Method + " for controller " + basePath + " not found");
-
                     Object entity;
                     if (operation.Method == ODataConstants.MethodPatch)
                     {
@@ -76,6 +71,7 @@ namespace OdataToEntity.AspNetCore
                             properties[odataProperty.Name] = OeEdmClrHelper.GetClrValue(propertyInfo.PropertyType, odataProperty.Value);
                         }
                         entity = properties;
+                        base.HttpContext.Request.Method = HttpMethods.Patch;
                     }
                     else
                         entity = OeEdmClrHelper.CreateEntity(entitySetAdapter.EntityType, operation.Entry);
@@ -86,6 +82,12 @@ namespace OdataToEntity.AspNetCore
                         DataContext = new OeDataContext(entitySetAdapter, refModel, dataContext, operation)
                     };
                     OnBeforeInvokeController(modelState.DataContext, operation.Entry);
+
+                    List<ActionDescriptor> candidates = OeRouter.SelectCandidates(actionDescriptors.Items, base.HttpContext, base.RouteData.Values, path, operation.Method);
+                    if (candidates.Count > 1)
+                        throw new InvalidOperationException("Ambiguous action " + String.Join(Environment.NewLine, candidates.Select(c => c.DisplayName)));
+                    if (candidates.Count == 0)
+                        throw new InvalidOperationException("Action " + operation.Method + " for controller " + basePath + " not found");
 
                     var actionContext = new ActionContext(base.HttpContext, base.HttpContext.GetRouteData(), candidates[0], modelState);
                     IActionInvoker actionInvoker = actionInvokerFactory.CreateInvoker(actionContext);

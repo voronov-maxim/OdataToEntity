@@ -16,7 +16,7 @@ namespace OdataToEntity.Test.WcfClient
 
         public WcfClientInterceptor(Binding binding, String remoteAddress)
         {
-            _channelFactory = new ChannelFactory<IOdataWcf>(binding, remoteAddress);
+            _channelFactory = new ChannelFactory<IOdataWcf>(binding, new EndpointAddress(remoteAddress));
         }
 
         public void Dispose()
@@ -52,7 +52,7 @@ namespace OdataToEntity.Test.WcfClient
             try
             {
                 client = _channelFactory.CreateChannel();
-                if (requestStream == null)
+                if (requestStream == null || requestStream.Length == 0)
                 {
                     String accept = requestMessage.GetHeader("Accept");
                     String prefer = requestMessage.GetHeader("Prefer");

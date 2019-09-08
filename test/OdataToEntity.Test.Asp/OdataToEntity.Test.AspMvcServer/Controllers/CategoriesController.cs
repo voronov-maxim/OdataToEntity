@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace OdataToEntity.Test.AspMvcServer.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api")]
     public sealed class CategoriesController
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
@@ -16,12 +16,12 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
             _httpContextAccessor = httpContextAccessor;
         }
 
-        [HttpDelete]
+        [HttpDelete("[controller]")]
         public void Delete(OeDataContext dataContext, Model.Category category)
         {
             dataContext.Update(category);
         }
-        [HttpGet]
+        [HttpGet("[controller]")]
         public ODataResult<Model.Category> Get()
         {
             Query.OeModelBoundProvider modelBoundProvider = _httpContextAccessor.HttpContext.CreateModelBoundProvider();
@@ -29,7 +29,7 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
             IAsyncEnumerable<Model.Category> categories = parser.ExecuteReader<Model.Category>();
             return parser.OData(categories);
         }
-        [HttpGet("{id}")]
+        [HttpGet("[controller]({id})")]
         public ODataResult<Model.Category> Get(int id)
         {
             Query.OeModelBoundProvider modelBoundProvider = _httpContextAccessor.HttpContext.CreateModelBoundProvider();
@@ -37,12 +37,12 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
             IAsyncEnumerable<Model.Category> categories = parser.ExecuteReader<Model.Category>();
             return parser.OData(categories);
         }
-        [HttpPatch]
+        [HttpPatch("[controller]")]
         public void Patch(OeDataContext dataContext, IDictionary<String, Object> categoryProperties)
         {
             dataContext.Update(categoryProperties);
         }
-        [HttpPost]
+        [HttpPost("[controller]")]
         public void Post(OeDataContext dataContext, Model.Category category)
         {
             dataContext.Update(category);

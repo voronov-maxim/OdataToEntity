@@ -1,49 +1,40 @@
-﻿using Microsoft.OData.Edm;
-using OdataToEntity.Db;
+﻿using CoreWCF;
+using CoreWCF.Configuration;
+using Microsoft.AspNetCore;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.ServiceModel;
-
-namespace OdataToEntity.Test.Model
-{
-    internal static class TestHelper
-    {
-        public static Cache.OeQueryCache GetQueryCache(Db.OeDataAdapter dataAdapter) => new Cache.OeQueryCache();
-    }
-}
 
 namespace OdataToEntity.Test.WcfService
 {
-    public sealed class OrderServiceBehaviorAttribute : OdataWcfServiceBehaviorAttribute
+    public class Startup
     {
-        public OrderServiceBehaviorAttribute() : base(typeof(Model.OrderDataAdapter))
+        public void ConfigureServices(IServiceCollection services)
         {
+            services.AddServiceModelServices();
         }
 
-        protected override OdataWcfService CreateOdataWcfService(OeDataAdapter dataAdapter, IEdmModel edmModel)
+        public void Configure(IApplicationBuilder app)
         {
-            return new OrderService(dataAdapter, edmModel);
-        }
-    }
-
-    [OrderServiceBehavior]
-    [ServiceBehavior(IncludeExceptionDetailInFaults = true)]
-    public sealed class OrderService : OdataWcfService
-    {
-        public OrderService(OeDataAdapter dataAdapter, IEdmModel edmModel) : base(dataAdapter, edmModel)
-        {
+            app.UseServiceModel(builder =>
+            {
+                builder.AddService<OrderService>();
+                builder.AddServiceEndpoint<OrderService, IOdataWcf>(new NetTcpBinding(), "/OdataWcfService");
+            });
         }
     }
 
     class Program
     {
-        static void Main(string[] args)
+        static void Main(String[] args)
         {
-            using (var host = new ServiceHost(typeof(OrderService), new Uri("net.tcp://localhost:5000/OdataWcfService")))
+            using (IWebHost host = WebHost.CreateDefaultBuilder(args)
+                .UseStartup<Startup>()
+                .UseNetTcp(5000)
+                .Build())
             {
-                var binding = new NetTcpBinding();
-                host.AddServiceEndpoint(typeof(IOdataWcf), binding, String.Empty);
-                host.Open();
-
+                host.Start();
                 do
                     Console.WriteLine("Close server press escape to exit");
                 while (Console.ReadKey().Key != ConsoleKey.Escape);

@@ -13,12 +13,6 @@ using System.Threading.Tasks;
 
 namespace OdataToEntity.Linq2Db
 {
-    internal static class SqlFunction
-    {
-        [Sql.Function]
-        public static int DatePart(Sql.DateParts part, DateTimeOffset date) => 0;
-    }
-
     public class OeLinq2DbDataAdapter<T> : Db.OeDataAdapter where T : DataConnection, IOeLinq2DbDataContext
     {
         private sealed class ParameterVisitor : ExpressionVisitor
@@ -140,8 +134,6 @@ namespace OdataToEntity.Linq2Db
         }
         private static Db.OeEntitySetAdapterCollection CreateEntitySetAdapters()
         {
-            InitializeLinq2Db();
-
             var entitySetAdapters = new List<Db.OeEntitySetAdapter>();
             foreach (PropertyInfo property in typeof(T).GetTypeInfo().GetProperties())
             {
@@ -242,22 +234,6 @@ namespace OdataToEntity.Linq2Db
                 countExpression = null;
 
             return expression;
-        }
-        private static void InitializeLinq2Db()
-        {
-            Func<Sql.DateParts, DateTimeOffset, int> datePartFunc = SqlFunction.DatePart;
-            ParameterExpression parameter = Expression.Parameter(typeof(DateTimeOffset));
-
-            foreach (Sql.DateParts datePart in Enum.GetValues(typeof(Sql.DateParts)))
-            {
-                PropertyInfo propertyInfo = typeof(DateTimeOffset).GetProperty(datePart.ToString());
-                if (propertyInfo == null)
-                    continue;
-
-                MethodCallExpression call = Expression.Call(datePartFunc.GetMethodInfo(), Expression.Constant(datePart), parameter);
-                LambdaExpression lambda = Expression.Lambda(call, parameter);
-                LinqToDB.Linq.Expressions.MapMember(propertyInfo, lambda);
-            }
         }
         public override Task<int> SaveChangesAsync(Object dataContext, CancellationToken cancellationToken)
         {

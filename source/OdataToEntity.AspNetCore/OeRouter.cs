@@ -24,7 +24,7 @@ namespace OdataToEntity.AspNetCore
             _actionDescriptors = actionDescriptorCollectionProvider.ActionDescriptors;
         }
 
-        private static bool ActionConstaint(ActionDescriptor actionDescriptor, String httpMethod)
+        private static bool ActionConstaint(ActionDescriptor actionDescriptor, HttpContext httpContext, RouteValueDictionary values, String httpMethod)
         {
             if (actionDescriptor.ActionConstraints == null)
                 if (actionDescriptor is ControllerActionDescriptor controllerActionDescriptor)
@@ -34,6 +34,9 @@ namespace OdataToEntity.AspNetCore
 
             var candidate = new ActionSelectorCandidate(actionDescriptor, null);
             var constraintContext = new ActionConstraintContext() { CurrentCandidate = candidate };
+            if (constraintContext.RouteContext == null)
+                constraintContext.RouteContext = new RouteContext(httpContext) { RouteData = new RouteData(values) };
+
             for (int i = 0; i < actionDescriptor.ActionConstraints.Count; i++)
                 if (actionDescriptor.ActionConstraints[i] is IActionConstraint actionConstraint && actionConstraint.Accept(constraintContext))
                     return true;
@@ -74,7 +77,8 @@ namespace OdataToEntity.AspNetCore
         public Task RouteAsync(RouteContext context)
         {
             String path = GetPath(context.HttpContext.Request.Path.Value);
-            IReadOnlyList<ActionDescriptor> candidates = SelectCandidates(_actionDescriptors.Items, context.RouteData.Values, path, context.HttpContext.Request.Method);
+            IReadOnlyList<ActionDescriptor> candidates = SelectCandidates(_actionDescriptors.Items,
+                context.HttpContext, context.RouteData.Values, path, context.HttpContext.Request.Method);
             if (candidates.Count == 0)
                 return Task.CompletedTask;
             if (candidates.Count > 1)
@@ -92,7 +96,8 @@ namespace OdataToEntity.AspNetCore
 
             return Task.CompletedTask;
         }
-        internal static List<ActionDescriptor> SelectCandidates(IReadOnlyList<ActionDescriptor> actionDescriptors, RouteValueDictionary values, String path, String httpMethod)
+        internal static List<ActionDescriptor> SelectCandidates(IReadOnlyList<ActionDescriptor> actionDescriptors,
+            HttpContext httpContext, RouteValueDictionary values, String path, String httpMethod)
         {
             var selectCandidates = new List<ActionDescriptor>();
             for (int i = 0; i < actionDescriptors.Count; i++)
@@ -102,7 +107,7 @@ namespace OdataToEntity.AspNetCore
                 {
                     RouteTemplate template = TemplateParser.Parse(actionDescriptor.AttributeRouteInfo.Template);
                     var matcher = new TemplateMatcher(template, null);
-                    if (matcher.TryMatch(path, values) && ActionConstaint(actionDescriptor, httpMethod))
+                    if (matcher.TryMatch(path, values) && ActionConstaint(actionDescriptor, httpContext, values, httpMethod))
                         selectCandidates.Add(actionDescriptor);
                 }
             }
@@ -117,7 +122,7 @@ namespace OdataToEntity.AspNetCore
                         if (actionDescriptor.AttributeRouteInfo != null && path != null
                             && path.IndexOf(actionDescriptor.AttributeRouteInfo.Template, StringComparison.OrdinalIgnoreCase) == 1
                             && path[actionDescriptor.AttributeRouteInfo.Template.Length + 1] == '/'
-                            && ActionConstaint(actionDescriptor, httpMethod))
+                            && ActionConstaint(actionDescriptor, httpContext, values, httpMethod))
                         {
                             selectCandidates.Add(actionDescriptor);
                             break;
@@ -127,7 +132,7 @@ namespace OdataToEntity.AspNetCore
                 }
 
                 if (HttpMethods.IsPatch(httpMethod) || HttpMethods.IsDelete(httpMethod) || HttpMethods.IsPut(httpMethod))
-                    return SelectCandidates(actionDescriptors, values, path, HttpMethods.Post);
+                    return SelectCandidates(actionDescriptors, httpContext, values, path, HttpMethods.Post);
             }
 
             return selectCandidates;

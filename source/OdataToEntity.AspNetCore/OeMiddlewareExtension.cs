@@ -12,6 +12,12 @@ namespace OdataToEntity.AspNetCore
     {
         public static IServiceCollection AddOdataToEntityMvc(this IServiceCollection services, IEdmModel edmModel)
         {
+            services.AddSingleton(edmModel).AddHttpContextAccessor();
+            services.AddMvcCore(o => o.Conventions.Add(new OeBatchFilterConvention()));
+            return services;
+        }
+        public static IServiceCollection AddOdataToEntityMvcRouting(this IServiceCollection services, IEdmModel edmModel)
+        {
             services.AddSingleton(edmModel).AddSingleton<OeRouter>().AddHttpContextAccessor();
             services.AddMvcCore(o => { o.EnableEndpointRouting = false; o.Conventions.Add(new OeBatchFilterConvention()); });
             return services;

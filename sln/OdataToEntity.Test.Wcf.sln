@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26730.16
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29209.152
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OdataToEntity.Test.WcfService", "..\test\OdataToEntity.Test.Wcf\OdataToEntity.Test.WcfService\OdataToEntity.Test.WcfService.csproj", "{899BFDB6-3F83-438B-8B21-654FED0512A3}"
 EndProject
@@ -10,6 +10,10 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OdataToEntity", "..\source\OdataToEntity\OdataToEntity.csproj", "{70ED8CE4-4FA6-418A-A5BC-8697F5CA0B03}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OdataToEntity.EfCore", "..\source\OdataToEntity.EfCore\OdataToEntity.EfCore.csproj", "{94E8BF46-2821-4890-9E07-D1FA5C797C92}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CoreWCF.NetTcp", "..\test\OdataToEntity.Test.Wcf\CoreWcf\src\CoreWCF.NetTcp\src\CoreWCF.NetTcp.csproj", "{E31B4E73-ED53-420E-92FD-C89F1BB6CB30}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CoreWCF.Primitives", "..\test\OdataToEntity.Test.Wcf\CoreWcf\src\CoreWCF.Primitives\src\CoreWCF.Primitives.csproj", "{D0198044-E739-43DD-A252-824D2DF5928B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +37,14 @@ Global
 		{94E8BF46-2821-4890-9E07-D1FA5C797C92}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{94E8BF46-2821-4890-9E07-D1FA5C797C92}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{94E8BF46-2821-4890-9E07-D1FA5C797C92}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E31B4E73-ED53-420E-92FD-C89F1BB6CB30}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E31B4E73-ED53-420E-92FD-C89F1BB6CB30}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E31B4E73-ED53-420E-92FD-C89F1BB6CB30}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E31B4E73-ED53-420E-92FD-C89F1BB6CB30}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D0198044-E739-43DD-A252-824D2DF5928B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D0198044-E739-43DD-A252-824D2DF5928B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D0198044-E739-43DD-A252-824D2DF5928B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D0198044-E739-43DD-A252-824D2DF5928B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -98,8 +98,7 @@ namespace OdataToEntity.AspNetCore
         }
         public static async Task Get(HttpContext httpContext, Query.OeModelBoundProvider modelBoundProvider = null)
         {
-            var requestHeaders = (HttpRequestHeaders)httpContext.Request.Headers;
-            OeRequestHeaders headers = GetRequestHeaders(requestHeaders, httpContext.Response);
+            OeRequestHeaders headers = GetRequestHeaders(httpContext.Request.Headers, httpContext.Response);
 
             var edmModel = (IEdmModel)httpContext.RequestServices.GetService(typeof(IEdmModel));
             var parser = new OeParser(UriHelper.GetBaseUri(httpContext.Request), edmModel, modelBoundProvider, null);
@@ -115,9 +114,7 @@ namespace OdataToEntity.AspNetCore
             if (_dataContext == null)
                 _dataContext = _dataAdapter.CreateDataContext();
 
-            var requestHeaders = (HttpRequestHeaders)_httpContext.Request.Headers;
-            OeRequestHeaders headers = GetRequestHeaders(requestHeaders, _httpContext.Response);
-
+            OeRequestHeaders headers = GetRequestHeaders(_httpContext.Request.Headers, _httpContext.Response);
             if (odataUri.Path.LastSegment is OperationImportSegment)
                 return ExecutePost(refModel, odataUri, headers, _httpContext.Request.Body, _httpContext.RequestAborted);
             else
@@ -135,10 +132,10 @@ namespace OdataToEntity.AspNetCore
             }
             return (TDataContext)_dataContext;
         }
-        private static OeRequestHeaders GetRequestHeaders(HttpRequestHeaders requestHeaders, HttpResponse httpResponse)
+        private static OeRequestHeaders GetRequestHeaders(IHeaderDictionary requestHeaders, HttpResponse httpResponse)
         {
             ((IDictionary<String, StringValues>)requestHeaders).TryGetValue("Prefer", out StringValues preferHeader);
-            var headers = OeRequestHeaders.Parse(requestHeaders.HeaderAccept, preferHeader);
+            var headers = OeRequestHeaders.Parse(requestHeaders["Accept"], preferHeader);
             return new OeHttpRequestHeaders(headers, httpResponse);
         }
         public ODataResult<T> OData<T>(IAsyncEnumerable<T> asyncEnumerable)

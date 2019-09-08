@@ -14,7 +14,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         public MySqlSchema(DbContextOptions<DynamicDbContext> dynamicDbContextOptions)
             : base(dynamicDbContextOptions, CreatePool(dynamicDbContextOptions))
         {
-            OperationAdapter = new OeMySqlEfCoreOperationAdapter(typeof(DynamicDbContext));
+            base.OperationAdapter = new OeMySqlEfCoreOperationAdapter(typeof(DynamicDbContext));
         }
 
         public override DynamicMetadataProvider CreateMetadataProvider(InformationSchemaMapping informationSchemaMapping)
@@ -95,8 +95,5 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         {
             return parameterName;
         }
-
-        public override bool IsCaseSensitive => false;
-        public override OeEfCoreOperationAdapter OperationAdapter { get; }
     }
 }

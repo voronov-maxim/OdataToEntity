@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace OdataToEntity.Test.AspMvcServer.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api")]
     public sealed class ManyColumnsController
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
@@ -16,12 +16,12 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
             _httpContextAccessor = httpContextAccessor;
         }
 
-        [HttpDelete]
+        [HttpDelete("[controller]")]
         public void Delete(OeDataContext dataContext, Model.ManyColumns manyColumns)
         {
             dataContext.Update(manyColumns);
         }
-        [HttpGet]
+        [HttpGet("[controller]")]
         public ODataResult<Model.ManyColumns> Get()
         {
             Query.OeModelBoundProvider modelBoundProvider = _httpContextAccessor.HttpContext.CreateModelBoundProvider();
@@ -29,19 +29,19 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
             IAsyncEnumerable<Model.ManyColumns> manyColumns = parser.ExecuteReader<Model.ManyColumns>();
             return parser.OData(manyColumns);
         }
-        [HttpGet("{id}")]
+        [HttpGet("[controller]({id})")]
         public ODataResult<Model.ManyColumns> Get(int id)
         {
             var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
             IAsyncEnumerable<Model.ManyColumns> manyColumns = parser.ExecuteReader<Model.ManyColumns>();
             return parser.OData(manyColumns);
         }
-        [HttpPatch]
+        [HttpPatch("[controller]")]
         public void Patch(OeDataContext dataContext, IDictionary<String, Object> manyColumnsProperties)
         {
             dataContext.Update(manyColumnsProperties);
         }
-        [HttpPost]
+        [HttpPost("[controller]")]
         public void Post(OeDataContext dataContext, Model.ManyColumns manyColumns)
         {
             dataContext.Update(manyColumns);

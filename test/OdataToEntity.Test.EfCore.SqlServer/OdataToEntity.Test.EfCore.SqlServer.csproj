@@ -17,7 +17,7 @@
     <StartupObject>OdataToEntity.Test.EfCore.SqlServer.Program</StartupObject>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netcoreapp3.0|AnyCPU'">
+  <PropertyGroup>
     <NoWarn>EF1001</NoWarn>
   </PropertyGroup>
 

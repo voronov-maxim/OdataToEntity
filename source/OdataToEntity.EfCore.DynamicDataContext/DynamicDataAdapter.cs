@@ -1,18 +1,22 @@
 ﻿using Microsoft.OData.Edm;
 using OdataToEntity.ModelBuilder;
 using System;
+using System.Linq.Expressions;
 
 namespace OdataToEntity.EfCore.DynamicDataContext
 {
     public sealed class DynamicDataAdapter : OeEfCoreDataAdapter<DynamicDbContext>
     {
         private readonly Db.OeEntitySetAdapterCollection _dynamicEntitySetAdapters;
+        private readonly ExpressionVisitor _expressionVisitor;
 
         public DynamicDataAdapter(DynamicTypeDefinitionManager typeDefinitionManager)
             : base(null, null, typeDefinitionManager.OperationAdapter)
         {
             TypeDefinitionManager = typeDefinitionManager;
             _dynamicEntitySetAdapters = CreateEntitySetAdapters(typeDefinitionManager);
+
+            _expressionVisitor = typeDefinitionManager.ExpressionVisitor;
             base.IsDatabaseNullHighestValue = typeDefinitionManager.IsDatabaseNullHighestValue;
             base.IsCaseSensitive = typeDefinitionManager.IsCaseSensitive;
         }
@@ -41,6 +45,10 @@ namespace OdataToEntity.EfCore.DynamicDataContext
         public override Object CreateDataContext()
         {
             return TypeDefinitionManager.CreateDynamicDbContext();
+        }
+        protected override Expression TranslateExpression(Expression expression)
+        {
+            return _expressionVisitor == null ? expression : _expressionVisitor.Visit(expression);
         }
 
         public override Db.OeEntitySetAdapterCollection EntitySetAdapters => _dynamicEntitySetAdapters;

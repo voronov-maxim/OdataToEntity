@@ -10,9 +10,9 @@ namespace OdataToEntity.EfCore.Postgresql
         public String item { get; set; }
     }
 
-    public class OeEfCorePostgreSqlDataAdapter<T> : OeEfCoreDataAdapter<T> where T : DbContext
+    public class EfCorePostgreSqlDataAdapter<T> : OeEfCorePostgreSqlDataAdapter<T> where T : DbContext
     {
-        private sealed class EfCorePostgreSqlOperationAdapter : Postgresql.OePostgreSqlEfCoreOperationAdapter
+        private sealed class EfCorePostgreSqlOperationAdapter : OePostgreSqlEfCoreOperationAdapter
         {
             public EfCorePostgreSqlOperationAdapter(Type dataContextType) : base(dataContextType)
             {
@@ -35,13 +35,12 @@ namespace OdataToEntity.EfCore.Postgresql
             }
         }
 
-        public OeEfCorePostgreSqlDataAdapter() : this(null, null)
+        public EfCorePostgreSqlDataAdapter() : this(null, null)
         {
         }
-        public OeEfCorePostgreSqlDataAdapter(DbContextOptions options, Cache.OeQueryCache queryCache)
+        public EfCorePostgreSqlDataAdapter(DbContextOptions options, Cache.OeQueryCache queryCache)
             : base(options, queryCache, new EfCorePostgreSqlOperationAdapter(typeof(T)))
         {
-            base.IsDatabaseNullHighestValue = true;
         }
     }
 }
