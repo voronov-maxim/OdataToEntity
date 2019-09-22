@@ -4,18 +4,15 @@
 //    Changes to this file may cause incorrect behavior and will be lost if the code is regenerated.
 // </auto-generated>
 //---------------------------------------------------------------------------------------------------
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
-
 using LinqToDB;
 using LinqToDB.DataProvider.SqlServer;
 using LinqToDB.Mapping;
 using OdataToEntity.Linq2Db;
-using System.ComponentModel;
 using OdataToEntity.Query;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
 
 namespace OdataToEntity.Test.Model
 {

@@ -18,7 +18,7 @@ namespace OdataToEntity.Test.Model
 
         public OrderDataAdapter(bool allowCache, bool useRelationalNulls) : base(new Cache.OeQueryCache(allowCache))
         {
-            LinqToDB.Common.Configuration.Linq.AllowMultipleQuery = true;
+            LinqToDB.Common.Configuration.Linq.AllowMultipleQuery = false;
         }
 
         public static ModelBuilder.OeEdmModelMetadataProvider CreateMetadataProvider()
@@ -38,7 +38,7 @@ namespace OdataToEntity.Test.Model
 
         public Order2DataAdapter(bool allowCache, bool useRelationalNulls) : base(new Cache.OeQueryCache(allowCache))
         {
-            LinqToDB.Common.Configuration.Linq.AllowMultipleQuery = true;
+            LinqToDB.Common.Configuration.Linq.AllowMultipleQuery = false;
         }
     }
 }

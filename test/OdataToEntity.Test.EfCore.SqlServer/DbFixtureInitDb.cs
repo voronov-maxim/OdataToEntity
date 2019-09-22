@@ -3,6 +3,8 @@ using OdataToEntity.ModelBuilder;
 using OdataToEntity.Test.Model;
 using System;
 using System.IO;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -34,9 +36,11 @@ namespace OdataToEntity.Test
         }
         public override async Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
         {
+            parameters.Expression = (Expression<Func<IQueryable<T>, IQueryable<TResult>>>)new OdataToEntity.EfCore.Fix.FixSelectDistinctVisitor().Visit(parameters.Expression);
+
             Task t1 = base.Execute(parameters);
-            //Task t2 = base.Execute(parameters);zzz
-            await Task.WhenAll(t1, Task.CompletedTask).ConfigureAwait(false);
+            Task t2 = base.Execute(parameters);
+            await Task.WhenAll(t1, t2).ConfigureAwait(false);
         }
         public override async Task Execute<T, TResult>(QueryParametersScalar<T, TResult> parameters)
         {
@@ -74,8 +78,8 @@ namespace OdataToEntity.Test
         public override async Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
         {
             Task t1 = base.Execute(parameters);
-            //Task t2 = base.Execute(parameters);zzz
-            await Task.WhenAll(t1, Task.CompletedTask).ConfigureAwait(false);
+            Task t2 = base.Execute(parameters);
+            await Task.WhenAll(t1, t2).ConfigureAwait(false);
         }
         public override async Task Execute<T, TResult>(QueryParametersScalar<T, TResult> parameters)
         {

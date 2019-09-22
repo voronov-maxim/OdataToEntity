@@ -20,7 +20,8 @@ namespace OdataToEntity.EfCore.Postgresql
 
         protected override Expression TranslateExpression(Expression expression)
         {
-            return new OeDateTimeOffsetMembersVisitor().Visit(expression);
+            expression = new OeDateTimeOffsetMembersVisitor().Visit(expression);
+            return base.TranslateExpression(expression);
         }
     }
 }

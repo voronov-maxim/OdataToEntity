@@ -13,7 +13,7 @@ using System.Xml;
 
 namespace OdataToEntity.Test.GraphQL
 {
-    public abstract class DbFixture:  IDisposable
+    public abstract class DbFixture : IDisposable
     {
         private readonly OeGraphqlParser _graphqlParser;
 
@@ -36,7 +36,7 @@ namespace OdataToEntity.Test.GraphQL
         }
         public async Task<String> Execute(String query, Inputs inputs)
         {
-            return new DocumentWriter(true).Write(await _graphqlParser.Execute(query, inputs));
+            return await (await _graphqlParser.Execute(query, inputs)).ToStringAsync();
         }
         public static String GetCsdlSchema(IEdmModel edmModel)
         {

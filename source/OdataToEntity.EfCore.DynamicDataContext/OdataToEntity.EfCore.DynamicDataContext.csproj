@@ -1,5 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="..\..\build\dependencies.props" />
+  <Import Project="..\..\dependencies.props" />
 
   <PropertyGroup>
     <Description>Access database without data context. Targets .NET Core with support for .NET 4.6.1</Description>

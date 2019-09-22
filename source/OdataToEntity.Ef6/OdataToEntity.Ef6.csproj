@@ -1,5 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="..\..\build\dependencies.props" />
+  <Import Project="..\..\dependencies.props" />
 
   <PropertyGroup>
     <Description>Classes bridge from OdataToEntity to Entity Framework 6.3.0. Abstraction layer access to DataContext Entity Framework 6.3.0. Targets .NET 4.8</Description>

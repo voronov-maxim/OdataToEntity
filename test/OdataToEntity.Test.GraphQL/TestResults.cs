@@ -1,5 +1,4 @@
 ﻿using GraphQL;
-using GraphQL.Http;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
@@ -210,7 +209,7 @@ namespace OdataToEntity.Test.GraphQL
         {
             FieldInfo fieldInfo = typeof(TestResults).GetField(memberName);
             var expected = (String)fieldInfo.GetValue(null);
-            String formated = new DocumentWriter(true).Write(new ExecutionResult { Data = JObject.Parse(expected) });
+            String formated = new ExecutionResult { Data = JObject.Parse(expected) }.ToStringAsync().GetAwaiter().GetResult();
             Xunit.Assert.Equal(formated, SortJson(result));
         }
         private static String SortJson(String json)

@@ -25,7 +25,7 @@ namespace OdataToEntity.Test.DynamicDataContext
         static async Task Main(String[] args)
         {
             //PerformanceCacheTest.RunTest(100);
-            new PLNull(new PLNull_DbFixtureInitDb()).FilterDateTimeOffsetYearMonthDay(0).GetAwaiter().GetResult();
+            new PLNull(new PLNull_DbFixtureInitDb()).ApplyFilterGroupBy(0).GetAwaiter().GetResult();
             //new ProcedureTest().ScalarFunction_get().GetAwaiter().GetResult();
             //new PLNull_ManyColumns(new PLNull_ManyColumnsFixtureInitDb()).Filter(1).GetAwaiter().GetResult();
 

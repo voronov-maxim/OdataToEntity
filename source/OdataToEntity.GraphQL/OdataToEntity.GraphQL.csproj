@@ -1,5 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="..\..\build\dependencies.props" />
+  <Import Project="..\..\dependencies.props" />
 
   <PropertyGroup>
     <Description>Translate and execute GraphQL query via OData</Description>
@@ -26,7 +26,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="GraphQL" Version="3.0.0-preview-1211" />
+    <PackageReference Include="GraphQL" Version="3.0.0-*" />
     <PackageReference Include="System.Interactive.Async" Version="$(SystemInteractiveAsyncVersion)" />
   </ItemGroup>
 

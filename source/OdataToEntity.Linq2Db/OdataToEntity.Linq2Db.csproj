@@ -1,5 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="..\..\build\dependencies.props" />
+  <Import Project="..\..\dependencies.props" />
 
   <PropertyGroup>
     <Description>Classes bridge from OdataToEntity to Linq2Db. Abstraction layer access to DataContext Entity Linq2Db</Description>

@@ -233,7 +233,7 @@ namespace OdataToEntity.EfCore
             : base(queryCache, operationAdapter)
         {
             if (options != null)
-                _dbContextPool = new DbContextPool<T>(options);
+                _dbContextPool = new DbContextPool<T>(Fix.FixHelper.FixDistinctCount(options));
         }
 
         public override void CloseDataContext(Object dataContext)
@@ -398,7 +398,7 @@ namespace OdataToEntity.EfCore
         }
         protected virtual Expression TranslateExpression(Expression expression)
         {
-            return expression;
+            return new Fix.FixSelectDistinctVisitor().Visit(expression);
         }
 
         public override Type DataContextType => typeof(T);

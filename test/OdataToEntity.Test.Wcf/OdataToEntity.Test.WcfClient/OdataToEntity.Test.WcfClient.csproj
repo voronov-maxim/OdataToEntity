@@ -1,5 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="..\..\..\build\dependencies.props" />
+  <Import Project="..\..\..\dependencies.props" />
 
   <PropertyGroup>
     <Description>Test Wcf client for OdataToEntity</Description>

@@ -66,7 +66,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
             DbContextOptions dynamicContextOptions = optionsBuilder.Options;
             foreach (IDbContextOptionsExtension extension in options.Extensions)
                 dynamicContextOptions = dynamicContextOptions.WithExtension(extension);
-            return dynamicContextOptions;
+            return Fix.FixHelper.FixDistinctCount(dynamicContextOptions);
         }
         public DynamicTypeDefinition GetDynamicTypeDefinition(Type dynamicTypeType)
         {

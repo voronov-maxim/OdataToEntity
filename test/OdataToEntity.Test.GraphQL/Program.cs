@@ -52,13 +52,13 @@ namespace OdataToEntity.Test.GraphQL
             String starWarsOdataUri = Uri.UnescapeDataString(parser.GetOdataUri(starWarsQuery).OriginalString);
             Console.WriteLine(starWarsOdataUri);
 
-            String starWarsJson = new DocumentWriter(true).Write(await parser.Execute(starWarsQuery));
+            String starWarsJson = await (await parser.Execute(starWarsQuery)).ToStringAsync();
             Console.WriteLine(starWarsJson);
 
             String order2OdataUri = Uri.UnescapeDataString(parser.GetOdataUri(order2Query).OriginalString);
             Console.WriteLine(order2OdataUri);
 
-            String order2Json = new DocumentWriter(true).Write(await parser.Execute(order2Query));
+            String order2Json = await (await parser.Execute(order2Query)).ToStringAsync();
             Console.WriteLine(order2Json);
         }
     }

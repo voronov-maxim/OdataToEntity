@@ -48,7 +48,8 @@ namespace OdataToEntity.EfCore.DynamicDataContext
         }
         protected override Expression TranslateExpression(Expression expression)
         {
-            return _expressionVisitor == null ? expression : _expressionVisitor.Visit(expression);
+            expression = _expressionVisitor == null ? expression : _expressionVisitor.Visit(expression);
+            return base.TranslateExpression(expression);
         }
 
         public override Db.OeEntitySetAdapterCollection EntitySetAdapters => _dynamicEntitySetAdapters;

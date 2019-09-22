@@ -1,4 +1,4 @@
 [submodule "test/OdataToEntity.Test.Wcf/CoreWcf"]
 	path = test/OdataToEntity.Test.Wcf/CoreWcf
-	url = https://github.com/voronov-maxim/CoreWCF.git
+	url = https://github.com/CoreWCF/CoreWCF.git
 	branch = master

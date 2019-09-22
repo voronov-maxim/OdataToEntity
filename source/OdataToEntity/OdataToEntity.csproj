@@ -1,5 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="..\..\build\dependencies.props" />
+  <Import Project="..\..\dependencies.props" />
 
   <PropertyGroup>
     <Description>Classes to serialize, deserialize OData JSON payloads. Supports OData v4 only. Enables construction of OData services via Entity Framework (Linq2Db) DataContext (without controller). Targets .NET Core with support for .NET 4.6.1</Description>
@@ -30,7 +30,7 @@
     <PackageReference Include="Microsoft.OData.Core" Version="$(ODataLibVersion)" />
     <PackageReference Include="Microsoft.OData.Edm" Version="$(ODataLibVersion)" />
     <PackageReference Include="Microsoft.Spatial" Version="$(ODataLibVersion)" />
-    <PackageReference Include="System.ComponentModel.Annotations" Version="4.6.0-preview8.19405.3" />
+    <PackageReference Include="System.ComponentModel.Annotations" Version="$(CoreFxVersion)" />
     <PackageReference Include="System.Interactive.Async" Version="$(SystemInteractiveAsyncVersion)" />
   </ItemGroup>
 
