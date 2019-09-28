@@ -2,7 +2,7 @@
   <Import Project="..\..\dependencies.props" />
 
   <PropertyGroup>
-    <Description>Access database without data context. Targets .NET Core with support for .NET 4.6.1</Description>
+    <Description>Access database without data context.</Description>
     <Authors>Maxim Voronov</Authors>
     <TargetFramework>$(NetStandardVersion)</TargetFramework>
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -20,7 +20,7 @@
     <AssemblyVersion>$(OdataToEntityVersion)</AssemblyVersion>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.1|AnyCPU'">
+  <PropertyGroup>
     <NoWarn>EF1001</NoWarn>
   </PropertyGroup>
 
@@ -32,7 +32,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.OData.Core" Version="$(ODataLibVersion)" />
     <PackageReference Include="Microsoft.OData.Edm" Version="$(ODataLibVersion)" />
-    <PackageReference Include="Pluralize.NET" Version="0.1.84" />
+    <PackageReference Include="Pluralize.NET" Version="1.0.2" />
   </ItemGroup>
 
 </Project>

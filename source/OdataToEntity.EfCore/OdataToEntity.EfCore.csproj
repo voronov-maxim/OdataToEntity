@@ -2,7 +2,7 @@
   <Import Project="..\..\dependencies.props" />
 
   <PropertyGroup>
-    <Description>Classes bridge from ODataToEntity to Entity Framework Core. Abstraction layer access to DataContext Entity Framework Core. Targets .NET Core with support for .NET 4.6.1</Description>
+    <Description>Classes bridge from ODataToEntity to Entity Framework Core. Abstraction layer access to DataContext Entity Framework Core.</Description>
     <Authors>Maxim Voronov</Authors>
     <TargetFramework>$(NetStandardVersion)</TargetFramework>
     <PlatformTarget>AnyCPU</PlatformTarget>

@@ -40,7 +40,7 @@ namespace OdataToEntity.Db
                 if (String.Compare(entitySetAdapter.EntitySetName, entitySet.Name, StringComparison.OrdinalIgnoreCase) == 0)
                     return entitySetAdapter;
 
-            return null;
+            throw new InvalidOperationException("EntitySet " + entitySet.Name + " not found");
         }
     }
 }

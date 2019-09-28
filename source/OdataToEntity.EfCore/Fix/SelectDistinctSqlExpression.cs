@@ -19,7 +19,7 @@ namespace OdataToEntity.EfCore.Fix
 
         public override bool Equals(Object obj)
         {
-            return obj != null && (ReferenceEquals(this, obj) || obj is SelectDistinctSqlExpression distinctCountExpression && Equals(distinctCountExpression));
+            return obj is SelectDistinctSqlExpression distinctCountExpression && Equals(distinctCountExpression);
         }
         private bool Equals(SelectDistinctSqlExpression distinctCountExpression)
         {
