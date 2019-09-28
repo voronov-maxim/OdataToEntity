@@ -2,7 +2,7 @@
   <Import Project="..\..\dependencies.props" />
 
   <PropertyGroup>
-    <Description>Classes to serialize, deserialize OData JSON payloads. Supports OData v4 only. Enables construction of OData services via Entity Framework (Linq2Db) DataContext (without controller). Targets .NET Core with support for .NET 4.6.1</Description>
+    <Description>Classes to serialize, deserialize OData JSON payloads. Supports OData v4 only. Enables construction of OData services via Entity Framework (Linq2Db) DataContext (with/without controller).</Description>
     <Authors>Maxim Voronov</Authors>
     <TargetFrameworks>$(NetStandardVersion);$(FrameworkVersion)</TargetFrameworks>
     <PlatformTarget>AnyCPU</PlatformTarget>
