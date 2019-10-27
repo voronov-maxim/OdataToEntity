@@ -1,5 +1,7 @@
-﻿using Microsoft.OData;
+﻿#nullable enable
+using Microsoft.OData;
 using System;
+using System.IO;
 
 namespace OdataToEntity
 {
@@ -12,6 +14,7 @@ namespace OdataToEntity
 
     public class OeRequestHeaders
     {
+        private static readonly Stream _emptyStream = new MemoryStream();
         public static readonly OeRequestHeaders JsonDefault = new OeRequestHeaders("application/json", OeMetadataLevel.Minimal, true, "utf-8");
         public static readonly OeRequestHeaders TextDefault = new OeRequestHeaders("text/plain", OeMetadataLevel.Minimal, true, "utf-8");
 
@@ -121,7 +124,7 @@ namespace OdataToEntity
             if (String.IsNullOrEmpty(preferHeader))
                 return requestHeaders;
 
-            var message = new Infrastructure.OeInMemoryMessage(null, null);
+            var message = new Infrastructure.OeInMemoryMessage(_emptyStream, null);
             message.SetHeader("Prefer", preferHeader);
             ODataPreferenceHeader preferenceHeader = message.PreferHeader();
             if (preferenceHeader.MaxPageSize == null)
@@ -143,9 +146,9 @@ namespace OdataToEntity
         public String Charset { get; }
         public String ContentType { get; }
         public OeMetadataLevel MetadataLevel { get; }
-        public string MimeType { get; }
+        public String MimeType { get; }
         public int MaxPageSize { get; private set; }
-        public virtual string ResponseContentType { get; set; }
+        public virtual String? ResponseContentType { get; set; }
         public bool Streaming { get; }
     }
 }

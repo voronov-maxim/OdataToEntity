@@ -1,4 +1,5 @@
-﻿using Microsoft.OData;
+﻿#nullable enable
+using Microsoft.OData;
 using Microsoft.OData.Edm;
 using OdataToEntity.ModelBuilder;
 using System;
@@ -63,7 +64,7 @@ namespace OdataToEntity.Parsers
             var propertyAccessors = new List<OePropertyAccessor>();
             foreach (IEdmStructuralProperty edmProperty in entitySet.EntityType().StructuralProperties())
             {
-                PropertyInfo propertyInfo = clrType.GetPropertyIgnoreCaseOrNull(edmProperty);
+                PropertyInfo? propertyInfo = clrType.GetPropertyIgnoreCaseOrNull(edmProperty);
                 if (propertyInfo == null)
                 {
                     if (!(edmProperty is OeEdmStructuralShadowProperty))
@@ -85,6 +86,6 @@ namespace OdataToEntity.Parsers
         public IEdmProperty EdmProperty { get; }
         internal MemberExpression PropertyExpression { get; }
         public bool SkipToken { get; }
-        public ODataTypeAnnotation TypeAnnotation { get; }
+        public ODataTypeAnnotation? TypeAnnotation { get; }
     }
 }

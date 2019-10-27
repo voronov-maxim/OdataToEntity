@@ -61,7 +61,7 @@ namespace OdataToEntity.Test.Model
 		}
         #endregion
 
-        [Db.OeBoundFunction(CollectionFunctionName = "BoundFunctionCollection", SingleFunctionName = "BoundFunctionSingle")]
+        [Db.OeBoundFunction(collectionFunctionName: "BoundFunctionCollection", singleFunctionName: "BoundFunctionSingle")]
         public static IEnumerable<Order> BoundFunction(Db.OeBoundFunctionParameter<Customer, Order> boundParameter, IEnumerable<String> orderNames)
         {
             using (var orderContext = new OdataToEntityDB())

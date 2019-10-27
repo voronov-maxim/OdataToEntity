@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace OdataToEntity.Test.AspMvcServer.Controllers
 {
-    [Route("api")]
+    [Route("api/[controller]")]
     public sealed class OrderItemsViewController
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
@@ -15,7 +15,7 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
             _httpContextAccessor = httpContextAccessor;
         }
 
-        [HttpGet("[controller]")]
+        [HttpGet]
         public ODataResult<Model.OrderItemsView> Get()
         {
             Query.OeModelBoundProvider modelBoundProvider = _httpContextAccessor.HttpContext.CreateModelBoundProvider();

@@ -1,4 +1,5 @@
-﻿using Microsoft.OData;
+﻿#nullable enable
+using Microsoft.OData;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using System;
@@ -14,11 +15,11 @@ namespace OdataToEntity.Parsers
         private struct ResourceFactory
         {
             private readonly Uri _baseUri;
-            private IEdmEntityType _edmEntityType;
+            private IEdmEntityType? _edmEntityType;
             private readonly IEdmModel _edmModel;
-            private readonly IServiceProvider _serviceProvider;
+            private readonly IServiceProvider? _serviceProvider;
 
-            public ResourceFactory(IEdmModel edmModel, Uri baseUri, IServiceProvider serviceProvider)
+            public ResourceFactory(IEdmModel edmModel, Uri baseUri, IServiceProvider? serviceProvider)
             {
                 _edmModel = edmModel;
                 _baseUri = baseUri;
@@ -28,7 +29,7 @@ namespace OdataToEntity.Parsers
 
             private IEdmType ClientCustomTypeResolver(IEdmType edmType, String name)
             {
-                return edmType ?? _edmEntityType;
+                return edmType ?? (_edmEntityType ?? throw new InvalidOperationException(nameof(_edmEntityType) + " mist set in ReadEntityFromStream"));
             }
             public ODataResource CreateEntry(ODataBatchOperationRequestMessage batchRequest, out IEdmEntitySet entitSet)
             {
@@ -46,7 +47,7 @@ namespace OdataToEntity.Parsers
                 _edmEntityType = entitySet.EntityType();
                 IEdmModel edmModel = _edmModel.GetEdmModel(entitySet);
 
-                ODataResource entry = null;
+                ODataResource? entry = null;
                 IODataRequestMessage requestMessage = new Infrastructure.OeInMemoryMessage(content, contentType, _serviceProvider);
                 var settings = new ODataMessageReaderSettings
                 {
@@ -90,7 +91,7 @@ namespace OdataToEntity.Parsers
             Entry = entry;
         }
 
-        public static async ValueTask<OeOperationMessage> Create(IEdmModel edmModel, Uri baseUri, ODataBatchReader reader, IServiceProvider serviceProvider)
+        public static async ValueTask<OeOperationMessage> Create(IEdmModel edmModel, Uri baseUri, ODataBatchReader reader, IServiceProvider? serviceProvider)
         {
             ODataBatchOperationRequestMessage batchRequest = await reader.CreateOperationRequestMessageAsync();
             ODataResource entry = new ResourceFactory(edmModel, baseUri, serviceProvider).CreateEntry(batchRequest, out IEdmEntitySet entitSet);

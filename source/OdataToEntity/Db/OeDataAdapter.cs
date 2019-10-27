@@ -1,4 +1,5 @@
-﻿using Microsoft.OData.Edm;
+﻿#nullable enable
+using Microsoft.OData.Edm;
 using OdataToEntity.Parsers;
 using System;
 using System.Collections.Generic;
@@ -9,7 +10,7 @@ namespace OdataToEntity.Db
 {
     public abstract class OeDataAdapter
     {
-        public OeDataAdapter(Cache.OeQueryCache queryCache, OeOperationAdapter operationAdapter)
+        public OeDataAdapter(Cache.OeQueryCache? queryCache, OeOperationAdapter operationAdapter)
         {
             QueryCache = queryCache ?? new Cache.OeQueryCache(true);
             OperationAdapter = operationAdapter;

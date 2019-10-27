@@ -43,7 +43,7 @@ namespace OdataToEntity
             }
             public override IEdmNavigationSource ResolveNavigationSource(IEdmModel model, String identifier)
             {
-                return OeEdmClrHelper.GetEntitySet(model, identifier, EnableCaseInsensitive ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
+                return OeEdmClrHelper.GetEntitySetOrNull(model, identifier, EnableCaseInsensitive ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
             }
             public override IEnumerable<IEdmOperationImport> ResolveOperationImports(IEdmModel edmModel, String identifier)
             {

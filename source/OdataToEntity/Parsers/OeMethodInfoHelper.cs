@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -11,23 +12,23 @@ namespace OdataToEntity.Parsers
         private readonly static MethodInfo[] _enumerableMethods = typeof(Enumerable).GetMethods();
         private readonly static MethodInfo[] _queryableMethods = typeof(Queryable).GetMethods();
 
-        private static MethodInfo _anyMethodInfo;
-        private static MethodInfo _countMethodInfo;
-        private static MethodInfo _defaultIfEmpty;
-        private static MethodInfo _distinctMethodInfo;
-        private static MethodInfo _groupByMethodInfo;
-        private static MethodInfo _groupByMethodInfo2;
-        private static MethodInfo _groupJoinMethodInfo;
-        private static MethodInfo _orderByMethodInfo;
-        private static MethodInfo _orderByDescendingMethodInfo;
-        private static MethodInfo _selectManyMethodInfo;
-        private static MethodInfo _selectManyMethodInfo2;
-        private static MethodInfo _selectMethodInfo;
-        private static MethodInfo _skipMethodInfo;
-        private static MethodInfo _takeMethodInfo;
-        private static MethodInfo _thenByMethodInfo;
-        private static MethodInfo _thenByDescendingMethodInfo;
-        private static MethodInfo _whereMethodInfo;
+        private static MethodInfo? _anyMethodInfo;
+        private static MethodInfo? _countMethodInfo;
+        private static MethodInfo? _defaultIfEmpty;
+        private static MethodInfo? _distinctMethodInfo;
+        private static MethodInfo? _groupByMethodInfo;
+        private static MethodInfo? _groupByMethodInfo2;
+        private static MethodInfo? _groupJoinMethodInfo;
+        private static MethodInfo? _orderByMethodInfo;
+        private static MethodInfo? _orderByDescendingMethodInfo;
+        private static MethodInfo? _selectManyMethodInfo;
+        private static MethodInfo? _selectManyMethodInfo2;
+        private static MethodInfo? _selectMethodInfo;
+        private static MethodInfo? _skipMethodInfo;
+        private static MethodInfo? _takeMethodInfo;
+        private static MethodInfo? _thenByMethodInfo;
+        private static MethodInfo? _thenByDescendingMethodInfo;
+        private static MethodInfo? _whereMethodInfo;
 
         public static MethodInfo GetAggMethodInfo(String methodName, Type returnType)
         {
@@ -51,20 +52,12 @@ namespace OdataToEntity.Parsers
                 if (arguments[1] == returnType)
                     return methodInfo;
             }
-
-            Func<IEnumerable<Object>, Func<Object, Object>, Object> aggFunc;
-            switch (methodName)
+            Func<IEnumerable<Object>, Func<Object, Object>, Object> aggFunc = methodName switch
             {
-                case nameof(Enumerable.Max):
-                    aggFunc = Enumerable.Max;
-                    break;
-                case nameof(Enumerable.Min):
-                    aggFunc = Enumerable.Min;
-                    break;
-                default:
-                    throw new InvalidOperationException("Aggregation method " + methodName + " not found");
-            }
-
+                nameof(Enumerable.Max) => Enumerable.Max,
+                nameof(Enumerable.Min) => Enumerable.Min,
+                _ => throw new InvalidOperationException("Aggregation method " + methodName + " not found"),
+            };
             return aggFunc.Method.GetGenericMethodDefinition();
         }
         public static MethodInfo GetAnyMethodInfo(Type sourceType)
@@ -234,7 +227,7 @@ namespace OdataToEntity.Parsers
                 method.Name == nameof(Enumerable.Min) ||
                 method.Name == nameof(Enumerable.Sum))
             {
-                MethodInfo[] methods = null;
+                MethodInfo[]? methods = null;
                 if (method.DeclaringType == typeof(Enumerable))
                     methods = _enumerableMethods;
                 else if (method.DeclaringType == typeof(Queryable))
@@ -258,7 +251,7 @@ namespace OdataToEntity.Parsers
                 if (!parameter.ParameterType.IsGenericType)
                     continue;
 
-                Type[] parameterGenericArguments = null;
+                Type[]? parameterGenericArguments = null;
                 if (typeof(Delegate).IsAssignableFrom(parameter.ParameterType))
                     parameterGenericArguments = parameter.ParameterType.GetGenericArguments();
                 else if (typeof(LambdaExpression).IsAssignableFrom(parameter.ParameterType))
@@ -286,7 +279,7 @@ namespace OdataToEntity.Parsers
                                 continue;
                         }
 
-                        Type[] genericArguments = null;
+                        Type[]? genericArguments = null;
                         Expression expression = arguments[i];
                         if (expression is UnaryExpression unary)
                             expression = unary.Operand;

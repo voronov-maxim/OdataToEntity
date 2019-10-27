@@ -1,9 +1,13 @@
-﻿using OdataToEntity.ModelBuilder;
+﻿#if !NETSTANDARD2_1
+    #pragma warning disable CS8604
+#endif
+#nullable enable
+using OdataToEntity.ModelBuilder;
 using OdataToEntity.Parsers;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Globalization;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text;
 using System.Threading;
@@ -13,7 +17,7 @@ namespace OdataToEntity.Db
     public abstract class OeOperationAdapter
     {
         private readonly Type _dataContextType;
-        private IReadOnlyList<OeOperationConfiguration> _operations;
+        private IReadOnlyList<OeOperationConfiguration>? _operations;
 
         protected OeOperationAdapter(Type dataContextType) : this(dataContextType, false)
         {
@@ -68,7 +72,7 @@ namespace OdataToEntity.Db
         {
             return !IsCaseSensitive || name[0] == '"' ? name : "\"" + name + "\"";
         }
-        protected virtual String GetDefaultSchema(Object dataContext) => null;
+        protected virtual String? GetDefaultSchema(Object dataContext) => null;
         protected IReadOnlyList<MethodInfo> GetMethodInfos()
         {
             var methodInfos = new List<MethodInfo>();
@@ -82,7 +86,7 @@ namespace OdataToEntity.Db
                 }
             return methodInfos;
         }
-        protected String GetOperationCaseSensitivityName(String operationName, String defaultSchema)
+        protected String GetOperationCaseSensitivityName(String operationName, String? defaultSchema)
         {
             int i = operationName.IndexOf('.');
             if (i == -1)
@@ -108,7 +112,7 @@ namespace OdataToEntity.Db
 
             return _operations;
         }
-        protected virtual IReadOnlyList<OeOperationConfiguration> GetOperationConfigurations(MethodInfo methodInfo)
+        protected virtual IReadOnlyList<OeOperationConfiguration>? GetOperationConfigurations(MethodInfo methodInfo)
         {
             var description = (DescriptionAttribute)methodInfo.GetCustomAttribute(typeof(DescriptionAttribute));
             if (description == null)
@@ -125,7 +129,7 @@ namespace OdataToEntity.Db
                 return operations;
             }
 
-            String schema = null;
+            String? schema = null;
             String name = description.Description;
             int i = name.IndexOf('.');
             if (i != -1)
@@ -142,13 +146,13 @@ namespace OdataToEntity.Db
             var operations = new List<OeOperationConfiguration>(methodInfos.Count);
             for (int i = 0; i < methodInfos.Count; i++)
             {
-                IReadOnlyList<OeOperationConfiguration> operationConfiguration = GetOperationConfigurations(methodInfos[i]);
+                IReadOnlyList<OeOperationConfiguration>? operationConfiguration = GetOperationConfigurations(methodInfos[i]);
                 if (operationConfiguration != null)
                     operations.AddRange(operationConfiguration);
             }
             return operations;
         }
-        protected virtual Object GetParameterCore(KeyValuePair<String, Object> parameter, String parameterName, int parameterIndex)
+        protected virtual Object GetParameterCore(KeyValuePair<String, Object> parameter, String? parameterName, int parameterIndex)
         {
             return parameter.Value;
         }

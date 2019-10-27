@@ -1,4 +1,5 @@
-﻿using Microsoft.OData.Edm;
+﻿#nullable enable
+using Microsoft.OData.Edm;
 using System;
 using System.Collections;
 using System.Collections.Generic;

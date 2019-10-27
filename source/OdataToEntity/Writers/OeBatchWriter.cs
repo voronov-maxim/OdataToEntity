@@ -29,8 +29,7 @@ namespace OdataToEntity.Writers
 
         public async Task Write(Stream stream, OeBatchMessage batchMessage)
         {
-            var syncToAsyncStream = new Infrastructure.SyncToAsyncStream(stream);//fix invoke Flush throw exception in kestrel 3.0
-            IODataResponseMessage responseMessage = new Infrastructure.OeInMemoryMessage(syncToAsyncStream, batchMessage.ContentType);
+            IODataResponseMessage responseMessage = new Infrastructure.OeInMemoryMessage(stream, batchMessage.ContentType);
             using (var messageWriter = new ODataMessageWriter(responseMessage, _settings))
             {
                 ODataBatchWriter writer = await messageWriter.CreateODataBatchWriterAsync().ConfigureAwait(false);

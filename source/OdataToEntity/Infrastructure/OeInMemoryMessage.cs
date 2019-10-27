@@ -1,4 +1,5 @@
-﻿using Microsoft.OData;
+﻿#nullable enable
+using Microsoft.OData;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,13 +10,13 @@ namespace OdataToEntity.Infrastructure
     public sealed class OeInMemoryMessage : IODataRequestMessage, IODataRequestMessageAsync, IODataResponseMessage, IODataResponseMessageAsync, IContainerProvider
     {
         private readonly Dictionary<String, String> _headers;
-        private readonly IServiceProvider _serviceProvider;
+        private readonly IServiceProvider? _serviceProvider;
         private readonly Stream _stream;
 
-        public OeInMemoryMessage(Stream stream, String contentType) : this(stream, contentType, null)
+        public OeInMemoryMessage(Stream stream, String? contentType) : this(stream, contentType, null)
         {
         }
-        public OeInMemoryMessage(Stream stream, String contentType, IServiceProvider serviceProvider)
+        public OeInMemoryMessage(Stream stream, String? contentType, IServiceProvider? serviceProvider)
         {
             _stream = stream;
             _headers = new Dictionary<String, String>(1);
@@ -57,6 +58,6 @@ namespace OdataToEntity.Infrastructure
             set => throw new NotSupportedException();
         }
 
-        IServiceProvider IContainerProvider.Container => _serviceProvider;
+        IServiceProvider? IContainerProvider.Container => _serviceProvider;
     }
 }

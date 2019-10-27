@@ -1,4 +1,5 @@
-﻿using Microsoft.OData.Edm;
+﻿#nullable enable
+using Microsoft.OData.Edm;
 using Microsoft.Spatial;
 using System;
 using System.Collections.Generic;
@@ -92,19 +93,19 @@ namespace OdataToEntity.ModelBuilder
         {
             return EdmCoreModel.Instance.GetPrimitiveType(primitiveKind);
         }
-        public static IEdmPrimitiveType GetPrimitiveType(Type clrType)
+        public static IEdmPrimitiveType? GetPrimitiveType(Type clrType)
         {
             _clrTypeMappings.TryGetValue(clrType, out IEdmPrimitiveType edmType);
             return edmType;
         }
-        public static IEdmPrimitiveTypeReference GetPrimitiveTypeRef(Type clrType, bool nullable)
+        public static IEdmPrimitiveTypeReference? GetPrimitiveTypeRef(Type clrType, bool nullable)
         {
-            IEdmPrimitiveType primitiveEdmType = GetPrimitiveType(clrType);
+            IEdmPrimitiveType? primitiveEdmType = GetPrimitiveType(clrType);
             return primitiveEdmType == null ? null : EdmCoreModel.Instance.GetPrimitive(primitiveEdmType.PrimitiveKind, nullable);
         }
-        public static IEdmPrimitiveTypeReference GetPrimitiveTypeRef(PropertyInfo clrProperty, bool isNullable)
+        public static IEdmPrimitiveTypeReference? GetPrimitiveTypeRef(PropertyInfo clrProperty, bool isNullable)
         {
-            IEdmPrimitiveType edmPrimitiveType = GetPrimitiveType(clrProperty.PropertyType);
+            IEdmPrimitiveType? edmPrimitiveType = GetPrimitiveType(clrProperty.PropertyType);
             if (edmPrimitiveType == null)
                 return null;
 

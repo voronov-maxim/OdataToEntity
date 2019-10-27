@@ -1,4 +1,5 @@
-﻿using Microsoft.OData.Edm;
+﻿#nullable enable
+using Microsoft.OData.Edm;
 using OdataToEntity.ModelBuilder;
 using System;
 using System.Reflection;
@@ -9,18 +10,18 @@ namespace OdataToEntity
     {
         public static Type GetClrType(this IEdmModel edmModel, IEdmType edmType)
         {
-            Type clrType = GetClrTypeImpl(edmModel, edmType);
+            Type? clrType = GetClrTypeImpl(edmModel, edmType);
             if (clrType == null)
                 throw new InvalidOperationException("Add type annotation for " + edmType.FullTypeName());
 
             return clrType;
         }
-        private static Type GetClrTypeImpl(IEdmModel edmModel, IEdmType edmType)
+        private static Type? GetClrTypeImpl(IEdmModel edmModel, IEdmType edmType)
         {
-            if (edmType.TypeKind == EdmTypeKind.Primitive)
-                return PrimitiveTypeHelper.GetClrType((edmType as IEdmPrimitiveType).PrimitiveKind);
+            if (edmType is IEdmPrimitiveType edmPrimitiveType)
+                return PrimitiveTypeHelper.GetClrType(edmPrimitiveType.PrimitiveKind);
 
-            Type clrType = edmModel.GetAnnotationValue<Type>(edmType);
+            Type? clrType = edmModel.GetAnnotationValue<Type>(edmType);
             if (clrType != null)
                 return clrType;
 
@@ -40,8 +41,10 @@ namespace OdataToEntity
         public static Type GetClrType(this IEdmModel edmModel, IEdmEntitySetBase entitySet)
         {
             IEdmEntityType entityType = entitySet.EntityType();
-            edmModel = OeEdmClrHelper.GetEdmModel(edmModel, entityType);
-            return edmModel.GetAnnotationValue<Type>(entityType);
+            IEdmModel? model = OeEdmClrHelper.GetEdmModel(edmModel, entityType);
+            if (model == null)
+                throw new InvalidOperationException("Add type annotation for " + entityType.FullTypeName());
+            return model.GetAnnotationValue<Type>(entityType);
         }
         public static Db.OeDataAdapter GetDataAdapter(this IEdmModel edmModel, Type dataContextType)
         {

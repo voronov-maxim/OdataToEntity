@@ -50,8 +50,7 @@ namespace OdataToEntity.Writers
             if (serviceProvider != null)
                 serviceProvider = new ServiceProvider(serviceProvider, settings);
 
-            var syncToAsyncStream = new Infrastructure.SyncToAsyncStream(stream);//fix invoke Flush throw exception in kestrel 3.0
-            IODataResponseMessage responseMessage = new Infrastructure.OeInMemoryMessage(syncToAsyncStream, contentType, serviceProvider);
+            IODataResponseMessage responseMessage = new Infrastructure.OeInMemoryMessage(stream, contentType, serviceProvider);
             using (ODataMessageWriter messageWriter = new ODataMessageWriter(responseMessage, settings, queryContext.EdmModel))
             {
                 ODataUtils.SetHeadersForPayload(messageWriter, ODataPayloadKind.ResourceSet);

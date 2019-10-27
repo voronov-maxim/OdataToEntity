@@ -1,4 +1,5 @@
-﻿using Microsoft.OData.UriParser;
+﻿#nullable enable
+using Microsoft.OData.UriParser;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
@@ -11,7 +12,7 @@ namespace OdataToEntity.Parsers
         public static readonly ConstantExpression ZeroStringCompareConstantExpression = Expression.Constant(0);
 
         private readonly List<ConstantExpression> _constantExpressions;
-        private IReadOnlyList<Expression> _parameterExpressions;
+        private IReadOnlyList<Expression>? _parameterExpressions;
 
         public OeConstantToVariableVisitor()
         {

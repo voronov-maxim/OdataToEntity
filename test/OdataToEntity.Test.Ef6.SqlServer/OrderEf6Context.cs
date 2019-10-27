@@ -43,7 +43,7 @@ namespace OdataToEntity.Test.Ef6.SqlServer
         public DbSet<OrderItemsView> OrderItemsView { get; set; }
         public DbSet<ShippingAddress> ShippingAddresses { get; set; }
 
-        [Db.OeBoundFunction(CollectionFunctionName = "BoundFunctionCollection", SingleFunctionName = "BoundFunctionSingle")]
+        [Db.OeBoundFunction(collectionFunctionName: "BoundFunctionCollection", singleFunctionName: "BoundFunctionSingle")]
         public static IEnumerable<Order> BoundFunction(Db.OeBoundFunctionParameter<Customer, Order> boundParameter, IEnumerable<String> orderNames)
         {
             using (var orderContext = new OrderEf6Context(true))

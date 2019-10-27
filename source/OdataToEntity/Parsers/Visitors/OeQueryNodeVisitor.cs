@@ -1,4 +1,5 @@
-﻿using Microsoft.OData.UriParser;
+﻿#nullable enable
+using Microsoft.OData.UriParser;
 using OdataToEntity.Cache.UriCompare;
 using System;
 using System.Collections.Generic;
@@ -12,7 +13,7 @@ namespace OdataToEntity.Parsers
     {
         private readonly Dictionary<ConstantExpression, ConstantNode> _constants;
         private ParameterExpression _parameter;
-        private readonly OeQueryNodeVisitor _parentVisitor;
+        private readonly OeQueryNodeVisitor? _parentVisitor;
 
         public OeQueryNodeVisitor(ParameterExpression parameter)
         {
@@ -59,12 +60,6 @@ namespace OdataToEntity.Parsers
             Type itemType = OeExpressionHelper.GetCollectionItemTypeOrNull(source.Type) ?? source.Type;
             if (Parameter.Type != itemType)
                 _parameter = Expression.Parameter(itemType);
-        }
-        private Expression GetPropertyExpression(SingleValuePropertyAccessNode nodeIn)
-        {
-            Expression e = TranslateNode(nodeIn.Source);
-            PropertyInfo property = e.Type.GetPropertyIgnoreCase(nodeIn.Property);
-            return Expression.Property(e, property);
         }
         private Expression Lambda(CollectionNavigationNode sourceNode, SingleValueNode body, String methodName)
         {
@@ -129,22 +124,20 @@ namespace OdataToEntity.Parsers
 
                 if (right.Type != left.Type)
                 {
-                    if (left is ConstantExpression)
+                    if (left is ConstantExpression leftOldConstant)
                     {
-                        ConstantExpression oldConstant = left as ConstantExpression;
-                        ConstantExpression newConstant = OeExpressionHelper.ConstantChangeType(oldConstant, rightType);
-                        if (oldConstant != newConstant)
-                            ReplaceConstant(oldConstant, newConstant);
+                        ConstantExpression newConstant = OeExpressionHelper.ConstantChangeType(leftOldConstant, rightType);
+                        if (leftOldConstant != newConstant)
+                            ReplaceConstant(leftOldConstant, newConstant);
 
                         if (newConstant.Value != null)
                             left = Expression.Convert(newConstant, right.Type);
                     }
-                    else if (right is ConstantExpression)
+                    else if (right is ConstantExpression rightOldConstant)
                     {
-                        ConstantExpression oldConstant = right as ConstantExpression;
-                        ConstantExpression newConstant = OeExpressionHelper.ConstantChangeType(oldConstant, leftType);
-                        if (oldConstant != newConstant)
-                            ReplaceConstant(oldConstant, newConstant);
+                        ConstantExpression newConstant = OeExpressionHelper.ConstantChangeType(rightOldConstant, leftType);
+                        if (rightOldConstant != newConstant)
+                            ReplaceConstant(rightOldConstant, newConstant);
 
                         if (newConstant.Value != null)
                             right = Expression.Convert(newConstant, left.Type);
@@ -188,7 +181,7 @@ namespace OdataToEntity.Parsers
 
             return Expression.MakeBinary(binaryType, left, right);
 
-            UnaryExpression ConvertEnumExpression(Expression e, Type nullableType)
+            static UnaryExpression ConvertEnumExpression(Expression e, Type nullableType)
             {
                 if (e is UnaryExpression unaryExpression)
                 {
@@ -234,7 +227,7 @@ namespace OdataToEntity.Parsers
             var propertyExpression = (MemberExpression)Visit((SingleValuePropertyAccessNode)nodeIn.Left);
             var constantNodes = (CollectionConstantNode)nodeIn.Right;
 
-            BinaryExpression inExpression = null;
+            BinaryExpression? inExpression = null;
             for (int i = 0; i < constantNodes.Collection.Count; i++)
             {
                 var constantExpression = (ConstantExpression)Visit(constantNodes.Collection[i]);
@@ -245,7 +238,7 @@ namespace OdataToEntity.Parsers
                 BinaryExpression equalExpression = Expression.Equal(propertyExpression, coercedConstanExpression);
                 inExpression = inExpression == null ? equalExpression : Expression.OrElse(inExpression, equalExpression);
             }
-            return inExpression;
+            return inExpression ?? throw new InvalidOperationException("Suppress possible null reference return");
         }
         public override Expression Visit(ResourceRangeVariableReferenceNode nodeIn)
         {
@@ -255,17 +248,18 @@ namespace OdataToEntity.Parsers
         {
             Expression source;
             if (nodeIn.Source is SingleNavigationNode sourceNode)
-            {
                 source = Visit(sourceNode);
-                if (source == null)
-                    return null;
-            }
             else
                 source = Parameter;
 
-            PropertyInfo propertyInfo = source.Type.GetPropertyIgnoreCaseOrNull(nodeIn.NavigationProperty);
+            PropertyInfo? propertyInfo = source.Type.GetPropertyIgnoreCaseOrNull(nodeIn.NavigationProperty);
             if (propertyInfo == null)
-                return null;
+            {
+                if (TuplePropertyByAliasName == null)
+                    throw new InvalidOperationException("Cannot translate navigation property on Tuple type");
+
+                return Parameter;
+            }
 
             return Expression.Property(source, propertyInfo);
         }
@@ -280,14 +274,7 @@ namespace OdataToEntity.Parsers
             }
 
             Expression source = TranslateNode(nodeIn.Source);
-            e = TuplePropertyByAliasName(source ?? Parameter, nodeIn);
-            if (e == null)
-            {
-                e = GetPropertyExpression(nodeIn);
-                if (e == null)
-                    throw new InvalidOperationException("property name " + nodeIn.Property.Name + " not found");
-            }
-            return e;
+            return TuplePropertyByAliasName(source, nodeIn);
         }
         public override Expression Visit(SingleValueFunctionCallNode nodeIn)
         {
@@ -296,11 +283,14 @@ namespace OdataToEntity.Parsers
         public override Expression Visit(SingleValueOpenPropertyAccessNode nodeIn)
         {
             Expression source = TranslateNode(nodeIn.Source);
+            if (TuplePropertyByAliasName == null)
+                throw new InvalidOperationException("Cannot transalte SingleValueOpenPropertyAccessNode " + nameof(TuplePropertyByAliasName) + " is null");
+
             return TuplePropertyByAliasName(source, nodeIn);
         }
 
         public IReadOnlyDictionary<ConstantExpression, ConstantNode> Constans => _parentVisitor == null ? _constants : _parentVisitor.Constans;
         public ParameterExpression Parameter => _parameter;
-        public Func<Expression, SingleValueNode, Expression> TuplePropertyByAliasName { get; set; }
+        public Func<Expression, SingleValueNode, Expression>? TuplePropertyByAliasName { get; set; }
     }
 }

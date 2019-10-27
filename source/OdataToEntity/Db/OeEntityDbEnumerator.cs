@@ -1,4 +1,5 @@
-﻿using OdataToEntity.Parsers;
+﻿#nullable enable
+using OdataToEntity.Parsers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -10,7 +11,7 @@ namespace OdataToEntity.Db
     public sealed class OeEntityDbEnumerator : IOeDbEnumerator
     {
         private readonly IAsyncEnumerator<Object> _asyncEnumerator;
-        private readonly OeEntityDbEnumerator _parentEnumerator;
+        private readonly OeEntityDbEnumerator? _parentEnumerator;
 
         public OeEntityDbEnumerator(IAsyncEnumerator<Object> asyncEnumerator, OeEntryFactory entryFactory)
         {
@@ -50,7 +51,7 @@ namespace OdataToEntity.Db
 
         public Object Current => _asyncEnumerator.Current;
         public OeEntryFactory EntryFactory { get; }
-        IOeDbEnumerator IOeDbEnumerator.ParentEnumerator => _parentEnumerator;
+        IOeDbEnumerator? IOeDbEnumerator.ParentEnumerator => _parentEnumerator;
         public Object RawValue => _asyncEnumerator.Current;
     }
 }

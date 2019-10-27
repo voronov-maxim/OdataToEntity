@@ -119,8 +119,7 @@ namespace OdataToEntity.Parsers
             IEdmOperationImport operationImport = importSegment.OperationImports.Single();
             Type returnType = edmModel.GetClrType(operationImport.Operation.ReturnType.Definition);
 
-            var syncToAsyncStream = new Infrastructure.SyncToAsyncStream(responseStream);//fix invoke Flush throw exception in kestrel 3.0
-            IODataRequestMessage requestMessage = new Infrastructure.OeInMemoryMessage(syncToAsyncStream, null);
+            IODataRequestMessage requestMessage = new Infrastructure.OeInMemoryMessage(responseStream, null);
             using (ODataMessageWriter messageWriter = new ODataMessageWriter(requestMessage,
                 new ODataMessageWriterSettings() { EnableMessageStreamDisposal = false, ODataUri = odataUri }, edmModel))
             {

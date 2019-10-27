@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 
@@ -7,12 +8,13 @@ namespace OdataToEntity.Parsers
     public sealed class OeParameterToVariableVisitor : ExpressionVisitor
     {
         private readonly SortedDictionary<String, ConstantExpression> _constantExpressions;
-        private Dictionary<String, MemberExpression> _propertyExpressions;
+        private Dictionary<String, MemberExpression>? _propertyExpressions;
         private IReadOnlyList<Cache.OeQueryCacheDbParameterValue> _parameterValues;
 
         public OeParameterToVariableVisitor()
         {
             _constantExpressions = new SortedDictionary<String, ConstantExpression>(StringComparer.Ordinal);
+            _parameterValues = Array.Empty<Cache.OeQueryCacheDbParameterValue>();
         }
 
         public Expression Translate(Expression expression, IReadOnlyList<Cache.OeQueryCacheDbParameterValue> parameterValues)

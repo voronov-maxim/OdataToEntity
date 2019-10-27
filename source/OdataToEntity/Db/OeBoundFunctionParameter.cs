@@ -1,4 +1,5 @@
-﻿using Microsoft.OData.Edm;
+﻿#nullable enable
+using Microsoft.OData.Edm;
 using OdataToEntity.Parsers;
 using System;
 using System.Collections.Generic;
@@ -52,7 +53,7 @@ namespace OdataToEntity.Db
         {
             return base.ApplySelect(result, dataContext);
         }
-        public void CloseDataContext<TDataContext>(TDataContext dataContext)
+        public void CloseDataContext<TDataContext>(TDataContext dataContext) where TDataContext : notnull
         {
             OeDataAdapter dataAdapter = base.EdmModel.GetDataAdapter(typeof(TDataContext));
             dataAdapter.CloseDataContext(dataContext);

@@ -1,4 +1,5 @@
-﻿using Microsoft.OData;
+﻿#nullable enable
+using Microsoft.OData;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using System;
@@ -21,12 +22,12 @@ namespace OdataToEntity.Parsers
                 var edmFunction = (IEdmFunction)operationSegment.Operations.First();
                 MethodInfo methodInfo = queryContext.EdmModel.GetMethodInfo(edmFunction);
 
-                IReadOnlyList<KeyValuePair<String, Object>> parameterList = OeOperationHelper.GetParameters(
+                IReadOnlyList<KeyValuePair<String, Object?>> parameterList = OeOperationHelper.GetParameters(
                     queryContext.EdmModel, operationSegment, queryContext.ODataUri.ParameterAliasNodes);
 
                 Db.OeBoundFunctionParameter boundFunctionParameter = OeOperationHelper.CreateBoundFunctionParameter(queryContext);
 
-                var parameters = new Object[parameterList.Count + 1];
+                var parameters = new Object?[parameterList.Count + 1];
                 parameters[0] = boundFunctionParameter;
                 for (int i = 1; i < parameters.Length; i++)
                     parameters[i] = parameterList[i - 1].Value;
@@ -43,7 +44,7 @@ namespace OdataToEntity.Parsers
         }
         public static Db.OeBoundFunctionParameter CreateBoundFunctionParameter(OeQueryContext queryContext)
         {
-            var expressionBuilder = new OeExpressionBuilder(queryContext.JoinBuilder);
+            var expressionBuilder = queryContext.CreateExpressionBuilder();
 
             Type sourceEntityType = queryContext.EntitySetAdapter.EntityType;
             IEdmEntitySet sourceEntitySet = OeEdmClrHelper.GetEntitySet(queryContext.EdmModel, queryContext.EntitySetAdapter.EntitySetName);
@@ -54,7 +55,7 @@ namespace OdataToEntity.Parsers
             if (sourceEntitySet != targetEntitySet)
                 queryContext.ODataUri.Path = new ODataPath(new EntitySetSegment(targetEntitySet));
 
-            expressionBuilder = new OeExpressionBuilder(queryContext.JoinBuilder);
+            expressionBuilder = queryContext.CreateExpressionBuilder();
             Type targetEntityType = queryContext.EdmModel.GetClrType(targetEntitySet.EntityType());
             Expression target = OeEnumerableStub.CreateEnumerableStubExpression(targetEntityType, targetEntitySet);
             target = expressionBuilder.ApplySelect(target, queryContext);
@@ -67,7 +68,7 @@ namespace OdataToEntity.Parsers
             ConstructorInfo ctor = boundFunctionParameterType.GetConstructors()[0];
             return (Db.OeBoundFunctionParameter)ctor.Invoke(new Object[] { sourceQueryExpression, targetQueryExpression });
         }
-        private static void FillParameters(IEdmModel edmModel, List<KeyValuePair<String, Object>> parameters, Stream requestStream, IEdmOperation operation, String contentType)
+        private static void FillParameters(IEdmModel edmModel, List<KeyValuePair<String, Object?>> parameters, Stream requestStream, IEdmOperation operation, String? contentType)
         {
             if (!operation.Parameters.Any())
                 return;
@@ -79,7 +80,7 @@ namespace OdataToEntity.Parsers
                 ODataParameterReader parameterReader = messageReader.CreateODataParameterReader(operation);
                 while (parameterReader.Read())
                 {
-                    Object value;
+                    Object? value;
                     switch (parameterReader.State)
                     {
                         case ODataParameterReaderState.Value:
@@ -109,11 +110,11 @@ namespace OdataToEntity.Parsers
                             continue;
                     }
 
-                    parameters.Add(new KeyValuePair<String, Object>(parameterReader.Name, value));
+                    parameters.Add(new KeyValuePair<String, Object?>(parameterReader.Name, value));
                 }
             }
         }
-        public static IEdmEntitySet GetEntitySet(IEdmOperationImport operationImport)
+        public static IEdmEntitySet? GetEntitySet(IEdmOperationImport operationImport)
         {
             if (operationImport.Operation.ReturnType is IEdmCollectionTypeReference collectionTypeReference)
             {
@@ -136,12 +137,12 @@ namespace OdataToEntity.Parsers
                 if (entitySet.EntityType() == edmEntityType)
                     return entitySet;
 
-            return null;
+            throw new InvalidOperationException("EntitySet not found for operation " + edmOperation.FullName());
         }
-        public static IReadOnlyList<KeyValuePair<String, Object>> GetParameters(IEdmModel edmModel, ODataPathSegment segment,
-            IDictionary<string, SingleValueNode> parameterAliasNodes, Stream requestStream = null, String contentType = null)
+        public static IReadOnlyList<KeyValuePair<String, Object?>> GetParameters(IEdmModel edmModel, ODataPathSegment segment,
+            IDictionary<string, SingleValueNode> parameterAliasNodes, Stream? requestStream = null, String? contentType = null)
         {
-            var parameters = new List<KeyValuePair<String, Object>>();
+            var parameters = new List<KeyValuePair<String, Object?>>();
 
             IEdmOperation operation;
             IEnumerable<OperationSegmentParameter> segmentParameters;
@@ -160,7 +161,7 @@ namespace OdataToEntity.Parsers
 
             foreach (OperationSegmentParameter segmentParameter in segmentParameters)
             {
-                Object value;
+                Object? value;
                 if (segmentParameter.Value is ConstantNode constantNode)
                     value = OeEdmClrHelper.GetValue(edmModel, constantNode.Value);
                 else if (segmentParameter.Value is ParameterAliasNode parameterAliasNode)
@@ -168,7 +169,7 @@ namespace OdataToEntity.Parsers
                 else
                     value = OeEdmClrHelper.GetValue(edmModel, segmentParameter.Value);
 
-                parameters.Add(new KeyValuePair<String, Object>(segmentParameter.Name, value));
+                parameters.Add(new KeyValuePair<String, Object?>(segmentParameter.Name, value));
             }
 
             if (parameters.Count == 0 && requestStream != null)
@@ -177,7 +178,7 @@ namespace OdataToEntity.Parsers
 
             return parameters;
         }
-        private static void OrderParameters(IEnumerable<IEdmOperationParameter> operationParameters, List<KeyValuePair<String, Object>> parameters)
+        private static void OrderParameters(IEnumerable<IEdmOperationParameter> operationParameters, List<KeyValuePair<String, Object?>> parameters)
         {
             int pos = 0;
             foreach (IEdmOperationParameter operationParameter in operationParameters)
@@ -187,7 +188,7 @@ namespace OdataToEntity.Parsers
                     {
                         if (i != pos)
                         {
-                            KeyValuePair<String, Object> temp = parameters[pos];
+                            KeyValuePair<String, Object?> temp = parameters[pos];
                             parameters[pos] = parameters[i];
                             parameters[i] = temp;
                         }

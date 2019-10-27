@@ -24,7 +24,7 @@ namespace OdataToEntity.Test.Model
             base.OnModelCreating(modelBuilder);
         }
 
-        [Db.OeBoundFunction(CollectionFunctionName = "BoundFunctionCollection", SingleFunctionName = "BoundFunctionSingle")]
+        [Db.OeBoundFunction(collectionFunctionName: "BoundFunctionCollection", singleFunctionName: "BoundFunctionSingle")]
         public static IEnumerable<Order> BoundFunction(Db.OeBoundFunctionParameter<Customer, Order> boundParameter, IEnumerable<String> orderNames)
         {
             OrderContext orderContext = boundParameter.CreateDataContext<OrderContext>();

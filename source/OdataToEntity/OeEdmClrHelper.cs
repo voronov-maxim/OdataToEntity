@@ -1,4 +1,5 @@
-﻿using Microsoft.OData;
+﻿#nullable enable
+using Microsoft.OData;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using OdataToEntity.ModelBuilder;
@@ -36,27 +37,19 @@ namespace OdataToEntity
 
             if (value is DateTime dateTime)
             {
-                DateTimeOffset dateTimeOffset;
-                switch (dateTime.Kind)
+                DateTimeOffset dateTimeOffset = dateTime.Kind switch
                 {
-                    case DateTimeKind.Unspecified:
-                        dateTimeOffset = new DateTimeOffset(DateTime.SpecifyKind(dateTime, DateTimeKind.Utc));
-                        break;
-                    case DateTimeKind.Utc:
-                        dateTimeOffset = new DateTimeOffset(dateTime);
-                        break;
-                    case DateTimeKind.Local:
-                        dateTimeOffset = new DateTimeOffset(dateTime.ToUniversalTime());
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException("Unknown DateTimeKind " + dateTime.Kind.ToString());
-                }
+                    DateTimeKind.Unspecified => new DateTimeOffset(DateTime.SpecifyKind(dateTime, DateTimeKind.Utc)),
+                    DateTimeKind.Utc => new DateTimeOffset(dateTime),
+                    DateTimeKind.Local => new DateTimeOffset(dateTime.ToUniversalTime()),
+                    _ => throw new ArgumentOutOfRangeException("Unknown DateTimeKind " + dateTime.Kind.ToString()),
+                };
                 return new ODataPrimitiveValue(dateTimeOffset);
             }
 
             return new ODataPrimitiveValue(value);
         }
-        public static ResourceRangeVariableReferenceNode CreateRangeVariableReferenceNode(IEdmEntitySetBase entitySet, String name = null)
+        public static ResourceRangeVariableReferenceNode CreateRangeVariableReferenceNode(IEdmEntitySetBase entitySet, String? name = null)
         {
             var entityTypeRef = (IEdmEntityTypeReference)((IEdmCollectionType)entitySet.Type).ElementType;
             var rangeVariable = new ResourceRangeVariable(name ?? "$it", entityTypeRef, entitySet);
@@ -94,7 +87,7 @@ namespace OdataToEntity
         {
             return edmModel.GetEdmModel(entitySet.Container);
         }
-        public static IEdmModel GetEdmModel(this IEdmModel edmModel, IEdmEntityType entityType)
+        public static IEdmModel? GetEdmModel(this IEdmModel edmModel, IEdmEntityType entityType)
         {
             foreach (IEdmSchemaElement element in edmModel.SchemaElements)
                 if (element == entityType)
@@ -103,7 +96,7 @@ namespace OdataToEntity
             foreach (IEdmModel refModel in edmModel.ReferencedModels)
                 if (refModel is EdmModel)
                 {
-                    IEdmModel foundModel = GetEdmModel(refModel, entityType);
+                    IEdmModel? foundModel = GetEdmModel(refModel, entityType);
                     if (foundModel != null)
                         return foundModel;
                 }
@@ -138,7 +131,10 @@ namespace OdataToEntity
             if (clrType.IsEnum)
                 clrType = Enum.GetUnderlyingType(clrType);
 
-            IEdmPrimitiveType primitiveEdmType = PrimitiveTypeHelper.GetPrimitiveType(clrType);
+            IEdmPrimitiveType? primitiveEdmType = PrimitiveTypeHelper.GetPrimitiveType(clrType);
+            if (primitiveEdmType == null)
+                throw new InvalidOperationException("Not found Edm type for Clr type " + clrType.FullName);
+
             return EdmCoreModel.Instance.GetPrimitive(primitiveEdmType.PrimitiveKind, nullable);
         }
         public static IEdmTypeReference GetEdmTypeReference(IEdmModel edmModel, Type clrType)
@@ -153,7 +149,7 @@ namespace OdataToEntity
                 nullable = true;
             }
 
-            IEdmPrimitiveType primitiveEdmType = PrimitiveTypeHelper.GetPrimitiveType(clrType);
+            IEdmPrimitiveType? primitiveEdmType = PrimitiveTypeHelper.GetPrimitiveType(clrType);
             if (primitiveEdmType == null)
             {
                 var edmEnumType = (IEdmEnumType)edmModel.FindType(clrType.FullName);
@@ -181,20 +177,10 @@ namespace OdataToEntity
         }
         public static IEdmEntitySet GetEntitySet(IEdmModel edmModel, String entitySetName, StringComparison comparison = StringComparison.OrdinalIgnoreCase)
         {
-            foreach (IEdmEntityContainerElement element in edmModel.EntityContainer.Elements)
-                if (element is IEdmEntitySet edmEntitySet &&
-                    String.Compare(edmEntitySet.Name, entitySetName, comparison) == 0)
-                    return edmEntitySet;
-
-            foreach (IEdmModel refModel in edmModel.ReferencedModels)
-                if (refModel.EntityContainer != null && refModel is EdmModel)
-                {
-                    IEdmEntitySet entitySet = GetEntitySet(refModel, entitySetName);
-                    if (entitySet != null)
-                        return entitySet;
-                }
-
-            return null;
+            IEdmEntitySet? entitySet = GetEntitySetOrNull(edmModel, entitySetName, comparison);
+            if (entitySet == null)
+                throw new InvalidOperationException();
+            return entitySet;
         }
         public static IEdmEntitySetBase GetEntitySet(IEdmModel edmModel, ExpandedNavigationSelectItem item)
         {
@@ -209,10 +195,30 @@ namespace OdataToEntity
         public static IEdmEntitySet GetEntitySet(ODataPath odataPath)
         {
             IReadOnlyList<Parsers.OeParseNavigationSegment> parseNavigationSegments = Parsers.OeParseNavigationSegment.GetNavigationSegments(odataPath);
-            IEdmEntitySet entitySet = Parsers.OeParseNavigationSegment.GetEntitySet(parseNavigationSegments);
-            if (entitySet == null && odataPath.FirstSegment is EntitySetSegment entitySetSegment)
-                entitySet = entitySetSegment.EntitySet;
+            IEdmEntitySet? entitySet = Parsers.OeParseNavigationSegment.GetEntitySet(parseNavigationSegments);
+            if (entitySet == null)
+                if (odataPath.FirstSegment is EntitySetSegment entitySetSegment)
+                    entitySet = entitySetSegment.EntitySet;
+                else
+                    throw new InvalidOperationException("Cannot get EntitySet from ODataPath");
             return entitySet;
+        }
+        public static IEdmEntitySet? GetEntitySetOrNull(IEdmModel edmModel, String entitySetName, StringComparison comparison = StringComparison.OrdinalIgnoreCase)
+        {
+            foreach (IEdmEntityContainerElement element in edmModel.EntityContainer.Elements)
+                if (element is IEdmEntitySet edmEntitySet &&
+                    String.Compare(edmEntitySet.Name, entitySetName, comparison) == 0)
+                    return edmEntitySet;
+
+            foreach (IEdmModel refModel in edmModel.ReferencedModels)
+                if (refModel.EntityContainer != null && refModel is EdmModel)
+                {
+                    IEdmEntitySet? entitySet = GetEntitySetOrNull(refModel, entitySetName);
+                    if (entitySet != null)
+                        return entitySet;
+                }
+
+            return null;
         }
         public static int GetPageSize(this ExpandedNavigationSelectItem navigationSelectItem)
         {
@@ -233,7 +239,7 @@ namespace OdataToEntity
         }
         public static IEdmProperty GetPropertyIgnoreCase(this IEdmStructuredType entityType, String propertyName)
         {
-            IEdmProperty edmProperty = entityType.GetPropertyIgnoreCaseOrNull(propertyName);
+            IEdmProperty? edmProperty = entityType.GetPropertyIgnoreCaseOrNull(propertyName);
             if (edmProperty == null)
                 throw new InvalidOperationException("Property " + propertyName + " not found in IEdmStructuredType" + entityType.FullTypeName());
 
@@ -247,7 +253,7 @@ namespace OdataToEntity
         {
             return declaringType.GetPropertyIgnoreCaseOrNull(edmProperty) ?? throw new InvalidOperationException("EdmProperty " + edmProperty.Name + " not found in type " + declaringType.FullName);
         }
-        public static IEdmProperty GetPropertyIgnoreCaseOrNull(this IEdmStructuredType entityType, String propertyName)
+        public static IEdmProperty? GetPropertyIgnoreCaseOrNull(this IEdmStructuredType entityType, String propertyName)
         {
             foreach (IEdmProperty edmProperty in entityType.Properties())
                 if (String.Compare(edmProperty.Name, propertyName, StringComparison.OrdinalIgnoreCase) == 0)
@@ -255,7 +261,7 @@ namespace OdataToEntity
 
             return null;
         }
-        public static PropertyInfo GetPropertyIgnoreCaseOrNull(this Type declaringType, IEdmProperty edmProperty)
+        public static PropertyInfo? GetPropertyIgnoreCaseOrNull(this Type declaringType, IEdmProperty edmProperty)
         {
             var schemaElement = (IEdmSchemaElement)edmProperty.DeclaringType;
             do
@@ -290,11 +296,11 @@ namespace OdataToEntity
         }
         public static Object GetValue(IEdmModel edmModel, ODataCollectionValue odataValue)
         {
-            IList list = null;
+            IList? list = null;
             int nullCount = 0;
             foreach (Object odataItem in odataValue.Items)
             {
-                Object listItem = GetValue(edmModel, odataItem);
+                Object? listItem = GetValue(edmModel, odataItem);
                 if (list == null)
                 {
                     if (listItem == null)
@@ -309,15 +315,14 @@ namespace OdataToEntity
                             list.Add(null);
                             nullCount--;
                         }
+                        list.Add(listItem);
                     }
                 }
-                list.Add(listItem);
+                else
+                    list.Add(listItem);
             }
 
-            if (nullCount > 0)
-                list = new Object[nullCount];
-
-            return list;
+            return list ?? (new Object[nullCount]);
         }
         public static Object GetValue(IEdmModel edmModel, ODataResource odataValue)
         {
@@ -333,7 +338,7 @@ namespace OdataToEntity
             }
             return instance;
         }
-        public static Object GetValue(IEdmModel edmModel, Object odataValue)
+        public static Object? GetValue(IEdmModel edmModel, Object odataValue)
         {
             if (odataValue == null)
                 return null;

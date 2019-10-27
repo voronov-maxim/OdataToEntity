@@ -1,4 +1,5 @@
-﻿using Microsoft.OData.UriParser;
+﻿#nullable enable
+using Microsoft.OData.UriParser;
 using OdataToEntity.Cache;
 using System;
 using System.Collections.Generic;
@@ -10,7 +11,7 @@ namespace OdataToEntity.Parsers
     public sealed class OeConstantToParameterVisitor : OeConstantToVariableVisitor
     {
         private readonly Dictionary<ConstantNode, OeQueryCacheDbParameterDefinition> _constantToParameterMapper;
-        private OeQueryCacheDbParameterValue[] _parameterValues;
+        private OeQueryCacheDbParameterValue[]? _parameterValues;
 
         public OeConstantToParameterVisitor()
         {

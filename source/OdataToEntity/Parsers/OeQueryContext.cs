@@ -1,4 +1,5 @@
-﻿using Microsoft.OData;
+﻿#nullable enable
+using Microsoft.OData;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using System;
@@ -13,6 +14,7 @@ namespace OdataToEntity.Parsers
     {
         private sealed class FilterVisitor : ExpressionVisitor
         {
+            private ConstantExpression? _source;
             private readonly Type _sourceType;
 
             public FilterVisitor(Type sourceType)
@@ -23,7 +25,7 @@ namespace OdataToEntity.Parsers
             protected override Expression VisitConstant(ConstantExpression node)
             {
                 if (OeExpressionHelper.GetCollectionItemTypeOrNull(node.Type) == _sourceType)
-                    Source = node;
+                    _source = node;
 
                 return node;
             }
@@ -57,17 +59,17 @@ namespace OdataToEntity.Parsers
                 return node;
             }
 
-            public ConstantExpression Source { get; private set; }
-            public MethodCallExpression WhereExpression { get; private set; }
+            public ConstantExpression Source => _source ?? throw new InvalidOperationException("Suppress possible null reference return");
+            public MethodCallExpression? WhereExpression { get; private set; }
         }
 
         private sealed class SourceVisitor : ExpressionVisitor
         {
             private readonly Object _dataContext;
             private readonly IEdmModel _edmModel;
-            private readonly Func<IEdmEntitySet, IQueryable> _queryableSource;
+            private readonly Func<IEdmEntitySet, IQueryable>? _queryableSource;
 
-            public SourceVisitor(IEdmModel edmModel, Object dataContext, Func<IEdmEntitySet, IQueryable> queryableSource)
+            public SourceVisitor(IEdmModel edmModel, Object dataContext, Func<IEdmEntitySet, IQueryable>? queryableSource)
             {
                 _edmModel = edmModel;
                 _dataContext = dataContext;
@@ -78,7 +80,7 @@ namespace OdataToEntity.Parsers
             {
                 if (node.Value is OeEnumerableStub enumerableStub)
                 {
-                    IQueryable query = null;
+                    IQueryable? query = null;
                     if (_queryableSource != null)
                     {
                         query = _queryableSource(enumerableStub.EntitySet);
@@ -99,19 +101,14 @@ namespace OdataToEntity.Parsers
             }
         }
 
+        private readonly Translators.OeJoinBuilder _joinBuilder;
         private bool _initialized;
         private int? _restCount;
 
         public OeQueryContext(IEdmModel edmModel, ODataUri odataUri)
+            : this(edmModel, odataUri, edmModel.GetEntitySetAdapter(((EntitySetSegment)odataUri.Path.FirstSegment).EntitySet))
         {
-            EdmModel = edmModel;
-            ODataUri = odataUri;
-
             ParseNavigationSegments = OeParseNavigationSegment.GetNavigationSegments(odataUri.Path);
-            EntitySetAdapter = edmModel.GetEntitySetAdapter((odataUri.Path.FirstSegment as EntitySetSegment).EntitySet);
-            var visitor = new OeQueryNodeVisitor(Expression.Parameter(EntitySetAdapter.EntityType));
-            JoinBuilder = new Translators.OeJoinBuilder(visitor);
-            MetadataLevel = OeMetadataLevel.Minimal;
         }
         public OeQueryContext(IEdmModel edmModel, ODataUri odataUri, Db.OeEntitySetAdapter entitySetAdapter)
         {
@@ -119,8 +116,11 @@ namespace OdataToEntity.Parsers
             ODataUri = odataUri;
             EntitySetAdapter = entitySetAdapter;
 
-            ParseNavigationSegments = Array.Empty<OeParseNavigationSegment>();
+            var visitor = new OeQueryNodeVisitor(Expression.Parameter(entitySetAdapter.EntityType));
+            _joinBuilder = new Translators.OeJoinBuilder(visitor);
             MetadataLevel = OeMetadataLevel.Minimal;
+            ParseNavigationSegments = Array.Empty<OeParseNavigationSegment>();
+            SkipTokenNameValues = Array.Empty<OeSkipTokenNameValue>();
         }
 
         public Cache.OeCacheContext CreateCacheContext()
@@ -132,7 +132,7 @@ namespace OdataToEntity.Parsers
         {
             return new Cache.OeCacheContext(this, constantToParameterMapper);
         }
-        public MethodCallExpression CreateCountExpression(Expression source)
+        public MethodCallExpression? CreateCountExpression(Expression source)
         {
             if (EntryFactory == null)
                 return null;
@@ -141,7 +141,7 @@ namespace OdataToEntity.Parsers
             var filterVisitor = new FilterVisitor(sourceType);
             filterVisitor.Visit(source);
 
-            Expression whereExpression = filterVisitor.WhereExpression;
+            Expression? whereExpression = filterVisitor.WhereExpression;
             if (whereExpression == null)
                 whereExpression = filterVisitor.Source;
 
@@ -150,7 +150,7 @@ namespace OdataToEntity.Parsers
         }
         private OeEntryFactory CreateEntryFactory(OeExpressionBuilder expressionBuilder, OePropertyAccessor[] skipTokenAccessors)
         {
-            IEdmEntitySet entitySet = OeParseNavigationSegment.GetEntitySet(ParseNavigationSegments);
+            IEdmEntitySet? entitySet = OeParseNavigationSegment.GetEntitySet(ParseNavigationSegments);
             if (entitySet == null)
                 entitySet = OeEdmClrHelper.GetEntitySet(EdmModel, EntitySetAdapter.EntitySetName);
 
@@ -161,7 +161,7 @@ namespace OdataToEntity.Parsers
             Initialize();
 
             Expression expression;
-            var expressionBuilder = new OeExpressionBuilder(JoinBuilder);
+            var expressionBuilder = new OeExpressionBuilder(_joinBuilder);
 
             IEdmEntitySet entitySet = OeEdmClrHelper.GetEntitySet(EdmModel, EntitySetAdapter.EntitySetName);
             expression = OeEnumerableStub.CreateEnumerableStubExpression(EntitySetAdapter.EntityType, entitySet);
@@ -182,7 +182,7 @@ namespace OdataToEntity.Parsers
                 expression = expressionBuilder.ApplyCount(expression, true);
             else
             {
-                OePropertyAccessor[] skipTokenAccessors = OeSkipTokenParser.GetAccessors(expression, ODataUri.OrderBy, JoinBuilder);
+                OePropertyAccessor[] skipTokenAccessors = OeSkipTokenParser.GetAccessors(expression, ODataUri.OrderBy, _joinBuilder);
                 EntryFactory = CreateEntryFactory(expressionBuilder, skipTokenAccessors);
             }
 
@@ -194,11 +194,18 @@ namespace OdataToEntity.Parsers
             Expression expression = CreateExpression(out IReadOnlyDictionary<ConstantExpression, ConstantNode> constants);
             return constantToVariableVisitor.Translate(expression, constants);
         }
+        public OeExpressionBuilder CreateExpressionBuilder()
+        {
+            return new OeExpressionBuilder(_joinBuilder);
+        }
         public IEdmEntitySet GetEntitySet()
         {
-            IEdmEntitySet entitySet = OeParseNavigationSegment.GetEntitySet(ParseNavigationSegments);
-            if (entitySet == null && ODataUri.Path.FirstSegment is EntitySetSegment entitySetSegment)
-                entitySet = entitySetSegment.EntitySet;
+            IEdmEntitySet? entitySet = OeParseNavigationSegment.GetEntitySet(ParseNavigationSegments);
+            if (entitySet == null)
+                if (ODataUri.Path.FirstSegment is EntitySetSegment entitySetSegment)
+                    entitySet = entitySetSegment.EntitySet;
+                else
+                    throw new InvalidOperationException("Cannot get EntitySet from ODataPath");
             return entitySet;
         }
         private void Initialize()
@@ -214,7 +221,6 @@ namespace OdataToEntity.Parsers
                     ODataUri.Top = pageSize;
                 }
 
-                SkipTokenNameValues = Array.Empty<OeSkipTokenNameValue>();
                 if (!(ODataUri.Path.LastSegment is OperationSegment))
                 {
                     ODataUri.OrderBy = OeSkipTokenParser.GetUniqueOrderBy(GetEntitySet(), ODataUri.OrderBy, ODataUri.Apply);
@@ -233,20 +239,19 @@ namespace OdataToEntity.Parsers
         {
             return TranslateSource(EdmModel, dataContext, expression, QueryableSource);
         }
-        internal static Expression TranslateSource(IEdmModel edmModel, Object dataContext, Expression expression, Func<IEdmEntitySet, IQueryable> queryableSource)
+        internal static Expression TranslateSource(IEdmModel edmModel, Object dataContext, Expression expression, Func<IEdmEntitySet, IQueryable>? queryableSource)
         {
             return new SourceVisitor(edmModel, dataContext, queryableSource).Visit(expression);
         }
 
         public IEdmModel EdmModel { get; }
         public Db.OeEntitySetAdapter EntitySetAdapter { get; }
-        public OeEntryFactory EntryFactory { get; set; }
-        public Translators.OeJoinBuilder JoinBuilder { get; }
+        public OeEntryFactory? EntryFactory { get; set; }
         public bool IsDatabaseNullHighestValue => EdmModel.GetDataAdapter(EdmModel.EntityContainer).IsDatabaseNullHighestValue;
         public OeMetadataLevel MetadataLevel { get; set; }
         public ODataUri ODataUri { get; }
         public IReadOnlyList<OeParseNavigationSegment> ParseNavigationSegments { get; }
-        public Func<IEdmEntitySet, IQueryable> QueryableSource { get; set; }
+        public Func<IEdmEntitySet, IQueryable>? QueryableSource { get; set; }
         public int? RestCount => _restCount;
         public OeSkipTokenNameValue[] SkipTokenNameValues { get; private set; }
         public int? TotalCountOfItems { get; set; }

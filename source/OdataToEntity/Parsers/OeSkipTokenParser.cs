@@ -1,4 +1,5 @@
-﻿using Microsoft.OData;
+﻿#nullable enable
+using Microsoft.OData;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using Microsoft.OData.UriParser.Aggregation;
@@ -110,7 +111,7 @@ namespace OdataToEntity.Parsers
             }
             return true;
         }
-        private static List<SingleValuePropertyAccessNode> GetOrderByProperties(IEdmEntitySetBase entitySet, OrderByClause orderByClause, ApplyClause applyClause)
+        private static List<SingleValuePropertyAccessNode> GetOrderByProperties(IEdmEntitySetBase entitySet, OrderByClause? orderByClause, ApplyClause? applyClause)
         {
             var keys = new List<SingleValuePropertyAccessNode>();
             GroupByTransformationNode groupByNode;
@@ -165,14 +166,14 @@ namespace OdataToEntity.Parsers
                 int i = 0;
                 foreach (KeyValuePair<String, Object> key in keys)
                     keyArray[i++] = key;
-                keyArray[keyArray.Length - 1] = new KeyValuePair<String, Object>(RestCountName, restCount);
+                keyArray[keyArray.Length - 1] = new KeyValuePair<String, Object>(RestCountName, restCount.GetValueOrDefault());
 
                 return GetJson(edmModel, keyArray);
             }
 
             return GetJson(edmModel, keys);
         }
-        internal static OrderByClause GetUniqueOrderBy(IEdmEntitySetBase entitySet, OrderByClause orderByClause, ApplyClause applyClause)
+        internal static OrderByClause GetUniqueOrderBy(IEdmEntitySetBase entitySet, OrderByClause orderByClause, ApplyClause? applyClause)
         {
             if (orderByClause != null && applyClause == null && GetIsKey(entitySet.EntityType(), GetEdmProperies(orderByClause)))
                 return orderByClause;
@@ -181,7 +182,7 @@ namespace OdataToEntity.Parsers
             if (orderByProperties.Count == 0)
                 return orderByClause ?? throw new InvalidOperationException("orderByClause must not null");
 
-            OrderByClause uniqueOrderByClause = null;
+            OrderByClause? uniqueOrderByClause = null;
             for (int i = orderByProperties.Count - 1; i >= 0; i--)
             {
                 ResourceRangeVariableReferenceNode source;
@@ -193,7 +194,7 @@ namespace OdataToEntity.Parsers
             }
 
             if (orderByClause == null)
-                return uniqueOrderByClause;
+                return uniqueOrderByClause ?? throw new InvalidOperationException("Suppress possible null reference return");
 
             var orderByClauses = new Stack<OrderByClause>();
             do
@@ -209,7 +210,7 @@ namespace OdataToEntity.Parsers
                 uniqueOrderByClause = new OrderByClause(uniqueOrderByClause, orderByClause.Expression, orderByClause.Direction, orderByClause.RangeVariable);
             }
 
-            return uniqueOrderByClause;
+            return uniqueOrderByClause ?? throw new InvalidOperationException("Suppress possible null reference return");
         }
         private static OeSkipTokenNameValue[] ParseJson(IEdmModel edmModel, String skipToken, IEdmStructuralProperty[] keys, out int? restCount)
         {

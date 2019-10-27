@@ -1,4 +1,5 @@
-﻿using Microsoft.OData;
+﻿#nullable enable
+using Microsoft.OData;
 using Microsoft.OData.Edm;
 using System;
 using System.Collections.ObjectModel;
@@ -24,7 +25,7 @@ namespace OdataToEntity.Db
         {
         }
 
-        public OeEntitySetAdapter Find(Type clrType)
+        public OeEntitySetAdapter? Find(Type clrType)
         {
             var entitySetAdapters = (OeEntitySetAdapter[])base.Items;
             foreach (OeEntitySetAdapter entitySetAdapter in entitySetAdapters)

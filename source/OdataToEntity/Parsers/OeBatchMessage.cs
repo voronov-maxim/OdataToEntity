@@ -1,4 +1,5 @@
-﻿using Microsoft.OData;
+﻿#nullable enable
+using Microsoft.OData;
 using Microsoft.OData.Edm;
 using System;
 using System.Collections.Generic;
@@ -22,7 +23,7 @@ namespace OdataToEntity.Parsers
             Operation = operation;
         }
 
-        public static async ValueTask<OeBatchMessage> CreateBatchMessage(IEdmModel edmModel, Uri baseUri, Stream requestStream, String contentType, IServiceProvider serviceProvider = null)
+        public static async ValueTask<OeBatchMessage> CreateBatchMessage(IEdmModel edmModel, Uri baseUri, Stream requestStream, String contentType, IServiceProvider? serviceProvider = null)
         {
             IODataRequestMessage requestMessage = new Infrastructure.OeInMemoryMessage(requestStream, contentType, serviceProvider);
             var settings = new ODataMessageReaderSettings() { EnableMessageStreamDisposal = false };
@@ -48,7 +49,7 @@ namespace OdataToEntity.Parsers
             throw new InvalidOperationException("batch not found");
         }
 
-        public IReadOnlyList<OeOperationMessage> Changeset { get; }
+        public IReadOnlyList<OeOperationMessage>? Changeset { get; }
         public String ContentType { get; }
         public OeOperationMessage Operation { get; }
     }

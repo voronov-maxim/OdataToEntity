@@ -1,9 +1,11 @@
-﻿using Microsoft.OData.Edm;
+﻿#nullable enable
+using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using OdataToEntity.Parsers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,25 +15,28 @@ namespace OdataToEntity.Db
     public sealed class OeEntityAsyncEnumeratorAdapter<T> : IAsyncEnumerator<T>, IAsyncEnumerable<T>
     {
         private CancellationToken _cancellationToken;
+        [AllowNull]
+        [MaybeNull]
         private T _current;
         private readonly OeDbEnumerator _dbEnumerator;
         private bool _isFirstMoveNext;
         private bool _isMoveNext;
-        private readonly OeQueryContext _queryContext;
+        private readonly OeQueryContext? _queryContext;
 
         public OeEntityAsyncEnumeratorAdapter(IAsyncEnumerator<Object> asyncEnumerator, OeQueryContext queryContext)
-            : this(asyncEnumerator, queryContext.EntryFactory, queryContext)
+            : this(asyncEnumerator, queryContext.EntryFactory ?? throw new InvalidOperationException("queryContext.EntryFactory is null"), queryContext)
         {
         }
         public OeEntityAsyncEnumeratorAdapter(IAsyncEnumerator<Object> asyncEnumerator, OeEntryFactory entryFactory)
             : this(asyncEnumerator, entryFactory, null)
         {
         }
-        private OeEntityAsyncEnumeratorAdapter(IAsyncEnumerator<Object> asyncEnumerator, OeEntryFactory entryFactory, OeQueryContext queryContext)
+        private OeEntityAsyncEnumeratorAdapter(IAsyncEnumerator<Object> asyncEnumerator, OeEntryFactory entryFactory, OeQueryContext? queryContext)
         {
             _dbEnumerator = new OeDbEnumerator(asyncEnumerator, entryFactory);
             _queryContext = queryContext;
             _isFirstMoveNext = true;
+            _current = default;
         }
 
         private static async Task<Object> CreateEntity(IOeDbEnumerator dbEnumerator, Object value, Object entity, Type entityType, CancellationToken cancellationToken)
@@ -58,7 +63,7 @@ namespace OdataToEntity.Db
             }
             return entity;
         }
-        private static async Task<Object> CreateNestedEntity(IOeDbEnumerator dbEnumerator, Object value, Type nestedEntityType, CancellationToken cancellationToken)
+        private static async Task<Object?> CreateNestedEntity(IOeDbEnumerator dbEnumerator, Object value, Type nestedEntityType, CancellationToken cancellationToken)
         {
             Object entity = dbEnumerator.Current;
             if (entity == null)
@@ -111,8 +116,8 @@ namespace OdataToEntity.Db
             Object rawValue = _dbEnumerator.RawValue;
 
             _isMoveNext = await _dbEnumerator.MoveNextAsync().ConfigureAwait(false);
-            if (!_isMoveNext && _queryContext != null && _queryContext.EntryFactory.SkipTokenAccessors.Length > 0)
-                SetOrderByProperties(_queryContext, entity, rawValue);
+            if (!_isMoveNext && _queryContext != null && _queryContext.EntryFactory != null && _queryContext.EntryFactory.SkipTokenAccessors.Length > 0)
+                SetOrderByProperties(_queryContext.EntryFactory, _queryContext.ODataUri.OrderBy, entity, rawValue);
 
             _current = entity;
             return true;
@@ -121,25 +126,27 @@ namespace OdataToEntity.Db
         {
             PropertyInfo propertyInfo = entity.GetType().GetProperty(dbEnumerator.EntryFactory.EdmNavigationProperty.Name);
             Type nestedEntityType = OeExpressionHelper.GetCollectionItemTypeOrNull(propertyInfo.PropertyType) ?? propertyInfo.PropertyType;
-            Object navigationValue = await CreateNestedEntity(dbEnumerator, value, nestedEntityType, cancellationToken).ConfigureAwait(false);
+            Object? navigationValue = await CreateNestedEntity(dbEnumerator, value, nestedEntityType, cancellationToken).ConfigureAwait(false);
             propertyInfo.SetValue(entity, navigationValue);
         }
-        private static void SetOrderByProperties(OeQueryContext queryContext, Object entity, Object value)
+        private static void SetOrderByProperties(OeEntryFactory entryFactory, OrderByClause? orderByClause, Object entity, Object value)
         {
             int i = 0;
-            OrderByClause orderByClause = queryContext.ODataUri.OrderBy;
             while (orderByClause != null)
             {
                 var propertyAccessNode = (SingleValuePropertyAccessNode)orderByClause.Expression;
                 var properties = new List<IEdmProperty>() { propertyAccessNode.Property };
                 if (propertyAccessNode.Source is SingleNavigationNode navigationNode)
-                    do
+                {
+                    properties.Add(navigationNode.NavigationProperty);
+                    while (navigationNode.Source is SingleNavigationNode)
                     {
+                        navigationNode = (SingleNavigationNode)navigationNode.Source;
                         properties.Add(navigationNode.NavigationProperty);
                     }
-                    while ((navigationNode = navigationNode.Source as SingleNavigationNode) != null);
+                }
 
-                Object orderValue = queryContext.EntryFactory.SkipTokenAccessors[i++].GetValue(value);
+                Object orderValue = entryFactory.SkipTokenAccessors[i++].GetValue(value);
                 SetPropertyValue(entity, properties, orderValue);
 
                 orderByClause = orderByClause.ThenBy;
@@ -164,7 +171,7 @@ namespace OdataToEntity.Db
             clrProperty.SetValue(entity, orderValue);
         }
 
-        public Object Current => _current;
+        public Object? Current => _current;
         T IAsyncEnumerator<T>.Current => _current;
     }
 }

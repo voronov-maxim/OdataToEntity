@@ -1,6 +1,8 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -48,7 +50,7 @@ namespace OdataToEntity.Infrastructure
                 return new ValueTask<bool>(false);
             }
 
-            public Object Current => null;
+            public Object Current => throw new InvalidOperationException("Empty collection");
         }
 
         private sealed class EnumeratorAdapter : IAsyncEnumerable<Object>, IAsyncEnumerator<Object>
@@ -80,6 +82,8 @@ namespace OdataToEntity.Infrastructure
 
         private sealed class ScalarEnumeratorAdapter<T> : IAsyncEnumerable<T>, IAsyncEnumerator<T>
         {
+            [AllowNull]
+            [MaybeNull]
             private T _scalarResult;
             private readonly Task<T> _scalarTask;
             private int _state;
@@ -87,6 +91,7 @@ namespace OdataToEntity.Infrastructure
             public ScalarEnumeratorAdapter(Task<T> scalarTask)
             {
                 _scalarTask = scalarTask;
+                _scalarResult = default;
             }
 
             public ValueTask DisposeAsync()

@@ -1,4 +1,5 @@
-﻿using Microsoft.OData;
+﻿#nullable enable
+using Microsoft.OData;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using System;
@@ -55,7 +56,7 @@ namespace OdataToEntity.Parsers
         }
         public static BinaryOperatorNode CreateFilterExpression(SingleValueNode singleValueNode, IEnumerable<KeyValuePair<IEdmStructuralProperty, Object>> keys)
         {
-            BinaryOperatorNode compositeNode = null;
+            BinaryOperatorNode? compositeNode = null;
             foreach (KeyValuePair<IEdmStructuralProperty, Object> keyValue in keys)
             {
                 var left = new SingleValuePropertyAccessNode(singleValueNode, keyValue.Key);
@@ -67,7 +68,7 @@ namespace OdataToEntity.Parsers
                 else
                     compositeNode = new BinaryOperatorNode(BinaryOperatorKind.And, compositeNode, node);
             }
-            return compositeNode;
+            return compositeNode ?? throw new InvalidOperationException("Parameter keys is empty collection");
         }
         public static NewExpression CreateTupleExpression(IReadOnlyList<Expression> expressions)
         {
@@ -87,7 +88,7 @@ namespace OdataToEntity.Parsers
                 return Expression.New(ctorInfo, expressions, tupleType.GetProperties());
             }
 
-            NewExpression restNew = null;
+            NewExpression? restNew = null;
             int count = expressions.Count;
             while (count > 0)
             {
@@ -107,7 +108,7 @@ namespace OdataToEntity.Parsers
                     restExpressions[len - 1] = expressions[count - 1];
                 restNew = CreateTupleExpression(restExpressions);
             }
-            return restNew;
+            return restNew ?? throw new InvalidOperationException("Suppress possible null reference return");
         }
         private static Type GetArithmethicPrecedenceType(Type leftType, Type rightType)
         {
@@ -131,7 +132,7 @@ namespace OdataToEntity.Parsers
         {
             return GetCollectionItemTypeOrNull(collectionType) ?? throw new InvalidOperationException("Type " + collectionType.Name + " is not collection type");
         }
-        public static Type GetCollectionItemTypeOrNull(Type type)
+        public static Type? GetCollectionItemTypeOrNull(Type type)
         {
             if (type.IsPrimitive || type == typeof(String))
                 return null;
@@ -315,12 +316,13 @@ namespace OdataToEntity.Parsers
         public static MemberExpression ReplaceParameter(MemberExpression propertyExpression, Expression newParameter)
         {
             var properties = new Stack<PropertyInfo>();
+            MemberExpression? memberExpression = propertyExpression;
             do
             {
-                properties.Push((PropertyInfo)propertyExpression.Member);
-                propertyExpression = propertyExpression.Expression as MemberExpression;
+                properties.Push((PropertyInfo)memberExpression.Member);
+                memberExpression = memberExpression.Expression as MemberExpression;
             }
-            while (propertyExpression != null);
+            while (memberExpression != null);
 
             Expression expression = Expression.Convert(newParameter, properties.Peek().DeclaringType);
             while (properties.Count > 0)
@@ -330,45 +332,30 @@ namespace OdataToEntity.Parsers
         }
         public static ExpressionType ToExpressionType(BinaryOperatorKind operatorKind)
         {
-            switch (operatorKind)
+            return operatorKind switch
             {
-                case BinaryOperatorKind.Or:
-                    return ExpressionType.OrElse;
-                case BinaryOperatorKind.And:
-                    return ExpressionType.AndAlso;
-                case BinaryOperatorKind.Equal:
-                    return ExpressionType.Equal;
-                case BinaryOperatorKind.NotEqual:
-                    return ExpressionType.NotEqual;
-                case BinaryOperatorKind.GreaterThan:
-                    return ExpressionType.GreaterThan;
-                case BinaryOperatorKind.GreaterThanOrEqual:
-                    return ExpressionType.GreaterThanOrEqual;
-                case BinaryOperatorKind.LessThan:
-                    return ExpressionType.LessThan;
-                case BinaryOperatorKind.LessThanOrEqual:
-                    return ExpressionType.LessThanOrEqual;
-                case BinaryOperatorKind.Add:
-                    return ExpressionType.Add;
-                case BinaryOperatorKind.Subtract:
-                    return ExpressionType.Subtract;
-                case BinaryOperatorKind.Multiply:
-                    return ExpressionType.Multiply;
-                case BinaryOperatorKind.Divide:
-                    return ExpressionType.Divide;
-                case BinaryOperatorKind.Modulo:
-                    return ExpressionType.Modulo;
-                case BinaryOperatorKind.Has:
-                    throw new NotImplementedException(nameof(BinaryOperatorKind.Has));
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(operatorKind));
-            }
+                BinaryOperatorKind.Or => ExpressionType.OrElse,
+                BinaryOperatorKind.And => ExpressionType.AndAlso,
+                BinaryOperatorKind.Equal => ExpressionType.Equal,
+                BinaryOperatorKind.NotEqual => ExpressionType.NotEqual,
+                BinaryOperatorKind.GreaterThan => ExpressionType.GreaterThan,
+                BinaryOperatorKind.GreaterThanOrEqual => ExpressionType.GreaterThanOrEqual,
+                BinaryOperatorKind.LessThan => ExpressionType.LessThan,
+                BinaryOperatorKind.LessThanOrEqual => ExpressionType.LessThanOrEqual,
+                BinaryOperatorKind.Add => ExpressionType.Add,
+                BinaryOperatorKind.Subtract => ExpressionType.Subtract,
+                BinaryOperatorKind.Multiply => ExpressionType.Multiply,
+                BinaryOperatorKind.Divide => ExpressionType.Divide,
+                BinaryOperatorKind.Modulo => ExpressionType.Modulo,
+                BinaryOperatorKind.Has => throw new NotImplementedException(nameof(BinaryOperatorKind.Has)),
+                _ => throw new ArgumentOutOfRangeException(nameof(operatorKind)),
+            };
         }
-        public static bool TryGetConstantValue(Expression expression, out Object value)
+        public static bool TryGetConstantValue(Expression expression, out Object? value)
         {
             value = null;
 
-            MemberExpression propertyExpression = expression as MemberExpression;
+            MemberExpression? propertyExpression = expression as MemberExpression;
             if (propertyExpression == null && expression is UnaryExpression convertExpression)
                 propertyExpression = convertExpression.Operand as MemberExpression;
 
@@ -377,7 +364,7 @@ namespace OdataToEntity.Parsers
 
             if (propertyExpression.Expression is ConstantExpression constantExpression)
             {
-                value = (propertyExpression.Member as PropertyInfo).GetValue(constantExpression.Value);
+                value = ((PropertyInfo)propertyExpression.Member).GetValue(constantExpression.Value);
                 return true;
             }
 

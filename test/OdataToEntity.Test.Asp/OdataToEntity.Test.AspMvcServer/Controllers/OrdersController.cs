@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace OdataToEntity.Test.AspMvcServer.Controllers
 {
-    [Route("api")]
+    [Route("api/[controller]")]
     public sealed class OrdersController
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
@@ -18,12 +18,12 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
             _httpContextAccessor = httpContextAccessor;
         }
 
-        [HttpDelete("[controller]")]
+        [HttpDelete]
         public void Delete(OeDataContext dataContext, Model.Order order)
         {
             dataContext.Update(order);
         }
-        [HttpGet("[controller]")]
+        [HttpGet]
         public async Task<ODataResult<Model.Order>> Get()
         {
             Query.OeModelBoundProvider modelBoundProvider = _httpContextAccessor.HttpContext.CreateModelBoundProvider();
@@ -33,7 +33,7 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
             List<Model.Order> orderList = await orders.OrderBy(o => o.Id).ToListAsync().ConfigureAwait(false);
             return parser.OData(orderList);
         }
-        [HttpGet("[controller]({id})")]
+        [HttpGet("{id}")]
         public ODataResult<Model.Order> Get(int id)
         {
             Query.OeModelBoundProvider modelBoundProvider = _httpContextAccessor.HttpContext.CreateModelBoundProvider();
@@ -41,19 +41,19 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
             IAsyncEnumerable<Model.Order> orders = parser.ExecuteReader<Model.Order>();
             return parser.OData(orders);
         }
-        [HttpGet("[controller]({id})/Items")]
+        [HttpGet("{id}/Items")]
         public ODataResult<Model.OrderItem> GetItems(int id)
         {
             var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext);
             IAsyncEnumerable<Model.OrderItem> orderItems = parser.ExecuteReader<Model.OrderItem>();
             return parser.OData(orderItems);
         }
-        [HttpPatch("[controller]")]
+        [HttpPatch]
         public void Patch(OeDataContext dataContext, IDictionary<String, Object> orderProperties)
         {
             dataContext.Update(orderProperties);
         }
-        [HttpPost("[controller]")]
+        [HttpPost]
         public void Post(OeDataContext dataContext, Model.Order order)
         {
             dataContext.Update(order);

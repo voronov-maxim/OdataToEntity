@@ -1,4 +1,5 @@
-﻿using Microsoft.OData;
+﻿#nullable enable
+using Microsoft.OData;
 using Microsoft.OData.Edm;
 using System;
 using System.Collections.Generic;
@@ -26,25 +27,29 @@ namespace OdataToEntity.Writers
             using (IEnumerator<IEdmStructuralProperty> enumerator = entitySet.EntityType().Key().GetEnumerator())
             {
                 if (!enumerator.MoveNext())
-                    return null;
+                    throw new InvalidOperationException("Key property not found for EntityType " + entitySet.EntityType().FullName());
 
                 IEdmStructuralProperty keyProperty = enumerator.Current;
                 if (enumerator.MoveNext())
                 {
                     int counter = 0;
-                    while (keyProperty != null)
+                    do
                     {
                         ODataProperty property = GetProperty(entry, keyProperty.Name);
                         builder.Append(property.Name);
                         builder.Append('=');
                         builder.Append(ODataUriUtils.ConvertToUriLiteral(property.Value, ODataVersion.V4));
 
-                        keyProperty = counter == 0 || enumerator.MoveNext() ? enumerator.Current : null;
-                        if (keyProperty != null)
+                        if (counter == 0 || enumerator.MoveNext())
+                        {
+                            keyProperty = enumerator.Current;
                             builder.Append(',');
-
-                        counter++;
+                            counter = 1;
+                        }
+                        else
+                            counter = 2;
                     }
+                    while (counter < 2);
                 }
                 else
                 {

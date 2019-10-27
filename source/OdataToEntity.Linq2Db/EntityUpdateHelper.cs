@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -14,7 +15,7 @@ namespace OdataToEntity.Linq2Db
         public static Expression<Func<T, bool>> GetWhere<T>(PropertyInfo[] primaryKey, T entity)
         {
             ParameterExpression parameter = Expression.Parameter(typeof(T));
-            BinaryExpression where = null;
+            BinaryExpression? where = null;
             foreach (PropertyInfo propertyInfo in primaryKey)
             {
                 MemberExpression propertyExpression = Expression.Property(parameter, propertyInfo);

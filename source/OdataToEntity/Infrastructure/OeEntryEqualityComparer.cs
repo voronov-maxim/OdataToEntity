@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq.Expressions;
@@ -8,7 +9,7 @@ namespace OdataToEntity.Infrastructure
 {
     public readonly struct OeEntryEqualityComparer : IEqualityComparer<Object>, IComparer<Object>, IComparer
     {
-        private sealed class TypedEqualityComparer<T> : IEqualityComparer<T>, IComparer<T>
+        private sealed class TypedEqualityComparer<T> : IEqualityComparer<T>, IComparer<T> where T : notnull
         {
             private readonly OeEntryEqualityComparer _entryEqualityComparer;
 
@@ -96,11 +97,11 @@ namespace OdataToEntity.Infrastructure
                 hashCode = (hashCode << 5) + hashCode ^ propertyGetHashCodes[i](obj);
             return hashCode;
         }
-        public IComparer<T> GetTypedComparer<T>()
+        public IComparer<T> GetTypedComparer<T>() where T : notnull
         {
             return new TypedEqualityComparer<T>(this);
         }
-        public IEqualityComparer<T> GetTypedEqualityComparer<T>()
+        public IEqualityComparer<T> GetTypedEqualityComparer<T>() where T : notnull
         {
             return new TypedEqualityComparer<T>(this);
         }

@@ -1,4 +1,5 @@
-﻿using Microsoft.OData.Edm;
+﻿#nullable enable
+using Microsoft.OData.Edm;
 using OdataToEntity.Parsers;
 using System;
 using System.Collections.Generic;
@@ -13,7 +14,7 @@ namespace OdataToEntity.Db
         IOeDbEnumerator CreateChild(OeEntryFactory entryFactory, CancellationToken cancellationToken);
 
         OeEntryFactory EntryFactory { get; }
-        IOeDbEnumerator ParentEnumerator { get; }
+        IOeDbEnumerator? ParentEnumerator { get; }
         Object RawValue { get; }
     }
 
@@ -49,7 +50,7 @@ namespace OdataToEntity.Db
         }
 
         private int _bufferPosition;
-        private readonly HashSet<Object> _uniqueConstraint;
+        private readonly HashSet<Object>? _uniqueConstraint;
 
         public OeDbEnumerator(IAsyncEnumerator<Object> asyncEnumerator, OeEntryFactory entryFactory)
         {
@@ -94,6 +95,9 @@ namespace OdataToEntity.Db
         }
         private void Initialize()
         {
+            if (ParentEnumerator == null)
+                throw new InvalidOperationException("Cannot initialize root OeDbEnumerator");
+
             _bufferPosition = ParentEnumerator._bufferPosition;
 
             if (_uniqueConstraint != null)
@@ -104,7 +108,7 @@ namespace OdataToEntity.Db
                     _uniqueConstraint.Add(value);
             }
         }
-        private static bool IsEquals(OeEntryFactory entryFactory, Object value1, Object value2)
+        private static bool IsEquals(OeEntryFactory entryFactory, Object? value1, Object? value2)
         {
             if (Object.ReferenceEquals(value1, value2))
                 return true;
@@ -113,7 +117,7 @@ namespace OdataToEntity.Db
 
             return entryFactory.EqualityComparer.Equals(value1, value2);
         }
-        private bool IsSame(Object value)
+        private bool IsSame(Object? value)
         {
             Object nextValue = Current;
             if (IsEquals(EntryFactory, value, nextValue))
@@ -131,6 +135,9 @@ namespace OdataToEntity.Db
         }
         private bool IsSameParent()
         {
+            if (ParentEnumerator == null)
+                throw new InvalidOperationException("Cannot compare value with parent OeDbEnumertor value");
+
             Object currentParentValue = ParentEnumerator.EntryFactory.GetValue(Context.Buffer[_bufferPosition]);
             return IsEquals(ParentEnumerator.EntryFactory, ParentEnumerator.Current, currentParentValue);
         }
@@ -139,7 +146,7 @@ namespace OdataToEntity.Db
             if (ParentEnumerator == null && Context.Eof)
                 return false;
 
-            Object value = _bufferPosition < 0 ? null : Current;
+            Object? value = _bufferPosition < 0 ? null : Current;
             do
             {
                 _bufferPosition++;
@@ -165,8 +172,8 @@ namespace OdataToEntity.Db
         private DataContext Context { get; }
         public Object Current => EntryFactory.GetValue(RawValue);
         public OeEntryFactory EntryFactory { get; }
-        private OeDbEnumerator ParentEnumerator { get; }
-        IOeDbEnumerator IOeDbEnumerator.ParentEnumerator => ParentEnumerator;
+        private OeDbEnumerator? ParentEnumerator { get; }
+        IOeDbEnumerator? IOeDbEnumerator.ParentEnumerator => ParentEnumerator;
         public Object RawValue => Context.Buffer[_bufferPosition];
     }
 }

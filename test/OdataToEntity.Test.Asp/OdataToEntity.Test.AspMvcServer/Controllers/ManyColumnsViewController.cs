@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace OdataToEntity.Test.AspMvcServer.Controllers
 {
-    [Route("api")]
+    [Route("api/[controller]")]
     public class ManyColumnsViewController
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
@@ -16,7 +16,7 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
             _httpContextAccessor = httpContextAccessor;
         }
 
-        [HttpGet("[controller]")]
+        [HttpGet]
         public async Task Get()
         {
             var edmModel = (IEdmModel)_httpContextAccessor.HttpContext.RequestServices.GetService(typeof(IEdmModel));

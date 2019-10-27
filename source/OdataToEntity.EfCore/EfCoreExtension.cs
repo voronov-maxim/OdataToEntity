@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿#nullable enable
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Query;
 using OdataToEntity.Infrastructure;
@@ -17,7 +18,7 @@ namespace OdataToEntity.EfCore
             if (Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(expression.Type) == null)
             {
                 Func<QueryContext, Task<T>> executor = queryCompilationContextFactory.Create(true).CreateQueryExecutor<Task<T>>(expression);
-                return queryContext => AsyncEnumeratorHelper.ToAsyncEnumerable((executor(queryContext)));
+                return queryContext => AsyncEnumeratorHelper.ToAsyncEnumerable(executor(queryContext));
             }
 
             return queryCompilationContextFactory.Create(true).CreateQueryExecutor<IAsyncEnumerable<T>>(expression);
