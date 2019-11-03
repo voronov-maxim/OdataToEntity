@@ -89,7 +89,7 @@ namespace OdataToEntity.ModelBuilder
                     edmModel.SetClrType(typeInfo.EdmType, typeInfo.ClrType);
                 }
 
-                Db.OeEntitySetAdapter entitySetAdapter = _dataAdapter.EntitySetAdapters.Find(typeInfo.ClrType);
+                Db.OeEntitySetAdapter? entitySetAdapter = _dataAdapter.EntitySetAdapters.Find(typeInfo.ClrType);
                 if (entitySetAdapter != null)
                 {
                     EdmEntitySet entitySet = container.AddEntitySet(entitySetAdapter.EntitySetName, typeInfo.EdmType);
@@ -128,7 +128,12 @@ namespace OdataToEntity.ModelBuilder
                     edmModel.AddElement(edmFunction);
 
                     if (edmFunction.IsBound)
+                    {
+                        if (operationConfiguration.MethodInfo == null)
+                            throw new InvalidOperationException("Bound function operationConfiguration.MethodInfo must be not null");
+
                         edmModel.SetMethodInfo(edmFunction, operationConfiguration.MethodInfo);
+                    }
                     else
                     {
                         container.AddFunctionImport(operationConfiguration.ImportName, edmFunction, edmFunction.EntitySetPath);
@@ -165,13 +170,13 @@ namespace OdataToEntity.ModelBuilder
                 }
                 while (clrType != typeof(Object));
 
-                EdmEntityType edmType = null;
+                EdmEntityType? edmType = null;
                 foreach (Type baseClrType in baseClrTypes)
                     if (entityTypeInfos.TryGetValue(baseClrType, out EntityTypeInfo entityTypeInfo))
                         edmType = entityTypeInfo.EdmType;
                     else
                     {
-                        EdmEntityType baseEdmType = GetBaseEdmEntityType(baseClrType);
+                        EdmEntityType? baseEdmType = GetBaseEdmEntityType(refModels, baseClrType);
                         if (baseEdmType == null)
                         {
                             edmType = new EdmEntityType(baseClrType.Namespace, baseClrType.Name, edmType, baseClrType.IsAbstract, false);
@@ -187,7 +192,7 @@ namespace OdataToEntity.ModelBuilder
             }
             return entityTypeInfos;
 
-            EdmEntityType GetBaseEdmEntityType(Type clrType)
+            static EdmEntityType? GetBaseEdmEntityType(IEdmModel[] refModels, Type clrType)
             {
                 foreach (IEdmModel refModel in refModels)
                     foreach (IEdmSchemaElement element in refModel.SchemaElements)
@@ -202,7 +207,7 @@ namespace OdataToEntity.ModelBuilder
         private EdmFunction BuildFunction(OeOperationConfiguration operationConfiguration, Dictionary<Type, EntityTypeInfo> entityTypeInfos)
         {
             IEdmTypeReference edmTypeReference;
-            Type itemType = Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(operationConfiguration.ReturnType);
+            Type? itemType = Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(operationConfiguration.ReturnType);
             if (itemType == null)
                 edmTypeReference = GetEdmTypeReference(operationConfiguration.ReturnType, entityTypeInfos);
             else
@@ -248,7 +253,7 @@ namespace OdataToEntity.ModelBuilder
             if (_complexTypes.TryGetValue(clrType, out EdmComplexType edmComplexType))
                 return new EdmComplexTypeReference(edmComplexType, nullable);
 
-            IEdmTypeReference typeRef = PrimitiveTypeHelper.GetPrimitiveTypeRef(clrType, nullable);
+            IEdmTypeReference? typeRef = PrimitiveTypeHelper.GetPrimitiveTypeRef(clrType, nullable);
             if (typeRef != null)
                 return typeRef;
 

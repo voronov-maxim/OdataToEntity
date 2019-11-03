@@ -13,7 +13,7 @@ namespace OdataToEntity.Query.Builder
             _modelBoundProvider = modelBoundProvider;
         }
 
-        private void Validate(SelectExpandClause selectExpandClause, IEdmEntityType entityType, ExpandedNavigationSelectItem navigationItem)
+        private void Validate(SelectExpandClause selectExpandClause, IEdmEntityType? entityType, ExpandedNavigationSelectItem? navigationItem)
         {
             if (selectExpandClause != null)
                 foreach (SelectItem selectItem in selectExpandClause.SelectedItems)
@@ -62,11 +62,16 @@ namespace OdataToEntity.Query.Builder
 
             Validate(item.SelectAndExpand, null, item);
         }
-        private void Validate(PathSelectItem pathSelectItem, IEdmEntityType entityType, ExpandedNavigationSelectItem navigationItem)
+        private void Validate(PathSelectItem pathSelectItem, IEdmEntityType? entityType, ExpandedNavigationSelectItem? navigationItem)
         {
             bool isSelectable;
             if (navigationItem == null)
+            {
+                if (entityType == null)
+                    throw new System.InvalidOperationException("entityType or navigationItem must be not null");
+
                 isSelectable = _modelBoundProvider.IsSelectable(pathSelectItem.SelectedPath, entityType);
+            }
             else
                 isSelectable = _modelBoundProvider.IsSelectable(pathSelectItem.SelectedPath, navigationItem);
 

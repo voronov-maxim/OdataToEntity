@@ -40,7 +40,7 @@ namespace OdataToEntity.EfCore
                     if (propertyInfo.DeclaringType.IsAssignableFrom(pair.Key))
                         yield return pair.Value;
         }
-        public override PropertyInfo[] GetForeignKey(PropertyInfo propertyInfo)
+        public override PropertyInfo[]? GetForeignKey(PropertyInfo propertyInfo)
         {
             foreach (IEntityType efEntityType in GetEntityTypes(propertyInfo))
                 foreach (IForeignKey fkey in efEntityType.GetForeignKeys())
@@ -63,7 +63,7 @@ namespace OdataToEntity.EfCore
 
             return null;
         }
-        public override PropertyInfo GetInverseProperty(PropertyInfo propertyInfo)
+        public override PropertyInfo? GetInverseProperty(PropertyInfo propertyInfo)
         {
             foreach (IEntityType efEntityType in GetEntityTypes(propertyInfo))
             {
@@ -105,9 +105,6 @@ namespace OdataToEntity.EfCore
         }
         public override PropertyInfo[] GetPrincipalStructuralProperties(PropertyInfo principalNavigation)
         {
-            if (principalNavigation == null)
-                return null;
-
             foreach (EntityType efEntityType in GetEntityTypes(principalNavigation))
             {
                 Navigation navigation = efEntityType.FindNavigation(principalNavigation);
@@ -122,12 +119,12 @@ namespace OdataToEntity.EfCore
 
             throw new InvalidOperationException("Not found key for principal navigation property " + principalNavigation.DeclaringType.Name + "." + principalNavigation.Name);
         }
-        public override PropertyInfo[] GetPrincipalToDependentWithoutDependent(PropertyInfo propertyInfo)
+        public override PropertyInfo[] GetPrincipalToDependentWithoutDependent(PropertyInfo principalNavigation)
         {
-            foreach (IEntityType efEntityType in GetEntityTypes(propertyInfo))
+            foreach (IEntityType efEntityType in GetEntityTypes(principalNavigation))
                 foreach (IForeignKey fkey in efEntityType.GetReferencingForeignKeys())
                     if (fkey.PrincipalToDependent != null &&
-                        fkey.PrincipalToDependent.Name == propertyInfo.Name &&
+                        fkey.PrincipalToDependent.Name == principalNavigation.Name &&
                         fkey.PrincipalToDependent.IsCollection() &&
                         fkey.PrincipalToDependent.FindInverse() == null)
                     {
@@ -137,7 +134,7 @@ namespace OdataToEntity.EfCore
                         return properties;
                     }
 
-            return null;
+            throw new InvalidOperationException("Pricipal structurlal property not found for principal navigation " + principalNavigation.Name);
         }
         public override PropertyInfo[] GetProperties(Type type)
         {

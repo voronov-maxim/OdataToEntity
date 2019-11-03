@@ -14,22 +14,17 @@ namespace OdataToEntity.Parsers
     {
         private readonly Db.OeDataAdapter _dataAdapter;
         private readonly IEdmModel _edmModel;
-        private readonly IServiceProvider _serviceProvider;
+        private readonly IServiceProvider? _serviceProvider;
 
-        public OePostParser(IEdmModel edmModel, IServiceProvider serviceProvider)
+        public OePostParser(IEdmModel edmModel, IServiceProvider? serviceProvider)
         {
             _edmModel = edmModel;
             _serviceProvider = serviceProvider;
             _dataAdapter = edmModel.GetDataAdapter(edmModel.EntityContainer);
         }
 
-        public OeQueryContext CreateQueryContext(ODataUri odataUri, OeMetadataLevel metadataLevel)
+        public OeQueryContext CreateQueryContext(ODataUri odataUri, IEdmEntitySet entitySet, OeMetadataLevel metadataLevel)
         {
-            var importSegment = (OperationImportSegment)odataUri.Path.FirstSegment;
-            IEdmEntitySet entitySet = OeOperationHelper.GetEntitySet(importSegment.OperationImports.Single());
-            if (entitySet == null)
-                return null;
-
             OePropertyAccessor[] accessors = OePropertyAccessor.CreateFromType(_edmModel.GetClrType(entitySet), entitySet);
             Db.OeEntitySetAdapter entitySetAdapter = _dataAdapter.EntitySetAdapters.Find(entitySet);
             return new OeQueryContext(_edmModel, odataUri, entitySetAdapter)
@@ -38,13 +33,13 @@ namespace OdataToEntity.Parsers
                 MetadataLevel = metadataLevel
             };
         }
-        public async Task ExecuteAsync(ODataUri odataUri, Stream requestStream, OeRequestHeaders headers, Stream responseStream, CancellationToken cancellationToken)
+        public async Task ExecuteAsync(ODataUri odataUri, Stream? requestStream, OeRequestHeaders headers, Stream responseStream, CancellationToken cancellationToken)
         {
-            Object dataContext = null;
+            Object? dataContext = null;
             try
             {
                 dataContext = _dataAdapter.CreateDataContext();
-                IAsyncEnumerator<Object> asyncEnumerator = null;
+                IAsyncEnumerator<Object>? asyncEnumerator = null;
                 try
                 {
                     asyncEnumerator = GetAsyncEnumerable(odataUri, requestStream, headers, dataContext, cancellationToken, out bool isScalar).GetAsyncEnumerator(cancellationToken);
@@ -61,11 +56,15 @@ namespace OdataToEntity.Parsers
                     }
                     else
                     {
-                        OeQueryContext queryContext = CreateQueryContext(odataUri, headers.MetadataLevel);
-                        if (queryContext == null)
+                        var importSegment = (OperationImportSegment)odataUri.Path.FirstSegment;
+                        IEdmEntitySet? entitySet = OeOperationHelper.GetEntitySet(importSegment.OperationImports.Single());
+                        if (entitySet == null)
                             await WriteCollectionAsync(_edmModel, odataUri, asyncEnumerator, responseStream).ConfigureAwait(false);
                         else
+                        {
+                            OeQueryContext queryContext = CreateQueryContext(odataUri, entitySet, headers.MetadataLevel);
                             await Writers.OeGetWriter.SerializeAsync(queryContext, asyncEnumerator, headers.ContentType, responseStream, _serviceProvider, cancellationToken).ConfigureAwait(false);
+                        }
                     }
                 }
                 finally
@@ -80,14 +79,14 @@ namespace OdataToEntity.Parsers
                     _dataAdapter.CloseDataContext(dataContext);
             }
         }
-        public IAsyncEnumerable<Object> GetAsyncEnumerable(ODataUri odataUri, Stream requestStream, OeRequestHeaders headers, Object dataContext, CancellationToken cancellationToken, out bool isScalar)
+        public IAsyncEnumerable<Object> GetAsyncEnumerable(ODataUri odataUri, Stream? requestStream, OeRequestHeaders headers, Object dataContext, CancellationToken cancellationToken, out bool isScalar)
         {
             isScalar = true;
             var importSegment = (OperationImportSegment)odataUri.Path.LastSegment;
-            IReadOnlyList<KeyValuePair<String, Object>> parameters = OeOperationHelper.GetParameters(_edmModel, importSegment, odataUri.ParameterAliasNodes, requestStream, headers.ContentType);
+            IReadOnlyList<KeyValuePair<String, Object?>> parameters = OeOperationHelper.GetParameters(_edmModel, importSegment, odataUri.ParameterAliasNodes, requestStream, headers.ContentType);
 
             IEdmOperationImport operationImport = importSegment.OperationImports.Single();
-            IEdmEntitySet entitySet = OeOperationHelper.GetEntitySet(operationImport);
+            IEdmEntitySet? entitySet = OeOperationHelper.GetEntitySet(operationImport);
             if (entitySet == null)
             {
                 if (operationImport.Operation.ReturnType == null)

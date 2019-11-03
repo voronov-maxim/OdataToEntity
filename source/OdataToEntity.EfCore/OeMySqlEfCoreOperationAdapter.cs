@@ -13,7 +13,7 @@ namespace OdataToEntity.EfCore
         {
         }
 
-        protected override String GetProcedureName(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters)
+        protected override String GetProcedureName(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object?>> parameters)
         {
             var sql = new StringBuilder("call ");
             sql.Append(operationName);

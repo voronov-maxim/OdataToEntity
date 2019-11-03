@@ -22,7 +22,7 @@ namespace OdataToEntity.EfCore
         {
         }
 
-        private IRelationalCommand CreateCommand(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, out Dictionary<String, Object> parameterValues)
+        private IRelationalCommand CreateCommand(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object?>> parameters, out Dictionary<String, Object?> parameterValues)
         {
             var dbContext = (DbContext)dataContext;
             var commandBuilderFactory = dbContext.GetService<IRelationalCommandBuilderFactory>();
@@ -32,7 +32,7 @@ namespace OdataToEntity.EfCore
             var parameterNameGenerator = dbContext.GetService<IParameterNameGeneratorFactory>().Create();
             var sqlHelper = dbContext.GetService<ISqlGenerationHelper>();
 
-            parameterValues = new Dictionary<String, Object>(parameters.Count);
+            parameterValues = new Dictionary<String, Object?>(parameters.Count);
             for (int i = 0; i < parameters.Count; i++)
             {
                 String invariantName = parameterNameGenerator.GenerateNext();
@@ -44,22 +44,22 @@ namespace OdataToEntity.EfCore
 
             return commandBuilder.Build();
         }
-        protected override IAsyncEnumerable<Object> ExecuteNonQuery(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters)
+        protected override IAsyncEnumerable<Object> ExecuteNonQuery(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object?>> parameters)
         {
             ((DbContext)dataContext).Database.ExecuteSqlRaw(sql, GetParameterValues(parameters));
             return Infrastructure.AsyncEnumeratorHelper.Empty;
         }
-        protected override IAsyncEnumerable<Object> ExecuteReader(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, OeEntitySetAdapter entitySetAdapter)
+        protected override IAsyncEnumerable<Object> ExecuteReader(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object?>> parameters, OeEntitySetAdapter entitySetAdapter)
         {
             var fromSql = (IFromSql)entitySetAdapter;
             var query = (IQueryable<Object>)fromSql.FromSql((DbContext)dataContext, sql, GetParameterValues(parameters));
             return Infrastructure.AsyncEnumeratorHelper.ToAsyncEnumerable(query);
         }
-        protected override IAsyncEnumerable<Object> ExecutePrimitive(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType, CancellationToken cancellationToken)
+        protected override IAsyncEnumerable<Object> ExecutePrimitive(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object?>> parameters, Type returnType, CancellationToken cancellationToken)
         {
             var dbContext = (DbContext)dataContext;
             var connection = dbContext.GetService<IRelationalConnection>();
-            IRelationalCommand command = CreateCommand(dataContext, sql, parameters, out Dictionary<String, Object> parameterValues);
+            IRelationalCommand command = CreateCommand(dataContext, sql, parameters, out Dictionary<String, Object?> parameterValues);
 
             var commandParameters = new RelationalCommandParameterObject(connection, parameterValues, dbContext, null);
             if (Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(returnType) == null)
@@ -74,7 +74,7 @@ namespace OdataToEntity.EfCore
         {
             return ((Model)((DbContext)dataContext).Model).GetDefaultSchema();
         }
-        protected override IReadOnlyList<OeOperationConfiguration> GetOperationConfigurations(MethodInfo methodInfo)
+        protected override IReadOnlyList<OeOperationConfiguration>? GetOperationConfigurations(MethodInfo methodInfo)
         {
             var dbFunction = (DbFunctionAttribute)methodInfo.GetCustomAttribute(typeof(DbFunctionAttribute));
             if (dbFunction == null)
@@ -83,7 +83,7 @@ namespace OdataToEntity.EfCore
             String functionName = dbFunction.Name ?? methodInfo.Name;
             return new[] { new OeOperationConfiguration(dbFunction.Schema, functionName, methodInfo, true) };
         }
-        protected override String[] GetParameterNames(Object dataContext, IReadOnlyList<KeyValuePair<String, Object>> parameters)
+        protected override String[] GetParameterNames(Object dataContext, IReadOnlyList<KeyValuePair<String, Object?>> parameters)
         {
             var dbContext = (DbContext)dataContext;
             var parameterNameGenerator = dbContext.GetService<IParameterNameGeneratorFactory>().Create();

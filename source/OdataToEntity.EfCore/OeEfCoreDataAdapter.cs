@@ -22,7 +22,7 @@ namespace OdataToEntity.EfCore
 {
     internal interface IFromSql
     {
-        IQueryable FromSql(Object dataContext, String sql, Object[] parameters);
+        IQueryable FromSql(Object dataContext, String sql, Object?[] parameters);
     }
 
     public class OeEfCoreDataAdapter<T> : Db.OeDataAdapter, IDisposable where T : DbContext
@@ -42,7 +42,7 @@ namespace OdataToEntity.EfCore
             {
                 throw new NotSupportedException();
             }
-            public IQueryable FromSql(Object dataContext, String sql, Object[] parameters)
+            public IQueryable FromSql(Object dataContext, String sql, Object?[] parameters)
             {
                 var queryable = (DbSet<TEntity>)GetEntitySet(dataContext);
                 return queryable.FromSqlRaw(sql, parameters);
@@ -65,12 +65,16 @@ namespace OdataToEntity.EfCore
         {
             private IEntityType _entityType;
             private Func<MaterializationContext, Object> _materializer;
+            private static readonly IEntityType _nullEntityType = new EntityType("dummy", new Model(), ConfigurationSource.Convention);
             private Func<Object[]> _valueBufferArrayInit;
-            private IForeignKey _selfReferenceKey;
+            private IForeignKey? _selfReferenceKey;
 
             public DbSetAdapterImpl(String entitySetName)
             {
                 EntitySetName = entitySetName;
+                _entityType = _nullEntityType;
+                _materializer = NullMaterializer;
+                _valueBufferArrayInit = NullValueBufferArrayInit;
             }
 
             public override void AddEntity(Object dataContext, ODataResourceBase entry)
@@ -138,7 +142,7 @@ namespace OdataToEntity.EfCore
                 NewArrayExpression newArrayExpression = Expression.NewArrayInit(typeof(Object), constants);
                 return Expression.Lambda<Func<Object[]>>(newArrayExpression).Compile();
             }
-            public IQueryable FromSql(Object dataContext, String sql, Object[] parameters)
+            public IQueryable FromSql(Object dataContext, String sql, Object?[] parameters)
             {
                 var dbSet = new InternalDbSet<TEntity>((T)dataContext);
                 return dbSet.FromSqlRaw(sql, parameters);
@@ -169,6 +173,34 @@ namespace OdataToEntity.EfCore
                 }
                 return keyValues;
             }
+            private void Initialize(DbContext context)
+            {
+                if (_entityType == _nullEntityType)
+                {
+                    IEntityType entityType = context.Model.FindEntityType(EntityType);
+                    foreach (IForeignKey fkey in entityType.GetForeignKeys())
+                        if (fkey.IsSelfReferencing())
+                        {
+                            Volatile.Write(ref _selfReferenceKey, fkey);
+                            break;
+                        }
+
+                    Volatile.Write(ref _valueBufferArrayInit, CreateNewArrayInit(entityType));
+
+                    var entityMaterializerSource = context.GetService<IEntityMaterializerSource>();
+                    Volatile.Write(ref _materializer, entityMaterializerSource.GetMaterializer(entityType));
+
+                    Volatile.Write(ref _entityType, entityType);
+                }
+            }
+            private static Object NullMaterializer(MaterializationContext materializationContext)
+            {
+                throw new InvalidOperationException("Stub for nullable reference type");
+            }
+            private static Object[] NullValueBufferArrayInit()
+            {
+                throw new InvalidOperationException("Stub for nullable reference type");
+            }
             public override void RemoveEntity(Object dataContext, ODataResourceBase entry)
             {
                 var context = (T)dataContext;
@@ -188,33 +220,13 @@ namespace OdataToEntity.EfCore
                 else
                     entityEntry.SetEntityState(EntityState.Deleted);
             }
-            private void Initialize(DbContext context)
-            {
-                if (_entityType == null)
-                {
-                    IEntityType entityType = context.Model.FindEntityType(EntityType);
-                    foreach (IForeignKey fkey in entityType.GetForeignKeys())
-                        if (fkey.IsSelfReferencing())
-                        {
-                            Volatile.Write(ref _selfReferenceKey, fkey);
-                            break;
-                        }
-
-                    Volatile.Write(ref _valueBufferArrayInit, CreateNewArrayInit(entityType));
-
-                    var entityMaterializerSource = context.GetService<IEntityMaterializerSource>();
-                    Volatile.Write(ref _materializer, entityMaterializerSource.GetMaterializer(entityType));
-
-                    Volatile.Write(ref _entityType, entityType);
-                }
-            }
 
             public override Type EntityType => typeof(TEntity);
             public override String EntitySetName { get; }
         }
 
-        private readonly DbContextPool<T> _dbContextPool;
-        private static Db.OeEntitySetAdapterCollection _entitySetAdapters;
+        private readonly DbContextPool<T>? _dbContextPool;
+        private static Db.OeEntitySetAdapterCollection? _entitySetAdapters;
 
         public OeEfCoreDataAdapter() : this(null, null)
         {
@@ -225,11 +237,11 @@ namespace OdataToEntity.EfCore
         public OeEfCoreDataAdapter(Cache.OeQueryCache queryCache) : this(null, queryCache)
         {
         }
-        public OeEfCoreDataAdapter(DbContextOptions options, Cache.OeQueryCache queryCache)
+        public OeEfCoreDataAdapter(DbContextOptions? options, Cache.OeQueryCache? queryCache)
             : this(options, queryCache, new OeEfCoreOperationAdapter(typeof(T)))
         {
         }
-        public OeEfCoreDataAdapter(DbContextOptions options, Cache.OeQueryCache queryCache, OeEfCoreOperationAdapter operationAdapter)
+        public OeEfCoreDataAdapter(DbContextOptions? options, Cache.OeQueryCache? queryCache, OeEfCoreOperationAdapter operationAdapter)
             : base(queryCache, operationAdapter)
         {
             if (options != null)
@@ -289,7 +301,7 @@ namespace OdataToEntity.EfCore
         public override IAsyncEnumerable<Object> Execute(Object dataContext, OeQueryContext queryContext)
         {
             IAsyncEnumerable<Object> asyncEnumerable;
-            MethodCallExpression countExpression = null;
+            MethodCallExpression? countExpression = null;
             if (base.QueryCache.AllowCache)
                 asyncEnumerable = GetFromCache<Object>(queryContext, (T)dataContext, out countExpression);
             else
@@ -330,7 +342,7 @@ namespace OdataToEntity.EfCore
         }
         private static Db.OeEntitySetAdapterCollection GetEntitySetAdapters(Db.OeDataAdapter dataAdapter)
         {
-            Db.OeEntitySetAdapterCollection entitySetAdapters = Volatile.Read(ref _entitySetAdapters);
+            Db.OeEntitySetAdapterCollection? entitySetAdapters = Volatile.Read(ref _entitySetAdapters);
             if (entitySetAdapters != null)
                 return entitySetAdapters;
 
@@ -338,14 +350,14 @@ namespace OdataToEntity.EfCore
             try
             {
                 Interlocked.CompareExchange(ref _entitySetAdapters, CreateEntitySetAdapters(context.Model), null);
-                return Volatile.Read(ref _entitySetAdapters);
+                return Volatile.Read(ref _entitySetAdapters)!;
             }
             finally
             {
                 dataAdapter.CloseDataContext(context);
             }
         }
-        private IAsyncEnumerable<TResult> GetFromCache<TResult>(OeQueryContext queryContext, T dbContext, out MethodCallExpression countExpression)
+        private IAsyncEnumerable<TResult> GetFromCache<TResult>(OeQueryContext queryContext, T dbContext, out MethodCallExpression? countExpression)
         {
             Cache.OeCacheContext cacheContext = queryContext.CreateCacheContext();
             Cache.OeQueryCacheItem queryCacheItem = base.QueryCache.GetQuery(cacheContext);
@@ -361,9 +373,14 @@ namespace OdataToEntity.EfCore
                 expression = TranslateExpression(expression);
 
                 queryExecutor = dbContext.CreateAsyncQueryExecutor<TResult>(expression);
-                countExpression = queryContext.CreateCountExpression(expression);
-                countExpression = (MethodCallExpression)OeEnumerableToQuerableVisitor.Translate(countExpression);
-                countExpression = (MethodCallExpression)TranslateExpression(countExpression);
+                if (queryContext.EntryFactory == null)
+                    countExpression = null;
+                else
+                {
+                    countExpression = queryContext.CreateCountExpression(expression);
+                    countExpression = (MethodCallExpression)OeEnumerableToQuerableVisitor.Translate(countExpression);
+                    countExpression = (MethodCallExpression)TranslateExpression(countExpression);
+                }
 
                 base.QueryCache.AddQuery(queryContext.CreateCacheContext(parameterVisitor.ConstantToParameterMapper), queryExecutor, countExpression, queryContext.EntryFactory);
                 parameterValues = parameterVisitor.ParameterValues;
@@ -381,7 +398,7 @@ namespace OdataToEntity.EfCore
             foreach (Cache.OeQueryCacheDbParameterValue parameterValue in parameterValues)
                 efQueryContext.AddParameter(parameterValue.ParameterName, parameterValue.ParameterValue);
 
-            if (queryContext.IsQueryCount())
+            if (queryContext.IsQueryCount() && countExpression != null)
             {
                 countExpression = (MethodCallExpression)queryContext.TranslateSource(dbContext, countExpression);
                 countExpression = (MethodCallExpression)new OeParameterToVariableVisitor().Translate(countExpression, parameterValues);

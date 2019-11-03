@@ -51,15 +51,11 @@ namespace OdataToEntity.Parsers.Translators
             Expression propertyExpression = orderProperty.PropertyExpression;
             Expression parameterExpression = orderProperty.ParameterExpression;
 
-            Type underlyingType = Nullable.GetUnderlyingType(propertyExpression.Type);
-            bool isNullableType = underlyingType != null;
-            if (!isNullableType)
-                underlyingType = propertyExpression.Type;
-
+            Type underlyingType = Nullable.GetUnderlyingType(propertyExpression.Type) ?? propertyExpression.Type;
             if (underlyingType.IsEnum)
             {
                 Type enumUnderlyingType = Enum.GetUnderlyingType(underlyingType);
-                if (isNullableType)
+                if (propertyExpression.Type != underlyingType)
                     enumUnderlyingType = typeof(Nullable<>).MakeGenericType(enumUnderlyingType);
 
                 propertyExpression = Expression.Convert(propertyExpression, enumUnderlyingType);
@@ -90,10 +86,13 @@ namespace OdataToEntity.Parsers.Translators
         }
         private static Expression CreateFilterExpression(bool isDatabaseNullHighestValue, OrderProperty[] orderProperties)
         {
-            Expression filter = null;
+            if (orderProperties.Length == 0)
+                throw new InvalidOperationException(nameof(orderProperties) + " is empty array");
+
+            Expression? filter = null;
             for (int i = 0; i < orderProperties.Length; i++)
             {
-                BinaryExpression eqFilter = null;
+                BinaryExpression? eqFilter = null;
                 for (int j = 0; j < i; j++)
                 {
                     Expression propertyExpression = orderProperties[j].PropertyExpression;
@@ -116,7 +115,7 @@ namespace OdataToEntity.Parsers.Translators
                 eqFilter = eqFilter == null ? ge : Expression.AndAlso(eqFilter, ge);
                 filter = filter == null ? eqFilter : Expression.OrElse(filter, eqFilter);
             }
-            return filter;
+            return filter!;
         }
         private OrderProperty[] CreateOrderProperies(Expression source, IReadOnlyList<OeSkipTokenNameValue> skipTokenNameValues, OrderByClause uniqueOrderBy)
         {

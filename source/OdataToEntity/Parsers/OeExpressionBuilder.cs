@@ -10,7 +10,7 @@ namespace OdataToEntity.Parsers
 {
     public sealed class OeExpressionBuilder
     {
-        private Func<IEdmEntitySet, Type, OePropertyAccessor[], OeEntryFactory> _entryFactoryFactory;
+        private Func<IEdmEntitySet, Type, OePropertyAccessor[], OeEntryFactory>? _entryFactoryFactory;
         private readonly Translators.OeJoinBuilder _joinBuilder;
 
         public OeExpressionBuilder(Translators.OeJoinBuilder joinBuilder)
@@ -81,12 +81,9 @@ namespace OdataToEntity.Parsers
                     e = Expression.MakeMemberAccess(parameter, navigationClrProperty);
 
                     MethodInfo selectMethodInfo;
-                    selectType = OeExpressionHelper.GetCollectionItemTypeOrNull(e.Type);
-                    if (selectType == null)
-                    {
-                        selectType = e.Type;
+                    selectType = OeExpressionHelper.GetCollectionItemTypeOrNull(e.Type) ?? e.Type;
+                    if (selectType == e.Type)
                         selectMethodInfo = OeMethodInfoHelper.GetSelectMethodInfo(sourceItemType, selectType);
-                    }
                     else
                         selectMethodInfo = OeMethodInfoHelper.GetSelectManyMethodInfo(sourceItemType, selectType);
 

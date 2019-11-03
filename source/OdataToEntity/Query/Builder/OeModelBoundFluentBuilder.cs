@@ -14,9 +14,6 @@ namespace OdataToEntity.Query.Builder
         public EntitySetConfiguration<TEntityType> EntitySet<TEntityType>(String entitySetName) where TEntityType : class
         {
             IEdmEntitySet entitySet = OeEdmClrHelper.GetEntitySet(EdmModel, entitySetName);
-            if (entitySet == null)
-                throw new InvalidOperationException("EntitySet " + entitySetName + " not found in EdmModel");
-
             return new EntitySetConfiguration<TEntityType>(this, entitySet);
         }
         public OeModelBoundProvider BuildProvider()

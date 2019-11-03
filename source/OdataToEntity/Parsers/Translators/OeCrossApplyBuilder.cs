@@ -74,17 +74,9 @@ namespace OdataToEntity.Parsers.Translators
                 }
             }
 
-            //sourceProperties = edmNavigationProperty.DependentProperties();
-            //if (sourceProperties == null)
-            //    sourceProperties = edmNavigationProperty.Partner.PrincipalProperties();
-
-            //subqueryProperties = edmNavigationProperty.PrincipalProperties();
-            //if (subqueryProperties == null)
-            //    subqueryProperties = edmNavigationProperty.Partner.DependentProperties();
-
-            BinaryExpression joinExpression = null;
-            IEnumerator<IEdmStructuralProperty> sourceEnumerator = null;
-            IEnumerator<IEdmStructuralProperty> subqueryEnumerator = null;
+            BinaryExpression? joinExpression = null;
+            IEnumerator<IEdmStructuralProperty>? sourceEnumerator = null;
+            IEnumerator<IEdmStructuralProperty>? subqueryEnumerator = null;
             try
             {
                 sourceEnumerator = sourceProperties.GetEnumerator();
@@ -116,7 +108,7 @@ namespace OdataToEntity.Parsers.Translators
                     subqueryEnumerator.Dispose();
             }
 
-            return joinExpression;
+            return joinExpression!;
         }
     }
 }

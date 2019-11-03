@@ -1,5 +1,4 @@
-﻿#nullable enable
-using Microsoft.OData;
+﻿using Microsoft.OData;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using Microsoft.OData.UriParser.Aggregation;
@@ -180,7 +179,7 @@ namespace OdataToEntity.Parsers
 
             List<SingleValuePropertyAccessNode> orderByProperties = GetOrderByProperties(entitySet, orderByClause, applyClause);
             if (orderByProperties.Count == 0)
-                return orderByClause ?? throw new InvalidOperationException("orderByClause must not null");
+                return orderByClause ?? throw new InvalidOperationException(nameof(orderByClause) + " parameter must contains orderable properties");
 
             OrderByClause? uniqueOrderByClause = null;
             for (int i = orderByProperties.Count - 1; i >= 0; i--)
@@ -194,7 +193,7 @@ namespace OdataToEntity.Parsers
             }
 
             if (orderByClause == null)
-                return uniqueOrderByClause ?? throw new InvalidOperationException("Suppress possible null reference return");
+                return uniqueOrderByClause!;
 
             var orderByClauses = new Stack<OrderByClause>();
             do
@@ -210,7 +209,7 @@ namespace OdataToEntity.Parsers
                 uniqueOrderByClause = new OrderByClause(uniqueOrderByClause, orderByClause.Expression, orderByClause.Direction, orderByClause.RangeVariable);
             }
 
-            return uniqueOrderByClause ?? throw new InvalidOperationException("Suppress possible null reference return");
+            return uniqueOrderByClause!;
         }
         private static OeSkipTokenNameValue[] ParseJson(IEdmModel edmModel, String skipToken, IEdmStructuralProperty[] keys, out int? restCount)
         {

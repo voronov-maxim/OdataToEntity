@@ -79,10 +79,10 @@ namespace OdataToEntity.ModelBuilder
             Dictionary<Type, EdmEnumType> enumTypes, Dictionary<Type, EdmComplexType> complexTypes, PropertyInfo clrProperty)
         {
             bool isNullable = !_metadataProvider.IsRequired(clrProperty);
-            IEdmTypeReference typeRef = PrimitiveTypeHelper.GetPrimitiveTypeRef(clrProperty, isNullable);
+            IEdmTypeReference? typeRef = PrimitiveTypeHelper.GetPrimitiveTypeRef(clrProperty, isNullable);
             if (typeRef == null)
             {
-                Type underlyingType = null;
+                Type? underlyingType = null;
                 if (clrProperty.PropertyType.IsEnum ||
                     (underlyingType = Nullable.GetUnderlyingType(clrProperty.PropertyType)) != null && underlyingType.IsEnum)
                 {
@@ -100,7 +100,7 @@ namespace OdataToEntity.ModelBuilder
                         typeRef = new EdmComplexTypeReference(edmComplexType, clrProperty.PropertyType.IsClass);
                     else
                     {
-                        FKeyInfo fkeyInfo = FKeyInfo.Create(_metadataProvider, entityTypes, this, clrProperty);
+                        FKeyInfo? fkeyInfo = FKeyInfo.Create(_metadataProvider, entityTypes, this, clrProperty);
                         if (fkeyInfo != null)
                             _navigationClrProperties.Add(fkeyInfo);
                         return;

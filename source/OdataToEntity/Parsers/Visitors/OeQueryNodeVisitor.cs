@@ -1,5 +1,4 @@
-﻿#nullable enable
-using Microsoft.OData.UriParser;
+﻿using Microsoft.OData.UriParser;
 using OdataToEntity.Cache.UriCompare;
 using System;
 using System.Collections.Generic;
@@ -238,7 +237,7 @@ namespace OdataToEntity.Parsers
                 BinaryExpression equalExpression = Expression.Equal(propertyExpression, coercedConstanExpression);
                 inExpression = inExpression == null ? equalExpression : Expression.OrElse(inExpression, equalExpression);
             }
-            return inExpression ?? throw new InvalidOperationException("Suppress possible null reference return");
+            return inExpression!;
         }
         public override Expression Visit(ResourceRangeVariableReferenceNode nodeIn)
         {

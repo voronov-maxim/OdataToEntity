@@ -15,7 +15,7 @@ namespace OdataToEntity.Cache.UriCompare
         private readonly OeCacheComparerParameterValues _parameterValues;
         private readonly OeQueryNodeComparer _queryNodeComparer;
 
-        public OeCacheComparer(IReadOnlyDictionary<ConstantNode, OeQueryCacheDbParameterDefinition> constantToParameterMapper)
+        public OeCacheComparer(IReadOnlyDictionary<ConstantNode, OeQueryCacheDbParameterDefinition>? constantToParameterMapper)
         {
             _parameterValues = new OeCacheComparerParameterValues(constantToParameterMapper);
             _queryNodeComparer = new OeQueryNodeComparer(_parameterValues);
@@ -68,7 +68,7 @@ namespace OdataToEntity.Cache.UriCompare
 
             return true;
         }
-        private bool CompareAggregate(AggregateTransformationNode node1, AggregateTransformationNode node2)
+        private bool CompareAggregate(AggregateTransformationNode? node1, AggregateTransformationNode? node2)
         {
             if (node1 == node2)
                 return true;
@@ -130,7 +130,7 @@ namespace OdataToEntity.Cache.UriCompare
             return expression1.TypeReference.IsEqual(expression2.TypeReference) &&
                 _queryNodeComparer.Compare(expression1.Expression, expression2.Expression);
         }
-        private bool CompareComputeTransformation(ComputeTransformationNode node1, ComputeTransformationNode node2)
+        private bool CompareComputeTransformation(ComputeTransformationNode? node1, ComputeTransformationNode? node2)
         {
             if (node1 == node2)
                 return true;
@@ -139,7 +139,7 @@ namespace OdataToEntity.Cache.UriCompare
 
             return EnumerableComparer.Compare(node1.Expressions, node2.Expressions, CompareComputeExpression);
         }
-        private bool CompareFilter(FilterClause clause1, FilterClause clause2, bool navigationNextLink)
+        private bool CompareFilter(FilterClause? clause1, FilterClause? clause2, bool navigationNextLink)
         {
             if (clause1 == clause2)
                 return true;
@@ -155,7 +155,7 @@ namespace OdataToEntity.Cache.UriCompare
 
             return queryNodeComparer.Compare(clause1.Expression, clause2.Expression);
         }
-        private bool CompareGroupBy(GroupByTransformationNode transformation1, GroupByTransformationNode transformation2)
+        private bool CompareGroupBy(GroupByTransformationNode? transformation1, GroupByTransformationNode? transformation2)
         {
             if (transformation1 == transformation2)
                 return true;
@@ -206,8 +206,8 @@ namespace OdataToEntity.Cache.UriCompare
                 queryNodeComparer.Compare(clause1.Expression, clause2.Expression) &&
                 CompareOrderBy(clause1.ThenBy, clause2.ThenBy, navigationNextLink);
         }
-        private bool CompareParseNavigationSegments(IReadOnlyList<OeParseNavigationSegment> parseNavigationSegments1,
-            IReadOnlyList<OeParseNavigationSegment> parseNavigationSegments2)
+        private bool CompareParseNavigationSegments(IReadOnlyList<OeParseNavigationSegment>? parseNavigationSegments1,
+            IReadOnlyList<OeParseNavigationSegment>? parseNavigationSegments2)
         {
             if (parseNavigationSegments1 == parseNavigationSegments2)
                 return true;
@@ -221,9 +221,11 @@ namespace OdataToEntity.Cache.UriCompare
             {
                 if (parseNavigationSegments1[i].NavigationSegment != parseNavigationSegments2[i].NavigationSegment)
                 {
-                    if (parseNavigationSegments1[i].NavigationSegment == null || parseNavigationSegments2[i].NavigationSegment == null)
+                    NavigationPropertySegment? navigationSegment1 = parseNavigationSegments1[i].NavigationSegment;
+                    NavigationPropertySegment? navigationSegment2 = parseNavigationSegments2[i].NavigationSegment;
+                    if (navigationSegment1 == null || navigationSegment2 == null)
                         return false;
-                    if (parseNavigationSegments1[i].NavigationSegment.NavigationProperty != parseNavigationSegments2[i].NavigationSegment.NavigationProperty)
+                    if (navigationSegment1.NavigationProperty != navigationSegment2.NavigationProperty)
                         return false;
                 }
 
@@ -250,7 +252,7 @@ namespace OdataToEntity.Cache.UriCompare
 
             if (selectItem1 is ExpandedNavigationSelectItem expandItem1)
             {
-                var expandItem2 = selectItem2 as ExpandedNavigationSelectItem;
+                var expandItem2 = (ExpandedNavigationSelectItem)selectItem2;
 
                 if (!CompareLevelsClause(expandItem1.LevelsOption, expandItem2.LevelsOption))
                     return false;
@@ -296,14 +298,13 @@ namespace OdataToEntity.Cache.UriCompare
 
             if (selectItem1 is PathSelectItem pathItem1)
             {
-                var pathItem2 = selectItem2 as PathSelectItem;
-
+                var pathItem2 = (PathSelectItem)selectItem2;
                 return ODataPathComparer.Compare(pathItem1.SelectedPath, pathItem2.SelectedPath);
             }
 
             if (selectItem1 is OePageSelectItem pageItem1)
             {
-                var pageItem2 = selectItem2 as OePageSelectItem;
+                var pageItem2 = (OePageSelectItem)selectItem2;
 
                 if (pageItem1.PageSize == 0 && pageItem2.PageSize == 0)
                     return true;
@@ -321,7 +322,7 @@ namespace OdataToEntity.Cache.UriCompare
 
             if (selectItem1 is OeNextLinkSelectItem nextLinkItem1)
             {
-                var nextLinkItem2 = selectItem2 as OeNextLinkSelectItem;
+                var nextLinkItem2 = (OeNextLinkSelectItem)selectItem2;
                 return nextLinkItem1.NextLink == nextLinkItem2.NextLink;
             }
 
@@ -380,13 +381,13 @@ namespace OdataToEntity.Cache.UriCompare
             else if (node1 is FilterTransformationNode filterTransformation1)
             {
                 FilterClause filter1 = filterTransformation1.FilterClause;
-                FilterClause filter2 = (node2 as FilterTransformationNode).FilterClause;
+                FilterClause filter2 = ((FilterTransformationNode)node2).FilterClause;
                 if (!CompareFilter(filter1, filter2, false))
                     return false;
             }
             else if (node1 is ComputeTransformationNode computeTransformation1)
             {
-                if (!CompareComputeTransformation(computeTransformation1, (node2 as ComputeTransformationNode)))
+                if (!CompareComputeTransformation(computeTransformation1, node2 as ComputeTransformationNode))
                     return false;
             }
             else
@@ -410,7 +411,7 @@ namespace OdataToEntity.Cache.UriCompare
                     OeParseNavigationSegment parseNavigationSegment = cacheContext.ParseNavigationSegments[i];
                     if (parseNavigationSegment.Filter != null)
                     {
-                        int h = hashVisitor.TranslateNode(cacheContext.ParseNavigationSegments[i].Filter.Expression);
+                        int h = hashVisitor.TranslateNode(parseNavigationSegment.Filter.Expression);
                         hash = CombineHashCodes(hash, h);
                     }
                 }

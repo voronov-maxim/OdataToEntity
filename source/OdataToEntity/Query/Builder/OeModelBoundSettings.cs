@@ -69,7 +69,7 @@ namespace OdataToEntity.Query.Builder
             foreach (KeyValuePair<IEdmProperty, SelectExpandType?[]> pair in settings._properties)
                 _properties.Add(pair.Key, pair.Value);
 
-            int Min(int value1, int value2)
+            static int Min(int value1, int value2)
             {
                 return value1 == 0 || value2 == 0 ? value1 + value2 : Math.Min(value1, value2);
             }
@@ -90,7 +90,7 @@ namespace OdataToEntity.Query.Builder
         public bool NavigationNextLink { get; set; }
         public int PageSize { get; set; }
 
-        public IEdmEntityType EntityType { get; }
-        public IEdmNavigationProperty NavigationProperty { get; }
+        public IEdmEntityType? EntityType { get; }
+        public IEdmNavigationProperty? NavigationProperty { get; }
     }
 }

@@ -18,7 +18,7 @@ namespace OdataToEntity.Cache
             AllowCache = allowCache;
         }
 
-        public void AddQuery(OeCacheContext cacheContext, Object query, MethodCallExpression countExpression, OeEntryFactory entryFactory)
+        public void AddQuery(OeCacheContext cacheContext, Object query, MethodCallExpression? countExpression, OeEntryFactory? entryFactory)
         {
             var queryCacheItem = new OeQueryCacheItem(query, countExpression, entryFactory);
             _cache.TryAdd(cacheContext, queryCacheItem);

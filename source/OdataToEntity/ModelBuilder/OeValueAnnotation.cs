@@ -1,5 +1,4 @@
-﻿#nullable enable
-namespace OdataToEntity.ModelBuilder
+﻿namespace OdataToEntity.ModelBuilder
 {
     public sealed class OeValueAnnotation<T>
     {

@@ -1,5 +1,4 @@
-﻿#nullable enable
-using Microsoft.OData;
+﻿using Microsoft.OData;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using System;
@@ -59,17 +58,17 @@ namespace OdataToEntity.Parsers
                 return node;
             }
 
-            public ConstantExpression Source => _source ?? throw new InvalidOperationException("Suppress possible null reference return");
+            public ConstantExpression Source => _source!;
             public MethodCallExpression? WhereExpression { get; private set; }
         }
 
         private sealed class SourceVisitor : ExpressionVisitor
         {
-            private readonly Object _dataContext;
+            private readonly Object? _dataContext;
             private readonly IEdmModel _edmModel;
-            private readonly Func<IEdmEntitySet, IQueryable>? _queryableSource;
+            private readonly Func<IEdmEntitySet, IQueryable?>? _queryableSource;
 
-            public SourceVisitor(IEdmModel edmModel, Object dataContext, Func<IEdmEntitySet, IQueryable>? queryableSource)
+            public SourceVisitor(IEdmModel edmModel, Object? dataContext, Func<IEdmEntitySet, IQueryable?>? queryableSource)
             {
                 _edmModel = edmModel;
                 _dataContext = dataContext;
@@ -90,6 +89,9 @@ namespace OdataToEntity.Parsers
 
                     if (query == null)
                     {
+                        if (_dataContext == null)
+                            throw new InvalidOperationException("If function queryableSource return null dataContext must be not null");
+
                         Db.OeEntitySetAdapter entitySetAdapter = _edmModel.GetEntitySetAdapter(enumerableStub.EntitySet);
                         query = entitySetAdapter.GetEntitySet(_dataContext);
                     }
@@ -132,10 +134,10 @@ namespace OdataToEntity.Parsers
         {
             return new Cache.OeCacheContext(this, constantToParameterMapper);
         }
-        public MethodCallExpression? CreateCountExpression(Expression source)
+        public MethodCallExpression CreateCountExpression(Expression source)
         {
             if (EntryFactory == null)
-                return null;
+                throw new InvalidOperationException("Cannot get count expression for scalar result expression");
 
             Type sourceType = EdmModel.GetClrType(EntryFactory.EntitySet);
             var filterVisitor = new FilterVisitor(sourceType);
@@ -239,7 +241,7 @@ namespace OdataToEntity.Parsers
         {
             return TranslateSource(EdmModel, dataContext, expression, QueryableSource);
         }
-        internal static Expression TranslateSource(IEdmModel edmModel, Object dataContext, Expression expression, Func<IEdmEntitySet, IQueryable>? queryableSource)
+        internal static Expression TranslateSource(IEdmModel edmModel, Object? dataContext, Expression expression, Func<IEdmEntitySet, IQueryable?>? queryableSource)
         {
             return new SourceVisitor(edmModel, dataContext, queryableSource).Visit(expression);
         }

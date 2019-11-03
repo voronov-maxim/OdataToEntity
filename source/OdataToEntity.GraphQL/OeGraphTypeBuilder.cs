@@ -49,7 +49,7 @@ namespace OdataToEntity.GraphQL
                 {
                     IGraphType resolvedType;
                     QueryArgument[] queryArguments;
-                    Type itemType = Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(propertyInfo.PropertyType);
+                    Type? itemType = Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(propertyInfo.PropertyType);
                     if (itemType == null)
                     {
                         if (!_clrTypeToObjectGraphType.TryGetValue(propertyInfo.PropertyType, out resolvedType))
@@ -131,7 +131,7 @@ namespace OdataToEntity.GraphQL
                     objectGraphType.AddField(CreateStructuralFieldType(propertyInfo));
                 else
                 {
-                    Type navigationType = Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(propertyInfo.PropertyType);
+                    Type? navigationType = Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(propertyInfo.PropertyType);
                     if (navigationType == null)
                         navigationType = propertyInfo.PropertyType;
 
@@ -178,7 +178,7 @@ namespace OdataToEntity.GraphQL
 
             return fieldType;
         }
-        private IEdmEntityType GetEntityTypeByName(String fullName, bool throwException = true)
+        private IEdmEntityType? GetEntityTypeByName(String fullName, bool throwException = true)
         {
             var entityType = (IEdmEntityType)_edmModel.FindDeclaredType(fullName);
             if (entityType != null)
@@ -211,7 +211,10 @@ namespace OdataToEntity.GraphQL
         }
         private bool IsRequired(PropertyInfo propertyInfo)
         {
-            IEdmEntityType entityType = GetEntityTypeByName(propertyInfo.DeclaringType.FullName);
+            IEdmEntityType? entityType = GetEntityTypeByName(propertyInfo.DeclaringType.FullName);
+            if (entityType == null)
+                throw new InvalidOperationException("IEdmEntityType not found for clr type " + propertyInfo.DeclaringType.FullName);
+
             IEdmProperty edmProperty = entityType.FindProperty(propertyInfo.Name);
             return !edmProperty.Type.IsNullable;
         }

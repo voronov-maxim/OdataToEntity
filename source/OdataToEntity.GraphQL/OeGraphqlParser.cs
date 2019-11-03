@@ -20,7 +20,7 @@ namespace OdataToEntity.GraphQL
         {
             return Execute(query, null);
         }
-        public async Task<ExecutionResult> Execute(String query, Inputs inputs)
+        public async Task<ExecutionResult> Execute(String query, Inputs? inputs)
         {
             Schema schema = Schema;
             return await new DocumentExecuter().ExecuteAsync(options =>
@@ -34,7 +34,7 @@ namespace OdataToEntity.GraphQL
         {
             return GetOdataUri(query, null);
         }
-        public Uri GetOdataUri(String query, Inputs inputs)
+        public Uri GetOdataUri(String query, Inputs? inputs)
         {
             var context = new ResolveFieldContext()
             {

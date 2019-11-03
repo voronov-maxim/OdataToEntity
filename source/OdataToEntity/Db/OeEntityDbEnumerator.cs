@@ -1,5 +1,4 @@
-﻿#nullable enable
-using OdataToEntity.Parsers;
+﻿using OdataToEntity.Parsers;
 using System;
 using System.Collections;
 using System.Collections.Generic;

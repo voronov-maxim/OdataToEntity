@@ -41,19 +41,19 @@ namespace OdataToEntity.GraphQL
             _context = context;
         }
 
-        private FilterClause BuildFilterClause(IEdmEntitySet entitySet, GraphQLFieldSelection selection)
+        private FilterClause? BuildFilterClause(IEdmEntitySet entitySet, GraphQLFieldSelection selection)
         {
             ResourceRangeVariable resourceVariable = GetResorceVariable(entitySet);
             var resourceNode = new ResourceRangeVariableReferenceNode("", resourceVariable);
-            BinaryOperatorNode filterExpression = BuildFilterExpression(resourceNode, selection);
+            BinaryOperatorNode? filterExpression = BuildFilterExpression(resourceNode, selection);
             if (filterExpression == null)
                 return null;
 
             return new FilterClause(filterExpression, resourceVariable);
         }
-        private BinaryOperatorNode BuildFilterExpression(SingleResourceNode source, GraphQLFieldSelection selection)
+        private BinaryOperatorNode? BuildFilterExpression(SingleResourceNode source, GraphQLFieldSelection selection)
         {
-            BinaryOperatorNode compositeNode = null;
+            BinaryOperatorNode? compositeNode = null;
             IEdmEntityType entityType = source.NavigationSource.EntityType();
 
             foreach (GraphQLArgument argument in selection.Arguments)
@@ -95,7 +95,7 @@ namespace OdataToEntity.GraphQL
 
                         var expandPath = new ODataExpandPath(new NavigationPropertySegment(navigationProperty, parentEntitySet));
 
-                        FilterClause filterOption = null;
+                        FilterClause? filterOption = null;
                         if (fieldSelection.Arguments.Any())
                             filterOption = BuildFilterClause(parentEntitySet, fieldSelection);
 
@@ -109,7 +109,7 @@ namespace OdataToEntity.GraphQL
 
             return new SelectExpandClause(selectItems, false);
         }
-        private static BinaryOperatorNode ComposeExpression(BinaryOperatorNode left, BinaryOperatorNode right)
+        private static BinaryOperatorNode ComposeExpression(BinaryOperatorNode? left, BinaryOperatorNode right)
         {
             if (left == null)
                 return right;
@@ -160,7 +160,7 @@ namespace OdataToEntity.GraphQL
             return new ResourceRangeVariable("", entityTypeRef, entitySet);
         }
         private static SelectExpandClause LiftRequiredSingleNavigationPropertyFilter(IEdmEntitySet entitySet,
-            SelectExpandClause selectExpandClause, ref FilterClause filter)
+            SelectExpandClause selectExpandClause, ref FilterClause? filter)
         {
             bool changed = false;
 
@@ -168,7 +168,7 @@ namespace OdataToEntity.GraphQL
             for (int i = 0; i < selectedItems.Count; i++)
                 if (selectedItems[i] is ExpandedNavigationSelectItem expandedNavigation)
                 {
-                    FilterClause childFilter = expandedNavigation.FilterOption;
+                    FilterClause? childFilter = expandedNavigation.FilterOption;
                     SelectExpandClause childSelectExpand = LiftRequiredSingleNavigationPropertyFilter(
                         (IEdmEntitySet)expandedNavigation.NavigationSource, expandedNavigation.SelectAndExpand, ref childFilter);
                     if (childSelectExpand != expandedNavigation.SelectAndExpand)
@@ -202,7 +202,7 @@ namespace OdataToEntity.GraphQL
 
             return changed ? new SelectExpandClause(selectedItems, selectExpandClause.AllSelected) : selectExpandClause;
         }
-        private static FilterClause MergeFilterClause(IEdmEntitySet entitySet, IEdmNavigationProperty navigationProperty, FilterClause source, FilterClause target)
+        private static FilterClause MergeFilterClause(IEdmEntitySet entitySet, IEdmNavigationProperty navigationProperty, FilterClause source, FilterClause? target)
         {
             ResourceRangeVariable resourceVariable = GetResorceVariable(entitySet);
             ResourceRangeVariableReferenceNode resourceNode = new ResourceRangeVariableReferenceNode("", resourceVariable);
@@ -222,7 +222,7 @@ namespace OdataToEntity.GraphQL
             GraphQLFieldSelection selection = GetSelection(document);
             IEdmEntitySet entitySet = GetEntitySet(selection);
             SelectExpandClause selectExpandClause = BuildSelectExpandClause(entitySet, selection.SelectionSet);
-            FilterClause filterClause = BuildFilterClause(entitySet, selection);
+            FilterClause? filterClause = BuildFilterClause(entitySet, selection);
             selectExpandClause = LiftRequiredSingleNavigationPropertyFilter(entitySet, selectExpandClause, ref filterClause);
 
             return new ODataUri()

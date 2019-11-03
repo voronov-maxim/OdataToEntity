@@ -24,7 +24,7 @@ namespace OdataToEntity.Parsers.Translators
         }
 
         private List<Expression> _expressions;
-        private PropertyInfo _foundProperty;
+        private PropertyInfo? _foundProperty;
         private PropertyDef _propertyDef;
         private readonly Expression _source;
         private Type _tupleType;
@@ -32,6 +32,8 @@ namespace OdataToEntity.Parsers.Translators
         public OePropertyTranslator(Expression source)
         {
             _source = source;
+            _expressions = new List<Expression>();
+            _tupleType = typeof(Object);
         }
 
         private static bool Compare(MemberExpression propertyExpression, in PropertyDef propertyDef)
@@ -49,23 +51,23 @@ namespace OdataToEntity.Parsers.Translators
             while (declaringType != null);
             return false;
         }
-        public MemberExpression Build(Expression parameter, PropertyInfo propertyInfo)
+        public MemberExpression? Build(Expression parameter, PropertyInfo propertyInfo)
         {
             var propertyDef = new PropertyDef(propertyInfo.DeclaringType.Namespace, propertyInfo.DeclaringType.Name, propertyInfo.Name);
             return Build(parameter, propertyDef);
         }
-        public MemberExpression Build(Expression parameter, IEdmProperty edmProperty)
+        public MemberExpression? Build(Expression parameter, IEdmProperty edmProperty)
         {
             var schemaElement = (IEdmSchemaElement)edmProperty.DeclaringType;
             var propertyDef = new PropertyDef(schemaElement.Namespace, schemaElement.Name, edmProperty.Name);
             return Build(parameter, propertyDef);
         }
-        private MemberExpression Build(Expression parameter, in PropertyDef propertyDef)
+        private MemberExpression? Build(Expression parameter, in PropertyDef propertyDef)
         {
             _foundProperty = null;
             _tupleType = parameter.Type;
             _propertyDef = propertyDef;
-            _expressions = new List<Expression>() { parameter };
+            _expressions.Add(parameter);
 
             base.Visit(_source);
             if (_foundProperty == null)
@@ -80,7 +82,7 @@ namespace OdataToEntity.Parsers.Translators
             Expression propertyExpression = _expressions[0];
             for (int i = 0; i < _expressions.Count; i++)
             {
-                PropertyInfo propertyInfo = null;
+                PropertyInfo? propertyInfo = null;
                 if (i < _expressions.Count - 1)
                 {
                     foreach (PropertyInfo property in _expressions[i].Type.GetProperties())
@@ -102,7 +104,7 @@ namespace OdataToEntity.Parsers.Translators
                 if (OeExpressionHelper.IsTupleType(expression.Type))
                 {
                     var propertyTranslator = new OePropertyTranslator(_source);
-                    MemberExpression propertyExpression = propertyTranslator.Build(expression, _propertyDef);
+                    MemberExpression? propertyExpression = propertyTranslator.Build(expression, _propertyDef);
                     if (propertyExpression != null)
                     {
                         _foundProperty = (PropertyInfo)propertyExpression.Member;
@@ -151,7 +153,7 @@ namespace OdataToEntity.Parsers.Translators
 
             return false;
         }
-        private static PropertyInfo GetPropertyInfo(Type type, in PropertyDef propertyDef)
+        private static PropertyInfo? GetPropertyInfo(Type type, in PropertyDef propertyDef)
         {
             do
             {

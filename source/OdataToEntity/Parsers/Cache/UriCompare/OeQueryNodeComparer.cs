@@ -195,8 +195,8 @@ namespace OdataToEntity.Cache.UriCompare
             if (node1.TypeReference != node2.TypeReference)
                 return false;
 
-            IEnumerator<QueryNode> e1 = null;
-            IEnumerator<QueryNode> e2 = null;
+            IEnumerator<QueryNode>? e1 = null;
+            IEnumerator<QueryNode>? e2 = null;
             try
             {
                 e1 = node1.Parameters.GetEnumerator();

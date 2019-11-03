@@ -161,7 +161,7 @@ namespace OdataToEntity.Query
             _settings.TryGetValue(navigationProperty, out OeModelBoundSettings settings);
             return settings;
         }
-        private bool IsAllowed(IEdmProperty property, OeModelBoundSettings entitySettings, OeModelBoundKind modelBoundKind)
+        private bool IsAllowed(IEdmProperty property, OeModelBoundSettings? entitySettings, OeModelBoundKind modelBoundKind)
         {
             if (entitySettings == null)
             {
@@ -224,12 +224,17 @@ namespace OdataToEntity.Query
                         return false;
 
                     if (propertyNode.Source is SingleNavigationNode navigationNode)
-                        do
+                        for (; ; )
                         {
                             if (!IsAllowed(navigationNode.NavigationProperty, null, OeModelBoundKind.OrderBy))
                                 return false;
+
+                            if (navigationNode.Source is SingleNavigationNode navigationNode2)
+                                navigationNode = navigationNode2;
+                            else
+                                break;
                         }
-                        while ((navigationNode = navigationNode.Source as SingleNavigationNode) != null);
+
                 }
 
                 orderByClause = orderByClause.ThenBy;

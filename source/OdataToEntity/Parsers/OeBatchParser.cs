@@ -12,9 +12,9 @@ namespace OdataToEntity.Parsers
     {
         private readonly Uri _baseUri;
         private readonly IEdmModel _edmModel;
-        private readonly IServiceProvider _serviceProvider;
+        private readonly IServiceProvider? _serviceProvider;
 
-        public OeBatchParser(Uri baseUri, IEdmModel edmModel, IServiceProvider serviceProvider = null)
+        public OeBatchParser(Uri baseUri, IEdmModel edmModel, IServiceProvider? serviceProvider = null)
         {
             _baseUri = baseUri;
             _edmModel = edmModel;
@@ -52,33 +52,32 @@ namespace OdataToEntity.Parsers
         }
         private async Task ExecuteChangeset(IReadOnlyList<OeOperationMessage> changeset, CancellationToken cancellationToken)
         {
-            Db.OeDataAdapter dataAdapter = null;
-            Object dataContext = null;
+            Db.OeDataAdapter? dataAdapter = null;
+            Object? dataContext = null;
             try
             {
                 for (int i = 0; i < changeset.Count; i++)
                 {
                     if (dataAdapter == null)
-                    {
                         dataAdapter = _edmModel.GetDataAdapter(changeset[i].EntitySet.Container);
+                    if (dataContext == null)
                         dataContext = dataAdapter.CreateDataContext();
-                    }
                     AddToEntitySet(dataContext, changeset[i]);
                 }
 
-                if (dataAdapter != null)
+                if (dataAdapter != null && dataContext != null)
                     await dataAdapter.SaveChangesAsync(dataContext, cancellationToken).ConfigureAwait(false);
             }
             finally
             {
-                if (dataContext != null)
+                if (dataAdapter != null && dataContext != null)
                     dataAdapter.CloseDataContext(dataContext);
             }
         }
         private async Task ExecuteOperation(OeOperationMessage operation, CancellationToken cancellationToken)
         {
             Db.OeDataAdapter dataAdapter = _edmModel.GetDataAdapter(operation.EntitySet.Container);
-            Object dataContext = null;
+            Object? dataContext = null;
             try
             {
                 dataContext = dataAdapter.CreateDataContext();

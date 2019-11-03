@@ -27,7 +27,7 @@ namespace OdataToEntity.Parsers
 
             EntryFactory = queryContext.EntryFactory;
         }
-        public OeQueryExpression(IEdmModel edmModel, IEdmEntitySet entitySet, Expression expression, OeEntryFactory entryFactory = null)
+        public OeQueryExpression(IEdmModel edmModel, IEdmEntitySet entitySet, Expression expression, OeEntryFactory? entryFactory = null)
         {
             EdmModel = edmModel;
             _entitySet = entitySet;
@@ -78,6 +78,6 @@ namespace OdataToEntity.Parsers
         }
 
         public IEdmModel EdmModel { get; }
-        internal OeEntryFactory EntryFactory { get; }
+        internal OeEntryFactory? EntryFactory { get; }
     }
 }

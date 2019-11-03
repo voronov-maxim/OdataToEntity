@@ -1,5 +1,4 @@
-﻿#nullable enable
-using Microsoft.OData;
+﻿using Microsoft.OData;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using System;
@@ -108,7 +107,7 @@ namespace OdataToEntity.Parsers
                     restExpressions[len - 1] = expressions[count - 1];
                 restNew = CreateTupleExpression(restExpressions);
             }
-            return restNew ?? throw new InvalidOperationException("Suppress possible null reference return");
+            return restNew!;
         }
         private static Type GetArithmethicPrecedenceType(Type leftType, Type rightType)
         {

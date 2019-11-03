@@ -1,5 +1,4 @@
-﻿#nullable enable
-using Microsoft.OData.UriParser;
+﻿using Microsoft.OData.UriParser;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;

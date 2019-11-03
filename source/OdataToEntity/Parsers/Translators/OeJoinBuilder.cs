@@ -174,7 +174,7 @@ namespace OdataToEntity.Parsers.Translators
             }
 
             ParameterExpression outerParameter = Expression.Parameter(outerType, outerType.Name);
-            Expression instance = GetJoinPropertyExpression(outerParameter, joinPath);
+            Expression? instance = GetJoinPropertyExpression(outerParameter, joinPath);
             if (instance == null)
                 throw new InvalidOperationException("Not found group join path + " + navigationProperty.DeclaringType.FullTypeName() + "." + navigationProperty.Name);
 
@@ -214,9 +214,12 @@ namespace OdataToEntity.Parsers.Translators
             if (propertyNode.Source is SingleNavigationNode navigationNode)
             {
                 var joinPath = new List<IEdmNavigationProperty>();
-                do
+                joinPath.Add(navigationNode.NavigationProperty);
+                while (navigationNode.Source is SingleNavigationNode)
+                {
+                    navigationNode = (SingleNavigationNode)navigationNode.Source;
                     joinPath.Insert(0, navigationNode.NavigationProperty);
-                while ((navigationNode = navigationNode.Source as SingleNavigationNode) != null);
+                }
                 return joinPath;
             }
             return Array.Empty<IEdmNavigationProperty>();
@@ -224,27 +227,24 @@ namespace OdataToEntity.Parsers.Translators
         public MemberExpression GetJoinPropertyExpression(Expression source, Expression parameter, SingleValuePropertyAccessNode propertyNode)
         {
             IReadOnlyList<IEdmNavigationProperty> joinPath = GetJoinPath(propertyNode);
-            MemberExpression propertyExpression = GetJoinPropertyExpression(source, parameter, joinPath, propertyNode.Property);
-            if (propertyExpression != null)
-                return propertyExpression;
+            MemberExpression? joinPropertyExpression = GetJoinPropertyExpression(source, parameter, joinPath, propertyNode.Property);
+            if (joinPropertyExpression != null)
+                return joinPropertyExpression;
 
-            propertyExpression = (MemberExpression)Visitor.TranslateNode(propertyNode);
-            if (propertyExpression == null)
-                throw new InvalidOperationException("property " + propertyNode.Property.Name + " not found");
-
+            var propertyExpression = (MemberExpression)Visitor.TranslateNode(propertyNode);
             if (Visitor.Parameter == parameter)
                 return propertyExpression;
 
             var replaceParameterVisitor = new ReplaceParameterVisitor(Visitor.Parameter, parameter);
             return (MemberExpression)replaceParameterVisitor.Visit(propertyExpression);
         }
-        internal MemberExpression GetJoinPropertyExpression(Expression source, Expression parameter, IReadOnlyList<IEdmNavigationProperty> joinPath, IEdmProperty edmProperty)
+        internal MemberExpression? GetJoinPropertyExpression(Expression source, Expression parameter, IReadOnlyList<IEdmNavigationProperty> joinPath, IEdmProperty edmProperty)
         {
-            Expression propertyExpression = GetJoinPropertyExpression(parameter, joinPath);
+            Expression? propertyExpression = GetJoinPropertyExpression(parameter, joinPath);
             if (propertyExpression == null)
                 return null;
 
-            PropertyInfo propertyInfo = propertyExpression.Type.GetPropertyIgnoreCaseOrNull(edmProperty);
+            PropertyInfo? propertyInfo = propertyExpression.Type.GetPropertyIgnoreCaseOrNull(edmProperty);
             if (propertyInfo != null)
                 return Expression.Property(propertyExpression, propertyInfo);
 
@@ -254,7 +254,7 @@ namespace OdataToEntity.Parsers.Translators
             var propertyTranslator = new OePropertyTranslator(source);
             return propertyTranslator.Build(propertyExpression, edmProperty);
         }
-        private Expression GetJoinPropertyExpression(Expression source, IReadOnlyList<IEdmNavigationProperty> joinPath)
+        private Expression? GetJoinPropertyExpression(Expression source, IReadOnlyList<IEdmNavigationProperty> joinPath)
         {
             if (joinPath.Count == 0)
             {
@@ -295,10 +295,10 @@ namespace OdataToEntity.Parsers.Translators
                 resultPropertyExpressions = new Expression[outerPropertyExpressions.Count + 1];
                 for (int i = 0; i < resultPropertyExpressions.Length - 1; i++)
                     resultPropertyExpressions[i] = outerPropertyExpressions[i];
+                resultPropertyExpressions[resultPropertyExpressions.Length - 1] = collectionParameter;
             }
             else
-                resultPropertyExpressions = new Expression[] { outerPropertyExpression, null };
-            resultPropertyExpressions[resultPropertyExpressions.Length - 1] = collectionParameter;
+                resultPropertyExpressions = new Expression[] { outerPropertyExpression, collectionParameter };
 
             NewExpression newTupleExpression = OeExpressionHelper.CreateTupleExpression(resultPropertyExpressions);
             return Expression.Lambda(newTupleExpression, sourceParameter, collectionParameter);

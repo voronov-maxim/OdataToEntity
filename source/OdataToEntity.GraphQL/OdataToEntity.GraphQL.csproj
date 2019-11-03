@@ -9,6 +9,7 @@
     <AssemblyVersion>$(OdataToEntityVersion)</AssemblyVersion>
     <Title>Translate GraphQL to OData</Title>
     <LangVersion>$(CSharpVersion)</LangVersion>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <PropertyGroup>

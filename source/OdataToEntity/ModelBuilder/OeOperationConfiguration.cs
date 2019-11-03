@@ -6,7 +6,7 @@ namespace OdataToEntity.ModelBuilder
 {
     public sealed class OeOperationConfiguration
     {
-        private OeOperationConfiguration(String schema, String name, String namespaceName, OeOperationParameterConfiguration[] parameters, Type returnType)
+        private OeOperationConfiguration(String? schema, String name, String namespaceName, OeOperationParameterConfiguration[] parameters, Type returnType)
         {
             Schema = schema;
             NamespaceName = namespaceName;
@@ -14,23 +14,15 @@ namespace OdataToEntity.ModelBuilder
             Parameters = parameters;
             ReturnType = returnType;
         }
-        public OeOperationConfiguration(String schema, String name, MethodInfo methodInfo, bool? isDbFunction) : this(
-            schema,
-            name.EndsWith("()", StringComparison.Ordinal) ? name.Substring(0, name.Length - 2) : name,
-            methodInfo.DeclaringType.Namespace,
-            GetParameters(methodInfo),
-            methodInfo.ReturnType)
+        public OeOperationConfiguration(String? schema, String name, MethodInfo methodInfo, bool? isDbFunction)
+            : this(schema, GetName(name), methodInfo.DeclaringType.Namespace, GetParameters(methodInfo), methodInfo.ReturnType)
         {
             ImportName = schema == null ? Name : schema + "." + Name;
             IsDbFunction = isDbFunction ?? name.EndsWith("()", StringComparison.Ordinal);
             MethodInfo = methodInfo;
         }
-        public OeOperationConfiguration(String schema, String name, MethodInfo methodInfo, bool isBound, bool isCollection) : this(
-            schema,
-            name,
-            methodInfo.DeclaringType.Namespace,
-            GetBoundParameters(methodInfo, isCollection),
-            methodInfo.ReturnType)
+        public OeOperationConfiguration(String? schema, String name, MethodInfo methodInfo, bool isBound, bool isCollection)
+            : this(schema, name, methodInfo.DeclaringType.Namespace, GetBoundParameters(methodInfo, isCollection), methodInfo.ReturnType)
         {
             IsBound = isBound;
             MethodInfo = methodInfo;
@@ -59,6 +51,10 @@ namespace OdataToEntity.ModelBuilder
 
             return parameters;
         }
+        private static String GetName(String name)
+        {
+            return name.EndsWith("()", StringComparison.Ordinal) ? name.Substring(0, name.Length - 2) : name;
+        }
         private static OeOperationParameterConfiguration[] GetParameters(MethodInfo methodInfo)
         {
             ParameterInfo[] parameterInfos = methodInfo.GetParameters();
@@ -71,13 +67,13 @@ namespace OdataToEntity.ModelBuilder
         public bool IsBound { get; }
         public bool IsDbFunction { get; }
         public bool IsEdmFunction => ReturnType != null && ReturnType != typeof(void);
-        public MethodInfo MethodInfo { get; }
+        public MethodInfo? MethodInfo { get; }
         public String Name { get; }
-        public String ImportName { get; }
+        public String? ImportName { get; }
         public String NamespaceName { get; }
         public OeOperationParameterConfiguration[] Parameters { get; }
         public Type ReturnType { get; }
-        public String Schema { get; }
+        public String? Schema { get; }
     }
 
     public readonly struct OeOperationParameterConfiguration

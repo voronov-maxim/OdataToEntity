@@ -21,10 +21,10 @@ namespace OdataToEntity.Cache.UriCompare
             public IEdmType Definition => throw new NotImplementedException();
         }
 
-        private readonly IReadOnlyDictionary<ConstantNode, OeQueryCacheDbParameterDefinition> _constantToParameterMapper;
+        private readonly IReadOnlyDictionary<ConstantNode, OeQueryCacheDbParameterDefinition>? _constantToParameterMapper;
         private readonly List<OeQueryCacheDbParameterValue> _parameterValues;
 
-        public OeCacheComparerParameterValues(IReadOnlyDictionary<ConstantNode, OeQueryCacheDbParameterDefinition> constantToParameterMapper)
+        public OeCacheComparerParameterValues(IReadOnlyDictionary<ConstantNode, OeQueryCacheDbParameterDefinition>? constantToParameterMapper)
         {
             _constantToParameterMapper = constantToParameterMapper;
             _parameterValues = new List<OeQueryCacheDbParameterValue>(_constantToParameterMapper == null ? 0 : _constantToParameterMapper.Count);
@@ -86,7 +86,11 @@ namespace OdataToEntity.Cache.UriCompare
                     for (int i = 0; i < _parameterValues.Count; i++)
                         if (String.CompareOrdinal(_parameterValues[i].ParameterName, pair.Value.ParameterName) == 0)
                         {
-                            if (value < (int)_parameterValues[i].ParameterValue)
+                            Object? parameterValue = _parameterValues[i].ParameterValue;
+                            if (parameterValue == null)
+                                throw new InvalidOperationException("Top parameter " + _parameterValues[i].ParameterName + " is null");
+
+                            if (value < (int)parameterValue)
                                 _parameterValues[i] = new OeQueryCacheDbParameterValue(pair.Value.ParameterName, (int)value);
                             return;
                         }

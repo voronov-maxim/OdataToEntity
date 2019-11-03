@@ -13,8 +13,8 @@ namespace OdataToEntity.Cache.UriCompare
             if (items1 == null || items2 == null)
                 return false;
 
-            IEnumerator<T> enumerator1 = null;
-            IEnumerator<T> enumerator2 = null;
+            IEnumerator<T>? enumerator1 = null;
+            IEnumerator<T>? enumerator2 = null;
             try
             {
                 enumerator1 = items1.GetEnumerator();
@@ -50,8 +50,8 @@ namespace OdataToEntity.Cache.UriCompare
             if (items1 == null || items2 == null)
                 return false;
 
-            IEnumerator<T> enumerator1 = null;
-            IEnumerator<T> enumerator2 = null;
+            IEnumerator<T>? enumerator1 = null;
+            IEnumerator<T>? enumerator2 = null;
             try
             {
                 enumerator1 = items1.GetEnumerator();

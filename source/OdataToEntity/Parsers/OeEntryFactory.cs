@@ -1,5 +1,4 @@
-﻿#nullable enable
-using Microsoft.OData;
+﻿using Microsoft.OData;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using System;
@@ -254,10 +253,10 @@ namespace OdataToEntity.Parsers
     {
         public OePropertyAccessor[] Accessors { get; set; }
         public IEdmEntitySetBase EntitySet { get; set; }
-        public IEdmNavigationProperty EdmNavigationProperty { get; set; }
-        public LambdaExpression LinkAccessor { get; set; }
+        public IEdmNavigationProperty? EdmNavigationProperty { get; set; }
+        public LambdaExpression? LinkAccessor { get; set; }
         public IReadOnlyList<OeEntryFactory> NavigationLinks { get; set; }
-        public ExpandedNavigationSelectItem NavigationSelectItem { get; set; }
+        public ExpandedNavigationSelectItem? NavigationSelectItem { get; set; }
         public bool NextLink { get; set; }
         public OePropertyAccessor[] SkipTokenAccessors { get; set; }
     }

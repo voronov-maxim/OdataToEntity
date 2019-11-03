@@ -10,6 +10,7 @@
     <AssemblyName>OdataToEntity</AssemblyName>
     <Title>OData via Entity Framework (Linq2Db)</Title>
     <LangVersion>$(CSharpVersion)</LangVersion>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <PropertyGroup>

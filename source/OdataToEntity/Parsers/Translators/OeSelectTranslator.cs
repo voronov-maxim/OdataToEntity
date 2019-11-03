@@ -81,15 +81,21 @@ namespace OdataToEntity.Parsers.Translators
         private Expression BuildJoin(Expression source, IList<OeNavigationSelectItem> navigationItems)
         {
             for (int i = 1; i < navigationItems.Count; i++)
-                if (!navigationItems[i].AlreadyUsedInBuildExpression)
-                {
-                    navigationItems[i].AlreadyUsedInBuildExpression = true;
+            {
+                OeNavigationSelectItem navigationItem = navigationItems[i];
+                if (navigationItem.Parent == null)
+                    throw new InvalidOperationException("Parent is null must be first element in " + nameof(navigationItems));
 
-                    ODataPathSegment segment = navigationItems[i].NavigationSelectItem.PathToNavigationProperty.LastSegment;
+                if (!navigationItem.AlreadyUsedInBuildExpression)
+                {
+                    navigationItem.AlreadyUsedInBuildExpression = true;
+
+                    ODataPathSegment segment = navigationItem.NavigationSelectItem.PathToNavigationProperty.LastSegment;
                     IEdmNavigationProperty navigationProperty = (((NavigationPropertySegment)segment).NavigationProperty);
-                    Expression innerSource = GetInnerSource(navigationItems[i]);
-                    source = _joinBuilder.Build(_edmModel, source, innerSource, navigationItems[i].Parent.GetJoinPath(), navigationProperty);
+                    Expression innerSource = GetInnerSource(navigationItem);
+                    source = _joinBuilder.Build(_edmModel, source, innerSource, navigationItem.Parent.GetJoinPath(), navigationProperty);
                 }
+            }
 
             _joinBuilder.Visitor.ChangeParameterType(source);
             return source;
@@ -121,9 +127,9 @@ namespace OdataToEntity.Parsers.Translators
                 var propertyNode = (SingleValuePropertyAccessNode)orderByClause.Expression;
                 if (propertyNode.Source is SingleNavigationNode navigationNode)
                 {
-                    OeNavigationSelectItem match;
-                    ExpandedNavigationSelectItem navigationSelectItem = null;
-                    do
+                    OeNavigationSelectItem? match;
+                    ExpandedNavigationSelectItem? navigationSelectItem = null;
+                    for (; ; )
                     {
                         if ((match = navigationItem.FindHierarchyNavigationItem(navigationNode.NavigationProperty)) != null)
                         {
@@ -142,8 +148,12 @@ namespace OdataToEntity.Parsers.Translators
 
                         var segment = new NavigationPropertySegment(navigationNode.NavigationProperty, navigationNode.NavigationSource);
                         navigationSelectItem = new ExpandedNavigationSelectItem(new ODataExpandPath(segment), navigationNode.NavigationSource, selectExpandClause);
+
+                        if (navigationNode.Source is SingleNavigationNode singleNavigationNode)
+                            navigationNode = singleNavigationNode;
+                        else
+                            break;
                     }
-                    while ((navigationNode = navigationNode.Source as SingleNavigationNode) != null);
 
                     if (navigationSelectItem != null)
                     {
@@ -250,7 +260,7 @@ namespace OdataToEntity.Parsers.Translators
                     }
 
                     OePropertyAccessor[] accessors = Array.Empty<OePropertyAccessor>();
-                    LambdaExpression linkAccessor = null;
+                    LambdaExpression? linkAccessor = null;
                     OeEntryFactory[] nestedNavigationLinks = Array.Empty<OeEntryFactory>();
                     if (navigationItem.Kind != OeNavigationSelectItemKind.NextLink)
                     {
@@ -263,11 +273,11 @@ namespace OdataToEntity.Parsers.Translators
                     var options = new OeEntryFactoryOptions()
                     {
                         Accessors = accessors,
-                        EdmNavigationProperty = navigationItem.EdmProperty,
+                        EdmNavigationProperty = navigationItem.Parent == null ? null : navigationItem.EdmProperty,
                         EntitySet = navigationItem.EntitySet,
                         LinkAccessor = linkAccessor,
                         NavigationLinks = nestedNavigationLinks,
-                        NavigationSelectItem = navigationItem.NavigationSelectItem,
+                        NavigationSelectItem = navigationItem.Parent == null ? null : navigationItem.NavigationSelectItem,
                         NextLink = navigationItem.Kind == OeNavigationSelectItemKind.NextLink,
                         SkipTokenAccessors = skipTokenAccessors
                     };
@@ -341,6 +351,9 @@ namespace OdataToEntity.Parsers.Translators
         }
         private Expression GetInnerSource(OeNavigationSelectItem navigationItem)
         {
+            if (navigationItem.Parent == null)
+                throw new InvalidOperationException("Inner source cannot exist for root item");
+
             Type clrEntityType = _edmModel.GetClrType(navigationItem.EdmProperty.DeclaringType);
             PropertyInfo navigationClrProperty = clrEntityType.GetPropertyIgnoreCase(navigationItem.EdmProperty);
 

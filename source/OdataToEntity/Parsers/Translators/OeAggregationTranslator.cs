@@ -114,22 +114,22 @@ namespace OdataToEntity.Parsers.Translators
             {
                 if (aggExpressionBase is AggregateExpression aggExpression)
                 {
-                    LambdaExpression aggLambda = null;
-                    if (aggExpression.Method != AggregationMethod.VirtualPropertyCount)
+                    MethodCallExpression aggCallExpression;
+                    if (aggExpression.Method == AggregationMethod.VirtualPropertyCount)
+                        aggCallExpression = CountExpression(sourceParameter);
+                    else
                     {
                         Expression expression = visitor.TranslateNode(aggExpression.Expression);
                         if (isGroupBy && expression is MemberExpression propertyExpression)
                         {
-                            MemberExpression keyPropertyExpression = FindInGroupByKey(source, expressions[0], propertyExpression);
+                            MemberExpression? keyPropertyExpression = FindInGroupByKey(source, expressions[0], propertyExpression);
                             if (keyPropertyExpression != null)
                                 expression = keyPropertyExpression;
                         }
-                        aggLambda = Expression.Lambda(expression, lambdaParameter);
+                        LambdaExpression aggLambda = Expression.Lambda(expression, lambdaParameter);
+                        aggCallExpression = AggCallExpression(aggExpression.Method, sourceParameter, aggLambda);
                     }
-
-                    MethodCallExpression aggCallExpression = AggCallExpression(aggExpression.Method, sourceParameter, aggLambda);
                     expressions.Add(aggCallExpression);
-
                     _aggProperties.Add(CreateEdmProperty(aggCallExpression.Type, aggExpression.Alias, false));
                 }
                 else
@@ -297,7 +297,7 @@ namespace OdataToEntity.Parsers.Translators
         {
             return new OeQueryNodeVisitor(_visitor, parameter);
         }
-        private static MemberExpression FindInGroupByKey(Expression source, Expression key, MemberExpression propertyExpression)
+        private static MemberExpression? FindInGroupByKey(Expression source, Expression key, MemberExpression propertyExpression)
         {
             if (propertyExpression.Expression is MemberExpression)
             {
@@ -357,7 +357,8 @@ namespace OdataToEntity.Parsers.Translators
                     return Expression.Property(source, propertyInfo);
                 }
             }
-            return null;
+
+            throw new InvalidOperationException("Property " + aliasName + " not found in " + source.Type.FullName);
         }
     }
 }

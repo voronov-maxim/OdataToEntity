@@ -13,13 +13,13 @@ namespace OdataToEntity.Parsers
     public readonly struct OeGetParser
     {
         private readonly IEdmModel _edmModel;
-        private readonly Query.OeModelBoundProvider _modelBoundProvider;
-        private readonly IServiceProvider _serviceProvider;
+        private readonly Query.OeModelBoundProvider? _modelBoundProvider;
+        private readonly IServiceProvider? _serviceProvider;
 
         public OeGetParser(IEdmModel edmModel, IServiceProvider serviceProvider) : this(edmModel, serviceProvider, null)
         {
         }
-        public OeGetParser(IEdmModel model, IServiceProvider serviceProvider, Query.OeModelBoundProvider modelBoundProvider)
+        public OeGetParser(IEdmModel model, IServiceProvider? serviceProvider, Query.OeModelBoundProvider? modelBoundProvider)
         {
             _edmModel = model;
             _serviceProvider = serviceProvider;
@@ -35,7 +35,7 @@ namespace OdataToEntity.Parsers
 
             if (queryContext.ODataUri.Path.LastSegment is OperationSegment)
             {
-                IAsyncEnumerator<Object> asyncEnumerator = null;
+                IAsyncEnumerator<Object>? asyncEnumerator = null;
                 try
                 {
                     asyncEnumerator = OeOperationHelper.ApplyBoundFunction(queryContext).GetAsyncEnumerator(cancellationToken);
@@ -50,7 +50,7 @@ namespace OdataToEntity.Parsers
                 return;
             }
 
-            Object dataContext = null;
+            Object? dataContext = null;
             Db.OeDataAdapter dataAdapter = queryContext.EdmModel.GetDataAdapter(queryContext.EdmModel.EntityContainer);
             try
             {
@@ -64,7 +64,7 @@ namespace OdataToEntity.Parsers
                 }
                 else
                 {
-                    IAsyncEnumerator<Object> asyncEnumerator = null;
+                    IAsyncEnumerator<Object>? asyncEnumerator = null;
                     try
                     {
                         asyncEnumerator = dataAdapter.Execute(dataContext, queryContext).GetAsyncEnumerator(cancellationToken);

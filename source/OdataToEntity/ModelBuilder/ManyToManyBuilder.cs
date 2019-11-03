@@ -25,7 +25,7 @@ namespace OdataToEntity.ModelBuilder
                 if (many == null || many.DeclaringType != typeInfo.ClrType)
                     continue;
 
-                IEdmNavigationProperty joinNavigationProperty = GetJoinNavigationProperty(typeInfo, join.DeclaringType);
+                IEdmNavigationProperty? joinNavigationProperty = GetJoinNavigationProperty(typeInfo, join.DeclaringType);
                 if (joinNavigationProperty == null)
                     continue;
 
@@ -56,11 +56,11 @@ namespace OdataToEntity.ModelBuilder
                 _edmModel.SetAnnotationValue(edmManyToManyProperty, manyToManyJoinDescription);
             }
         }
-        private IEdmNavigationProperty GetJoinNavigationProperty(EntityTypeInfo typeInfo, Type joinClassType)
+        private IEdmNavigationProperty? GetJoinNavigationProperty(EntityTypeInfo typeInfo, Type joinClassType)
         {
             foreach (PropertyInfo propertyInfo in _metadataProvider.GetProperties(typeInfo.ClrType))
             {
-                Type itemType = Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(propertyInfo.PropertyType);
+                Type? itemType = Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(propertyInfo.PropertyType);
                 if (itemType == joinClassType)
                     foreach (IEdmNavigationProperty edmNavigationProperty in typeInfo.EdmType.NavigationProperties())
                         if (String.CompareOrdinal(edmNavigationProperty.Name, propertyInfo.Name) == 0)
@@ -77,10 +77,10 @@ namespace OdataToEntity.ModelBuilder
                 Type itemType = Parsers.OeExpressionHelper.GetCollectionItemType(properties[i].PropertyType);
                 foreach (PropertyInfo property2 in metadataProvider.GetProperties(entityType))
                 {
-                    Type itemType2 = Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(property2.PropertyType);
+                    Type? itemType2 = Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(property2.PropertyType);
                     if (itemType2 != null)
                     {
-                        PropertyInfo partnerProperty = GetPartnerProperty(metadataProvider, itemType, itemType2);
+                        PropertyInfo? partnerProperty = GetPartnerProperty(metadataProvider, itemType, itemType2);
                         if (partnerProperty != null && itemType == partnerProperty.PropertyType)
                         {
                             yield return (properties[i], partnerProperty);
@@ -90,10 +90,10 @@ namespace OdataToEntity.ModelBuilder
                 }
             }
         }
-        private static PropertyInfo GetPartnerProperty(OeEdmModelMetadataProvider metadataProvider, Type itemType, Type itemType2)
+        private static PropertyInfo? GetPartnerProperty(OeEdmModelMetadataProvider metadataProvider, Type itemType, Type itemType2)
         {
-            PropertyInfo partnerProperty = null;
-            PropertyInfo otherSideProperty = null;
+            PropertyInfo? partnerProperty = null;
+            PropertyInfo? otherSideProperty = null;
             foreach (PropertyInfo propertyInfo in metadataProvider.GetProperties(itemType2))
             {
                 if (Parsers.OeExpressionHelper.IsPrimitiveType(propertyInfo.PropertyType))

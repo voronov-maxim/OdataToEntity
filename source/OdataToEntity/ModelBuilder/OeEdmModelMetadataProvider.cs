@@ -9,7 +9,7 @@ namespace OdataToEntity.ModelBuilder
 {
     public class OeEdmModelMetadataProvider
     {
-        public virtual PropertyInfo[] GetForeignKey(PropertyInfo propertyInfo)
+        public virtual PropertyInfo[]? GetForeignKey(PropertyInfo propertyInfo)
         {
             var fkey = (ForeignKeyAttribute)propertyInfo.GetCustomAttribute(typeof(ForeignKeyAttribute));
             if (fkey == null)
@@ -36,7 +36,7 @@ namespace OdataToEntity.ModelBuilder
 
             return new PropertyInfo[] { property };
         }
-        public virtual PropertyInfo GetInverseProperty(PropertyInfo propertyInfo)
+        public virtual PropertyInfo? GetInverseProperty(PropertyInfo propertyInfo)
         {
             var inverse = (InversePropertyAttribute)propertyInfo.GetCustomAttribute(typeof(InversePropertyAttribute));
             if (inverse == null)
@@ -47,7 +47,7 @@ namespace OdataToEntity.ModelBuilder
         }
         public virtual IReadOnlyList<PropertyInfo> GetManyToManyProperties(Type clrType)
         {
-            List<PropertyInfo> properties = null;
+            List<PropertyInfo>? properties = null;
             foreach (PropertyInfo propertyInfo in clrType.GetProperties())
                 if (IsNotMapped(propertyInfo) &&
                     !OeExpressionHelper.IsPrimitiveType(propertyInfo.PropertyType) &&
@@ -64,19 +64,20 @@ namespace OdataToEntity.ModelBuilder
             var column = (ColumnAttribute)propertyInfo.GetCustomAttribute(typeof(ColumnAttribute));
             return column == null ? -1 : column.Order;
         }
-        public virtual PropertyInfo[] GetPrincipalStructuralProperties(PropertyInfo principalNavigation)
+        public virtual PropertyInfo[]? GetPrincipalStructuralProperties(PropertyInfo principalNavigation)
         {
             return null;
         }
         public virtual PropertyInfo[] GetPrincipalToDependentWithoutDependent(PropertyInfo principalNavigation)
         {
-            Type itemType = OeExpressionHelper.GetCollectionItemTypeOrNull(principalNavigation.PropertyType);
+            Type? itemType = OeExpressionHelper.GetCollectionItemTypeOrNull(principalNavigation.PropertyType);
             if (itemType != null && GetInverseProperty(principalNavigation) == null)
             { 
                 String dependentPropertyName = principalNavigation.DeclaringType.Name + "id";
                 return new PropertyInfo[] { itemType.GetPropertyIgnoreCase(dependentPropertyName) };
             }
-            return null;
+
+            throw new InvalidOperationException("Pricipal structurlal property not found for principal navigation " + principalNavigation.Name);
         }
         public virtual PropertyInfo[] GetProperties(Type type)
         {

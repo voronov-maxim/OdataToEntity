@@ -9,7 +9,7 @@ namespace OdataToEntity.Test.Postgresql
     {
         static async Task Main()
         {
-            await new RDBNull(new RDBNull_DbFixtureInitDb()).ApplyFilterGroupBy(0);
+            await new RDBNull(new RDBNull_DbFixtureInitDb()).DbQuery(1);
         }
     }
 }

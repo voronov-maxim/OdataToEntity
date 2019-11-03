@@ -1,5 +1,4 @@
-﻿#nullable enable
-using Microsoft.OData.Edm;
+﻿using Microsoft.OData.Edm;
 using OdataToEntity.ModelBuilder;
 
 namespace OdataToEntity

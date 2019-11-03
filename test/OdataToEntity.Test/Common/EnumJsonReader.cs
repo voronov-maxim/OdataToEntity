@@ -66,6 +66,7 @@ namespace OdataToEntity.Test
                 case JsonToken.Boolean:
                 case JsonToken.Null:
                 case JsonToken.Undefined:
+                case JsonToken.Date:
                     return JsonNodeType.PrimitiveValue;
                 case JsonToken.EndObject:
                     return JsonNodeType.EndObject;
@@ -73,8 +74,6 @@ namespace OdataToEntity.Test
                     return JsonNodeType.EndArray;
                 case JsonToken.EndConstructor:
                     throw new NotSupportedException(nameof(JsonToken.EndConstructor));
-                case JsonToken.Date:
-                    return JsonNodeType.PrimitiveValue;
                 case JsonToken.Bytes:
                     throw new NotSupportedException(nameof(JsonToken.Bytes));
                 default:

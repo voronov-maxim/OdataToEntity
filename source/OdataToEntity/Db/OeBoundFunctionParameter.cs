@@ -1,5 +1,4 @@
-﻿#nullable enable
-using Microsoft.OData.Edm;
+﻿using Microsoft.OData.Edm;
 using OdataToEntity.Parsers;
 using System;
 using System.Collections.Generic;
@@ -28,6 +27,9 @@ namespace OdataToEntity.Db
         }
         public OeEntryFactory CreateEntryFactoryFromTuple()
         {
+            if (_result.EntryFactory == null)
+                throw new InvalidOperationException("Must set OeEntryFactory via constructor OeQueryExpression");
+
             return _result.EntryFactory.GetEntryFactoryFromTuple(_result.EdmModel, null);
         }
         protected IAsyncEnumerable<TResult> Materialize<TResult>(IQueryable result)

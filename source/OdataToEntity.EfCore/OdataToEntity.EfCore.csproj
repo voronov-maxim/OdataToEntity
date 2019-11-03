@@ -11,6 +11,7 @@
     <AssemblyVersion>$(OdataToEntityVersion)</AssemblyVersion>
     <Title>Entity Framework Core adapter for OdataEntity</Title>
     <LangVersion>$(CSharpVersion)</LangVersion>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <PropertyGroup>

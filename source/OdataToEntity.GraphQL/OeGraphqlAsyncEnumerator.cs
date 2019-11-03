@@ -7,8 +7,10 @@ using System.Threading.Tasks;
 
 namespace OdataToEntity.GraphQL
 {
-    public sealed class OeGraphqlAsyncEnumerator : IAsyncEnumerator<Dictionary<String, Object>>
+    public sealed class OeGraphqlAsyncEnumerator : IAsyncEnumerator<Dictionary<String, Object?>>
     {
+        private static readonly Dictionary<String, Object?> NullCurrent = new Dictionary<String, Object?>();
+
         private readonly CancellationToken _cancellationToken;
         private readonly Db.OeDbEnumerator _dbEnumerator;
         private bool _isFirstMoveNext;
@@ -19,14 +21,15 @@ namespace OdataToEntity.GraphQL
             _dbEnumerator = new Db.OeDbEnumerator(asyncEnumerator, entryFactory);
             _cancellationToken = cancellationToken;
             _isFirstMoveNext = true;
+            Current = NullCurrent;
         }
 
-        private static async Task<Dictionary<String, Object>> CreateEntity(Db.OeDbEnumerator dbEnumerator, Object value, Object entity, CancellationToken cancellationToken)
+        private static async Task<Dictionary<String, Object?>> CreateEntity(Db.OeDbEnumerator dbEnumerator, Object value, Object entity, CancellationToken cancellationToken)
         {
             if (OeExpressionHelper.IsTupleType(entity.GetType()))
                 value = entity;
 
-            Dictionary<String, Object> dictionary = CreateEntity(entity, dbEnumerator.EntryFactory.Accessors);
+            Dictionary<String, Object?> dictionary = CreateEntity(entity, dbEnumerator.EntryFactory.Accessors);
             foreach (OeEntryFactory navigationLink in dbEnumerator.EntryFactory.NavigationLinks)
             {
                 var childDbEnumerator = (Db.OeDbEnumerator)dbEnumerator.CreateChild(navigationLink, cancellationToken);
@@ -35,9 +38,9 @@ namespace OdataToEntity.GraphQL
 
             return dictionary;
         }
-        private static Dictionary<String, Object> CreateEntity(Object value, OePropertyAccessor[] accessors)
+        private static Dictionary<String, Object?> CreateEntity(Object value, OePropertyAccessor[] accessors)
         {
-            var entity = new Dictionary<String, Object>(accessors.Length);
+            var entity = new Dictionary<String, Object?>(accessors.Length);
             for (int i = 0; i < accessors.Length; i++)
             {
                 OePropertyAccessor accessor = accessors[i];
@@ -45,7 +48,7 @@ namespace OdataToEntity.GraphQL
             }
             return entity;
         }
-        private static async Task<Object> CreateNestedEntity(Db.OeDbEnumerator dbEnumerator, Object value, CancellationToken cancellationToken)
+        private static async Task<Object?> CreateNestedEntity(Db.OeDbEnumerator dbEnumerator, Object value, CancellationToken cancellationToken)
         {
             Object entity = dbEnumerator.Current;
             if (entity == null)
@@ -80,19 +83,19 @@ namespace OdataToEntity.GraphQL
             if (!_isMoveNext)
                 return false;
 
-            Dictionary<String, Object> entity = await CreateEntity(_dbEnumerator, _dbEnumerator.Current, _dbEnumerator.Current, _cancellationToken).ConfigureAwait(false);
+            Dictionary<String, Object?> entity = await CreateEntity(_dbEnumerator, _dbEnumerator.Current, _dbEnumerator.Current, _cancellationToken).ConfigureAwait(false);
             _dbEnumerator.ClearBuffer();
 
             _isMoveNext = await _dbEnumerator.MoveNextAsync().ConfigureAwait(false);
             Current = entity;
             return true;
         }
-        private static async Task SetNavigationProperty(Db.OeDbEnumerator dbEnumerator, Object value, Dictionary<String, Object> entity, CancellationToken cancellationToken)
+        private static async Task SetNavigationProperty(Db.OeDbEnumerator dbEnumerator, Object value, Dictionary<String, Object?> entity, CancellationToken cancellationToken)
         {
-            Object navigationValue = await CreateNestedEntity(dbEnumerator, value, cancellationToken).ConfigureAwait(false);
+            Object? navigationValue = await CreateNestedEntity(dbEnumerator, value, cancellationToken).ConfigureAwait(false);
             entity[dbEnumerator.EntryFactory.EdmNavigationProperty.Name] = navigationValue;
         }
 
-        public Dictionary<String, Object> Current { get; private set; }
+        public Dictionary<String, Object?> Current { get; private set; }
     }
 }

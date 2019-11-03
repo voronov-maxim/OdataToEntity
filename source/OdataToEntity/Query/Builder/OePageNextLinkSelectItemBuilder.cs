@@ -13,7 +13,7 @@ namespace OdataToEntity.Query.Builder
             _modelBoundProvider = modelBoundProvider;
         }
 
-        private static void AddPageNextLinkSelectItems(OeModelBoundSettings settings, SelectExpandClause selectExpandClause, ref List<SelectItem> selectItems)
+        private static void AddPageNextLinkSelectItems(OeModelBoundSettings settings, SelectExpandClause selectExpandClause, ref List<SelectItem>? selectItems)
         {
             if (settings != null && (settings.PageSize > 0 || settings.NavigationNextLink))
             {
@@ -27,7 +27,7 @@ namespace OdataToEntity.Query.Builder
                     selectItems.Add(Parsers.Translators.OeNextLinkSelectItem.Instance);
             }
         }
-        public SelectExpandClause Build(SelectExpandClause selectExpandClause, IEdmEntityType entityType)
+        public SelectExpandClause? Build(SelectExpandClause selectExpandClause, IEdmEntityType entityType)
         {
             return selectExpandClause == null ? null : GetSelectItems(selectExpandClause, _modelBoundProvider.GetSettings(entityType));
         }
@@ -57,7 +57,7 @@ namespace OdataToEntity.Query.Builder
         }
         private SelectExpandClause GetSelectItems(SelectExpandClause selectExpandClause, OeModelBoundSettings settings)
         {
-            List<SelectItem> selectItems = null;
+            List<SelectItem>? selectItems = null;
             int i = 0;
             foreach (SelectItem selectItem in selectExpandClause.SelectedItems)
             {

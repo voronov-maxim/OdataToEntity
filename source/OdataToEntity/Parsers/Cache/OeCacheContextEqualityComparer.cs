@@ -14,7 +14,6 @@ namespace OdataToEntity.Cache
                 return true;
             }
 
-            y.ParameterValues = null;
             return false;
         }
         public int GetHashCode(OeCacheContext obj)

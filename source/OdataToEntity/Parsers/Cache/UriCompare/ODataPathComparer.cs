@@ -13,7 +13,7 @@ namespace OdataToEntity.Cache.UriCompare
             _segments = odataPath.GetEnumerator();
         }
 
-        private ODataPathSegment GetNextSegment()
+        private ODataPathSegment? GetNextSegment()
         {
             return _segments.MoveNext() ? _segments.Current : null;
         }
@@ -22,7 +22,7 @@ namespace OdataToEntity.Cache.UriCompare
             if (odataPath1.Count != odataPath2.Count)
                 return false;
 
-            ODataPathComparer comparer = null;
+            ODataPathComparer? comparer = null;
             try
             {
                 comparer = new ODataPathComparer(odataPath1);

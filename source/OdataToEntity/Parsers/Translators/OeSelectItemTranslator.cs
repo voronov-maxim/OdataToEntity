@@ -43,7 +43,7 @@ namespace OdataToEntity.Parsers.Translators
         }
         private static void Translate(OeNavigationSelectItem parentNavigationItem, OePageSelectItem pageSelectItem)
         {
-            if (parentNavigationItem.NavigationSelectItem != null)
+            if (parentNavigationItem.Parent != null)
             {
                 var segment = (NavigationPropertySegment)parentNavigationItem.NavigationSelectItem.PathToNavigationProperty.LastSegment;
                 if (!segment.NavigationProperty.Type.IsCollection())

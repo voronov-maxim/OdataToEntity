@@ -31,7 +31,7 @@ namespace OdataToEntity.Parsers.Translators
             while (orderByClause != null)
             {
                 var propertyNode = (SingleValuePropertyAccessNode)orderByClause.Expression;
-                Expression keySelector = joinBuilder.GetJoinPropertyExpression(source, joinBuilder.Visitor.Parameter, joinPath, propertyNode.Property);
+                Expression? keySelector = joinBuilder.GetJoinPropertyExpression(source, joinBuilder.Visitor.Parameter, joinPath, propertyNode.Property);
                 if (keySelector == null)
                     throw new InvalidOperationException("Sorting EdmProperty " + propertyNode.Property.Name + " not found in source");
 
