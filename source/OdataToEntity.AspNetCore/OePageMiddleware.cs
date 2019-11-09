@@ -11,7 +11,7 @@ namespace OdataToEntity.AspNetCore
         {
         }
 
-        protected override OeModelBoundProvider GetModelBoundProvider(HttpContext httpContext)
+        protected override OeModelBoundProvider? GetModelBoundProvider(HttpContext httpContext)
         {
             return httpContext.CreateModelBoundProvider(base.EdmModel);
         }

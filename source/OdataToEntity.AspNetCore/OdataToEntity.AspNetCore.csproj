@@ -10,6 +10,7 @@
     <AssemblyName>OdataToEntity.AspNetCore</AssemblyName>
     <Title>OdataToEnity Asp Mvc .Net Core extension</Title>
     <LangVersion>$(CSharpVersion)</LangVersion>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <PropertyGroup>

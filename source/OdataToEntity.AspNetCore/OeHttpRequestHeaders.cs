@@ -15,7 +15,7 @@ namespace OdataToEntity.AspNetCore
 
         protected override OeRequestHeaders Clone() => new OeHttpRequestHeaders(this, _response);
 
-        public override String ResponseContentType
+        public override String? ResponseContentType
         {
             get => _response.ContentType;
             set => _response.ContentType = value;

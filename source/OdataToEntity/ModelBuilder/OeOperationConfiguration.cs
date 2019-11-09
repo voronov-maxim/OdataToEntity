@@ -66,7 +66,6 @@ namespace OdataToEntity.ModelBuilder
 
         public bool IsBound { get; }
         public bool IsDbFunction { get; }
-        public bool IsEdmFunction => ReturnType != null && ReturnType != typeof(void);
         public MethodInfo? MethodInfo { get; }
         public String Name { get; }
         public String? ImportName { get; }

@@ -32,25 +32,28 @@ namespace OdataToEntity.AspNetCore
             foreach (IEdmModel refModel in edmModel.ReferencedModels)
                 Build(refModel, modelBoundSettingsBuilder, pageSize, navigationNextLink);
         }
-        public static OeModelBoundProvider CreateModelBoundProvider(this HttpContext httpContext)
+        public static OeModelBoundProvider? CreateModelBoundProvider(this HttpContext httpContext)
         {
             var edmModel = (IEdmModel)httpContext.RequestServices.GetService(typeof(IEdmModel));
             return httpContext.CreateModelBoundProvider(edmModel);
         }
-        public static OeModelBoundProvider CreateModelBoundProvider(this HttpContext httpContext, IEdmModel edmModel)
+        public static OeModelBoundProvider? CreateModelBoundProvider(this HttpContext httpContext, IEdmModel edmModel)
         {
             int maxPageSize = GetMaxPageSize(httpContext.Request.Headers);
             if (maxPageSize <= 0)
                 return null;
 
-            if (!_cache.TryGetValue(maxPageSize, out OeModelBoundProvider modelBoundProvider))
+            if (!_cache.TryGetValue(maxPageSize, out OeModelBoundProvider? modelBoundProvider))
             {
                 modelBoundProvider = CreateModelBoundProvider(edmModel, maxPageSize, false);
+                if (modelBoundProvider == null)
+                    throw new InvalidOperationException("CreateModelBoundProvider must return non-null when maxPageSize > 0");
+
                 _cache.TryAdd(maxPageSize, modelBoundProvider);
             }
             return modelBoundProvider;
         }
-        public static OeModelBoundProvider CreateModelBoundProvider(IEdmModel edmModel, int pageSize, bool navigationNextLink)
+        public static OeModelBoundProvider? CreateModelBoundProvider(IEdmModel edmModel, int pageSize, bool navigationNextLink)
         {
             if (pageSize > 0 || navigationNextLink)
             {

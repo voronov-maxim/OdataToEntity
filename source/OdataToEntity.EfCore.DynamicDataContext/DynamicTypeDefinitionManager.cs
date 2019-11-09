@@ -65,7 +65,11 @@ namespace OdataToEntity.EfCore.DynamicDataContext
             var optionsBuilder = (DbContextOptionsBuilder)Activator.CreateInstance(optionsBuilderType);
             DbContextOptions dynamicContextOptions = optionsBuilder.Options;
             foreach (IDbContextOptionsExtension extension in options.Extensions)
-                dynamicContextOptions = dynamicContextOptions.WithExtension(extension);
+            {
+                var withExtensionFunc = (Func<IDbContextOptionsExtension, DbContextOptions>)dynamicContextOptions.WithExtension<IDbContextOptionsExtension>;
+                var withExtension = withExtensionFunc.Method.GetGenericMethodDefinition().MakeGenericMethod(new[] { extension.GetType() });
+                dynamicContextOptions = (DbContextOptions)withExtension.Invoke(dynamicContextOptions, new[] { extension });
+            }
             return Fix.FixHelper.FixDistinctCount(dynamicContextOptions);
         }
         public DynamicTypeDefinition GetDynamicTypeDefinition(Type dynamicTypeType)
@@ -102,7 +106,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
             return dynamicTypeDefinition;
         }
 
-        public ExpressionVisitor ExpressionVisitor { get; }
+        public ExpressionVisitor? ExpressionVisitor { get; }
         public bool IsCaseSensitive { get; }
         public bool IsDatabaseNullHighestValue { get; }
         public OeEfCoreOperationAdapter OperationAdapter { get; }

@@ -19,7 +19,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         {
             return CreateMetadataProvider(null);
         }
-        public virtual DynamicMetadataProvider CreateMetadataProvider(InformationSchemaMapping informationSchemaMapping)
+        public virtual DynamicMetadataProvider CreateMetadataProvider(InformationSchemaMapping? informationSchemaMapping)
         {
             return new DynamicMetadataProvider(this, informationSchemaMapping);
         }
@@ -27,15 +27,15 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         {
             SchemaContextPool.Dispose();
         }
-        public abstract Type GetColumnClrType(String dataType);
+        public abstract Type? GetColumnClrType(String dataType);
         public abstract IReadOnlyList<DbGeneratedColumn> GetDbGeneratedColumns();
         public abstract String GetParameterName(String parameterName);
 
         public bool IsCaseSensitive { get; protected set; }
         public DbContextOptions<DynamicDbContext> DynamicDbContextOptions { get; }
-        public ExpressionVisitor ExpressionVisitor { get; protected set; }
+        public ExpressionVisitor? ExpressionVisitor { get; protected set; }
         public bool IsDatabaseNullHighestValue { get; protected set; }
-        public OeEfCoreOperationAdapter OperationAdapter { get; protected set; }
+        public OeEfCoreOperationAdapter OperationAdapter { get; protected set; } = null!;
         public DbContextPool<SchemaContext> SchemaContextPool { get; }
     }
 }

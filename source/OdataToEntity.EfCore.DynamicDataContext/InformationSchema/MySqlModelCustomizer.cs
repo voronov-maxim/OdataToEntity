@@ -1,11 +1,13 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.Query;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Data.Common;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -41,17 +43,16 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             }
         }
 
-        [Table("COLUMNS", Schema = "INFORMATION_SCHEMA")]
         internal sealed class MySqlDbGeneratedColumn
         {
             [Column("TABLE_SCHEMA")]
-            public String TableSchema { get; set; }
+            public String TableSchema { get; set; } = null!;
             [Column("TABLE_NAME")]
-            public String TableName { get; set; }
+            public String TableName { get; set; } = null!;
             [Column("COLUMN_NAME")]
-            public String ColumnName { get; set; }
+            public String ColumnName { get; set; } = null!;
             [Column("EXTRA")]
-            public String Extra { get; set; }
+            public String Extra { get; set; } = null!;
         }
 
         private readonly ModelCustomizer _modelCustomizer;
@@ -65,7 +66,8 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         {
             _modelCustomizer.Customize(modelBuilder, context);
 
-            String databaseName = context.Database.GetDbConnection().Database;
+            GetDatabaseName(context);
+            String databaseName = GetDatabaseName(context);
             foreach (IMutableEntityType entityType in modelBuilder.Model.GetEntityTypes())
                 entityType.SetQueryFilter(GetFilter(entityType.ClrType, databaseName));
 
@@ -77,6 +79,22 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 
             Expression<Func<Parameter, bool>> parameterFilter = t => t.SpecificSchema == databaseName && t.OrdinalPosition > 0;
             modelBuilder.Model.FindEntityType(typeof(Parameter)).SetQueryFilter(parameterFilter);
+
+            modelBuilder.Entity<MySqlDbGeneratedColumn>().HasNoKey();
+        }
+        private static String GetDatabaseName(DbContext context)
+        {
+            var serviceProvider = (IInfrastructure<IServiceProvider>)context;
+            IDbContextOptions options = serviceProvider.GetService<IDbContextServices>().ContextOptions;
+            foreach (IDbContextOptionsExtension extension in options.Extensions)
+                if (extension is RelationalOptionsExtension relationalOptionsExtension)
+                {
+                    var builder = new DbConnectionStringBuilder();
+                    builder.ConnectionString = relationalOptionsExtension.ConnectionString;
+                    return (String)builder["database"];
+                }
+
+            throw new InvalidOperationException("Not connection string found in DbContext");
         }
         private static LambdaExpression GetFilter(Type entityType, String databaseName)
         {

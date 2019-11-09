@@ -253,7 +253,7 @@ namespace OdataToEntity.Parsers
         public OeMetadataLevel MetadataLevel { get; set; }
         public ODataUri ODataUri { get; }
         public IReadOnlyList<OeParseNavigationSegment> ParseNavigationSegments { get; }
-        public Func<IEdmEntitySet, IQueryable>? QueryableSource { get; set; }
+        public Func<IEdmEntitySet, IQueryable?>? QueryableSource { get; set; }
         public int? RestCount => _restCount;
         public OeSkipTokenNameValue[] SkipTokenNameValues { get; private set; }
         public int? TotalCountOfItems { get; set; }

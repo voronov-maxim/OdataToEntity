@@ -8,7 +8,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
     public sealed class DynamicDataAdapter : OeEfCoreDataAdapter<DynamicDbContext>
     {
         private readonly Db.OeEntitySetAdapterCollection _dynamicEntitySetAdapters;
-        private readonly ExpressionVisitor _expressionVisitor;
+        private readonly ExpressionVisitor? _expressionVisitor;
 
         public DynamicDataAdapter(DynamicTypeDefinitionManager typeDefinitionManager)
             : base(null, null, typeDefinitionManager.OperationAdapter)

@@ -11,6 +11,7 @@
     <AssemblyVersion>$(OdataToEntityVersion)</AssemblyVersion>
     <Title>Dynamic data context for OdataEntity</Title>
     <LangVersion>$(CSharpVersion)</LangVersion>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <PropertyGroup>

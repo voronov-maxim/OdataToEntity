@@ -27,8 +27,12 @@ namespace OdataToEntity.EfCore.Fix
 
             DbContextOptions contextOptions = optionsBuilder.Options;
             foreach (IDbContextOptionsExtension extension in options.Extensions)
-                if (extension.GetType() != typeof(CoreOptionsExtension))
-                    contextOptions = contextOptions.WithExtension(extension);
+                if (!(extension is CoreOptionsExtension))
+                {
+                    var withExtensionFunc = (Func<IDbContextOptionsExtension, DbContextOptions>)contextOptions.WithExtension<IDbContextOptionsExtension>;
+                    var withExtension = withExtensionFunc.Method.GetGenericMethodDefinition().MakeGenericMethod(new[] { extension.GetType() });
+                    contextOptions = (DbContextOptions)withExtension.Invoke(contextOptions, new[] { extension });
+                }
 
             return contextOptions;
         }

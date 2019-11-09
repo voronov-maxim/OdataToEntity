@@ -8,22 +8,22 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
     public sealed class Column
     {
         [Column("TABLE_SCHEMA")]
-        public String TableSchema { get; set; }
+        public String TableSchema { get; set; } = null!;
         [Column("TABLE_NAME")]
-        public String TableName { get; set; }
+        public String TableName { get; set; } = null!;
         [Column("COLUMN_NAME")]
-        public String ColumnName { get; set; }
+        public String ColumnName { get; set; } = null!;
         [Column("ORDINAL_POSITION")]
         public int OrdinalPosition { get; set; }
         [Column("COLUMN_DEFAULT")]
-        public String ColumnDefault { get; set; }
+        public String? ColumnDefault { get; set; }
         [Column("IS_NULLABLE")]
-        public String IsNullable { get; set; }
+        public String? IsNullable { get; set; }
         [Column("DATA_TYPE")]
-        public String DataType { get; set; }
+        public String DataType { get; set; } = null!;
 
         [NotMapped]
-        public Type ClrType { get; set; }
+        public Type ClrType { get; set; } = null!;
         [NotMapped]
         public bool IsComputed { get; set; }
         [NotMapped]
@@ -34,15 +34,15 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
     public sealed class KeyColumnUsage
     {
         [Column("CONSTRAINT_SCHEMA")]
-        public String ConstraintSchema { get; set; }
+        public String ConstraintSchema { get; set; } = null!;
         [Column("CONSTRAINT_NAME")]
-        public String ConstraintName { get; set; }
+        public String ConstraintName { get; set; } = null!;
         [Column("TABLE_SCHEMA")]
-        public String TableSchema { get; set; }
+        public String TableSchema { get; set; } = null!;
         [Column("TABLE_NAME")]
-        public String TableName { get; set; }
+        public String TableName { get; set; } = null!;
         [Column("COLUMN_NAME")]
-        public String ColumnName { get; set; }
+        public String ColumnName { get; set; } = null!;
         [Column("ORDINAL_POSITION")]
         public int OrdinalPosition { get; set; }
     }
@@ -51,81 +51,81 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
     public sealed class Parameter
     {
         [Column("SPECIFIC_SCHEMA")]
-        public String SpecificSchema { get; set; }
+        public String SpecificSchema { get; set; } = null!;
         [Column("SPECIFIC_NAME")]
-        public String SpecificName { get; set; }
+        public String SpecificName { get; set; } = null!;
         [Column("ORDINAL_POSITION")]
         public int OrdinalPosition { get; set; }
         [Column("PARAMETER_NAME")]
-        public String ParameterName { get; set; }
+        public String ParameterName { get; set; } = null!;
         [Column("DATA_TYPE")]
-        public String DataType { get; set; }
+        public String DataType { get; set; } = null!;
     }
 
     [Table("REFERENTIAL_CONSTRAINTS", Schema = "INFORMATION_SCHEMA")]
     public sealed class ReferentialConstraint
     {
         [Column("CONSTRAINT_SCHEMA")]
-        public String ConstraintSchema { get; set; }
+        public String ConstraintSchema { get; set; } = null!;
         [Column("CONSTRAINT_NAME")]
-        public String ConstraintName { get; set; }
+        public String ConstraintName { get; set; } = null!;
         [Column("UNIQUE_CONSTRAINT_SCHEMA")]
-        public String UniqueConstraintSchema { get; set; }
+        public String UniqueConstraintSchema { get; set; } = null!;
         [Column("UNIQUE_CONSTRAINT_NAME")]
-        public String UniqueConstraintName { get; set; }
+        public String UniqueConstraintName { get; set; } = null!;
         [NotMapped]
-        public String ReferencedTableName { get; set; }
+        public String ReferencedTableName { get; set; } = null!;
     }
 
     [Table("ROUTINES", Schema = "INFORMATION_SCHEMA")]
     public sealed class Routine
     {
         [Column("SPECIFIC_SCHEMA")]
-        public String SpecificSchema { get; set; }
+        public String SpecificSchema { get; set; } = null!;
         [Column("SPECIFIC_NAME")]
-        public String SpecificName { get; set; }
+        public String SpecificName { get; set; } = null!;
         [Column("ROUTINE_SCHEMA")]
-        public String RoutineSchema { get; set; }
+        public String RoutineSchema { get; set; } = null!;
         [Column("ROUTINE_NAME")]
-        public String RoutineName { get; set; }
+        public String RoutineName { get; set; } = null!;
         [Column("DATA_TYPE")]
-        public String DataType { get; set; }
+        public String? DataType { get; set; }
     }
 
     [Table("TABLES", Schema = "INFORMATION_SCHEMA")]
     public sealed class Table
     {
         [Column("TABLE_SCHEMA")]
-        public String TableSchema { get; set; }
+        public String TableSchema { get; set; } = null!;
         [Column("TABLE_NAME")]
-        public String TableName { get; set; }
+        public String TableName { get; set; } = null!;
         [Column("TABLE_TYPE")]
-        public String TableType { get; set; }
+        public String TableType { get; set; } = null!;
     }
 
     [Table("TABLE_CONSTRAINTS", Schema = "INFORMATION_SCHEMA")]
     public sealed class TableConstraint
     {
         [Column("CONSTRAINT_SCHEMA")]
-        public String ConstraintSchema { get; set; }
+        public String ConstraintSchema { get; set; } = null!;
         [Column("CONSTRAINT_NAME")]
-        public String ConstraintName { get; set; }
+        public String ConstraintName { get; set; } = null!;
         [Column("TABLE_SCHEMA")]
-        public String TableSchema { get; set; }
+        public String TableSchema { get; set; } = null!;
         [Column("TABLE_NAME")]
-        public String TableName { get; set; }
+        public String TableName { get; set; } = null!;
         [Column("CONSTRAINT_TYPE")]
-        public String ConstraintType { get; set; }
+        public String ConstraintType { get; set; } = null!;
     }
 
     public sealed class DbGeneratedColumn
     {
         [Column("TABLE_SCHEMA")]
-        public String TableSchema { get; set; }
+        public String TableSchema { get; set; } = null!;
         [Column("TABLE_NAME")]
-        public String TableName { get; set; }
+        public String TableName { get; set; } = null!;
         [Column("COLUMN_NAME")]
-        public String ColumnName { get; set; }
+        public String ColumnName { get; set; } = null!;
         [Column("is_identity")]
         public bool IsIdentity { get; set; }
         [Column("is_computed")]
@@ -152,13 +152,13 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             modelBuilder.Entity<Table>().HasNoKey();
         }
 
-        public DbSet<Column> Columns { get; set; }
-        public DbSet<DbGeneratedColumn> DbGeneratedColumns { get; set; }
-        public DbSet<KeyColumnUsage> KeyColumnUsage { get; set; }
-        public DbSet<Parameter> Parameters { get; set; }
-        public DbSet<ReferentialConstraint> ReferentialConstraints { get; set; }
-        public DbSet<Routine> Routines { get; set; }
-        public DbSet<TableConstraint> TableConstraints { get; set; }
-        public DbSet<Table> Tables { get; set; }
+        public DbSet<Column> Columns { get; set; } = null!;
+        public DbSet<DbGeneratedColumn> DbGeneratedColumns { get; set; } = null!;
+        public DbSet<KeyColumnUsage> KeyColumnUsage { get; set; } = null!;
+        public DbSet<Parameter> Parameters { get; set; } = null!;
+        public DbSet<ReferentialConstraint> ReferentialConstraints { get; set; } = null!;
+        public DbSet<Routine> Routines { get; set; } = null!;
+        public DbSet<TableConstraint> TableConstraints { get; set; } = null!;
+        public DbSet<Table> Tables { get; set; } = null!;
     }
 }

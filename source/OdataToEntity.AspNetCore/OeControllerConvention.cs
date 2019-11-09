@@ -11,8 +11,8 @@ namespace OdataToEntity.AspNetCore
         {
             for (int i = 0; i < controller.Selectors.Count; i++)
             {
-                RouteAttribute routeAttribute = GetAttribute<RouteAttribute>(controller.Selectors[i]);
-                String template = null;
+                RouteAttribute? routeAttribute = GetAttribute<RouteAttribute>(controller.Selectors[i]);
+                String? template = null;
                 if (routeAttribute != null && routeAttribute.Template != null)
                 {
                     if (routeAttribute.Template == "[controller]" || routeAttribute.Template == controller.ControllerName)
@@ -47,7 +47,7 @@ namespace OdataToEntity.AspNetCore
             {
                 if (action.Selectors[i].AttributeRouteModel == null)
                 {
-                    HttpMethodAttribute httpMethodAttribute = GetAttribute<HttpMethodAttribute>(action.Selectors[i]);
+                    HttpMethodAttribute? httpMethodAttribute = GetAttribute<HttpMethodAttribute>(action.Selectors[i]);
                     if (httpMethodAttribute != null)
                         action.Selectors[i].AttributeRouteModel = new AttributeRouteModel(CreateHttpMethodAttribute(httpMethodAttribute, controllerTemplate));
                 }
@@ -88,7 +88,7 @@ namespace OdataToEntity.AspNetCore
 
             throw new InvalidOperationException("Unknown HttpMethodAttribute " + httpMethodAttribute.GetType().FullName);
         }
-        private static T GetAttribute<T>(SelectorModel selectorModel) where T : Attribute, IRouteTemplateProvider
+        private static T? GetAttribute<T>(SelectorModel selectorModel) where T : Attribute, IRouteTemplateProvider
         {
             for (int i = 0; i < selectorModel.EndpointMetadata.Count; i++)
                 if (selectorModel.EndpointMetadata[i] is T attribute)

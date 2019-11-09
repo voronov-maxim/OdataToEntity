@@ -50,16 +50,16 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             }
         }
 
-        private List<ReferentialConstraint> _referentialConstraints;
-        private Dictionary<(String constraintSchema, String constraintName), IReadOnlyList<KeyColumnUsage>> _keyColumns;
-        private Dictionary<(String tableSchema, String tableName), IReadOnlyList<(String constraintName, bool isPrimary)>> _keys;
-        private Dictionary<String, IReadOnlyList<(String NavigationName, String ManyToManyTarget)>> _manyToManyProperties;
-        private Dictionary<(String tableSchema, String tableName), IReadOnlyList<NavigationMapping>> _navigationMappings;
-        private List<OeOperationConfiguration> _routines;
-        private Dictionary<(String tableSchema, String tableName), List<Column>> _tableColumns;
-        private Dictionary<(String tableSchema, String tableName), List<Navigation>> _tableNavigations;
-        private Dictionary<String, (String tableSchema, String tableName, bool isQueryType)> _tableEdmNameFullNames;
-        private Dictionary<(String tableSchema, String tableName), String> _tableFullNameEdmNames;
+        private List<ReferentialConstraint>? _referentialConstraints;
+        private Dictionary<(String constraintSchema, String constraintName), IReadOnlyList<KeyColumnUsage>>? _keyColumns;
+        private Dictionary<(String tableSchema, String tableName), IReadOnlyList<(String constraintName, bool isPrimary)>>? _keys;
+        private Dictionary<String, IReadOnlyList<(String NavigationName, String ManyToManyTarget)>>? _manyToManyProperties;
+        private Dictionary<(String tableSchema, String tableName), IReadOnlyList<NavigationMapping>>? _navigationMappings;
+        private List<OeOperationConfiguration>? _routines;
+        private Dictionary<(String tableSchema, String tableName), List<Column>>? _tableColumns;
+        private Dictionary<(String tableSchema, String tableName), List<Navigation>>? _tableNavigations;
+        private Dictionary<String, (String tableSchema, String tableName, bool isQueryType)>? _tableEdmNameFullNames;
+        private Dictionary<(String tableSchema, String tableName), String>? _tableFullNameEdmNames;
 
         private readonly ProviderSpecificSchema _informationSchema;
         private readonly Pluralizer _pluralizer;
@@ -75,10 +75,10 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             if (!String.IsNullOrEmpty(navigationName))
             {
                 (String tableName, String tableSchema) tableFullName = (keyColumn.TableSchema, keyColumn.TableName);
-                if (!_tableNavigations.TryGetValue(tableFullName, out List<Navigation> principalNavigations))
+                if (!GetNavigations().TryGetValue(tableFullName, out List<Navigation> principalNavigations))
                 {
                     principalNavigations = new List<Navigation>();
-                    _tableNavigations.Add(tableFullName, principalNavigations);
+                    _tableNavigations!.Add(tableFullName, principalNavigations);
                 }
                 principalNavigations.Add(new Navigation(fkey.ConstraintSchema, fkey.ConstraintName, fkey.UniqueConstraintName, navigationName, isCollection));
             }
@@ -89,8 +89,8 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         }
         public IReadOnlyList<Column> GetColumns(String tableEdmName)
         {
-            if (!_tableEdmNameFullNames.TryGetValue(tableEdmName, out (String tableSchema, String tableName, bool isQueryType) tableFullName))
-                return null;
+            if (!GetTables().TryGetValue(tableEdmName, out (String tableSchema, String tableName, bool isQueryType) tableFullName))
+                throw new InvalidOperationException("Table " + tableEdmName + " not found");
 
             return GetColumns(tableFullName.tableSchema, tableFullName.tableName);
         }
@@ -110,7 +110,11 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                             tableColumns.Add((column.TableSchema, column.TableName), columns);
                         }
 
-                        column.ClrType = _informationSchema.GetColumnClrType(column.DataType);
+                        Type? clrType = _informationSchema.GetColumnClrType(column.DataType);
+                        if (clrType == null)
+                            continue;
+
+                        column.ClrType = clrType;
                         var dbGeneratedColumns = _informationSchema.GetDbGeneratedColumns().ToDictionary(t => (t.TableSchema, t.TableName, t.ColumnName));
                         if (dbGeneratedColumns.TryGetValue((column.TableSchema, column.TableName, column.ColumnName), out DbGeneratedColumn dbGeneratedColumn))
                         {
@@ -139,26 +143,26 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                 SchemaContext schemaContext = _informationSchema.SchemaContextPool.Rent();
                 try
                 {
-                    String constraintSchema = null;
-                    String constraintName = null;
-                    List<KeyColumnUsage> columns = null;
+                    String? constraintSchema = null;
+                    String? constraintName = null;
+                    List<KeyColumnUsage>? columns = null;
                     foreach (KeyColumnUsage keyColumn in schemaContext.KeyColumnUsage.AsQueryable()
                         .OrderBy(t => t.TableSchema).ThenBy(t => t.TableName).ThenBy(t => t.ConstraintName).ThenBy(t => t.OrdinalPosition))
                     {
                         if (constraintSchema != keyColumn.ConstraintSchema || constraintName != keyColumn.ConstraintName)
                         {
                             if (columns != null)
-                                keyColumns.Add((constraintSchema, constraintName), columns);
+                                keyColumns.Add((constraintSchema!, constraintName!), columns);
 
                             constraintSchema = keyColumn.ConstraintSchema;
                             constraintName = keyColumn.ConstraintName;
                             columns = new List<KeyColumnUsage>();
                         }
-                        columns.Add(keyColumn);
+                        columns!.Add(keyColumn);
                     }
 
                     if (columns != null)
-                        keyColumns.Add((constraintSchema, constraintName), columns);
+                        keyColumns.Add((constraintSchema!, constraintName!), columns);
                 }
                 finally
                 {
@@ -169,8 +173,11 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             }
             return _keyColumns;
         }
-        public String GetFKeyConstraintName(String tableSchema, String tableName1, String tableName2)
+        public String? GetFKeyConstraintName(String tableSchema, String tableName1, String tableName2)
         {
+            if (_referentialConstraints == null)
+                throw new InvalidOperationException("Invoke Initialize");
+
             IReadOnlyDictionary<(String constraintSchema, String constraintName), IReadOnlyList<KeyColumnUsage>> keyColumns = GetKeyColumns();
             foreach (ReferentialConstraint fkey in _referentialConstraints)
             {
@@ -202,25 +209,25 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                         .OrderBy(t => t.TableSchema).ThenBy(t => t.TableName).ThenBy(t => t.ConstraintType);
 
                     _keys = new Dictionary<(String tableSchema, String tableName), IReadOnlyList<(String constraintName, bool isPrimary)>>();
-                    String tableSchema = null;
-                    String tableName = null;
-                    List<(String constraintName, bool isPrimary)> constraints = null;
+                    String? tableSchema = null;
+                    String? tableName = null;
+                    List<(String constraintName, bool isPrimary)>? constraints = null;
                     foreach (TableConstraint tableConstraint in tableConstraints)
                     {
                         if (tableSchema != tableConstraint.TableSchema || tableName != tableConstraint.TableName)
                         {
                             if (constraints != null)
-                                _keys.Add((tableSchema, tableName), constraints);
+                                _keys.Add((tableSchema!, tableName!), constraints);
 
                             tableSchema = tableConstraint.TableSchema;
                             tableName = tableConstraint.TableName;
                             constraints = new List<(String constraintName, bool isPrimary)>();
                         }
-                        constraints.Add((tableConstraint.ConstraintName, constraints.Count == 0));
+                        constraints!.Add((tableConstraint.ConstraintName, constraints.Count == 0));
                     }
 
                     if (constraints != null)
-                        _keys.Add((tableSchema, tableName), constraints);
+                        _keys.Add((tableSchema!, tableName!), constraints);
                 }
                 finally
                 {
@@ -233,6 +240,9 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         {
             if (_manyToManyProperties == null)
             {
+                if (_navigationMappings == null)
+                    throw new InvalidOperationException("Invoke Initialize");
+
                 _manyToManyProperties = new Dictionary<String, IReadOnlyList<(String NavigationName, String ManyToManyTarget)>>();
                 foreach (KeyValuePair<(String tableSchema, String tableName), IReadOnlyList<NavigationMapping>> pair in _navigationMappings)
                     for (int i = 0; i < pair.Value.Count; i++)
@@ -240,7 +250,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                         NavigationMapping navigationMapping = pair.Value[i];
                         if (!String.IsNullOrEmpty(navigationMapping.ManyToManyTarget))
                         {
-                            String tableEdmName = _tableFullNameEdmNames[pair.Key];
+                            String tableEdmName = GetTableEdmName(pair.Key.tableSchema, pair.Key.tableName);
                             List<(String NavigationName, String ManyToManyTarget)> manyToManies;
                             if (_manyToManyProperties.TryGetValue(tableEdmName, out IReadOnlyList<(String NavigationName, String ManyToManyTarget)> list))
                                 manyToManies = (List<(String NavigationName, String ManyToManyTarget)>)list;
@@ -249,6 +259,10 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                                 manyToManies = new List<(String NavigationName, String ManyToManyTarget)>();
                                 _manyToManyProperties.Add(tableEdmName, manyToManies);
                             }
+
+                            if (navigationMapping.NavigationName == null)
+                                throw new InvalidOperationException("For ManyToManyTarget" + navigationMapping.ManyToManyTarget + " NavigationName must be not null");
+
                             manyToManies.Add((navigationMapping.NavigationName, navigationMapping.ManyToManyTarget));
                         }
                     }
@@ -256,8 +270,11 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 
             return _manyToManyProperties;
         }
-        private String GetNavigationMappingName(ReferentialConstraint fkey, KeyColumnUsage keyColumn)
+        private String? GetNavigationMappingName(ReferentialConstraint fkey, KeyColumnUsage keyColumn)
         {
+            if (_navigationMappings == null)
+                throw new InvalidOperationException("Invoke Initialize");
+
             if (_navigationMappings.TryGetValue((keyColumn.TableSchema, keyColumn.TableName), out IReadOnlyList<NavigationMapping> navigationMappings))
                 for (int i = 0; i < navigationMappings.Count; i++)
                 {
@@ -272,6 +289,9 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         {
             if (_tableNavigations == null)
             {
+                if (_referentialConstraints == null)
+                    throw new InvalidOperationException("Invoke Initialize");
+
                 _tableNavigations = new Dictionary<(String tableSchema, String tableName), List<Navigation>>();
                 IReadOnlyDictionary<(String constraintSchema, String constraintName), IReadOnlyList<KeyColumnUsage>> keyColumns = GetKeyColumns();
 
@@ -291,7 +311,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                         continue;
 
                     bool selfReferences = false;
-                    String dependentNavigationName = GetNavigationMappingName(fkey, dependentKeyColumn);
+                    String? dependentNavigationName = GetNavigationMappingName(fkey, dependentKeyColumn);
                     if (dependentNavigationName == null)
                     {
                         selfReferences = dependentKeyColumn.TableSchema == principalKeyColumn.TableSchema && dependentKeyColumn.TableName == principalKeyColumn.TableName;
@@ -318,7 +338,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                         dependentNavigationName = GetUniqueName(dependentColumns, dependentNavigationName, columnsList.Count);
                     }
 
-                    String principalNavigationName = GetNavigationMappingName(fkey, principalKeyColumn);
+                    String? principalNavigationName = GetNavigationMappingName(fkey, principalKeyColumn);
                     if (principalNavigationName == null)
                     {
                         if (dependentKeyColumn.TableSchema == principalKeyColumn.TableSchema && dependentKeyColumn.TableName == principalKeyColumn.TableName)
@@ -353,7 +373,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             }
             return _tableNavigations;
 
-            bool FKeyExist(List<IReadOnlyList<KeyColumnUsage>> keyColumnsList, IReadOnlyList<KeyColumnUsage> keyColumns)
+            static bool FKeyExist(List<IReadOnlyList<KeyColumnUsage>> keyColumnsList, IReadOnlyList<KeyColumnUsage> keyColumns)
             {
                 for (int i = 0; i < keyColumnsList.Count; i++)
                     if (keyColumnsList[i].Count == keyColumns.Count)
@@ -369,7 +389,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 
                 return false;
             }
-            int GetCountName(IReadOnlyList<Column> columns, String navigationName)
+            static int GetCountName(IReadOnlyList<Column> columns, String navigationName)
             {
                 int counter = 0;
                 for (int i = 0; i < columns.Count; i++)
@@ -377,7 +397,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                         counter++;
                 return counter;
             }
-            String GetUniqueName(IReadOnlyList<Column> columns, String navigationName, int counter)
+            static String GetUniqueName(IReadOnlyList<Column> columns, String navigationName, int counter)
             {
                 int counter2;
                 String navigationName2 = navigationName;
@@ -391,7 +411,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                 return navigationName2;
             }
         }
-        public IReadOnlyList<OeOperationConfiguration> GetRoutines(DynamicTypeDefinitionManager typeDefinitionManager, InformationSchemaMapping informationSchemaMapping)
+        public IReadOnlyList<OeOperationConfiguration> GetRoutines(DynamicTypeDefinitionManager typeDefinitionManager, InformationSchemaMapping? informationSchemaMapping)
         {
             if (_routines == null)
             {
@@ -412,7 +432,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                         parameterList.Add(parameter);
                     }
 
-                    Dictionary<(String schema, String name), OperationMapping> operationMappings = null;
+                    Dictionary<(String schema, String name), OperationMapping>? operationMappings = null;
                     if (informationSchemaMapping != null && informationSchemaMapping.Operations != null)
                     {
                         operationMappings = new Dictionary<(String schema, String name), OperationMapping>(informationSchemaMapping.Operations.Count);
@@ -434,7 +454,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                     _routines = new List<OeOperationConfiguration>();
                     foreach (Routine routine in schemaContext.Routines)
                     {
-                        OperationMapping operationMapping = null;
+                        OperationMapping? operationMapping = null;
                         if (operationMappings != null &&
                             operationMappings.TryGetValue((routine.RoutineSchema, routine.RoutineName), out operationMapping) &&
                             operationMapping.Exclude)
@@ -443,7 +463,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                         OeOperationParameterConfiguration[] parameterConfigurations = Array.Empty<OeOperationParameterConfiguration>();
                         if (routineParameters.TryGetValue((routine.SpecificSchema, routine.SpecificName), out IReadOnlyList<Parameter> parameters))
                         {
-                            Type clrType = null;
+                            Type? clrType = null;
                             parameterConfigurations = new OeOperationParameterConfiguration[parameters.Count];
                             for (int i = 0; i < parameters.Count; i++)
                             {
@@ -462,7 +482,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                                 continue;
                         }
 
-                        Type returnType = null;
+                        Type? returnType = null;
                         if (routine.DataType != null)
                             returnType = _informationSchema.GetColumnClrType(routine.DataType);
 
@@ -478,7 +498,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                         }
 
                         _routines.Add(new OeOperationConfiguration(routine.RoutineSchema, routine.RoutineName,
-                            typeof(DynamicDbContext).Namespace, parameterConfigurations, returnType, routine.DataType != null));
+                            typeof(DynamicDbContext).Namespace, parameterConfigurations, returnType ?? typeof(void), routine.DataType != null));
                     }
                 }
                 finally
@@ -491,19 +511,22 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         }
         public String GetTableEdmName(String tableSchema, String tableName)
         {
+            if (_tableFullNameEdmNames == null)
+                throw new InvalidOperationException("Invoke Initialize");
+
             _tableFullNameEdmNames.TryGetValue((tableSchema, tableName), out String tableEdmName);
             return tableEdmName;
         }
         public (String tableSchema, String tableName) GetTableFullName(String tableEdmName)
         {
-            (String tableSchema, String tableName, bool _) = _tableEdmNameFullNames[tableEdmName];
+            (String tableSchema, String tableName, bool _) = GetTables()[tableEdmName];
             return (tableSchema, tableName);
         }
-        public Dictionary<String, (String tableSchema, String tableName, bool isQueryType)> GetTables()
+        public IReadOnlyDictionary<String, (String tableSchema, String tableName, bool isQueryType)> GetTables()
         {
-            return _tableEdmNameFullNames;
+            return _tableEdmNameFullNames ?? throw new InvalidOperationException("Invoke Initialize");
         }
-        public void Initialize(IReadOnlyCollection<TableMapping> tableMappings)
+        public void Initialize(IReadOnlyCollection<TableMapping>? tableMappings)
         {
             IEqualityComparer<String> comparer = _informationSchema.IsCaseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
             TupleStringComparer tupleComparer = _informationSchema.IsCaseSensitive ? TupleStringComparer.Ordinal : TupleStringComparer.OrdinalIgnoreCase;
@@ -517,7 +540,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             {
                 _referentialConstraints = schemaContext.ReferentialConstraints.ToList();
 
-                Dictionary<String, TableMapping> dbNameTableMappings = null;
+                Dictionary<String, TableMapping>? dbNameTableMappings = null;
                 if (tableMappings != null)
                     dbNameTableMappings = tableMappings.ToDictionary(t => t.DbName, StringComparer.OrdinalIgnoreCase);
 
@@ -552,7 +575,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                                 foreach (NavigationMapping navigationMapping in tableMapping.Navigations)
                                     if (!String.IsNullOrEmpty(navigationMapping.NavigationName) && String.IsNullOrEmpty(navigationMapping.ConstraintName))
                                     {
-                                        String tableName2 = navigationMapping.TargetTableName;
+                                        String? tableName2 = navigationMapping.TargetTableName;
                                         if (tableName2 != null)
                                         {
                                             int i = tableName2.IndexOf('.');

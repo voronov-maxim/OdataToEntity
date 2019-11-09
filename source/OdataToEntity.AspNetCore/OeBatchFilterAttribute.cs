@@ -24,6 +24,12 @@ namespace OdataToEntity.AspNetCore
     {
         internal sealed class BatchModelStateDictionary : ModelStateDictionary
         {
+            public BatchModelStateDictionary(Object entity, OeDataContext dataContext)
+            {
+                Entity = entity;
+                DataContext = dataContext;
+            }
+
             public Object Entity { get; set; }
             public OeDataContext DataContext { get; set; }
         }
@@ -34,20 +40,12 @@ namespace OdataToEntity.AspNetCore
         public void OnActionExecuting(ActionExecutingContext context)
         {
             if (context.ModelState is BatchModelStateDictionary batchModelState)
-            {
-                String dataContextName = null;
-                String entityName = null;
                 foreach (KeyValuePair<String, Object> keyValue in context.ActionArguments)
-                    if (keyValue.Value is OeDataContext)
-                        dataContextName = keyValue.Key;
-                    else if (keyValue.Value.GetType().IsAssignableFrom(batchModelState.Entity.GetType()))
-                        entityName = keyValue.Key;
-
-                if (dataContextName != null)
-                    context.ActionArguments[dataContextName] = batchModelState.DataContext;
-                if (entityName != null)
-                    context.ActionArguments[entityName] = batchModelState.Entity;
-            }
+                    if (keyValue.Value.GetType().IsAssignableFrom(batchModelState.Entity.GetType()))
+                    {
+                        context.ActionArguments[keyValue.Key] = batchModelState.Entity;
+                        break;
+                    }
         }
     }
 }

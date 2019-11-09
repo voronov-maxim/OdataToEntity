@@ -38,7 +38,7 @@ namespace OdataToEntity.AspNetCore
 
             return false;
         }
-        protected virtual Query.OeModelBoundProvider GetModelBoundProvider(HttpContext httpContext)
+        protected virtual Query.OeModelBoundProvider? GetModelBoundProvider(HttpContext httpContext)
         {
             return null;
         }

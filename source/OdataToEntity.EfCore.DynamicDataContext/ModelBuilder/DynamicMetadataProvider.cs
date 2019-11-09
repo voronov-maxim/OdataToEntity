@@ -9,10 +9,10 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
 {
     public sealed class DynamicMetadataProvider : IDisposable
     {
-        private readonly InformationSchemaMapping _informationSchemaMapping;
+        private readonly InformationSchemaMapping? _informationSchemaMapping;
         private readonly SchemaCache _schemaCache;
 
-        internal DynamicMetadataProvider(ProviderSpecificSchema informationSchema, InformationSchemaMapping informationSchemaMapping)
+        internal DynamicMetadataProvider(ProviderSpecificSchema informationSchema, InformationSchemaMapping? informationSchemaMapping)
         {
             InformationSchema = informationSchema;
             _informationSchemaMapping = informationSchemaMapping;

@@ -43,7 +43,7 @@ namespace OdataToEntity.AspNetCore
 
             return false;
         }
-        private static String GetPath(String path)
+        private static String? GetPath(String path)
         {
             int pos1, pos2;
 
@@ -76,7 +76,10 @@ namespace OdataToEntity.AspNetCore
         }
         public Task RouteAsync(RouteContext context)
         {
-            String path = GetPath(context.HttpContext.Request.Path.Value);
+            String? path = GetPath(context.HttpContext.Request.Path.Value);
+            if (path == null)
+                throw new InvalidOperationException("Cannot resolve path " + context.HttpContext.Request.Path.Value);
+
             IReadOnlyList<ActionDescriptor> candidates = SelectCandidates(_actionDescriptors.Items,
                 context.HttpContext, context.RouteData.Values, path, context.HttpContext.Request.Method);
             if (candidates.Count == 0)

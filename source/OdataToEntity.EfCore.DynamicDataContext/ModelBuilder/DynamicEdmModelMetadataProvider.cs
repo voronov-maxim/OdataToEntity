@@ -22,7 +22,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
             if (clrType == typeof(Types.DynamicType))
                 return Array.Empty<PropertyInfo>();
 
-            List<PropertyInfo> properties = null;
+            List<PropertyInfo>? properties = null;
             String tableEdmName = _typeDefinitionManager.GetDynamicTypeDefinition(clrType).TableEdmName;
             foreach ((String navigationName, String manyToManyTarget) in _dynamicMetadataProvider.GetManyToManyProperties(tableEdmName))
             {

@@ -19,7 +19,7 @@ namespace OdataToEntity.AspNetCore
 {
     public class OeBatchController : ControllerBase
     {
-        private IEdmModel _edmModel;
+        private IEdmModel? _edmModel;
 
         [HttpPost]
         public Task Batch()
@@ -44,11 +44,14 @@ namespace OdataToEntity.AspNetCore
             Uri baseUri = UriHelper.GetBaseUri(base.Request);
 
             OeBatchMessage batchMessage = await OeBatchMessage.CreateBatchMessage(EdmModel, baseUri, base.HttpContext.Request.Body, base.HttpContext.Request.ContentType);
-            OeDataAdapter dataAdapter = null;
-            Object dataContext = null;
+            if (batchMessage.Changeset == null)
+                return;
+
+            OeDataAdapter? dataAdapter = null;
+            Object? dataContext = null;
             try
             {
-                IEdmModel refModel = null;
+                IEdmModel? refModel = null;
                 foreach (OeOperationMessage operation in batchMessage.Changeset)
                 {
                     if (dataContext == null)
@@ -58,7 +61,7 @@ namespace OdataToEntity.AspNetCore
                         dataContext = dataAdapter.CreateDataContext();
                     }
 
-                    OeEntitySetAdapter entitySetAdapter = refModel.GetEntitySetAdapter(operation.EntitySet);
+                    OeEntitySetAdapter entitySetAdapter = refModel!.GetEntitySetAdapter(operation.EntitySet);
                     String path = basePath + "/" + entitySetAdapter.EntitySetName;
 
                     Object entity;
@@ -67,7 +70,10 @@ namespace OdataToEntity.AspNetCore
                         var properties = new Dictionary<String, Object>();
                         foreach (ODataProperty odataProperty in operation.Entry.Properties)
                         {
-                            PropertyInfo propertyInfo = entitySetAdapter.EntityType.GetProperty(odataProperty.Name);
+                            PropertyInfo? propertyInfo = entitySetAdapter.EntityType.GetProperty(odataProperty.Name);
+                            if (propertyInfo == null)
+                                throw new InvalidOperationException("Not found property " + odataProperty.Name  + " in type " + entitySetAdapter.EntityType.FullName);
+
                             properties[odataProperty.Name] = OeEdmClrHelper.GetClrValue(propertyInfo.PropertyType, odataProperty.Value);
                         }
                         entity = properties;
@@ -76,11 +82,7 @@ namespace OdataToEntity.AspNetCore
                     else
                         entity = OeEdmClrHelper.CreateEntity(entitySetAdapter.EntityType, operation.Entry);
 
-                    var modelState = new OeBatchFilterAttributeAttribute.BatchModelStateDictionary()
-                    {
-                        Entity = entity,
-                        DataContext = new OeDataContext(entitySetAdapter, refModel, dataContext, operation)
-                    };
+                    var modelState = new OeBatchFilterAttributeAttribute.BatchModelStateDictionary(entity, new OeDataContext(entitySetAdapter, refModel!, dataContext, operation));
                     OnBeforeInvokeController(modelState.DataContext, operation.Entry);
 
                     List<ActionDescriptor> candidates = OeRouter.SelectCandidates(actionDescriptors.Items, base.HttpContext, base.RouteData.Values, path, operation.Method);
@@ -94,11 +96,12 @@ namespace OdataToEntity.AspNetCore
                     await actionInvoker.InvokeAsync().ConfigureAwait(false);
                 }
 
-                await SaveChangesAsync(dataContext).ConfigureAwait(false);
+                if (dataContext != null)
+                    await SaveChangesAsync(dataContext).ConfigureAwait(false);
             }
             finally
             {
-                if (dataContext != null)
+                if (dataAdapter != null && dataContext != null)
                     dataAdapter.CloseDataContext(dataContext);
             }
 
@@ -131,7 +134,7 @@ namespace OdataToEntity.AspNetCore
         {
             get
             {
-                IEdmModel edmModel = Volatile.Read(ref _edmModel);
+                IEdmModel? edmModel = Volatile.Read(ref _edmModel);
                 if (edmModel == null)
                 {
                     edmModel = GetService<IEdmModel>();

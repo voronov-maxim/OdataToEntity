@@ -9,8 +9,8 @@ namespace OdataToEntity.AspNetCore
 {
     public class ODataResult<T> : IActionResult
     {
-        private readonly IAsyncEnumerator<T> _entities;
-        private readonly OeQueryContext _queryContext;
+        private readonly IAsyncEnumerator<T>? _entities;
+        private readonly OeQueryContext? _queryContext;
 
         protected ODataResult()
         {
@@ -23,6 +23,12 @@ namespace OdataToEntity.AspNetCore
 
         public virtual async Task ExecuteResultAsync(ActionContext context)
         {
+            if (_queryContext == null || _entities == null)
+                throw new InvalidOperationException("Derive class must override ExecuteResultAsync");
+
+            if (_queryContext.EntryFactory == null)
+                throw new InvalidOperationException("QueryContext.EntryFactory must be not null");
+
             HttpContext httpContext = context.HttpContext;
             OeEntryFactory entryFactoryFromTuple = _queryContext.EntryFactory.GetEntryFactoryFromTuple(_queryContext.EdmModel, _queryContext.ODataUri.OrderBy);
             await Writers.OeGetWriter.SerializeAsync(_queryContext, (IAsyncEnumerator<Object>)_entities,

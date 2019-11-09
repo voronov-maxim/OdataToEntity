@@ -17,7 +17,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             base.OperationAdapter = new OeMySqlEfCoreOperationAdapter(typeof(DynamicDbContext));
         }
 
-        public override DynamicMetadataProvider CreateMetadataProvider(InformationSchemaMapping informationSchemaMapping)
+        public override DynamicMetadataProvider CreateMetadataProvider(InformationSchemaMapping? informationSchemaMapping)
         {
             return new DynamicMetadataProvider(this, informationSchemaMapping);
         }
@@ -32,7 +32,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                 schemaOptions = schemaOptions.WithExtension(extension);
             return new DbContextPool<SchemaContext>(schemaOptions);
         }
-        public override Type GetColumnClrType(string dataType)
+        public override Type? GetColumnClrType(string dataType)
         {
             switch (dataType)
             {
@@ -68,7 +68,8 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             {
                 var dbGeneratedColumns = new List<DbGeneratedColumn>();
                 var dbSet = new InternalDbSet<MySqlModelCustomizer.MySqlDbGeneratedColumn>(schemaContext);
-                foreach (MySqlModelCustomizer.MySqlDbGeneratedColumn column in dbSet.AsQueryable().Where(c => c.Extra != ""))
+                foreach (MySqlModelCustomizer.MySqlDbGeneratedColumn column in
+                    dbSet.FromSqlRaw("SELECT TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME, EXTRA FROM INFORMATION_SCHEMA.COLUMNS WHERE EXTRA <> ''"))
                 {
                     var dbGeneratedColumn = new DbGeneratedColumn()
                     {

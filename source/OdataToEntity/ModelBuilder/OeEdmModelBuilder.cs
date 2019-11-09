@@ -122,7 +122,14 @@ namespace OdataToEntity.ModelBuilder
 
             foreach (OeOperationConfiguration operationConfiguration in _operationConfigurations)
             {
-                if (operationConfiguration.IsEdmFunction)
+                if (operationConfiguration.ReturnType == typeof(void))
+                {
+                    EdmAction edmAction = BuildAction(operationConfiguration, entityTypeInfos);
+                    edmModel.AddElement(edmAction);
+                    container.AddActionImport(operationConfiguration.ImportName, edmAction);
+                    edmModel.SetIsDbFunction(edmAction, operationConfiguration.IsDbFunction);
+                }
+                else
                 {
                     EdmFunction edmFunction = BuildFunction(operationConfiguration, entityTypeInfos);
                     edmModel.AddElement(edmFunction);
@@ -139,13 +146,6 @@ namespace OdataToEntity.ModelBuilder
                         container.AddFunctionImport(operationConfiguration.ImportName, edmFunction, edmFunction.EntitySetPath);
                         edmModel.SetIsDbFunction(edmFunction, operationConfiguration.IsDbFunction);
                     }
-                }
-                else
-                {
-                    EdmAction edmAction = BuildAction(operationConfiguration, entityTypeInfos);
-                    edmModel.AddElement(edmAction);
-                    container.AddActionImport(operationConfiguration.ImportName, edmAction);
-                    edmModel.SetIsDbFunction(edmAction, operationConfiguration.IsDbFunction);
                 }
             }
 

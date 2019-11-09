@@ -24,7 +24,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                 schemaOptions = schemaOptions.WithExtension(extension);
             return new DbContextPool<SchemaContext>(schemaOptions);
         }
-        public override Type GetColumnClrType(String dataType)
+        public override Type? GetColumnClrType(String dataType)
         {
             switch (dataType)
             {

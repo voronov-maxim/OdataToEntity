@@ -26,7 +26,7 @@ namespace OdataToEntity
             }
             return entity;
         }
-        public static ODataValue CreateODataValue(Object value)
+        public static ODataValue CreateODataValue(Object? value)
         {
             if (value == null)
                 return new ODataNullValue();
