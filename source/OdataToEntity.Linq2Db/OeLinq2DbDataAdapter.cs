@@ -92,17 +92,17 @@ namespace OdataToEntity.Linq2Db
             public override bool IsDbQuery { get; }
         }
 
-        private IEdmModel _edmModel;
+        private IEdmModel? _edmModel;
         private readonly static Db.OeEntitySetAdapterCollection _entitySetAdapters = CreateEntitySetAdapters();
 
         public OeLinq2DbDataAdapter() : this(null)
         {
         }
-        public OeLinq2DbDataAdapter(Cache.OeQueryCache queryCache)
+        public OeLinq2DbDataAdapter(Cache.OeQueryCache? queryCache)
             : base(queryCache, new OeLinq2DbOperationAdapter(typeof(T)))
         {
         }
-        public OeLinq2DbDataAdapter(Cache.OeQueryCache queryCache, Db.OeOperationAdapter operationAdapter)
+        public OeLinq2DbDataAdapter(Cache.OeQueryCache? queryCache, Db.OeOperationAdapter operationAdapter)
             : base(queryCache, operationAdapter)
         {
 
@@ -115,11 +115,14 @@ namespace OdataToEntity.Linq2Db
         }
         public override Object CreateDataContext()
         {
+            if (_edmModel == null)
+                throw new InvalidOperationException("Invoke " + nameof(SetEdmModel));
+
             var dataContext = Infrastructure.FastActivator.CreateInstance<T>();
             dataContext.DataContext = new OeLinq2DbDataContext(GetEdmModel(_edmModel), _entitySetAdapters);
             return dataContext;
 
-            IEdmModel GetEdmModel(IEdmModel edmModel)
+            static IEdmModel GetEdmModel(IEdmModel edmModel)
             {
                 Db.OeDataAdapter dataAdapter = edmModel.GetAnnotationValue<Db.OeDataAdapter>(edmModel.EntityContainer);
                 if (dataAdapter.DataContextType == typeof(T))
@@ -159,7 +162,7 @@ namespace OdataToEntity.Linq2Db
         public override IAsyncEnumerable<Object> Execute(Object dataContext, OeQueryContext queryContext)
         {
             Expression expression;
-            MethodCallExpression countExpression = null;
+            MethodCallExpression? countExpression = null;
             IQueryable entitySet = queryContext.EntitySetAdapter.GetEntitySet(dataContext);
             if (base.QueryCache.AllowCache)
                 expression = GetFromCache(queryContext, (T)dataContext, base.QueryCache, out countExpression);
@@ -196,7 +199,7 @@ namespace OdataToEntity.Linq2Db
             return query.Provider.Execute<TResult>(expression);
         }
         private static Expression GetFromCache(OeQueryContext queryContext, T dbContext, Cache.OeQueryCache queryCache,
-            out MethodCallExpression countExpression)
+            out MethodCallExpression? countExpression)
         {
             Cache.OeCacheContext cacheContext = queryContext.CreateCacheContext();
             Cache.OeQueryCacheItem queryCacheItem = queryCache.GetQuery(cacheContext);
@@ -209,8 +212,12 @@ namespace OdataToEntity.Linq2Db
                 expression = queryContext.CreateExpression(parameterVisitor);
                 expression = new ParameterVisitor().Visit(expression);
 
+                if (queryContext.EntryFactory == null)
+                    countExpression = null;
+                else
+                    countExpression = queryContext.CreateCountExpression(expression);
+
                 cacheContext = queryContext.CreateCacheContext(parameterVisitor.ConstantToParameterMapper);
-                countExpression = queryContext.CreateCountExpression(expression);
                 queryCache.AddQuery(cacheContext, expression, countExpression, queryContext.EntryFactory);
                 parameterValues = parameterVisitor.ParameterValues;
             }
@@ -225,7 +232,7 @@ namespace OdataToEntity.Linq2Db
             expression = new OeParameterToVariableVisitor().Translate(expression, parameterValues);
             expression = queryContext.TranslateSource(dbContext, expression);
 
-            if (queryContext.IsQueryCount())
+            if (queryContext.IsQueryCount() && countExpression != null)
             {
                 countExpression = (MethodCallExpression)queryContext.TranslateSource(dbContext, countExpression);
                 countExpression = (MethodCallExpression)new OeParameterToVariableVisitor().Translate(countExpression, parameterValues);

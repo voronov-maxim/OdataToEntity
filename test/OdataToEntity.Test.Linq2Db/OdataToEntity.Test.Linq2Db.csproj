@@ -19,11 +19,12 @@
 
   <PropertyGroup>
     <DefineConstants>IGNORE_PLNull</DefineConstants>
+    <NoWarn>EF1001</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="linq2db" Version="2.9.2" />
-    <PackageReference Include="linq2db.SqlServer" Version="2.9.2" />
+    <PackageReference Include="linq2db" Version="2.9.3" />
+    <PackageReference Include="linq2db.SqlServer" Version="2.9.3" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$(EfCoreVersion)" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="$(EfCoreVersion)" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />

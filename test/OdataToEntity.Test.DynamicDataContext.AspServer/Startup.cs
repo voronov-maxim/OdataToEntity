@@ -49,7 +49,7 @@ namespace OdataToEntity.Test.DynamicDataContext.AspServer
             if (!String.IsNullOrEmpty(basePath) && basePath[0] != '/')
                 basePath = "/" + basePath;
 
-            InformationSchemaMapping informationSchemaMapping = null;
+            InformationSchemaMapping? informationSchemaMapping = null;
             if (informationSchemaMappingFileName != null)
             {
                 String json = File.ReadAllText(informationSchemaMappingFileName);

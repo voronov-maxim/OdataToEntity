@@ -382,7 +382,8 @@ namespace OdataToEntity.EfCore
                     countExpression = (MethodCallExpression)TranslateExpression(countExpression);
                 }
 
-                base.QueryCache.AddQuery(queryContext.CreateCacheContext(parameterVisitor.ConstantToParameterMapper), queryExecutor, countExpression, queryContext.EntryFactory);
+                cacheContext = queryContext.CreateCacheContext(parameterVisitor.ConstantToParameterMapper);
+                base.QueryCache.AddQuery(cacheContext, queryExecutor, countExpression, queryContext.EntryFactory);
                 parameterValues = parameterVisitor.ParameterValues;
             }
             else

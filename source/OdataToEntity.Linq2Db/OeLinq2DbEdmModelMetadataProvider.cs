@@ -9,7 +9,7 @@ namespace OdataToEntity.Linq2Db
 {
     public sealed class OeLinq2DbEdmModelMetadataProvider : OeEdmModelMetadataProvider
     {
-        public override PropertyInfo[] GetForeignKey(PropertyInfo propertyInfo)
+        public override PropertyInfo[]? GetForeignKey(PropertyInfo propertyInfo)
         {
             var association = (AssociationAttribute)propertyInfo.GetCustomAttribute(typeof(AssociationAttribute));
             if (association == null || association.IsBackReference)
@@ -36,7 +36,7 @@ namespace OdataToEntity.Linq2Db
 
             return new PropertyInfo[] { property };
         }
-        public override PropertyInfo GetInverseProperty(PropertyInfo propertyInfo)
+        public override PropertyInfo? GetInverseProperty(PropertyInfo propertyInfo)
         {
             var association = (AssociationAttribute)propertyInfo.GetCustomAttribute(typeof(AssociationAttribute));
             if (association == null || !association.IsBackReference)
@@ -69,14 +69,14 @@ namespace OdataToEntity.Linq2Db
             SortClrPropertyByOrder(keys);
             return keys;
         }
-        public override PropertyInfo[] GetPrincipalToDependentWithoutDependent(PropertyInfo propertyInfo)
+        public override PropertyInfo[] GetPrincipalToDependentWithoutDependent(PropertyInfo principalNavigation)
         {
-            Type itemType;
-            var association = (AssociationAttribute)propertyInfo.GetCustomAttribute(typeof(AssociationAttribute));
+            Type? itemType;
+            var association = (AssociationAttribute)principalNavigation.GetCustomAttribute(typeof(AssociationAttribute));
             if (association != null &&
-                (itemType = OeExpressionHelper.GetCollectionItemTypeOrNull(propertyInfo.PropertyType)) != null &&
-                GetForeignKey(propertyInfo) == null &&
-                GetInverseProperty(propertyInfo) == null)
+                (itemType = OeExpressionHelper.GetCollectionItemTypeOrNull(principalNavigation.PropertyType)) != null &&
+                GetForeignKey(principalNavigation) == null &&
+                GetInverseProperty(principalNavigation) == null)
             {
                 String[] dependentPropertyNames = association.GetOtherKeys();
                 var dependentProperties = new PropertyInfo[dependentPropertyNames.Length];
@@ -84,7 +84,7 @@ namespace OdataToEntity.Linq2Db
                     dependentProperties[i] = itemType.GetPropertyIgnoreCase(dependentPropertyNames[i]);
                 return dependentProperties;
             }
-            return null;
+            throw new InvalidOperationException("Pricipal structurlal property not found for principal navigation " + principalNavigation.Name);
         }
         public override bool IsKey(PropertyInfo propertyInfo) => propertyInfo.GetCustomAttribute(typeof(PrimaryKeyAttribute)) != null;
         public override bool IsNotMapped(PropertyInfo propertyInfo)

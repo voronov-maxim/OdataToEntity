@@ -17,17 +17,17 @@ namespace OdataToEntity.Linq2Db
         {
         }
 
-        protected override IAsyncEnumerable<Object> ExecuteNonQuery(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters)
+        protected override IAsyncEnumerable<Object> ExecuteNonQuery(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object?>> parameters)
         {
             var dataConnection = (DataConnection)dataContext;
             dataConnection.Execute(sql, GetDataParameters(parameters));
             return Infrastructure.AsyncEnumeratorHelper.Empty;
         }
-        protected override IAsyncEnumerable<Object> ExecuteReader(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, OeEntitySetAdapter entitySetAdapter)
+        protected override IAsyncEnumerable<Object> ExecuteReader(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object?>> parameters, OeEntitySetAdapter entitySetAdapter)
         {
             return ExecuteReader(dataContext, sql, parameters, entitySetAdapter.EntityType);
         }
-        private IAsyncEnumerable<Object> ExecuteReader(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object>> parameters, Type retuenType)
+        private IAsyncEnumerable<Object> ExecuteReader(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object?>> parameters, Type retuenType)
         {
             Func<DataConnection, String, DataParameter[], IEnumerable<Object>> queryMethod;
             if (sql.StartsWith("select ", StringComparison.Ordinal))
@@ -43,9 +43,9 @@ namespace OdataToEntity.Linq2Db
             return Infrastructure.AsyncEnumeratorHelper.ToAsyncEnumerable(result);
         }
         protected override IAsyncEnumerable<Object> ExecutePrimitive(Object dataContext, String sql,
-            IReadOnlyList<KeyValuePair<String, Object>> parameters, Type returnType, CancellationToken cancellationToken)
+            IReadOnlyList<KeyValuePair<String, Object?>> parameters, Type returnType, CancellationToken cancellationToken)
         {
-            Type itemType = Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(returnType);
+            Type? itemType = Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(returnType);
             if (itemType == null)
             {
                 Task<Object> result = ((DataConnection)dataContext).ExecuteAsync<Object>(sql, GetDataParameters(parameters));
@@ -54,12 +54,12 @@ namespace OdataToEntity.Linq2Db
 
             return ExecuteReader(dataContext, sql, parameters, itemType);
         }
-        private DataParameter[] GetDataParameters(IReadOnlyList<KeyValuePair<String, Object>> parameters)
+        private DataParameter[] GetDataParameters(IReadOnlyList<KeyValuePair<String, Object?>> parameters)
         {
             var dataParameters = new DataParameter[parameters.Count];
             for (int i = 0; i < dataParameters.Length; i++)
             {
-                Object value = GetParameterCore(parameters[i], null, i);
+                Object? value = GetParameterCore(parameters[i], null, i);
                 if (value is DataParameter dataParameter)
                     dataParameters[i] = dataParameter;
                 else
@@ -67,18 +67,18 @@ namespace OdataToEntity.Linq2Db
             }
             return dataParameters;
         }
-        protected override String[] GetParameterNames(Object dataContext, IReadOnlyList<KeyValuePair<String, Object>> parameters)
+        protected override String[] GetParameterNames(Object dataContext, IReadOnlyList<KeyValuePair<String, Object?>> parameters)
         {
             var parameterNames = new String[parameters.Count];
             for (int i = 0; i < parameterNames.Length; i++)
                 parameterNames[i] = "@" + parameters[i].Key;
             return parameterNames;
         }
-        protected override string GetProcedureName(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object>> parameters)
+        protected override String GetProcedureName(Object dataContext, String operationName, IReadOnlyList<KeyValuePair<String, Object?>> parameters)
         {
             return GetOperationCaseSensitivityName(operationName, null);
         }
-        protected override IReadOnlyList<OeOperationConfiguration> GetOperationConfigurations(MethodInfo methodInfo)
+        protected override IReadOnlyList<OeOperationConfiguration>? GetOperationConfigurations(MethodInfo methodInfo)
         {
             var dbFunction = (Sql.FunctionAttribute)methodInfo.GetCustomAttribute(typeof(Sql.FunctionAttribute));
             if (dbFunction == null)

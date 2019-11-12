@@ -204,6 +204,14 @@ namespace OdataToEntity.EfCore.Fix
         {
             if (CallOriginal(memberExpression, out Object? result))
                 return (Expression)result;
+
+            if (memberExpression.Expression is ConstantExpression constantExpression && Parsers.OeExpressionHelper.IsTupleType(constantExpression.Type))
+            {
+                var property = (PropertyInfo)memberExpression.Member;
+                Object value = property.GetValue(constantExpression.Value);
+                return base.Visit(Expression.Constant(value, property.PropertyType));
+            }
+
             return base.VisitMember(memberExpression);
         }
         protected override MemberAssignment VisitMemberAssignment(MemberAssignment node)

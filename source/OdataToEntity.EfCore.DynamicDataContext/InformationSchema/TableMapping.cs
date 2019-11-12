@@ -11,7 +11,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 
     public sealed class TableMapping
     {
-        private readonly String? _dbName;
+        private String? _dbName;
 
         public TableMapping()
         {
@@ -25,7 +25,11 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             EdmName = edmName;
         }
 
-        public String DbName => _dbName ?? throw new InvalidOperationException(nameof(DbName) + " must not null");
+        public String DbName
+        {
+            get => _dbName ?? throw new InvalidOperationException(nameof(DbName) + " must not null");
+            set => _dbName = value;
+        }
         public String? EdmName { get; set; }
         public bool Exclude { get; set; }
         public IReadOnlyList<NavigationMapping>? Navigations { get; set; }
@@ -50,7 +54,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 
     public sealed class OperationMapping
     {
-        private readonly String? _dbName;
+        private String? _dbName;
 
         public OperationMapping()
         {
@@ -61,7 +65,11 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             ResultTableDbName = resultTableDbName;
         }
 
-        public String DbName => _dbName ?? throw new InvalidOperationException(nameof(DbName) + " must not null");
+        public String DbName
+        {
+            get => _dbName ?? throw new InvalidOperationException(nameof(DbName) + " must not null");
+            set => _dbName = value;
+        }
         public bool Exclude { get; set; }
         public String? ResultTableDbName { get; set; }
     }

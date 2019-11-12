@@ -5,7 +5,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
 {
     public static class DynamicMiddlewareHelper
     {
-        public static IEdmModel CreateEdmModel(ProviderSpecificSchema providerSchema, InformationSchemaMapping informationSchemaMapping)
+        public static IEdmModel CreateEdmModel(ProviderSpecificSchema providerSchema, InformationSchemaMapping? informationSchemaMapping)
         {
             using (var metadataProvider = providerSchema.CreateMetadataProvider(informationSchemaMapping))
             {

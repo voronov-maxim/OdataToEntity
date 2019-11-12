@@ -69,7 +69,7 @@ namespace OdataToEntity.Linq2Db
         {
             return Array.IndexOf(_primaryKey, propertyInfo) != -1;
         }
-        private static void OrderBy(PropertyInfo selfRefProperty, PropertyInfo keyProperty, List<T> items)
+        private static void OrderBy(PropertyInfo? selfRefProperty, PropertyInfo keyProperty, List<T> items)
         {
             if (selfRefProperty == null || items.Count == 0)
                 return;
@@ -139,7 +139,7 @@ namespace OdataToEntity.Linq2Db
                 _identities.Add(old, identity);
 
                 if (SelfRefProperty != null)
-                    UpdateParentIdentity(old, identity, i);
+                    UpdateParentIdentity(old, identity, i, SelfRefProperty);
             }
             return Inserted.Count;
         }
@@ -158,7 +158,7 @@ namespace OdataToEntity.Linq2Db
         }
         private IUpdatable<T> Updatable(ITable<T> table, T entity, IReadOnlyList<String> updatedPropertyNames)
         {
-            IUpdatable<T> updatable = null;
+            IUpdatable<T>? updatable = null;
             IQueryable<T> query = table.Where(EntityUpdateHelper.GetWhere(_primaryKey, entity));
             foreach (String updatedPropertyName in updatedPropertyNames.Except(_primaryKey.Select(p => p.Name)))
             {
@@ -166,22 +166,22 @@ namespace OdataToEntity.Linq2Db
                 SetBuilder<T> setBuilder = EntityUpdateHelper.GetSetBuilder<T>(updatedProperty);
                 updatable = updatable == null ? setBuilder.GetSet(query, entity) : setBuilder.GetSet(updatable, entity);
             }
-            return updatable;
+            return updatable ?? throw new InvalidOperationException("Table " + table.DatabaseName + " update properties is empty");
         }
         public void Update(T entity, IEnumerable<String> updatedPropertyNames)
         {
             _updated.Add(new UpdatableEntity<T>(entity, updatedPropertyNames.ToList()));
         }
-        private void UpdateParentIdentity(Object oldIdentity, Object newIdentity, int entityIndex)
+        private void UpdateParentIdentity(Object oldIdentity, Object newIdentity, int entityIndex, PropertyInfo selfRefProperty)
         {
             if (newIdentity.Equals(oldIdentity))
                 return;
 
             for (int i = entityIndex + 1; i < _inserted.Count; i++)
             {
-                Object parentIdentity = SelfRefProperty.GetValue(_inserted[i]);
+                Object parentIdentity = selfRefProperty.GetValue(_inserted[i]);
                 if (oldIdentity.Equals(parentIdentity))
-                    SelfRefProperty.SetValue(_inserted[i], newIdentity);
+                    selfRefProperty.SetValue(_inserted[i], newIdentity);
             }
         }
         public override void UpdateIdentities(PropertyInfo fkeyProperty, IReadOnlyDictionary<Object, Object> identities)
@@ -197,6 +197,6 @@ namespace OdataToEntity.Linq2Db
         public IReadOnlyList<T> Deleted => _deleted;
         public override IReadOnlyDictionary<Object, Object> Identities => _identities;
         public IReadOnlyList<T> Inserted => _inserted;
-        public static PropertyInfo SelfRefProperty { get; set; }
+        public static PropertyInfo? SelfRefProperty { get; set; }
     }
 }
