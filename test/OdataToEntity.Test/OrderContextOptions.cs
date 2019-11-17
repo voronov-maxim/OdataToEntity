@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.OData.Edm;
 using System;
 using System.Collections.Concurrent;
+using OdataToEntity.EfCore;
 
 namespace OdataToEntity.Test.Model
 {
@@ -32,17 +33,6 @@ namespace OdataToEntity.Test.Model
             optionsBuilder.UseSqlite(GetConnection(databaseName));
             //optionsBuilder.UseLoggerFactory(CreateLoggerFactory());
             return optionsBuilder.Options;
-        }
-        public static DbContextOptions<T> CreateOptions<T>(DbContext dbContext) where T : DbContext
-        {
-            var serviceProvider = (IInfrastructure<IServiceProvider>)dbContext;
-            IDbContextOptions options = serviceProvider.GetService<IDbContextServices>().ContextOptions;
-
-            var optionsBuilder = new DbContextOptionsBuilder<T>();
-            DbContextOptions contextOptions = optionsBuilder.Options;
-            foreach (IDbContextOptionsExtension extension in options.Extensions)
-                contextOptions = contextOptions.WithExtension(extension);
-            return (DbContextOptions<T>)contextOptions;
         }
         public static DbContextOptions CreateClientEvaluationWarning(String databaseName)
         {

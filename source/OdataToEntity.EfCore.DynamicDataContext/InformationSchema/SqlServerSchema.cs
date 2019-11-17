@@ -19,9 +19,8 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         {
             var optionsBuilder = new DbContextOptionsBuilder<SchemaContext>();
             optionsBuilder.ReplaceService<IModelCustomizer, SqlServerModelCustomizer>();
-            DbContextOptions schemaOptions = optionsBuilder.Options;
-            foreach (IDbContextOptionsExtension extension in dynamicDbContextOptions.Extensions)
-                schemaOptions = schemaOptions.WithExtension(extension);
+
+            DbContextOptions schemaOptions = optionsBuilder.CreateOptions(dynamicDbContextOptions);
             return new DbContextPool<SchemaContext>(schemaOptions);
         }
         public override Type? GetColumnClrType(String dataType)

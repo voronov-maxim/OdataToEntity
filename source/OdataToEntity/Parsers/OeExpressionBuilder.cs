@@ -10,7 +10,7 @@ namespace OdataToEntity.Parsers
 {
     public sealed class OeExpressionBuilder
     {
-        private Func<IEdmEntitySet, Type, OePropertyAccessor[], OeEntryFactory>? _entryFactoryFactory;
+        private OeEntryFactoryFactory? _entryFactoryFactory;
         private readonly Translators.OeJoinBuilder _joinBuilder;
 
         public OeExpressionBuilder(Translators.OeJoinBuilder joinBuilder)
@@ -30,8 +30,7 @@ namespace OdataToEntity.Parsers
                 return source;
 
             var aggTranslator = new Translators.OeAggregationTranslator(Visitor);
-            Expression aggExpression = aggTranslator.Build(source, applyClause);
-            _entryFactoryFactory = aggTranslator.CreateEntryFactory;
+            Expression aggExpression = aggTranslator.Build(source, applyClause, out _entryFactoryFactory);
 
             ChangeParameterType(aggExpression);
             Visitor.TuplePropertyByAliasName = aggTranslator.GetTuplePropertyByAliasName;
@@ -126,8 +125,7 @@ namespace OdataToEntity.Parsers
                 MetadataLevel = queryContext.MetadataLevel,
                 SkipTokenNameValues = queryContext.SkipTokenNameValues
             };
-            source = selectTranslator.Build(source, ref selectTranslatorParameters);
-            _entryFactoryFactory = selectTranslator.CreateEntryFactory;
+            source = selectTranslator.Build(source, ref selectTranslatorParameters, out _entryFactoryFactory);
 
             ChangeParameterType(source);
             return source;
@@ -172,7 +170,7 @@ namespace OdataToEntity.Parsers
         public OeEntryFactory CreateEntryFactory(IEdmEntitySet entitySet, OePropertyAccessor[] skipTokenAccessors)
         {
             if (_entryFactoryFactory != null)
-                return _entryFactoryFactory(entitySet, ParameterType, skipTokenAccessors);
+                return _entryFactoryFactory.CreateEntryFactory(entitySet, ParameterType, skipTokenAccessors);
 
             OePropertyAccessor[] accessors = OePropertyAccessor.CreateFromType(ParameterType, entitySet);
             return new OeEntryFactory(entitySet, accessors, skipTokenAccessors);

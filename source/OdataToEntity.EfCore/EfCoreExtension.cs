@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace OdataToEntity.EfCore
 {
-    internal static class EfCoreExtension
+    public static class EfCoreExtension
     {
         public static Func<QueryContext, IAsyncEnumerable<T>> CreateAsyncQueryExecutor<T>(this DbContext dbContext, Expression expression)
         {
@@ -21,6 +21,39 @@ namespace OdataToEntity.EfCore
             }
 
             return queryCompilationContextFactory.Create(true).CreateQueryExecutor<IAsyncEnumerable<T>>(expression);
+        }
+        public static DbContextOptions CreateOptions(this DbContextOptions options, Type dbContextType)
+        {
+            Type optionsBuilderType = typeof(DbContextOptionsBuilder<>).MakeGenericType(dbContextType);
+            var optionsBuilder = (DbContextOptionsBuilder)Activator.CreateInstance(optionsBuilderType);
+            return optionsBuilder.CreateOptions(options);
+        }
+        public static DbContextOptions CreateOptions(this DbContextOptionsBuilder optionsBuilder, DbContextOptions options)
+        {
+            DbContextOptions contextOptions = optionsBuilder.Options;
+            foreach (IDbContextOptionsExtension extension in options.Extensions)
+                if (extension is CoreOptionsExtension coreOptionsExtension)
+                {
+                    CoreOptionsExtension? newCoreOptions = contextOptions.FindExtension<CoreOptionsExtension>();
+                    if (newCoreOptions == null)
+                        contextOptions = contextOptions.WithExtension(coreOptionsExtension);
+                    else
+                    {
+                        if (coreOptionsExtension.ReplacedServices != null)
+                        {
+                            foreach (KeyValuePair<Type, Type> replacedService in coreOptionsExtension.ReplacedServices)
+                                newCoreOptions = newCoreOptions.WithReplacedService(replacedService.Key, replacedService.Value);
+                            contextOptions = contextOptions.WithExtension(newCoreOptions);
+                        }
+                    }
+                }
+                else
+                {
+                    var withExtensionFunc = (Func<IDbContextOptionsExtension, DbContextOptions>)contextOptions.WithExtension<IDbContextOptionsExtension>;
+                    var withExtension = withExtensionFunc.Method.GetGenericMethodDefinition().MakeGenericMethod(new[] { extension.GetType() });
+                    contextOptions = (DbContextOptions)withExtension.Invoke(contextOptions, new[] { extension });
+                }
+            return Fix.FixHelper.FixDistinctCount(contextOptions);
         }
     }
 }

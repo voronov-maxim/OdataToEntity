@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore.Query;
 using OdataToEntity.EfCore.DynamicDataContext.ModelBuilder;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 {
@@ -27,9 +26,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             optionsBuilder.ReplaceService<IModelCustomizer, MySqlModelCustomizer>();
             optionsBuilder.ReplaceService<IEntityMaterializerSource, MySqlModelCustomizer.MySqlEntityMaterializerSource>();
 
-            DbContextOptions schemaOptions = optionsBuilder.Options;
-            foreach (IDbContextOptionsExtension extension in dynamicDbContextOptions.Extensions)
-                schemaOptions = schemaOptions.WithExtension(extension);
+            DbContextOptions schemaOptions = optionsBuilder.CreateOptions(dynamicDbContextOptions);
             return new DbContextPool<SchemaContext>(schemaOptions);
         }
         public override Type? GetColumnClrType(string dataType)

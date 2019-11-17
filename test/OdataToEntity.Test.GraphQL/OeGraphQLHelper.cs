@@ -14,7 +14,8 @@ namespace OdataToEntity.Test.GraphQL
             {
                 await new DocumentWriter(true).WriteAsync(stream, executionResult).ConfigureAwait(false);
                 stream.Position = 0;
-                return new StreamReader(stream).ReadToEnd();
+                using (var reader = new StreamReader(stream))
+                    return reader.ReadToEnd();
             }
         }
     }

@@ -1,9 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.OData.Edm;
 using Microsoft.OData.Edm.Csdl;
 using Microsoft.OData.UriParser;
 using Newtonsoft.Json;
+using OdataToEntity.EfCore;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -76,6 +78,12 @@ namespace OdataToEntity.Test
             String jsonOe = JsonConvert.SerializeObject(fromOe, settings);
 
             Assert.Equal(jsonDb, jsonOe);
+        }
+        public static DbContextOptions CreateOptions<T>(DbContext dbContext) where T : DbContext
+        {
+            var serviceProvider = (IInfrastructure<IServiceProvider>)dbContext;
+            DbContextOptions options = (DbContextOptions)serviceProvider.GetService<IDbContextServices>().ContextOptions;
+            return options.CreateOptions(typeof(T));
         }
         public static IList ExecuteDb<T, TResult>(Db.OeEntitySetAdapterCollection entitySetAdapters, DbContext dataContext, Expression<Func<IQueryable<T>, TResult>> expression)
         {

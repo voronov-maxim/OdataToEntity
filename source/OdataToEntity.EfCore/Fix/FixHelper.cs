@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
@@ -27,7 +28,17 @@ namespace OdataToEntity.EfCore.Fix
 
             DbContextOptions contextOptions = optionsBuilder.Options;
             foreach (IDbContextOptionsExtension extension in options.Extensions)
-                if (!(extension is CoreOptionsExtension))
+                if (extension is CoreOptionsExtension coreOptionsExtension)
+                {
+                    if (coreOptionsExtension.ReplacedServices != null)
+                    {
+                        CoreOptionsExtension newCoreOptions = contextOptions.GetExtension<CoreOptionsExtension>();
+                        foreach (KeyValuePair<Type, Type> replacedService in coreOptionsExtension.ReplacedServices)
+                            newCoreOptions = newCoreOptions.WithReplacedService(replacedService.Key, replacedService.Value);
+                        contextOptions = contextOptions.WithExtension(newCoreOptions);
+                    }
+                }
+                else
                 {
                     var withExtensionFunc = (Func<IDbContextOptionsExtension, DbContextOptions>)contextOptions.WithExtension<IDbContextOptionsExtension>;
                     var withExtension = withExtensionFunc.Method.GetGenericMethodDefinition().MakeGenericMethod(new[] { extension.GetType() });

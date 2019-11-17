@@ -39,7 +39,7 @@ namespace OdataToEntity.Parsers.Translators
             }
         }
 
-        private sealed class AggProperty : EdmStructuralProperty
+        internal sealed class AggProperty : EdmStructuralProperty
         {
             public AggProperty(String name, IEdmTypeReference type, bool isGroup) : base(PrimitiveTypeHelper.TupleEdmType, name, type)
             {
@@ -237,8 +237,10 @@ namespace OdataToEntity.Parsers.Translators
 
             return ApplyAggregate(groupByCall, aggTransformation);
         }
-        public Expression Build(Expression source, ApplyClause applyClause)
+        public Expression Build(Expression source, ApplyClause applyClause, out OeEntryFactoryFactory entryFactoryFactory)
         {
+            entryFactoryFactory = new OeAggregationEntryFactoryFactory(_aggProperties);
+
             _aggProperties.Clear();
             if (applyClause == null)
                 return source;
@@ -279,19 +281,6 @@ namespace OdataToEntity.Parsers.Translators
         private static AggProperty CreateEdmProperty(Type clrType, String name, bool isGroup)
         {
             return new AggProperty(name, OeEdmClrHelper.GetEdmTypeReference(clrType), isGroup);
-        }
-        public OeEntryFactory CreateEntryFactory(IEdmEntitySet entitySet, Type clrType, OePropertyAccessor[] skipTokenAccessors)
-        {
-            OePropertyAccessor[] accessors;
-            if (_aggProperties.Count == 0)
-                accessors = OePropertyAccessor.CreateFromType(clrType, entitySet);
-            else
-            {
-                int groupIndex = _aggProperties.FindIndex(a => a.IsGroup);
-                accessors = OePropertyAccessor.CreateFromTuple(clrType, _aggProperties, groupIndex);
-            }
-
-            return new OeEntryFactory(entitySet, accessors, skipTokenAccessors);
         }
         private OeQueryNodeVisitor CreateVisitor(ParameterExpression parameter)
         {

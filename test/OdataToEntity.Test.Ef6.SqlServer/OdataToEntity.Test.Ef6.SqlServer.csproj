@@ -17,6 +17,10 @@
     <StartupObject>OdataToEntity.Test.Ef6.SqlServer.Program</StartupObject>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <NoWarn>EF1001</NoWarn>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="EntityFramework" Version="6.3.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$(EfCoreVersion)" />

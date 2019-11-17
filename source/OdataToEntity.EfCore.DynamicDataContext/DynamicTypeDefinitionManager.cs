@@ -31,7 +31,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
             OperationAdapter = informationSchema.OperationAdapter;
 
             ConstructorInfo dynamicDbContextCtor = dynamicDbContextType.GetConstructor(new Type[] { typeof(DbContextOptions), typeof(DynamicTypeDefinitionManager) });
-            DbContextOptions options = CreateOptions(informationSchema.DynamicDbContextOptions, dynamicDbContextType);
+            DbContextOptions options = informationSchema.DynamicDbContextOptions.CreateOptions(dynamicDbContextType);
             NewExpression ctor = Expression.New(dynamicDbContextCtor, Expression.Constant(options), Expression.Constant(this));
             _dynamicDbContextCtor = Expression.Lambda<Func<DynamicDbContext>>(ctor).Compile();
 
@@ -50,7 +50,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
             var typeDefinitionManager = new DynamicTypeDefinitionManager(dynamicDbContextType, metadataProvider.InformationSchema);
 
             ConstructorInfo ctor = dynamicDbContextType.GetConstructor(new Type[] { typeof(DbContextOptions), typeof(DynamicModelBuilder).MakeByRefType() });
-            DbContextOptions options = CreateOptions(metadataProvider.InformationSchema.DynamicDbContextOptions, dynamicDbContextType);
+            DbContextOptions options = metadataProvider.InformationSchema.DynamicDbContextOptions.CreateOptions(dynamicDbContextType);
             var dbContext = (DynamicDbContext)ctor.Invoke(new Object[] { options, new DynamicModelBuilder(metadataProvider, typeDefinitionManager) });
             _ = dbContext.Model; //force OnModelCreating
             return typeDefinitionManager;
@@ -58,19 +58,6 @@ namespace OdataToEntity.EfCore.DynamicDataContext
         public DynamicDbContext CreateDynamicDbContext()
         {
             return _dynamicDbContextCtor();
-        }
-        private static DbContextOptions CreateOptions(DbContextOptions options, Type dynamicDbContextType)
-        {
-            Type optionsBuilderType = typeof(DbContextOptionsBuilder<>).MakeGenericType(dynamicDbContextType);
-            var optionsBuilder = (DbContextOptionsBuilder)Activator.CreateInstance(optionsBuilderType);
-            DbContextOptions dynamicContextOptions = optionsBuilder.Options;
-            foreach (IDbContextOptionsExtension extension in options.Extensions)
-            {
-                var withExtensionFunc = (Func<IDbContextOptionsExtension, DbContextOptions>)dynamicContextOptions.WithExtension<IDbContextOptionsExtension>;
-                var withExtension = withExtensionFunc.Method.GetGenericMethodDefinition().MakeGenericMethod(new[] { extension.GetType() });
-                dynamicContextOptions = (DbContextOptions)withExtension.Invoke(dynamicContextOptions, new[] { extension });
-            }
-            return Fix.FixHelper.FixDistinctCount(dynamicContextOptions);
         }
         public DynamicTypeDefinition GetDynamicTypeDefinition(Type dynamicTypeType)
         {

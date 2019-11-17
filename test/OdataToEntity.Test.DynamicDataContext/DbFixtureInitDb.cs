@@ -33,7 +33,7 @@ namespace OdataToEntity.Test
             var dbContext = (DbContext)dataAdapter.CreateDataContext();
             try
             {
-                DbContextOptions options = OrderContextOptions.CreateOptions<OrderContext>(dbContext);
+                DbContextOptions options = TestHelper.CreateOptions<OrderContext>(dbContext);
                 return new OrderContext(options);
             }
             finally

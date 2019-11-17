@@ -56,16 +56,11 @@ namespace OdataToEntity.Test.Model
             optionsBuilder = optionsBuilder.UseSqlServer(@"Server=.\sqlexpress;Initial Catalog=OdataToEntity;Trusted_Connection=Yes;", opt => opt.UseRelationalNulls(useRelationalNulls));
             return optionsBuilder.Options;
         }
-        public static DbContextOptions<T> CreateOptions<T>(DbContext dbContext) where T : DbContext
+        public static DbContextOptions CreateOptions<T>(DbContext dbContext) where T : DbContext
         {
             var serviceProvider = (IInfrastructure<IServiceProvider>)dbContext;
-            IDbContextOptions options = serviceProvider.GetService<IDbContextServices>().ContextOptions;
-
-            var optionsBuilder = new DbContextOptionsBuilder<T>();
-            DbContextOptions contextOptions = optionsBuilder.Options;
-            foreach (IDbContextOptionsExtension extension in options.Extensions)
-                contextOptions = contextOptions.WithExtension(extension);
-            return (DbContextOptions<T>)contextOptions;
+            var options = (DbContextOptions)serviceProvider.GetService<IDbContextServices>().ContextOptions;
+            return (DbContextOptions)EfCoreExtension.CreateOptions(options, typeof(T));
         }
     }
 }

@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using OdataToEntity.EfCore.DynamicDataContext.InformationSchema;
-using OdataToEntity.EfCore.DynamicDataContext.Types;
 using System;
 
 namespace OdataToEntity.EfCore.DynamicDataContext
