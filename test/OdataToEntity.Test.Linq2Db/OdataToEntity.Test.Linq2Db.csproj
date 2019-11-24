@@ -19,7 +19,6 @@
 
   <PropertyGroup>
     <DefineConstants>IGNORE_PLNull</DefineConstants>
-    <NoWarn>EF1001</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

@@ -7,7 +7,7 @@ using System.Linq.Expressions;
 
 namespace OdataToEntity.Parsers
 {
-    public sealed class OeEntryFactory
+    public class OeEntryFactory
     {
         private sealed class AccessorByNameComparer : IComparer<OePropertyAccessor>
         {
@@ -24,40 +24,53 @@ namespace OdataToEntity.Parsers
         }
 
         private readonly OePropertyAccessor[] _allAccessors;
-        private readonly IEdmNavigationProperty? _edmNavigationProperty;
         private OeEntryFactory? _entryFactoryFromTuple;
         private readonly IEqualityComparer<Object>? _equalityComparer;
-        private readonly ExpandedNavigationSelectItem? _navigationSelectItem;
         private readonly String _typeName;
 
-        public OeEntryFactory(IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors, OePropertyAccessor[] skipTokenAccessors)
+        public OeEntryFactory(
+            IEdmEntitySetBase entitySet,
+            OePropertyAccessor[] accessors,
+            OePropertyAccessor[]? skipTokenAccessors)
         {
             Array.Sort(accessors, AccessorByNameComparer.Instance);
             EntitySet = entitySet;
             _allAccessors = accessors;
             Accessors = GetAccessorsWithoutSkiptoken(accessors);
-            SkipTokenAccessors = skipTokenAccessors;
+            SkipTokenAccessors = skipTokenAccessors ?? Array.Empty<OePropertyAccessor>();
 
             EdmEntityType = entitySet.EntityType();
-            NavigationLinks = Array.Empty<OeEntryFactory>();
+            NavigationLinks = Array.Empty<OeNavigationEntryFactory>();
             _typeName = EdmEntityType.FullName();
 
             IsTuple = accessors.Length == 0 ? false : OeExpressionHelper.IsTupleType(accessors[0].PropertyExpression.Expression.Type);
         }
-        public OeEntryFactory(ref OeEntryFactoryOptions options)
-            : this(options.EntitySet, options.Accessors, options.SkipTokenAccessors)
+        public OeEntryFactory(
+            IEdmEntitySetBase entitySet,
+            OePropertyAccessor[] accessors,
+            OePropertyAccessor[]? skipTokenAccessors,
+            IReadOnlyList<OeNavigationEntryFactory>? navigationLinks)
+            : this(entitySet, accessors, skipTokenAccessors, navigationLinks, null)
         {
-            _edmNavigationProperty = options.EdmNavigationProperty;
-            LinkAccessor = options.LinkAccessor == null ? null : (Func<Object, Object>)options.LinkAccessor.Compile();
-            NavigationLinks = options.NavigationLinks ?? Array.Empty<OeEntryFactory>();
-            _navigationSelectItem = options.NavigationSelectItem;
-            NextLink = options.NextLink;
+        }
+        public OeEntryFactory(
+            IEdmEntitySetBase entitySet,
+            OePropertyAccessor[] accessors,
+            OePropertyAccessor[]? skipTokenAccessors,
+            IReadOnlyList<OeNavigationEntryFactory>? navigationLinks,
+            LambdaExpression? linkAccessor)
+            : this(entitySet, accessors, skipTokenAccessors)
+        {
 
-            if (!options.NextLink)
+            NavigationLinks = navigationLinks ?? Array.Empty<OeNavigationEntryFactory>();
+
+            if (linkAccessor != null)
             {
-                _equalityComparer = new Infrastructure.OeEntryEqualityComparer(GetKeyExpressions(options.EntitySet, options.Accessors));
-                IsTuple |= GetIsTuple(options.LinkAccessor);
+                IsTuple = GetIsTuple(linkAccessor);
+                LinkAccessor = (Func<Object, Object>)linkAccessor.Compile();
             }
+            if (accessors.Length > 0)
+                _equalityComparer = new Infrastructure.OeEntryEqualityComparer(GetKeyExpressions(entitySet, accessors)); ;
         }
 
         public ODataResource CreateEntry(Object entity)
@@ -77,59 +90,18 @@ namespace OdataToEntity.Parsers
                 Properties = odataProperties
             };
         }
-        private OeEntryFactory CreateEntryFactoryFromTuple(IEdmModel edmModel, OeEntryFactory? parentEntryFactory, OePropertyAccessor[] skipTokenAccessors)
+        protected virtual OeNavigationEntryFactory CreateEntryFactoryFromTuple(IEdmModel edmModel, OeEntryFactory parentEntryFactory)
         {
-            OePropertyAccessor[] accessors = _allAccessors;
-            if (IsTuple)
-            {
-                OePropertyAccessor[] propertyAccessors = OePropertyAccessor.CreateFromType(edmModel.GetClrType(EntitySet), EntitySet);
-                accessors = new OePropertyAccessor[_allAccessors.Length];
-                for (int i = 0; i < accessors.Length; i++)
-                {
-                    OePropertyAccessor accessor = Array.Find(propertyAccessors, pa => pa.EdmProperty == _allAccessors[i].EdmProperty);
-                    if (Array.IndexOf(Accessors, _allAccessors[i]) == -1)
-                    {
-                        var convertExpression = (UnaryExpression)accessor.PropertyExpression.Expression;
-                        var parameterExpression = (ParameterExpression)convertExpression.Operand;
-                        accessor = OePropertyAccessor.CreatePropertyAccessor(accessor.EdmProperty, accessor.PropertyExpression, parameterExpression, true);
-                    }
-                    accessors[i] = accessor;
-                }
-            }
-
-            var navigationLinks = new OeEntryFactory[NavigationLinks.Count];
+            throw new InvalidOperationException("Must be invoke for " + nameof(OeNavigationEntryFactory));
+        }
+        private OeEntryFactory CreateEntryFactoryFromTuple(IEdmModel edmModel, OePropertyAccessor[]? skipTokenAccessors)
+        {
+            OePropertyAccessor[] accessors = GetAccessorsFromTuple(edmModel);
+            var navigationLinks = new OeNavigationEntryFactory[NavigationLinks.Count];
             for (int i = 0; i < NavigationLinks.Count; i++)
-                navigationLinks[i] = NavigationLinks[i].CreateEntryFactoryFromTuple(edmModel, this, Array.Empty<OePropertyAccessor>());
+                navigationLinks[i] = NavigationLinks[i].CreateEntryFactoryFromTuple(edmModel, this);
 
-            OeEntryFactoryOptions options;
-            if (parentEntryFactory == null)
-            {
-                options = new OeEntryFactoryOptions()
-                {
-                    Accessors = accessors,
-                    EntitySet = EntitySet,
-                    NavigationLinks = navigationLinks,
-                    SkipTokenAccessors = skipTokenAccessors,
-                };
-                return new OeEntryFactory(ref options);
-            }
-
-            ParameterExpression parameter = Expression.Parameter(typeof(Object));
-            UnaryExpression typedParameter = Expression.Convert(parameter, edmModel.GetClrType(parentEntryFactory.EntitySet));
-            MemberExpression navigationPropertyExpression = Expression.Property(typedParameter, EdmNavigationProperty.Name);
-            LambdaExpression linkAccessor = Expression.Lambda(navigationPropertyExpression, parameter);
-
-            options = new OeEntryFactoryOptions()
-            {
-                Accessors = accessors,
-                EdmNavigationProperty = EdmNavigationProperty,
-                EntitySet = EntitySet,
-                LinkAccessor = linkAccessor,
-                NavigationLinks = navigationLinks,
-                NavigationSelectItem = NavigationSelectItem,
-                SkipTokenAccessors = skipTokenAccessors,
-            };
-            return new OeEntryFactory(ref options);
+            return new OeEntryFactory(EntitySet, accessors, skipTokenAccessors, navigationLinks);
         }
         public ref OePropertyAccessor GetAccessorByName(String propertyName)
         {
@@ -149,6 +121,27 @@ namespace OdataToEntity.Parsers
             }
 
             throw new InvalidOperationException("Property " + propertyName + " not found in accessors");
+        }
+        protected OePropertyAccessor[] GetAccessorsFromTuple(IEdmModel edmModel)
+        {
+            OePropertyAccessor[] accessors = _allAccessors;
+            if (IsTuple)
+            {
+                OePropertyAccessor[] propertyAccessors = OePropertyAccessor.CreateFromType(edmModel.GetClrType(EntitySet), EntitySet);
+                accessors = new OePropertyAccessor[_allAccessors.Length];
+                for (int i = 0; i < accessors.Length; i++)
+                {
+                    OePropertyAccessor accessor = Array.Find(propertyAccessors, pa => pa.EdmProperty == _allAccessors[i].EdmProperty);
+                    if (Array.IndexOf(Accessors, _allAccessors[i]) == -1)
+                    {
+                        var convertExpression = (UnaryExpression)accessor.PropertyExpression.Expression;
+                        var parameterExpression = (ParameterExpression)convertExpression.Operand;
+                        accessor = OePropertyAccessor.CreatePropertyAccessor(accessor.EdmProperty, accessor.PropertyExpression, parameterExpression, true);
+                    }
+                    accessors[i] = accessor;
+                }
+            }
+            return accessors;
         }
         private static OePropertyAccessor[] GetAccessorsWithoutSkiptoken(OePropertyAccessor[] accessors)
         {
@@ -171,18 +164,16 @@ namespace OdataToEntity.Parsers
         {
             if (_entryFactoryFromTuple == null)
             {
-                OePropertyAccessor[] skipTokenAccessors;
+                OePropertyAccessor[]? skipTokenAccessors = null;
                 if (IsTuple)
                 {
                     if (SkipTokenAccessors.Length > 0)
                         skipTokenAccessors = GetSkipTokenAccessors(edmModel, orderByClause);
-                    else
-                        skipTokenAccessors = Array.Empty<OePropertyAccessor>();
                 }
                 else
                     skipTokenAccessors = SkipTokenAccessors;
 
-                _entryFactoryFromTuple = CreateEntryFactoryFromTuple(edmModel, null, skipTokenAccessors);
+                _entryFactoryFromTuple = CreateEntryFactoryFromTuple(edmModel, skipTokenAccessors);
             }
             return _entryFactoryFromTuple;
         }
@@ -239,25 +230,10 @@ namespace OdataToEntity.Parsers
         public OePropertyAccessor[] Accessors { get; }
         public IEdmEntitySetBase EntitySet { get; }
         public IEdmEntityType EdmEntityType { get; }
-        public IEdmNavigationProperty EdmNavigationProperty => _edmNavigationProperty ?? throw new InvalidOperationException(nameof(EdmNavigationProperty) + " is null");
         public IEqualityComparer<Object> EqualityComparer => _equalityComparer ?? throw new InvalidOperationException(nameof(EqualityComparer) + " is null");
         public bool IsTuple { get; }
         public Func<Object, Object>? LinkAccessor { get; }
-        public IReadOnlyList<OeEntryFactory> NavigationLinks { get; }
-        public ExpandedNavigationSelectItem NavigationSelectItem => _navigationSelectItem ?? throw new InvalidOperationException(nameof(NavigationSelectItem) + " is null");
-        public bool NextLink { get; }
+        public IReadOnlyList<OeNavigationEntryFactory> NavigationLinks { get; }
         public OePropertyAccessor[] SkipTokenAccessors { get; }
-    }
-
-    public struct OeEntryFactoryOptions
-    {
-        public OePropertyAccessor[] Accessors { get; set; }
-        public IEdmEntitySetBase EntitySet { get; set; }
-        public IEdmNavigationProperty? EdmNavigationProperty { get; set; }
-        public LambdaExpression? LinkAccessor { get; set; }
-        public IReadOnlyList<OeEntryFactory> NavigationLinks { get; set; }
-        public ExpandedNavigationSelectItem? NavigationSelectItem { get; set; }
-        public bool NextLink { get; set; }
-        public OePropertyAccessor[] SkipTokenAccessors { get; set; }
     }
 }

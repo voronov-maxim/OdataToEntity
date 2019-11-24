@@ -17,10 +17,6 @@
     <StartupObject>OdataToEntity.Test.EfCore.SqlServer.Program</StartupObject>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <NoWarn>EF1001</NoWarn>
-  </PropertyGroup>
-
   <ItemGroup>
     <Compile Include="..\OdataToEntity.Test\Common\*.cs" Link="Common\%(FileName).cs" />
     <Compile Include="..\OdataToEntity.Test\QueryComparerTest.cs" Link="QueryComparerTest.cs" />

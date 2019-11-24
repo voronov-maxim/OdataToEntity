@@ -29,7 +29,7 @@ namespace OdataToEntity.Parsers
             Db.OeEntitySetAdapter entitySetAdapter = _dataAdapter.EntitySetAdapters.Find(entitySet);
             return new OeQueryContext(_edmModel, odataUri, entitySetAdapter)
             {
-                EntryFactory = new OeEntryFactory(entitySet, accessors, Array.Empty<OePropertyAccessor>()),
+                EntryFactory = new OeEntryFactory(entitySet, accessors, null),
                 MetadataLevel = metadataLevel
             };
         }

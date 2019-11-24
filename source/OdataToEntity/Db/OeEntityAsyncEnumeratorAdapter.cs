@@ -46,7 +46,7 @@ namespace OdataToEntity.Db
                 entity = CreateEntityFromTuple(entityType, entity, dbEnumerator.EntryFactory.Accessors);
             }
 
-            foreach (OeEntryFactory navigationLink in dbEnumerator.EntryFactory.NavigationLinks)
+            foreach (OeNavigationEntryFactory navigationLink in dbEnumerator.EntryFactory.NavigationLinks)
                 await SetNavigationProperty(dbEnumerator.CreateChild(navigationLink, cancellationToken), value, entity, cancellationToken).ConfigureAwait(false);
 
             return entity;
@@ -68,7 +68,8 @@ namespace OdataToEntity.Db
             if (entity == null)
                 return null;
 
-            if (dbEnumerator.EntryFactory.EdmNavigationProperty.Type.Definition is EdmCollectionType)
+            var entryFactory = (OeNavigationEntryFactory)dbEnumerator.EntryFactory;
+            if (entryFactory.EdmNavigationProperty.Type.Definition is EdmCollectionType)
             {
                 Type listType = typeof(List<>).MakeGenericType(new[] { nestedEntityType });
                 var list = (IList)Activator.CreateInstance(listType);
@@ -113,6 +114,7 @@ namespace OdataToEntity.Db
 
             var entity = (T)await CreateEntity(_dbEnumerator, _dbEnumerator.Current, _dbEnumerator.Current, typeof(T), _cancellationToken).ConfigureAwait(false);
             Object rawValue = _dbEnumerator.RawValue;
+            _dbEnumerator.ClearBuffer();
 
             _isMoveNext = await _dbEnumerator.MoveNextAsync().ConfigureAwait(false);
             if (!_isMoveNext && _queryContext != null && _queryContext.EntryFactory != null && _queryContext.EntryFactory.SkipTokenAccessors.Length > 0)
@@ -123,7 +125,8 @@ namespace OdataToEntity.Db
         }
         private static async Task SetNavigationProperty(IOeDbEnumerator dbEnumerator, Object value, Object entity, CancellationToken cancellationToken)
         {
-            PropertyInfo propertyInfo = entity.GetType().GetProperty(dbEnumerator.EntryFactory.EdmNavigationProperty.Name);
+            var entryFactory = (OeNavigationEntryFactory)dbEnumerator.EntryFactory;
+            PropertyInfo propertyInfo = entity.GetType().GetProperty(entryFactory.EdmNavigationProperty.Name);
             Type nestedEntityType = OeExpressionHelper.GetCollectionItemTypeOrNull(propertyInfo.PropertyType) ?? propertyInfo.PropertyType;
             Object? navigationValue = await CreateNestedEntity(dbEnumerator, value, nestedEntityType, cancellationToken).ConfigureAwait(false);
             propertyInfo.SetValue(entity, navigationValue);

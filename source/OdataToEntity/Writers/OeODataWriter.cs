@@ -69,11 +69,12 @@ namespace OdataToEntity.Writers
         }
         private async Task WriteNavigation(Db.IOeDbEnumerator dbEnumerator)
         {
-            bool isCollection = dbEnumerator.EntryFactory.EdmNavigationProperty.Type.Definition is EdmCollectionType;
+            var entryFactory = (OeNavigationEntryFactory)dbEnumerator.EntryFactory;
+            bool isCollection = entryFactory.EdmNavigationProperty.Type.Definition is EdmCollectionType;
             var resourceInfo = new ODataNestedResourceInfo()
             {
                 IsCollection = isCollection,
-                Name = dbEnumerator.EntryFactory.EdmNavigationProperty.Name
+                Name = entryFactory.EdmNavigationProperty.Name
             };
             await _writer.WriteStartAsync(resourceInfo).ConfigureAwait(false);
 
@@ -86,6 +87,7 @@ namespace OdataToEntity.Writers
         }
         private async Task WriteNavigationCollection(Db.IOeDbEnumerator dbEnumerator)
         {
+            var entryFactory = (OeNavigationEntryFactory)dbEnumerator.EntryFactory;
             Object value;
             int readCount = 0;
             ODataResourceSet? resourceSet = null;
@@ -97,7 +99,7 @@ namespace OdataToEntity.Writers
                     if (resourceSet == null)
                     {
                         resourceSet = new ODataResourceSet();
-                        if (dbEnumerator.EntryFactory.NavigationSelectItem.CountOption.GetValueOrDefault())
+                        if (entryFactory.NavigationSelectItem.CountOption.GetValueOrDefault())
                             resourceSet.Count = OeNextPageLinkBuilder.GetNestedCount(_queryContext.EdmModel, dbEnumerator);
                         await _writer.WriteStartAsync(resourceSet).ConfigureAwait(false);
                     }
@@ -111,7 +113,7 @@ namespace OdataToEntity.Writers
             if (resourceSet == null)
             {
                 resourceSet = new ODataResourceSet();
-                if (dbEnumerator.EntryFactory.NavigationSelectItem.CountOption.GetValueOrDefault())
+                if (entryFactory.NavigationSelectItem.CountOption.GetValueOrDefault())
                     resourceSet.Count = 0;
                 await _writer.WriteStartAsync(resourceSet).ConfigureAwait(false);
             }

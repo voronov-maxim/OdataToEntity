@@ -14,38 +14,12 @@ namespace OdataToEntity.Parsers.Translators
             _rootNavigationItem = rootNavigationItem;
         }
 
-        public override OeEntryFactory CreateEntryFactory(IEdmEntitySet entitySet, Type clrType, OePropertyAccessor[] skipTokenAccessors)
+        public override OeEntryFactory CreateEntryFactory(IEdmEntitySet entitySet, Type clrType, OePropertyAccessor[]? skipTokenAccessors)
         {
             ParameterExpression parameter = Expression.Parameter(typeof(Object));
             UnaryExpression typedParameter = Expression.Convert(parameter, clrType);
 
-            if (!_rootNavigationItem.HasNavigationItems())
-            {
-                var navigationLinks = new OeEntryFactory[_rootNavigationItem.NavigationItems.Count];
-                for (int i = 0; i < _rootNavigationItem.NavigationItems.Count; i++)
-                {
-                    OeNavigationSelectItem navigationItem = _rootNavigationItem.NavigationItems[i];
-                    var nextLinkOptions = new OeEntryFactoryOptions()
-                    {
-                        Accessors = Array.Empty<OePropertyAccessor>(),
-                        EdmNavigationProperty = navigationItem.EdmProperty,
-                        EntitySet = navigationItem.EntitySet,
-                        NavigationSelectItem = navigationItem.NavigationSelectItem,
-                        NextLink = navigationItem.Kind == OeNavigationSelectItemKind.NextLink
-                    };
-                    navigationLinks[i] = new OeEntryFactory(ref nextLinkOptions);
-                }
-
-                var options = new OeEntryFactoryOptions()
-                {
-                    Accessors = GetAccessors(clrType, _rootNavigationItem),
-                    EntitySet = _rootNavigationItem.EntitySet,
-                    NavigationLinks = navigationLinks,
-                    SkipTokenAccessors = skipTokenAccessors
-                };
-                _rootNavigationItem.EntryFactory = new OeEntryFactory(ref options);
-            }
-            else
+            if (_rootNavigationItem.HasNavigationItems())
             {
                 List<OeNavigationSelectItem> navigationItems = OeSelectTranslator.FlattenNavigationItems(_rootNavigationItem, true);
                 IReadOnlyList<MemberExpression> navigationProperties = OeExpressionHelper.GetPropertyExpressions(typedParameter);
@@ -62,7 +36,7 @@ namespace OdataToEntity.Parsers.Translators
 
                     OePropertyAccessor[] accessors = Array.Empty<OePropertyAccessor>();
                     LambdaExpression? linkAccessor = null;
-                    OeEntryFactory[] nestedNavigationLinks = Array.Empty<OeEntryFactory>();
+                    OeNavigationEntryFactory[] nestedNavigationLinks = Array.Empty<OeNavigationEntryFactory>();
                     if (navigationItem.Kind != OeNavigationSelectItemKind.NextLink)
                     {
                         accessors = GetAccessors(navigationProperties[propertyIndex].Type, navigationItem);
@@ -71,19 +45,39 @@ namespace OdataToEntity.Parsers.Translators
                         propertyIndex--;
                     }
 
-                    var options = new OeEntryFactoryOptions()
-                    {
-                        Accessors = accessors,
-                        EdmNavigationProperty = navigationItem.Parent == null ? null : navigationItem.EdmProperty,
-                        EntitySet = navigationItem.EntitySet,
-                        LinkAccessor = linkAccessor,
-                        NavigationLinks = nestedNavigationLinks,
-                        NavigationSelectItem = navigationItem.Parent == null ? null : navigationItem.NavigationSelectItem,
-                        NextLink = navigationItem.Kind == OeNavigationSelectItemKind.NextLink,
-                        SkipTokenAccessors = skipTokenAccessors
-                    };
-                    navigationItem.EntryFactory = new OeEntryFactory(ref options);
+                    if (i == 0)
+                        navigationItem.EntryFactory = new OeEntryFactory(navigationItem.EntitySet, accessors, skipTokenAccessors, nestedNavigationLinks, linkAccessor);
+                    else
+                        navigationItem.EntryFactory = new OeNavigationEntryFactory(
+                            navigationItem.EntitySet,
+                            accessors,
+                            skipTokenAccessors,
+                            nestedNavigationLinks,
+                            linkAccessor,
+                            navigationItem.EdmProperty,
+                            navigationItem.NavigationSelectItem,
+                            navigationItem.Kind == OeNavigationSelectItemKind.NextLink);
                 }
+            }
+            else
+            {
+                var navigationLinks = new OeNavigationEntryFactory[_rootNavigationItem.NavigationItems.Count];
+                for (int i = 0; i < _rootNavigationItem.NavigationItems.Count; i++)
+                {
+                    OeNavigationSelectItem navigationItem = _rootNavigationItem.NavigationItems[i];
+                    navigationLinks[i] = new OeNavigationEntryFactory(
+                        navigationItem.EntitySet,
+                        Array.Empty<OePropertyAccessor>(),
+                        null,
+                        Array.Empty<OeNavigationEntryFactory>(),
+                        null,
+                        navigationItem.EdmProperty,
+                        navigationItem.NavigationSelectItem,
+                        navigationItem.Kind == OeNavigationSelectItemKind.NextLink);
+                }
+
+                OePropertyAccessor[] accessors = GetAccessors(clrType, _rootNavigationItem);
+                _rootNavigationItem.EntryFactory = new OeEntryFactory(_rootNavigationItem.EntitySet, accessors, skipTokenAccessors, navigationLinks);
             }
 
             return _rootNavigationItem.EntryFactory;
@@ -104,12 +98,12 @@ namespace OdataToEntity.Parsers.Translators
 
             return accessors;
         }
-        private static OeEntryFactory[] GetNestedNavigationLinks(OeNavigationSelectItem navigationItem)
+        private static OeNavigationEntryFactory[] GetNestedNavigationLinks(OeNavigationSelectItem navigationItem)
         {
-            var nestedEntryFactories = new List<OeEntryFactory>(navigationItem.NavigationItems.Count);
+            var nestedEntryFactories = new List<OeNavigationEntryFactory>(navigationItem.NavigationItems.Count);
             for (int i = 0; i < navigationItem.NavigationItems.Count; i++)
                 if (navigationItem.NavigationItems[i].Kind != OeNavigationSelectItemKind.NotSelected)
-                    nestedEntryFactories.Add(navigationItem.NavigationItems[i].EntryFactory);
+                    nestedEntryFactories.Add((OeNavigationEntryFactory)navigationItem.NavigationItems[i].EntryFactory);
             return nestedEntryFactories.ToArray();
         }
     }

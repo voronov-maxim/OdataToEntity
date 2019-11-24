@@ -264,7 +264,7 @@ namespace OdataToEntity.Test
                 else
                     continue;
 
-                //if (methodInfo.Name != "BoundFunctionCollection")
+                //if (methodInfo.Name != "SelectName")
                 //    continue;
 
                 Console.WriteLine(methodInfo.Name);

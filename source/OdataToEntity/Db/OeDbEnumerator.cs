@@ -10,7 +10,7 @@ namespace OdataToEntity.Db
     public interface IOeDbEnumerator : IAsyncEnumerator<Object>
     {
         void ClearBuffer();
-        IOeDbEnumerator CreateChild(OeEntryFactory entryFactory, CancellationToken cancellationToken);
+        IOeDbEnumerator CreateChild(OeNavigationEntryFactory entryFactory, CancellationToken cancellationToken);
 
         OeEntryFactory EntryFactory { get; }
         IOeDbEnumerator? ParentEnumerator { get; }
@@ -31,7 +31,7 @@ namespace OdataToEntity.Db
                 _pool = new Dictionary<OeEntryFactory, OeDbEnumerator>();
             }
 
-            public OeDbEnumerator GetFromPool(OeDbEnumerator parentEnumerator, OeEntryFactory entryFactory)
+            public OeDbEnumerator GetFromPool(OeDbEnumerator parentEnumerator, OeNavigationEntryFactory entryFactory)
             {
                 if (_pool.TryGetValue(entryFactory, out OeDbEnumerator dbEnumerator))
                     dbEnumerator.Initialize();
@@ -58,7 +58,7 @@ namespace OdataToEntity.Db
 
             _bufferPosition = -1;
         }
-        private OeDbEnumerator(OeDbEnumerator parentEnumerator, OeEntryFactory entryFactory)
+        private OeDbEnumerator(OeDbEnumerator parentEnumerator, OeNavigationEntryFactory entryFactory)
         {
             ParentEnumerator = parentEnumerator;
             Context = parentEnumerator.Context;
@@ -84,7 +84,7 @@ namespace OdataToEntity.Db
             if (!Context.Eof)
                 _bufferPosition = -1;
         }
-        public IOeDbEnumerator CreateChild(OeEntryFactory entryFactory, CancellationToken cancellationToken)
+        public IOeDbEnumerator CreateChild(OeNavigationEntryFactory entryFactory, CancellationToken cancellationToken)
         {
             return Context.GetFromPool(this, entryFactory);
         }

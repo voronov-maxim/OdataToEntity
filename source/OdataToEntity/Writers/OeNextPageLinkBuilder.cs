@@ -169,7 +169,8 @@ namespace OdataToEntity.Writers
             if (parentEnumerator == null)
                 throw new InvalidOperationException("For nested count must be child " + nameof(dbEnumerator));
 
-            ODataUri odataUri = OeNextPageLinkBuilder.GetCountODataUri(edmModel, parentEnumerator.EntryFactory, dbEnumerator.EntryFactory.NavigationSelectItem, parentEnumerator.Current);
+            var entryFactory = (OeNavigationEntryFactory)dbEnumerator.EntryFactory;
+            ODataUri odataUri = OeNextPageLinkBuilder.GetCountODataUri(edmModel, parentEnumerator.EntryFactory, entryFactory.NavigationSelectItem, parentEnumerator.Current);
             var queryContext = new OeQueryContext(edmModel, odataUri);
 
             IEdmEntitySet entitySet = ((EntitySetSegment)odataUri.Path.FirstSegment).EntitySet;
@@ -188,7 +189,7 @@ namespace OdataToEntity.Writers
         }
         public Uri? GetNextPageLinkNavigation(Db.IOeDbEnumerator dbEnumerator, int readCount, long? totalCount, Object value)
         {
-            OeEntryFactory entryFactory = dbEnumerator.EntryFactory;
+            var entryFactory = (OeNavigationEntryFactory)dbEnumerator.EntryFactory;
             ExpandedNavigationSelectItem navigationSelectItem = entryFactory.NavigationSelectItem;
 
             if (navigationSelectItem.GetPageSize() == 0 || readCount == 0 || (totalCount != null && readCount >= totalCount))

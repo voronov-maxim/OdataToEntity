@@ -59,7 +59,7 @@ namespace OdataToEntity.Parsers
             Expression target = OeEnumerableStub.CreateEnumerableStubExpression(targetEntityType, targetEntitySet);
             target = expressionBuilder.ApplySelect(target, queryContext);
 
-            OeEntryFactory targetEntryFactory = expressionBuilder.CreateEntryFactory(targetEntitySet, Array.Empty<OePropertyAccessor>());
+            OeEntryFactory targetEntryFactory = expressionBuilder.CreateEntryFactory(targetEntitySet, null);
             var sourceQueryExpression = new OeQueryExpression(queryContext.EdmModel, sourceEntitySet, source);
             var targetQueryExpression = new OeQueryExpression(queryContext.EdmModel, targetEntitySet, target, targetEntryFactory);
 

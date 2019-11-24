@@ -2,14 +2,14 @@
   <PropertyGroup>
     <CoreFxVersion>4.6.0</CoreFxVersion>
     <CSharpVersion>8.0</CSharpVersion>
-    <EfCoreVersion>3.0.0</EfCoreVersion>
+    <EfCoreVersion>3.0.1</EfCoreVersion>
     <FrameworkVersion>net48</FrameworkVersion>
     <JsonNetVersion>10.0.3</JsonNetVersion>
     <NetStandardVersion>netstandard2.1</NetStandardVersion>
     <NetCoreAppVersion>netcoreapp3.0</NetCoreAppVersion>
     <NetCoreVersion>3.0.0</NetCoreVersion>
     <NpgsqlVersion>3.0.1</NpgsqlVersion>
-    <ODataLibVersion>7.6.1</ODataLibVersion>
+    <ODataLibVersion>7.6.2</ODataLibVersion>
     <OdataToEntityVersion>2.4.0</OdataToEntityVersion>
     <SystemInteractiveAsyncVersion>4.0.0</SystemInteractiveAsyncVersion>
     <TestSdkVersion>16.4.0</TestSdkVersion>

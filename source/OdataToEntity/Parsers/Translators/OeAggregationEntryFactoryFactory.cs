@@ -13,7 +13,7 @@ namespace OdataToEntity.Parsers.Translators
             _aggProperties = aggProperties;
         }
 
-        public override OeEntryFactory CreateEntryFactory(IEdmEntitySet entitySet, Type clrType, OePropertyAccessor[] skipTokenAccessors)
+        public override OeEntryFactory CreateEntryFactory(IEdmEntitySet entitySet, Type clrType, OePropertyAccessor[]? skipTokenAccessors)
         {
             OePropertyAccessor[] accessors;
             if (_aggProperties.Count == 0)

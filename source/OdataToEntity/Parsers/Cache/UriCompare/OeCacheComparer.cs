@@ -21,7 +21,7 @@ namespace OdataToEntity.Cache.UriCompare
             _queryNodeComparer = new OeQueryNodeComparer(_parameterValues);
         }
 
-        private static int CombineHashCodes(int h1, int h2)
+        internal static int CombineHashCodes(int h1, int h2)
         {
             return (h1 << 5) + h1 ^ h2;
         }

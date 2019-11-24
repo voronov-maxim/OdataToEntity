@@ -30,7 +30,7 @@ namespace OdataToEntity.GraphQL
                 value = entity;
 
             Dictionary<String, Object?> dictionary = CreateEntity(entity, dbEnumerator.EntryFactory.Accessors);
-            foreach (OeEntryFactory navigationLink in dbEnumerator.EntryFactory.NavigationLinks)
+            foreach (OeNavigationEntryFactory navigationLink in dbEnumerator.EntryFactory.NavigationLinks)
             {
                 var childDbEnumerator = (Db.OeDbEnumerator)dbEnumerator.CreateChild(navigationLink, cancellationToken);
                 await SetNavigationProperty(childDbEnumerator, value, dictionary, cancellationToken).ConfigureAwait(false);
@@ -54,7 +54,8 @@ namespace OdataToEntity.GraphQL
             if (entity == null)
                 return null;
 
-            if (dbEnumerator.EntryFactory.EdmNavigationProperty.Type.Definition is EdmCollectionType)
+            var entryFactory = (OeNavigationEntryFactory)dbEnumerator.EntryFactory;
+            if (entryFactory.EdmNavigationProperty.Type.Definition is EdmCollectionType)
             {
                 var entityList = new List<Object>();
                 do
@@ -93,7 +94,8 @@ namespace OdataToEntity.GraphQL
         private static async Task SetNavigationProperty(Db.OeDbEnumerator dbEnumerator, Object value, Dictionary<String, Object?> entity, CancellationToken cancellationToken)
         {
             Object? navigationValue = await CreateNestedEntity(dbEnumerator, value, cancellationToken).ConfigureAwait(false);
-            entity[dbEnumerator.EntryFactory.EdmNavigationProperty.Name] = navigationValue;
+            var entryFactory = (OeNavigationEntryFactory)dbEnumerator.EntryFactory;
+            entity[entryFactory.EdmNavigationProperty.Name] = navigationValue;
         }
 
         public Dictionary<String, Object?> Current { get; private set; }

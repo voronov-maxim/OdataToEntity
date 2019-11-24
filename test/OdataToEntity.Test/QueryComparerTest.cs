@@ -62,6 +62,8 @@ namespace OdataToEntity.Test
 
             public override Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
             {
+                parameters.Expression = (Expression<Func<IQueryable<T>, IQueryable<TResult>>>)new OdataToEntity.EfCore.Fix.FixSelectDistinctVisitor().Visit(parameters.Expression);
+
                 var executorDb = (Func<Db.OeDataAdapter, DbContext, IList>)new ExpressionClosure<T, TResult>(parameters.Expression).Execute;
                 _selectTestDefinitions.Add(new SelectTestDefinition(parameters.RequestUri, executorDb));
                 return Task.CompletedTask;

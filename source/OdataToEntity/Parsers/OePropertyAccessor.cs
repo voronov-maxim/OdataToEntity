@@ -2,6 +2,7 @@
 using Microsoft.OData.Edm;
 using OdataToEntity.ModelBuilder;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -10,7 +11,51 @@ namespace OdataToEntity.Parsers
 {
     public readonly struct OePropertyAccessor
     {
+        private readonly struct PropertyExpressionKey : IEqualityComparer<PropertyExpressionKey>
+        {
+            private readonly int _hashCode;
+            private readonly List<MemberInfo> _propertyInfos;
+            public static readonly PropertyExpressionKey Comparer = new PropertyExpressionKey();
+
+            private PropertyExpressionKey(List<MemberInfo> memberInfos, int hashCode)
+            {
+                _propertyInfos = memberInfos;
+                _hashCode = hashCode;
+            }
+
+            public bool Equals(PropertyExpressionKey x, PropertyExpressionKey y)
+            {
+                if (x._propertyInfos.Count != y._propertyInfos.Count)
+                    return false;
+
+                for (int i = 0; i < x._propertyInfos.Count; i++)
+                    if (x._propertyInfos[i] != y._propertyInfos[i])
+                        return false;
+
+                return true;
+            }
+            public int GetHashCode(PropertyExpressionKey obj)
+            {
+                return obj._hashCode;
+            }
+            public static PropertyExpressionKey CreateKey(MemberExpression propertyExpression)
+            {
+                var memberInfos = new List<MemberInfo>();
+                memberInfos.Add(propertyExpression.Member);
+                int hashCode = propertyExpression.Member.GetHashCode();
+                while (propertyExpression.Expression is MemberExpression propertyExpression1)
+                {
+                    propertyExpression = propertyExpression1;
+                    memberInfos.Add(propertyExpression.Member);
+                    hashCode = Cache.UriCompare.OeCacheComparer.CombineHashCodes(hashCode, propertyExpression.Member.GetHashCode());
+                }
+                return new PropertyExpressionKey(memberInfos, hashCode);
+            }
+        }
+
         private readonly Func<Object, Object> _accessor;
+        private readonly static ConcurrentDictionary<PropertyExpressionKey, Func<Object, Object>> _lambdas =
+            new ConcurrentDictionary<PropertyExpressionKey, Func<Object, Object>>(new PropertyExpressionKey());
 
         private OePropertyAccessor(IEdmProperty edmProperty, Func<Object, Object> accessor, MemberExpression propertyExpression, bool skipToken)
         {
@@ -30,9 +75,14 @@ namespace OdataToEntity.Parsers
 
         public static OePropertyAccessor CreatePropertyAccessor(IEdmProperty edmProperty, MemberExpression propertyExpression, ParameterExpression parameter, bool skipToken)
         {
-            UnaryExpression instance = Expression.Convert(propertyExpression, typeof(Object));
-            var func = (Func<Object, Object>)Expression.Lambda(instance, parameter).Compile();
-            return new OePropertyAccessor(edmProperty, func, propertyExpression, skipToken);
+            PropertyExpressionKey propertyExpressionKey = PropertyExpressionKey.CreateKey(propertyExpression);
+            if (!_lambdas.TryGetValue(propertyExpressionKey, out Func<Object, Object> lambda))
+            {
+                UnaryExpression instance = Expression.Convert(propertyExpression, typeof(Object));
+                lambda = (Func<Object, Object>)Expression.Lambda(instance, parameter).Compile();
+                _lambdas[propertyExpressionKey] = lambda;
+            }
+            return new OePropertyAccessor(edmProperty, lambda, propertyExpression, skipToken);
         }
         public static OePropertyAccessor[] CreateFromTuple(Type tupleType, IReadOnlyList<IEdmProperty> edmProperties, int groupItemIndex)
         {

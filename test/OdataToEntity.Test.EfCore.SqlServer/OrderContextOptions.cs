@@ -58,9 +58,7 @@ namespace OdataToEntity.Test.Model
         }
         public static DbContextOptions CreateOptions<T>(DbContext dbContext) where T : DbContext
         {
-            var serviceProvider = (IInfrastructure<IServiceProvider>)dbContext;
-            var options = (DbContextOptions)serviceProvider.GetService<IDbContextServices>().ContextOptions;
-            return (DbContextOptions)EfCoreExtension.CreateOptions(options, typeof(T));
+            return TestHelper.CreateOptions<T>(dbContext);
         }
     }
 }

@@ -82,7 +82,9 @@ namespace OdataToEntity.Test
         public static DbContextOptions CreateOptions<T>(DbContext dbContext) where T : DbContext
         {
             var serviceProvider = (IInfrastructure<IServiceProvider>)dbContext;
+#pragma warning disable EF1001
             DbContextOptions options = (DbContextOptions)serviceProvider.GetService<IDbContextServices>().ContextOptions;
+#pragma warning restore EF1001
             return options.CreateOptions(typeof(T));
         }
         public static IList ExecuteDb<T, TResult>(Db.OeEntitySetAdapterCollection entitySetAdapters, DbContext dataContext, Expression<Func<IQueryable<T>, TResult>> expression)
@@ -97,7 +99,7 @@ namespace OdataToEntity.Test
             var visitor = new QueryVisitor<T>(dataAdapter.EntitySetAdapters, dataContext);
             Expression call = visitor.Visit(expression.Body);
 
-            var metadataProvider = new OdataToEntity.EfCore.OeEfCoreEdmModelMetadataProvider(dataContext.Model);
+            var metadataProvider = new OeEfCoreEdmModelMetadataProvider(dataContext.Model);
             var includeVisitor = new IncludeVisitor(metadataProvider, dataAdapter.IsDatabaseNullHighestValue);
             call = includeVisitor.Visit(call);
             includes = includeVisitor.Includes;

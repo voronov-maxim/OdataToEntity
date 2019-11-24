@@ -167,7 +167,7 @@ namespace OdataToEntity.Parsers
         {
             _joinBuilder.Visitor.ChangeParameterType(source);
         }
-        public OeEntryFactory CreateEntryFactory(IEdmEntitySet entitySet, OePropertyAccessor[] skipTokenAccessors)
+        public OeEntryFactory CreateEntryFactory(IEdmEntitySet entitySet, OePropertyAccessor[]? skipTokenAccessors)
         {
             if (_entryFactoryFactory != null)
                 return _entryFactoryFactory.CreateEntryFactory(entitySet, ParameterType, skipTokenAccessors);

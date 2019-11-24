@@ -17,7 +17,7 @@ namespace OdataToEntity.Db
             _asyncEnumerator = asyncEnumerator;
             EntryFactory = entryFactory;
         }
-        public OeEntityDbEnumerator(IAsyncEnumerator<Object> asyncEnumerator, OeEntryFactory entryFactory, OeEntityDbEnumerator parentEnumerator)
+        public OeEntityDbEnumerator(IAsyncEnumerator<Object> asyncEnumerator, OeNavigationEntryFactory entryFactory, OeEntityDbEnumerator parentEnumerator)
             : this(asyncEnumerator, entryFactory)
         {
             _parentEnumerator = parentEnumerator;
@@ -26,7 +26,7 @@ namespace OdataToEntity.Db
         public void ClearBuffer()
         {
         }
-        public IOeDbEnumerator CreateChild(OeEntryFactory entryFactory, CancellationToken cancellationToken)
+        public IOeDbEnumerator CreateChild(OeNavigationEntryFactory entryFactory, CancellationToken cancellationToken)
         {
             IAsyncEnumerable<Object> asyncEnumerable;
             Object navigationValue = entryFactory.GetValue(Current);
