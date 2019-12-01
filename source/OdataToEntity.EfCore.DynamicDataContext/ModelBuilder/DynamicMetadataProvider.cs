@@ -17,23 +17,22 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
             InformationSchema = informationSchema;
             _informationSchemaMapping = informationSchemaMapping;
 
-            _schemaCache = new SchemaCache(informationSchema);
-            _schemaCache.Initialize(_informationSchemaMapping?.Tables);
+            _schemaCache = SchemaCacheFactory.Create(informationSchema, _informationSchemaMapping?.Tables);
         }
 
         public void Dispose()
         {
             _schemaCache.Dispose();
         }
-        public DynamicDependentPropertyInfo GetDependentProperties(String tableName, String navigationPropertyName)
+        public DynamicDependentPropertyInfo GetDependentProperties(String tableEdmName, String navigationPropertyName)
         {
-            (String tableSchema, String tableName, bool isQueryType) tableFullName = _schemaCache.GetTables()[tableName];
-            if (_schemaCache.GetNavigations().TryGetValue((tableFullName.tableSchema, tableFullName.tableName), out List<SchemaCache.Navigation> navigations))
-                foreach (SchemaCache.Navigation navigation in navigations)
+            IReadOnlyList<Navigation> navigations = _schemaCache.GetNavigations(tableEdmName);
+            if (navigations.Count > 0)
+                foreach (Navigation navigation in navigations)
                     if (navigation.NavigationName == navigationPropertyName)
                     {
-                        IReadOnlyList<KeyColumnUsage> dependent = _schemaCache.GetKeyColumns()[(navigation.ConstraintSchema, navigation.DependentConstraintName)];
-                        IReadOnlyList<KeyColumnUsage> principal = _schemaCache.GetKeyColumns()[(navigation.ConstraintSchema, navigation.PrincipalConstraintName)]; ;
+                        IReadOnlyList<KeyColumnUsage> dependent = _schemaCache.GetKeyColumns(navigation.ConstraintSchema, navigation.DependentConstraintName);
+                        IReadOnlyList<KeyColumnUsage> principal = _schemaCache.GetKeyColumns(navigation.ConstraintSchema, navigation.PrincipalConstraintName);
                         var principalPropertyNames = new List<String>(principal.Select(p => p.ColumnName));
                         var dependentPropertyNames = new List<String>(dependent.Select(p => p.ColumnName));
 
@@ -42,32 +41,27 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
                         return new DynamicDependentPropertyInfo(principalEdmName, dependentEdmName, principalPropertyNames, dependentPropertyNames, navigation.IsCollection);
                     }
 
-            throw new InvalidOperationException("Navigation property " + navigationPropertyName + " not found in table " + tableName);
+            throw new InvalidOperationException("Navigation property " + navigationPropertyName + " not found in table " + tableEdmName);
         }
         public IReadOnlyList<(String NavigationName, String ManyToManyTarget)> GetManyToManyProperties(String tableEdmName)
         {
-            var manyToManyProperties = _schemaCache.GetManyToManyProperties();
-            if (manyToManyProperties.TryGetValue(tableEdmName, out IReadOnlyList<(String NavigationName, String ManyToManyTarget)> tableManyToManyProperties))
-                return tableManyToManyProperties;
-
-            return Array.Empty<(String NavigationName, String ManyToManyTarget)>();
+            return _schemaCache.GetManyToManyProperties(tableEdmName);
         }
         public IEnumerable<String> GetNavigationProperties(String tableEdmName)
         {
-            (String tableSchema, String tableName, bool _) = _schemaCache.GetTables()[tableEdmName];
-            if (_schemaCache.GetNavigations().TryGetValue((tableSchema, tableName), out List<SchemaCache.Navigation> navigations))
-                foreach (SchemaCache.Navigation navigation in navigations)
-                    yield return navigation.NavigationName;
+            foreach (Navigation navigation in _schemaCache.GetNavigations(tableEdmName))
+                yield return navigation.NavigationName;
         }
         public (String[] propertyNames, bool isPrimary)[] GetKeys(String tableEdmName)
         {
-            (String tableSchema, String tableName) tableFullName = _schemaCache.GetTableFullName(tableEdmName);
-            if (_schemaCache.GetKeyConstraintNames().TryGetValue(tableFullName, out IReadOnlyList<(String constraintName, bool isPrimary)> constraints))
+            IReadOnlyList<(String constraintName, bool isPrimary)> constraints = _schemaCache.GetKeyConstraintNames(tableEdmName);
+            if (constraints.Count > 0)
             {
+                (String tableSchema, _) = _schemaCache.GetTableFullName(tableEdmName);
                 var keys = new (String[] propertyNames, bool isPrimary)[constraints.Count];
                 for (int i = 0; i < constraints.Count; i++)
                 {
-                    IReadOnlyList<KeyColumnUsage> keyColumns = _schemaCache.GetKeyColumns()[(tableFullName.tableSchema, constraints[i].constraintName)];
+                    IReadOnlyList<KeyColumnUsage> keyColumns = _schemaCache.GetKeyColumns(tableSchema, constraints[i].constraintName);
                     var key = new String[keyColumns.Count];
                     for (int j = 0; j < key.Length; j++)
                         key[j] = keyColumns[j].ColumnName;
@@ -109,12 +103,11 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
         }
         public IEnumerable<(String tableEdmName, bool isQueryType)> GetTableEdmNames()
         {
-            foreach (var pair in _schemaCache.GetTables())
-                yield return (pair.Key, pair.Value.isQueryType);
+            return _schemaCache.GetTableEdmNames();
         }
         public String GetTableSchema(String tableEdmName)
         {
-            return _schemaCache.GetTables()[tableEdmName].tableSchema;
+            return _schemaCache.GetTableFullName(tableEdmName).tableSchema;
         }
 
         public ProviderSpecificSchema InformationSchema { get; }
