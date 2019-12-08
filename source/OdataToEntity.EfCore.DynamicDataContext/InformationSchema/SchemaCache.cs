@@ -10,7 +10,6 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         private readonly Dictionary<(String constraintSchema, String constraintName), IReadOnlyList<KeyColumnUsage>> _keyColumns;
         private readonly Dictionary<(String tableSchema, String tableName), List<(String constraintName, bool isPrimary)>> _keyConstraintNames;
         private readonly Dictionary<String, List<(String NavigationName, String ManyToManyTarget)>> _manyToManyProperties;
-        private readonly Dictionary<(String tableSchema, String tableName), IReadOnlyList<NavigationMapping>> _navigationMappings;
         private List<OeOperationConfiguration>? _routines;
         private readonly Dictionary<(String tableSchema, String tableName), List<Column>> _tableColumns;
         private readonly Dictionary<(String tableSchema, String tableName), List<Navigation>> _tableNavigations;
@@ -21,7 +20,6 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 
         internal SchemaCache(
             ProviderSpecificSchema informationSchema,
-            List<ReferentialConstraint> referentialConstraints,
             Dictionary<(String constraintSchema, String constraintName), IReadOnlyList<KeyColumnUsage>> keyColumns,
             Dictionary<String, (String tableSchema, String tableName, bool isQueryType)> tableEdmNameFullNames,
             Dictionary<(String tableSchema, String tableName), String> tableFullNameEdmNames,
@@ -34,7 +32,6 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             _keyColumns = keyColumns;
             _tableEdmNameFullNames = tableEdmNameFullNames;
             _tableFullNameEdmNames = tableFullNameEdmNames;
-            _navigationMappings = navigationMappings;
             _tableColumns = tableColumns;
             _keyConstraintNames = keyConstraintNames;
             _tableNavigations = tableNavigations;

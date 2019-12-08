@@ -23,17 +23,13 @@ namespace OdataToEntity.EfCore.DynamicDataContext
 
         public ProviderSpecificSchema CreateSchema(bool useRelationalNulls)
         {
-            switch (_provider)
+            return _provider switch
             {
-                case "mysql":
-                    return new MySqlSchema(CreateOptionsMySql(useRelationalNulls));
-                case "postgresql":
-                    return new PostgreSqlSchema(CreateOptionsPostgreSql(useRelationalNulls));
-                case "sqlserver":
-                    return new SqlServerSchema(CreateOptionsSqlServer(useRelationalNulls));
-                default:
-                    throw new InvalidOperationException("Unkown provider " + _provider);
-            }
+                "mysql" => new MySqlSchema(CreateOptionsMySql(useRelationalNulls)),
+                "postgresql" => new PostgreSqlSchema(CreateOptionsPostgreSql(useRelationalNulls)),
+                "sqlserver" => new SqlServerSchema(CreateOptionsSqlServer(useRelationalNulls)),
+                _ => throw new InvalidOperationException("Unkown provider " + _provider),
+            };
         }
         private DbContextOptions<DynamicDbContext> CreateOptionsSqlServer(bool useRelationalNulls)
         {

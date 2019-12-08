@@ -126,7 +126,6 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 
             return new SchemaCache(
                 informationSchema,
-                referentialConstraints,
                 keyColumns,
                 tableEdmNameFullNames,
                 tableFullNameEdmNames,

@@ -85,17 +85,13 @@ namespace OdataToEntity.Test
             if (jsonToken == JsonToken.Date)
             {
                 var dateTime = (DateTime)value;
-                switch (dateTime.Kind)
+                return dateTime.Kind switch
                 {
-                    case DateTimeKind.Unspecified:
-                        return new DateTimeOffset(DateTime.SpecifyKind(dateTime, DateTimeKind.Utc));
-                    case DateTimeKind.Utc:
-                        return new DateTimeOffset(dateTime);
-                    case DateTimeKind.Local:
-                        return new DateTimeOffset(dateTime.ToUniversalTime());
-                    default:
-                        throw new ArgumentOutOfRangeException("Unknown DateTimeKind " + dateTime.Kind.ToString());
-                }
+                    DateTimeKind.Unspecified => new DateTimeOffset(DateTime.SpecifyKind(dateTime, DateTimeKind.Utc)),
+                    DateTimeKind.Utc => new DateTimeOffset(dateTime),
+                    DateTimeKind.Local => new DateTimeOffset(dateTime.ToUniversalTime()),
+                    _ => throw new ArgumentOutOfRangeException("Unknown DateTimeKind " + dateTime.Kind.ToString()),
+                };
             }
             else if (jsonToken == JsonToken.Integer && value is long longValue)
                 return (int)longValue;

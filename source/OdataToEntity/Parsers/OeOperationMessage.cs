@@ -107,17 +107,13 @@ namespace OdataToEntity.Parsers
         {
             get
             {
-                switch (Method)
+                return Method switch
                 {
-                    case ODataConstants.MethodDelete:
-                        return HttpStatusCode.OK;
-                    case ODataConstants.MethodPatch:
-                        return HttpStatusCode.NoContent;
-                    case ODataConstants.MethodPost:
-                        return HttpStatusCode.Created;
-                    default:
-                        throw new NotSupportedException(Method);
-                }
+                    ODataConstants.MethodDelete => HttpStatusCode.OK,
+                    ODataConstants.MethodPatch => HttpStatusCode.NoContent,
+                    ODataConstants.MethodPost => HttpStatusCode.Created,
+                    _ => throw new NotSupportedException(Method),
+                };
             }
         }
     }

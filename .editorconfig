@@ -1,0 +1,13 @@
+[*.cs]
+
+# IDE0056: Use index operator
+csharp_style_prefer_index_operator = true:silent
+
+# IDE0054: Use compound assignment
+dotnet_style_prefer_compound_assignment = true:silent
+
+# IDE0057: Use range operator
+csharp_style_prefer_range_operator = true:silent
+
+# CA1012: Abstract types should not have constructors
+dotnet_diagnostic.CA1012.severity = silent

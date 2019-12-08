@@ -23,7 +23,7 @@ namespace OdataToEntity.Parsers.Translators
             public String PropertyName { get; }
         }
 
-        private List<Expression> _expressions;
+        private readonly List<Expression> _expressions;
         private PropertyInfo? _foundProperty;
         private PropertyDef _propertyDef;
         private readonly Expression _source;

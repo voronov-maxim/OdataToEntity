@@ -28,8 +28,6 @@ namespace OdataToEntity.Cache.UriCompare
                     if (!eof1)
                         return true;
 
-                    T item1 = enumerator1.Current;
-                    T item2 = enumerator2.Current;
                     if (!compare(enumerator1.Current, enumerator2.Current))
                         return false;
                 }
@@ -65,8 +63,6 @@ namespace OdataToEntity.Cache.UriCompare
                     if (!eof1)
                         return true;
 
-                    T item1 = enumerator1.Current;
-                    T item2 = enumerator2.Current;
                     if (!compare(enumerator1.Current, enumerator2.Current, parameter))
                         return false;
                 }

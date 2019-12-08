@@ -89,8 +89,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             foreach (IDbContextOptionsExtension extension in options.Extensions)
                 if (extension is RelationalOptionsExtension relationalOptionsExtension)
                 {
-                    var builder = new DbConnectionStringBuilder();
-                    builder.ConnectionString = relationalOptionsExtension.ConnectionString;
+                    var builder = new DbConnectionStringBuilder() { ConnectionString = relationalOptionsExtension.ConnectionString };
                     return (String)builder["database"];
                 }
 

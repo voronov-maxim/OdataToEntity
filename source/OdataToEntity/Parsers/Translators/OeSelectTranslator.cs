@@ -201,7 +201,7 @@ namespace OdataToEntity.Parsers.Translators
             source = expressionBuilder.ApplySkip(source, _odataUri.Skip, _odataUri.Path);
             return expressionBuilder.ApplyTake(source, top, _odataUri.Path);
 
-            bool HasSelectItems(SelectExpandClause selectExpandClause)
+            static bool HasSelectItems(SelectExpandClause selectExpandClause)
             {
                 if (selectExpandClause != null)
                     foreach (SelectItem odataSelectItem in selectExpandClause.SelectedItems)

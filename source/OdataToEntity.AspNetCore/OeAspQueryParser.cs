@@ -83,7 +83,7 @@ namespace OdataToEntity.AspNetCore
 
             return new Db.OeEntityAsyncEnumeratorAdapter<T>(asyncEnumerable.GetAsyncEnumerator(), _queryContext);
         }
-        public async Task<T?> ExecuteScalar<T>(IQueryable? source = null, CancellationToken cancellationToken = default) where T : struct
+        public async Task<T?> ExecuteScalar<T>(IQueryable? source = null) where T : struct
         {
             IAsyncEnumerator<Object>? asyncEnumerator = null;
             try

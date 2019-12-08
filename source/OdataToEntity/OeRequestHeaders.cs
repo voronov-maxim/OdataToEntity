@@ -33,20 +33,12 @@ namespace OdataToEntity
 
         private static String GetContentType(String mimeType, OeMetadataLevel metadataLevel, bool streaming, String charset)
         {
-            String metadataArg;
-            switch (metadataLevel)
+            var metadataArg = metadataLevel switch
             {
-                case OeMetadataLevel.None:
-                    metadataArg = "none";
-                    break;
-                case OeMetadataLevel.Full:
-                    metadataArg = "full";
-                    break;
-                default:
-                    metadataArg = "minimal";
-                    break;
-            }
-
+                OeMetadataLevel.None => "none",
+                OeMetadataLevel.Full => "full",
+                _ => "minimal",
+            };
             String streamingArg = streaming ? "true" : "false";
             return $"{mimeType};odata.metadata={metadataArg};odata.streaming={streamingArg};charset={charset}";
         }

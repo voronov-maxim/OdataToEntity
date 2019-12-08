@@ -113,6 +113,9 @@ namespace OdataToEntity
                 return edmModel.GetEdmModel(operationImport.Container);
             }
 
+            if (path.FirstSegment == null)
+                throw new InvalidOperationException("Invalid path first sgment is null");
+
             throw new InvalidOperationException("Not supported segment type " + path.FirstSegment.GetType().FullName);
         }
         public static IEdmTypeReference GetEdmTypeReference(Type clrType)

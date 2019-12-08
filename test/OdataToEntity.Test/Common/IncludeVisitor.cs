@@ -14,12 +14,12 @@ namespace OdataToEntity.Test
         {
             public int Compare(T x, T y)
             {
-                if (x == default || y == default)
+                if (EqualityComparer<T>.Default.Equals(x, default) || EqualityComparer<T>.Default.Equals(y, default))
                 {
-                    if (x == default && y == default)
+                    if (EqualityComparer<T>.Default.Equals(x, default) && EqualityComparer<T>.Default.Equals(y, default))
                         return 0;
 
-                    return x == default ? 1 : -1;
+                    return EqualityComparer<T>.Default.Equals(x, default) ? 1 : -1;
                 }
 
                 return Comparer<T>.Default.Compare(x, y);

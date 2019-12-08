@@ -53,7 +53,7 @@ namespace Xunit
         }
         public static void Equal<T>(T expected, T actual)
         {
-            if (expected == default && actual == default)
+            if (EqualityComparer<T>.Default.Equals(expected, default) && EqualityComparer<T>.Default.Equals(actual, default))
                 return;
 
             if (!expected.Equals(actual))

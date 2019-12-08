@@ -46,7 +46,7 @@ namespace OdataToEntity.EfCore
         }
         protected override IAsyncEnumerable<Object> ExecuteNonQuery(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object?>> parameters)
         {
-            ((DbContext)dataContext).Database.ExecuteSqlRaw(sql, GetParameterValues(parameters));
+            ((DbContext)  dataContext).Database.ExecuteSqlRaw(sql, GetParameterValues(parameters));
             return Infrastructure.AsyncEnumeratorHelper.Empty;
         }
         protected override IAsyncEnumerable<Object> ExecuteReader(Object dataContext, String sql, IReadOnlyList<KeyValuePair<String, Object?>> parameters, OeEntitySetAdapter entitySetAdapter)
@@ -61,7 +61,7 @@ namespace OdataToEntity.EfCore
             var connection = dbContext.GetService<IRelationalConnection>();
             IRelationalCommand command = CreateCommand(dataContext, sql, parameters, out Dictionary<String, Object?> parameterValues);
 
-            var commandParameters = new RelationalCommandParameterObject(connection, parameterValues, dbContext, null);
+            var commandParameters = new RelationalCommandParameterObject(connection, parameterValues, null, dbContext, null);
             if (Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(returnType) == null)
             {
                 Task<Object> scalarResult = command.ExecuteScalarAsync(commandParameters);
