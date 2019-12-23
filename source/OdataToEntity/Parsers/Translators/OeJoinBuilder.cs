@@ -213,8 +213,7 @@ namespace OdataToEntity.Parsers.Translators
         {
             if (propertyNode.Source is SingleNavigationNode navigationNode)
             {
-                var joinPath = new List<IEdmNavigationProperty>();
-                joinPath.Add(navigationNode.NavigationProperty);
+                var joinPath = new List<IEdmNavigationProperty> { navigationNode.NavigationProperty };
                 while (navigationNode.Source is SingleNavigationNode)
                 {
                     navigationNode = (SingleNavigationNode)navigationNode.Source;

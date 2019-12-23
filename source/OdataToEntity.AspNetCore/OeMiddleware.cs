@@ -38,6 +38,16 @@ namespace OdataToEntity.AspNetCore
 
             return false;
         }
+        private static void GetJsonSchema(IEdmModel edmModel, Stream stream)
+        {
+            using (var memoryStream = new MemoryStream()) //kestrel allow only async operation
+            {
+                var schemaGenerator = new ModelBuilder.OeJsonSchemaGenerator(edmModel);
+                schemaGenerator.Generate(memoryStream);
+                memoryStream.Position = 0;
+                memoryStream.CopyToAsync(stream);
+            }
+        }
         protected virtual Query.OeModelBoundProvider? GetModelBoundProvider(HttpContext httpContext)
         {
             return null;
@@ -48,6 +58,8 @@ namespace OdataToEntity.AspNetCore
                 InvokeMetadata(httpContext);
             else if (httpContext.Request.Path == "/$batch")
                 await InvokeBatch(httpContext).ConfigureAwait(false);
+            else if (httpContext.Request.Path == "/$json-schema")
+                InvokeJsonSchema(httpContext);
             else if (httpContext.Request.PathBase == _apiPath)
                 await InvokeApi(httpContext).ConfigureAwait(false);
             else
@@ -68,6 +80,11 @@ namespace OdataToEntity.AspNetCore
             var parser = new OeParser(UriHelper.GetBaseUri(httpContext.Request), EdmModel);
             await parser.ExecuteBatchAsync(httpContext.Request.Body, httpContext.Response.Body,
                 httpContext.Request.ContentType, CancellationToken.None).ConfigureAwait(false);
+        }
+        private void InvokeJsonSchema(HttpContext httpContext)
+        {
+            httpContext.Response.ContentType = "application/schema+json";
+            GetJsonSchema(EdmModel, httpContext.Response.Body);
         }
         private void InvokeMetadata(HttpContext httpContext)
         {

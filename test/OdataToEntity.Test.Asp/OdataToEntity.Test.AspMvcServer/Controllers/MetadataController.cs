@@ -3,12 +3,17 @@ using OdataToEntity.AspNetCore;
 
 namespace OdataToEntity.Test.AspMvcServer.Controllers
 {
-    [Route("api/$metadata")]
     public class MetadataController : OeMetadataController
     {
-        public void Get()
+        [Route("api/$metadata")]
+        public void GetCsdl()
         {
             base.GetCsdlSchema();
+        }
+        [Route("api/$json-schema")]
+        public void GetJson()
+        {
+            base.GetJsonSchema();
         }
     }
 }

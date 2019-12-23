@@ -40,8 +40,7 @@ namespace OdataToEntity.Parsers
             }
             public static PropertyExpressionKey CreateKey(MemberExpression propertyExpression)
             {
-                var memberInfos = new List<MemberInfo>();
-                memberInfos.Add(propertyExpression.Member);
+                var memberInfos = new List<MemberInfo> { propertyExpression.Member };
                 int hashCode = propertyExpression.Member.GetHashCode();
                 while (propertyExpression.Expression is MemberExpression propertyExpression1)
                 {
