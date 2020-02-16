@@ -168,12 +168,15 @@ namespace OdataToEntity.Parsers
             IEdmEntitySet entitySet = OeEdmClrHelper.GetEntitySet(EdmModel, EntitySetAdapter.EntitySetName);
             expression = OeEnumerableStub.CreateEnumerableStubExpression(EntitySetAdapter.EntityType, entitySet);
             expression = expressionBuilder.ApplyNavigation(expression, ParseNavigationSegments);
-            expression = expressionBuilder.ApplyFilter(expression, ODataUri.Filter);
             if (ODataUri.Apply == null)
+            {
+                expression = expressionBuilder.ApplyFilter(expression, ODataUri.Filter);
                 expression = expressionBuilder.ApplySelect(expression, this);
+            }
             else
             {
                 expression = expressionBuilder.ApplyAggregation(expression, ODataUri.Apply);
+                expression = expressionBuilder.ApplyFilter(expression, ODataUri.Filter);
                 expression = expressionBuilder.ApplySkipToken(expression, SkipTokenNameValues, ODataUri.OrderBy, IsDatabaseNullHighestValue); //order by aggregation
                 expression = expressionBuilder.ApplyOrderBy(expression, ODataUri.OrderBy);
                 expression = expressionBuilder.ApplySkip(expression, ODataUri.Skip, ODataUri.Path);

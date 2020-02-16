@@ -99,6 +99,10 @@ namespace OdataToEntity.Query
 
                 return nodeIn;
             }
+            public override QueryNode Visit(SingleValueOpenPropertyAccessNode nodeIn)
+            {
+                return nodeIn;
+            }
             public override QueryNode Visit(SingleValuePropertyAccessNode nodeIn)
             {
                 nodeIn.Source.Accept(this);
