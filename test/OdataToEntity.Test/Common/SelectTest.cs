@@ -1219,6 +1219,22 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
+        [Fact]
+        public async Task MathFunctions()
+        {
+            var parameters = new QueryParameters<OrderItem, Object>()
+            {
+                RequestUri = "OrderItems?$select=Price&$compute=ceiling(Price) as Ceiling,floor(Price) as Floor,round(Price) as Round&$orderby=Price",
+                Expression = t => t.Select(i => new
+                {
+                    i.Price,
+                    Ceiling = Math.Ceiling(i.Price.GetValueOrDefault()),
+                    Floor = Math.Floor(i.Price.GetValueOrDefault()),
+                    Round = Math.Round(i.Price.GetValueOrDefault())
+                }).OrderBy(g => g.Price)
+            };
+            await Fixture.Execute(parameters).ConfigureAwait(false);
+        }
         [Theory]
         [InlineData(0)]
         [InlineData(1)]
@@ -1352,6 +1368,40 @@ namespace OdataToEntity.Test
                 RequestUri = "Orders?$orderby=Id",
                 Expression = t => t.OrderBy(o => o.Id),
                 PageSize = pageSize,
+            };
+            await Fixture.Execute(parameters).ConfigureAwait(false);
+        }
+        [Fact]
+        public async Task TimeDateTimeFunction()
+        {
+            var parameters = new QueryParameters<Category, Object>()
+            {
+                RequestUri = "Categories?$select=DateTime&$compute=hour(DateTime) as Hour,minute(DateTime) as Minute,second(DateTime) as Second&$orderby=DateTime",
+                Expression = t => t.Select(c => new
+                {
+                    c.DateTime,
+                    c.DateTime.Value.Hour,
+                    c.DateTime.Value.Minute,
+                    c.DateTime.Value.Second
+                })
+            .OrderBy(c => c.DateTime)
+            };
+            await Fixture.Execute(parameters).ConfigureAwait(false);
+        }
+        [Fact]
+        public async Task TimeDateTimeOffsetFunction()
+        {
+            var parameters = new QueryParameters<Order, Object>()
+            {
+                RequestUri = "Orders?$select=Date&$compute=hour(Date) as Hour,minute(Date) as Minute,second(Date) as Second&$orderby=Date",
+                Expression = t => t.Select(o => new
+                {
+                    o.Date,
+                    o.Date.Value.Hour,
+                    o.Date.Value.Minute,
+                    o.Date.Value.Second
+                })
+            .OrderBy(o => o.Date)
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }

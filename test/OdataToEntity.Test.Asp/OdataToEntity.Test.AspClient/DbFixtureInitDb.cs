@@ -78,6 +78,9 @@ namespace OdataToEntity.Test
                 if (parameters.RequestUri.Contains("$apply="))
                     throw;
 
+                if (parameters.RequestUri.Contains("$compute=") && (parameters.RequestUri.Contains("ceiling(") || parameters.RequestUri.Contains("hour(")))
+                    throw new NotSupportedException("$compute and function not suported");
+
                 fromOe = await ExecuteOeViaHttpClient(parameters, null);
                 TestWriteException(e, ConsoleColor.Green);
             }

@@ -184,7 +184,7 @@ namespace OdataToEntity.Test
             {
                 ResponseReader.NavigationInfo navigationInfo = reader.GetNavigationInfo(category.Children);
                 String actual = Uri.UnescapeDataString(navigationInfo.NextPageLink.OriginalString);
-                String expected = $"http://dummy/Categories?$filter=ParentId eq {category.Id}";
+                String expected = $"http://dummy/Categories?$filter=ParentId eq {category.Id}&$orderby=Id";
                 Assert.Equal(expected, actual);
             }
         }

@@ -1,5 +1,5 @@
 ﻿using GraphQL;
-using GraphQL.Http;
+using GraphQL.NewtonsoftJson;
 using System;
 using System.IO;
 using System.Threading.Tasks;

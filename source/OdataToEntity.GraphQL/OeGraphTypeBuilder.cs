@@ -21,7 +21,7 @@ namespace OdataToEntity.GraphQL
                 _propertyInfo = propertyInfo;
             }
 
-            public Object Resolve(ResolveFieldContext context)
+            public Object Resolve(IResolveFieldContext context)
             {
                 if (context.Source is IDictionary<String, Object> dictionary)
                     return dictionary[_propertyInfo.Name];
@@ -100,7 +100,10 @@ namespace OdataToEntity.GraphQL
                         IGraphType resolvedType = fieldType.ResolvedType;
                         if (resolvedType is NonNullGraphType nonNullGraphType)
                             resolvedType = nonNullGraphType.ResolvedType;
-                        queryArgument = new QueryArgument(resolvedType.GetType()) { ResolvedType = resolvedType };
+
+                        Type inputObjectGraphType = typeof(InputObjectGraphType<>).MakeGenericType(resolvedType.GetType());
+                        var inputObjectGraph = (IInputObjectGraphType)Activator.CreateInstance(inputObjectGraphType);
+                        queryArgument = new QueryArgument(inputObjectGraphType) { Name = resolvedType.Name, ResolvedType = inputObjectGraph };
                     }
                     else
                     {

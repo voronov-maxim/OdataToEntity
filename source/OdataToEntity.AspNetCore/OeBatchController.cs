@@ -107,7 +107,7 @@ namespace OdataToEntity.AspNetCore
 
             base.HttpContext.Response.ContentType = base.HttpContext.Request.ContentType;
             var batchWriter = new OeBatchWriter(EdmModel, baseUri);
-            await batchWriter.Write(base.HttpContext.Response.Body, batchMessage);
+            await batchWriter.WriteAsync(base.HttpContext.Response.Body, batchMessage);
         }
         protected virtual void OnBeforeInvokeController(OeDataContext dataContext, ODataResource entry)
         {

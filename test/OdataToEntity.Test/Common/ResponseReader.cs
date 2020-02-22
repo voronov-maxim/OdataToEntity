@@ -172,7 +172,8 @@ namespace OdataToEntity.Test
                             value = Activator.CreateInstance(clrProperty.PropertyType);
 
                     clrProperty.SetValue(entity, value);
-                    NavigationProperties.Add(value, navigationInfo);
+                    if (value != null)
+                        NavigationProperties.Add(value, navigationInfo);
 
                     if (propertyInfos == null)
                     {
@@ -238,7 +239,7 @@ namespace OdataToEntity.Test
         }
         public NavigationInfo GetNavigationInfo(Object navigationProperty)
         {
-            return NavigationProperties[navigationProperty];
+            return navigationProperty == null ? default : NavigationProperties[navigationProperty];
         }
         public IReadOnlyDictionary<PropertyInfo, NavigationInfo> GetNavigationProperties(Object entity)
         {

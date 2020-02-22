@@ -19,7 +19,7 @@ namespace OdataToEntity.Parsers.Translators
         private readonly IEdmNavigationProperty? _edmProperty;
         private OeEntryFactory? _entryFactory;
         private readonly List<OeNavigationSelectItem> _navigationItems;
-        private readonly ExpandedNavigationSelectItem? _navigationSelectItem;
+        private ExpandedNavigationSelectItem? _navigationSelectItem;
         private readonly List<OeStructuralSelectItem> _structuralItems;
         private readonly List<OeStructuralSelectItem> _structuralItemsNotSelected;
 
@@ -53,6 +53,23 @@ namespace OdataToEntity.Parsers.Translators
             if (!AllSelected)
                 foreach (IEdmStructuralProperty keyProperty in EntitySet.EntityType().Key())
                     AddStructuralItem(keyProperty, notSelected);
+
+            if (_navigationSelectItem != null)
+            {
+                OrderByClause orderByClause = OeSkipTokenParser.GetUniqueOrderBy(EntitySet, _navigationSelectItem.OrderByOption, null);
+                if (_navigationSelectItem.OrderByOption != orderByClause)
+                    _navigationSelectItem = new ExpandedNavigationSelectItem(
+                        _navigationSelectItem.PathToNavigationProperty,
+                        _navigationSelectItem.NavigationSource,
+                        _navigationSelectItem.SelectAndExpand,
+                        _navigationSelectItem.FilterOption,
+                        orderByClause,
+                        _navigationSelectItem.TopOption,
+                        _navigationSelectItem.SkipOption,
+                        _navigationSelectItem.CountOption,
+                        _navigationSelectItem.SearchOption,
+                        _navigationSelectItem.LevelsOption);
+            }
 
             foreach (OeNavigationSelectItem childNavigationItem in _navigationItems)
             {

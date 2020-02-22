@@ -40,7 +40,7 @@ namespace OdataToEntity.Test.AspClient
 
             Assert.Equal(8, (await container.Categories.ToListAsync()).Count);
             Assert.Equal(4, (await container.Customers.ToListAsync()).Count);
-            Assert.Equal(3, (await container.Orders.ToListAsync()).Count);
+            Assert.Equal(4, (await container.Orders.ToListAsync()).Count);
             Assert.Equal(7, (await container.OrderItems.ToListAsync()).Count);
             Assert.Equal(5, (await container.ShippingAddresses.ToListAsync()).Count);
             Assert.Equal(5, (await container.CustomerShippingAddress.ToListAsync()).Count);
@@ -146,7 +146,7 @@ namespace OdataToEntity.Test.AspClient
             {
                 AltCustomerCountry = null,
                 AltCustomerId = null,
-                Date = DateTimeOffset.Now,
+                Date = DateTimeOffset.Parse("2016-07-04T19:10:10.8237573+03:00"),
                 Id = -1,
                 Name = "Order 1",
                 CustomerCountry = "RU",
@@ -157,7 +157,7 @@ namespace OdataToEntity.Test.AspClient
             {
                 AltCustomerCountry = null,
                 AltCustomerId = null,
-                Date = DateTimeOffset.Now,
+                Date = DateTimeOffset.Parse("2016-07-04T19:10:11.0000000+03:00"),
                 Id = -2,
                 Name = "Order 2",
                 CustomerCountry = "EN",
@@ -174,6 +174,17 @@ namespace OdataToEntity.Test.AspClient
                 CustomerCountry = "UN",
                 CustomerId = 1,
                 Status = OrderStatus.Unknown
+            };
+            var order4 = new Order()
+            {
+                AltCustomerCountry = "RU",
+                AltCustomerId = 2,
+                Date = DateTimeOffset.Parse("2020-02-20T20:20:20.0000020+03:00"),
+                Id = -4,
+                Name = "Order Ivan",
+                CustomerCountry = "RU",
+                CustomerId = 1,
+                Status = OrderStatus.Cancelled
             };
 
             var orderItem11 = new OrderItem()
@@ -385,6 +396,7 @@ namespace OdataToEntity.Test.AspClient
             container.AddToOrders(order1);
             container.AddToOrders(order2);
             container.AddToOrders(order3);
+            container.AddToOrders(order4);
 
             container.AddToOrderItems(orderItem11);
             container.AddToOrderItems(orderItem12);
@@ -423,7 +435,7 @@ namespace OdataToEntity.Test.AspClient
 
             Assert.Equal(5, (await container.Categories.ToListAsync()).Count);
             Assert.Equal(4, (await container.Customers.ToListAsync()).Count);
-            Assert.Equal(2, (await container.Orders.ToListAsync()).Count);
+            Assert.Equal(3, (await container.Orders.ToListAsync()).Count);
             Assert.Equal(3, (await container.OrderItems.ToListAsync()).Count);
             Assert.Equal(2, (await container.ShippingAddresses.ToListAsync()).Count);
             Assert.Equal(2, (await container.CustomerShippingAddress.ToListAsync()).Count);
@@ -505,7 +517,7 @@ namespace OdataToEntity.Test.AspClient
             Assert.Equal("jackets", (await container.Categories.Where(t => t.Id == category.ParentId).SingleAsync()).Name);
 
             Assert.Equal(4, (await container.Customers.ToListAsync()).Count);
-            Assert.Equal(3, (await container.Orders.ToListAsync()).Count);
+            Assert.Equal(4, (await container.Orders.ToListAsync()).Count);
             Assert.Equal(7, (await container.OrderItems.ToListAsync()).Count);
 
             var order1 = await container.Orders.ByKey(1).Expand(t => t.Items).GetValueAsync();

@@ -1,5 +1,6 @@
 ﻿using GraphQL;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -105,7 +106,7 @@ namespace OdataToEntity.Test.GraphQL
                 }
             ";
 
-            var inputs = new Inputs { { "id", "1" } };
+            var inputs = new Inputs( new Dictionary<String, Object>() { { "id", "1" } });
             String result = await Fixture.Execute(query, inputs);
             TestResults.Assert(result);
         }

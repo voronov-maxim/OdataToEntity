@@ -146,7 +146,10 @@ namespace OdataToEntity.Test
                         continue;
 
                     if (value is Decimal d)
-                        value = Math.Round(d, 2);
+                        if (d == 0)
+                            value = Decimal.Parse("0.00", System.Globalization.CultureInfo.InvariantCulture);
+                        else
+                            value = Math.Round(d, 2);
 
                     if (value is DateTimeOffset dateTimeOffset)
                         value = dateTimeOffset.ToUniversalTime();
@@ -215,7 +218,10 @@ namespace OdataToEntity.Test
                                     continue;
 
                                 if (value is Decimal d)
-                                    value = Math.Round(d, 2);
+                                    if (d == 0)
+                                        value = Decimal.Parse("0.00", System.Globalization.CultureInfo.InvariantCulture);
+                                    else
+                                        value = Math.Round(d, 2);
 
                                 if (value is DateTimeOffset dateTimeOffset)
                                     value = dateTimeOffset.ToUniversalTime();

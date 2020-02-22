@@ -111,7 +111,7 @@ Content-Type: application/http
 Content-Transfer-Encoding: binary
 Content-ID: 8
 
-POST http://dummy/OrderItems HTTP/1.1
+POST http://dummy/Orders HTTP/1.1
 OData-Version: 4.0
 OData-MaxVersion: 4.0
 Content-Type: application/json;odata.metadata=minimal
@@ -119,7 +119,7 @@ Accept: application/json;odata.metadata=minimal
 Accept-Charset: UTF-8
 User-Agent: Microsoft ADO.NET Data Services
 
-{"@odata.type":"#OdataToEntity.Test.Model.OrderItem","Count":1,"Id":-1,"OrderId":-1,"Price":1.1,"Product":"Product order 1 item 1"}
+{"@odata.type":"#OdataToEntity.Test.Model.Order","AltCustomerCountry":"RU","AltCustomerId":2,"CustomerCountry":"RU","CustomerId":1,"Date":"2020-02-20T20:20:20.0000020+03:00","Id":-4,"Name":"Order Ivan","Status@odata.type":"#OdataToEntity.Test.Model.OrderStatus","Status":"Cancelled"}
 
 --changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
 Content-Type: application/http
@@ -134,7 +134,7 @@ Accept: application/json;odata.metadata=minimal
 Accept-Charset: UTF-8
 User-Agent: Microsoft ADO.NET Data Services
 
-{"@odata.type":"#OdataToEntity.Test.Model.OrderItem","Count":2,"Id":-2,"OrderId":-1,"Price":1.2,"Product":"Product order 1 item 2"}
+{"@odata.type":"#OdataToEntity.Test.Model.OrderItem","Count":1,"Id":-1,"OrderId":-1,"Price":1.1,"Product":"Product order 1 item 1"}
 
 --changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
 Content-Type: application/http
@@ -149,7 +149,7 @@ Accept: application/json;odata.metadata=minimal
 Accept-Charset: UTF-8
 User-Agent: Microsoft ADO.NET Data Services
 
-{"@odata.type":"#OdataToEntity.Test.Model.OrderItem","Count":3,"Id":-3,"OrderId":-1,"Price":1.3,"Product":"Product order 1 item 3"}
+{"@odata.type":"#OdataToEntity.Test.Model.OrderItem","Count":2,"Id":-2,"OrderId":-1,"Price":1.2,"Product":"Product order 1 item 2"}
 
 --changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
 Content-Type: application/http
@@ -164,7 +164,7 @@ Accept: application/json;odata.metadata=minimal
 Accept-Charset: UTF-8
 User-Agent: Microsoft ADO.NET Data Services
 
-{"@odata.type":"#OdataToEntity.Test.Model.OrderItem","Count":1,"Id":-4,"OrderId":-2,"Price":2.1,"Product":"Product order 2 item 1"}
+{"@odata.type":"#OdataToEntity.Test.Model.OrderItem","Count":3,"Id":-3,"OrderId":-1,"Price":1.3,"Product":"Product order 1 item 3"}
 
 --changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
 Content-Type: application/http
@@ -179,7 +179,7 @@ Accept: application/json;odata.metadata=minimal
 Accept-Charset: UTF-8
 User-Agent: Microsoft ADO.NET Data Services
 
-{"@odata.type":"#OdataToEntity.Test.Model.OrderItem","Count":2,"Id":-5,"OrderId":-2,"Price":2.2,"Product":"Product order 2 item 2"}
+{"@odata.type":"#OdataToEntity.Test.Model.OrderItem","Count":1,"Id":-4,"OrderId":-2,"Price":2.1,"Product":"Product order 2 item 1"}
 
 --changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
 Content-Type: application/http
@@ -194,7 +194,7 @@ Accept: application/json;odata.metadata=minimal
 Accept-Charset: UTF-8
 User-Agent: Microsoft ADO.NET Data Services
 
-{"@odata.type":"#OdataToEntity.Test.Model.OrderItem","Count":null,"Id":-6,"OrderId":-3,"Price":null,"Product":"Product order 3 item 1 (unknown)"}
+{"@odata.type":"#OdataToEntity.Test.Model.OrderItem","Count":2,"Id":-5,"OrderId":-2,"Price":2.2,"Product":"Product order 2 item 2"}
 
 --changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
 Content-Type: application/http
@@ -209,14 +209,14 @@ Accept: application/json;odata.metadata=minimal
 Accept-Charset: UTF-8
 User-Agent: Microsoft ADO.NET Data Services
 
-{"@odata.type":"#OdataToEntity.Test.Model.OrderItem","Count":0,"Id":-7,"OrderId":-3,"Price":0,"Product":"{ null }.Sum() == 0"}
+{"@odata.type":"#OdataToEntity.Test.Model.OrderItem","Count":null,"Id":-6,"OrderId":-3,"Price":null,"Product":"Product order 3 item 1 (unknown)"}
 
 --changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
 Content-Type: application/http
 Content-Transfer-Encoding: binary
 Content-ID: 15
 
-POST http://dummy/Categories HTTP/1.1
+POST http://dummy/OrderItems HTTP/1.1
 OData-Version: 4.0
 OData-MaxVersion: 4.0
 Content-Type: application/json;odata.metadata=minimal
@@ -224,7 +224,7 @@ Accept: application/json;odata.metadata=minimal
 Accept-Charset: UTF-8
 User-Agent: Microsoft ADO.NET Data Services
 
-{"@odata.type":"#OdataToEntity.Test.Model.Category","Id":-1,"Name":"clothes","ParentId":null,"DateTime":"2016-07-04T19:10:10.8237573+03:00"}
+{"@odata.type":"#OdataToEntity.Test.Model.OrderItem","Count":0,"Id":-7,"OrderId":-3,"Price":0,"Product":"{ null }.Sum() == 0"}
 
 --changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
 Content-Type: application/http
@@ -239,7 +239,7 @@ Accept: application/json;odata.metadata=minimal
 Accept-Charset: UTF-8
 User-Agent: Microsoft ADO.NET Data Services
 
-{"@odata.type":"#OdataToEntity.Test.Model.Category","Id":-2,"Name":"unknown","ParentId":null}
+{"@odata.type":"#OdataToEntity.Test.Model.Category","Id":-1,"Name":"clothes","ParentId":null,"DateTime":"2016-07-04T19:10:10.8237573+03:00"}
 
 --changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
 Content-Type: application/http
@@ -254,7 +254,7 @@ Accept: application/json;odata.metadata=minimal
 Accept-Charset: UTF-8
 User-Agent: Microsoft ADO.NET Data Services
 
-{"@odata.type":"#OdataToEntity.Test.Model.Category","Id":-3,"Name":"hats","ParentId":-1,"DateTime":"2016-07-04T19:10:10.8237573+03:00"}
+{"@odata.type":"#OdataToEntity.Test.Model.Category","Id":-2,"Name":"unknown","ParentId":null}
 
 --changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
 Content-Type: application/http
@@ -269,12 +269,27 @@ Accept: application/json;odata.metadata=minimal
 Accept-Charset: UTF-8
 User-Agent: Microsoft ADO.NET Data Services
 
-{"@odata.type":"#OdataToEntity.Test.Model.Category","Id":-4,"Name":"jackets","ParentId":-1,"DateTime":"2016-07-04T19:10:10.8237573+03:00"}
+{"@odata.type":"#OdataToEntity.Test.Model.Category","Id":-3,"Name":"hats","ParentId":-1,"DateTime":"2016-07-04T19:10:10.8237573+03:00"}
 
 --changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
 Content-Type: application/http
 Content-Transfer-Encoding: binary
 Content-ID: 19
+
+POST http://dummy/Categories HTTP/1.1
+OData-Version: 4.0
+OData-MaxVersion: 4.0
+Content-Type: application/json;odata.metadata=minimal
+Accept: application/json;odata.metadata=minimal
+Accept-Charset: UTF-8
+User-Agent: Microsoft ADO.NET Data Services
+
+{"@odata.type":"#OdataToEntity.Test.Model.Category","Id":-4,"Name":"jackets","ParentId":-1,"DateTime":"2016-07-04T19:10:10.8237573+03:00"}
+
+--changeset_e9a0e344-4133-4677-9be8-1d0006e40bb6
+Content-Type: application/http
+Content-Transfer-Encoding: binary
+Content-ID: 20
 
 POST http://dummy/Categories HTTP/1.1
 OData-Version: 4.0

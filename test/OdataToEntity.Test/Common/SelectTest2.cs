@@ -77,7 +77,7 @@ namespace OdataToEntity.Test
             foreach (dynamic order in reader.Read(response))
             {
                 var navigationProperty = (IEnumerable)order.Items;
-                actualCounts.Add(reader.GetNavigationInfo(navigationProperty).Count.Value);
+                actualCounts.Add(reader.GetNavigationInfo(navigationProperty).Count.GetValueOrDefault());
             }
 
             List<long> expectedCounts;
@@ -111,7 +111,7 @@ namespace OdataToEntity.Test
         [Fact]
         public async Task CountQueryParameterFilter()
         {
-            String request = "OrderItems?$filter=OrderId eq 1&$count=true&$top=1";
+            String request = "OrderItems?$filter=Order/Name eq 'Order 1'&$count=true&$top=1";
 
             ODataUri odataUri = Fixture.ParseUri(request);
             IEdmModel edmModel = Fixture.OeEdmModel.GetEdmModel(odataUri.Path);
@@ -126,7 +126,7 @@ namespace OdataToEntity.Test
 
             int? expectedCount;
             using (var dbContext = Fixture.CreateContext())
-                expectedCount = dbContext.OrderItems.Count(i => i.OrderId == 1);
+                expectedCount = dbContext.OrderItems.Count(i => i.Order.Name == "Order 1");
 
             Assert.Equal(expectedCount, reader.ResourceSet.Count);
         }
@@ -226,21 +226,24 @@ namespace OdataToEntity.Test
                     }
 
                     var navigationProperty = (IEnumerable)order.Items;
-                    ResponseReader.NavigationInfo info = reader.GetNavigationInfo(navigationProperty);
+                    if (navigationProperty != null)
+                    {
+                        ResponseReader.NavigationInfo info = reader.GetNavigationInfo(navigationProperty);
 
-                    if (!navigationNextLink && !uri.OriginalString.Contains("$skiptoken="))
-                        Assert.Equal(expectedCount, info.Count);
+                        if (!navigationNextLink && !uri.OriginalString.Contains("$skiptoken="))
+                            Assert.Equal(expectedCount, info.Count);
 
-                    var navigationPropertyResponse = new MemoryStream();
-                    await navigationPropertyParser.ExecuteGetAsync(info.NextPageLink, OeRequestHeaders.JsonDefault, navigationPropertyResponse, CancellationToken.None).ConfigureAwait(false);
-                    navigationPropertyResponse.Position = 0;
+                        var navigationPropertyResponse = new MemoryStream();
+                        await navigationPropertyParser.ExecuteGetAsync(info.NextPageLink, OeRequestHeaders.JsonDefault, navigationPropertyResponse, CancellationToken.None).ConfigureAwait(false);
+                        navigationPropertyResponse.Position = 0;
 
-                    var navigationPropertyReader = new ResponseReader(parser.EdmModel);
-                    foreach (dynamic orderItem in navigationPropertyReader.Read(navigationPropertyResponse))
-                        order.Items.Add(orderItem);
+                        var navigationPropertyReader = new ResponseReader(parser.EdmModel);
+                        foreach (dynamic orderItem in navigationPropertyReader.Read(navigationPropertyResponse))
+                            order.Items.Add(orderItem);
 
-                    if (navigationNextLink)
-                        Assert.Equal(expectedCount, navigationPropertyReader.ResourceSet.Count);
+                        if (navigationNextLink)
+                            Assert.Equal(expectedCount, navigationPropertyReader.ResourceSet.Count);
+                    }
                 }
 
                 if (count < 0)

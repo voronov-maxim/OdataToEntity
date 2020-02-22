@@ -32,10 +32,10 @@ namespace OdataToEntity.GraphQL
             }
         }
 
-        private readonly ResolveFieldContext _context;
+        private readonly IResolveFieldContext _context;
         private readonly IEdmModel _edmModel;
 
-        public OeGraphqlAstToODataUri(IEdmModel edmModel, ResolveFieldContext context)
+        public OeGraphqlAstToODataUri(IEdmModel edmModel, IResolveFieldContext context)
         {
             _edmModel = edmModel;
             _context = context;
@@ -56,16 +56,17 @@ namespace OdataToEntity.GraphQL
             BinaryOperatorNode? compositeNode = null;
             IEdmEntityType entityType = source.NavigationSource.EntityType();
 
-            foreach (GraphQLArgument argument in selection.Arguments)
-            {
-                IEdmProperty edmProperty = FindEdmProperty(entityType, argument.Name.Value);
-                var left = new SingleValuePropertyAccessNode(source, edmProperty);
+            if (selection.Arguments != null)
+                foreach (GraphQLArgument argument in selection.Arguments)
+                {
+                    IEdmProperty edmProperty = FindEdmProperty(entityType, argument.Name.Value);
+                    var left = new SingleValuePropertyAccessNode(source, edmProperty);
 
-                Object value = GetArgumentValue(edmProperty.Type, argument.Value);
-                var right = new ConstantNode(value, ODataUriUtils.ConvertToUriLiteral(value, ODataVersion.V4));
-                var node = new BinaryOperatorNode(BinaryOperatorKind.Equal, left, right);
-                compositeNode = ComposeExpression(compositeNode, node);
-            }
+                    Object value = GetArgumentValue(edmProperty.Type, argument.Value);
+                    var right = new ConstantNode(value, ODataUriUtils.ConvertToUriLiteral(value, ODataVersion.V4));
+                    var node = new BinaryOperatorNode(BinaryOperatorKind.Equal, left, right);
+                    compositeNode = ComposeExpression(compositeNode, node);
+                }
 
             return compositeNode;
         }
@@ -96,7 +97,7 @@ namespace OdataToEntity.GraphQL
                         var expandPath = new ODataExpandPath(new NavigationPropertySegment(navigationProperty, parentEntitySet));
 
                         FilterClause? filterOption = null;
-                        if (fieldSelection.Arguments.Any())
+                        if (fieldSelection.Arguments != null && fieldSelection.Arguments.Any())
                             filterOption = BuildFilterClause(parentEntitySet, fieldSelection);
 
                         SelectExpandClause childSelectExpand = BuildSelectExpandClause(parentEntitySet, fieldSelection.SelectionSet);
@@ -134,10 +135,7 @@ namespace OdataToEntity.GraphQL
                 return ODataUriUtils.ConvertFromUriLiteral(scalarValue.Value, ODataVersion.V4, _edmModel, typeReference);
             }
             else if (graphValue is GraphQLVariable variable)
-            {
-                Type clrType = _edmModel.GetClrType(typeReference.Definition);
-                return _context.GetArgument(clrType, variable.Name.Value);
-            }
+                return _context.Arguments[variable.Name.Value];
 
             throw new NotSupportedException("Argument " + graphValue.GetType().Name + " not supported");
         }

@@ -220,6 +220,7 @@ namespace OdataToEntity.Writers
                 return null;
 
             ODataUri nextOdataUri = _queryContext.ODataUri.Clone();
+            nextOdataUri.Compute = _queryContext.ODataUri.Compute;
             nextOdataUri.SelectAndExpand = _queryContext.ODataUri.SelectAndExpand;
             nextOdataUri.ServiceRoot = null;
             nextOdataUri.QueryCount = null;

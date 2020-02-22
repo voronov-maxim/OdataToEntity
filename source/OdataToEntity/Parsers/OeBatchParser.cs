@@ -48,7 +48,7 @@ namespace OdataToEntity.Parsers
                 await ExecuteChangeset(batchMessage.Changeset, cancellationToken).ConfigureAwait(false);
 
             var batchWriter = new Writers.OeBatchWriter(_edmModel, _baseUri);
-            await batchWriter.Write(responseStream, batchMessage);
+            await batchWriter.WriteAsync(responseStream, batchMessage);
         }
         private async Task ExecuteChangeset(IReadOnlyList<OeOperationMessage> changeset, CancellationToken cancellationToken)
         {

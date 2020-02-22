@@ -1,5 +1,4 @@
 ﻿using GraphQL;
-using GraphQL.Http;
 using GraphQL.Types;
 using Microsoft.OData.Edm;
 using Microsoft.OData.Edm.Csdl;

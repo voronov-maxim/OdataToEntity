@@ -60,7 +60,7 @@ namespace OdataToEntity.Parsers
                     headers.ResponseContentType = OeRequestHeaders.TextDefault.ContentType;
                     int count = dataAdapter.ExecuteScalar<int>(dataContext, queryContext);
                     byte[] buffer = System.Text.Encoding.UTF8.GetBytes(count.ToString(CultureInfo.InvariantCulture));
-                    stream.Write(buffer, 0, buffer.Length);
+                    await stream.WriteAsync(buffer, 0, buffer.Length);
                 }
                 else
                 {

@@ -17,7 +17,7 @@ namespace OdataToEntity.GraphQL
         {
             _edmModel = edmModel;
         }
-        public async Task<IEnumerable<Dictionary<String, Object?>>> Resolve(ResolveFieldContext context)
+        public async Task<IEnumerable<Dictionary<String, Object?>>> Resolve(IResolveFieldContext context)
         {
             var results = new List<Dictionary<String, Object?>>();
 
@@ -49,7 +49,11 @@ namespace OdataToEntity.GraphQL
 
             return results;
         }
-        Object IFieldResolver.Resolve(ResolveFieldContext context)
+        Task<IEnumerable<Dictionary<String, Object?>>> IFieldResolver<Task<IEnumerable<Dictionary<String, Object?>>>>.Resolve(IResolveFieldContext context)
+        {
+            throw new NotImplementedException();
+        }
+        Object IFieldResolver.Resolve(IResolveFieldContext context)
         {
             return Resolve(context);
         }
