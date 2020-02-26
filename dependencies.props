@@ -11,7 +11,7 @@
     <NetCoreVersion>3.1.1</NetCoreVersion>
     <NpgsqlVersion>3.1.1.2</NpgsqlVersion>
     <ODataLibVersion>7.6.3</ODataLibVersion>
-    <OdataToEntityVersion>2.4.0</OdataToEntityVersion>
+    <OdataToEntityVersion>2.5.0</OdataToEntityVersion>
     <SystemInteractiveAsyncVersion>4.0.0</SystemInteractiveAsyncVersion>
     <TestSdkVersion>16.5.0</TestSdkVersion>
     <Version>$(OdataToEntityVersion)</Version>
