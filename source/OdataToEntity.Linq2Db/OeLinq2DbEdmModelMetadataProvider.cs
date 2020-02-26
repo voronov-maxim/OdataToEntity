@@ -86,6 +86,10 @@ namespace OdataToEntity.Linq2Db
             }
             throw new InvalidOperationException("Pricipal structurlal property not found for principal navigation " + principalNavigation.Name);
         }
+        public override bool IsDatabaseGenerated(PropertyInfo propertyInfo)
+        {
+            return propertyInfo.GetCustomAttribute(typeof(IdentityAttribute)) != null;
+        }
         public override bool IsKey(PropertyInfo propertyInfo) => propertyInfo.GetCustomAttribute(typeof(PrimaryKeyAttribute)) != null;
         public override bool IsNotMapped(PropertyInfo propertyInfo)
         {

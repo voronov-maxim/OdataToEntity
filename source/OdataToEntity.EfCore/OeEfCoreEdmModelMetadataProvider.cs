@@ -162,6 +162,17 @@ namespace OdataToEntity.EfCore
 
             return efProperty.PropertyInfo;
         }
+        public override bool IsDatabaseGenerated(PropertyInfo propertyInfo)
+        {
+            foreach (IEntityType efEntityType in GetEntityTypes(propertyInfo))
+            {
+                IProperty efProperty = efEntityType.FindProperty(propertyInfo.Name);
+                if (efProperty != null)
+                    return efProperty.ValueGenerated != ValueGenerated.Never;
+            }
+
+            throw new InvalidOperationException("property " + propertyInfo.Name + " not found");
+        }
         public override bool IsKey(PropertyInfo propertyInfo)
         {
             foreach (IEntityType efEntityType in GetEntityTypes(propertyInfo))

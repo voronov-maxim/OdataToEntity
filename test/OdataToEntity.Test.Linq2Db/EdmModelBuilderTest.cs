@@ -28,7 +28,8 @@ namespace OdataToEntity.Test
             foreach (XElement xelement in xschema.Elements())
             {
                 XAttribute xattribute = xelement.Attribute("Name");
-                xattribute.SetValue(xattribute.Value.Replace(linq2db.Name, efCore.Name));
+                if (xattribute != null)
+                    xattribute.SetValue(xattribute.Value.Replace(linq2db.Name, efCore.Name));
             }
 
             using (var stream = new MemoryStream())

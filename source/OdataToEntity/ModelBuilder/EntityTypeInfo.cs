@@ -1,4 +1,6 @@
 ﻿using Microsoft.OData.Edm;
+using Microsoft.OData.Edm.Vocabularies;
+using Microsoft.OData.Edm.Vocabularies.V1;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -75,7 +77,26 @@ namespace OdataToEntity.ModelBuilder
             }
             EdmType.AddKeys(keys.OrderBy(p => p.Item2).Select(p => p.Item1));
         }
-        private void BuildProperty(Dictionary<Type, EntityTypeInfo> entityTypes,
+        public void BuildStructuralProperties(EdmModel edmModel, Dictionary<Type, EntityTypeInfo> entityTypes,
+            Dictionary<Type, EdmEnumType> enumTypes, Dictionary<Type, EdmComplexType> complexTypes)
+        {
+            foreach (PropertyInfo clrProperty in _metadataProvider.GetProperties(ClrType))
+                if (!_metadataProvider.IsNotMapped(clrProperty))
+                {
+                    EdmStructuralProperty? edmProperty = BuildStructuralProperty(entityTypes, enumTypes, complexTypes, clrProperty);
+                    if (edmProperty != null && _metadataProvider.IsDatabaseGenerated(clrProperty))
+                    {
+                        var databaseGenerated = new EdmVocabularyAnnotation(edmProperty, CoreVocabularyModel.ComputedTerm, new EdmBooleanConstant(true));
+                        edmModel.SetVocabularyAnnotation(databaseGenerated);
+                    }
+                }
+
+            if (_isDbQuery)
+                AddDbQueryKeys();
+            else
+                AddKeys();
+        }
+        private EdmStructuralProperty? BuildStructuralProperty(Dictionary<Type, EntityTypeInfo> entityTypes,
             Dictionary<Type, EdmEnumType> enumTypes, Dictionary<Type, EdmComplexType> complexTypes, PropertyInfo clrProperty)
         {
             bool isNullable = !_metadataProvider.IsRequired(clrProperty);
@@ -103,7 +124,7 @@ namespace OdataToEntity.ModelBuilder
                         FKeyInfo? fkeyInfo = FKeyInfo.Create(_metadataProvider, entityTypes, this, clrProperty);
                         if (fkeyInfo != null)
                             _navigationClrProperties.Add(fkeyInfo);
-                        return;
+                        return null;
                     }
                 }
             }
@@ -122,18 +143,8 @@ namespace OdataToEntity.ModelBuilder
             EdmType.AddProperty(edmProperty);
             if (_metadataProvider.IsKey(clrProperty))
                 _keyProperties.Add(new KeyValuePair<PropertyInfo, EdmStructuralProperty>(clrProperty, edmProperty));
-        }
-        public void BuildProperties(Dictionary<Type, EntityTypeInfo> entityTypes,
-            Dictionary<Type, EdmEnumType> enumTypes, Dictionary<Type, EdmComplexType> complexTypes)
-        {
-            foreach (PropertyInfo clrProperty in _metadataProvider.GetProperties(ClrType))
-                if (!_metadataProvider.IsNotMapped(clrProperty))
-                    BuildProperty(entityTypes, enumTypes, complexTypes, clrProperty);
 
-            if (_isDbQuery)
-                AddDbQueryKeys();
-            else
-                AddKeys();
+            return edmProperty;
         }
         public override String ToString()
         {

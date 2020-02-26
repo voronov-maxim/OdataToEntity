@@ -83,6 +83,11 @@ namespace OdataToEntity.ModelBuilder
         {
             return type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
         }
+        public virtual bool IsDatabaseGenerated(PropertyInfo propertyInfo)
+        {
+            DatabaseGeneratedAttribute attribute = propertyInfo.GetCustomAttribute<DatabaseGeneratedAttribute>();
+            return attribute != null && attribute.DatabaseGeneratedOption != DatabaseGeneratedOption.None;
+        }
         public virtual bool IsKey(PropertyInfo propertyInfo)
         {
             return propertyInfo.GetCustomAttribute(typeof(KeyAttribute)) != null;

@@ -55,6 +55,11 @@ namespace OdataToEntity.Test
             }
             xschemas[1].Remove();
 
+            var annotations = xschemas[0].Elements().Where(x => x.Name.LocalName == "Annotations").ToList();
+            foreach (XElement annotation in annotations)
+                annotation.Remove();
+            xschemas[0].Add(annotations);
+
             using (var stream = new MemoryStream())
             using (var xwriter = XmlWriter.Create(stream, new XmlWriterSettings() { Indent = true, Encoding = new UTF8Encoding(false) }))
             {

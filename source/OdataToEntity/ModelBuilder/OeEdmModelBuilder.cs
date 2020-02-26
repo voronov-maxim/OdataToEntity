@@ -57,18 +57,18 @@ namespace OdataToEntity.ModelBuilder
         public EdmModel BuildEdmModel(params IEdmModel[] refModels)
         {
             AddOperations();
+            var edmModel = new EdmModel(false);
 
             Dictionary<Type, EntityTypeInfo> entityTypeInfos = BuildEntityTypes(refModels);
             foreach (EntityTypeInfo typeInfo in entityTypeInfos.Values)
                 if (!typeInfo.IsRefModel)
-                    typeInfo.BuildProperties(entityTypeInfos, _enumTypes, _complexTypes);
+                    typeInfo.BuildStructuralProperties(edmModel, entityTypeInfos, _enumTypes, _complexTypes);
 
             foreach (EntityTypeInfo typeInfo in entityTypeInfos.Values)
                 if (!typeInfo.IsRefModel)
                     foreach (FKeyInfo fkeyInfo in typeInfo.NavigationClrProperties)
                         fkeyInfo.BuildNavigationProperty();
 
-            var edmModel = new EdmModel(false);
             edmModel.AddElements(_enumTypes.Values);
             foreach (KeyValuePair<Type, EdmEnumType> enumType in _enumTypes)
                 edmModel.SetClrType(enumType.Value, enumType.Key);

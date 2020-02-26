@@ -109,6 +109,24 @@ namespace OdataToEntity.Ef6
 
             return null;
         }
+        private static StoreGeneratedPattern GetStoreGeneratedPattern(EdmProperty property)
+        {
+            if (property.MetadataProperties.TryGetValue("http://schemas.microsoft.com/ado/2009/02/edm/annotation:StoreGeneratedPattern", false, out MetadataProperty item))
+                return (StoreGeneratedPattern)Enum.Parse(typeof(StoreGeneratedPattern), (String)item.Value);
+            return StoreGeneratedPattern.None;
+        }
+        public override bool IsDatabaseGenerated(PropertyInfo propertyInfo)
+        {
+            foreach (EntityType efEntityType in GetEntityTypes(propertyInfo))
+            {
+                EdmProperty efProperty = efEntityType.DeclaredProperties.FirstOrDefault(p => p.Name == propertyInfo.Name);
+                if (efProperty != null)
+                    return GetStoreGeneratedPattern(efProperty) != StoreGeneratedPattern.None;
+            }
+
+            throw new InvalidOperationException("property " + propertyInfo.Name + " not found");
+
+        }
         public override bool IsKey(PropertyInfo propertyInfo)
         {
             foreach (EntityType efEntityType in GetEntityTypes(propertyInfo))

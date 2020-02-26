@@ -1,7 +1,10 @@
 ﻿using Microsoft.OData.Edm;
+using Microsoft.OData.Edm.Vocabularies;
+using Microsoft.OData.Edm.Vocabularies.V1;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 
 namespace OdataToEntity.ModelBuilder
@@ -36,7 +39,7 @@ namespace OdataToEntity.ModelBuilder
                 WriteDefinitions(writer, edmModel);
             writer.WriteEndObject();
         }
-        public static void WriteDefinitions(Utf8JsonWriter writer, IEdmModel edmModel)
+        public void WriteDefinitions(Utf8JsonWriter writer, IEdmModel edmModel)
         {
             foreach (IEdmSchemaElement schemaElement in edmModel.SchemaElements)
                 if (schemaElement is IEdmEntityType entityType)
@@ -47,7 +50,7 @@ namespace OdataToEntity.ModelBuilder
                 else if (schemaElement is IEdmEnumType enumType)
                     WriteEnum(writer, enumType);
         }
-        private static void WriteEntity(Utf8JsonWriter writer, IEdmEntityType entityType)
+        private void WriteEntity(Utf8JsonWriter writer, IEdmEntityType entityType)
         {
             writer.WritePropertyName(entityType.Name);
             writer.WriteStartObject();
@@ -150,7 +153,7 @@ namespace OdataToEntity.ModelBuilder
                     writer.WriteEndObject();
                 }
         }
-        private static void WriteStructuralProperty(Utf8JsonWriter writer, IEdmStructuralProperty structuralProperty)
+        private void WriteStructuralProperty(Utf8JsonWriter writer, IEdmStructuralProperty structuralProperty)
         {
             if (structuralProperty.Type.Definition is IEdmEnumType enumType)
             {
@@ -221,8 +224,14 @@ namespace OdataToEntity.ModelBuilder
             writer.WritePropertyName(structuralProperty.Name);
             writer.WriteStartObject();
             writer.WriteString("type", typeName);
+
             if (format != null)
                 writer.WriteString("format", format);
+
+            IEdmVocabularyAnnotation? annotation = _edmModel.FindVocabularyAnnotations<IEdmVocabularyAnnotation>(structuralProperty, CoreVocabularyModel.ComputedTerm).SingleOrDefault();
+            if (annotation != null && annotation.Value is IEdmBooleanConstantExpression expression && expression.Value)
+                writer.WriteBoolean("readOnly", true);
+
             writer.WriteEndObject();
         }
     }
