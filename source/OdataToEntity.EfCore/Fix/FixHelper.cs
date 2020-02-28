@@ -30,13 +30,23 @@ namespace OdataToEntity.EfCore.Fix
             foreach (IDbContextOptionsExtension extension in options.Extensions)
                 if (extension is CoreOptionsExtension coreOptionsExtension)
                 {
+                    CoreOptionsExtension? newCoreOptions = null;
                     if (coreOptionsExtension.ReplacedServices != null)
                     {
-                        CoreOptionsExtension newCoreOptions = contextOptions.GetExtension<CoreOptionsExtension>();
+                        newCoreOptions = contextOptions.GetExtension<CoreOptionsExtension>();
                         foreach (KeyValuePair<Type, Type> replacedService in coreOptionsExtension.ReplacedServices)
                             newCoreOptions = newCoreOptions.WithReplacedService(replacedService.Key, replacedService.Value);
-                        contextOptions = contextOptions.WithExtension(newCoreOptions);
                     }
+
+                    if (coreOptionsExtension.LoggerFactory != null)
+                    {
+                        if (newCoreOptions == null)
+                            newCoreOptions = contextOptions.GetExtension<CoreOptionsExtension>();
+                        newCoreOptions = newCoreOptions.WithLoggerFactory(coreOptionsExtension.LoggerFactory);
+                    }
+
+                    if (newCoreOptions != null)
+                        contextOptions = contextOptions.WithExtension(newCoreOptions);
                 }
                 else
                 {
