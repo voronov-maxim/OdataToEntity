@@ -174,6 +174,7 @@ namespace OdataToEntity.Db
         }
 
         public Object? Current => _current;
+        [MaybeNull]
         T IAsyncEnumerator<T>.Current => _current;
     }
 }

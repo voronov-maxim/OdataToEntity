@@ -111,6 +111,7 @@ namespace OdataToEntity.Infrastructure
                 return true;
             }
 
+            [MaybeNull]
             public T Current => _scalarResult;
         }
 

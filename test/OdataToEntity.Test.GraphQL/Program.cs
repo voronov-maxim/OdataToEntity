@@ -1,5 +1,4 @@
-﻿using GraphQL.Http;
-using Microsoft.OData.Edm;
+﻿using Microsoft.OData.Edm;
 using OdataToEntity.EfCore;
 using OdataToEntity.GraphQL;
 using System;
