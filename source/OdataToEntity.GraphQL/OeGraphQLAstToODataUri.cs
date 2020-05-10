@@ -1,4 +1,5 @@
-﻿using GraphQL.Types;
+﻿using GraphQL;
+using GraphQL.Types;
 using GraphQLParser;
 using GraphQLParser.AST;
 using Microsoft.OData;
@@ -62,7 +63,7 @@ namespace OdataToEntity.GraphQL
                     IEdmProperty edmProperty = FindEdmProperty(entityType, argument.Name.Value);
                     var left = new SingleValuePropertyAccessNode(source, edmProperty);
 
-                    Object value = GetArgumentValue(edmProperty.Type, argument.Value);
+                    Object? value = GetArgumentValue(edmProperty.Type, argument.Value);
                     var right = new ConstantNode(value, ODataUriUtils.ConvertToUriLiteral(value, ODataVersion.V4));
                     var node = new BinaryOperatorNode(BinaryOperatorKind.Equal, left, right);
                     compositeNode = ComposeExpression(compositeNode, node);
@@ -125,7 +126,7 @@ namespace OdataToEntity.GraphQL
 
             throw new InvalidOperationException("Property " + name + " not found in edm type " + edmType.FullTypeName());
         }
-        private Object GetArgumentValue(IEdmTypeReference typeReference, GraphQLValue graphValue)
+        private Object? GetArgumentValue(IEdmTypeReference typeReference, GraphQLValue? graphValue)
         {
             if (graphValue is GraphQLScalarValue scalarValue)
             {
@@ -136,6 +137,8 @@ namespace OdataToEntity.GraphQL
             }
             else if (graphValue is GraphQLVariable variable)
                 return _context.Arguments[variable.Name.Value];
+            else if (graphValue is null)
+                return null;
 
             throw new NotSupportedException("Argument " + graphValue.GetType().Name + " not supported");
         }

@@ -1,5 +1,5 @@
-﻿using GraphQL.Resolvers;
-using GraphQL.Types;
+﻿using GraphQL;
+using GraphQL.Resolvers;
 using Microsoft.OData;
 using Microsoft.OData.Edm;
 using System;

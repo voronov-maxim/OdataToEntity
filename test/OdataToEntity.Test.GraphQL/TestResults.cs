@@ -140,7 +140,7 @@ namespace OdataToEntity.Test.GraphQL
         name: 'Luke',
         voice: {
           name: 'Mark Hamill',
-          birthday: '1951-09-25'
+          birthday: '1951-09-25T00:00:00'
         }
       },
       {
@@ -167,7 +167,7 @@ namespace OdataToEntity.Test.GraphQL
         name: 'Luke',
         actor: {
           name: 'Mark Hamill',
-          birthday: '1951-09-25'
+          birthday: '1951-09-25T00:00:00'
         }
       }
     ]

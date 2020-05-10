@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
+using Microsoft.OData;
 using Microsoft.OData.Edm;
 using Microsoft.OData.Edm.Csdl;
 using Microsoft.OData.Edm.Validation;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -52,16 +54,35 @@ namespace OdataToEntity.AspNetCore
         {
             return null;
         }
+        private static async Task GetServiceDocument(IEdmModel edmModel, Uri baseUri, Stream stream)
+        {
+            var settings = new ODataMessageWriterSettings()
+            {
+                BaseUri = baseUri,
+                Version = ODataVersion.V4,
+                ODataUri = new ODataUri() { ServiceRoot = baseUri },
+                EnableMessageStreamDisposal = false
+            };
+            ODataServiceDocument serviceDocument = ODataUtils.GenerateServiceDocument(edmModel);
+            IODataResponseMessage responseMessage = new Infrastructure.OeInMemoryMessage(stream, null);
+            using (var messageWriter = new ODataMessageWriter(responseMessage, settings))
+                await messageWriter.WriteServiceDocumentAsync(serviceDocument);
+        }
         public async Task Invoke(HttpContext httpContext)
         {
-            if (httpContext.Request.Path == "/$metadata")
-                InvokeMetadata(httpContext);
-            else if (httpContext.Request.Path == "/$batch")
-                await InvokeBatch(httpContext).ConfigureAwait(false);
-            else if (httpContext.Request.Path == "/$json-schema")
-                InvokeJsonSchema(httpContext);
-            else if (httpContext.Request.PathBase == _apiPath)
-                await InvokeApi(httpContext).ConfigureAwait(false);
+            if (httpContext.Request.PathBase == _apiPath)
+            {
+                if (httpContext.Request.Path == "/$metadata")
+                    InvokeMetadata(httpContext);
+                else if (httpContext.Request.Path == "/$batch")
+                    await InvokeBatch(httpContext).ConfigureAwait(false);
+                else if (httpContext.Request.Path == "/$json-schema")
+                    InvokeJsonSchema(httpContext);
+                else if (httpContext.Request.Path == "" || httpContext.Request.Path == "/")
+                    await InvokeServiceDocument(httpContext);
+                else
+                    await InvokeApi(httpContext).ConfigureAwait(false);
+            }
             else
                 await _next(httpContext).ConfigureAwait(false);
         }
@@ -90,6 +111,11 @@ namespace OdataToEntity.AspNetCore
         {
             httpContext.Response.ContentType = "application/xml";
             GetCsdlSchema(EdmModel, httpContext.Response.Body);
+        }
+        private Task InvokeServiceDocument(HttpContext httpContext)
+        {
+            httpContext.Response.ContentType = "application/schema+json";
+            return GetServiceDocument(EdmModel, UriHelper.GetBaseUri(httpContext.Request), httpContext.Response.Body);
         }
 
         protected IEdmModel EdmModel { get; }
