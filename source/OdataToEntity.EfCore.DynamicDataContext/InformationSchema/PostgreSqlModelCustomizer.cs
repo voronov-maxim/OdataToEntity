@@ -32,10 +32,10 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                     property.SetColumnName(property.GetColumnName().ToLowerInvariant());
             }
 
-            Expression<Func<Parameter, bool>> parameterFilter = t => t.SpecificSchema != "pg_catalog" && t.SpecificSchema != "information_schema" && t.DataType != "ARRAY";
+            Expression<Func<Parameter, bool>> parameterFilter = t => t.SpecificSchema != "pg_catalog" && t.SpecificSchema != "information_schema";
             modelBuilder.Model.FindEntityType(typeof(Parameter)).SetQueryFilter(parameterFilter);
 
-            Expression<Func<Routine, bool>> routineFilter = t => t.SpecificSchema != "pg_catalog" && t.SpecificSchema != "information_schema";
+            Expression<Func<Routine, bool>> routineFilter = t => t.SpecificSchema != "pg_catalog" && t.SpecificSchema != "information_schema" && t.DataType != "internal";
             modelBuilder.Model.FindEntityType(typeof(Routine)).SetQueryFilter(routineFilter);
         }
         private static LambdaExpression GetFilter(Type entityType)

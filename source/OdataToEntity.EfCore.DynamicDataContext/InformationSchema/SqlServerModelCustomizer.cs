@@ -18,7 +18,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         {
             _modelCustomizer.Customize(modelBuilder, context);
 
-            Expression<Func<Parameter, bool>> parameterFilter = t => t.DataType != "table type";
+            Expression<Func<Parameter, bool>> parameterFilter = t => t.DataType != "table type" && t.ParameterName != "";
             modelBuilder.Model.FindEntityType(typeof(Parameter)).SetQueryFilter(parameterFilter);
         }
     }

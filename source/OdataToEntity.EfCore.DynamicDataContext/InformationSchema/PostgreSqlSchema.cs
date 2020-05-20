@@ -93,11 +93,12 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                     return typeof(String);
                 case "(internal) char":
                     return typeof(char);
-                case "record":
-                    return typeof(Object[]);
                 case "void":
                     return typeof(void);
+                case "record": //typeof(Object[]);
                 case "USER-DEFINED":
+                case "ARRAY":
+                case "tid":
                     return null;
                 default:
                     throw new InvalidOperationException("Unknown data type " + dataType);

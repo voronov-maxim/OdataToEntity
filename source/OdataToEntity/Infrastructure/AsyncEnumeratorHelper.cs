@@ -81,8 +81,6 @@ namespace OdataToEntity.Infrastructure
 
         private sealed class ScalarEnumeratorAdapter<T> : IAsyncEnumerable<T>, IAsyncEnumerator<T>
         {
-            [AllowNull]
-            [MaybeNull]
             private T _scalarResult;
             private readonly Task<T> _scalarTask;
             private int _state;
@@ -90,7 +88,7 @@ namespace OdataToEntity.Infrastructure
             public ScalarEnumeratorAdapter(Task<T> scalarTask)
             {
                 _scalarTask = scalarTask;
-                _scalarResult = default;
+                _scalarResult = default!;
             }
 
             public ValueTask DisposeAsync()
@@ -111,7 +109,6 @@ namespace OdataToEntity.Infrastructure
                 return true;
             }
 
-            [MaybeNull]
             public T Current => _scalarResult;
         }
 

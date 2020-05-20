@@ -14,8 +14,6 @@ namespace OdataToEntity.Db
     public sealed class OeEntityAsyncEnumeratorAdapter<T> : IAsyncEnumerator<T>, IAsyncEnumerable<T>
     {
         private CancellationToken _cancellationToken;
-        [AllowNull]
-        [MaybeNull]
         private T _current;
         private readonly OeDbEnumerator _dbEnumerator;
         private bool _isFirstMoveNext;
@@ -35,7 +33,7 @@ namespace OdataToEntity.Db
             _dbEnumerator = new OeDbEnumerator(asyncEnumerator, entryFactory);
             _queryContext = queryContext;
             _isFirstMoveNext = true;
-            _current = default;
+            _current = default!;
         }
 
         private static async Task<Object> CreateEntity(IOeDbEnumerator dbEnumerator, Object value, Object entity, Type entityType, CancellationToken cancellationToken)
@@ -174,7 +172,6 @@ namespace OdataToEntity.Db
         }
 
         public Object? Current => _current;
-        [MaybeNull]
         T IAsyncEnumerator<T>.Current => _current;
     }
 }

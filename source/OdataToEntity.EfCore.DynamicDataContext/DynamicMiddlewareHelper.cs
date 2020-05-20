@@ -16,3 +16,4 @@ namespace OdataToEntity.EfCore.DynamicDataContext
         }
     }
 }
+

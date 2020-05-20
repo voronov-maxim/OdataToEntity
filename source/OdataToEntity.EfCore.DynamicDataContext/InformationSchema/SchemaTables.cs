@@ -57,7 +57,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         [Column("ORDINAL_POSITION")]
         public int OrdinalPosition { get; set; }
         [Column("PARAMETER_NAME")]
-        public String ParameterName { get; set; } = null!;
+        public String? ParameterName { get; set; }
         [Column("DATA_TYPE")]
         public String DataType { get; set; } = null!;
     }

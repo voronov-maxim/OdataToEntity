@@ -105,19 +105,20 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                 SchemaContext schemaContext = _informationSchema.SchemaContextPool.Rent();
                 try
                 {
-                    var routineParameters = new Dictionary<(String specificSchema, String specificName), IReadOnlyList<Parameter>>();
-                    foreach (Parameter parameter in schemaContext.Parameters.AsQueryable().Where(p => p.ParameterName != ""))
-                    {
-                        List<Parameter> parameterList;
-                        if (routineParameters.TryGetValue((parameter.SpecificSchema, parameter.SpecificName), out IReadOnlyList<Parameter> parameters))
-                            parameterList = (List<Parameter>)parameters;
+                    var unsupportedRoutines = new HashSet<(String specificSchema, String specificName)>();
+                    var routineParameters = new Dictionary<(String specificSchema, String specificName), List<Parameter>>();
+                    foreach (Parameter parameter in schemaContext.Parameters)
+                        if (String.IsNullOrEmpty(parameter.ParameterName) || _informationSchema.GetColumnClrType(parameter.DataType) == null)
+                            unsupportedRoutines.Add((parameter.SpecificSchema, parameter.SpecificName));
                         else
                         {
-                            parameterList = new List<Parameter>();
-                            routineParameters.Add((parameter.SpecificSchema, parameter.SpecificName), parameterList);
+                            if (!routineParameters.TryGetValue((parameter.SpecificSchema, parameter.SpecificName), out List<Parameter> parameters))
+                            {
+                                parameters = new List<Parameter>();
+                                routineParameters.Add((parameter.SpecificSchema, parameter.SpecificName), parameters);
+                            }
+                            parameters.Add(parameter);
                         }
-                        parameterList.Add(parameter);
-                    }
 
                     Dictionary<(String schema, String name), OperationMapping>? operationMappings = null;
                     if (informationSchemaMapping != null && informationSchemaMapping.Operations != null)
@@ -142,13 +143,14 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                     foreach (Routine routine in schemaContext.Routines)
                     {
                         OperationMapping? operationMapping = null;
-                        if (operationMappings != null &&
-                            operationMappings.TryGetValue((routine.RoutineSchema, routine.RoutineName), out operationMapping) &&
-                            operationMapping.Exclude)
+                        if (unsupportedRoutines.Contains((routine.SpecificSchema, routine.SpecificName)) ||
+                            (operationMappings != null &&
+                            operationMappings.TryGetValue((routine.RoutineSchema, routine.RoutineName), out operationMapping)
+                            && operationMapping.Exclude))
                             continue;
 
                         OeOperationParameterConfiguration[] parameterConfigurations = Array.Empty<OeOperationParameterConfiguration>();
-                        if (routineParameters.TryGetValue((routine.SpecificSchema, routine.SpecificName), out IReadOnlyList<Parameter> parameters))
+                        if (routineParameters.TryGetValue((routine.SpecificSchema, routine.SpecificName), out List<Parameter> parameters))
                         {
                             Type? clrType = null;
                             parameterConfigurations = new OeOperationParameterConfiguration[parameters.Count];
@@ -161,7 +163,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                                 if (clrType.IsValueType)
                                     clrType = typeof(Nullable<>).MakeGenericType(clrType);
 
-                                String parameterName = _informationSchema.GetParameterName(parameters[i].ParameterName);
+                                String parameterName = _informationSchema.GetParameterName(parameters[i].ParameterName!);
                                 parameterConfigurations[parameters[i].OrdinalPosition - 1] = new OeOperationParameterConfiguration(parameterName, clrType);
                             }
 
