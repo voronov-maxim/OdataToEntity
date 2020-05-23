@@ -4,10 +4,11 @@ using Microsoft.OData;
 using Microsoft.OData.Edm;
 using Microsoft.OData.Edm.Csdl;
 using Microsoft.OData.Edm.Validation;
+using Microsoft.OData.UriParser;
+using OdataToEntity.Parsers;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 
@@ -79,7 +80,7 @@ namespace OdataToEntity.AspNetCore
                 else if (httpContext.Request.Path == "/$json-schema")
                     InvokeJsonSchema(httpContext);
                 else if (httpContext.Request.Path == "" || httpContext.Request.Path == "/")
-                    await InvokeServiceDocument(httpContext);
+                    await InvokeServiceDocument(httpContext).ConfigureAwait(false);
                 else
                     await InvokeApi(httpContext).ConfigureAwait(false);
             }
@@ -91,16 +92,38 @@ namespace OdataToEntity.AspNetCore
             httpContext.Request.Headers.TryGetValue("Prefer", out StringValues preferHeader);
             OeRequestHeaders headers = OeRequestHeaders.Parse(httpContext.Request.Headers["Accept"], preferHeader);
 
-            var parser = new OeParser(UriHelper.GetBaseUri(httpContext.Request), EdmModel, GetModelBoundProvider(httpContext), OeParser.ServiceProvider);
-            await parser.ExecuteGetAsync(UriHelper.GetUri(httpContext.Request), new OeHttpRequestHeaders(headers, httpContext.Response),
-                httpContext.Response.Body, CancellationToken.None).ConfigureAwait(false);
+            Uri baseUri = UriHelper.GetBaseUri(httpContext.Request);
+            Uri requestUri = UriHelper.GetUri(httpContext.Request);
+            if (HttpMethods.IsGet(httpContext.Request.Method))
+            {
+                var parser = new OeParser(baseUri, EdmModel, GetModelBoundProvider(httpContext), OeParser.ServiceProvider);
+                await parser.ExecuteGetAsync(requestUri, new OeHttpRequestHeaders(headers, httpContext.Response),
+                    httpContext.Response.Body, httpContext.RequestAborted).ConfigureAwait(false);
+            }
+            else if (HttpMethods.IsPost(httpContext.Request.Method) || HttpMethods.IsPut(httpContext.Request.Method) || HttpMethods.IsPatch(httpContext.Request.Method))
+            {
+                ODataUri odataUri = OeParser.ParseUri(EdmModel, baseUri, requestUri, OeParser.ServiceProvider);
+                if (odataUri.Path.LastSegment is OperationImportSegment)
+                {
+                    var parser = new OeParser(baseUri, EdmModel, GetModelBoundProvider(httpContext), OeParser.ServiceProvider);
+                    await parser.ExecuteOperationAsync(odataUri, new OeHttpRequestHeaders(headers, httpContext.Response),
+                        httpContext.Request.Body, httpContext.Response.Body, httpContext.RequestAborted).ConfigureAwait(false);
+                }
+                else
+                {
+                    httpContext.Response.ContentType = httpContext.Request.ContentType;
+                    var batchParser = new OeBatchParser(baseUri, EdmModel, OeParser.ServiceProvider);
+                    await batchParser.ExecuteOperationAsync(requestUri, httpContext.Request.Body, httpContext.Response.Body,
+                        httpContext.Request.ContentType, httpContext.Request.Method, httpContext.RequestAborted).ConfigureAwait(false);
+                }
+            }
         }
         private async Task InvokeBatch(HttpContext httpContext)
         {
             httpContext.Response.ContentType = httpContext.Request.ContentType;
             var parser = new OeParser(UriHelper.GetBaseUri(httpContext.Request), EdmModel);
             await parser.ExecuteBatchAsync(httpContext.Request.Body, httpContext.Response.Body,
-                httpContext.Request.ContentType, CancellationToken.None).ConfigureAwait(false);
+                httpContext.Request.ContentType, httpContext.RequestAborted).ConfigureAwait(false);
         }
         private void InvokeJsonSchema(HttpContext httpContext)
         {

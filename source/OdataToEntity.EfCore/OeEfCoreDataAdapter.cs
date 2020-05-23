@@ -25,7 +25,7 @@ namespace OdataToEntity.EfCore
         IQueryable FromSql(Object dataContext, String sql, Object?[] parameters);
     }
 
-    public class OeEfCoreDataAdapter<T> : Db.OeDataAdapter, IDisposable where T : DbContext
+    public class OeEfCoreDataAdapter<T> : Db.OeDataAdapter, IDisposable where T : notnull, DbContext
     {
         private sealed class DbQueryAdapterImpl<TEntity> : Db.OeEntitySetAdapter, IFromSql where TEntity : class
         {
@@ -81,15 +81,21 @@ namespace OdataToEntity.EfCore
             {
                 var context = (DbContext)dataContext;
                 EntityEntry<TEntity> entityEntry = context.Add(CreateEntity(context, entry));
-                InternalEntityEntry internalEntityEntry = entityEntry.GetInfrastructure();
+                InternalEntityEntry internalEntry = entityEntry.GetInfrastructure();
+                AddInstanceAnnotation(entry, internalEntry);
 
                 IReadOnlyList<IProperty> keyProperties = _entityType.FindPrimaryKey().Properties;
                 for (int i = 0; i < keyProperties.Count; i++)
                     if (keyProperties[i].ValueGenerated == ValueGenerated.OnAdd)
                     {
-                        Object value = internalEntityEntry.GetCurrentValue(keyProperties[i]);
-                        internalEntityEntry.SetTemporaryValue(keyProperties[i], value, false);
+                        Object value = internalEntry.GetCurrentValue(keyProperties[i]);
+                        internalEntry.SetTemporaryValue(keyProperties[i], value, false);
                     }
+            }
+            private static void AddInstanceAnnotation(ODataResourceBase entry, InternalEntityEntry internalEntityEntry)
+            {
+                entry.InstanceAnnotations.Add(new ODataInstanceAnnotation("ef.InternalEntityEntryValue",
+                    new Infrastructure.OeOdataValue<InternalEntityEntry>(internalEntityEntry)));
             }
             public override void AttachEntity(Object dataContext, ODataResourceBase entry)
             {
@@ -99,6 +105,7 @@ namespace OdataToEntity.EfCore
                 {
                     TEntity entity = CreateEntity(context, entry);
                     internalEntry = context.Attach(entity).GetInfrastructure();
+                    AddInstanceAnnotation(entry, internalEntry);
 
                     IKey key = _entityType.FindPrimaryKey();
                     foreach (ODataProperty odataProperty in entry.Properties)
@@ -219,6 +226,22 @@ namespace OdataToEntity.EfCore
                 }
                 else
                     entityEntry.SetEntityState(EntityState.Deleted);
+            }
+            public override void UpdateEntityAfterSave(Object dataContext, ODataResourceBase resource)
+            {
+                foreach (ODataInstanceAnnotation instanceAnnotation in resource.InstanceAnnotations)
+                    if (instanceAnnotation.Value is Infrastructure.OeOdataValue<InternalEntityEntry> internalEntry)
+                    {
+                        PropertyValues propertyValues = internalEntry.Value.ToEntityEntry().CurrentValues;
+                        foreach (ODataProperty odataProperty in resource.Properties)
+                        {
+                            IProperty property = internalEntry.Value.EntityType.FindProperty(odataProperty.Name);
+                            if (property.ValueGenerated != ValueGenerated.Never || property.IsForeignKey())
+                                odataProperty.Value = OeEdmClrHelper.CreateODataValue(propertyValues[property]);
+                        }
+                        resource.InstanceAnnotations.Remove(instanceAnnotation);
+                        break;
+                    }
             }
 
             public override Type EntityType => typeof(TEntity);

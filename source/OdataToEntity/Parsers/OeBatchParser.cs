@@ -1,5 +1,6 @@
 ﻿using Microsoft.OData;
 using Microsoft.OData.Edm;
+using Microsoft.OData.UriParser;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -41,16 +42,16 @@ namespace OdataToEntity.Parsers
         }
         public async Task ExecuteAsync(Stream requestStream, Stream responseStream, String contentType, CancellationToken cancellationToken)
         {
-            OeBatchMessage batchMessage = await OeBatchMessage.CreateBatchMessage(_edmModel, _baseUri, requestStream, contentType, _serviceProvider);
+            OeBatchMessage batchMessage = await OeBatchMessage.CreateBatchMessageAsync(_edmModel, _baseUri, requestStream, contentType, _serviceProvider);
             if (batchMessage.Changeset == null)
-                await ExecuteOperation(batchMessage.Operation, cancellationToken).ConfigureAwait(false);
+                await ExecuteOperationAsync(batchMessage.Operation, cancellationToken).ConfigureAwait(false);
             else
-                await ExecuteChangeset(batchMessage.Changeset, cancellationToken).ConfigureAwait(false);
+                await ExecuteChangesetAsync(batchMessage.Changeset, cancellationToken).ConfigureAwait(false);
 
             var batchWriter = new Writers.OeBatchWriter(_edmModel, _baseUri);
-            await batchWriter.WriteAsync(responseStream, batchMessage);
+            await batchWriter.WriteBatchAsync(responseStream, batchMessage);
         }
-        private async Task ExecuteChangeset(IReadOnlyList<OeOperationMessage> changeset, CancellationToken cancellationToken)
+        private async Task ExecuteChangesetAsync(IReadOnlyList<OeOperationMessage> changeset, CancellationToken cancellationToken)
         {
             Db.OeDataAdapter? dataAdapter = null;
             Object? dataContext = null;
@@ -66,7 +67,14 @@ namespace OdataToEntity.Parsers
                 }
 
                 if (dataAdapter != null && dataContext != null)
+                {
                     await dataAdapter.SaveChangesAsync(dataContext, cancellationToken).ConfigureAwait(false);
+                    for (int i = 0; i < changeset.Count; i++)
+                    {
+                        Db.OeEntitySetAdapter entitySetAdapter = dataAdapter.EntitySetAdapters.Find(changeset[i].EntitySet);
+                        entitySetAdapter.UpdateEntityAfterSave(dataContext, changeset[i].Entry);
+                    }
+                }
             }
             finally
             {
@@ -74,7 +82,7 @@ namespace OdataToEntity.Parsers
                     dataAdapter.CloseDataContext(dataContext);
             }
         }
-        private async Task ExecuteOperation(OeOperationMessage operation, CancellationToken cancellationToken)
+        private async Task ExecuteOperationAsync(OeOperationMessage operation, CancellationToken cancellationToken)
         {
             Db.OeDataAdapter dataAdapter = _edmModel.GetDataAdapter(operation.EntitySet.Container);
             Object? dataContext = null;
@@ -89,6 +97,15 @@ namespace OdataToEntity.Parsers
                 if (dataContext != null)
                     dataAdapter.CloseDataContext(dataContext);
             }
+        }
+        public async Task ExecuteOperationAsync(Uri requestUri, Stream requestStream, Stream responseStream, String contentType, String httpMethod, CancellationToken cancellationToken)
+        {
+            OeOperationMessage operationMessage = await OeBatchMessage.CreateOperationMessageAsync(
+                _edmModel, _baseUri, requestUri, requestStream, contentType, httpMethod, _serviceProvider).ConfigureAwait(false);
+            await ExecuteChangesetAsync(new[] { operationMessage }, cancellationToken).ConfigureAwait(false);
+
+            var batchWriter = new Writers.OeBatchWriter(_edmModel, _baseUri);
+            await batchWriter.WriteOperationAsync(responseStream, operationMessage).ConfigureAwait(false);
         }
     }
 }

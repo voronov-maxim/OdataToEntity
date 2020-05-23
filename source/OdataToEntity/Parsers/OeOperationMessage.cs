@@ -30,23 +30,23 @@ namespace OdataToEntity.Parsers
             {
                 return edmType ?? (_edmEntityType ?? throw new InvalidOperationException(nameof(_edmEntityType) + " mist set in ReadEntityFromStream"));
             }
-            public ODataResource CreateEntry(ODataBatchOperationRequestMessage batchRequest, out IEdmEntitySet entitSet)
+            public async ValueTask<(IEdmEntitySet entitySet, ODataResource resource)> CreateEntryAsync(IODataRequestMessage requestMessage)
             {
-                if (batchRequest.Method == ODataConstants.MethodDelete)
-                    return ReadEntityFromUrl(batchRequest.Url, out entitSet);
+                if (requestMessage.Method == ODataConstants.MethodDelete)
+                    return ReadEntityFromUrl(requestMessage.Url);
 
-                String contentType = batchRequest.GetHeader(ODataConstants.ContentTypeHeader);
-                using (Stream stream = batchRequest.GetStream())
-                    return ReadEntityFromStream(stream, batchRequest.Url, contentType, out entitSet);
+                String contentType = requestMessage.GetHeader(ODataConstants.ContentTypeHeader);
+                using (Stream stream = requestMessage.GetStream())
+                    return await ReadEntityFromStreamAsync(stream, requestMessage.Url, contentType).ConfigureAwait(false);
             }
-            private ODataResource ReadEntityFromStream(Stream content, Uri requestUrl, String contentType, out IEdmEntitySet entitySet)
+            private async ValueTask<(IEdmEntitySet entitySet, ODataResource resource)> ReadEntityFromStreamAsync(Stream content, Uri requestUrl, String contentType)
             {
                 ODataUri odataUri = OeParser.ParseUri(_edmModel, _baseUri, requestUrl);
-                entitySet = ((EntitySetSegment)odataUri.Path.FirstSegment).EntitySet;
+                IEdmEntitySet entitySet = ((EntitySetSegment)odataUri.Path.FirstSegment).EntitySet;
                 _edmEntityType = entitySet.EntityType();
                 IEdmModel edmModel = _edmModel.GetEdmModel(entitySet);
 
-                ODataResource? entry = null;
+                ODataResource? resource = null;
                 IODataRequestMessage requestMessage = new Infrastructure.OeInMemoryMessage(content, contentType, _serviceProvider);
                 var settings = new ODataMessageReaderSettings
                 {
@@ -55,46 +55,51 @@ namespace OdataToEntity.Parsers
                 };
                 using (var messageReader = new ODataMessageReader(requestMessage, settings, edmModel))
                 {
-                    ODataReader reader = messageReader.CreateODataResourceReader(entitySet, entitySet.EntityType());
-                    while (reader.Read())
+                    ODataReader reader = await messageReader.CreateODataResourceReaderAsync(entitySet, entitySet.EntityType()).ConfigureAwait(false);
+                    while (await reader.ReadAsync().ConfigureAwait(false))
                         if (reader.State == ODataReaderState.ResourceEnd)
-                            entry = (ODataResource)reader.Item;
-                    if (entry == null)
+                            resource = (ODataResource)reader.Item;
+                    if (resource == null)
                         throw new InvalidOperationException("operation not contain entry");
                 }
 
-                return entry;
+                return (entitySet, resource);
             }
-            private ODataResource ReadEntityFromUrl(Uri requestUrl, out IEdmEntitySet entitySet)
+            private (IEdmEntitySet entitySet, ODataResource resource) ReadEntityFromUrl(Uri requestUrl)
             {
                 ODataPath path = OeParser.ParsePath(_edmModel, _baseUri, requestUrl);
                 var keySegment = (KeySegment)path.LastSegment;
-                entitySet = (IEdmEntitySet)keySegment.NavigationSource;
+                var entitySet = (IEdmEntitySet)keySegment.NavigationSource;
 
                 var properties = new List<ODataProperty>();
                 foreach (var key in keySegment.Keys)
                     properties.Add(new ODataProperty() { Name = key.Key, Value = key.Value });
-                var entry = new ODataResource() { Properties = properties };
+                var resource = new ODataResource() { Properties = properties };
 
-                return entry;
+                return (entitySet, resource);
             }
         }
 
-        private OeOperationMessage(ODataBatchOperationRequestMessage batchRequest, IEdmEntitySet entitySet, ODataResource entry)
+        private OeOperationMessage(IEdmEntitySet entitySet, ODataResource entry, IODataRequestMessage requestMessage, string contentId)
         {
-            ContentId = batchRequest.ContentId;
-            ContentType = batchRequest.GetHeader(ODataConstants.ContentTypeHeader);
-            Method = batchRequest.Method;
-            RequestUrl = batchRequest.Url;
+            ContentId = contentId;
+            ContentType = requestMessage.GetHeader(ODataConstants.ContentTypeHeader);
+            Method = requestMessage.Method;
+            RequestUrl = requestMessage.Url;
             EntitySet = entitySet;
             Entry = entry;
         }
 
-        public static async ValueTask<OeOperationMessage> Create(IEdmModel edmModel, Uri baseUri, ODataBatchReader reader, IServiceProvider? serviceProvider)
+        public static async ValueTask<OeOperationMessage> CreateAsync(IEdmModel edmModel, Uri baseUri, ODataBatchReader reader, IServiceProvider? serviceProvider)
         {
             ODataBatchOperationRequestMessage batchRequest = await reader.CreateOperationRequestMessageAsync();
-            ODataResource entry = new ResourceFactory(edmModel, baseUri, serviceProvider).CreateEntry(batchRequest, out IEdmEntitySet entitSet);
-            return new OeOperationMessage(batchRequest, entitSet, entry);
+            var (entitySet, resource) = await (new ResourceFactory(edmModel, baseUri, serviceProvider)).CreateEntryAsync(batchRequest).ConfigureAwait(false);
+            return new OeOperationMessage(entitySet, resource, batchRequest, batchRequest.ContentId);
+        }
+        public static async ValueTask<OeOperationMessage> CreateAsync(IEdmModel edmModel, Uri baseUri, IODataRequestMessage requestMessage, IServiceProvider? serviceProvider)
+        {
+            var (entitySet, resource) = await (new ResourceFactory(edmModel, baseUri, serviceProvider)).CreateEntryAsync(requestMessage).ConfigureAwait(false);
+            return new OeOperationMessage(entitySet, resource, requestMessage, "");
         }
 
         public String ContentId { get; }

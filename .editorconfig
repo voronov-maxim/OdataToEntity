@@ -17,3 +17,6 @@ csharp_prefer_simple_using_statement = true:silent
 
 # CA1819: Properties should not return arrays
 dotnet_diagnostic.CA1819.severity = silent
+
+# CA1063: Implement IDisposable correctly
+dotnet_diagnostic.CA1063.severity = silent

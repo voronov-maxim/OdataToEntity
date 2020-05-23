@@ -4,6 +4,7 @@ using Microsoft.OData.Json;
 using Microsoft.OData.UriParser;
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -14,6 +15,41 @@ namespace OdataToEntity
 {
     public readonly struct OeParser
     {
+        private sealed class ContainerBuilder : IContainerBuilder, IServiceProvider
+        {
+            private ContainerBuilder()
+            {
+                JsonReaderFactory = null!;
+            }
+
+            public IContainerBuilder AddService(ServiceLifetime lifetime, Type serviceType, Type implementationType)
+            {
+                if (serviceType == typeof(IJsonReaderFactory))
+                    JsonReaderFactory = (IJsonReaderFactory)Activator.CreateInstance(implementationType);
+                return this;
+            }
+            public IContainerBuilder AddService(ServiceLifetime lifetime, Type serviceType, Func<IServiceProvider, object> implementationFactory)
+            {
+                return this;
+            }
+            public IServiceProvider BuildContainer()
+            {
+                return this;
+            }
+            public static ContainerBuilder Create()
+            {
+                var containerBuilder = new ContainerBuilder();
+                containerBuilder.AddDefaultODataServices();
+                return containerBuilder;
+            }
+            public object GetService(Type serviceType)
+            {
+                throw new NotImplementedException();
+            }
+
+            public IJsonReaderFactory JsonReaderFactory { get; private set; }
+        }
+
         private sealed class RefModelUriResolver : ODataUriResolver
         {
             public RefModelUriResolver()
@@ -70,6 +106,7 @@ namespace OdataToEntity
 
         private sealed class ServiceProviderImpl : IServiceProvider
         {
+            private static readonly ContainerBuilder _containerBuilder = ContainerBuilder.Create();
             private static readonly ODataMediaTypeResolver _mediaTypeResolver = new ODataMediaTypeResolver();
             private static readonly ODataPayloadValueConverter _payloadValueConverter = new ODataPayloadValueConverter();
             private static readonly ODataSimplifiedOptions _simplifiedOptions = new ODataSimplifiedOptions();
@@ -100,6 +137,10 @@ namespace OdataToEntity
                     return _payloadValueConverter;
                 if (serviceType == typeof(IJsonWriterFactory))
                     return new DefaultJsonWriterFactory(ODataStringEscapeOption.EscapeOnlyControls);
+                if (serviceType == typeof(IJsonReaderFactory))
+                    return _containerBuilder.JsonReaderFactory;
+                if (serviceType == typeof(ODataMessageReaderSettings))
+                    return new ODataMessageReaderSettings();
 
                 throw new InvalidOperationException("ServiceProvider not found type " + serviceType.FullName);
             }

@@ -43,7 +43,8 @@ namespace OdataToEntity.AspNetCore
             }
             Uri baseUri = UriHelper.GetBaseUri(base.Request);
 
-            OeBatchMessage batchMessage = await OeBatchMessage.CreateBatchMessage(EdmModel, baseUri, base.HttpContext.Request.Body, base.HttpContext.Request.ContentType);
+            OeBatchMessage batchMessage = await OeBatchMessage.CreateBatchMessageAsync(EdmModel, baseUri,
+                base.HttpContext.Request.Body, base.HttpContext.Request.ContentType, OeParser.ServiceProvider);
             if (batchMessage.Changeset == null)
                 return;
 
@@ -62,29 +63,15 @@ namespace OdataToEntity.AspNetCore
                     }
 
                     OeEntitySetAdapter entitySetAdapter = refModel!.GetEntitySetAdapter(operation.EntitySet);
-                    String path = basePath + "/" + entitySetAdapter.EntitySetName;
-
-                    Object entity;
+                    Object entity = OeDataContext.CreateEntity(operation, entitySetAdapter.EntityType);
                     if (operation.Method == ODataConstants.MethodPatch)
-                    {
-                        var properties = new Dictionary<String, Object>();
-                        foreach (ODataProperty odataProperty in operation.Entry.Properties)
-                        {
-                            PropertyInfo? propertyInfo = entitySetAdapter.EntityType.GetProperty(odataProperty.Name);
-                            if (propertyInfo == null)
-                                throw new InvalidOperationException("Not found property " + odataProperty.Name  + " in type " + entitySetAdapter.EntityType.FullName);
-
-                            properties[odataProperty.Name] = OeEdmClrHelper.GetClrValue(propertyInfo.PropertyType, odataProperty.Value);
-                        }
-                        entity = properties;
                         base.HttpContext.Request.Method = HttpMethods.Patch;
-                    }
-                    else
-                        entity = OeEdmClrHelper.CreateEntity(entitySetAdapter.EntityType, operation.Entry);
 
-                    var modelState = new OeBatchFilterAttributeAttribute.BatchModelStateDictionary(entity, new OeDataContext(entitySetAdapter, refModel!, dataContext, operation));
+                    var oeDataContext = new OeDataContext(entitySetAdapter, refModel!, dataContext, operation);
+                    var modelState = new OeBatchFilterAttributeAttribute.BatchModelStateDictionary(dataAdapter!, oeDataContext, entity);
                     OnBeforeInvokeController(modelState.DataContext, operation.Entry);
 
+                    String path = basePath + "/" + entitySetAdapter.EntitySetName;
                     List<ActionDescriptor> candidates = OeRouter.SelectCandidates(actionDescriptors.Items, base.HttpContext, base.RouteData.Values, path, operation.Method);
                     if (candidates.Count > 1)
                         throw new InvalidOperationException("Ambiguous action " + String.Join(Environment.NewLine, candidates.Select(c => c.DisplayName)));
@@ -96,8 +83,12 @@ namespace OdataToEntity.AspNetCore
                     await actionInvoker.InvokeAsync().ConfigureAwait(false);
                 }
 
-                if (dataContext != null)
+                if (dataAdapter != null && dataContext != null)
+                {
                     await SaveChangesAsync(dataContext).ConfigureAwait(false);
+                    foreach (OeOperationMessage operation in batchMessage.Changeset)
+                        dataAdapter.EntitySetAdapters.Find(operation.EntitySet).UpdateEntityAfterSave(dataContext, operation.Entry);
+                }
             }
             finally
             {
@@ -107,7 +98,25 @@ namespace OdataToEntity.AspNetCore
 
             base.HttpContext.Response.ContentType = base.HttpContext.Request.ContentType;
             var batchWriter = new OeBatchWriter(EdmModel, baseUri);
-            await batchWriter.WriteAsync(base.HttpContext.Response.Body, batchMessage);
+            await batchWriter.WriteBatchAsync(base.HttpContext.Response.Body, batchMessage);
+        }
+        internal static Object CreateEntity(OeOperationMessage operation, Type clrEntityType)
+        {
+            if (operation.Method == ODataConstants.MethodPatch)
+            {
+                var properties = new Dictionary<String, Object>();
+                foreach (ODataProperty odataProperty in operation.Entry.Properties)
+                {
+                    PropertyInfo? propertyInfo = clrEntityType.GetProperty(odataProperty.Name);
+                    if (propertyInfo == null)
+                        throw new InvalidOperationException("Not found property " + odataProperty.Name + " in type " + clrEntityType.FullName);
+
+                    properties[odataProperty.Name] = OeEdmClrHelper.GetClrValue(propertyInfo.PropertyType, odataProperty.Value);
+                }
+                return properties;
+            }
+
+            return OeEdmClrHelper.CreateEntity(clrEntityType, operation.Entry);
         }
         protected virtual void OnBeforeInvokeController(OeDataContext dataContext, ODataResource entry)
         {

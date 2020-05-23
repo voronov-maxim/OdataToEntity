@@ -8,10 +8,11 @@ namespace OdataToEntity.Db
 {
     public abstract class OeEntitySetAdapter
     {
-        public abstract void AddEntity(Object dataContext, ODataResourceBase entry);
-        public abstract void AttachEntity(Object dataContext, ODataResourceBase entry);
+        public abstract void AddEntity(Object dataContext, ODataResourceBase entity);
+        public abstract void AttachEntity(Object dataContext, ODataResourceBase entity);
         public abstract IQueryable GetEntitySet(Object dataContext);
-        public abstract void RemoveEntity(Object dataContext, ODataResourceBase entry);
+        public abstract void RemoveEntity(Object dataContext, ODataResourceBase entity);
+        public virtual void UpdateEntityAfterSave(Object dataContext, ODataResourceBase entity) { }
 
         public abstract Type EntityType { get; }
         public abstract String EntitySetName { get; }

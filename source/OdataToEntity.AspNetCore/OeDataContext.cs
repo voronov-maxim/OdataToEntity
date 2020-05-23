@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.OData;
 using Microsoft.OData.Edm;
@@ -7,21 +8,36 @@ using OdataToEntity.Parsers;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Security.Permissions;
 using System.Threading.Tasks;
 
 namespace OdataToEntity.AspNetCore
 {
     internal sealed class OeDataContextBinder : IModelBinder
     {
-        public Task BindModelAsync(ModelBindingContext bindingContext)
+        public async Task BindModelAsync(ModelBindingContext bindingContext)
         {
             if (bindingContext.ModelState is OeBatchFilterAttributeAttribute.BatchModelStateDictionary batchModelState)
-            {
-                bindingContext.Result = ModelBindingResult.Success(batchModelState.DataContext);
-                return Task.CompletedTask;
-            }
+                bindingContext.Result = ModelBindingResult.Success(batchModelState.DataContext); //batch operation
+            else
+                bindingContext.Result = ModelBindingResult.Success(await GetModelStateAsync(bindingContext.HttpContext)); //single operation
+        }
+        private static async Task<OeBatchFilterAttributeAttribute.BatchModelStateDictionary> GetModelStateAsync(HttpContext httpContext)
+        {
+            var edmModel = (IEdmModel)httpContext.RequestServices.GetService(typeof(IEdmModel));
+            Uri baseUri = UriHelper.GetBaseUri(httpContext.Request);
+            Uri requestUri = UriHelper.GetUri(httpContext.Request);
+            OeOperationMessage operation = await OeBatchMessage.CreateOperationMessageAsync(edmModel, baseUri, requestUri,
+                httpContext.Request.Body, httpContext.Request.ContentType, httpContext.Request.Method, OeParser.ServiceProvider).ConfigureAwait(false);
 
-            throw new InvalidOperationException(nameof(OeDataContext) + " must be create in " + nameof(OeBatchController));
+            IEdmModel refModel = edmModel.GetEdmModel(operation.EntitySet.Container);
+            OeDataAdapter dataAdapter = refModel.GetDataAdapter(operation.EntitySet.Container);
+            Object dataContext = dataAdapter.CreateDataContext();
+            OeEntitySetAdapter entitySetAdapter = refModel.GetEntitySetAdapter(operation.EntitySet);
+            Object entity = OeDataContext.CreateEntity(operation, entitySetAdapter.EntityType);
+
+            var oeDataContext = new OeDataContext(entitySetAdapter, refModel, dataContext, operation);
+            return new OeBatchFilterAttributeAttribute.BatchModelStateDictionary(dataAdapter, oeDataContext, entity);
         }
     }
 
@@ -29,16 +45,33 @@ namespace OdataToEntity.AspNetCore
     public sealed class OeDataContext
     {
         private readonly OeEntitySetAdapter _entitySetAdapter;
-        private readonly OeOperationMessage _operation;
 
         public OeDataContext(OeEntitySetAdapter entitySetAdapter, IEdmModel edmModel, Object dataContext, in OeOperationMessage operation)
         {
             _entitySetAdapter = entitySetAdapter;
             DbContext = dataContext;
             EdmModel = edmModel;
-            _operation = operation;
+            Operation = operation;
         }
 
+        internal static Object CreateEntity(OeOperationMessage operation, Type clrEntityType)
+        {
+            if (operation.Method == ODataConstants.MethodPatch)
+            {
+                var properties = new Dictionary<String, Object>();
+                foreach (ODataProperty odataProperty in operation.Entry.Properties)
+                {
+                    PropertyInfo? propertyInfo = clrEntityType.GetProperty(odataProperty.Name);
+                    if (propertyInfo == null)
+                        throw new InvalidOperationException("Not found property " + odataProperty.Name + " in type " + clrEntityType.FullName);
+
+                    properties[odataProperty.Name] = OeEdmClrHelper.GetClrValue(propertyInfo.PropertyType, odataProperty.Value);
+                }
+                return properties;
+            }
+
+            return OeEdmClrHelper.CreateEntity(clrEntityType, operation.Entry);
+        }
         private ODataResource CreateEntry(Object entity)
         {
             IEdmEntitySet entitySet = OeEdmClrHelper.GetEntitySet(EdmModel, _entitySetAdapter.EntitySetName);
@@ -87,12 +120,12 @@ namespace OdataToEntity.AspNetCore
         public void Update(Object entity)
         {
             ODataResource entry;
-            switch (_operation.Method)
+            switch (Operation.Method)
             {
                 case ODataConstants.MethodDelete:
                     entry = CreateEntry(entity);
                     _entitySetAdapter.RemoveEntity(DbContext, entry);
-                    break;
+                    return;
                 case ODataConstants.MethodPatch:
                     entry = CreateEntry((IDictionary<String, Object>)entity);
                     _entitySetAdapter.AttachEntity(DbContext, entry);
@@ -102,12 +135,16 @@ namespace OdataToEntity.AspNetCore
                     _entitySetAdapter.AddEntity(DbContext, entry);
                     break;
                 default:
-                    throw new NotImplementedException(_operation.Method);
+                    throw new NotImplementedException(Operation.Method);
             }
+
+            Operation.Entry.Properties = entry.Properties;
+            Operation.Entry.InstanceAnnotations = entry.InstanceAnnotations;
         }
 
         public Object DbContext { get; }
         public IEdmModel EdmModel { get; }
-        public String HttpMethod => _operation.Method;
+        internal OeOperationMessage Operation { get; }
+        public String HttpMethod => Operation.Method;
     }
 }

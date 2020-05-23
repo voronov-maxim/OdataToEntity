@@ -27,7 +27,7 @@ namespace OdataToEntity.Writers
             };
         }
 
-        public async Task WriteAsync(Stream stream, OeBatchMessage batchMessage)
+        public async ValueTask WriteBatchAsync(Stream stream, OeBatchMessage batchMessage)
         {
             IODataResponseMessage responseMessage = new Infrastructure.OeInMemoryMessage(stream, batchMessage.ContentType);
             using (var messageWriter = new ODataMessageWriter(responseMessage, _settings))
@@ -39,33 +39,14 @@ namespace OdataToEntity.Writers
                 await writer.WriteEndBatchAsync().ConfigureAwait(false);
             }
         }
-        private async Task WriteBatchAsync(ODataBatchWriter writer, OeBatchMessage batchMessage)
+        private async ValueTask WriteBatchAsync(ODataBatchWriter writer, OeBatchMessage batchMessage)
         {
             if (batchMessage.Changeset == null)
-                await WriteOperationAsync(writer, batchMessage.Operation);
+                await WriteBatchOperationAsync(writer, batchMessage.Operation).ConfigureAwait(false);
             else
-                await WriteChangesetAsync(writer, batchMessage.Changeset);
+                await WriteChangesetAsync(writer, batchMessage.Changeset).ConfigureAwait(false);
         }
-        private async Task WriteChangesetAsync(ODataBatchWriter writer, IReadOnlyList<OeOperationMessage> changeset)
-        {
-            await writer.WriteStartChangesetAsync();
-            foreach (OeOperationMessage operation in changeset)
-                await WriteOperationAsync(writer, operation);
-            await writer.WriteEndChangesetAsync();
-        }
-        private async Task WriteEntityAsync(IEdmEntitySet entitySet, ODataResource entry, Stream stream)
-        {
-            IODataResponseMessage responseMessage = new Infrastructure.OeInMemoryMessage(stream, null);
-            using (ODataMessageWriter messageWriter = new ODataMessageWriter(responseMessage, _settings, _model.GetEdmModel(entitySet)))
-            {
-                ODataUtils.SetHeadersForPayload(messageWriter, ODataPayloadKind.Resource);
-                ODataWriter writer = await messageWriter.CreateODataResourceWriterAsync(entitySet, entitySet.EntityType());
-
-                await writer.WriteStartAsync(entry);
-                await writer.WriteEndAsync();
-            }
-        }
-        private async Task WriteOperationAsync(ODataBatchWriter writer, OeOperationMessage operation)
+        private async ValueTask WriteBatchOperationAsync(ODataBatchWriter writer, OeOperationMessage operation)
         {
             ODataBatchOperationResponseMessage operationMessage = await writer.CreateOperationResponseMessageAsync(operation.ContentId);
             operationMessage.SetHeader("Location", operation.RequestUrl.AbsoluteUri);
@@ -73,8 +54,33 @@ namespace OdataToEntity.Writers
             operationMessage.StatusCode = (int)operation.StatusCode;
 
             if (operation.StatusCode != HttpStatusCode.NoContent)
-                using (Stream stream = await operationMessage.GetStreamAsync())
-                    await WriteEntityAsync(operation.EntitySet, operation.Entry, stream);
+                using (Stream stream = await operationMessage.GetStreamAsync().ConfigureAwait(false))
+                    await WriteEntityAsync(operation.EntitySet, operation.Entry, stream).ConfigureAwait(false);
+        }
+        private async ValueTask WriteChangesetAsync(ODataBatchWriter writer, IReadOnlyList<OeOperationMessage> changeset)
+        {
+            await writer.WriteStartChangesetAsync().ConfigureAwait(false);
+            foreach (OeOperationMessage operation in changeset)
+                await WriteBatchOperationAsync(writer, operation).ConfigureAwait(false);
+            await writer.WriteEndChangesetAsync().ConfigureAwait(false);
+        }
+        private async ValueTask WriteEntityAsync(IEdmEntitySet entitySet, ODataResource entry, Stream stream)
+        {
+            IODataResponseMessage responseMessage = new Infrastructure.OeInMemoryMessage(stream, null);
+            using (ODataMessageWriter messageWriter = new ODataMessageWriter(responseMessage, _settings, _model.GetEdmModel(entitySet)))
+            {
+                ODataUtils.SetHeadersForPayload(messageWriter, ODataPayloadKind.Resource);
+                ODataWriter writer = await messageWriter.CreateODataResourceWriterAsync(entitySet, entitySet.EntityType()).ConfigureAwait(false);
+
+                await writer.WriteStartAsync(entry).ConfigureAwait(false);
+                await writer.WriteEndAsync().ConfigureAwait(false);
+            }
+        }
+        public async ValueTask WriteOperationAsync(Stream stream, OeOperationMessage operation)
+        {
+            IODataResponseMessage responseMessage = new Infrastructure.OeInMemoryMessage(stream, operation.ContentType);
+            using (var messageWriter = new ODataMessageWriter(responseMessage, _settings))
+                await WriteEntityAsync(operation.EntitySet, operation.Entry, stream).ConfigureAwait(false);
         }
     }
 }
