@@ -18,7 +18,7 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
             _httpContextAccessor = httpContextAccessor;
         }
 
-        [HttpDelete]
+        [HttpDelete("{id}")]
         public void Delete(OeDataContext dataContext, Model.Order order)
         {
             dataContext.Update(order);

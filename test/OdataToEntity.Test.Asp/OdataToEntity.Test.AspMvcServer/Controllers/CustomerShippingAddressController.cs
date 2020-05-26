@@ -16,7 +16,7 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
             _httpContextAccessor = httpContextAccessor;
         }
 
-        [HttpDelete]
+        [HttpDelete("{customerCountry},{customerId},{shippingAddressOrderId},{shippingAddressId}")]
         public void Delete(OeDataContext dataContext, Model.CustomerShippingAddress customerShippingAddress)
         {
             dataContext.Update(customerShippingAddress);

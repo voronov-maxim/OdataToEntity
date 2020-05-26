@@ -16,7 +16,7 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
             _httpContextAccessor = httpContextAccessor;
         }
 
-        [HttpDelete]
+        [HttpDelete("{id}")]
         public void Delete(OeDataContext dataContext, Model.ManyColumns manyColumns)
         {
             dataContext.Update(manyColumns);

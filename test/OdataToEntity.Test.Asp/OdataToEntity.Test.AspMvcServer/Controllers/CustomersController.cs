@@ -30,7 +30,7 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
             IAsyncEnumerable<Model.Order> orders = parser.ExecuteReader<Model.Order>();
             return parser.OData(orders);
         }
-        [HttpDelete]
+        [HttpDelete("{country},{id}")]
         public void Delete(OeDataContext dataContext, Model.Customer customer)
         {
             dataContext.Update(customer);

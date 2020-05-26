@@ -100,7 +100,10 @@ namespace OdataToEntity.AspNetCore
                 await parser.ExecuteGetAsync(requestUri, new OeHttpRequestHeaders(headers, httpContext.Response),
                     httpContext.Response.Body, httpContext.RequestAborted).ConfigureAwait(false);
             }
-            else if (HttpMethods.IsPost(httpContext.Request.Method) || HttpMethods.IsPut(httpContext.Request.Method) || HttpMethods.IsPatch(httpContext.Request.Method))
+            else if (HttpMethods.IsPost(httpContext.Request.Method) ||
+                HttpMethods.IsPut(httpContext.Request.Method) ||
+                HttpMethods.IsPatch(httpContext.Request.Method) ||
+                HttpMethods.IsDelete(httpContext.Request.Method))
             {
                 ODataUri odataUri = OeParser.ParseUri(EdmModel, baseUri, requestUri, OeParser.ServiceProvider);
                 if (odataUri.Path.LastSegment is OperationImportSegment)
