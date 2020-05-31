@@ -33,7 +33,7 @@ namespace OdataToEntity.Db
 
             public OeDbEnumerator GetFromPool(OeDbEnumerator parentEnumerator, OeNavigationEntryFactory entryFactory)
             {
-                if (_pool.TryGetValue(entryFactory, out OeDbEnumerator dbEnumerator))
+                if (_pool.TryGetValue(entryFactory, out OeDbEnumerator? dbEnumerator))
                     dbEnumerator.Initialize();
                 else
                 {

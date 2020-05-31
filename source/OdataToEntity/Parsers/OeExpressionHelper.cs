@@ -223,8 +223,8 @@ namespace OdataToEntity.Parsers
         }
         public static Type GetTypeConversion(Type leftType, Type rightType)
         {
-            Type leftUnderlyingType = Nullable.GetUnderlyingType(leftType);
-            Type rightUnderlyingType = Nullable.GetUnderlyingType(rightType);
+            Type? leftUnderlyingType = Nullable.GetUnderlyingType(leftType);
+            Type? rightUnderlyingType = Nullable.GetUnderlyingType(rightType);
 
             if (leftUnderlyingType == null && rightUnderlyingType == null)
                 return GetArithmethicPrecedenceType(leftType, rightType);
@@ -235,7 +235,7 @@ namespace OdataToEntity.Parsers
                 if (leftType == rightUnderlyingType)
                     return typeof(Nullable<>).MakeGenericType(leftType);
 
-                precedenceType = GetArithmethicPrecedenceType(leftType, rightUnderlyingType);
+                precedenceType = GetArithmethicPrecedenceType(leftType, rightUnderlyingType!);
                 return typeof(Nullable<>).MakeGenericType(precedenceType);
             }
 
@@ -290,7 +290,7 @@ namespace OdataToEntity.Parsers
         }
         public static bool IsNull(Expression expression)
         {
-            return expression is ConstantExpression constantExpression ? constantExpression.Value == null : false;
+            return expression is ConstantExpression constantExpression && constantExpression.Value == null;
         }
         public static bool IsNullable(Expression expression)
         {

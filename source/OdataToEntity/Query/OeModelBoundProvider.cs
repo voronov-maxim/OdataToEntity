@@ -179,12 +179,12 @@ namespace OdataToEntity.Query
         public bool IsCountable(IEdmEntityType entityType)
         {
             OeModelBoundSettings settings = GetSettings(entityType);
-            return settings == null ? true : settings.Countable;
+            return settings == null || settings.Countable;
         }
         public bool IsCountable(IEdmNavigationProperty navigationProperty)
         {
             OeModelBoundSettings settings = GetSettings(navigationProperty);
-            return settings == null ? true : settings.Countable;
+            return settings == null || settings.Countable;
         }
         public bool IsFilterable(FilterClause filterClause, IEdmEntityType entityType)
         {
@@ -208,7 +208,7 @@ namespace OdataToEntity.Query
         public bool IsNavigationNextLink(IEdmNavigationProperty navigationProperty)
         {
             OeModelBoundSettings settings = GetSettings(navigationProperty);
-            return settings == null ? false : settings.NavigationNextLink;
+            return settings != null && settings.NavigationNextLink;
         }
         public bool IsOrderable(OrderByClause orderByClause, IEdmEntityType entityType)
         {

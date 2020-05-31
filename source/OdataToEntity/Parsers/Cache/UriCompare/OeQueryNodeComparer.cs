@@ -36,10 +36,9 @@ namespace OdataToEntity.Cache.UriCompare
                 case QueryNodeKind.Convert:
                     return Visit((ConvertNode)node1, (ConvertNode)node2);
                 case QueryNodeKind.Count:
-                    if (node1 is CountNode)
-                        return Visit((CountNode)node1, (CountNode)node2);
-                    else
-                        return Visit((CountVirtualPropertyNode)node1, (CountVirtualPropertyNode)node1);
+                    return node1 is CountNode
+                        ? Visit((CountNode)node1, (CountNode)node2)
+                        : Visit((CountVirtualPropertyNode)node1, (CountVirtualPropertyNode)node1);
                 case QueryNodeKind.In:
                     return Visit((InNode)node1, (InNode)node2);
                 case QueryNodeKind.ResourceRangeVariableReference:

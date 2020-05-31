@@ -139,9 +139,9 @@ namespace OdataToEntity.Db
                 if (propertyAccessNode.Source is SingleNavigationNode navigationNode)
                 {
                     properties.Add(navigationNode.NavigationProperty);
-                    while (navigationNode.Source is SingleNavigationNode)
+                    while (navigationNode.Source is SingleNavigationNode node)
                     {
-                        navigationNode = (SingleNavigationNode)navigationNode.Source;
+                        navigationNode = node;
                         properties.Add(navigationNode.NavigationProperty);
                     }
                 }
@@ -158,7 +158,7 @@ namespace OdataToEntity.Db
             for (int i = edmProperties.Count - 1; i > 0; i--)
             {
                 clrProperty = entity.GetType().GetPropertyIgnoreCase(edmProperties[i]);
-                Object navigationValue = clrProperty.GetValue(entity);
+                Object? navigationValue = clrProperty.GetValue(entity);
                 if (navigationValue == null)
                 {
                     navigationValue = Activator.CreateInstance(clrProperty.PropertyType);

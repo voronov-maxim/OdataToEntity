@@ -43,7 +43,7 @@ namespace OdataToEntity.Parsers
             NavigationLinks = Array.Empty<OeNavigationEntryFactory>();
             _typeName = EdmEntityType.FullName();
 
-            IsTuple = accessors.Length == 0 ? false : OeExpressionHelper.IsTupleType(accessors[0].PropertyExpression.Expression.Type);
+            IsTuple = accessors.Length != 0 && OeExpressionHelper.IsTupleType(accessors[0].PropertyExpression.Expression.Type);
         }
         public OeEntryFactory(
             IEdmEntitySetBase entitySet,

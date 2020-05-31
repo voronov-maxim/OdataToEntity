@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -17,8 +18,8 @@ namespace OdataToEntity.Infrastructure
                 _entryEqualityComparer = entryEqualityComparer;
             }
 
-            public int Compare(T x, T y) => _entryEqualityComparer.Compare(x, y);
-            public bool Equals(T x, T y) => _entryEqualityComparer.Equals(x, y);
+            public int Compare([AllowNull] T x, [AllowNull] T y) => _entryEqualityComparer.Compare(x, y);
+            public bool Equals([AllowNull] T x, [AllowNull] T y) => _entryEqualityComparer.Equals(x, y);
             public int GetHashCode(T obj) => _entryEqualityComparer.GetHashCode(obj);
         }
 
@@ -31,7 +32,7 @@ namespace OdataToEntity.Infrastructure
             _propertyGetHashCodes = CreatePropertyGetHashCodes(propertyExpressions);
         }
 
-        public int Compare(Object x, Object y)
+        public int Compare(Object? x, Object? y)
         {
             if (x == y)
                 return 0;
@@ -84,7 +85,7 @@ namespace OdataToEntity.Infrastructure
                 propertyGetHashCodes[i] = CreatePropertyGetHashCode(propertyExpressions[i]);
             return propertyGetHashCodes;
         }
-        public new bool Equals(Object x, Object y)
+        public new bool Equals(Object? x, Object? y)
         {
             return Compare(x, y) == 0;
         }

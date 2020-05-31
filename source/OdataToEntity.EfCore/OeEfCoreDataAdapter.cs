@@ -49,7 +49,8 @@ namespace OdataToEntity.EfCore
             }
             public override IQueryable GetEntitySet(Object dataContext)
             {
-                return new EntityQueryable<TEntity>(((T)dataContext).GetDependencies().QueryProvider);
+                var dbContext = (T)dataContext;
+                return dbContext.Set<TEntity>();
             }
             public override void RemoveEntity(Object dataContext, ODataResourceBase entry)
             {
@@ -151,12 +152,13 @@ namespace OdataToEntity.EfCore
             }
             public IQueryable FromSql(Object dataContext, String sql, Object?[] parameters)
             {
-                var dbSet = new InternalDbSet<TEntity>((T)dataContext);
-                return dbSet.FromSqlRaw(sql, parameters);
+                var dbContext = (T)dataContext;
+                return dbContext.Set<TEntity>().FromSqlRaw(sql, parameters);
             }
             public override IQueryable GetEntitySet(Object dataContext)
             {
-                return new EntityQueryable<TEntity>(((T)dataContext).GetDependencies().QueryProvider);
+                var dbContext = (T)dataContext;
+                return dbContext.Set<TEntity>();
             }
             private InternalEntityEntry GetEntityEntry(T context, ODataResourceBase entity)
             {

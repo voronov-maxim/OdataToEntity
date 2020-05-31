@@ -14,7 +14,9 @@ namespace OdataToEntity.EfCore.Fix
         public static DbContextOptions FixDistinctCount(this DbContextOptions options)
         {
             Type optionsBuilderType = typeof(DbContextOptionsBuilder<>).MakeGenericType(options.ContextType);
-            var optionsBuilder = (DbContextOptionsBuilder)Activator.CreateInstance(optionsBuilderType);
+            var optionsBuilder = (DbContextOptionsBuilder?)Activator.CreateInstance(optionsBuilderType);
+            if (optionsBuilder == null)
+                throw new InvalidOperationException("Cannot create " + nameof(DbContextOptionsBuilder));
 
             RelationalOptionsExtension relationalOptionsExtension = options.Extensions.OfType<RelationalOptionsExtension>().Single();
             var serviceCollection = new ServiceCollection();
@@ -52,7 +54,7 @@ namespace OdataToEntity.EfCore.Fix
                 {
                     var withExtensionFunc = (Func<IDbContextOptionsExtension, DbContextOptions>)contextOptions.WithExtension<IDbContextOptionsExtension>;
                     var withExtension = withExtensionFunc.Method.GetGenericMethodDefinition().MakeGenericMethod(new[] { extension.GetType() });
-                    contextOptions = (DbContextOptions)withExtension.Invoke(contextOptions, new[] { extension });
+                    contextOptions = (DbContextOptions?)withExtension.Invoke(contextOptions, new[] { extension }) ?? throw new InvalidOperationException("Cannot create " + nameof(DbContextOptions));
                 }
 
             return contextOptions;

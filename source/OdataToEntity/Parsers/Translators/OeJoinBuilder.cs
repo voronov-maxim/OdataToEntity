@@ -214,9 +214,9 @@ namespace OdataToEntity.Parsers.Translators
             if (propertyNode.Source is SingleNavigationNode navigationNode)
             {
                 var joinPath = new List<IEdmNavigationProperty> { navigationNode.NavigationProperty };
-                while (navigationNode.Source is SingleNavigationNode)
+                while (navigationNode.Source is SingleNavigationNode node)
                 {
-                    navigationNode = (SingleNavigationNode)navigationNode.Source;
+                    navigationNode = node;
                     joinPath.Insert(0, navigationNode.NavigationProperty);
                 }
                 return joinPath;

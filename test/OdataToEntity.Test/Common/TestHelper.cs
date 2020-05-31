@@ -34,7 +34,7 @@ namespace OdataToEntity.Test
                 _dataContext = dataContext;
             }
 
-            private ConstantExpression GetQueryConstantExpression(Expression node)
+            private Expression GetQueryConstantExpression(Expression node)
             {
                 if (node.Type.IsGenericType && node.Type.GetGenericTypeDefinition() == typeof(IQueryable<>))
                 {
@@ -43,7 +43,7 @@ namespace OdataToEntity.Test
                     if (_query == null && entitySetAdapter.EntityType == typeof(T))
                         _query = (IQueryable<T>)query;
 
-                    return Expression.Constant(query);
+                    return query.Expression;
                 }
 
                 return null;

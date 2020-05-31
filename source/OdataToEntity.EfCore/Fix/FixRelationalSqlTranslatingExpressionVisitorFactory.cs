@@ -21,7 +21,7 @@ namespace OdataToEntity.EfCore.Fix
         public RelationalSqlTranslatingExpressionVisitor Create(IModel model, QueryableMethodTranslatingExpressionVisitor queryableMethodTranslatingExpressionVisitor)
         {
             RelationalSqlTranslatingExpressionVisitor originalVisitor = _originalFactory.Create(model, queryableMethodTranslatingExpressionVisitor);
-            return new FixSqlServerSqlTranslatingExpressionVisitor(_dependencies, model, queryableMethodTranslatingExpressionVisitor, originalVisitor);
+            return new FixSqlServerSqlTranslatingExpressionVisitor(_dependencies, model, queryableMethodTranslatingExpressionVisitor);
         }
     }
 }

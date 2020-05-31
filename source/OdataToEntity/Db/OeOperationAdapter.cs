@@ -1,12 +1,8 @@
-﻿#if !NETSTANDARD2_1
-    #pragma warning disable CS8604
-#endif
-using OdataToEntity.ModelBuilder;
+﻿using OdataToEntity.ModelBuilder;
 using OdataToEntity.Parsers;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text;
 using System.Threading;

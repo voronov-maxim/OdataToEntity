@@ -13,7 +13,7 @@ namespace OdataToEntity.Parsers
     {
         private sealed class FilterVisitor : ExpressionVisitor
         {
-            private ConstantExpression? _source;
+            private Expression? _source;
             private readonly Type _sourceType;
 
             public FilterVisitor(Type sourceType)
@@ -28,11 +28,15 @@ namespace OdataToEntity.Parsers
 
                 return node;
             }
+            protected override Expression VisitExtension(Expression node)
+            {
+                if (OeExpressionHelper.GetCollectionItemTypeOrNull(node.Type) == _sourceType)
+                    _source = node;
+
+                return node;
+            }
             protected override Expression VisitMethodCall(MethodCallExpression node)
             {
-                if (node.Method.Name == nameof(Enumerable.Take))
-                    return base.Visit(node.Arguments[0]);
-
                 var e = (MethodCallExpression)base.VisitMethodCall(node);
                 if (e.Method.Name == nameof(Enumerable.Where))
                 {
@@ -58,7 +62,7 @@ namespace OdataToEntity.Parsers
                 return node;
             }
 
-            public ConstantExpression Source => _source!;
+            public Expression Source => _source ?? throw new InvalidOperationException("Source not found in expression");
             public MethodCallExpression? WhereExpression { get; private set; }
         }
 
@@ -238,7 +242,7 @@ namespace OdataToEntity.Parsers
         }
         public bool IsQueryCount()
         {
-            return ODataUri.SkipToken == null ? ODataUri.QueryCount.GetValueOrDefault() : false;
+            return ODataUri.SkipToken == null && ODataUri.QueryCount.GetValueOrDefault();
         }
         public Expression TranslateSource(Object dataContext, Expression expression)
         {
