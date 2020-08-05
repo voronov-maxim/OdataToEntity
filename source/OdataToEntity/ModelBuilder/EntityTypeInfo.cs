@@ -35,7 +35,7 @@ namespace OdataToEntity.ModelBuilder
         {
             if (_keyProperties.Count == 0)
             {
-                PropertyInfo key = ClrType.GetPropertyIgnoreCase("id");
+                PropertyInfo? key = ClrType.GetPropertyIgnoreCaseOrNull("id");
                 if (key != null)
                 {
                     var edmProperty = (EdmStructuralProperty)EdmType.GetPropertyIgnoreCase(key.Name);
@@ -43,7 +43,7 @@ namespace OdataToEntity.ModelBuilder
                 }
                 else
                 {
-                    key = ClrType.GetPropertyIgnoreCase(ClrType.Name + "id");
+                    key = ClrType.GetPropertyIgnoreCaseOrNull(ClrType.Name + "id");
                     if (key == null)
                     {
                         if (EdmType.Key().Any() || ClrType.IsAbstract)
@@ -148,7 +148,7 @@ namespace OdataToEntity.ModelBuilder
         }
         public override String ToString()
         {
-            return ClrType.FullName;
+            return ClrType.FullName ?? ClrType.Name;
         }
 
         public Type ClrType { get; }

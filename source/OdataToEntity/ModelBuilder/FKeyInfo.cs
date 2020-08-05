@@ -204,7 +204,7 @@ namespace OdataToEntity.ModelBuilder
 
                 if (dependentProperties.Count == 0)
                 {
-                    PropertyInfo clrProperty = dependentInfo.ClrType.GetPropertyIgnoreCase(dependentProperty.Name + "id");
+                    PropertyInfo? clrProperty = dependentInfo.ClrType.GetPropertyIgnoreCaseOrNull(dependentProperty.Name + "id");
                     if (clrProperty != null)
                         dependentProperties.Add(clrProperty);
                 }

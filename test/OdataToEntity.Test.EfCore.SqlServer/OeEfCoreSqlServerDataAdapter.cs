@@ -36,7 +36,7 @@ namespace OdataToEntity.EfCore
         public OeEfCoreSqlServerDataAdapter(Cache.OeQueryCache queryCache) : this(null, queryCache)
         {
         }
-        public OeEfCoreSqlServerDataAdapter(DbContextOptions options, Cache.OeQueryCache queryCache)
+        public OeEfCoreSqlServerDataAdapter(DbContextOptions<T> options, Cache.OeQueryCache queryCache)
             : base(options, queryCache, new OeEfCoreSqlServerOperationAdapter(typeof(T)))
         {
         }

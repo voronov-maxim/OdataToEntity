@@ -48,8 +48,8 @@ namespace OdataToEntity.Infrastructure
         public override MethodInfo GetGetMethod(bool nonPublic) => _getMethodInfo;
         public override ParameterInfo[] GetIndexParameters() => Array.Empty<ParameterInfo>();
         public override MethodInfo GetSetMethod(bool nonPublic) => _setMethodInfo;
-        public override Object GetValue(Object obj, BindingFlags invokeAttr, Binder binder, Object[] index, CultureInfo culture) => throw new NotSupportedException();
+        public override Object? GetValue(Object? obj, BindingFlags invokeAttr, Binder? binder, Object?[]? index, CultureInfo? culture) => throw new NotSupportedException();
         public override bool IsDefined(Type attributeType, bool inherit) => false;
-        public override void SetValue(Object obj, Object value, BindingFlags invokeAttr, Binder binder, Object[] index, CultureInfo culture) => throw new NotSupportedException();
+        public override void SetValue(Object? obj, Object? value, BindingFlags invokeAttr, Binder? binder, Object?[]? index, CultureInfo? culture) => throw new NotSupportedException();
     }
 }

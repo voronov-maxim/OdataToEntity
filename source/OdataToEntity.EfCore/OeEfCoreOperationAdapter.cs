@@ -76,7 +76,7 @@ namespace OdataToEntity.EfCore
         }
         protected override IReadOnlyList<OeOperationConfiguration>? GetOperationConfigurations(MethodInfo methodInfo)
         {
-            var dbFunction = (DbFunctionAttribute)methodInfo.GetCustomAttribute(typeof(DbFunctionAttribute));
+            var dbFunction = (DbFunctionAttribute?)methodInfo.GetCustomAttribute(typeof(DbFunctionAttribute));
             if (dbFunction == null)
                 return base.GetOperationConfigurations(methodInfo);
 

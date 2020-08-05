@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.Query;
-using Microsoft.EntityFrameworkCore.Query.Internal;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.OData;
 using OdataToEntity.Parsers;
@@ -60,8 +59,8 @@ namespace OdataToEntity.EfCore
             public override Type EntityType => typeof(TEntity);
             public override String EntitySetName { get; }
             public override bool IsDbQuery => true;
-
         }
+
         private sealed class DbSetAdapterImpl<TEntity> : Db.OeEntitySetAdapter, IFromSql where TEntity : class
         {
             private IEntityType _entityType;
@@ -256,30 +255,27 @@ namespace OdataToEntity.EfCore
         public OeEfCoreDataAdapter() : this(null, null)
         {
         }
-        public OeEfCoreDataAdapter(DbContextOptions options) : this(options, null)
+        public OeEfCoreDataAdapter(DbContextOptions<T> options) : this(options, null)
         {
         }
         public OeEfCoreDataAdapter(Cache.OeQueryCache queryCache) : this(null, queryCache)
         {
         }
-        public OeEfCoreDataAdapter(DbContextOptions? options, Cache.OeQueryCache? queryCache)
+        public OeEfCoreDataAdapter(DbContextOptions<T>? options, Cache.OeQueryCache? queryCache)
             : this(options, queryCache, new OeEfCoreOperationAdapter(typeof(T)))
         {
         }
-        public OeEfCoreDataAdapter(DbContextOptions? options, Cache.OeQueryCache? queryCache, OeEfCoreOperationAdapter operationAdapter)
+        public OeEfCoreDataAdapter(DbContextOptions<T>? options, Cache.OeQueryCache? queryCache, OeEfCoreOperationAdapter operationAdapter)
             : base(queryCache, operationAdapter)
         {
             if (options != null)
-                _dbContextPool = new DbContextPool<T>(Fix.FixHelper.FixDistinctCount(options));
+                _dbContextPool = new DbContextPool<T>(options);
         }
 
         public override void CloseDataContext(Object dataContext)
         {
             var dbContext = (T)dataContext;
-            if (_dbContextPool == null)
-                dbContext.Dispose();
-            else
-                _dbContextPool.Return(dbContext);
+            dbContext.Dispose();
         }
         public override Object CreateDataContext()
         {
@@ -287,7 +283,7 @@ namespace OdataToEntity.EfCore
             if (_dbContextPool == null)
                 dbContext = Infrastructure.FastActivator.CreateInstance<T>();
             else
-                dbContext = _dbContextPool.Rent();
+                dbContext = (T)new DbContextLease(_dbContextPool, true).Context;
 
             dbContext.ChangeTracker.AutoDetectChangesEnabled = false;
             dbContext.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
@@ -312,7 +308,7 @@ namespace OdataToEntity.EfCore
         {
             MethodInfo mi = ((Func<String, bool, Db.OeEntitySetAdapter>)CreateEntitySetAdapter<Object>).GetMethodInfo().GetGenericMethodDefinition();
             MethodInfo func = mi.GetGenericMethodDefinition().MakeGenericMethod(entityType);
-            return (Db.OeEntitySetAdapter)func.Invoke(null, new Object[] { entitySetName, isDbQuery });
+            return (Db.OeEntitySetAdapter)func.Invoke(null, new Object[] { entitySetName, isDbQuery })!;
         }
         private static Db.OeEntitySetAdapter CreateEntitySetAdapter<TEntity>(String entitySetName, bool isDbQuery) where TEntity : class
         {
@@ -441,7 +437,7 @@ namespace OdataToEntity.EfCore
         }
         protected virtual Expression TranslateExpression(Expression expression)
         {
-            return new Fix.FixSelectDistinctVisitor().Visit(expression);
+            return expression;
         }
 
         public override Type DataContextType => typeof(T);

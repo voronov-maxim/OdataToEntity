@@ -14,10 +14,10 @@ namespace OdataToEntity
     {
         public static Object CreateEntity(Type clrType, ODataResourceBase entry)
         {
-            Object entity = Activator.CreateInstance(clrType);
+            Object entity = Activator.CreateInstance(clrType)!;
             foreach (ODataProperty property in entry.Properties)
             {
-                PropertyInfo clrProperty = clrType.GetProperty(property.Name);
+                PropertyInfo? clrProperty = clrType.GetProperty(property.Name);
                 if (clrProperty != null)
                 {
                     Object value = GetClrValue(clrProperty.PropertyType, property.Value);
@@ -121,7 +121,7 @@ namespace OdataToEntity
         public static IEdmTypeReference GetEdmTypeReference(Type clrType)
         {
             bool nullable;
-            Type underlyingType = Nullable.GetUnderlyingType(clrType);
+            Type? underlyingType = Nullable.GetUnderlyingType(clrType);
             if (underlyingType == null)
                 nullable = clrType.IsClass;
             else
@@ -142,7 +142,7 @@ namespace OdataToEntity
         public static IEdmTypeReference GetEdmTypeReference(IEdmModel edmModel, Type clrType)
         {
             bool nullable;
-            Type underlyingType = Nullable.GetUnderlyingType(clrType);
+            Type? underlyingType = Nullable.GetUnderlyingType(clrType);
             if (underlyingType == null)
                 nullable = clrType.IsClass;
             else
@@ -243,13 +243,17 @@ namespace OdataToEntity
         {
             IEdmProperty? edmProperty = entityType.GetPropertyIgnoreCaseOrNull(propertyName);
             if (edmProperty == null)
-                throw new InvalidOperationException("Property " + propertyName + " not found in IEdmStructuredType" + entityType.FullTypeName());
+                throw new InvalidOperationException("Property " + propertyName + " not found in IEdmStructuredType " + entityType.FullTypeName());
 
             return edmProperty;
         }
         public static PropertyInfo GetPropertyIgnoreCase(this Type declaringType, String propertyName)
         {
-            return declaringType.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase);
+            PropertyInfo? propertyInfo = declaringType.GetPropertyIgnoreCaseOrNull(propertyName);
+            if (propertyInfo == null)
+                throw new InvalidOperationException("Property " + propertyName + " not found in Clr type " + declaringType.FullName);
+
+            return propertyInfo;
         }
         public static PropertyInfo GetPropertyIgnoreCase(this Type declaringType, IEdmProperty edmProperty)
         {
@@ -263,10 +267,14 @@ namespace OdataToEntity
 
             return null;
         }
+        public static PropertyInfo? GetPropertyIgnoreCaseOrNull(this Type declaringType, String propertyName)
+        {
+            return declaringType.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase);
+        }
         public static PropertyInfo? GetPropertyIgnoreCaseOrNull(this Type declaringType, IEdmProperty edmProperty)
         {
             var schemaElement = (IEdmSchemaElement)edmProperty.DeclaringType;
-            do
+            for (; ; )
             {
                 if (String.Compare(declaringType.Name, schemaElement.Name, StringComparison.OrdinalIgnoreCase) == 0 &&
                     String.Compare(declaringType.Namespace, schemaElement.Namespace, StringComparison.OrdinalIgnoreCase) == 0)
@@ -284,11 +292,11 @@ namespace OdataToEntity
                     return propertyInfo;
                 }
 
+                if (declaringType.BaseType == null)
+                    return null;
+
                 declaringType = declaringType.BaseType;
             }
-            while (declaringType != null);
-
-            return null;
         }
         public static Object GetValue(IEdmModel edmModel, ODataEnumValue odataValue)
         {
@@ -310,7 +318,7 @@ namespace OdataToEntity
                     else
                     {
                         Type listType = typeof(List<>).MakeGenericType(new[] { listItem.GetType() });
-                        list = (IList)Activator.CreateInstance(listType);
+                        list = (IList)Activator.CreateInstance(listType)!;
 
                         while (nullCount > 0)
                         {
@@ -329,10 +337,10 @@ namespace OdataToEntity
         public static Object GetValue(IEdmModel edmModel, ODataResource odataValue)
         {
             Type clrType = edmModel.GetClrType(edmModel.FindType(odataValue.TypeName));
-            Object instance = Activator.CreateInstance(clrType);
+            Object instance = Activator.CreateInstance(clrType)!;
             foreach (ODataProperty edmProperty in odataValue.Properties)
             {
-                PropertyInfo clrProperty = clrType.GetProperty(edmProperty.Name);
+                PropertyInfo clrProperty = clrType.GetPropertyIgnoreCase(edmProperty.Name);
                 if (clrProperty.PropertyType == typeof(DateTime) || clrProperty.PropertyType == typeof(DateTime?))
                     clrProperty.SetValue(instance, ((DateTimeOffset)edmProperty.Value).UtcDateTime);
                 else

@@ -24,7 +24,7 @@ namespace OdataToEntity.EfCore
 
         private Infrastructure.OeShadowPropertyInfo CreateShadowProperty(IPropertyBase efProperty)
         {
-            if (!_shadowProperties.TryGetValue(efProperty, out Infrastructure.OeShadowPropertyInfo shadowProperty))
+            if (!_shadowProperties.TryGetValue(efProperty, out Infrastructure.OeShadowPropertyInfo? shadowProperty))
             {
                 shadowProperty = new Infrastructure.OeShadowPropertyInfo(efProperty.DeclaringType.ClrType, efProperty.ClrType, efProperty.Name);
                 _shadowProperties.Add(efProperty, shadowProperty);
@@ -33,7 +33,10 @@ namespace OdataToEntity.EfCore
         }
         private IEnumerable<IEntityType> GetEntityTypes(PropertyInfo propertyInfo)
         {
-            if (_entityTypes.TryGetValue(propertyInfo.DeclaringType, out IEntityType efEntityType))
+            if (propertyInfo.DeclaringType == null)
+                throw new InvalidOperationException("PropertyInfo.DeclaringType is null");
+
+            if (_entityTypes.TryGetValue(propertyInfo.DeclaringType, out IEntityType? efEntityType))
                 yield return efEntityType;
             else
                 foreach (KeyValuePair<Type, IEntityType> pair in _entityTypes)
@@ -42,6 +45,9 @@ namespace OdataToEntity.EfCore
         }
         public override PropertyInfo[]? GetForeignKey(PropertyInfo propertyInfo)
         {
+            if (propertyInfo.DeclaringType == null)
+                throw new InvalidOperationException("PropertyInfo.DeclaringType is null");
+
             foreach (IEntityType efEntityType in GetEntityTypes(propertyInfo))
                 foreach (IForeignKey fkey in efEntityType.GetForeignKeys())
                 {
@@ -68,20 +74,16 @@ namespace OdataToEntity.EfCore
             foreach (IEntityType efEntityType in GetEntityTypes(propertyInfo))
             {
                 foreach (IForeignKey fkey in efEntityType.GetForeignKeys())
-                    if (fkey.DependentToPrincipal != null && fkey.DependentToPrincipal.Name == propertyInfo.Name)
-                    {
-                        INavigation efInverseProperty = fkey.DependentToPrincipal.FindInverse();
-                        if (efInverseProperty != null)
-                            return GetPropertyInfo(efInverseProperty);
-                    }
+                    if (fkey.DependentToPrincipal != null &&
+                        fkey.DependentToPrincipal.Name == propertyInfo.Name &&
+                        fkey.DependentToPrincipal.Inverse != null)
+                        return GetPropertyInfo(fkey.DependentToPrincipal.Inverse);
 
                 foreach (IForeignKey fkey in efEntityType.GetReferencingForeignKeys())
-                    if (fkey.PrincipalToDependent != null && fkey.PrincipalToDependent.Name == propertyInfo.Name)
-                    {
-                        INavigation efInverseProperty = fkey.PrincipalToDependent.FindInverse();
-                        if (efInverseProperty != null)
-                            return GetPropertyInfo(efInverseProperty);
-                    }
+                    if (fkey.PrincipalToDependent != null &&
+                        fkey.PrincipalToDependent.Name == propertyInfo.Name &&
+                        fkey.PrincipalToDependent.Inverse != null)
+                        return GetPropertyInfo(fkey.PrincipalToDependent.Inverse);
             }
 
             return null;
@@ -117,7 +119,7 @@ namespace OdataToEntity.EfCore
                 }
             }
 
-            throw new InvalidOperationException("Not found key for principal navigation property " + principalNavigation.DeclaringType.Name + "." + principalNavigation.Name);
+            throw new InvalidOperationException("Not found key for principal navigation property " + principalNavigation.DeclaringType?.Name + "." + principalNavigation.Name);
         }
         public override PropertyInfo[] GetPrincipalToDependentWithoutDependent(PropertyInfo principalNavigation)
         {
@@ -125,8 +127,8 @@ namespace OdataToEntity.EfCore
                 foreach (IForeignKey fkey in efEntityType.GetReferencingForeignKeys())
                     if (fkey.PrincipalToDependent != null &&
                         fkey.PrincipalToDependent.Name == principalNavigation.Name &&
-                        fkey.PrincipalToDependent.IsCollection() &&
-                        fkey.PrincipalToDependent.FindInverse() == null)
+                        fkey.PrincipalToDependent.IsCollection &&
+                        fkey.PrincipalToDependent.Inverse == null)
                     {
                         var properties = new PropertyInfo[fkey.Properties.Count];
                         for (int i = 0; i < fkey.Properties.Count; i++)
@@ -138,7 +140,7 @@ namespace OdataToEntity.EfCore
         }
         public override PropertyInfo[] GetProperties(Type type)
         {
-            if (_entityTypes.TryGetValue(type, out IEntityType efEntityType))
+            if (_entityTypes.TryGetValue(type, out IEntityType? efEntityType))
             {
                 var properties = new List<PropertyInfo>();
                 foreach (IProperty efProperty in efEntityType.GetDeclaredProperties())

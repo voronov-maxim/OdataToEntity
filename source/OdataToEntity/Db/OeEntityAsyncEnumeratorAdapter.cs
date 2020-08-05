@@ -4,7 +4,6 @@ using OdataToEntity.Parsers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -51,12 +50,12 @@ namespace OdataToEntity.Db
         }
         private static Object CreateEntityFromTuple(Type entityType, Object tuple, OePropertyAccessor[] accessors)
         {
-            Object entity = Activator.CreateInstance(entityType);
+            Object entity = Activator.CreateInstance(entityType)!;
             for (int i = 0; i < accessors.Length; i++)
             {
                 OePropertyAccessor accessor = accessors[i];
                 Object value = accessor.GetValue(tuple);
-                entityType.GetProperty(accessor.EdmProperty.Name).SetValue(entity, value);
+                entityType.GetPropertyIgnoreCase(accessor.EdmProperty.Name).SetValue(entity, value);
             }
             return entity;
         }
@@ -70,7 +69,7 @@ namespace OdataToEntity.Db
             if (entryFactory.EdmNavigationProperty.Type.Definition is EdmCollectionType)
             {
                 Type listType = typeof(List<>).MakeGenericType(new[] { nestedEntityType });
-                var list = (IList)Activator.CreateInstance(listType);
+                var list = (IList)Activator.CreateInstance(listType)!;
 
                 do
                 {
@@ -124,7 +123,7 @@ namespace OdataToEntity.Db
         private static async Task SetNavigationProperty(IOeDbEnumerator dbEnumerator, Object value, Object entity, CancellationToken cancellationToken)
         {
             var entryFactory = (OeNavigationEntryFactory)dbEnumerator.EntryFactory;
-            PropertyInfo propertyInfo = entity.GetType().GetProperty(entryFactory.EdmNavigationProperty.Name);
+            PropertyInfo propertyInfo = entity.GetType().GetPropertyIgnoreCase(entryFactory.EdmNavigationProperty.Name);
             Type nestedEntityType = OeExpressionHelper.GetCollectionItemTypeOrNull(propertyInfo.PropertyType) ?? propertyInfo.PropertyType;
             Object? navigationValue = await CreateNestedEntity(dbEnumerator, value, nestedEntityType, cancellationToken).ConfigureAwait(false);
             propertyInfo.SetValue(entity, navigationValue);
@@ -161,7 +160,7 @@ namespace OdataToEntity.Db
                 Object? navigationValue = clrProperty.GetValue(entity);
                 if (navigationValue == null)
                 {
-                    navigationValue = Activator.CreateInstance(clrProperty.PropertyType);
+                    navigationValue = Activator.CreateInstance(clrProperty.PropertyType)!;
                     clrProperty.SetValue(entity, navigationValue);
                 }
                 entity = navigationValue;

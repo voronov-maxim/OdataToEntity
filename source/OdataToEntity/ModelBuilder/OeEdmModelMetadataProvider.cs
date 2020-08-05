@@ -11,11 +11,11 @@ namespace OdataToEntity.ModelBuilder
     {
         public virtual PropertyInfo[]? GetForeignKey(PropertyInfo propertyInfo)
         {
-            var fkey = (ForeignKeyAttribute)propertyInfo.GetCustomAttribute(typeof(ForeignKeyAttribute));
+            var fkey = (ForeignKeyAttribute?)propertyInfo.GetCustomAttribute(typeof(ForeignKeyAttribute));
             if (fkey == null)
                 return null;
 
-            PropertyInfo property = propertyInfo.DeclaringType.GetPropertyIgnoreCase(fkey.Name);
+            PropertyInfo? property = propertyInfo.DeclaringType.GetPropertyIgnoreCaseOrNull(fkey.Name);
             if (property == null)
             {
                 String[] propertyNames = fkey.Name.Split(',');
@@ -38,7 +38,7 @@ namespace OdataToEntity.ModelBuilder
         }
         public virtual PropertyInfo? GetInverseProperty(PropertyInfo propertyInfo)
         {
-            var inverse = (InversePropertyAttribute)propertyInfo.GetCustomAttribute(typeof(InversePropertyAttribute));
+            var inverse = (InversePropertyAttribute?)propertyInfo.GetCustomAttribute(typeof(InversePropertyAttribute));
             if (inverse == null)
                 return null;
 

@@ -12,19 +12,19 @@ namespace OdataToEntity.EfCore.Postgresql
         {
             protected override Expression VisitMember(MemberExpression node)
             {
-                Expression expression = base.Visit(node.Expression);
-                if (expression.Type == node.Expression.Type)
+                Expression expression = base.Visit(node.Expression)!;
+                if (expression.Type == node.Expression!.Type)
                 {
                     if (node.Member is PropertyInfo property)
                     {
                         if (property.PropertyType == typeof(DateTimeOffset))
                         {
-                            var propertyInfo = new OeShadowPropertyInfo(property.DeclaringType, typeof(DateTime), property.Name);
+                            var propertyInfo = new OeShadowPropertyInfo(property.DeclaringType!, typeof(DateTime), property.Name);
                             return Expression.Property(expression, propertyInfo);
                         }
                         if (property.PropertyType == typeof(DateTimeOffset?))
                         {
-                            var propertyInfo = new OeShadowPropertyInfo(property.DeclaringType, typeof(DateTime?), property.Name);
+                            var propertyInfo = new OeShadowPropertyInfo(property.DeclaringType!, typeof(DateTime?), property.Name);
                             return Expression.Property(expression, propertyInfo);
                         }
                     }
@@ -50,9 +50,11 @@ namespace OdataToEntity.EfCore.Postgresql
                 return node;
             }
         }
+
         protected override Expression VisitMember(MemberExpression node)
         {
-            if (node.Expression.Type == typeof(DateTimeOffset) &&
+            if (node.Expression != null &&
+                node.Expression.Type == typeof(DateTimeOffset) &&
                 (node.Member.Name == nameof(DateTimeOffset.Day) ||
                 node.Member.Name == nameof(DateTimeOffset.Month) ||
                 node.Member.Name == nameof(DateTimeOffset.Year)))

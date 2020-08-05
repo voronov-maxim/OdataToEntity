@@ -79,13 +79,13 @@ namespace OdataToEntity.Test
 
             Assert.Equal(jsonDb, jsonOe);
         }
-        public static DbContextOptions CreateOptions<T>(DbContext dbContext) where T : DbContext
+        public static DbContextOptions<T> CreateOptions<T>(DbContext dbContext) where T : DbContext
         {
             var serviceProvider = (IInfrastructure<IServiceProvider>)dbContext;
 #pragma warning disable EF1001
             DbContextOptions options = (DbContextOptions)serviceProvider.GetService<IDbContextServices>().ContextOptions;
 #pragma warning restore EF1001
-            return options.CreateOptions(typeof(T));
+            return (DbContextOptions<T>)options.CreateOptions(typeof(T));
         }
         public static IList ExecuteDb<T, TResult>(Db.OeEntitySetAdapterCollection entitySetAdapters, DbContext dataContext, Expression<Func<IQueryable<T>, TResult>> expression)
         {

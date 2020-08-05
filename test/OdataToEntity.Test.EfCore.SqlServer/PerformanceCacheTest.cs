@@ -42,7 +42,7 @@ namespace OdataToEntity.Test.EfCore.SqlServer
             for (int i = 0; i < testCount; i++)
                 foreach (SelectTestDefinition testDefinition in testDefinitions)
                 {
-                    OrderContext dbContext = pool.Rent();
+                    var dbContext = (OrderContext)pool.Rent();
                     testDefinition.ExecutorDb(dataAdapter, dbContext);
                     pool.Return(dbContext);
                 }

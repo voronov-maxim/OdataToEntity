@@ -25,7 +25,7 @@ namespace OdataToEntity.EfCore
         public static DbContextOptions CreateOptions(this DbContextOptions options, Type dbContextType)
         {
             Type optionsBuilderType = typeof(DbContextOptionsBuilder<>).MakeGenericType(dbContextType);
-            var optionsBuilder = (DbContextOptionsBuilder)Activator.CreateInstance(optionsBuilderType);
+            var optionsBuilder = (DbContextOptionsBuilder)Activator.CreateInstance(optionsBuilderType)!;
             return optionsBuilder.CreateOptions(options);
         }
         public static DbContextOptions CreateOptions(this DbContextOptionsBuilder optionsBuilder, DbContextOptions options)
@@ -41,8 +41,8 @@ namespace OdataToEntity.EfCore
                     {
                         if (coreOptionsExtension.ReplacedServices != null)
                         {
-                            foreach (KeyValuePair<Type, Type> replacedService in coreOptionsExtension.ReplacedServices)
-                                newCoreOptions = newCoreOptions.WithReplacedService(replacedService.Key, replacedService.Value);
+                            foreach (KeyValuePair<(Type, Type), Type> replacedService in coreOptionsExtension.ReplacedServices)
+                                newCoreOptions = newCoreOptions.WithReplacedService(replacedService.Key.Item1, replacedService.Value);
                             contextOptions = contextOptions.WithExtension(newCoreOptions);
                         }
                     }
@@ -51,9 +51,9 @@ namespace OdataToEntity.EfCore
                 {
                     var withExtensionFunc = (Func<IDbContextOptionsExtension, DbContextOptions>)contextOptions.WithExtension<IDbContextOptionsExtension>;
                     var withExtension = withExtensionFunc.Method.GetGenericMethodDefinition().MakeGenericMethod(new[] { extension.GetType() });
-                    contextOptions = (DbContextOptions)withExtension.Invoke(contextOptions, new[] { extension });
+                    contextOptions = (DbContextOptions)withExtension.Invoke(contextOptions, new[] { extension })!;
                 }
-            return Fix.FixHelper.FixDistinctCount(contextOptions);
+            return contextOptions;
         }
     }
 }

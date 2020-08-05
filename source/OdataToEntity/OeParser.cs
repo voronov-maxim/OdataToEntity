@@ -4,7 +4,6 @@ using Microsoft.OData.Json;
 using Microsoft.OData.UriParser;
 using System;
 using System.Collections.Generic;
-using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -25,7 +24,7 @@ namespace OdataToEntity
             public IContainerBuilder AddService(ServiceLifetime lifetime, Type serviceType, Type implementationType)
             {
                 if (serviceType == typeof(IJsonReaderFactory))
-                    JsonReaderFactory = (IJsonReaderFactory)Activator.CreateInstance(implementationType);
+                    JsonReaderFactory = (IJsonReaderFactory)Activator.CreateInstance(implementationType)!;
                 return this;
             }
             public IContainerBuilder AddService(ServiceLifetime lifetime, Type serviceType, Func<IServiceProvider, object> implementationFactory)

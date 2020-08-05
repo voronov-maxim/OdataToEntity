@@ -56,7 +56,7 @@ namespace OdataToEntity.Test.Model
             optionsBuilder = optionsBuilder.UseSqlServer(@"Server=.\sqlexpress;Initial Catalog=OdataToEntity;Trusted_Connection=Yes;", opt => opt.UseRelationalNulls(useRelationalNulls));
             return optionsBuilder.Options;
         }
-        public static DbContextOptions CreateOptions<T>(DbContext dbContext) where T : DbContext
+        public static DbContextOptions<T> CreateOptions<T>(DbContext dbContext) where T : DbContext
         {
             return TestHelper.CreateOptions<T>(dbContext);
         }
