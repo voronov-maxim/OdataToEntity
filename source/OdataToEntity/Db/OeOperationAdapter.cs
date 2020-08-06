@@ -89,7 +89,7 @@ namespace OdataToEntity.Db
                 if (String.IsNullOrEmpty(defaultSchema))
                     return GetCaseSensitivityName(operationName);
 
-                return GetCaseSensitivityName(defaultSchema) + "." + GetCaseSensitivityName(operationName);
+                return GetCaseSensitivityName(defaultSchema!) + "." + GetCaseSensitivityName(operationName);
             }
 
             if (operationName[0] == '"' && operationName[i + 1] == '"')
@@ -109,10 +109,10 @@ namespace OdataToEntity.Db
         }
         protected virtual IReadOnlyList<OeOperationConfiguration>? GetOperationConfigurations(MethodInfo methodInfo)
         {
-            var description = (DescriptionAttribute)methodInfo.GetCustomAttribute(typeof(DescriptionAttribute));
+            var description = (DescriptionAttribute?)methodInfo.GetCustomAttribute(typeof(DescriptionAttribute));
             if (description == null)
             {
-                var boundFunction = (OeBoundFunctionAttribute)methodInfo.GetCustomAttribute(typeof(OeBoundFunctionAttribute));
+                var boundFunction = (OeBoundFunctionAttribute?)methodInfo.GetCustomAttribute(typeof(OeBoundFunctionAttribute));
                 if (boundFunction == null)
                     return null;
 

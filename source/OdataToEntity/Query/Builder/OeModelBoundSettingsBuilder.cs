@@ -22,22 +22,22 @@ namespace OdataToEntity.Query.Builder
         }
         private OeModelBoundSettings GetSettingsOrAdd(IEdmEntityType entityType)
         {
-            if (!_elementSettings.TryGetValue(entityType, out OeModelBoundSettings settings))
+            if (!_elementSettings.TryGetValue(entityType, out OeModelBoundSettings? settings))
                 _elementSettings.Add(entityType, settings = new OeModelBoundSettings(entityType));
             return settings;
         }
         private OeModelBoundSettings GetSettingsOrAdd(IEdmNavigationProperty navigationProperty)
         {
-            if (!_elementSettings.TryGetValue(navigationProperty, out OeModelBoundSettings settings))
+            if (!_elementSettings.TryGetValue(navigationProperty, out OeModelBoundSettings? settings))
                 _elementSettings.Add(navigationProperty, settings = new OeModelBoundSettings(navigationProperty));
             return settings;
         }
         private void MergeSettings(IEdmEntityType entityType)
         {
-            _elementSettings.TryGetValue(entityType, out OeModelBoundSettings settings);
-            while ((entityType = (IEdmEntityType)entityType.BaseType) != null)
-                if (_elementSettings.TryGetValue(entityType, out OeModelBoundSettings baseSettings))
-                    settings.Merge(baseSettings);
+            if (_elementSettings.TryGetValue(entityType, out OeModelBoundSettings? settings))
+                while ((entityType = (IEdmEntityType)entityType.BaseType) != null)
+                    if (_elementSettings.TryGetValue(entityType, out OeModelBoundSettings? baseSettings))
+                        settings.Merge(baseSettings);
         }
         public void SetCount(bool countable, IEdmEntityType entityType)
         {

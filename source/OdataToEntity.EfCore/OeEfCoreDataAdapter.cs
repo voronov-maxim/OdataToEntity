@@ -381,7 +381,7 @@ namespace OdataToEntity.EfCore
         private IAsyncEnumerable<TResult> GetFromCache<TResult>(OeQueryContext queryContext, T dbContext, out MethodCallExpression? countExpression)
         {
             Cache.OeCacheContext cacheContext = queryContext.CreateCacheContext();
-            Cache.OeQueryCacheItem queryCacheItem = base.QueryCache.GetQuery(cacheContext);
+            Cache.OeQueryCacheItem? queryCacheItem = base.QueryCache.GetQuery(cacheContext);
 
             Func<QueryContext, IAsyncEnumerable<TResult>> queryExecutor;
             IReadOnlyList<Cache.OeQueryCacheDbParameterValue> parameterValues;

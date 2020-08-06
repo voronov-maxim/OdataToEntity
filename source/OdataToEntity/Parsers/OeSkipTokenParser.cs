@@ -69,14 +69,14 @@ namespace OdataToEntity.Parsers
 
             throw new InvalidOperationException("Unknown type order by expression " + sortProperty.GetType().Name);
         }
-        private static KeyValuePair<String, Object>[] GetKeys(OePropertyAccessor[] accessors, Object value)
+        private static KeyValuePair<String, Object?>[] GetKeys(OePropertyAccessor[] accessors, Object value)
         {
-            var keys = new KeyValuePair<String, Object>[accessors.Length];
+            var keys = new KeyValuePair<String, Object?>[accessors.Length];
             for (int i = 0; i < keys.Length; i++)
-                keys[i] = new KeyValuePair<String, Object>(GetPropertyName(accessors[i].EdmProperty), accessors[i].GetValue(value));
+                keys[i] = new KeyValuePair<String, Object?>(GetPropertyName(accessors[i].EdmProperty), accessors[i].GetValue(value));
             return keys;
         }
-        public static String GetJson(IEdmModel edmModel, IEnumerable<KeyValuePair<String, Object>> keys)
+        public static String GetJson(IEdmModel edmModel, IEnumerable<KeyValuePair<String, Object?>> keys)
         {
             using (var stream = new MemoryStream())
             {
@@ -85,11 +85,11 @@ namespace OdataToEntity.Parsers
                 {
                     ODataParameterWriter writer = messageWriter.CreateODataParameterWriter(null);
                     writer.WriteStart();
-                    foreach (KeyValuePair<String, Object> key in keys)
+                    foreach (KeyValuePair<String, Object?> key in keys)
                     {
-                        Object value = key.Value;
+                        Object? value = key.Value;
                         if (value != null && value.GetType().IsEnum)
-                            value = value.ToString();
+                            value = value.ToString()!;
                         writer.WriteValue(key.Key, value);
                     }
                     writer.WriteEnd();
@@ -113,7 +113,7 @@ namespace OdataToEntity.Parsers
         private static List<SingleValuePropertyAccessNode> GetOrderByProperties(IEdmEntitySetBase entitySet, OrderByClause? orderByClause, ApplyClause? applyClause)
         {
             var keys = new List<SingleValuePropertyAccessNode>();
-            GroupByTransformationNode groupByNode;
+            GroupByTransformationNode? groupByNode;
             if (applyClause != null && (groupByNode = applyClause.Transformations.OfType<GroupByTransformationNode>().SingleOrDefault()) != null)
             {
                 foreach (GroupByPropertyNode node in groupByNode.GroupingProperties)
@@ -148,24 +148,24 @@ namespace OdataToEntity.Parsers
         }
         public static String GetSkipToken(IEdmModel edmModel, OePropertyAccessor[] accessors, Object value, int? restCount)
         {
-            KeyValuePair<String, Object>[] keys = GetKeys(accessors, value);
+            KeyValuePair<String, Object?>[] keys = GetKeys(accessors, value);
             if (restCount.GetValueOrDefault() > 0)
             {
                 Array.Resize(ref keys, keys.Length + 1);
-                keys[keys.Length - 1] = new KeyValuePair<String, Object>(RestCountName, restCount.GetValueOrDefault());
+                keys[keys.Length - 1] = new KeyValuePair<String, Object?>(RestCountName, restCount.GetValueOrDefault());
             }
 
             return GetJson(edmModel, keys);
         }
-        public static String GetSkipToken(IEdmModel edmModel, ICollection<KeyValuePair<String, Object>> keys, int? restCount)
+        public static String GetSkipToken(IEdmModel edmModel, ICollection<KeyValuePair<String, Object?>> keys, int? restCount)
         {
             if (restCount.GetValueOrDefault() > 0)
             {
-                var keyArray = new KeyValuePair<String, Object>[keys.Count + 1];
+                var keyArray = new KeyValuePair<String, Object?>[keys.Count + 1];
                 int i = 0;
-                foreach (KeyValuePair<String, Object> key in keys)
+                foreach (KeyValuePair<String, Object?> key in keys)
                     keyArray[i++] = key;
-                keyArray[keyArray.Length - 1] = new KeyValuePair<String, Object>(RestCountName, restCount.GetValueOrDefault());
+                keyArray[keyArray.Length - 1] = new KeyValuePair<String, Object?>(RestCountName, restCount.GetValueOrDefault());
 
                 return GetJson(edmModel, keyArray);
             }

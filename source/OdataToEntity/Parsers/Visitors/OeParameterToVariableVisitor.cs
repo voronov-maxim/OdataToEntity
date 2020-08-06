@@ -57,7 +57,7 @@ namespace OdataToEntity.Parsers
             }
             else
             {
-                if (node.Name != null && _propertyExpressions.TryGetValue(node.Name, out MemberExpression propertyExpression))
+                if (node.Name != null && _propertyExpressions.TryGetValue(node.Name, out MemberExpression? propertyExpression))
                     return propertyExpression;
             }
 

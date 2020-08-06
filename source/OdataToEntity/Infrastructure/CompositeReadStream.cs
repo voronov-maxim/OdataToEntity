@@ -68,13 +68,13 @@ namespace OdataToEntity.Infrastructure
                 readCount = _array.Count - _arrayPosition;
                 if (count < readCount)
                 {
-                    Buffer.BlockCopy(_array.Array, _array.Offset + _arrayPosition, buffer, offset, count);
+                    Buffer.BlockCopy(_array.Array!, _array.Offset + _arrayPosition, buffer, offset, count);
                     _arrayPosition += count;
                     readCount = count;
                     return true;
                 }
 
-                Buffer.BlockCopy(_array.Array, _array.Offset + _arrayPosition, buffer, offset, readCount);
+                Buffer.BlockCopy(_array.Array!, _array.Offset + _arrayPosition, buffer, offset, readCount);
                 _arrayPosition += readCount;
             }
             return false;

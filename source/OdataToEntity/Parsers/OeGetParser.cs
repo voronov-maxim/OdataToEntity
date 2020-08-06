@@ -35,7 +35,7 @@ namespace OdataToEntity.Parsers
 
             if (queryContext.ODataUri.Path.LastSegment is OperationSegment)
             {
-                IAsyncEnumerator<Object>? asyncEnumerator = null;
+                IAsyncEnumerator<Object?>? asyncEnumerator = null;
                 try
                 {
                     asyncEnumerator = OeOperationHelper.ApplyBoundFunction(queryContext).GetAsyncEnumerator(cancellationToken);

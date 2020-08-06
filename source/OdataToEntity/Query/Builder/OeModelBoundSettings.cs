@@ -34,7 +34,7 @@ namespace OdataToEntity.Query.Builder
 
             if (NavigationProperty != null)
             {
-                OeModelBoundSettings entitySettings = modelBoundProvider.GetSettings((IEdmEntityType)property.DeclaringType);
+                OeModelBoundSettings? entitySettings = modelBoundProvider.GetSettings((IEdmEntityType)property.DeclaringType);
                 if (entitySettings != null && entitySettings.GetPropertySetting(property, modelBoundKind) == SelectExpandType.Disabled)
                     return false;
             }
@@ -43,7 +43,7 @@ namespace OdataToEntity.Query.Builder
         }
         public SelectExpandType? GetPropertySetting(IEdmProperty property, OeModelBoundKind modelBoundKind)
         {
-            if (_properties.TryGetValue(property, out SelectExpandType?[] propertySettings))
+            if (_properties.TryGetValue(property, out SelectExpandType?[]? propertySettings))
                 return propertySettings[(int)modelBoundKind];
 
             return null;
@@ -76,7 +76,7 @@ namespace OdataToEntity.Query.Builder
         }
         internal void SetPropertySetting(IEdmProperty property, OeModelBoundKind modelBoundKind, SelectExpandType allowed)
         {
-            if (!_properties.TryGetValue(property, out SelectExpandType?[] propertySettings))
+            if (!_properties.TryGetValue(property, out SelectExpandType?[]? propertySettings))
             {
                 propertySettings = new SelectExpandType?[(int)OeModelBoundKind.Select + 1];
                 _properties.Add(property, propertySettings);

@@ -48,7 +48,7 @@ namespace OdataToEntity.Parsers
                         if (await asyncEnumerator.MoveNextAsync().ConfigureAwait(false) && asyncEnumerator.Current != null)
                         {
                             headers.ResponseContentType = OeRequestHeaders.TextDefault.ContentType;
-                            byte[] buffer = System.Text.Encoding.UTF8.GetBytes(asyncEnumerator.Current.ToString());
+                            byte[] buffer = System.Text.Encoding.UTF8.GetBytes(asyncEnumerator.Current.ToString()!);
                             await responseStream.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
                         }
                         else
@@ -130,7 +130,7 @@ namespace OdataToEntity.Parsers
                 {
                     Object value = asyncEnumerator.Current;
                     if (value != null && value.GetType().IsEnum)
-                        value = value.ToString();
+                        value = value.ToString()!;
 
                     await writer.WriteItemAsync(value).ConfigureAwait(false);
                 }

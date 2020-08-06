@@ -17,7 +17,7 @@ namespace OdataToEntity.Writers
             _queryContext = queryContext;
         }
 
-        private static ODataUri GetCountODataUri(IEdmModel edmModel, OeEntryFactory entryFactory, ExpandedNavigationSelectItem item, Object value)
+        private static ODataUri GetCountODataUri(IEdmModel edmModel, OeEntryFactory entryFactory, ExpandedNavigationSelectItem item, Object? value)
         {
             FilterClause? filterClause = GetFilter(edmModel, entryFactory, item, value);
             if (filterClause == null)
@@ -32,7 +32,7 @@ namespace OdataToEntity.Writers
                 Path = new ODataPath(pathSegments),
             };
         }
-        private static FilterClause? GetFilter(IEdmModel edmModel, OeEntryFactory entryFactory, ExpandedNavigationSelectItem item, Object value)
+        private static FilterClause? GetFilter(IEdmModel edmModel, OeEntryFactory entryFactory, ExpandedNavigationSelectItem item, Object? value)
         {
             SingleValueNode filterExpression;
             ResourceRangeVariableReferenceNode refNode;
@@ -83,7 +83,7 @@ namespace OdataToEntity.Writers
                 }
 
                 refNode = OeEdmClrHelper.CreateRangeVariableReferenceNode((IEdmEntitySetBase)segment.NavigationSource);
-                List<KeyValuePair<IEdmStructuralProperty, Object>> keys = GetKeys(parentKeys, childKeys);
+                List<KeyValuePair<IEdmStructuralProperty, Object?>> keys = GetKeys(parentKeys, childKeys);
                 if (IsNullKeys(keys))
                     return null;
 
@@ -95,43 +95,43 @@ namespace OdataToEntity.Writers
 
             return new FilterClause(filterExpression, refNode.RangeVariable);
 
-            List<KeyValuePair<IEdmStructuralProperty, Object>> GetKeys(IEnumerable<IEdmStructuralProperty> parentKeys, IEnumerable<IEdmStructuralProperty> childKeys)
+            List<KeyValuePair<IEdmStructuralProperty, Object?>> GetKeys(IEnumerable<IEdmStructuralProperty> parentKeys, IEnumerable<IEdmStructuralProperty> childKeys)
             {
-                var keys = new List<KeyValuePair<IEdmStructuralProperty, Object>>();
+                var keys = new List<KeyValuePair<IEdmStructuralProperty, Object?>>();
                 IEnumerator<IEdmStructuralProperty> childKeyEnumerator = childKeys.GetEnumerator();
                 foreach (IEdmStructuralProperty parentKey in parentKeys)
                 {
                     childKeyEnumerator.MoveNext();
-                    Object keyValue = entryFactory.GetAccessorByName(parentKey.Name).GetValue(value);
-                    keys.Add(new KeyValuePair<IEdmStructuralProperty, Object>(childKeyEnumerator.Current, keyValue));
+                    Object? keyValue = entryFactory.GetAccessorByName(parentKey.Name).GetValue(value);
+                    keys.Add(new KeyValuePair<IEdmStructuralProperty, Object?>(childKeyEnumerator.Current, keyValue));
                 }
                 return keys;
             }
-            static bool IsNullKeys(List<KeyValuePair<IEdmStructuralProperty, Object>> keys)
+            static bool IsNullKeys(List<KeyValuePair<IEdmStructuralProperty, Object?>> keys)
             {
-                foreach (KeyValuePair<IEdmStructuralProperty, Object> key in keys)
+                foreach (KeyValuePair<IEdmStructuralProperty, Object?> key in keys)
                     if (key.Value != null)
                         return false;
                 return true;
             }
         }
-        private static KeyValuePair<String, Object>[] GetNavigationSkipTokenKeys(OeEntryFactory entryFactory, OrderByClause orderByClause, Object value)
+        private static KeyValuePair<String, Object?>[] GetNavigationSkipTokenKeys(OeEntryFactory entryFactory, OrderByClause orderByClause, Object value)
         {
             IEdmStructuralProperty[] keyProperties = OeSkipTokenParser.GetEdmProperies(orderByClause);
-            var keys = new KeyValuePair<String, Object>[keyProperties.Length];
+            var keys = new KeyValuePair<String, Object?>[keyProperties.Length];
             for (int i = 0; i < keys.Length; i++)
             {
                 String propertyName = OeSkipTokenParser.GetPropertyName(keyProperties[i]);
                 OePropertyAccessor accessor = entryFactory.GetAccessorByName(keyProperties[i].Name);
-                keys[i] = new KeyValuePair<String, Object>(propertyName, accessor.GetValue(value));
+                keys[i] = new KeyValuePair<String, Object?>(propertyName, accessor.GetValue(value));
             }
             return keys;
         }
-        public Uri? GetNavigationUri(OeEntryFactory entryFactory, ExpandedNavigationSelectItem item, Object value)
+        public Uri? GetNavigationUri(OeEntryFactory entryFactory, ExpandedNavigationSelectItem item, Object? value)
         {
             return GetNavigationUri(entryFactory, item, item.OrderByOption, value, null);
         }
-        private Uri? GetNavigationUri(OeEntryFactory entryFactory, ExpandedNavigationSelectItem item, OrderByClause orderByClause, Object value, String? skipToken)
+        private Uri? GetNavigationUri(OeEntryFactory entryFactory, ExpandedNavigationSelectItem item, OrderByClause orderByClause, Object? value, String? skipToken)
         {
             bool? queryCount = item.CountOption;
             long? top = item.TopOption;
@@ -196,7 +196,7 @@ namespace OdataToEntity.Writers
                 return null;
 
             OrderByClause orderByClause = OeSkipTokenParser.GetUniqueOrderBy(entryFactory.EntitySet, navigationSelectItem.OrderByOption, null);
-            KeyValuePair<String, Object>[] keys = GetNavigationSkipTokenKeys(entryFactory, orderByClause, value);
+            KeyValuePair<String, Object?>[] keys = GetNavigationSkipTokenKeys(entryFactory, orderByClause, value);
 
             int restCount = GetRestCountNavigation((int?)navigationSelectItem.TopOption, readCount, totalCount);
             String skipToken = OeSkipTokenParser.GetSkipToken(_queryContext.EdmModel, keys, restCount);
@@ -204,6 +204,7 @@ namespace OdataToEntity.Writers
             Db.IOeDbEnumerator? parentEnumerator = dbEnumerator.ParentEnumerator;
             if (parentEnumerator == null)
                 throw new InvalidOperationException("For nested navigation must be child " + nameof(dbEnumerator));
+
             return GetNavigationUri(parentEnumerator.EntryFactory, navigationSelectItem, orderByClause, parentEnumerator.Current, skipToken);
         }
         public Uri? GetNextPageLinkRoot(OeEntryFactory entryFactory, int readCount, int? totalCount, Object value)

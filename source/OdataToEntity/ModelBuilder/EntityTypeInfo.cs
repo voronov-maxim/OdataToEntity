@@ -108,7 +108,7 @@ namespace OdataToEntity.ModelBuilder
                     (underlyingType = Nullable.GetUnderlyingType(clrProperty.PropertyType)) != null && underlyingType.IsEnum)
                 {
                     Type clrPropertyType = underlyingType ?? clrProperty.PropertyType;
-                    if (!enumTypes.TryGetValue(clrPropertyType, out EdmEnumType edmEnumType))
+                    if (!enumTypes.TryGetValue(clrPropertyType, out EdmEnumType? edmEnumType))
                     {
                         edmEnumType = OeEdmModelBuilder.CreateEdmEnumType(clrPropertyType);
                         enumTypes.Add(clrPropertyType, edmEnumType);
@@ -117,7 +117,7 @@ namespace OdataToEntity.ModelBuilder
                 }
                 else
                 {
-                    if (complexTypes.TryGetValue(clrProperty.PropertyType, out EdmComplexType edmComplexType))
+                    if (complexTypes.TryGetValue(clrProperty.PropertyType, out EdmComplexType? edmComplexType))
                         typeRef = new EdmComplexTypeReference(edmComplexType, clrProperty.PropertyType.IsClass);
                     else
                     {

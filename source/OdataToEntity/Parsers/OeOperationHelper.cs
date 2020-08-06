@@ -14,7 +14,7 @@ namespace OdataToEntity.Parsers
 {
     public static class OeOperationHelper
     {
-        public static IAsyncEnumerable<Object> ApplyBoundFunction(OeQueryContext queryContext)
+        public static IAsyncEnumerable<Object?> ApplyBoundFunction(OeQueryContext queryContext)
         {
             if (queryContext.ODataUri.Path.LastSegment is OperationSegment operationSegment)
             {
@@ -31,7 +31,7 @@ namespace OdataToEntity.Parsers
                 for (int i = 1; i < parameters.Length; i++)
                     parameters[i] = parameterList[i - 1].Value;
 
-                Object result = methodInfo.Invoke(null, parameters);
+                Object? result = methodInfo.Invoke(null, parameters);
                 queryContext.EntryFactory = boundFunctionParameter.CreateEntryFactoryFromTuple();
                 if (result is IEnumerable enumerable)
                     return Infrastructure.AsyncEnumeratorHelper.ToAsyncEnumerable(enumerable);

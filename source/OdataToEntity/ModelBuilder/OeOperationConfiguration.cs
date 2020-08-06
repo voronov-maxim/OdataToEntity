@@ -15,14 +15,14 @@ namespace OdataToEntity.ModelBuilder
             ReturnType = returnType;
         }
         public OeOperationConfiguration(String? schema, String name, MethodInfo methodInfo, bool? isDbFunction)
-            : this(schema, GetName(name), methodInfo.DeclaringType.Namespace, GetParameters(methodInfo), methodInfo.ReturnType)
+            : this(schema, GetName(name), methodInfo.DeclaringType!.Namespace ?? "", GetParameters(methodInfo), methodInfo.ReturnType)
         {
             ImportName = schema == null ? Name : schema + "." + Name;
             IsDbFunction = isDbFunction ?? name.EndsWith("()", StringComparison.Ordinal);
             MethodInfo = methodInfo;
         }
         public OeOperationConfiguration(String? schema, String name, MethodInfo methodInfo, bool isBound, bool isCollection)
-            : this(schema, name, methodInfo.DeclaringType.Namespace, GetBoundParameters(methodInfo, isCollection), methodInfo.ReturnType)
+            : this(schema, name, methodInfo.DeclaringType!.Namespace ?? "", GetBoundParameters(methodInfo, isCollection), methodInfo.ReturnType)
         {
             IsBound = isBound;
             MethodInfo = methodInfo;
@@ -45,9 +45,9 @@ namespace OdataToEntity.ModelBuilder
 
             Type entityType = boundParameterType.GetGenericArguments()[0];
             Type parameterType = isCollection ? typeof(IEnumerable<>).MakeGenericType(entityType) : entityType;
-            parameters[0] = new OeOperationParameterConfiguration(parameterInfos[0].Name, parameterType);
+            parameters[0] = new OeOperationParameterConfiguration(parameterInfos[0].Name!, parameterType);
             for (int i = 1; i < parameterInfos.Length; i++)
-                parameters[i] = new OeOperationParameterConfiguration(parameterInfos[i].Name, parameterInfos[i].ParameterType);
+                parameters[i] = new OeOperationParameterConfiguration(parameterInfos[i].Name!, parameterInfos[i].ParameterType);
 
             return parameters;
         }
@@ -60,7 +60,7 @@ namespace OdataToEntity.ModelBuilder
             ParameterInfo[] parameterInfos = methodInfo.GetParameters();
             var parameters = new OeOperationParameterConfiguration[parameterInfos.Length];
             for (int i = 0; i < parameterInfos.Length; i++)
-                parameters[i] = new OeOperationParameterConfiguration(parameterInfos[i].Name, parameterInfos[i].ParameterType);
+                parameters[i] = new OeOperationParameterConfiguration(parameterInfos[i].Name!, parameterInfos[i].ParameterType);
             return parameters;
         }
 

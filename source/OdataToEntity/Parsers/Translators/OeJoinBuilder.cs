@@ -100,7 +100,7 @@ namespace OdataToEntity.Parsers.Translators
 
             bool isCoerced = false;
             for (int i = 0; i < arguments.Length; i++)
-                if (ethalon.Arguments[i].Type != coercion.Arguments[i].Type && OeExpressionHelper.IsNullable(ethalon.Arguments[i]))
+                if (ethalon.Arguments[i].Type != coercion.Arguments[i].Type && Nullable.GetUnderlyingType(ethalon.Arguments[i].Type) != null)
                 {
                     isCoerced = true;
                     arguments[i] = Expression.Convert(coercion.Arguments[i], ethalon.Arguments[i].Type);
@@ -273,15 +273,15 @@ namespace OdataToEntity.Parsers.Translators
         private static LambdaExpression GetSelectManyCollectionSelector(LambdaExpression groupJoinResultSelect)
         {
             ParameterExpression parameter = Expression.Parameter(groupJoinResultSelect.ReturnType);
-            MemberExpression innerSource = Expression.Property(parameter, parameter.Type.GetProperty(nameof(Tuple<Object, Object>.Item2)));
+            MemberExpression innerSource = Expression.Property(parameter, parameter.Type.GetProperty(nameof(Tuple<Object, Object>.Item2))!);
             Type innerType = OeExpressionHelper.GetCollectionItemType(innerSource.Type);
             MethodCallExpression defaultIfEmptyCall = Expression.Call(OeMethodInfoHelper.GetDefaultIfEmptyMethodInfo(innerType), innerSource);
             return Expression.Lambda(defaultIfEmptyCall, parameter);
         }
         private static LambdaExpression GetSelectManyResultSelector(LambdaExpression groupJoinResultSelect)
         {
-            PropertyInfo outerProperty = groupJoinResultSelect.ReturnType.GetProperty(nameof(Tuple<Object, Object>.Item1));
-            PropertyInfo innerProperty = groupJoinResultSelect.ReturnType.GetProperty(nameof(Tuple<Object, Object>.Item2));
+            PropertyInfo outerProperty = groupJoinResultSelect.ReturnType.GetProperty(nameof(Tuple<Object, Object>.Item1))!;
+            PropertyInfo innerProperty = groupJoinResultSelect.ReturnType.GetProperty(nameof(Tuple<Object, Object>.Item2))!;
 
             ParameterExpression sourceParameter = Expression.Parameter(groupJoinResultSelect.ReturnType, "source");
             ParameterExpression collectionParameter = Expression.Parameter(OeExpressionHelper.GetCollectionItemType(innerProperty.PropertyType), "collection");

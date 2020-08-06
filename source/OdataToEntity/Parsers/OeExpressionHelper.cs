@@ -37,13 +37,8 @@ namespace OdataToEntity.Parsers
             else if (constantExpression.Type == typeof(ODataEnumValue))
             {
                 var enumValue = (ODataEnumValue)constantExpression.Value;
-                if (targetType.IsEnum)
-                    value = Enum.Parse(targetType, enumValue.Value);
-                else
-                {
-                    Type underlyingType = Nullable.GetUnderlyingType(targetType);
-                    value = Enum.Parse(underlyingType, enumValue.Value);
-                }
+                Type? underlyingType = Nullable.GetUnderlyingType(targetType);
+                value = underlyingType == null ? Enum.Parse(targetType, enumValue.Value) : Enum.Parse(underlyingType, enumValue.Value);
                 return Expression.Constant(value, targetType);
             }
 
@@ -53,10 +48,10 @@ namespace OdataToEntity.Parsers
             value = Convert.ChangeType(constantExpression.Value, targetType, CultureInfo.InvariantCulture);
             return Expression.Constant(value);
         }
-        public static BinaryOperatorNode CreateFilterExpression(SingleValueNode singleValueNode, IEnumerable<KeyValuePair<IEdmStructuralProperty, Object>> keys)
+        public static BinaryOperatorNode CreateFilterExpression(SingleValueNode singleValueNode, IEnumerable<KeyValuePair<IEdmStructuralProperty, Object?>> keys)
         {
             BinaryOperatorNode? compositeNode = null;
-            foreach (KeyValuePair<IEdmStructuralProperty, Object> keyValue in keys)
+            foreach (KeyValuePair<IEdmStructuralProperty, Object?> keyValue in keys)
             {
                 var left = new SingleValuePropertyAccessNode(singleValueNode, keyValue.Key);
                 var right = new ConstantNode(keyValue.Value, ODataUriUtils.ConvertToUriLiteral(keyValue.Value, ODataVersion.V4));
@@ -83,7 +78,7 @@ namespace OdataToEntity.Parsers
                         typeArguments[i] = type;
                 }
                 Type tupleType = GetTupleType(typeArguments);
-                ConstructorInfo ctorInfo = tupleType.GetConstructor(typeArguments);
+                ConstructorInfo ctorInfo = tupleType.GetConstructor(typeArguments)!;
                 return Expression.New(ctorInfo, expressions, tupleType.GetProperties());
             }
 
@@ -292,17 +287,12 @@ namespace OdataToEntity.Parsers
         {
             return expression is ConstantExpression constantExpression && constantExpression.Value == null;
         }
-        public static bool IsNullable(Expression expression)
-        {
-            Type type = expression.Type;
-            return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>);
-        }
         public static bool IsPrimitiveType(Type clrType)
         {
             if (ModelBuilder.PrimitiveTypeHelper.GetPrimitiveType(clrType) != null || clrType.IsEnum)
                 return true;
 
-            Type underlyingType = Nullable.GetUnderlyingType(clrType);
+            Type? underlyingType = Nullable.GetUnderlyingType(clrType);
             if (underlyingType != null && (ModelBuilder.PrimitiveTypeHelper.GetPrimitiveType(underlyingType) != null || underlyingType.IsEnum))
                 return true;
 
@@ -323,7 +313,7 @@ namespace OdataToEntity.Parsers
             }
             while (memberExpression != null);
 
-            Expression expression = Expression.Convert(newParameter, properties.Peek().DeclaringType);
+            Expression expression = Expression.Convert(newParameter, properties.Peek().DeclaringType!);
             while (properties.Count > 0)
                 expression = Expression.Property(expression, properties.Pop());
 

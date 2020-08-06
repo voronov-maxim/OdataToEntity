@@ -24,7 +24,7 @@ namespace OdataToEntity.Infrastructure
             var table = new DataTable();
             foreach (PropertyInfo property in properties)
                 table.Columns.Add(property.Name, property.PropertyType);
-            Object[] values = new Object[properties.Length];
+            Object?[] values = new Object[properties.Length];
 
             table.BeginLoadData();
             foreach (Object item in source)

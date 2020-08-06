@@ -39,20 +39,26 @@ namespace OdataToEntity.Parsers
             else
                 _parentVisitor.AddConstant(constantExpression, constantNode);
         }
-        public void AddSkipConstant(ConstantExpression skipConstant, ODataPath path)
+        public ConstantExpression AddSkipConstant(int skip, ODataPath path)
         {
-            ConstantNode skipNode = OeCacheComparerParameterValues.CreateSkipConstantNode((int)skipConstant.Value, path);
+            ConstantExpression skipConstant = Expression.Constant(skip, typeof(int));
+            ConstantNode skipNode = OeCacheComparerParameterValues.CreateSkipConstantNode(skip, path);
             AddConstant(skipConstant, skipNode);
+            return skipConstant;
         }
-        public void AddSkipTokenConstant(ConstantExpression skipTokenConstant, String propertyName)
+        public ConstantExpression AddSkipTokenConstant(OeSkipTokenNameValue skipTokenNameValue, Type propertyType)
         {
-            ConstantNode skipTokenNode = OeCacheComparerParameterValues.CreateSkipTokenConstantNode(skipTokenConstant.Value, propertyName);
+            ConstantExpression skipTokenConstant = Expression.Constant(skipTokenNameValue.Value, propertyType);
+            ConstantNode skipTokenNode = OeCacheComparerParameterValues.CreateSkipTokenConstantNode(skipTokenNameValue.Value, skipTokenNameValue.Name);
             AddConstant(skipTokenConstant, skipTokenNode);
+            return skipTokenConstant;
         }
-        public void AddTopConstant(ConstantExpression topConstant, ODataPath path)
+        public ConstantExpression AddTopConstant(int top, ODataPath path)
         {
-            ConstantNode topNode = OeCacheComparerParameterValues.CreateTopConstantNode((int)topConstant.Value, path);
+            ConstantExpression topConstant = Expression.Constant(top, typeof(int));
+            ConstantNode topNode = OeCacheComparerParameterValues.CreateTopConstantNode(top, path);
             AddConstant(topConstant, topNode);
+            return topConstant;
         }
         public void ChangeParameterType(Expression source)
         {
@@ -106,19 +112,24 @@ namespace OdataToEntity.Parsers
                 Type leftType = left.Type;
                 Type rightType = right.Type;
 
-                if (OeExpressionHelper.IsNullable(left) && !OeExpressionHelper.IsNull(left))
+                Type? leftUnderlyingType = Nullable.GetUnderlyingType(left.Type);
+                if (leftUnderlyingType != null && !OeExpressionHelper.IsNull(left))
                 {
                     if (OeExpressionHelper.IsNull(right))
                         right = OeConstantToVariableVisitor.NullConstantExpression;
                     else
-                        leftType = Nullable.GetUnderlyingType(left.Type);
+                        leftType = leftUnderlyingType;
                 }
-                else if (OeExpressionHelper.IsNullable(right) && !OeExpressionHelper.IsNull(right))
+                else
                 {
-                    if (OeExpressionHelper.IsNull(left))
-                        left = OeConstantToVariableVisitor.NullConstantExpression;
-                    else
-                        rightType = Nullable.GetUnderlyingType(right.Type);
+                    Type? rightUnderlyingType = Nullable.GetUnderlyingType(right.Type);
+                    if (rightUnderlyingType != null && !OeExpressionHelper.IsNull(right))
+                    {
+                        if (OeExpressionHelper.IsNull(left))
+                            left = OeConstantToVariableVisitor.NullConstantExpression;
+                        else
+                            rightType = rightUnderlyingType;
+                    }
                 }
 
                 if (right.Type != left.Type)
@@ -162,7 +173,7 @@ namespace OdataToEntity.Parsers
                     return Expression.MakeBinary(binaryType, compareToCall, OeConstantToVariableVisitor.ZeroStringCompareConstantExpression);
                 }
 
-                Type underlyingType;
+                Type? underlyingType;
                 if (left.Type.IsEnum)
                 {
                     Type enumUnderlyingType = Enum.GetUnderlyingType(left.Type);

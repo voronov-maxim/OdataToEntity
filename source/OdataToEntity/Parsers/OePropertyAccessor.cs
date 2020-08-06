@@ -52,11 +52,11 @@ namespace OdataToEntity.Parsers
             }
         }
 
-        private readonly Func<Object, Object> _accessor;
-        private readonly static ConcurrentDictionary<PropertyExpressionKey, Func<Object, Object>> _lambdas =
-            new ConcurrentDictionary<PropertyExpressionKey, Func<Object, Object>>(new PropertyExpressionKey());
+        private readonly Func<Object?, Object?> _accessor;
+        private readonly static ConcurrentDictionary<PropertyExpressionKey, Func<Object?, Object?>> _lambdas =
+            new ConcurrentDictionary<PropertyExpressionKey, Func<Object?, Object?>>(new PropertyExpressionKey());
 
-        private OePropertyAccessor(IEdmProperty edmProperty, Func<Object, Object> accessor, MemberExpression propertyExpression, bool skipToken)
+        private OePropertyAccessor(IEdmProperty edmProperty, Func<Object?, Object?> accessor, MemberExpression propertyExpression, bool skipToken)
         {
             EdmProperty = edmProperty;
             _accessor = accessor;
@@ -65,7 +65,7 @@ namespace OdataToEntity.Parsers
 
             if (edmProperty.DeclaringType == PrimitiveTypeHelper.TupleEdmType)
             {
-                String typeName = propertyExpression.Type.IsEnum ? propertyExpression.Type.FullName : edmProperty.Type.ShortQualifiedName();
+                String typeName = propertyExpression.Type.IsEnum ? propertyExpression.Type.FullName! : edmProperty.Type.ShortQualifiedName();
                 TypeAnnotation = new ODataTypeAnnotation(typeName);
             }
             else
@@ -75,10 +75,10 @@ namespace OdataToEntity.Parsers
         public static OePropertyAccessor CreatePropertyAccessor(IEdmProperty edmProperty, MemberExpression propertyExpression, ParameterExpression parameter, bool skipToken)
         {
             PropertyExpressionKey propertyExpressionKey = PropertyExpressionKey.CreateKey(propertyExpression);
-            if (!_lambdas.TryGetValue(propertyExpressionKey, out Func<Object, Object> lambda))
+            if (!_lambdas.TryGetValue(propertyExpressionKey, out Func<Object?, Object?>? lambda))
             {
                 UnaryExpression instance = Expression.Convert(propertyExpression, typeof(Object));
-                lambda = (Func<Object, Object>)Expression.Lambda(instance, parameter).Compile();
+                lambda = (Func<Object?, Object?>)Expression.Lambda(instance, parameter).Compile();
                 _lambdas[propertyExpressionKey] = lambda;
             }
             return new OePropertyAccessor(edmProperty, lambda, propertyExpression, skipToken);
@@ -126,7 +126,7 @@ namespace OdataToEntity.Parsers
             }
             return propertyAccessors.ToArray();
         }
-        public Object GetValue(Object item)
+        public Object? GetValue(Object? item)
         {
             return _accessor(item);
         }

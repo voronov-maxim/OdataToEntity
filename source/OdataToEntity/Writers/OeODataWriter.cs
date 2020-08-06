@@ -22,14 +22,14 @@ namespace OdataToEntity.Writers
             _cancellationToken = cancellationToken;
         }
 
-        private ODataResource CreateEntry(OeEntryFactory entryFactory, Object entity)
+        private ODataResource CreateEntry(OeEntryFactory entryFactory, Object? entity)
         {
             ODataResource entry = entryFactory.CreateEntry(entity);
             if (_queryContext.MetadataLevel == OeMetadataLevel.Full)
                 entry.Id = OeUriHelper.ComputeId(_queryContext.ODataUri.ServiceRoot, entryFactory.EntitySet, entry);
             return entry;
         }
-        public async Task WriteAsync(OeEntryFactory entryFactory, IAsyncEnumerator<Object> asyncEnumerator)
+        public async Task WriteAsync(OeEntryFactory entryFactory, IAsyncEnumerator<Object?> asyncEnumerator)
         {
             var resourceSet = new ODataResourceSet() { Count = _queryContext.TotalCountOfItems };
             await _writer.WriteStartAsync(resourceSet).ConfigureAwait(false);
@@ -54,7 +54,7 @@ namespace OdataToEntity.Writers
 
             await _writer.WriteEndAsync().ConfigureAwait(false);
         }
-        private async Task WriteEntry(Db.IOeDbEnumerator dbEnumerator, Object value)
+        private async Task WriteEntry(Db.IOeDbEnumerator dbEnumerator, Object? value)
         {
             OeEntryFactory entryFactory = dbEnumerator.EntryFactory;
             ODataResource entry = CreateEntry(entryFactory, value);
@@ -88,7 +88,7 @@ namespace OdataToEntity.Writers
         private async Task WriteNavigationCollection(Db.IOeDbEnumerator dbEnumerator)
         {
             var entryFactory = (OeNavigationEntryFactory)dbEnumerator.EntryFactory;
-            Object value;
+            Object? value;
             int readCount = 0;
             ODataResourceSet? resourceSet = null;
             do
@@ -125,7 +125,7 @@ namespace OdataToEntity.Writers
 
             await _writer.WriteEndAsync().ConfigureAwait(false);
         }
-        private async Task WriteNavigationNextLink(OeEntryFactory parentEntryFactory, ExpandedNavigationSelectItem item, Object value)
+        private async Task WriteNavigationNextLink(OeEntryFactory parentEntryFactory, ExpandedNavigationSelectItem item, Object? value)
         {
             Uri? nextPageLink = new OeNextPageLinkBuilder(_queryContext).GetNavigationUri(parentEntryFactory, item, value);
             if (nextPageLink == null)
@@ -153,7 +153,7 @@ namespace OdataToEntity.Writers
         }
         private async Task WriteNavigationSingle(Db.IOeDbEnumerator dbEnumerator)
         {
-            Object value = dbEnumerator.Current;
+            Object? value = dbEnumerator.Current;
             if (value == null)
             {
                 await _writer.WriteStartAsync((ODataResource?)null).ConfigureAwait(false);

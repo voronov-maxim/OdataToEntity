@@ -43,7 +43,7 @@ namespace OdataToEntity.Parsers
             NavigationLinks = Array.Empty<OeNavigationEntryFactory>();
             _typeName = EdmEntityType.FullName();
 
-            IsTuple = accessors.Length != 0 && OeExpressionHelper.IsTupleType(accessors[0].PropertyExpression.Expression.Type);
+            IsTuple = accessors.Length != 0 && OeExpressionHelper.IsTupleType(accessors[0].PropertyExpression.Expression!.Type);
         }
         public OeEntryFactory(
             IEdmEntitySetBase entitySet,
@@ -73,12 +73,12 @@ namespace OdataToEntity.Parsers
                 _equalityComparer = new Infrastructure.OeEntryEqualityComparer(GetKeyExpressions(entitySet, accessors));
         }
 
-        public ODataResource CreateEntry(Object entity)
+        public ODataResource CreateEntry(Object? entity)
         {
             var odataProperties = new ODataProperty[Accessors.Length];
             for (int i = 0; i < Accessors.Length; i++)
             {
-                Object value = Accessors[i].GetValue(entity);
+                Object? value = Accessors[i].GetValue(entity);
                 ODataValue odataValue = OeEdmClrHelper.CreateODataValue(value);
                 odataValue.TypeAnnotation = Accessors[i].TypeAnnotation;
                 odataProperties[i] = new ODataProperty() { Name = Accessors[i].EdmProperty.Name, Value = odataValue };
@@ -134,7 +134,7 @@ namespace OdataToEntity.Parsers
                     OePropertyAccessor accessor = Array.Find(propertyAccessors, pa => pa.EdmProperty == _allAccessors[i].EdmProperty);
                     if (Array.IndexOf(Accessors, _allAccessors[i]) == -1)
                     {
-                        var convertExpression = (UnaryExpression)accessor.PropertyExpression.Expression;
+                        var convertExpression = (UnaryExpression)accessor.PropertyExpression.Expression!;
                         var parameterExpression = (ParameterExpression)convertExpression.Operand;
                         accessor = OePropertyAccessor.CreatePropertyAccessor(accessor.EdmProperty, accessor.PropertyExpression, parameterExpression, true);
                     }
@@ -222,8 +222,11 @@ namespace OdataToEntity.Parsers
 
             return skipTokenAccessors.ToArray();
         }
-        public Object GetValue(Object value)
+        public Object? GetValue(Object? value)
         {
+            if (value == null)
+                return null;
+
             return LinkAccessor == null ? value : LinkAccessor(value);
         }
 

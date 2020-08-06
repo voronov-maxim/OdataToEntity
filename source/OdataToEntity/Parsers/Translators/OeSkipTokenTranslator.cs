@@ -125,14 +125,8 @@ namespace OdataToEntity.Parsers.Translators
                 OrderByClause orderBy = GetOrderBy(uniqueOrderBy, skipTokenNameValues[i].Name);
                 MemberExpression propertyExpression = OeOrderByTranslator.GetPropertyExpression(_joinBuilder, source, _visitor.Parameter, orderBy.Expression);
 
-                ConstantExpression parameterExpression;
-                if (skipTokenNameValues[i].Value == null)
-                    parameterExpression = OeConstantToVariableVisitor.NullConstantExpression;
-                else
-                {
-                    parameterExpression = Expression.Constant(skipTokenNameValues[i].Value, propertyExpression.Type);
-                    _visitor.AddSkipTokenConstant(parameterExpression, skipTokenNameValues[i].Name);
-                }
+                ConstantExpression parameterExpression = skipTokenNameValues[i].Value == null ?
+                    OeConstantToVariableVisitor.NullConstantExpression : _visitor.AddSkipTokenConstant(skipTokenNameValues[i], propertyExpression.Type);
 
                 IEdmStructuralProperty edmProperty = OeSkipTokenParser.GetEdmProperty(orderBy.Expression, propertyExpression.Type);
                 orderProperties[i] = new OrderProperty(edmProperty, orderBy.Direction, propertyExpression, parameterExpression);

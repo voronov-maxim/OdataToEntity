@@ -44,7 +44,7 @@ namespace OdataToEntity.Parsers
 
             if (_parameterExpressions == null)
             {
-                Type underlyingType;
+                Type? underlyingType;
                 if (ModelBuilder.PrimitiveTypeHelper.GetPrimitiveType(node.Type) != null || node.Type.IsEnum ||
                     (underlyingType = Nullable.GetUnderlyingType(node.Type)) != null && underlyingType.IsEnum)
                     if (!_constantExpressions.Contains(node) && node != NullConstantExpression)

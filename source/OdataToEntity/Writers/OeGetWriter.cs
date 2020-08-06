@@ -21,7 +21,7 @@ namespace OdataToEntity.Writers
                 _writerSettings = writerSettings;
             }
 
-            public Object GetService(Type serviceType)
+            public Object? GetService(Type serviceType)
             {
                 if (serviceType == typeof(ODataMessageWriterSettings))
                     return _writerSettings;
@@ -30,7 +30,7 @@ namespace OdataToEntity.Writers
             }
         }
 
-        public static Task SerializeAsync(OeQueryContext queryContext, IAsyncEnumerator<Object> asyncEnumerator,
+        public static Task SerializeAsync(OeQueryContext queryContext, IAsyncEnumerator<Object?> asyncEnumerator,
             String contentType, Stream stream, IServiceProvider? serviceProvider, CancellationToken cancellationToken)
         {
             if (queryContext.EntryFactory == null)
@@ -38,7 +38,7 @@ namespace OdataToEntity.Writers
 
             return SerializeAsync(queryContext, asyncEnumerator, contentType, stream, queryContext.EntryFactory, serviceProvider, cancellationToken);
         }
-        public static async Task SerializeAsync(OeQueryContext queryContext, IAsyncEnumerator<Object> asyncEnumerator,
+        public static async Task SerializeAsync(OeQueryContext queryContext, IAsyncEnumerator<Object?> asyncEnumerator,
             String contentType, Stream stream, OeEntryFactory entryFactory, IServiceProvider? serviceProvider, CancellationToken cancellationToken)
         {
             var settings = new ODataMessageWriterSettings()

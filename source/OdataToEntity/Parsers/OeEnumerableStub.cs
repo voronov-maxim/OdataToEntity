@@ -42,8 +42,8 @@ namespace OdataToEntity.Parsers
         private static OeEnumerableStub Create(Type entityType, IEdmEntitySet entitySet)
         {
             Type stubType = typeof(OeEnumerableStubImpl<>).MakeGenericType(entityType);
-            MethodInfo createMethodInfo = stubType.GetMethod(nameof(OeEnumerableStubImpl<Object>.Create));
-            return (OeEnumerableStub)createMethodInfo.Invoke(null, new Object[] { entitySet });
+            MethodInfo createMethodInfo = stubType.GetMethod(nameof(OeEnumerableStubImpl<Object>.Create))!;
+            return (OeEnumerableStub)createMethodInfo.Invoke(null, new Object[] { entitySet })!;
         }
         public static ConstantExpression CreateEnumerableStubExpression(Type entityType, IEdmEntitySet entitySet)
         {

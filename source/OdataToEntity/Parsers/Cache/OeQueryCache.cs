@@ -23,9 +23,9 @@ namespace OdataToEntity.Cache
             var queryCacheItem = new OeQueryCacheItem(query, countExpression, entryFactory);
             _cache.TryAdd(cacheContext, queryCacheItem);
         }
-        public OeQueryCacheItem GetQuery(OeCacheContext cacheContext)
+        public OeQueryCacheItem? GetQuery(OeCacheContext cacheContext)
         {
-            _cache.TryGetValue(cacheContext, out OeQueryCacheItem cacheItem);
+            _cache.TryGetValue(cacheContext, out OeQueryCacheItem? cacheItem);
             return cacheItem;
         }
 

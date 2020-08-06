@@ -7,14 +7,14 @@ using System.Threading.Tasks;
 
 namespace OdataToEntity.Db
 {
-    public interface IOeDbEnumerator : IAsyncEnumerator<Object>
+    public interface IOeDbEnumerator : IAsyncEnumerator<Object?>
     {
         void ClearBuffer();
         IOeDbEnumerator CreateChild(OeNavigationEntryFactory entryFactory, CancellationToken cancellationToken);
 
         OeEntryFactory EntryFactory { get; }
         IOeDbEnumerator? ParentEnumerator { get; }
-        Object RawValue { get; }
+        Object? RawValue { get; }
     }
 
     public sealed class OeDbEnumerator : IOeDbEnumerator
@@ -23,10 +23,10 @@ namespace OdataToEntity.Db
         {
             private readonly Dictionary<OeEntryFactory, OeDbEnumerator> _pool;
 
-            public DataContext(IAsyncEnumerator<Object> asyncEnumerator)
+            public DataContext(IAsyncEnumerator<Object?> asyncEnumerator)
             {
                 AsyncEnumerator = asyncEnumerator;
-                Buffer = new List<Object>(1024);
+                Buffer = new List<Object?>(1024);
 
                 _pool = new Dictionary<OeEntryFactory, OeDbEnumerator>();
             }
@@ -43,15 +43,15 @@ namespace OdataToEntity.Db
                 return dbEnumerator;
             }
 
-            public IAsyncEnumerator<Object> AsyncEnumerator { get; }
-            public List<Object> Buffer { get; }
+            public IAsyncEnumerator<Object?> AsyncEnumerator { get; }
+            public List<Object?> Buffer { get; }
             public bool Eof { get; set; }
         }
 
         private int _bufferPosition;
         private readonly HashSet<Object>? _uniqueConstraint;
 
-        public OeDbEnumerator(IAsyncEnumerator<Object> asyncEnumerator, OeEntryFactory entryFactory)
+        public OeDbEnumerator(IAsyncEnumerator<Object?> asyncEnumerator, OeEntryFactory entryFactory)
         {
             Context = new DataContext(asyncEnumerator);
             EntryFactory = entryFactory;
@@ -75,7 +75,7 @@ namespace OdataToEntity.Db
             if (ParentEnumerator != null)
                 throw new InvalidOperationException("ClearBuffer can not from child " + nameof(OeDbEnumerator));
 
-            Object lastValue = Context.Buffer[Context.Buffer.Count - 1];
+            Object? lastValue = Context.Buffer[Context.Buffer.Count - 1];
             int bufferCount = Context.Buffer.Count;
             Context.Buffer.Clear();
             if (_bufferPosition < bufferCount - 1)
@@ -102,7 +102,7 @@ namespace OdataToEntity.Db
             if (_uniqueConstraint != null)
             {
                 _uniqueConstraint.Clear();
-                Object value = Current;
+                Object? value = Current;
                 if (value != null)
                     _uniqueConstraint.Add(value);
             }
@@ -118,7 +118,7 @@ namespace OdataToEntity.Db
         }
         private bool IsSame(Object? value)
         {
-            Object nextValue = Current;
+            Object? nextValue = Current;
             if (IsEquals(EntryFactory, value, nextValue))
             {
                 if (value == null && ParentEnumerator != null)
@@ -127,7 +127,7 @@ namespace OdataToEntity.Db
                 return true;
             }
 
-            if (_uniqueConstraint == null || _uniqueConstraint.Add(nextValue))
+            if (nextValue == null || _uniqueConstraint == null || _uniqueConstraint.Add(nextValue))
                 return false;
 
             return IsSameParent();
@@ -137,7 +137,7 @@ namespace OdataToEntity.Db
             if (ParentEnumerator == null)
                 throw new InvalidOperationException("Cannot compare value with parent OeDbEnumertor value");
 
-            Object currentParentValue = ParentEnumerator.EntryFactory.GetValue(Context.Buffer[_bufferPosition]);
+            Object? currentParentValue = ParentEnumerator.EntryFactory.GetValue(Context.Buffer[_bufferPosition]);
             return IsEquals(ParentEnumerator.EntryFactory, ParentEnumerator.Current, currentParentValue);
         }
         public async ValueTask<bool> MoveNextAsync()
@@ -169,10 +169,10 @@ namespace OdataToEntity.Db
         }
 
         private DataContext Context { get; }
-        public Object Current => EntryFactory.GetValue(RawValue);
+        public Object? Current => EntryFactory.GetValue(RawValue);
         public OeEntryFactory EntryFactory { get; }
         private OeDbEnumerator? ParentEnumerator { get; }
         IOeDbEnumerator? IOeDbEnumerator.ParentEnumerator => ParentEnumerator;
-        public Object RawValue => Context.Buffer[_bufferPosition];
+        public Object? RawValue => Context.Buffer[_bufferPosition];
     }
 }

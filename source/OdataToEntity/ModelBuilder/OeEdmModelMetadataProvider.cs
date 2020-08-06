@@ -15,7 +15,7 @@ namespace OdataToEntity.ModelBuilder
             if (fkey == null)
                 return null;
 
-            PropertyInfo? property = propertyInfo.DeclaringType.GetPropertyIgnoreCaseOrNull(fkey.Name);
+            PropertyInfo? property = propertyInfo.DeclaringType!.GetPropertyIgnoreCaseOrNull(fkey.Name);
             if (property == null)
             {
                 String[] propertyNames = fkey.Name.Split(',');
@@ -26,7 +26,7 @@ namespace OdataToEntity.ModelBuilder
                 for (int i = 0; i < properties.Length; i++)
                 {
                     String propertyName = propertyNames[i].Trim();
-                    property = propertyInfo.DeclaringType.GetPropertyIgnoreCase(propertyName) ??
+                    property = propertyInfo.DeclaringType!.GetPropertyIgnoreCase(propertyName) ??
                         throw new InvalidOperationException("property " + propertyName + " foreign key " + propertyInfo.Name + " not found");
 
                     properties[i] = property;
@@ -61,7 +61,7 @@ namespace OdataToEntity.ModelBuilder
         }
         public virtual int GetOrder(PropertyInfo propertyInfo)
         {
-            var column = (ColumnAttribute)propertyInfo.GetCustomAttribute(typeof(ColumnAttribute));
+            ColumnAttribute? column = propertyInfo.GetCustomAttribute<ColumnAttribute>();
             return column == null ? -1 : column.Order;
         }
         public virtual PropertyInfo[]? GetPrincipalStructuralProperties(PropertyInfo principalNavigation)
@@ -73,7 +73,7 @@ namespace OdataToEntity.ModelBuilder
             Type? itemType = OeExpressionHelper.GetCollectionItemTypeOrNull(principalNavigation.PropertyType);
             if (itemType != null && GetInverseProperty(principalNavigation) == null)
             { 
-                String dependentPropertyName = principalNavigation.DeclaringType.Name + "id";
+                String dependentPropertyName = principalNavigation.DeclaringType!.Name + "id";
                 return new PropertyInfo[] { itemType.GetPropertyIgnoreCase(dependentPropertyName) };
             }
 
@@ -85,7 +85,7 @@ namespace OdataToEntity.ModelBuilder
         }
         public virtual bool IsDatabaseGenerated(PropertyInfo propertyInfo)
         {
-            DatabaseGeneratedAttribute attribute = propertyInfo.GetCustomAttribute<DatabaseGeneratedAttribute>();
+            DatabaseGeneratedAttribute? attribute = propertyInfo.GetCustomAttribute<DatabaseGeneratedAttribute>();
             return attribute != null && attribute.DatabaseGeneratedOption != DatabaseGeneratedOption.None;
         }
         public virtual bool IsKey(PropertyInfo propertyInfo)

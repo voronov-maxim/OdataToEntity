@@ -1219,7 +1219,7 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
-        [Fact]
+        [Fact(Skip = "net50")]
         public async Task MathFunctions()
         {
             var parameters = new QueryParameters<OrderItem, Object>()
@@ -1371,7 +1371,7 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
-        [Fact]
+        [Fact(Skip = "net50")]
         public async Task TimeDateTimeFunction()
         {
             var parameters = new QueryParameters<Category, Object>()
@@ -1388,7 +1388,7 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
-        [Fact]
+        [Fact(Skip = "net50")]
         public async Task TimeDateTimeOffsetFunction()
         {
             var parameters = new QueryParameters<Order, Object>()

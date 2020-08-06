@@ -290,7 +290,7 @@ namespace OdataToEntity.Parsers.Translators
                 orderByClause = OeSkipTokenParser.GetUniqueOrderBy(navigationItem.EntitySet, item.OrderByOption, null);
 
             var entitySet = (IEdmEntitySet)navigationItem.Parent.EntitySet;
-            Expression source = OeEnumerableStub.CreateEnumerableStubExpression(navigationClrProperty.DeclaringType, entitySet);
+            Expression source = OeEnumerableStub.CreateEnumerableStubExpression(navigationClrProperty.DeclaringType!, entitySet);
 
             var crossApplyBuilder = new OeCrossApplyBuilder(_edmModel, expressionBuilder);
             return crossApplyBuilder.Build(source, innerSource, navigationItem.Path, orderByClause, item.SkipOption, top);

@@ -58,8 +58,8 @@ namespace OdataToEntity.Infrastructure
             MemberExpression xproperty = Parsers.OeExpressionHelper.ReplaceParameter(property, xparameter);
             MemberExpression yproperty = Parsers.OeExpressionHelper.ReplaceParameter(property, yparameter);
 
-            MethodInfo compareMethodInfo = typeof(Comparer<>).MakeGenericType(property.Type).GetMethod(nameof(Comparer<Object>.Compare));
-            MethodInfo defaultMethod = typeof(Comparer<>).MakeGenericType(property.Type).GetProperty(nameof(Comparer<Object>.Default)).GetGetMethod();
+            MethodInfo compareMethodInfo = typeof(Comparer<>).MakeGenericType(property.Type).GetMethod(nameof(Comparer<Object>.Compare))!;
+            MethodInfo defaultMethod = typeof(Comparer<>).MakeGenericType(property.Type).GetProperty(nameof(Comparer<Object>.Default))!.GetGetMethod()!;
             MethodCallExpression compareCall = Expression.Call(Expression.Call(defaultMethod), compareMethodInfo, xproperty, yproperty);
 
             return (Func<Object, Object, int>)Expression.Lambda(compareCall, xparameter, yparameter).Compile();
@@ -75,7 +75,7 @@ namespace OdataToEntity.Infrastructure
         {
             ParameterExpression parameter = Expression.Parameter(typeof(Object));
             propertyExpression = Parsers.OeExpressionHelper.ReplaceParameter(propertyExpression, parameter);
-            MethodCallExpression getHashCodeCall = Expression.Call(propertyExpression, propertyExpression.Type.GetMethod(nameof(Object.GetHashCode), Type.EmptyTypes));
+            MethodCallExpression getHashCodeCall = Expression.Call(propertyExpression, propertyExpression.Type.GetMethod(nameof(Object.GetHashCode), Type.EmptyTypes)!);
             return (Func<Object, int>)Expression.Lambda(getHashCodeCall, parameter).Compile();
         }
         private static Func<Object, int>[] CreatePropertyGetHashCodes(IReadOnlyList<MemberExpression> propertyExpressions)

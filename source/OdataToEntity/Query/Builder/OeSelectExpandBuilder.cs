@@ -55,7 +55,7 @@ namespace OdataToEntity.Query.Builder
         {
             _visited.Clear();
 
-            OeModelBoundSettings settings = _modelBoundProvider.GetSettings(entityType);
+            OeModelBoundSettings? settings = _modelBoundProvider.GetSettings(entityType);
 
             var selectItems = new List<SelectItem>();
             var properties = new HashSet<IEdmProperty>();
@@ -125,7 +125,7 @@ namespace OdataToEntity.Query.Builder
                     propertiesCount = selectItems.Count;
                 }
 
-                OeModelBoundSettings settings = _modelBoundProvider.GetSettings(entityType);
+                OeModelBoundSettings? settings = _modelBoundProvider.GetSettings(entityType);
                 if (settings != null)
                     MergeSelectItems(selectItems, settings, 3);
 
@@ -210,7 +210,7 @@ namespace OdataToEntity.Query.Builder
             bool disabledMatched = false;
             foreach (IEdmProperty property in entityType.Properties())
             {
-                OeModelBoundSettings settings = _modelBoundProvider.GetSettings((IEdmEntityType)property.DeclaringType);
+                OeModelBoundSettings? settings = _modelBoundProvider.GetSettings((IEdmEntityType)property.DeclaringType);
                 if (settings != null)
                 {
                     SelectExpandType? propertySetting = settings.GetPropertySetting(property, OeModelBoundKind.Select);
@@ -232,7 +232,7 @@ namespace OdataToEntity.Query.Builder
             if (selectItems.Count == 0 && disabledMatched)
                 foreach (IEdmStructuralProperty structuralProperty in entityType.StructuralProperties())
                 {
-                    OeModelBoundSettings settings = _modelBoundProvider.GetSettings((IEdmEntityType)structuralProperty.DeclaringType);
+                    OeModelBoundSettings? settings = _modelBoundProvider.GetSettings((IEdmEntityType)structuralProperty.DeclaringType);
                     if (settings == null || settings.GetPropertySetting(structuralProperty, OeModelBoundKind.Select) != SelectExpandType.Disabled)
                         selectItems.Add(CreateStructuralSelectItem(structuralProperty));
                 }
@@ -241,7 +241,7 @@ namespace OdataToEntity.Query.Builder
         }
         private List<SelectItem> GetSelectItems(IEdmNavigationProperty navigationProperty, int level)
         {
-            if (_selectItemsCache.TryGetValue((navigationProperty, level), out List<SelectItem> selectItems))
+            if (_selectItemsCache.TryGetValue((navigationProperty, level), out List<SelectItem>? selectItems))
                 return selectItems;
 
             if (_visited.Add(navigationProperty))
@@ -257,7 +257,7 @@ namespace OdataToEntity.Query.Builder
                     selectItems = new List<SelectItem>();
             }
 
-            OeModelBoundSettings navigationSettings = _modelBoundProvider.GetSettings(navigationProperty);
+            OeModelBoundSettings? navigationSettings = _modelBoundProvider.GetSettings(navigationProperty);
             if (navigationSettings != null)
                 MergeSelectItems(selectItems, navigationSettings, level);
 

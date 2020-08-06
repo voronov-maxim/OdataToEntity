@@ -166,13 +166,13 @@ namespace OdataToEntity.ModelBuilder
                 do
                 {
                     baseClrTypes.Push(clrType);
-                    clrType = clrType.BaseType;
+                    clrType = clrType.BaseType!;
                 }
-                while (clrType != typeof(Object));
+                while (!(clrType == typeof(Object) || clrType == typeof(ValueType)));
 
                 EdmEntityType? edmType = null;
                 foreach (Type baseClrType in baseClrTypes)
-                    if (entityTypeInfos.TryGetValue(baseClrType, out EntityTypeInfo entityTypeInfo))
+                    if (entityTypeInfos.TryGetValue(baseClrType, out EntityTypeInfo? entityTypeInfo))
                         edmType = entityTypeInfo.EdmType;
                     else
                     {
@@ -239,18 +239,18 @@ namespace OdataToEntity.ModelBuilder
             bool nullable = PrimitiveTypeHelper.IsNullable(clrType);
             if (nullable)
             {
-                Type underlyingType = Nullable.GetUnderlyingType(clrType);
+                Type? underlyingType = Nullable.GetUnderlyingType(clrType);
                 if (underlyingType != null)
                     clrType = underlyingType;
             }
 
-            if (entityTypeInfos.TryGetValue(clrType, out EntityTypeInfo entityTypeInfo))
+            if (entityTypeInfos.TryGetValue(clrType, out EntityTypeInfo? entityTypeInfo))
                 return new EdmEntityTypeReference(entityTypeInfo.EdmType, nullable);
 
-            if (_enumTypes.TryGetValue(clrType, out EdmEnumType edmEnumType))
+            if (_enumTypes.TryGetValue(clrType, out EdmEnumType? edmEnumType))
                 return new EdmEnumTypeReference(edmEnumType, nullable);
 
-            if (_complexTypes.TryGetValue(clrType, out EdmComplexType edmComplexType))
+            if (_complexTypes.TryGetValue(clrType, out EdmComplexType? edmComplexType))
                 return new EdmComplexTypeReference(edmComplexType, nullable);
 
             IEdmTypeReference? typeRef = PrimitiveTypeHelper.GetPrimitiveTypeRef(clrType, nullable);

@@ -38,22 +38,23 @@ namespace OdataToEntity.Parsers.Translators
 
         private static bool Compare(MemberExpression propertyExpression, in PropertyDef propertyDef)
         {
-            Type declaringType = propertyExpression.Member.DeclaringType;
-            do
+            Type declaringType = propertyExpression.Member.DeclaringType!;
+            for (; ; )
             {
                 if (String.Compare(declaringType.Name, propertyDef.DeclaringTypeName, StringComparison.OrdinalIgnoreCase) == 0 &&
                     String.Compare(declaringType.Namespace, propertyDef.NamespaceName, StringComparison.OrdinalIgnoreCase) == 0 &&
                     String.Compare(propertyExpression.Member.Name, propertyDef.PropertyName, StringComparison.OrdinalIgnoreCase) == 0)
                     return true;
 
+                if (declaringType.BaseType == null)
+                    return false;
+
                 declaringType = declaringType.BaseType;
             }
-            while (declaringType != null);
-            return false;
         }
         public MemberExpression? Build(Expression parameter, PropertyInfo propertyInfo)
         {
-            var propertyDef = new PropertyDef(propertyInfo.DeclaringType.Namespace, propertyInfo.DeclaringType.Name, propertyInfo.Name);
+            var propertyDef = new PropertyDef(propertyInfo.DeclaringType!.Namespace ?? "", propertyInfo.DeclaringType.Name, propertyInfo.Name);
             return Build(parameter, propertyDef);
         }
         public MemberExpression? Build(Expression parameter, IEdmProperty edmProperty)
@@ -91,6 +92,9 @@ namespace OdataToEntity.Parsers.Translators
                             propertyInfo = property;
                             break;
                         }
+
+                    if (propertyInfo == null)
+                        throw new InvalidOperationException("Cannot build navigation properties chain");
                 }
                 else
                     propertyInfo = _foundProperty;
@@ -155,17 +159,17 @@ namespace OdataToEntity.Parsers.Translators
         }
         private static PropertyInfo? GetPropertyInfo(Type type, in PropertyDef propertyDef)
         {
-            do
+            for (; ; )
             {
                 if (String.Compare(type.Name, propertyDef.DeclaringTypeName, StringComparison.OrdinalIgnoreCase) == 0 &&
                     String.Compare(type.Namespace, propertyDef.NamespaceName, StringComparison.OrdinalIgnoreCase) == 0)
                     return type.GetPropertyIgnoreCase(propertyDef.PropertyName);
 
+                if (type.BaseType == null)
+                    return null;
+
                 type = type.BaseType;
             }
-            while (type != null);
-
-            return null;
         }
         protected override Expression VisitNew(NewExpression node)
         {

@@ -150,7 +150,7 @@ namespace OdataToEntity.ModelBuilder
             Dictionary<Type, EntityTypeInfo> entityTypes, EntityTypeInfo dependentInfo, PropertyInfo dependentNavigationProperty)
         {
             Type clrType = Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(dependentNavigationProperty.PropertyType) ?? dependentNavigationProperty.PropertyType;
-            if (!entityTypes.TryGetValue(clrType, out EntityTypeInfo principalInfo))
+            if (!entityTypes.TryGetValue(clrType, out EntityTypeInfo? principalInfo))
                 return null;
 
             PropertyInfo[] dependentStructuralProperties = GetDependentStructuralProperties(metadataProvider, dependentInfo, dependentNavigationProperty);

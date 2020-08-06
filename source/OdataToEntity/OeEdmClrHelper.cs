@@ -58,12 +58,8 @@ namespace OdataToEntity
         {
             if (edmValue is ODataEnumValue enumValue)
             {
-                Type enumType;
-                if (clrType.IsEnum)
-                    enumType = clrType;
-                else
-                    enumType = Nullable.GetUnderlyingType(clrType);
-                return Enum.Parse(enumType, enumValue.Value);
+                Type? underlyingType = Nullable.GetUnderlyingType(clrType);
+                return underlyingType == null ? Enum.Parse(clrType, enumValue.Value) : Enum.Parse(underlyingType, enumValue.Value);
             }
 
             if (edmValue is DateTimeOffset dateTimeOffset && (clrType == typeof(DateTime) || clrType == typeof(DateTime?)))

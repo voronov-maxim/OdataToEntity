@@ -102,7 +102,7 @@ namespace OdataToEntity.Parsers.Translators
             bool isGroupBy = sourceType.GetGenericTypeDefinition() == typeof(IGrouping<,>);
             if (isGroupBy)
             {
-                PropertyInfo keyProperty = sourceType.GetProperty(nameof(IGrouping<Object, Object>.Key));
+                PropertyInfo keyProperty = sourceType.GetProperty(nameof(IGrouping<Object, Object>.Key))!;
                 MemberExpression key = Expression.Property(sourceParameter, keyProperty);
                 expressions.Add(key);
 
@@ -328,13 +328,13 @@ namespace OdataToEntity.Parsers.Translators
                     int itemIndex;
                     if (_aggProperties[i].IsGroup)
                     {
-                        propertyInfo = source.Type.GetProperty("Item1");
+                        propertyInfo = source.Type.GetProperty("Item1")!;
                         source = Expression.Property(source, propertyInfo);
                         itemIndex = groupCount;
 
                         for (; itemIndex > 7; itemIndex -= 7)
                         {
-                            propertyInfo = source.Type.GetProperty("Rest");
+                            propertyInfo = source.Type.GetProperty("Rest")!;
                             source = Expression.Property(source, propertyInfo);
                         }
                     }
@@ -342,7 +342,7 @@ namespace OdataToEntity.Parsers.Translators
                         itemIndex = i - groupCount + 2;
 
                     String propertyName = "Item" + itemIndex.ToString(CultureInfo.InvariantCulture);
-                    propertyInfo = source.Type.GetProperty(propertyName);
+                    propertyInfo = source.Type.GetProperty(propertyName)!;
                     return Expression.Property(source, propertyInfo);
                 }
             }

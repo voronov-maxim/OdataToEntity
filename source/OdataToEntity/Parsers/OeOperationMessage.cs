@@ -35,7 +35,7 @@ namespace OdataToEntity.Parsers
                 if (requestMessage.Method == ODataConstants.MethodDelete)
                     return ReadEntityFromUrl(requestMessage.Url);
 
-                String contentType = requestMessage.GetHeader(ODataConstants.ContentTypeHeader);
+                String contentType = requestMessage.GetHeader(ODataConstants.ContentTypeHeader) ?? OeRequestHeaders.JsonDefault.ContentType;
                 using (Stream stream = requestMessage.GetStream())
                     return await ReadEntityFromStreamAsync(stream, requestMessage.Url, contentType).ConfigureAwait(false);
             }
@@ -83,7 +83,7 @@ namespace OdataToEntity.Parsers
         private OeOperationMessage(IEdmEntitySet entitySet, ODataResource entry, IODataRequestMessage requestMessage, string contentId)
         {
             ContentId = contentId;
-            ContentType = requestMessage.GetHeader(ODataConstants.ContentTypeHeader);
+            ContentType = requestMessage.GetHeader(ODataConstants.ContentTypeHeader) ?? OeRequestHeaders.JsonDefault.ContentType;
             Method = requestMessage.Method;
             RequestUrl = requestMessage.Url;
             EntitySet = entitySet;

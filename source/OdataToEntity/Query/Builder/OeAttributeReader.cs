@@ -60,7 +60,7 @@ namespace OdataToEntity.Query.Builder
                 }
                 else
                 {
-                    var attribute = (T)clrProperty.GetCustomAttribute(typeof(T));
+                    var attribute = (T?)clrProperty.GetCustomAttribute(typeof(T));
                     if (attribute != null)
                         SetProperty(edmProperty, IsAllowed(attribute));
                 }

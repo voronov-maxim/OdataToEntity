@@ -19,14 +19,14 @@ namespace OdataToEntity.Query.Builder
 
         private void BuildModelBoundCountPage(IEdmEntityType edmEntityType, Type clrEntityType)
         {
-            var pageAttribute = (PageAttribute)clrEntityType.GetCustomAttribute(typeof(PageAttribute));
+            var pageAttribute = (PageAttribute?)clrEntityType.GetCustomAttribute(typeof(PageAttribute));
             if (pageAttribute != null)
             {
                 _modelBoundSettingsBuilder.SetPageSize(pageAttribute.PageSize, edmEntityType);
                 _modelBoundSettingsBuilder.SetMaxTop(pageAttribute.MaxTop, edmEntityType);
             }
 
-            var countAttribute = (CountAttribute)clrEntityType.GetCustomAttribute(typeof(CountAttribute));
+            var countAttribute = (CountAttribute?)clrEntityType.GetCustomAttribute(typeof(CountAttribute));
             if (countAttribute != null && countAttribute.Disabled)
                 _modelBoundSettingsBuilder.SetCount(false, edmEntityType);
 
@@ -37,12 +37,12 @@ namespace OdataToEntity.Query.Builder
                 bool isCollection = navigationProperty.Type.IsCollection();
                 if (isCollection)
                 {
-                    countAttribute = (CountAttribute)clrProperty.GetCustomAttribute(typeof(CountAttribute));
+                    countAttribute = (CountAttribute?)clrProperty.GetCustomAttribute(typeof(CountAttribute));
                     if (countAttribute != null && countAttribute.Disabled)
                         _modelBoundSettingsBuilder.SetCount(false, navigationProperty);
                 }
 
-                pageAttribute = (PageAttribute)clrProperty.GetCustomAttribute(typeof(PageAttribute));
+                pageAttribute = (PageAttribute?)clrProperty.GetCustomAttribute(typeof(PageAttribute));
                 if (pageAttribute != null)
                 {
                     if (isCollection)

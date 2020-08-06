@@ -135,9 +135,7 @@ namespace OdataToEntity.Parsers
             if (skip == null)
                 return source;
 
-            ConstantExpression skipConstant = Expression.Constant((int)skip.Value, typeof(int));
-            Visitor.AddSkipConstant(skipConstant, path);
-
+            ConstantExpression skipConstant = Visitor.AddSkipConstant((int)skip.Value, path);
             MethodInfo skipMethodInfo = OeMethodInfoHelper.GetSkipMethodInfo(ParameterType);
             return Expression.Call(skipMethodInfo, source, skipConstant);
         }
@@ -157,9 +155,7 @@ namespace OdataToEntity.Parsers
             if (top == null)
                 return source;
 
-            ConstantExpression topConstant = Expression.Constant((int)top.Value, typeof(int));
-            Visitor.AddTopConstant(topConstant, path);
-
+            ConstantExpression topConstant = Visitor.AddTopConstant((int)top.Value, path);
             MethodInfo takeMethodInfo = OeMethodInfoHelper.GetTakeMethodInfo(ParameterType);
             return Expression.Call(takeMethodInfo, source, topConstant);
         }

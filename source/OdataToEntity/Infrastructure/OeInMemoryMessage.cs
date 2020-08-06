@@ -31,9 +31,9 @@ namespace OdataToEntity.Infrastructure
             _serviceProvider = serviceProvider;
         }
 
-        public String GetHeader(String headerName)
+        public String? GetHeader(String headerName)
         {
-            _headers.TryGetValue(headerName, out String result);
+            _headers.TryGetValue(headerName, out String? result);
             return result;
         }
         public Stream GetStream()

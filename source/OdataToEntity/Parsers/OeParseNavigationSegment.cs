@@ -21,11 +21,11 @@ namespace OdataToEntity.Parsers
             ResourceRangeVariableReferenceNode refNode = OeEdmClrHelper.CreateRangeVariableReferenceNode(entitySet);
             var entityType = (IEdmEntityType)refNode.RangeVariable.TypeReference.Definition;
 
-            var propertyValues = new List<KeyValuePair<IEdmStructuralProperty, Object>>();
+            var propertyValues = new List<KeyValuePair<IEdmStructuralProperty, Object?>>();
             foreach (KeyValuePair<String, Object> keyValue in keys)
             {
                 var property = (IEdmStructuralProperty)entityType.GetPropertyIgnoreCase(keyValue.Key);
-                propertyValues.Add(new KeyValuePair<IEdmStructuralProperty, Object>(property, keyValue.Value));
+                propertyValues.Add(new KeyValuePair<IEdmStructuralProperty, Object?>(property, keyValue.Value));
             }
 
             return new FilterClause(OeExpressionHelper.CreateFilterExpression(refNode, propertyValues), refNode.RangeVariable);
