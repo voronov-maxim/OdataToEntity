@@ -12,7 +12,7 @@ namespace OdataToEntity.Linq2Db
         public override PropertyInfo[]? GetForeignKey(PropertyInfo propertyInfo)
         {
             var association = (AssociationAttribute)propertyInfo.GetCustomAttribute(typeof(AssociationAttribute));
-            if (association == null || association.IsBackReference)
+            if (association == null || association.IsBackReference || association.ThisKey == null)
                 return null;
 
             PropertyInfo property = propertyInfo.DeclaringType.GetPropertyIgnoreCase(association.ThisKey);

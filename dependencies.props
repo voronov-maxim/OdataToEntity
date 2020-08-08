@@ -3,17 +3,17 @@
     <ComponentModelAnnotations>4.7.0</ComponentModelAnnotations>
     <CoreFxVersion>4.7.2</CoreFxVersion>
     <CSharpVersion>8.0</CSharpVersion>
-    <EfCoreVersion>3.1.4</EfCoreVersion>
+    <EfCoreVersion>3.1.6</EfCoreVersion>
     <FrameworkVersion>net48</FrameworkVersion>
     <JsonNetVersion>12.0.3</JsonNetVersion>
     <NetStandardVersion>netstandard2.1</NetStandardVersion>
     <NetCoreAppVersion>netcoreapp3.1</NetCoreAppVersion>
-    <NetCoreVersion>3.1.4</NetCoreVersion>
-    <NpgsqlVersion>3.1.3</NpgsqlVersion>
-    <ODataLibVersion>7.6.4</ODataLibVersion>
-    <OdataToEntityVersion>2.5.0</OdataToEntityVersion>
+    <NetCoreVersion>3.1.6</NetCoreVersion>
+    <NpgsqlVersion>3.1.4</NpgsqlVersion>
+    <ODataLibVersion>7.7.0</ODataLibVersion>
+    <OdataToEntityVersion>2.5.1</OdataToEntityVersion>
     <SystemInteractiveAsyncVersion>4.1.1</SystemInteractiveAsyncVersion>
-    <TestSdkVersion>16.6.1</TestSdkVersion>
+    <TestSdkVersion>16.7.0</TestSdkVersion>
     <Version>$(OdataToEntityVersion)</Version>
     <XunitVersion>2.4.1</XunitVersion>
   </PropertyGroup>

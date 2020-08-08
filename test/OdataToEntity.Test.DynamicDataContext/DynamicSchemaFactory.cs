@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
 using OdataToEntity.EfCore.DynamicDataContext.InformationSchema;
+using OdataToEntity.EfCore.DynamicDataContext.ModelBuilder;
 using System;
 
 namespace OdataToEntity.EfCore.DynamicDataContext
@@ -35,18 +37,21 @@ namespace OdataToEntity.EfCore.DynamicDataContext
         {
             var optionsBuilder = new DbContextOptionsBuilder<DynamicDbContext>();
             optionsBuilder = optionsBuilder.UseSqlServer(_connectionString, opt => opt.UseRelationalNulls(useRelationalNulls));
+            //optionsBuilder.ReplaceService<IConventionSetBuilder, DynamicConventionSetBuilder>();
             return optionsBuilder.Options;
         }
         private DbContextOptions<DynamicDbContext> CreateOptionsPostgreSql(bool useRelationalNulls)
         {
             var optionsBuilder = new DbContextOptionsBuilder<DynamicDbContext>();
             optionsBuilder.UseNpgsql(_connectionString, opt => opt.UseRelationalNulls(useRelationalNulls));
+            //optionsBuilder.ReplaceService<IConventionSetBuilder, DynamicConventionSetBuilder>();
             return optionsBuilder.Options;
         }
         private DbContextOptions<DynamicDbContext> CreateOptionsMySql(bool useRelationalNulls)
         {
             var optionsBuilder = new DbContextOptionsBuilder<DynamicDbContext>();
             optionsBuilder.UseMySql(_connectionString, opt => opt.UseRelationalNulls(useRelationalNulls));
+            //optionsBuilder.ReplaceService<IConventionSetBuilder, DynamicConventionSetBuilder>();
             return optionsBuilder.Options;
         }
     }
