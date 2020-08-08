@@ -56,7 +56,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
                     if (property.DatabaseGeneratedOption == DatabaseGeneratedOption.Identity)
                         efProperty.SetValueGenerated(ValueGenerated.OnAdd, ConfigurationSource.Explicit);
                     else if (property.DatabaseGeneratedOption == DatabaseGeneratedOption.Computed)
-                        efProperty.SetValueGenerated(ValueGenerated.OnAddOrUpdate, ConfigurationSource.Explicit);
+                        efProperty.SetBeforeSaveBehavior(PropertySaveBehavior.Ignore);
                     else
                         efProperty.SetValueGenerated(ValueGenerated.Never, ConfigurationSource.Explicit);
                 }

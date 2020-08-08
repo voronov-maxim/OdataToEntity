@@ -13,7 +13,7 @@
     <ODataLibVersion>7.7.0</ODataLibVersion>
     <OdataToEntityVersion>2.5.0</OdataToEntityVersion>
     <SystemInteractiveAsyncVersion>4.1.1</SystemInteractiveAsyncVersion>
-    <TestSdkVersion>16.6.1</TestSdkVersion>
+    <TestSdkVersion>16.7.0</TestSdkVersion>
     <Version>$(OdataToEntityVersion)</Version>
     <XunitVersion>2.4.1</XunitVersion>
   </PropertyGroup>

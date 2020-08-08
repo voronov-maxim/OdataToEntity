@@ -170,7 +170,8 @@ namespace OdataToEntity.EfCore
             {
                 IProperty efProperty = efEntityType.FindProperty(propertyInfo.Name);
                 if (efProperty != null)
-                    return efProperty.ValueGenerated != ValueGenerated.Never;
+                    return efProperty.ValueGenerated != ValueGenerated.Never ||
+                        efProperty.GetBeforeSaveBehavior() == PropertySaveBehavior.Ignore;
             }
 
             throw new InvalidOperationException("property " + propertyInfo.Name + " not found");

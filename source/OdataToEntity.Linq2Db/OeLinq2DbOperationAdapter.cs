@@ -81,7 +81,7 @@ namespace OdataToEntity.Linq2Db
         protected override IReadOnlyList<OeOperationConfiguration>? GetOperationConfigurations(MethodInfo methodInfo)
         {
             var dbFunction = (Sql.FunctionAttribute)methodInfo.GetCustomAttribute(typeof(Sql.FunctionAttribute));
-            if (dbFunction == null)
+            if (dbFunction == null || dbFunction.Name == null)
                 return base.GetOperationConfigurations(methodInfo);
 
             return new[] { new OeOperationConfiguration(dbFunction.Configuration, dbFunction.Name, methodInfo, true) };
