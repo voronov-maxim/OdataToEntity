@@ -13,14 +13,12 @@ namespace OdataToEntity.AspNetCore
         protected void GetCsdlSchema()
         {
             base.HttpContext.Response.ContentType = "application/xml";
-            var edmModel = (IEdmModel)base.HttpContext.RequestServices.GetService(typeof(IEdmModel));
-            GetCsdlSchema(edmModel, base.HttpContext.Response.Body);
+            GetCsdlSchema(base.HttpContext.GetEdmModel(), base.HttpContext.Response.Body);
         }
         protected void GetJsonSchema()
         {
             base.HttpContext.Response.ContentType = "application/schema+json";
-            var edmModel = (IEdmModel)base.HttpContext.RequestServices.GetService(typeof(IEdmModel));
-            GetJsonSchema(edmModel, base.HttpContext.Response.Body);
+            GetJsonSchema(base.HttpContext.GetEdmModel(), base.HttpContext.Response.Body);
         }
         private static bool GetCsdlSchema(IEdmModel edmModel, Stream stream)
         {

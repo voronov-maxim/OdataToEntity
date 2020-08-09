@@ -45,7 +45,7 @@ namespace OdataToEntity.AspNetCore
         {
             if (app == null)
                 throw new ArgumentNullException(nameof(app));
-            if (apiPath.HasValue && apiPath.Value.EndsWith("/", StringComparison.Ordinal))
+            if (apiPath.Value != null && apiPath.Value.EndsWith("/", StringComparison.Ordinal))
                 throw new ArgumentException("The path must not end with a '/'", nameof(apiPath));
 
             IApplicationBuilder applicationBuilder = app.New();
@@ -57,6 +57,10 @@ namespace OdataToEntity.AspNetCore
                 PathMatch = apiPath
             };
             return app.Use((RequestDelegate next) => new RequestDelegate(new MapMiddleware(next, options).Invoke));
+        }
+        public static IEdmModel GetEdmModel(this HttpContext httpContext)
+        {
+            return httpContext.RequestServices.GetService<IEdmModel>() ?? throw new ArgumentNullException("Use AddOdataToEntityMvc for register IEdmModel");
         }
     }
 }

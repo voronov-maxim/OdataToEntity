@@ -10,9 +10,9 @@ namespace OdataToEntity.Infrastructure
     {
         private sealed class AsyncEnumerableAdapter<T> : IAsyncEnumerable<T>, IAsyncEnumerator<T>
         {
-            private readonly IAsyncEnumerator<Object> _asyncEnumerator;
+            private readonly IAsyncEnumerator<Object?> _asyncEnumerator;
 
-            public AsyncEnumerableAdapter(IAsyncEnumerable<Object> asyncEnumerable, CancellationToken cancellationToken)
+            public AsyncEnumerableAdapter(IAsyncEnumerable<Object?> asyncEnumerable, CancellationToken cancellationToken)
             {
                 _asyncEnumerator = asyncEnumerable.GetAsyncEnumerator(cancellationToken);
             }
@@ -30,7 +30,16 @@ namespace OdataToEntity.Infrastructure
                 return _asyncEnumerator.MoveNextAsync();
             }
 
-            public T Current => (T)_asyncEnumerator.Current;
+            public T Current
+            {
+                get
+                {
+                    if (_asyncEnumerator.Current is T value)
+                        return value;
+
+                    return default!;
+                }
+            }
         }
 
         private sealed class EmptyAsyncEnumerator : IAsyncEnumerable<Object>, IAsyncEnumerator<Object>
@@ -121,7 +130,7 @@ namespace OdataToEntity.Infrastructure
         {
             return new ScalarEnumeratorAdapter<T>(scalarResult);
         }
-        public static IAsyncEnumerable<T> ToAsyncEnumerable<T>(IAsyncEnumerable<Object> asyncEnumerable, CancellationToken cancellationToken)
+        public static IAsyncEnumerable<T> ToAsyncEnumerable<T>(IAsyncEnumerable<Object?> asyncEnumerable, CancellationToken cancellationToken)
         {
             return new AsyncEnumerableAdapter<T>(asyncEnumerable, cancellationToken);
         }

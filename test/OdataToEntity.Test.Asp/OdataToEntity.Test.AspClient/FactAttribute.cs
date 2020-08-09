@@ -10,6 +10,7 @@ namespace Xunit
     [AttributeUsage(AttributeTargets.Method)]
     internal sealed class FactAttribute : Attribute
     {
+        public String Skip { get; set; }
     }
 
     [AttributeUsage(AttributeTargets.Method)]

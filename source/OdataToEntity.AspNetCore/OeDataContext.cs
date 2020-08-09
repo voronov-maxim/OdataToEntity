@@ -24,7 +24,7 @@ namespace OdataToEntity.AspNetCore
         }
         private static async Task<OeBatchFilterAttributeAttribute.BatchModelStateDictionary> GetModelStateAsync(HttpContext httpContext)
         {
-            var edmModel = (IEdmModel)httpContext.RequestServices.GetService(typeof(IEdmModel));
+            IEdmModel edmModel = httpContext.GetEdmModel();
             Uri baseUri = UriHelper.GetBaseUri(httpContext.Request);
             Uri requestUri = UriHelper.GetUri(httpContext.Request);
             OeOperationMessage operation = await OeBatchMessage.CreateOperationMessageAsync(edmModel, baseUri, requestUri,

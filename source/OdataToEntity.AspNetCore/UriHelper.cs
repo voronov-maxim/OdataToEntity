@@ -12,7 +12,7 @@ namespace OdataToEntity.AspNetCore
                 uriBuilder.Path = request.PathBase;
             else
             {
-                if (request.Path.Value.Length > 1)
+                if (request.Path.Value != null && request.Path.Value.Length > 1)
                 {
                     int i = request.Path.Value.IndexOf('(');
                     if (i == -1)

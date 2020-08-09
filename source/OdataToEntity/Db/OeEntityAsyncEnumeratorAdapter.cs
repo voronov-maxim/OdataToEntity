@@ -21,7 +21,7 @@ namespace OdataToEntity.Db
         private bool _isMoveNext;
         private readonly OeQueryContext? _queryContext;
 
-        public OeEntityAsyncEnumeratorAdapter(IAsyncEnumerator<Object> asyncEnumerator, OeQueryContext queryContext)
+        public OeEntityAsyncEnumeratorAdapter(IAsyncEnumerator<Object?> asyncEnumerator, OeQueryContext queryContext)
             : this(asyncEnumerator, queryContext.EntryFactory ?? throw new InvalidOperationException("queryContext.EntryFactory is null"), queryContext)
         {
         }
@@ -29,7 +29,7 @@ namespace OdataToEntity.Db
             : this(asyncEnumerator, entryFactory, null)
         {
         }
-        private OeEntityAsyncEnumeratorAdapter(IAsyncEnumerator<Object> asyncEnumerator, OeEntryFactory entryFactory, OeQueryContext? queryContext)
+        private OeEntityAsyncEnumeratorAdapter(IAsyncEnumerator<Object?> asyncEnumerator, OeEntryFactory entryFactory, OeQueryContext? queryContext)
         {
             _dbEnumerator = new OeDbEnumerator(asyncEnumerator, entryFactory);
             _queryContext = queryContext;
@@ -112,16 +112,19 @@ namespace OdataToEntity.Db
                 return false;
 
             T entity = default;
+            bool isEntityNull = true;
             if (_dbEnumerator.Current != null)
+            {
+                isEntityNull = false;
                 entity = (T)await CreateEntity(_dbEnumerator, _dbEnumerator.Current, _dbEnumerator.Current, typeof(T), _cancellationToken).ConfigureAwait(false);
+            }
 
             Object? rawValue = _dbEnumerator.RawValue;
             _dbEnumerator.ClearBuffer();
 
             _isMoveNext = await _dbEnumerator.MoveNextAsync().ConfigureAwait(false);
-            if (!_isMoveNext &&
-                _queryContext != null && _queryContext.EntryFactory != null && _queryContext.EntryFactory.SkipTokenAccessors.Length > 0 &&
-                _dbEnumerator.Current != null)
+            if (!isEntityNull && !_isMoveNext &&
+                _queryContext != null && _queryContext.EntryFactory != null && _queryContext.EntryFactory.SkipTokenAccessors.Length > 0)
                 SetOrderByProperties(_queryContext.EntryFactory, _queryContext.ODataUri.OrderBy, entity!, rawValue);
 
             _current = entity;

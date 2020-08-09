@@ -34,8 +34,7 @@ namespace OdataToEntity.AspNetCore
         }
         public static OeModelBoundProvider? CreateModelBoundProvider(this HttpContext httpContext)
         {
-            var edmModel = (IEdmModel)httpContext.RequestServices.GetService(typeof(IEdmModel));
-            return httpContext.CreateModelBoundProvider(edmModel);
+            return httpContext.CreateModelBoundProvider(httpContext.GetEdmModel());
         }
         public static OeModelBoundProvider? CreateModelBoundProvider(this HttpContext httpContext, IEdmModel edmModel)
         {

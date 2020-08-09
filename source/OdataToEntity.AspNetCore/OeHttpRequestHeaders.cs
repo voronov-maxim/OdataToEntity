@@ -18,7 +18,7 @@ namespace OdataToEntity.AspNetCore
         public override String? ResponseContentType
         {
             get => _response.ContentType;
-            set => _response.ContentType = value;
+            set => _response.ContentType = value!;
         }
     }
 }

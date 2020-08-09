@@ -19,8 +19,6 @@ namespace OdataToEntity.AspNetCore
 {
     public class OeBatchController : ControllerBase
     {
-        private IEdmModel? _edmModel;
-
         [HttpPost]
         public Task Batch()
         {
@@ -29,17 +27,17 @@ namespace OdataToEntity.AspNetCore
         [HttpPost]
         protected virtual async Task BatchCore()
         {
-            var actionDescriptors = GetService<IActionDescriptorCollectionProvider>().ActionDescriptors;
-            var actionInvokerFactory = GetService<IActionInvokerFactory>();
-
             String basePath = "";
             if (base.HttpContext.Request.PathBase.HasValue)
                 basePath = base.HttpContext.Request.PathBase;
             else
             {
-                int i = base.HttpContext.Request.Path.Value.IndexOf('/', 1);
-                if (i > 0)
-                    basePath = base.HttpContext.Request.Path.Value.Substring(0, i);
+                if (base.HttpContext.Request.Path.Value != null)
+                {
+                    int i = base.HttpContext.Request.Path.Value.IndexOf('/', 1);
+                    if (i > 0)
+                        basePath = base.HttpContext.Request.Path.Value.Substring(0, i);
+                }
             }
             Uri baseUri = UriHelper.GetBaseUri(base.Request);
 
@@ -50,6 +48,8 @@ namespace OdataToEntity.AspNetCore
 
             OeDataAdapter? dataAdapter = null;
             Object? dataContext = null;
+            ActionDescriptorCollection actionDescriptors = GetService<IActionDescriptorCollectionProvider>().ActionDescriptors;
+            IActionInvokerFactory actionInvokerFactory = GetService<IActionInvokerFactory>();
             try
             {
                 IEdmModel? refModel = null;
@@ -123,7 +123,8 @@ namespace OdataToEntity.AspNetCore
         }
         private T GetService<T>()
         {
-            return (T)base.HttpContext.RequestServices.GetService(typeof(T));
+            return (T)base.HttpContext.RequestServices.GetService(typeof(T))
+                ?? throw new InvalidOperationException("Type " + typeof(T).FullName + " not register in HttpContext.RequestServices");
         }
         protected virtual async Task<int> SaveChangesAsync(Object dataContext)
         {
@@ -139,18 +140,6 @@ namespace OdataToEntity.AspNetCore
                 base.HttpContext.Request.ContentType, CancellationToken.None).ConfigureAwait(false);
         }
 
-        protected IEdmModel EdmModel
-        {
-            get
-            {
-                IEdmModel? edmModel = Volatile.Read(ref _edmModel);
-                if (edmModel == null)
-                {
-                    edmModel = GetService<IEdmModel>();
-                    Interlocked.CompareExchange(ref _edmModel, edmModel, null);
-                }
-                return edmModel;
-            }
-        }
+        protected IEdmModel EdmModel => base.HttpContext.GetEdmModel();
     }
 }

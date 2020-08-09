@@ -43,8 +43,11 @@ namespace OdataToEntity.AspNetCore
 
             return false;
         }
-        private static String? GetPath(String path)
+        private static String? GetPath(String? path)
         {
+            if (path == null)
+                return null;
+
             int pos1, pos2;
 
             if ((pos2 = path.IndexOf(")/", StringComparison.Ordinal)) != -1)
@@ -109,7 +112,7 @@ namespace OdataToEntity.AspNetCore
                 if (actionDescriptor.AttributeRouteInfo != null)
                 {
                     RouteTemplate template = TemplateParser.Parse(actionDescriptor.AttributeRouteInfo.Template);
-                    var matcher = new TemplateMatcher(template, null);
+                    var matcher = new TemplateMatcher(template, new RouteValueDictionary());
                     if (matcher.TryMatch(path, values) && ActionConstaint(actionDescriptor, httpContext, values, httpMethod))
                         selectCandidates.Add(actionDescriptor);
                 }
