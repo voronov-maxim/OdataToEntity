@@ -3,10 +3,25 @@ using System.Collections.Generic;
 
 namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 {
-    public sealed class InformationSchemaMapping
+    public sealed class InformationSchemaSettings
     {
+        public DbObjectFilter ObjectFilter { get; set; }
         public IReadOnlyList<OperationMapping>? Operations { get; set; }
+        public ISet<String>? SchemaFilter { get; set; }
+        public DbSchemaFilterMode SchemaFilterMode { get; set; }
         public IReadOnlyList<TableMapping>? Tables { get; set; }
+    }
+
+    public enum DbObjectFilter
+    {
+        All = 0,
+        Mapping = 1
+    }
+
+    public enum DbSchemaFilterMode
+    {
+        Normal = 0,
+        Except = 1
     }
 
     public sealed class TableMapping

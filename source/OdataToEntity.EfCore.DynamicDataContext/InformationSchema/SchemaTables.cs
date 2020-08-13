@@ -111,9 +111,9 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         [Column("CONSTRAINT_NAME")]
         public String ConstraintName { get; set; } = null!;
         [Column("TABLE_SCHEMA")]
-        public String TableSchema { get; set; } = null!;
+        public String? TableSchema { get; set; }
         [Column("TABLE_NAME")]
-        public String TableName { get; set; } = null!;
+        public String? TableName { get; set; }
         [Column("CONSTRAINT_TYPE")]
         public String ConstraintType { get; set; } = null!;
     }

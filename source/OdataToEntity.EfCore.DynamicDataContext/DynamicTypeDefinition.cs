@@ -44,11 +44,16 @@ namespace OdataToEntity.EfCore.DynamicDataContext
 
             String shadowPropertyIndex = _shadowPropertyIndex.ToString(CultureInfo.InvariantCulture);
             String shadowPropertyGetName = "ShadowPropertyGet" + shadowPropertyIndex;
-            MethodInfo getMethodInfo = typeof(Types.DynamicType).GetMethod(shadowPropertyGetName, BindingFlags.Instance | BindingFlags.NonPublic);
+            MethodInfo? getMethodInfo = typeof(Types.DynamicType).GetMethod(shadowPropertyGetName, BindingFlags.Instance | BindingFlags.NonPublic);
+            if (getMethodInfo == null)
+                throw new InvalidOperationException(shadowPropertyGetName + " out of range, property name " + propertyName);
+
             getMethodInfo = getMethodInfo.GetGenericMethodDefinition().MakeGenericMethod(new Type[] { propertyType });
 
             String shadowPropertyFieldName = "ShadowProperty" + shadowPropertyIndex;
-            FieldInfo fieldInfo = typeof(Types.DynamicType).GetField(shadowPropertyFieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+            FieldInfo? fieldInfo = typeof(Types.DynamicType).GetField(shadowPropertyFieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+            if (fieldInfo == null)
+                throw new InvalidOperationException(shadowPropertyFieldName + " out of range, proeprty name " + propertyName);
 
             var shadowPropertyDefinition = new ShadowPropertyDefinition(getMethodInfo, fieldInfo);
             _shadowPropertyDefinitions.Add(propertyName, shadowPropertyDefinition);

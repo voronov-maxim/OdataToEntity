@@ -89,7 +89,7 @@ namespace OdataToEntity.Db
                 if (String.IsNullOrEmpty(defaultSchema))
                     return GetCaseSensitivityName(operationName);
 
-                return GetCaseSensitivityName(defaultSchema) + "." + GetCaseSensitivityName(operationName);
+                return GetCaseSensitivityName(defaultSchema!) + "." + GetCaseSensitivityName(operationName);
             }
 
             if (operationName[0] == '"' && operationName[i + 1] == '"')

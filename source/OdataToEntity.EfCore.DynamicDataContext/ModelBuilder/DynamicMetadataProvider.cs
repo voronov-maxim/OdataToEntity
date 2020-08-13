@@ -9,15 +9,15 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
 {
     public sealed class DynamicMetadataProvider : IDisposable
     {
-        private readonly InformationSchemaMapping? _informationSchemaMapping;
+        private readonly InformationSchemaSettings _informationSchemaSettings;
         private readonly SchemaCache _schemaCache;
 
-        internal DynamicMetadataProvider(ProviderSpecificSchema informationSchema, InformationSchemaMapping? informationSchemaMapping)
+        internal DynamicMetadataProvider(ProviderSpecificSchema informationSchema, InformationSchemaSettings informationSchemaSettings)
         {
             InformationSchema = informationSchema;
-            _informationSchemaMapping = informationSchemaMapping;
+            _informationSchemaSettings = informationSchemaSettings;
 
-            _schemaCache = SchemaCacheFactory.Create(informationSchema, _informationSchemaMapping?.Tables);
+            _schemaCache = SchemaCacheFactory.Create(informationSchema, _informationSchemaSettings);
         }
 
         public void Dispose()
@@ -36,8 +36,14 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
                         var principalPropertyNames = new List<String>(principal.Select(p => p.ColumnName));
                         var dependentPropertyNames = new List<String>(dependent.Select(p => p.ColumnName));
 
-                        String principalEdmName = _schemaCache.GetTableEdmName(principal[0].TableSchema, principal[0].TableName);
-                        String dependentEdmName = _schemaCache.GetTableEdmName(dependent[0].TableSchema, dependent[0].TableName);
+                        String? principalEdmName = _schemaCache.GetTableEdmName(principal[0].TableSchema, principal[0].TableName);
+                        if (principalEdmName == null)
+                            throw new InvalidOperationException($"Table {principal[0].TableSchema}.{principal[0].TableName} not found");
+
+                        String? dependentEdmName = _schemaCache.GetTableEdmName(dependent[0].TableSchema, dependent[0].TableName);
+                        if (dependentEdmName == null)
+                            throw new InvalidOperationException($"Table {dependent[0].TableSchema}.{dependent[0].TableName} not found");
+
                         return new DynamicDependentPropertyInfo(principalEdmName, dependentEdmName, principalPropertyNames, dependentPropertyNames, navigation.IsCollection);
                     }
 
@@ -75,7 +81,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
         }
         public IReadOnlyList<OeOperationConfiguration> GetRoutines(DynamicTypeDefinitionManager typeDefinitionManager)
         {
-            return _schemaCache.GetRoutines(typeDefinitionManager, _informationSchemaMapping);
+            return _schemaCache.GetRoutines(typeDefinitionManager, _informationSchemaSettings);
         }
         public IEnumerable<DynamicPropertyInfo> GetStructuralProperties(String tableName)
         {

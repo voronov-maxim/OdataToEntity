@@ -17,11 +17,11 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 
         public DynamicMetadataProvider CreateMetadataProvider()
         {
-            return CreateMetadataProvider(null);
+            return CreateMetadataProvider(new InformationSchemaSettings());
         }
-        public virtual DynamicMetadataProvider CreateMetadataProvider(InformationSchemaMapping? informationSchemaMapping)
+        public virtual DynamicMetadataProvider CreateMetadataProvider(InformationSchemaSettings informationSchemaSettings)
         {
-            return new DynamicMetadataProvider(this, informationSchemaMapping);
+            return new DynamicMetadataProvider(this, informationSchemaSettings);
         }
         public void Dispose()
         {

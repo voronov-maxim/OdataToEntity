@@ -8,6 +8,7 @@ using OdataToEntity.AspNetCore;
 using OdataToEntity.EfCore.DynamicDataContext;
 using OdataToEntity.EfCore.DynamicDataContext.InformationSchema;
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace OdataToEntity.Test.DynamicDataContext.AspServer
@@ -43,22 +44,33 @@ namespace OdataToEntity.Test.DynamicDataContext.AspServer
             String provider = Configuration.GetValue<String>("OdataToEntity:Provider");
             String connectionString = Configuration.GetValue<String>("OdataToEntity:ConnectionString");
             bool useRelationalNulls = Configuration.GetValue<bool>("OdataToEntity:UseRelationalNulls");
-            String informationSchemaMappingFileName = Configuration.GetValue<String>("OdataToEntity:InformationSchemaMappingFileName");
+            String? informationSchemaMappingFileName = Configuration.GetValue<String>("OdataToEntity:InformationSchemaMappingFileName");
+            String? filter = Configuration.GetValue<String>("OdataToEntity:Filter");
+            String? schemaFilterMode = Configuration.GetValue<String>("OdataToEntity:SchemaFilterMode");
+            String[]? schemaFilter = Configuration.GetSection("OdataToEntity:SchemaFilter").Get<String[]>();
 
             if (!String.IsNullOrEmpty(basePath) && basePath[0] != '/')
                 basePath = "/" + basePath;
 
-            InformationSchemaMapping? informationSchemaMapping = null;
+            var informationSchemaSettings = new InformationSchemaSettings();
+            if (schemaFilterMode != null)
+                informationSchemaSettings.SchemaFilterMode = Enum.Parse<DbSchemaFilterMode>(schemaFilterMode, true);
+            if (schemaFilter != null)
+                informationSchemaSettings.SchemaFilter = new HashSet<String>(schemaFilter);
+            if (filter != null)
+                informationSchemaSettings.ObjectFilter = Enum.Parse<DbObjectFilter>(filter, true);
             if (informationSchemaMappingFileName != null)
             {
                 String json = File.ReadAllText(informationSchemaMappingFileName);
-                informationSchemaMapping = Newtonsoft.Json.JsonConvert.DeserializeObject<InformationSchemaMapping>(json);
+                var informationSchemaMapping = Newtonsoft.Json.JsonConvert.DeserializeObject<InformationSchemaMapping>(json);
+                informationSchemaSettings.Operations = informationSchemaMapping.Operations;
+                informationSchemaSettings.Tables = informationSchemaMapping.Tables;
             }
 
             var schemaFactory = new DynamicSchemaFactory(provider, connectionString);
             using (ProviderSpecificSchema providerSchema = schemaFactory.CreateSchema(useRelationalNulls))
             {
-                IEdmModel edmModel = DynamicMiddlewareHelper.CreateEdmModel(providerSchema, informationSchemaMapping);
+                IEdmModel edmModel = DynamicMiddlewareHelper.CreateEdmModel(providerSchema, informationSchemaSettings);
                 app.UseOdataToEntityMiddleware<OePageMiddleware>(basePath, edmModel);
             }
         }
