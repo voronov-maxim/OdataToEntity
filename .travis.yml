@@ -7,6 +7,7 @@ addons:
 sudo: required
 language: csharp
 mono: none
+dotnet: 3.1
 services:
   - postgresql
 before_script:
