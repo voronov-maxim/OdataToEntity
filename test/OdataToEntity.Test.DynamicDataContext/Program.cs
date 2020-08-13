@@ -29,11 +29,11 @@ namespace OdataToEntity.Test.DynamicDataContext
             //new ProcedureTest().ScalarFunction_get().GetAwaiter().GetResult();
             //new PLNull_ManyColumns(new PLNull_ManyColumnsFixtureInitDb()).Filter(1).GetAwaiter().GetResult();
 
-            InformationSchemaMapping informationSchemaMapping = GetMappings();
+            InformationSchemaSettings informationSchemaSettings = GetSettings();
             ProviderSpecificSchema providerSchema = CreateSchemaSqlServer(true);
 
             EdmModel dynamicEdmModel;
-            using (var metadataProvider = providerSchema.CreateMetadataProvider(informationSchemaMapping))
+            using (var metadataProvider = providerSchema.CreateMetadataProvider(informationSchemaSettings))
             {
                 DynamicTypeDefinitionManager typeDefinitionManager = DynamicTypeDefinitionManager.Create(metadataProvider);
                 var dataAdapter = new DynamicDataAdapter(typeDefinitionManager);
@@ -64,10 +64,11 @@ namespace OdataToEntity.Test.DynamicDataContext
             return optionsFactory.CreateSchema(useRelationalNulls);
         }
 
-        public static InformationSchemaMapping GetMappings()
+        public static InformationSchemaSettings GetSettings()
         {
-            return new InformationSchemaMapping
+            return new InformationSchemaSettings
             {
+                ObjectFilter = DbObjectFilter.Mapping,
                 Operations = new OperationMapping[]
                 {
                     new OperationMapping("dbo.GetOrders", "dbo.Orders"),

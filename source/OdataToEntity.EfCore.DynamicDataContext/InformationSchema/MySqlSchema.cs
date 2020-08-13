@@ -16,9 +16,9 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             base.OperationAdapter = new OeMySqlEfCoreOperationAdapter(typeof(DynamicDbContext));
         }
 
-        public override DynamicMetadataProvider CreateMetadataProvider(InformationSchemaMapping? informationSchemaMapping)
+        public override DynamicMetadataProvider CreateMetadataProvider(InformationSchemaSettings informationSchemaSettings)
         {
-            return new DynamicMetadataProvider(this, informationSchemaMapping);
+            return new DynamicMetadataProvider(this, informationSchemaSettings);
         }
         private static DbContextPool<SchemaContext> CreatePool(DbContextOptions<DynamicDbContext> dynamicDbContextOptions)
         {

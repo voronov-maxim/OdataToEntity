@@ -42,6 +42,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
                 EntityTypeBuilder entityTypeBuilder = modelBuilder.Entity(dynamicTypeDefinition.DynamicTypeType).ToTable(tableEdmName, tableSchema);
 
                 entityType = (EntityType)entityTypeBuilder.Metadata;
+                entityType.IsKeyless = isQueryType;
                 foreach (DynamicPropertyInfo property in MetadataProvider.GetStructuralProperties(tableEdmName))
                 {
                     DynamicTypeDefinition typeDefinition = TypeDefinitionManager.GetDynamicTypeDefinition(entityType.ClrType);
@@ -61,9 +62,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
                         efProperty.SetValueGenerated(ValueGenerated.Never, ConfigurationSource.Explicit);
                 }
 
-                if (isQueryType)
-                    entityTypeBuilder.Metadata.IsKeyless = true;
-                else
+                if (!isQueryType)
                     foreach ((String[] propertyNames, bool isPrimary) in keys)
                         if (isPrimary)
                             entityTypeBuilder.HasKey(propertyNames);

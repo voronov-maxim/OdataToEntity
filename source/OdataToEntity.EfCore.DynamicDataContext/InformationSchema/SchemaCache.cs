@@ -55,6 +55,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         {
             if (_keyConstraintNames.TryGetValue(GetTableFullName(tableEdmName), out List<(String constraintName, bool isPrimary)> constraints))
                 return constraints;
+
             return Array.Empty<(String constraintName, bool isPrimary)>();
         }
         public IReadOnlyList<(String NavigationName, String ManyToManyTarget)> GetManyToManyProperties(String tableEdmName)
@@ -98,16 +99,33 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 
             return Array.Empty<Navigation>();
         }
-        public IReadOnlyList<OeOperationConfiguration> GetRoutines(DynamicTypeDefinitionManager typeDefinitionManager, InformationSchemaMapping? informationSchemaMapping)
+        public IReadOnlyList<OeOperationConfiguration> GetRoutines(DynamicTypeDefinitionManager typeDefinitionManager, InformationSchemaSettings informationSchemaSettings)
         {
             if (_routines == null)
             {
                 SchemaContext schemaContext = _informationSchema.SchemaContextPool.Rent();
+
+                IQueryable<Parameter> parametersQuery = schemaContext.Parameters;
+                IQueryable<Routine> routinesQuery = schemaContext.Routines;
+                if (informationSchemaSettings.SchemaFilter != null && informationSchemaSettings.SchemaFilter.Count > 0)
+                {
+                    if (informationSchemaSettings.SchemaFilterMode == DbSchemaFilterMode.Normal)
+                    {
+                        parametersQuery = parametersQuery.Where(t => informationSchemaSettings.SchemaFilter.Contains(t.SpecificSchema));
+                        routinesQuery = routinesQuery.Where(t => informationSchemaSettings.SchemaFilter.Contains(t.RoutineSchema));
+                    }
+                    else
+                    {
+                        parametersQuery = parametersQuery.Where(t => !informationSchemaSettings.SchemaFilter.Contains(t.SpecificSchema));
+                        routinesQuery = routinesQuery.Where(t => !informationSchemaSettings.SchemaFilter.Contains(t.RoutineSchema));
+                    }
+                }
+
                 try
                 {
                     var unsupportedRoutines = new HashSet<(String specificSchema, String specificName)>();
                     var routineParameters = new Dictionary<(String specificSchema, String specificName), List<Parameter>>();
-                    foreach (Parameter parameter in schemaContext.Parameters)
+                    foreach (Parameter parameter in parametersQuery)
                         if (String.IsNullOrEmpty(parameter.ParameterName) || _informationSchema.GetColumnClrType(parameter.DataType) == null)
                             unsupportedRoutines.Add((parameter.SpecificSchema, parameter.SpecificName));
                         else
@@ -121,12 +139,12 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                         }
 
                     Dictionary<(String schema, String name), OperationMapping>? operationMappings = null;
-                    if (informationSchemaMapping != null && informationSchemaMapping.Operations != null)
+                    if (informationSchemaSettings.Operations != null)
                     {
-                        operationMappings = new Dictionary<(String schema, String name), OperationMapping>(informationSchemaMapping.Operations.Count);
-                        for (int i = 0; i < informationSchemaMapping.Operations.Count; i++)
+                        operationMappings = new Dictionary<(String schema, String name), OperationMapping>(informationSchemaSettings.Operations.Count);
+                        for (int i = 0; i < informationSchemaSettings.Operations.Count; i++)
                         {
-                            OperationMapping operationMapping = informationSchemaMapping.Operations[i];
+                            OperationMapping operationMapping = informationSchemaSettings.Operations[i];
                             int index = operationMapping.DbName.IndexOf('.');
                             if (index == -1)
                                 operationMappings.Add(("", operationMapping.DbName), operationMapping);
@@ -140,14 +158,17 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                     }
 
                     _routines = new List<OeOperationConfiguration>();
-                    foreach (Routine routine in schemaContext.Routines)
+                    foreach (Routine routine in routinesQuery)
                     {
                         OperationMapping? operationMapping = null;
                         if (unsupportedRoutines.Contains((routine.SpecificSchema, routine.SpecificName)) ||
                             (operationMappings != null &&
                             operationMappings.TryGetValue((routine.RoutineSchema, routine.RoutineName), out operationMapping)
                             && operationMapping.Exclude))
-                            continue;
+                        {
+                            if ((operationMapping != null && operationMapping.Exclude) || informationSchemaSettings.ObjectFilter == DbObjectFilter.Mapping)
+                                continue;
+                        }
 
                         OeOperationParameterConfiguration[] parameterConfigurations = Array.Empty<OeOperationParameterConfiguration>();
                         if (routineParameters.TryGetValue((routine.SpecificSchema, routine.SpecificName), out List<Parameter> parameters))
@@ -181,7 +202,10 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                             if (i == -1)
                                 throw new InvalidOperationException("ResultTableDbName " + operationMapping.ResultTableDbName + " must contains schema");
 
-                            String edmName = GetTableEdmName(operationMapping.ResultTableDbName.Substring(0, i), operationMapping.ResultTableDbName.Substring(i + 1));
+                            String? edmName = GetTableEdmName(operationMapping.ResultTableDbName.Substring(0, i), operationMapping.ResultTableDbName.Substring(i + 1));
+                            if (edmName == null)
+                                continue;
+
                             returnType = typeDefinitionManager.GetDynamicTypeDefinition(edmName).DynamicTypeType;
                             returnType = typeof(IEnumerable<>).MakeGenericType(returnType);
                         }
@@ -198,9 +222,9 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 
             return _routines;
         }
-        public String GetTableEdmName(String tableSchema, String tableName)
+        public String? GetTableEdmName(String tableSchema, String tableName)
         {
-            _tableFullNameEdmNames.TryGetValue((tableSchema, tableName), out String tableEdmName);
+            _tableFullNameEdmNames.TryGetValue((tableSchema, tableName), out String? tableEdmName);
             return tableEdmName;
         }
         public IEnumerable<(String tableEdmName, bool isQueryType)> GetTableEdmNames()

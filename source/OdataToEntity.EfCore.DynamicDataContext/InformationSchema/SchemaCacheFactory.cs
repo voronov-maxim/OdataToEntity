@@ -30,41 +30,57 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             }
         }
 
-        public static SchemaCache Create(ProviderSpecificSchema informationSchema, IReadOnlyCollection<TableMapping>? tableMappings)
-        {
+        public static SchemaCache Create(ProviderSpecificSchema informationSchema, InformationSchemaSettings informationSchemaSettings)
+        { 
             IEqualityComparer<String> comparer = informationSchema.IsCaseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
             TupleStringComparer tupleComparer = informationSchema.IsCaseSensitive ? TupleStringComparer.Ordinal : TupleStringComparer.OrdinalIgnoreCase;
 
             var tableEdmNameFullNames = new Dictionary<String, (String tableSchema, String tableName, bool isQueryType)>(comparer);
             var tableFullNameEdmNames = new Dictionary<(String tableSchema, String tableName), String>(tupleComparer);
             var navigationMappings = new Dictionary<(String tableSchema, String tableName), IReadOnlyList<NavigationMapping>>(tupleComparer);
-            Dictionary<(String constraintSchema, String constraintName), IReadOnlyList<KeyColumnUsage>> keyColumns = GetKeyColumns(informationSchema);
+            Dictionary<(String constraintSchema, String constraintName), IReadOnlyList<KeyColumnUsage>> keyColumns = GetKeyColumns(informationSchema, informationSchemaSettings);
             List<ReferentialConstraint> referentialConstraints;
 
             SchemaContext schemaContext = informationSchema.SchemaContextPool.Rent();
             try
             {
-                referentialConstraints = schemaContext.ReferentialConstraints.ToList();
-
                 Dictionary<String, TableMapping>? dbNameTableMappings = null;
-                if (tableMappings != null)
-                    dbNameTableMappings = tableMappings.ToDictionary(t => t.DbName, StringComparer.OrdinalIgnoreCase);
+                if (informationSchemaSettings.Tables != null)
+                    dbNameTableMappings = informationSchemaSettings.Tables.ToDictionary(t => t.DbName, StringComparer.OrdinalIgnoreCase);
 
-                var fixTableNames = new List<String>();
-                List<Table> tables = schemaContext.Tables.ToList();
+                var fixTableNames = new List<Table>();
+
+                IQueryable<Table> tableQuery = schemaContext.Tables.AsQueryable();
+                IQueryable<ReferentialConstraint> referentialConstraintsQuery = schemaContext.ReferentialConstraints;
+                if (informationSchemaSettings.SchemaFilter != null && informationSchemaSettings.SchemaFilter.Count > 0)
+                {
+                    if (informationSchemaSettings.SchemaFilterMode == DbSchemaFilterMode.Normal)
+                    {
+                        tableQuery = tableQuery.Where(t => informationSchemaSettings.SchemaFilter.Contains(t.TableSchema));
+                        referentialConstraintsQuery = referentialConstraintsQuery.Where(t => informationSchemaSettings.SchemaFilter.Contains(t.ConstraintSchema));
+                    }
+                    else
+                    {
+                        tableQuery = tableQuery.Where(t => !informationSchemaSettings.SchemaFilter.Contains(t.TableSchema));
+                        referentialConstraintsQuery = referentialConstraintsQuery.Where(t => !informationSchemaSettings.SchemaFilter.Contains(t.ConstraintSchema));
+                    }
+                }
+                List<Table> tables = tableQuery.ToList();
+                referentialConstraints = referentialConstraintsQuery.ToList();
+
                 foreach (Table table in tables)
                 {
                     String tableName = table.TableName;
                     if (tableEdmNameFullNames.ContainsKey(tableName))
                     {
-                        fixTableNames.Add(tableName);
+                        fixTableNames.Add(table);
                         tableName = table.TableSchema + table.TableName;
                     }
 
                     if (dbNameTableMappings != null)
                     {
                         if (dbNameTableMappings.TryGetValue(table.TableName, out TableMapping tableMapping) ||
-                        dbNameTableMappings.TryGetValue(table.TableSchema + "." + table.TableName, out tableMapping))
+                            dbNameTableMappings.TryGetValue(table.TableSchema + "." + table.TableName, out tableMapping))
                         {
                             if (tableMapping.Exclude)
                                 continue;
@@ -96,18 +112,18 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                             }
                         }
                         else
-                            continue;
+                        {
+                            if (informationSchemaSettings.ObjectFilter == DbObjectFilter.Mapping)
+                                continue;
+                        }
                     }
 
                     tableEdmNameFullNames.Add(tableName, (table.TableSchema, table.TableName, table.TableType == "VIEW"));
                     tableFullNameEdmNames.Add((table.TableSchema, table.TableName), tableName);
                 }
 
-                foreach (String tableName in fixTableNames)
-                {
-                    int index = tables.FindIndex(t => t.TableName == tableName);
-                    tableEdmNameFullNames[tables[index].TableSchema + tables[index].TableName] = (tables[index].TableSchema, tables[index].TableName, tables[index].TableType == "VIEW");
-                }
+                foreach (Table fixTableName in fixTableNames)
+                    tableEdmNameFullNames[fixTableName.TableSchema + fixTableName.TableName] = (fixTableName.TableSchema, fixTableName.TableName, fixTableName.TableType == "VIEW");
             }
             finally
             {
@@ -140,7 +156,8 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             SchemaContext schemaContext = informationSchema.SchemaContextPool.Rent();
             try
             {
-                var tableConstraints = schemaContext.TableConstraints.AsQueryable().Where(t => t.ConstraintType == "PRIMARY KEY" || t.ConstraintType == "UNIQUE")
+                var tableConstraints = schemaContext.TableConstraints.AsQueryable()
+                    .Where(t => (t.ConstraintType == "PRIMARY KEY" || t.ConstraintType == "UNIQUE") && t.TableSchema != null && t.TableName != null)
                     .OrderBy(t => t.TableSchema).ThenBy(t => t.TableName).ThenBy(t => t.ConstraintType);
 
                 String? tableSchema = null;
@@ -191,7 +208,8 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 
             return null;
         }
-        private static Dictionary<(String constraintSchema, String constraintName), IReadOnlyList<KeyColumnUsage>> GetKeyColumns(ProviderSpecificSchema informationSchema)
+        private static Dictionary<(String constraintSchema, String constraintName), IReadOnlyList<KeyColumnUsage>> GetKeyColumns(
+            ProviderSpecificSchema informationSchema, InformationSchemaSettings informationSchemaSettings)
         {
             var keyColumns = new Dictionary<(String constraintSchema, String constraintName), IReadOnlyList<KeyColumnUsage>>();
             SchemaContext schemaContext = informationSchema.SchemaContextPool.Rent();
@@ -200,8 +218,16 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                 String? constraintSchema = null;
                 String? constraintName = null;
                 List<KeyColumnUsage>? columns = null;
-                foreach (KeyColumnUsage keyColumn in schemaContext.KeyColumnUsage.AsQueryable()
-                    .OrderBy(t => t.TableSchema).ThenBy(t => t.TableName).ThenBy(t => t.ConstraintName).ThenBy(t => t.OrdinalPosition))
+
+                IQueryable<KeyColumnUsage> keyColumnQueryable = schemaContext.KeyColumnUsage.AsQueryable();
+                if (informationSchemaSettings.SchemaFilter != null && informationSchemaSettings.SchemaFilter.Count > 0)
+                {
+                    if (informationSchemaSettings.SchemaFilterMode == DbSchemaFilterMode.Normal)
+                        keyColumnQueryable = keyColumnQueryable.Where(t => informationSchemaSettings.SchemaFilter.Contains(t.TableSchema));
+                    else
+                        keyColumnQueryable = keyColumnQueryable.Where(t => !informationSchemaSettings.SchemaFilter.Contains(t.TableSchema));
+                }
+                foreach (KeyColumnUsage keyColumn in keyColumnQueryable.OrderBy(t => t.TableSchema).ThenBy(t => t.TableName).ThenBy(t => t.ConstraintName).ThenBy(t => t.OrdinalPosition))
                 {
                     if (constraintSchema != keyColumn.ConstraintSchema || constraintName != keyColumn.ConstraintName)
                     {
@@ -229,6 +255,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         {
             var tableColumns = new Dictionary<(String tableSchema, String tableName), List<Column>>();
             SchemaContext schemaContext = informationSchema.SchemaContextPool.Rent();
+            var dbGeneratedColumns = informationSchema.GetDbGeneratedColumns().ToDictionary(t => (t.TableSchema, t.TableName, t.ColumnName));
             try
             {
                 foreach (Column column in schemaContext.Columns)
@@ -244,7 +271,6 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                         continue;
 
                     column.ClrType = clrType;
-                    var dbGeneratedColumns = informationSchema.GetDbGeneratedColumns().ToDictionary(t => (t.TableSchema, t.TableName, t.ColumnName));
                     if (dbGeneratedColumns.TryGetValue((column.TableSchema, column.TableName, column.ColumnName), out DbGeneratedColumn dbGeneratedColumn))
                     {
                         column.IsComputed = dbGeneratedColumn.IsComputed;
