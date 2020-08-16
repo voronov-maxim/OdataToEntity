@@ -37,11 +37,11 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                 IReadOnlyList<KeyColumnUsage> dependentKeyColumns = keyColumns[(fkey.ConstraintSchema, fkey.ConstraintName)];
 
                 KeyColumnUsage dependentKeyColumn = dependentKeyColumns[0];
-                if (!tableFullNameEdmNames.TryGetValue((dependentKeyColumn.TableSchema, dependentKeyColumn.TableName), out String principalEdmName))
+                if (!tableFullNameEdmNames.TryGetValue((dependentKeyColumn.TableSchema, dependentKeyColumn.TableName), out String? principalEdmName))
                     continue;
 
                 KeyColumnUsage principalKeyColumn = keyColumns[(fkey.UniqueConstraintSchema, fkey.UniqueConstraintName)][0];
-                if (!tableFullNameEdmNames.TryGetValue((principalKeyColumn.TableSchema, principalKeyColumn.TableName), out String dependentEdmName))
+                if (!tableFullNameEdmNames.TryGetValue((principalKeyColumn.TableSchema, principalKeyColumn.TableName), out String? dependentEdmName))
                     continue;
 
                 bool selfReferences = false;
@@ -55,7 +55,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                         dependentNavigationName = pluralizer.Singularize(dependentEdmName);
 
                     (String, String, String) dependentKey = (fkey.ConstraintSchema, dependentKeyColumn.TableName, principalKeyColumn.TableName);
-                    if (navigationCounter.TryGetValue(dependentKey, out List<IReadOnlyList<KeyColumnUsage>> columnsList))
+                    if (navigationCounter.TryGetValue(dependentKey, out List<IReadOnlyList<KeyColumnUsage>>? columnsList))
                     {
                         if (FKeyExist(columnsList, dependentKeyColumns))
                             continue;
@@ -81,7 +81,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                         principalNavigationName = pluralizer.Pluralize(principalEdmName);
 
                     (String, String, String) principalKey = (fkey.ConstraintSchema, principalKeyColumn.TableName, dependentKeyColumn.TableName);
-                    if (navigationCounter.TryGetValue(principalKey, out List<IReadOnlyList<KeyColumnUsage>> columnsList))
+                    if (navigationCounter.TryGetValue(principalKey, out List<IReadOnlyList<KeyColumnUsage>>? columnsList))
                     {
                         if (!selfReferences)
                         {
@@ -113,7 +113,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                 if (!String.IsNullOrEmpty(navigationName))
                 {
                     (String tableName, String tableSchema) tableFullName = (keyColumn.TableSchema, keyColumn.TableName);
-                    if (!tableNavigations.TryGetValue(tableFullName, out List<Navigation> principalNavigations))
+                    if (!tableNavigations.TryGetValue(tableFullName, out List<Navigation>? principalNavigations))
                     {
                         principalNavigations = new List<Navigation>();
                         tableNavigations.Add(tableFullName, principalNavigations);
@@ -148,7 +148,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             static String? GetNavigationMappingName(IReadOnlyDictionary<(String tableSchema, String tableName), IReadOnlyList<NavigationMapping>> navigationMappings,
                 ReferentialConstraint fkey, KeyColumnUsage keyColumn)
             {
-                if (navigationMappings.TryGetValue((keyColumn.TableSchema, keyColumn.TableName), out IReadOnlyList<NavigationMapping> tableNavigationMappings))
+                if (navigationMappings.TryGetValue((keyColumn.TableSchema, keyColumn.TableName), out IReadOnlyList<NavigationMapping>? tableNavigationMappings))
                     for (int i = 0; i < tableNavigationMappings.Count; i++)
                     {
                         NavigationMapping navigationMapping = tableNavigationMappings[i];

@@ -275,7 +275,7 @@ namespace OdataToEntity
                 if (String.Compare(declaringType.Name, schemaElement.Name, StringComparison.OrdinalIgnoreCase) == 0 &&
                     String.Compare(declaringType.Namespace, schemaElement.Namespace, StringComparison.OrdinalIgnoreCase) == 0)
                 {
-                    PropertyInfo propertyInfo = declaringType.GetPropertyIgnoreCase(edmProperty.Name);
+                    PropertyInfo? propertyInfo = declaringType.GetPropertyIgnoreCaseOrNull(edmProperty.Name);
                     if (propertyInfo == null)
                     {
                         if (edmProperty is OeEdmStructuralShadowProperty structuralShadowProperty)

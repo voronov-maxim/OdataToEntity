@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using Microsoft.EntityFrameworkCore.Query;
+using Microsoft.EntityFrameworkCore.Query.Internal;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -97,12 +97,16 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         }
         private static LambdaExpression GetFilter(Type entityType, String databaseName)
         {
-            PropertyInfo propertyInfo = entityType.GetProperty("TableSchema");
+            PropertyInfo? propertyInfo = entityType.GetProperty("TableSchema");
             if (propertyInfo == null)
             {
                 propertyInfo = entityType.GetProperty("ConstraintSchema");
                 if (propertyInfo == null)
+                {
                     propertyInfo = entityType.GetProperty("SpecificSchema");
+                    if (propertyInfo == null)
+                        throw new InvalidOperationException("Unknow MySql schema");
+                }
             }
 
             ParameterExpression parameter = Expression.Parameter(entityType);

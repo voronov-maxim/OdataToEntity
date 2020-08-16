@@ -61,10 +61,6 @@ namespace OdataToEntity.EfCore
                             properties[i] = GetPropertyInfo(fkey.Properties[i]);
                         return properties;
                     }
-
-                    for (int i = 0; i < fkey.Properties.Count; i++)
-                        if (fkey.Properties[i].Name == propertyInfo.Name && fkey.DependentToPrincipal != null)
-                            return new PropertyInfo[] { propertyInfo.DeclaringType.GetPropertyIgnoreCase(fkey.DependentToPrincipal.Name) };
                 }
 
             return null;
@@ -174,7 +170,7 @@ namespace OdataToEntity.EfCore
                         efProperty.GetBeforeSaveBehavior() == PropertySaveBehavior.Ignore;
             }
 
-            throw new InvalidOperationException("property " + propertyInfo.Name + " not found");
+            throw new InvalidOperationException("Property " + propertyInfo.Name + " not found");
         }
         public override bool IsKey(PropertyInfo propertyInfo)
         {

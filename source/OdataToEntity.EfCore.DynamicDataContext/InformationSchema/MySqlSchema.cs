@@ -26,7 +26,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             optionsBuilder.ReplaceService<IModelCustomizer, MySqlModelCustomizer>();
             optionsBuilder.ReplaceService<IEntityMaterializerSource, MySqlModelCustomizer.MySqlEntityMaterializerSource>();
 
-            DbContextOptions schemaOptions = optionsBuilder.CreateOptions(dynamicDbContextOptions);
+            var schemaOptions = (DbContextOptions<SchemaContext>)optionsBuilder.CreateOptions(dynamicDbContextOptions);
             return new DbContextPool<SchemaContext>(schemaOptions);
         }
         public override Type? GetColumnClrType(string dataType)
@@ -60,11 +60,11 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         }
         public override IReadOnlyList<DbGeneratedColumn> GetDbGeneratedColumns()
         {
-            SchemaContext schemaContext = base.SchemaContextPool.Rent();
+            var schemaContext = base.GetSchemaContext();
             try
             {
                 var dbGeneratedColumns = new List<DbGeneratedColumn>();
-                var dbSet = new InternalDbSet<MySqlModelCustomizer.MySqlDbGeneratedColumn>(schemaContext);
+                var dbSet = schemaContext.Set<MySqlModelCustomizer.MySqlDbGeneratedColumn>();
                 foreach (MySqlModelCustomizer.MySqlDbGeneratedColumn column in
                     dbSet.FromSqlRaw("SELECT TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME, EXTRA FROM INFORMATION_SCHEMA.COLUMNS WHERE EXTRA <> ''"))
                 {
@@ -86,7 +86,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             }
             finally
             {
-                base.SchemaContextPool.Return(schemaContext);
+                schemaContext.Dispose();
             }
         }
         public override String GetParameterName(String parameterName)

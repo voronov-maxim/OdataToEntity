@@ -20,7 +20,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             var optionsBuilder = new DbContextOptionsBuilder<SchemaContext>();
             optionsBuilder.ReplaceService<IModelCustomizer, SqlServerModelCustomizer>();
 
-            DbContextOptions schemaOptions = optionsBuilder.CreateOptions(dynamicDbContextOptions);
+            var schemaOptions = (DbContextOptions<SchemaContext>)optionsBuilder.CreateOptions(dynamicDbContextOptions);
             return new DbContextPool<SchemaContext>(schemaOptions);
         }
         public override Type? GetColumnClrType(String dataType)
@@ -93,7 +93,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         }
         public override IReadOnlyList<DbGeneratedColumn> GetDbGeneratedColumns()
         {
-            SchemaContext schemaContext = base.SchemaContextPool.Rent();
+            SchemaContext schemaContext = base.GetSchemaContext();
             try
             {
                 return schemaContext.DbGeneratedColumns.FromSqlRaw(
@@ -102,7 +102,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             }
             finally
             {
-                base.SchemaContextPool.Return(schemaContext);
+                schemaContext.Dispose();
             }
         }
         public override String GetParameterName(String parameterName)

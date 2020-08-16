@@ -71,7 +71,6 @@ namespace OdataToEntity.Test
             var dataAdapter = (DynamicDataAdapter)base.OeEdmModel.GetDataAdapter(base.OeEdmModel.EntityContainer);
             if (dataAdapter.TypeDefinitionManager.ExpressionVisitor != null)
                 parameters.Expression = (Expression<Func<IQueryable<T>, IQueryable<TResult>>>)dataAdapter.TypeDefinitionManager.ExpressionVisitor.Visit(parameters.Expression);
-            parameters.Expression = (Expression<Func<IQueryable<T>, IQueryable<TResult>>>)new EfCore.Fix.FixSelectDistinctVisitor().Visit(parameters.Expression);
 
             Task t1 = base.Execute(parameters);
             Task t2 = base.Execute(parameters);

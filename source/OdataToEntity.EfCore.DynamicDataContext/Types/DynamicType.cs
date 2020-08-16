@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -18,10 +19,12 @@ namespace OdataToEntity.EfCore.DynamicDataContext.Types
             _dynamicTypeDefinition = dynamicTypeDefinition;
         }
 
+        [return: MaybeNull]
         private T GetShadowPropertyValue<T>([CallerMemberName] String caller = null!)
         {
             FieldInfo fieldInfo = _dynamicTypeDefinition.GetShadowPropertyFieldInfoNameByGetName(caller);
             return (T)fieldInfo.GetValue(this);
+
         }
         public void SetValue(String propertyName, Object value)
         {
@@ -253,6 +256,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.Types
         internal Object? ShadowProperty139;
 #pragma warning restore 0649
 
+#pragma warning disable 8603
         internal T ShadowPropertyGet1<T>() => GetShadowPropertyValue<T>();
         internal T ShadowPropertyGet2<T>() => GetShadowPropertyValue<T>();
         internal T ShadowPropertyGet3<T>() => GetShadowPropertyValue<T>();
@@ -392,5 +396,6 @@ namespace OdataToEntity.EfCore.DynamicDataContext.Types
         internal T ShadowPropertyGet137<T>() => GetShadowPropertyValue<T>();
         internal T ShadowPropertyGet138<T>() => GetShadowPropertyValue<T>();
         internal T ShadowPropertyGet139<T>() => GetShadowPropertyValue<T>();
+#pragma warning restore 8603
     }
 }

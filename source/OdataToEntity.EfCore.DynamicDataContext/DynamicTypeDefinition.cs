@@ -76,7 +76,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
         }
         public String GetCollectionFiledName(String navigationPropertyName)
         {
-            if (_navigationPropertyNames.TryGetValue(navigationPropertyName, out String fieldName))
+            if (_navigationPropertyNames.TryGetValue(navigationPropertyName, out String? fieldName))
                 return fieldName;
 
             _collectionFieldIndex++;
@@ -94,7 +94,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
         }
         public String GetSingleFieldName(String navigationPropertyName)
         {
-            if (_navigationPropertyNames.TryGetValue(navigationPropertyName, out String fieldName))
+            if (_navigationPropertyNames.TryGetValue(navigationPropertyName, out String? fieldName))
                 return fieldName;
 
             _singleFieldIndex++;

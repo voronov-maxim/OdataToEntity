@@ -40,12 +40,16 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         }
         private static LambdaExpression GetFilter(Type entityType)
         {
-            PropertyInfo propertyInfo = entityType.GetProperty("TableSchema");
+            PropertyInfo? propertyInfo = entityType.GetProperty("TableSchema");
             if (propertyInfo == null)
             {
                 propertyInfo = entityType.GetProperty("ConstraintSchema");
                 if (propertyInfo == null)
+                {
                     propertyInfo = entityType.GetProperty("SpecificSchema");
+                    if (propertyInfo == null)
+                        throw new InvalidOperationException("Unknow PostgreSql schema");
+                }
             }
 
             ParameterExpression parameter = Expression.Parameter(entityType);

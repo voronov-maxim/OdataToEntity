@@ -53,14 +53,14 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         }
         public IReadOnlyList<(String constraintName, bool isPrimary)> GetKeyConstraintNames(String tableEdmName)
         {
-            if (_keyConstraintNames.TryGetValue(GetTableFullName(tableEdmName), out List<(String constraintName, bool isPrimary)> constraints))
+            if (_keyConstraintNames.TryGetValue(GetTableFullName(tableEdmName), out List<(String constraintName, bool isPrimary)>? constraints))
                 return constraints;
 
             return Array.Empty<(String constraintName, bool isPrimary)>();
         }
         public IReadOnlyList<(String NavigationName, String ManyToManyTarget)> GetManyToManyProperties(String tableEdmName)
         {
-            if (_manyToManyProperties.TryGetValue(tableEdmName, out List<(String NavigationName, String ManyToManyTarget)> tableManyToManyProperties))
+            if (_manyToManyProperties.TryGetValue(tableEdmName, out List<(String NavigationName, String ManyToManyTarget)>? tableManyToManyProperties))
                 return tableManyToManyProperties;
 
             return Array.Empty<(String NavigationName, String ManyToManyTarget)>();
@@ -77,7 +77,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                     if (!String.IsNullOrEmpty(navigationMapping.ManyToManyTarget))
                     {
                         String tableEdmName = tableFullNameEdmNames[(pair.Key.tableSchema, pair.Key.tableName)];
-                        if (!manyToManyProperties.TryGetValue(tableEdmName, out List<(String NavigationName, String ManyToManyTarget)> manyToManies))
+                        if (!manyToManyProperties.TryGetValue(tableEdmName, out List<(String NavigationName, String ManyToManyTarget)>? manyToManies))
                         {
                             manyToManies = new List<(String NavigationName, String ManyToManyTarget)>();
                             manyToManyProperties.Add(tableEdmName, manyToManies);
@@ -94,7 +94,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         }
         public IReadOnlyList<Navigation> GetNavigations(String tableEdmName)
         {
-            if (_tableNavigations.TryGetValue(GetTableFullName(tableEdmName), out List<Navigation> navigations))
+            if (_tableNavigations.TryGetValue(GetTableFullName(tableEdmName), out List<Navigation>? navigations))
                 return navigations;
 
             return Array.Empty<Navigation>();
@@ -103,7 +103,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         {
             if (_routines == null)
             {
-                SchemaContext schemaContext = _informationSchema.SchemaContextPool.Rent();
+                SchemaContext schemaContext = _informationSchema.GetSchemaContext();
 
                 IQueryable<Parameter> parametersQuery = schemaContext.Parameters;
                 IQueryable<Routine> routinesQuery = schemaContext.Routines;
@@ -130,7 +130,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                             unsupportedRoutines.Add((parameter.SpecificSchema, parameter.SpecificName));
                         else
                         {
-                            if (!routineParameters.TryGetValue((parameter.SpecificSchema, parameter.SpecificName), out List<Parameter> parameters))
+                            if (!routineParameters.TryGetValue((parameter.SpecificSchema, parameter.SpecificName), out List<Parameter>? parameters))
                             {
                                 parameters = new List<Parameter>();
                                 routineParameters.Add((parameter.SpecificSchema, parameter.SpecificName), parameters);
@@ -171,7 +171,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                         }
 
                         OeOperationParameterConfiguration[] parameterConfigurations = Array.Empty<OeOperationParameterConfiguration>();
-                        if (routineParameters.TryGetValue((routine.SpecificSchema, routine.SpecificName), out List<Parameter> parameters))
+                        if (routineParameters.TryGetValue((routine.SpecificSchema, routine.SpecificName), out List<Parameter>? parameters))
                         {
                             Type? clrType = null;
                             parameterConfigurations = new OeOperationParameterConfiguration[parameters.Count];
@@ -211,12 +211,12 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                         }
 
                         _routines.Add(new OeOperationConfiguration(routine.RoutineSchema, routine.RoutineName,
-                            typeof(DynamicDbContext).Namespace, parameterConfigurations, returnType ?? typeof(void), routine.DataType != null));
+                            typeof(DynamicDbContext).Namespace!, parameterConfigurations, returnType ?? typeof(void), routine.DataType != null));
                     }
                 }
                 finally
                 {
-                    _informationSchema.SchemaContextPool.Return(schemaContext);
+                    schemaContext.Dispose();
                 }
             }
 

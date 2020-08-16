@@ -45,7 +45,7 @@ namespace OdataToEntity.Test.DynamicDataContext.OwnedEntity
             root.SetTableName("ManyColumns");
             root.AddProperty("Item1").SetColumnName("Column01");
             root.AddProperty("Item2").SetColumnName("Column02");
-            root.SetPrimaryKey(root.FindProperty("Item1"));
+            root.SetPrimaryKey(root.FindProperty("Item1"), ConfigurationSource.Explicit);
 
             CreateModel(modelBuilder.Model, root);
         }
@@ -59,8 +59,8 @@ namespace OdataToEntity.Test.DynamicDataContext.OwnedEntity
                 var entityType = (EntityType)model.AddEntityType(clrType);
                 model.AddIgnored(entityType.ClrType);
 
-                IMutableProperty keyProperty = entityType.AddProperty("pkey", typeof(int));
-                entityType.SetPrimaryKey(keyProperty);
+                var keyProperty = (Property)entityType.AddProperty("pkey", typeof(int));
+                entityType.SetPrimaryKey(keyProperty, ConfigurationSource.Explicit);
 
                 var fkey = (ForeignKey)entityType.AddForeignKey(keyProperty, prevEntityType.FindPrimaryKey(), prevEntityType);
                 fkey.SetIsOwnership(true, ConfigurationSource.Explicit);
@@ -70,7 +70,7 @@ namespace OdataToEntity.Test.DynamicDataContext.OwnedEntity
                 String restName = i == 0 ? "Scalar" : "Rest";
                 PropertyInfo restProperty = prevEntityType.ClrType.GetProperty(restName, BindingFlags.Instance | BindingFlags.NonPublic);
                 Navigation restNavigation = fkey.HasPrincipalToDependent(restProperty, ConfigurationSource.Explicit);
-                restNavigation.SetIsEagerLoaded(true);
+                restNavigation.SetIsEagerLoaded(true, ConfigurationSource.Explicit);
 
                 columnIndex++;
                 entityType.AddProperty("Item1").SetColumnName("Column" + columnIndex.ToString("00"));
@@ -87,7 +87,7 @@ namespace OdataToEntity.Test.DynamicDataContext.OwnedEntity
         public static void Test()
         {
             var dctx = new DContext();
-            var result = dctx.Set<DTypeRoot<Object>>().ToArray();
+            dctx.Set<DTypeRoot<Object>>().ToArray();
         }
     }
 }

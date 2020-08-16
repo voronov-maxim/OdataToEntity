@@ -31,7 +31,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
         }
         private EntityType CreateEntityType(Microsoft.EntityFrameworkCore.ModelBuilder modelBuilder, String tableEdmName, bool isQueryType)
         {
-            if (!_entityTypes.TryGetValue(tableEdmName, out EntityType entityType))
+            if (!_entityTypes.TryGetValue(tableEdmName, out EntityType? entityType))
             {
                 (String[] propertyNames, bool isPrimary)[] keys = MetadataProvider.GetKeys(tableEdmName);
                 if (keys.Length == 0)
@@ -55,7 +55,10 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
                     efProperty.SetPropertyAccessMode(PropertyAccessMode.Field);
 
                     if (property.DatabaseGeneratedOption == DatabaseGeneratedOption.Identity)
+                    {
+                        FixHasDefaultValue(efProperty, propertyInfo);
                         efProperty.SetValueGenerated(ValueGenerated.OnAdd, ConfigurationSource.Explicit);
+                    }
                     else if (property.DatabaseGeneratedOption == DatabaseGeneratedOption.Computed)
                         efProperty.SetBeforeSaveBehavior(PropertySaveBehavior.Ignore);
                     else
@@ -73,6 +76,16 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
             }
 
             return entityType;
+
+            //fix ef core 5.0 bug get DynamicType.ShadowProperty1 when type Object
+            static void FixHasDefaultValue(IProperty efProperty, Infrastructure.OeShadowPropertyInfo propertyInfo)
+            {
+                IClrPropertyGetter propertyGetter = efProperty.GetGetter();
+                FieldInfo hasDefaultValue = propertyGetter.GetType().GetField("_hasDefaultValue", BindingFlags.Instance | BindingFlags.NonPublic)!;
+                var getterFactory = new ClrPropertyGetterFactory();
+                IClrPropertyGetter fixPropertyGetter = new ClrPropertyGetterFactory().Create(propertyInfo);
+                hasDefaultValue.SetValue(propertyGetter, hasDefaultValue.GetValue(fixPropertyGetter));
+            }
         }
         private void CreateNavigationProperties(Microsoft.EntityFrameworkCore.ModelBuilder modelBuilder, String tableEdmName)
         {
@@ -111,14 +124,14 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
                         Type propertyType = typeof(IEnumerable<>).MakeGenericType(dependentEntityType.ClrType);
                         var shadowProperty = new Infrastructure.OeShadowPropertyInfo(principalEntityType.ClrType, propertyType, propertyName);
                         Navigation navigation = fkey.HasPrincipalToDependent(shadowProperty, ConfigurationSource.Explicit);
-                        navigation.SetField(dynamicTypeDefinition.GetCollectionFiledName(propertyName));
+                        navigation.SetField(dynamicTypeDefinition.GetCollectionFiledName(propertyName), ConfigurationSource.Explicit);
                     }
                 }
                 else
                 {
                     var shadowProperty = new Infrastructure.OeShadowPropertyInfo(dependentEntityType.ClrType, principalEntityType.ClrType, propertyName);
-                    Navigation navigation = fkey.HasDependentToPrincipal(shadowProperty, ConfigurationSource.Explicit);
-                    navigation.SetField(dynamicTypeDefinition.GetSingleFieldName(propertyName));
+                    Navigation navigation = fkey.SetDependentToPrincipal(shadowProperty, ConfigurationSource.Explicit);
+                    navigation.SetField(dynamicTypeDefinition.GetSingleFieldName(propertyName), ConfigurationSource.Explicit);
                 }
             }
         }

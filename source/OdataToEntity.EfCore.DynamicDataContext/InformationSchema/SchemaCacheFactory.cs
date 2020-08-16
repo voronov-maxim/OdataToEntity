@@ -41,7 +41,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             Dictionary<(String constraintSchema, String constraintName), IReadOnlyList<KeyColumnUsage>> keyColumns = GetKeyColumns(informationSchema, informationSchemaSettings);
             List<ReferentialConstraint> referentialConstraints;
 
-            SchemaContext schemaContext = informationSchema.SchemaContextPool.Rent();
+            SchemaContext schemaContext = informationSchema.GetSchemaContext();
             try
             {
                 Dictionary<String, TableMapping>? dbNameTableMappings = null;
@@ -79,7 +79,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 
                     if (dbNameTableMappings != null)
                     {
-                        if (dbNameTableMappings.TryGetValue(table.TableName, out TableMapping tableMapping) ||
+                        if (dbNameTableMappings.TryGetValue(table.TableName, out TableMapping? tableMapping) ||
                             dbNameTableMappings.TryGetValue(table.TableSchema + "." + table.TableName, out tableMapping))
                         {
                             if (tableMapping.Exclude)
@@ -127,7 +127,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             }
             finally
             {
-                informationSchema.SchemaContextPool.Return(schemaContext);
+                schemaContext.Dispose();
             }
 
             Dictionary<(String tableSchema, String tableName), List<Column>> tableColumns = GetTableColumns(informationSchema);
@@ -153,7 +153,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         private static Dictionary<(String tableSchema, String tableName), List<(String constraintName, bool isPrimary)>> GetKeyConstraintNames(ProviderSpecificSchema informationSchema)
         {
             var keyConstraintNames = new Dictionary<(String tableSchema, String tableName), List<(String constraintName, bool isPrimary)>>();
-            SchemaContext schemaContext = informationSchema.SchemaContextPool.Rent();
+            SchemaContext schemaContext = informationSchema.GetSchemaContext();
             try
             {
                 var tableConstraints = schemaContext.TableConstraints.AsQueryable()
@@ -182,7 +182,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             }
             finally
             {
-                informationSchema.SchemaContextPool.Return(schemaContext);
+                schemaContext.Dispose();
             }
             return keyConstraintNames;
         }
@@ -212,7 +212,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             ProviderSpecificSchema informationSchema, InformationSchemaSettings informationSchemaSettings)
         {
             var keyColumns = new Dictionary<(String constraintSchema, String constraintName), IReadOnlyList<KeyColumnUsage>>();
-            SchemaContext schemaContext = informationSchema.SchemaContextPool.Rent();
+            SchemaContext schemaContext = informationSchema.GetSchemaContext();
             try
             {
                 String? constraintSchema = null;
@@ -246,7 +246,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             }
             finally
             {
-                informationSchema.SchemaContextPool.Return(schemaContext);
+                schemaContext.Dispose();
             }
 
             return keyColumns;
@@ -254,13 +254,13 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         private static Dictionary<(String tableSchema, String tableName), List<Column>> GetTableColumns(ProviderSpecificSchema informationSchema)
         {
             var tableColumns = new Dictionary<(String tableSchema, String tableName), List<Column>>();
-            SchemaContext schemaContext = informationSchema.SchemaContextPool.Rent();
+            SchemaContext schemaContext = informationSchema.GetSchemaContext();
             var dbGeneratedColumns = informationSchema.GetDbGeneratedColumns().ToDictionary(t => (t.TableSchema, t.TableName, t.ColumnName));
             try
             {
                 foreach (Column column in schemaContext.Columns)
                 {
-                    if (!tableColumns.TryGetValue((column.TableSchema, column.TableName), out List<Column> columns))
+                    if (!tableColumns.TryGetValue((column.TableSchema, column.TableName), out List<Column>? columns))
                     {
                         columns = new List<Column>();
                         tableColumns.Add((column.TableSchema, column.TableName), columns);
@@ -271,7 +271,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                         continue;
 
                     column.ClrType = clrType;
-                    if (dbGeneratedColumns.TryGetValue((column.TableSchema, column.TableName, column.ColumnName), out DbGeneratedColumn dbGeneratedColumn))
+                    if (dbGeneratedColumns.TryGetValue((column.TableSchema, column.TableName, column.ColumnName), out DbGeneratedColumn? dbGeneratedColumn))
                     {
                         column.IsComputed = dbGeneratedColumn.IsComputed;
                         column.IsIdentity = dbGeneratedColumn.IsIdentity;
@@ -282,7 +282,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             }
             finally
             {
-                informationSchema.SchemaContextPool.Return(schemaContext);
+                schemaContext.Dispose();
             }
 
             return tableColumns;

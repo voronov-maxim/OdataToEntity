@@ -9,10 +9,12 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 {
     public abstract class ProviderSpecificSchema : IDisposable
     {
+        private readonly DbContextPool<SchemaContext> _schemaContextPool;
+
         protected ProviderSpecificSchema(DbContextOptions<DynamicDbContext> dynamicDbContextOptions, DbContextPool<SchemaContext> schemaContextPool)
         {
             DynamicDbContextOptions = dynamicDbContextOptions;
-            SchemaContextPool = schemaContextPool;
+            _schemaContextPool = schemaContextPool;
         }
 
         public DynamicMetadataProvider CreateMetadataProvider()
@@ -25,17 +27,20 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         }
         public void Dispose()
         {
-            SchemaContextPool.Dispose();
+            _schemaContextPool.Dispose();
         }
         public abstract Type? GetColumnClrType(String dataType);
         public abstract IReadOnlyList<DbGeneratedColumn> GetDbGeneratedColumns();
         public abstract String GetParameterName(String parameterName);
+        public SchemaContext GetSchemaContext()
+        {
+            return (SchemaContext)new DbContextLease(_schemaContextPool, true).Context;
+        }
 
         public bool IsCaseSensitive { get; protected set; }
         public DbContextOptions<DynamicDbContext> DynamicDbContextOptions { get; }
         public ExpressionVisitor? ExpressionVisitor { get; protected set; }
         public bool IsDatabaseNullHighestValue { get; protected set; }
         public OeEfCoreOperationAdapter OperationAdapter { get; protected set; } = null!;
-        public DbContextPool<SchemaContext> SchemaContextPool { get; }
     }
 }
