@@ -1,7 +1,5 @@
 ﻿using OdataToEntity.Test.GraphQL.StarWars;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace OdataToEntity.Test.Model
 {

@@ -47,7 +47,7 @@ namespace OdataToEntity.GraphQL
             foreach (PropertyInfo propertyInfo in entityType.GetProperties())
                 if (!entityGraphType.HasField(propertyInfo.Name))
                 {
-                    IGraphType resolvedType;
+                    IGraphType? resolvedType;
                     QueryArgument[] queryArguments;
                     Type? itemType = Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(propertyInfo.PropertyType);
                     if (itemType == null)
@@ -92,7 +92,7 @@ namespace OdataToEntity.GraphQL
             {
                 QueryArgument queryArgument;
                 var entityGraphType = (IObjectGraphType)_clrTypeToObjectGraphType[entityType];
-                FieldType fieldType = entityGraphType.Fields.SingleOrDefault(f => f.Name == properties[i].Name);
+                FieldType? fieldType = entityGraphType.Fields.SingleOrDefault(f => f.Name == properties[i].Name);
                 if (fieldType != null)
                 {
                     if (fieldType.Type == null)
@@ -102,7 +102,7 @@ namespace OdataToEntity.GraphQL
                             resolvedType = nonNullGraphType.ResolvedType;
 
                         Type inputObjectGraphType = typeof(InputObjectGraphType<>).MakeGenericType(resolvedType.GetType());
-                        var inputObjectGraph = (IInputObjectGraphType)Activator.CreateInstance(inputObjectGraphType);
+                        var inputObjectGraph = (IInputObjectGraphType)Activator.CreateInstance(inputObjectGraphType)!;
                         queryArgument = new QueryArgument(inputObjectGraphType) { Name = resolvedType.Name, ResolvedType = inputObjectGraph };
                     }
                     else
@@ -120,11 +120,11 @@ namespace OdataToEntity.GraphQL
         }
         private IObjectGraphType CreateGraphType(Type entityType)
         {
-            if (_clrTypeToObjectGraphType.TryGetValue(entityType, out IGraphType graphType))
+            if (_clrTypeToObjectGraphType.TryGetValue(entityType, out IGraphType? graphType))
                 return (IObjectGraphType)graphType;
 
             Type objectGraphTypeType = typeof(ObjectGraphType<>).MakeGenericType(entityType);
-            var objectGraphType = (IObjectGraphType)Activator.CreateInstance(objectGraphTypeType);
+            var objectGraphType = (IObjectGraphType)Activator.CreateInstance(objectGraphTypeType)!;
             objectGraphType.Name = NameFirstCharLower(entityType.Name);
             objectGraphType.IsTypeOf = t => t is IDictionary<String, Object>;
             _clrTypeToObjectGraphType.Add(entityType, objectGraphType);
@@ -138,7 +138,7 @@ namespace OdataToEntity.GraphQL
                     if (navigationType == null)
                         navigationType = propertyInfo.PropertyType;
 
-                    if (!_clrTypeToObjectGraphType.ContainsKey(navigationType) && GetEntityTypeByName(navigationType.FullName, false) != null)
+                    if (!_clrTypeToObjectGraphType.ContainsKey(navigationType) && GetEntityTypeByName(navigationType.FullName!, false) != null)
                         CreateGraphType(navigationType);
                 }
 
@@ -152,7 +152,7 @@ namespace OdataToEntity.GraphQL
         {
             Type graphType;
             bool isNullable = !IsRequired(propertyInfo);
-            Type enumType = propertyInfo.PropertyType;
+            Type? enumType = propertyInfo.PropertyType;
             if (enumType.IsEnum || ((enumType = Nullable.GetUnderlyingType(enumType)) != null && enumType.IsEnum))
             {
                 graphType = typeof(EnumerationGraphType<>).MakeGenericType(enumType);
@@ -206,7 +206,7 @@ namespace OdataToEntity.GraphQL
         }
         private bool IsKey(PropertyInfo propertyInfo)
         {
-            var entityType = GetEntityTypeByName(propertyInfo.DeclaringType.FullName);
+            var entityType = GetEntityTypeByName(propertyInfo.DeclaringType!.FullName!);
             foreach (IEdmStructuralProperty key in entityType.Key())
                 if (String.Compare(key.Name, propertyInfo.Name, StringComparison.OrdinalIgnoreCase) == 0)
                     return true;
@@ -214,7 +214,7 @@ namespace OdataToEntity.GraphQL
         }
         private bool IsRequired(PropertyInfo propertyInfo)
         {
-            IEdmEntityType? entityType = GetEntityTypeByName(propertyInfo.DeclaringType.FullName);
+            IEdmEntityType? entityType = GetEntityTypeByName(propertyInfo.DeclaringType!.FullName!);
             if (entityType == null)
                 throw new InvalidOperationException("IEdmEntityType not found for clr type " + propertyInfo.DeclaringType.FullName);
 

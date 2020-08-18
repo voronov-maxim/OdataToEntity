@@ -20,7 +20,7 @@ namespace OdataToEntity.Test.GraphQL.StarWars
         {
             return Create<StarWarsContext>(databaseName);
         }
-        internal static DbContextOptions Create<T>(String databaseName) where T : DbContext
+        internal static DbContextOptions<T> Create<T>(String databaseName) where T : DbContext
         {
             var optionsBuilder = new DbContextOptionsBuilder<T>();
             optionsBuilder.UseSqlite(GetConnection(databaseName));

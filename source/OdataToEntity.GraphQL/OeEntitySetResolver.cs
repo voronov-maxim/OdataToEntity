@@ -37,7 +37,8 @@ namespace OdataToEntity.GraphQL
 
                 entityAsyncEnumerator = new OeGraphqlAsyncEnumerator(asyncEnumerator, queryContext.EntryFactory, CancellationToken.None);
                 while (await entityAsyncEnumerator.MoveNextAsync())
-                    results.Add(entityAsyncEnumerator.Current);
+                    if (entityAsyncEnumerator.Current != null)
+                        results.Add(entityAsyncEnumerator.Current);
             }
             finally
             {

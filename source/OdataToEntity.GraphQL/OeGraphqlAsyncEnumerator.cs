@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace OdataToEntity.GraphQL
 {
-    public sealed class OeGraphqlAsyncEnumerator : IAsyncEnumerator<Dictionary<String, Object?>>
+    public sealed class OeGraphqlAsyncEnumerator : IAsyncEnumerator<Dictionary<String, Object?>?>
     {
         private static readonly Dictionary<String, Object?> NullCurrent = new Dictionary<String, Object?>();
 
@@ -50,7 +50,7 @@ namespace OdataToEntity.GraphQL
         }
         private static async Task<Object?> CreateNestedEntity(Db.OeDbEnumerator dbEnumerator, Object value, CancellationToken cancellationToken)
         {
-            Object entity = dbEnumerator.Current;
+            Object? entity = dbEnumerator.Current;
             if (entity == null)
                 return null;
 
@@ -60,7 +60,7 @@ namespace OdataToEntity.GraphQL
                 var entityList = new List<Object>();
                 do
                 {
-                    Object item = dbEnumerator.Current;
+                    Object? item = dbEnumerator.Current;
                     if (item != null)
                         entityList.Add(await CreateEntity(dbEnumerator, item, item, cancellationToken).ConfigureAwait(false));
                 }
@@ -84,7 +84,9 @@ namespace OdataToEntity.GraphQL
             if (!_isMoveNext)
                 return false;
 
-            Dictionary<String, Object?> entity = await CreateEntity(_dbEnumerator, _dbEnumerator.Current, _dbEnumerator.Current, _cancellationToken).ConfigureAwait(false);
+            Dictionary<String, Object?>? entity = null;
+            if (_dbEnumerator.Current != null)
+                entity = await CreateEntity(_dbEnumerator, _dbEnumerator.Current, _dbEnumerator.Current, _cancellationToken).ConfigureAwait(false);
             _dbEnumerator.ClearBuffer();
 
             _isMoveNext = await _dbEnumerator.MoveNextAsync().ConfigureAwait(false);
@@ -98,6 +100,6 @@ namespace OdataToEntity.GraphQL
             entity[entryFactory.EdmNavigationProperty.Name] = navigationValue;
         }
 
-        public Dictionary<String, Object?> Current { get; private set; }
+        public Dictionary<String, Object?>? Current { get; private set; }
     }
 }
