@@ -23,7 +23,8 @@ namespace OdataToEntity.Test.GraphQL.StarWars
         internal static DbContextOptions<T> Create<T>(String databaseName) where T : DbContext
         {
             var optionsBuilder = new DbContextOptionsBuilder<T>();
-            optionsBuilder.UseSqlite(GetConnection(databaseName));
+            optionsBuilder.UseSqlServer(@"Server=.\sqlexpress;Initial Catalog=StarWars;Trusted_Connection=Yes;");
+            //optionsBuilder.UseSqlite(GetConnection(databaseName));
             //optionsBuilder.UseLoggerFactory(LoggerFactory);
             return optionsBuilder.Options;
         }
@@ -51,6 +52,7 @@ namespace OdataToEntity.Test.GraphQL.StarWars
                 .HasValue<Droid>(2);
 
             modelBuilder.Entity<CharacterToCharacter>().HasKey(t => new { t.CharacterId, t.FriendId });
+            modelBuilder.Entity<CharacterToCharacter>().HasOne(t => t.FriendTo).WithMany().OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<CharacterToEpisode>().HasKey(t => new { t.CharacterId, t.EpisodeId });
 
             modelBuilder.Entity<Actor>().HasData(

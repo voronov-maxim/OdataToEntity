@@ -7,6 +7,7 @@ namespace OdataToEntity.Test.GraphQL.StarWars
 {
     public abstract class Hero
     {
+        [Column(TypeName = "varchar(16)")]
         public String Id { get; set; }
         public String Name { get; set; }
 
@@ -48,6 +49,7 @@ namespace OdataToEntity.Test.GraphQL.StarWars
     public sealed class CharacterToEpisode
     {
         public Hero Character { get; set; }
+        [Column(TypeName = "varchar(16)")]
         public String CharacterId { get; set; }
         public EpisodeEnum Episode { get; set; }
         public Episodes EpisodeId { get; set; }
@@ -71,6 +73,7 @@ namespace OdataToEntity.Test.GraphQL.StarWars
 
     public sealed class Actor
     {
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public int Id { get; set; }
         public String Name { get; set; }
         public DateTime Birthday { get; set; }
