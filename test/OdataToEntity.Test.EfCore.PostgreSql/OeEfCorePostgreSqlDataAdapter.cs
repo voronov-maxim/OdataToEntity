@@ -38,7 +38,7 @@ namespace OdataToEntity.EfCore.Postgresql
         public EfCorePostgreSqlDataAdapter() : this(null, null)
         {
         }
-        public EfCorePostgreSqlDataAdapter(DbContextOptions options, Cache.OeQueryCache queryCache)
+        public EfCorePostgreSqlDataAdapter(DbContextOptions<T> options, Cache.OeQueryCache queryCache)
             : base(options, queryCache, new EfCorePostgreSqlOperationAdapter(typeof(T)))
         {
         }

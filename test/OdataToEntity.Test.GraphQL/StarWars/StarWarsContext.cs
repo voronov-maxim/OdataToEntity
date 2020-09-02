@@ -23,8 +23,8 @@ namespace OdataToEntity.Test.GraphQL.StarWars
         internal static DbContextOptions<T> Create<T>(String databaseName) where T : DbContext
         {
             var optionsBuilder = new DbContextOptionsBuilder<T>();
-            optionsBuilder.UseSqlServer(@"Server=.\sqlexpress;Initial Catalog=StarWars;Trusted_Connection=Yes;");
-            //optionsBuilder.UseSqlite(GetConnection(databaseName));
+            //optionsBuilder.UseSqlServer(@"Server=.\sqlexpress;Initial Catalog=StarWars;Trusted_Connection=Yes;");
+            optionsBuilder.UseSqlite(GetConnection(databaseName));
             //optionsBuilder.UseLoggerFactory(LoggerFactory);
             return optionsBuilder.Options;
         }

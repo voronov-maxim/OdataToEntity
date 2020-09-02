@@ -32,7 +32,7 @@ namespace OdataToEntity.AspNetCore
                 else
                     return false;
 
-            var candidate = new ActionSelectorCandidate(actionDescriptor, null);
+            var candidate = new ActionSelectorCandidate(actionDescriptor, Array.Empty<IActionConstraint>());
             var constraintContext = new ActionConstraintContext() { CurrentCandidate = candidate };
             if (constraintContext.RouteContext == null)
                 constraintContext.RouteContext = new RouteContext(httpContext) { RouteData = new RouteData(values) };
@@ -109,7 +109,7 @@ namespace OdataToEntity.AspNetCore
             for (int i = 0; i < actionDescriptors.Count; i++)
             {
                 ActionDescriptor actionDescriptor = actionDescriptors[i];
-                if (actionDescriptor.AttributeRouteInfo != null)
+                if (actionDescriptor.AttributeRouteInfo != null && actionDescriptor.AttributeRouteInfo.Template != null)
                 {
                     RouteTemplate template = TemplateParser.Parse(actionDescriptor.AttributeRouteInfo.Template);
                     var matcher = new TemplateMatcher(template, new RouteValueDictionary());
@@ -125,7 +125,7 @@ namespace OdataToEntity.AspNetCore
                     for (int i = 0; i < actionDescriptors.Count; i++)
                     {
                         ActionDescriptor actionDescriptor = actionDescriptors[i];
-                        if (actionDescriptor.AttributeRouteInfo != null && path != null
+                        if (actionDescriptor.AttributeRouteInfo != null && actionDescriptor.AttributeRouteInfo.Template != null && path != null
                             && path.IndexOf(actionDescriptor.AttributeRouteInfo.Template, StringComparison.OrdinalIgnoreCase) == 1
                             && path[actionDescriptor.AttributeRouteInfo.Template.Length + 1] == '/'
                             && ActionConstaint(actionDescriptor, httpContext, values, httpMethod))

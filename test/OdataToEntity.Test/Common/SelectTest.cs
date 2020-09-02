@@ -1219,7 +1219,7 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
-        [Fact(Skip = "net50")]
+        [Fact]
         public async Task MathFunctions()
         {
             var parameters = new QueryParameters<OrderItem, Object>()
@@ -1371,7 +1371,7 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
-        [Fact(Skip = "net50")]
+        [Fact]
         public async Task TimeDateTimeFunction()
         {
             var parameters = new QueryParameters<Category, Object>()
@@ -1380,15 +1380,15 @@ namespace OdataToEntity.Test
                 Expression = t => t.Select(c => new
                 {
                     c.DateTime,
-                    c.DateTime.Value.Hour,
-                    c.DateTime.Value.Minute,
-                    c.DateTime.Value.Second
+                    c.DateTime.GetValueOrDefault().Hour,
+                    c.DateTime.GetValueOrDefault().Minute,
+                    c.DateTime.GetValueOrDefault().Second
                 })
             .OrderBy(c => c.DateTime)
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
-        [Fact(Skip = "net50")]
+        [Fact]
         public async Task TimeDateTimeOffsetFunction()
         {
             var parameters = new QueryParameters<Order, Object>()
@@ -1397,9 +1397,9 @@ namespace OdataToEntity.Test
                 Expression = t => t.Select(o => new
                 {
                     o.Date,
-                    o.Date.Value.Hour,
-                    o.Date.Value.Minute,
-                    o.Date.Value.Second
+                    o.Date.GetValueOrDefault().Hour,
+                    o.Date.GetValueOrDefault().Minute,
+                    o.Date.GetValueOrDefault().Second
                 })
             .OrderBy(o => o.Date)
             };

@@ -36,8 +36,7 @@ namespace OdataToEntity.Test
         }
         public override async Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
         {
-            Expression expression = (Expression<Func<IQueryable<T>, IQueryable<TResult>>>)new EfCore.Fix.FixSelectDistinctVisitor().Visit(parameters.Expression);
-            parameters.Expression = (Expression<Func<IQueryable<T>, IQueryable<TResult>>>)new EfCore.Postgresql.OeDateTimeOffsetMembersVisitor().Visit(expression);
+            parameters.Expression = (Expression<Func<IQueryable<T>, IQueryable<TResult>>>)new EfCore.Postgresql.OeDateTimeOffsetMembersVisitor().Visit(parameters.Expression);
 
             Task t1 = base.Execute(parameters);
             Task t2 = base.Execute(parameters);

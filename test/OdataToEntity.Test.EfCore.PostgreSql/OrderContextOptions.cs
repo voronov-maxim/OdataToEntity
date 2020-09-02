@@ -13,11 +13,11 @@ namespace OdataToEntity.Test.Model
             var order2DataAdapter = new OeEfCoreDataAdapter<Order2Context>(Create<Order2Context>(useRelationalNulls)) { IsDatabaseNullHighestValue = true };
             return order2DataAdapter.BuildEdmModelFromEfCoreModel(orderEdmModel);
         }
-        public static DbContextOptions Create(bool useRelationalNulls)
+        public static DbContextOptions<OrderContext> Create(bool useRelationalNulls)
         {
             return Create<OrderContext>(useRelationalNulls);
         }
-        public static DbContextOptions Create<T>(bool useRelationalNulls) where T : DbContext
+        public static DbContextOptions<T> Create<T>(bool useRelationalNulls) where T : DbContext
         {
             Npgsql.NpgsqlConnection.GlobalTypeMapper.MapComposite<EfCore.Postgresql.StringList>("dbo.string_list");
 

@@ -72,13 +72,17 @@ namespace OdataToEntity.Parsers.Translators
         private void BuildCompute(ComputeClause computeClause)
         {
             if (computeClause != null)
+            {
+                var selectNullableVisitor = new SelectNullableVisitor();
                 foreach (ComputeExpression computeExpression in computeClause.ComputedItems)
                 {
                     Expression expression = _joinBuilder.Visitor.TranslateNode(computeExpression.Expression);
+                    expression = selectNullableVisitor.Visit(expression);
                     IEdmTypeReference edmTypeReference = OeEdmClrHelper.GetEdmTypeReference(_edmModel, expression.Type);
                     var computeProperty = new ComputeProperty(computeExpression.Alias, edmTypeReference, expression);
                     _rootNavigationItem.AddStructuralItem(computeProperty, false);
                 }
+            }
         }
         private Expression BuildJoin(Expression source, IList<OeNavigationSelectItem> navigationItems)
         {
