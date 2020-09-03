@@ -34,7 +34,9 @@ namespace OdataToEntity.Linq2Db
 
         public OeLinq2DbDataContext(IEdmModel edmModel, OeEntitySetAdapterCollection entitySetAdapters)
         {
-            if (!_edmModelOrderedTableTypes.TryGetValue(edmModel, out _orderedTableTypes))
+            if (_edmModelOrderedTableTypes.TryGetValue(edmModel, out ClrTableTypeEdmSet[]? orderedTableTypes))
+                _orderedTableTypes = orderedTableTypes;
+            else
             {
                 _orderedTableTypes = GetOrderedTableTypes(edmModel, entitySetAdapters);
                 _edmModelOrderedTableTypes.TryAdd(edmModel, _orderedTableTypes);
@@ -74,10 +76,14 @@ namespace OdataToEntity.Linq2Db
                         {
                             var schemaElement = (IEdmSchemaElement)propertyPair.PrincipalProperty.DeclaringType;
                             if (propertyInfo.Name == propertyPair.PrincipalProperty.Name &&
-                                propertyInfo.DeclaringType.Name == schemaElement.Name &&
+                                propertyInfo.DeclaringType!.Name == schemaElement.Name &&
                                 propertyInfo.DeclaringType.Namespace == schemaElement.Namespace)
                             {
-                                dependentProperties.Add(clrTypeEdmSets[i].ClrTableType.GetProperty(propertyPair.DependentProperty.Name));
+                                PropertyInfo? dependentProperty = clrTypeEdmSets[i].ClrTableType.GetProperty(propertyPair.DependentProperty.Name);
+                                if (dependentProperty == null)
+                                    throw new InvalidOperationException("Cannot find dependent property " + propertyPair.DependentProperty.Name);
+
+                                dependentProperties.Add(dependentProperty);
                                 break;
                             }
                         }
@@ -101,7 +107,7 @@ namespace OdataToEntity.Linq2Db
                     {
                         Type linq2DbTableType = typeof(OeLinq2DbTable<>).MakeGenericType(clrTypeEdmSetList[i].ClrTableType);
                         if (selfRefProperty != null)
-                            linq2DbTableType.GetProperty(nameof(OeLinq2DbTable<Object>.SelfRefProperty)).SetValue(null, selfRefProperty);
+                            linq2DbTableType.GetProperty(nameof(OeLinq2DbTable<Object>.SelfRefProperty))!.SetValue(null, selfRefProperty);
 
                         orderedTableTypeList.Add(clrTypeEdmSetList[i]);
                         clrTypeEdmSetList.RemoveAt(i);
@@ -111,14 +117,14 @@ namespace OdataToEntity.Linq2Db
         }
         public OeLinq2DbTable? GetTable(Type entityType)
         {
-            if (_tables.TryGetValue(entityType, out OeLinq2DbTable table))
+            if (_tables.TryGetValue(entityType, out OeLinq2DbTable? table))
                 return table;
 
             return null;
         }
         internal OeLinq2DbTable<T> GetTable<T>() where T : class
         {
-            if (_tables.TryGetValue(typeof(T), out OeLinq2DbTable value))
+            if (_tables.TryGetValue(typeof(T), out OeLinq2DbTable? value))
                 return (OeLinq2DbTable<T>)value;
 
             var table = new OeLinq2DbTable<T>();
@@ -193,7 +199,7 @@ namespace OdataToEntity.Linq2Db
                             if (targetTable.IsKey(dependentProperties[0]))
                                 foreach (PropertyInfo dependentProperty in GetDependentProperties(dependentProperties[0], _orderedTableTypes, j))
                                 {
-                                    OeLinq2DbTable? fkeyTable = GetTable(dependentProperty.DeclaringType);
+                                    OeLinq2DbTable? fkeyTable = GetTable(dependentProperty.DeclaringType!);
                                     if (fkeyTable == null)
                                         throw new InvalidOperationException("Not found table for clr type " + dependentProperty.DeclaringType);
 

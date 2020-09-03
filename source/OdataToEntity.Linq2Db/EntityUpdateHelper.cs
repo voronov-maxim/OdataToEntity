@@ -10,10 +10,13 @@ namespace OdataToEntity.Linq2Db
         public static SetBuilder<T> GetSetBuilder<T>(PropertyInfo updatedProperty)
         {
             Type setBuilderType = typeof(SetBuilder<,>).MakeGenericType(typeof(T), updatedProperty.PropertyType);
-            return (SetBuilder<T>)Activator.CreateInstance(setBuilderType, new Object[] { updatedProperty });
+            return (SetBuilder<T>)Activator.CreateInstance(setBuilderType, new Object[] { updatedProperty })!;
         }
         public static Expression<Func<T, bool>> GetWhere<T>(PropertyInfo[] primaryKey, T entity)
         {
+            if (primaryKey.Length == 0)
+                throw new InvalidOperationException("Missing primary key");
+
             ParameterExpression parameter = Expression.Parameter(typeof(T));
             BinaryExpression? where = null;
             foreach (PropertyInfo propertyInfo in primaryKey)
@@ -26,7 +29,7 @@ namespace OdataToEntity.Linq2Db
                 else
                     where = Expression.AndAlso(where, equal);
             }
-            return Expression.Lambda<Func<T, bool>>(where, parameter);
+            return Expression.Lambda<Func<T, bool>>(where!, parameter);
         }
     }
 }

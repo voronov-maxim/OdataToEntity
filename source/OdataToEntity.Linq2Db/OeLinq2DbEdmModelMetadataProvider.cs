@@ -11,11 +11,11 @@ namespace OdataToEntity.Linq2Db
     {
         public override PropertyInfo[]? GetForeignKey(PropertyInfo propertyInfo)
         {
-            var association = (AssociationAttribute)propertyInfo.GetCustomAttribute(typeof(AssociationAttribute));
+            var association = (AssociationAttribute?)propertyInfo.GetCustomAttribute(typeof(AssociationAttribute));
             if (association == null || association.IsBackReference || association.ThisKey == null)
                 return null;
 
-            PropertyInfo property = propertyInfo.DeclaringType.GetPropertyIgnoreCase(association.ThisKey);
+            PropertyInfo? property = propertyInfo.DeclaringType!.GetPropertyIgnoreCaseOrNull(association.ThisKey);
             if (property == null)
             {
                 String[] propertyNames = association.GetThisKeys();
@@ -26,7 +26,7 @@ namespace OdataToEntity.Linq2Db
                 for (int i = 0; i < properties.Length; i++)
                 {
                     String propertyName = propertyNames[i].Trim();
-                    property = propertyInfo.DeclaringType.GetPropertyIgnoreCase(propertyName) ??
+                    property = propertyInfo.DeclaringType!.GetPropertyIgnoreCase(propertyName) ??
                         throw new InvalidOperationException("property " + propertyName + " foreign key " + propertyInfo.Name + " not found");
 
                     properties[i] = property;
@@ -38,14 +38,14 @@ namespace OdataToEntity.Linq2Db
         }
         public override PropertyInfo? GetInverseProperty(PropertyInfo propertyInfo)
         {
-            var association = (AssociationAttribute)propertyInfo.GetCustomAttribute(typeof(AssociationAttribute));
+            var association = (AssociationAttribute?)propertyInfo.GetCustomAttribute(typeof(AssociationAttribute));
             if (association == null || !association.IsBackReference)
                 return null;
 
             Type clrType = OeExpressionHelper.GetCollectionItemTypeOrNull(propertyInfo.PropertyType) ?? propertyInfo.PropertyType;
             foreach (PropertyInfo clrProperty in clrType.GetProperties())
             {
-                var association2 = (AssociationAttribute)clrProperty.GetCustomAttribute(typeof(AssociationAttribute));
+                var association2 = (AssociationAttribute?)clrProperty.GetCustomAttribute(typeof(AssociationAttribute));
                 if (association2 != null && association2.ThisKey == association.OtherKey)
                     return clrProperty;
             }
@@ -54,7 +54,7 @@ namespace OdataToEntity.Linq2Db
         }
         public override int GetOrder(PropertyInfo propertyInfo)
         {
-            var key = (PrimaryKeyAttribute)propertyInfo.GetCustomAttribute(typeof(PrimaryKeyAttribute));
+            var key = (PrimaryKeyAttribute?)propertyInfo.GetCustomAttribute(typeof(PrimaryKeyAttribute));
             return key == null ? -1 : key.Order;
         }
         internal PropertyInfo[] GetPrimaryKey(Type entityType)
@@ -72,7 +72,7 @@ namespace OdataToEntity.Linq2Db
         public override PropertyInfo[] GetPrincipalToDependentWithoutDependent(PropertyInfo principalNavigation)
         {
             Type? itemType;
-            var association = (AssociationAttribute)principalNavigation.GetCustomAttribute(typeof(AssociationAttribute));
+            var association = (AssociationAttribute?)principalNavigation.GetCustomAttribute(typeof(AssociationAttribute));
             if (association != null &&
                 (itemType = OeExpressionHelper.GetCollectionItemTypeOrNull(principalNavigation.PropertyType)) != null &&
                 GetForeignKey(principalNavigation) == null &&

@@ -14,7 +14,7 @@ namespace OdataToEntity.Linq2Db
             UpdatedProperty = updatedProperty;
         }
 
-        public override bool Equals(Object obj)
+        public override bool Equals(Object? obj)
         {
             if (obj is SetBuilder<T> setBuilder)
                 return UpdatedProperty == setBuilder.UpdatedProperty;

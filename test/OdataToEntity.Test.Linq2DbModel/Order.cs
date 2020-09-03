@@ -45,7 +45,7 @@ namespace OdataToEntity.Test.Model
         }
 
 		public OdataToEntityDB()
-			: base("SqlServer", @"Server=.\sqlexpress;Initial Catalog=OdataToEntity;Trusted_Connection=Yes;")
+			: base("Microsoft.Data.SqlClient", @"Server=.\sqlexpress;Initial Catalog=OdataToEntity;Trusted_Connection=Yes;")
 		{
 			InitDataContext();
 		}
@@ -367,7 +367,7 @@ namespace OdataToEntity.Test.Model
         public ITable<Order>    Orders2    { get { return this.GetTable<Order>(); } }
 
 		public Order2Connection()
-			: base("SqlServer", @"Server=.\sqlexpress;Initial Catalog=OdataToEntity;Trusted_Connection=Yes;")
+			: base("Microsoft.Data.SqlClient", @"Server=.\sqlexpress;Initial Catalog=OdataToEntity;Trusted_Connection=Yes;")
 		{
 		}
 

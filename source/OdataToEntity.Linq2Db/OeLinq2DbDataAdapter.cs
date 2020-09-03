@@ -43,7 +43,7 @@ namespace OdataToEntity.Linq2Db
             }
             protected override Expression VisitParameter(ParameterExpression node)
             {
-                if (_parameters.TryGetValue(node, out ParameterExpression parameter))
+                if (_parameters.TryGetValue(node, out ParameterExpression? parameter))
                     return parameter;
 
                 parameter = Expression.Parameter(node.Type, node.Name ?? node.ToString());
@@ -140,7 +140,7 @@ namespace OdataToEntity.Linq2Db
             var entitySetAdapters = new List<Db.OeEntitySetAdapter>();
             foreach (PropertyInfo property in typeof(T).GetTypeInfo().GetProperties())
             {
-                Type entitySetType = property.PropertyType.GetTypeInfo().GetInterface(typeof(IQueryable<>).FullName);
+                Type? entitySetType = property.PropertyType.GetTypeInfo().GetInterface(typeof(IQueryable<>).FullName!);
                 if (entitySetType != null)
                     entitySetAdapters.Add(CreateEntitySetAdapter(property, entitySetType));
             }
@@ -151,12 +151,15 @@ namespace OdataToEntity.Linq2Db
             MethodInfo mi = ((Func<PropertyInfo, Db.OeEntitySetAdapter>)CreateEntitySetInvoker<Object>).GetMethodInfo().GetGenericMethodDefinition();
             Type entityType = entitySetType.GetTypeInfo().GetGenericArguments()[0];
             MethodInfo func = mi.GetGenericMethodDefinition().MakeGenericMethod(entityType);
-            return (Db.OeEntitySetAdapter)func.Invoke(null, new Object[] { property });
+            return (Db.OeEntitySetAdapter)func.Invoke(null, new Object[] { property })!;
         }
         private static Db.OeEntitySetAdapter CreateEntitySetInvoker<TEntity>(PropertyInfo property) where TEntity : class
         {
-            var getEntitySet = (Func<T, ITable<TEntity>>)property.GetGetMethod().CreateDelegate(typeof(Func<T, ITable<TEntity>>));
+            var getEntitySet = (Func<T, ITable<TEntity>>)property.GetGetMethod()!.CreateDelegate(typeof(Func<T, ITable<TEntity>>));
             var tableAttribute = typeof(TEntity).GetCustomAttribute<LinqToDB.Mapping.TableAttribute>();
+            if (tableAttribute == null)
+                throw new InvalidOperationException(typeof(TEntity).Name + " missing TableAttribute");
+
             return new TableAdapterImpl<TEntity>(getEntitySet, property.Name, tableAttribute.IsView);
         }
         public override IAsyncEnumerable<Object> Execute(Object dataContext, OeQueryContext queryContext)
@@ -202,7 +205,7 @@ namespace OdataToEntity.Linq2Db
             out MethodCallExpression? countExpression)
         {
             Cache.OeCacheContext cacheContext = queryContext.CreateCacheContext();
-            Cache.OeQueryCacheItem queryCacheItem = queryCache.GetQuery(cacheContext);
+            Cache.OeQueryCacheItem? queryCacheItem = queryCache.GetQuery(cacheContext);
 
             Expression expression;
             IReadOnlyList<Cache.OeQueryCacheDbParameterValue> parameterValues;

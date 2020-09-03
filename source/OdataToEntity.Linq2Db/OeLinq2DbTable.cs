@@ -76,7 +76,7 @@ namespace OdataToEntity.Linq2Db
 
             for (int i = 0; i < items.Count; i++)
             {
-                Object parentKey = selfRefProperty.GetValue(items[i]);
+                Object? parentKey = selfRefProperty.GetValue(items[i]);
                 if (parentKey == null)
                     continue;
 
@@ -85,7 +85,10 @@ namespace OdataToEntity.Linq2Db
                     bool found = false;
                     for (int k = j; k < items.Count; k++)
                     {
-                        Object key = keyProperty.GetValue(items[k]);
+                        Object? key = keyProperty.GetValue(items[k]);
+                        if (key == null)
+                            throw new InvalidOperationException("Primary key cannot be null");
+
                         if (key.Equals(parentKey))
                         {
                             found = true;
@@ -134,7 +137,10 @@ namespace OdataToEntity.Linq2Db
                 T entity = _inserted[i];
                 Object identity = dc.InsertWithIdentity(entity);
                 identity = Convert.ChangeType(identity, identityProperties[0].PropertyType, CultureInfo.InvariantCulture);
-                Object old = identityProperties[0].GetValue(entity);
+                Object? old = identityProperties[0].GetValue(entity);
+                if (old == null)
+                    throw new InvalidOperationException("Identity " + identityProperties[0].Name + " cannot be null");
+
                 identityProperties[0].SetValue(entity, identity);
                 _identities.Add(old, identity);
 
@@ -156,13 +162,13 @@ namespace OdataToEntity.Linq2Db
                     Updatable(table, updatableEntity.Entity, updatableEntity.UpdatedPropertyNames).Update();
             return _updated.Count;
         }
-        private IUpdatable<T> Updatable(ITable<T> table, T entity, IReadOnlyList<String> updatedPropertyNames)
+        private static IUpdatable<T> Updatable(ITable<T> table, T entity, IReadOnlyList<String> updatedPropertyNames)
         {
             IUpdatable<T>? updatable = null;
             IQueryable<T> query = table.Where(EntityUpdateHelper.GetWhere(_primaryKey, entity));
             foreach (String updatedPropertyName in updatedPropertyNames.Except(_primaryKey.Select(p => p.Name)))
             {
-                PropertyInfo updatedProperty = typeof(T).GetProperty(updatedPropertyName);
+                PropertyInfo updatedProperty = typeof(T).GetProperty(updatedPropertyName)!;
                 SetBuilder<T> setBuilder = EntityUpdateHelper.GetSetBuilder<T>(updatedProperty);
                 updatable = updatable == null ? setBuilder.GetSet(query, entity) : setBuilder.GetSet(updatable, entity);
             }
@@ -179,7 +185,7 @@ namespace OdataToEntity.Linq2Db
 
             for (int i = entityIndex + 1; i < _inserted.Count; i++)
             {
-                Object parentIdentity = selfRefProperty.GetValue(_inserted[i]);
+                Object? parentIdentity = selfRefProperty.GetValue(_inserted[i]);
                 if (oldIdentity.Equals(parentIdentity))
                     selfRefProperty.SetValue(_inserted[i], newIdentity);
             }
@@ -188,8 +194,8 @@ namespace OdataToEntity.Linq2Db
         {
             foreach (T entity in Inserted)
             {
-                Object oldValue = fkeyProperty.GetValue(entity);
-                if (oldValue != null && identities.TryGetValue(oldValue, out Object newValue))
+                Object? oldValue = fkeyProperty.GetValue(entity);
+                if (oldValue != null && identities.TryGetValue(oldValue, out Object? newValue))
                     fkeyProperty.SetValue(entity, newValue);
             }
         }
