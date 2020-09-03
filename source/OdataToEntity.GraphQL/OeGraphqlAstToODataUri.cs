@@ -60,7 +60,7 @@ namespace OdataToEntity.GraphQL
             if (selection.Arguments != null)
                 foreach (GraphQLArgument argument in selection.Arguments)
                 {
-                    IEdmProperty edmProperty = FindEdmProperty(entityType, argument.Name.Value);
+                    IEdmProperty edmProperty = FindEdmProperty(entityType, argument.GetName());
                     var left = new SingleValuePropertyAccessNode(source, edmProperty);
 
                     Object? value = GetArgumentValue(edmProperty.Type, argument.Value);
@@ -74,10 +74,10 @@ namespace OdataToEntity.GraphQL
         private SelectExpandClause BuildSelectExpandClause(IEdmEntitySet entitySet, GraphQLSelectionSet selectionSet)
         {
             var selectItems = new List<SelectItem>();
-            foreach (ASTNode astNode in selectionSet.Selections)
+            foreach (ASTNode astNode in selectionSet.GetSelections())
                 if (astNode is GraphQLFieldSelection fieldSelection)
                 {
-                    IEdmProperty edmProperty = FindEdmProperty(entitySet.EntityType(), fieldSelection.Name.Value);
+                    IEdmProperty edmProperty = FindEdmProperty(entitySet.EntityType(), fieldSelection.GetName());
                     if (fieldSelection.SelectionSet == null)
                     {
                         var structuralProperty = (IEdmStructuralProperty)edmProperty;
@@ -136,7 +136,7 @@ namespace OdataToEntity.GraphQL
                 return ODataUriUtils.ConvertFromUriLiteral(scalarValue.Value, ODataVersion.V4, _edmModel, typeReference);
             }
             else if (graphValue is GraphQLVariable variable)
-                return _context.Arguments[variable.Name.Value];
+                return _context.Arguments[variable.GetName()];
             else if (graphValue is null)
                 return null;
 
@@ -144,16 +144,16 @@ namespace OdataToEntity.GraphQL
         }
         private static GraphQLFieldSelection GetSelection(GraphQLDocument document)
         {
-            var operationDefinition = document.Definitions.OfType<GraphQLOperationDefinition>().Single();
-            return operationDefinition.SelectionSet.Selections.OfType<GraphQLFieldSelection>().Single();
+            var operationDefinition = (document.Definitions ?? throw new InvalidOperationException("Definitions is null")).OfType<GraphQLOperationDefinition>().Single();
+            return (operationDefinition.SelectionSet ?? throw new InvalidOperationException("SelectionSet is null")).GetSelections().OfType<GraphQLFieldSelection>().Single();
         }
         private IEdmEntitySet GetEntitySet(GraphQLFieldSelection selection)
         {
             foreach (FieldType fieldType in _context.Schema.Query.Fields)
-                if (String.Compare(fieldType.Name, selection.Name.Value, StringComparison.OrdinalIgnoreCase) == 0)
+                if (String.Compare(fieldType.Name, selection.GetName(), StringComparison.OrdinalIgnoreCase) == 0)
                     return OeEdmClrHelper.GetEntitySet(_edmModel, fieldType.Name);
 
-            throw new InvalidOperationException("Field name " + selection.Name.Value + " not found in schema query");
+            throw new InvalidOperationException("Field name " + selection.GetName() + " not found in schema query");
         }
         private static ResourceRangeVariable GetResorceVariable(IEdmEntitySet entitySet)
         {
@@ -222,7 +222,7 @@ namespace OdataToEntity.GraphQL
 
             GraphQLFieldSelection selection = GetSelection(document);
             IEdmEntitySet entitySet = GetEntitySet(selection);
-            SelectExpandClause selectExpandClause = BuildSelectExpandClause(entitySet, selection.SelectionSet);
+            SelectExpandClause selectExpandClause = BuildSelectExpandClause(entitySet, selection.SelectionSet ?? throw new InvalidOperationException("SelectionSet is null"));
             FilterClause? filterClause = BuildFilterClause(entitySet, selection);
             selectExpandClause = LiftRequiredSingleNavigationPropertyFilter(entitySet, selectExpandClause, ref filterClause);
 

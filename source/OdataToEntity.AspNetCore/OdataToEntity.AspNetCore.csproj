@@ -34,7 +34,6 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.OData.Core" Version="$(ODataLibVersion)" />
     <PackageReference Include="Microsoft.OData.Edm" Version="$(ODataLibVersion)" />
-    <PackageReference Include="System.Interactive.Async" Version="$(SystemInteractiveAsyncVersion)" />
   </ItemGroup>
   
   <ItemGroup>
