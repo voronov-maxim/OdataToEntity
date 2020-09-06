@@ -1,10 +1,13 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using OdataToEntity.EfCore.DynamicDataContext.Types;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq.Expressions;
 using System.Reflection;
 
 namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
@@ -46,17 +49,13 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
                 foreach (DynamicPropertyInfo property in MetadataProvider.GetStructuralProperties(tableEdmName))
                 {
                     DynamicTypeDefinition typeDefinition = TypeDefinitionManager.GetDynamicTypeDefinition(entityType.ClrType);
-                    MethodInfo getMethodInfo = typeDefinition.AddShadowPropertyGetMethodInfo(property.Name, property.Type);
-                    var propertyInfo = new Infrastructure.OeShadowPropertyInfo(entityType.ClrType, property.Type, property.Name, getMethodInfo);
 
-                    var efProperty = (Property)entityType.AddProperty(propertyInfo);
-                    efProperty.FieldInfo = dynamicTypeDefinition.AddShadowPropertyFieldInfo(property.Name, property.Type);
+                    var efProperty = (Property)entityType.AddIndexerProperty(property.Name, property.Type);
                     efProperty.SetIsNullable(property.IsNullable, ConfigurationSource.Explicit);
-                    efProperty.SetPropertyAccessMode(PropertyAccessMode.Field);
 
                     if (property.DatabaseGeneratedOption == DatabaseGeneratedOption.Identity)
                     {
-                        FixHasDefaultValue(efProperty, propertyInfo);
+                        FixHasDefaultValue(efProperty);
                         efProperty.SetValueGenerated(ValueGenerated.OnAdd, ConfigurationSource.Explicit);
                     }
                     else if (property.DatabaseGeneratedOption == DatabaseGeneratedOption.Computed)
@@ -77,14 +76,12 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
 
             return entityType;
 
-            //fix ef core 5.0 bug get DynamicType.ShadowProperty1 when type Object
-            static void FixHasDefaultValue(IProperty efProperty, Infrastructure.OeShadowPropertyInfo propertyInfo)
+            //fix ef core 5.0 bug get indexer properties
+            static void FixHasDefaultValue(IProperty efProperty)
             {
                 IClrPropertyGetter propertyGetter = efProperty.GetGetter();
                 FieldInfo hasDefaultValue = propertyGetter.GetType().GetField("_hasDefaultValue", BindingFlags.Instance | BindingFlags.NonPublic)!;
-                var getterFactory = new ClrPropertyGetterFactory();
-                IClrPropertyGetter fixPropertyGetter = new ClrPropertyGetterFactory().Create(propertyInfo);
-                hasDefaultValue.SetValue(propertyGetter, hasDefaultValue.GetValue(fixPropertyGetter));
+                hasDefaultValue.SetValue(propertyGetter, GetDefaultValueFunc(efProperty));
             }
         }
         private void CreateNavigationProperties(Microsoft.EntityFrameworkCore.ModelBuilder modelBuilder, String tableEdmName)
@@ -134,6 +131,14 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
                     navigation.SetField(dynamicTypeDefinition.GetSingleFieldName(propertyName), ConfigurationSource.Explicit);
                 }
             }
+        }
+        private static Func<DynamicType, bool> GetDefaultValueFunc(IPropertyBase propertyBase)
+        {
+            ParameterExpression parameterExpression = Expression.Parameter(typeof(DynamicType));
+            Expression expression = PropertyBase.CreateMemberAccess(propertyBase, parameterExpression, propertyBase.PropertyInfo);
+            expression = Expression.Convert(expression, propertyBase.ClrType);
+            expression = expression.MakeHasDefaultValue(propertyBase);
+            return Expression.Lambda<Func<DynamicType, bool>>(expression, new[] { parameterExpression }).Compile();
         }
 
         public DynamicMetadataProvider MetadataProvider { get; }

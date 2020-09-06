@@ -26,7 +26,7 @@ namespace OdataToEntity.Infrastructure
         private readonly Func<Object, Object, int>[] _propertyComparers;
         private readonly Func<Object, int>[] _propertyGetHashCodes;
 
-        public OeEntryEqualityComparer(IReadOnlyList<MemberExpression> propertyExpressions)
+        public OeEntryEqualityComparer(IReadOnlyList<Expression> propertyExpressions)
         {
             _propertyComparers = CreatePropertyComparers(propertyExpressions);
             _propertyGetHashCodes = CreatePropertyGetHashCodes(propertyExpressions);
@@ -50,35 +50,60 @@ namespace OdataToEntity.Infrastructure
 
             return 0;
         }
-        private static Func<Object, Object, int> CreatePropertyComparer(MemberExpression property)
+        private static Func<Object, Object, int> CreatePropertyComparer(Expression expression)
         {
             ParameterExpression xparameter = Expression.Parameter(typeof(Object));
             ParameterExpression yparameter = Expression.Parameter(typeof(Object));
 
-            MemberExpression xproperty = Parsers.OeExpressionHelper.ReplaceParameter(property, xparameter);
-            MemberExpression yproperty = Parsers.OeExpressionHelper.ReplaceParameter(property, yparameter);
+            Expression xproperty, yproperty;
+            if (expression is MemberExpression memberExpression)
+            {
+                xproperty = Parsers.OeExpressionHelper.ReplaceParameter(memberExpression, xparameter);
+                yproperty = Parsers.OeExpressionHelper.ReplaceParameter(memberExpression, yparameter);
+            }
+            else if (expression is UnaryExpression convertExpression)
+            {
+                var indexExpression = (MethodCallExpression)convertExpression.Operand;
+                UnaryExpression xdynamicParameter = Expression.Convert(xparameter, indexExpression.Object!.Type);
+                UnaryExpression ydynamicParameter = Expression.Convert(yparameter, indexExpression.Object!.Type);
 
-            MethodInfo compareMethodInfo = typeof(Comparer<>).MakeGenericType(property.Type).GetMethod(nameof(Comparer<Object>.Compare))!;
-            MethodInfo defaultMethod = typeof(Comparer<>).MakeGenericType(property.Type).GetProperty(nameof(Comparer<Object>.Default))!.GetGetMethod()!;
+                xproperty = Expression.Convert(indexExpression.Update(xdynamicParameter, indexExpression.Arguments), expression.Type);
+                yproperty = Expression.Convert(indexExpression.Update(ydynamicParameter, indexExpression.Arguments), expression.Type);
+            }
+            else
+                throw new InvalidOperationException("Unsupported expression type");
+
+            MethodInfo compareMethodInfo = typeof(Comparer<>).MakeGenericType(expression.Type).GetMethod(nameof(Comparer<Object>.Compare))!;
+            MethodInfo defaultMethod = typeof(Comparer<>).MakeGenericType(expression.Type).GetProperty(nameof(Comparer<Object>.Default))!.GetGetMethod()!;
             MethodCallExpression compareCall = Expression.Call(Expression.Call(defaultMethod), compareMethodInfo, xproperty, yproperty);
 
             return (Func<Object, Object, int>)Expression.Lambda(compareCall, xparameter, yparameter).Compile();
         }
-        private static Func<Object, Object, int>[] CreatePropertyComparers(IReadOnlyList<MemberExpression> propertyExpressions)
+        private static Func<Object, Object, int>[] CreatePropertyComparers(IReadOnlyList<Expression> propertyExpressions)
         {
             var propertyComparers = new Func<Object, Object, int>[propertyExpressions.Count];
             for (int i = 0; i < propertyExpressions.Count; i++)
                 propertyComparers[i] = CreatePropertyComparer(propertyExpressions[i]);
             return propertyComparers;
         }
-        private static Func<Object, int> CreatePropertyGetHashCode(MemberExpression propertyExpression)
+        private static Func<Object, int> CreatePropertyGetHashCode(Expression expression)
         {
             ParameterExpression parameter = Expression.Parameter(typeof(Object));
-            propertyExpression = Parsers.OeExpressionHelper.ReplaceParameter(propertyExpression, parameter);
-            MethodCallExpression getHashCodeCall = Expression.Call(propertyExpression, propertyExpression.Type.GetMethod(nameof(Object.GetHashCode), Type.EmptyTypes)!);
+            if (expression is MemberExpression memberExpression)
+                expression = Parsers.OeExpressionHelper.ReplaceParameter(memberExpression, parameter);
+            else if (expression is UnaryExpression convertExpression)
+            {
+                var indexExpression = (MethodCallExpression)convertExpression.Operand;
+                indexExpression = indexExpression.Update(Expression.Convert(parameter, indexExpression.Object!.Type), indexExpression.Arguments);
+                expression = Expression.Convert(indexExpression, expression.Type);
+            }
+            else
+                throw new InvalidOperationException("Unsupported expression type");
+
+            MethodCallExpression getHashCodeCall = Expression.Call(expression, expression.Type.GetMethod(nameof(Object.GetHashCode), Type.EmptyTypes)!);
             return (Func<Object, int>)Expression.Lambda(getHashCodeCall, parameter).Compile();
         }
-        private static Func<Object, int>[] CreatePropertyGetHashCodes(IReadOnlyList<MemberExpression> propertyExpressions)
+        private static Func<Object, int>[] CreatePropertyGetHashCodes(IReadOnlyList<Expression> propertyExpressions)
         {
             var propertyGetHashCodes = new Func<Object, int>[propertyExpressions.Count];
             for (int i = 0; i < propertyExpressions.Count; i++)

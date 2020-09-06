@@ -30,9 +30,9 @@ namespace OdataToEntity.EfCore.DynamicDataContext
             IsDatabaseNullHighestValue = informationSchema.IsDatabaseNullHighestValue;
             OperationAdapter = informationSchema.OperationAdapter;
 
-            ConstructorInfo dynamicDbContextCtor = dynamicDbContextType.GetConstructor(new Type[] { typeof(DbContextOptions), typeof(DynamicTypeDefinitionManager) })!;
+            ConstructorInfo dynamicDbContextCtor = dynamicDbContextType.GetConstructor(new Type[] { typeof(DbContextOptions) })!;
             DbContextOptions options = informationSchema.DynamicDbContextOptions.CreateOptions(dynamicDbContextType);
-            NewExpression ctor = Expression.New(dynamicDbContextCtor, Expression.Constant(options), Expression.Constant(this));
+            NewExpression ctor = Expression.New(dynamicDbContextCtor, Expression.Constant(options));
             _dynamicDbContextCtor = Expression.Lambda<Func<DynamicDbContext>>(ctor).Compile();
 
             _dynamicTypeDefinitions = new Dictionary<Type, DynamicTypeDefinition>();

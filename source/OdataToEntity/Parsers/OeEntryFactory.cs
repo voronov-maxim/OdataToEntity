@@ -43,7 +43,8 @@ namespace OdataToEntity.Parsers
             NavigationLinks = Array.Empty<OeNavigationEntryFactory>();
             _typeName = EdmEntityType.FullName();
 
-            IsTuple = accessors.Length != 0 && OeExpressionHelper.IsTupleType(accessors[0].PropertyExpression.Expression!.Type);
+            if (accessors.Length != 0 && accessors[0].PropertyExpression is MemberExpression propertyExpression)
+                IsTuple = OeExpressionHelper.IsTupleType(propertyExpression.Expression!.Type);
         }
         public OeEntryFactory(
             IEdmEntitySetBase entitySet,
@@ -134,9 +135,10 @@ namespace OdataToEntity.Parsers
                     OePropertyAccessor accessor = Array.Find(propertyAccessors, pa => pa.EdmProperty == _allAccessors[i].EdmProperty);
                     if (Array.IndexOf(Accessors, _allAccessors[i]) == -1)
                     {
-                        var convertExpression = (UnaryExpression)accessor.PropertyExpression.Expression!;
+                        var propertyExpression = (MemberExpression)accessor.PropertyExpression;
+                        var convertExpression = (UnaryExpression)propertyExpression.Expression!;
                         var parameterExpression = (ParameterExpression)convertExpression.Operand;
-                        accessor = OePropertyAccessor.CreatePropertyAccessor(accessor.EdmProperty, accessor.PropertyExpression, parameterExpression, true);
+                        accessor = OePropertyAccessor.CreatePropertyAccessor(accessor.EdmProperty, propertyExpression, parameterExpression, true);
                     }
                     accessors[i] = accessor;
                 }
@@ -184,9 +186,9 @@ namespace OdataToEntity.Parsers
 
             return false;
         }
-        private static List<MemberExpression> GetKeyExpressions(IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors)
+        private static List<Expression> GetKeyExpressions(IEdmEntitySetBase entitySet, OePropertyAccessor[] accessors)
         {
-            var propertyExpressions = new List<MemberExpression>();
+            var propertyExpressions = new List<Expression>();
             foreach (IEdmStructuralProperty key in entitySet.EntityType().Key())
             {
                 bool found = false;

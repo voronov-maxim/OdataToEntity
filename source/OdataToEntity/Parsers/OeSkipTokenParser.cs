@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
 namespace OdataToEntity.Parsers
@@ -36,12 +37,20 @@ namespace OdataToEntity.Parsers
 
             ParameterExpression parameter = Expression.Parameter(typeof(Object));
             UnaryExpression instance = Expression.Convert(parameter, OeExpressionHelper.GetCollectionItemType(source.Type));
-
             while (orderByClause != null)
             {
                 MemberExpression propertyExpression = Translators.OeOrderByTranslator.GetPropertyExpression(joinBuilder, source, instance, orderByClause.Expression);
                 IEdmStructuralProperty edmProperty = GetEdmProperty(orderByClause.Expression, propertyExpression.Type);
-                accessors.Add(OePropertyAccessor.CreatePropertyAccessor(edmProperty, propertyExpression, parameter, true));
+                OePropertyAccessor accessor;
+                if (typeof(OeIndexerProperty).IsAssignableFrom(propertyExpression.Expression!.Type))
+                {
+                    InterfaceMapping interfaceMapping = propertyExpression.Expression!.Type.GetInterfaceMap(typeof(OeIndexerProperty));
+                    MethodCallExpression expression = Expression.Call(propertyExpression.Expression!, interfaceMapping.TargetMethods[0], Expression.Constant(edmProperty.Name));
+                    accessor = OePropertyAccessor.CreatePropertyAccessor(edmProperty, expression, parameter, true);
+                }
+                else
+                    accessor = OePropertyAccessor.CreatePropertyAccessor(edmProperty, propertyExpression, parameter, true);
+                accessors.Add(accessor);
                 orderByClause = orderByClause.ThenBy;
             }
 

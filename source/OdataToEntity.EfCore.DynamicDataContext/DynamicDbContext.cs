@@ -8,14 +8,12 @@ namespace OdataToEntity.EfCore.DynamicDataContext
     {
         private readonly DynamicModelBuilder? _dynamicModelBuilder;
 
-        protected DynamicDbContext(DbContextOptions options, DynamicTypeDefinitionManager typeDefinitionManager) : base(options)
+        protected DynamicDbContext(DbContextOptions options) : base(options)
         {
-            TypeDefinitionManager = typeDefinitionManager;
         }
         public DynamicDbContext(DbContextOptions options, in DynamicModelBuilder dynamicModelBuilder) : base(options)
         {
             _dynamicModelBuilder = dynamicModelBuilder;
-            TypeDefinitionManager = dynamicModelBuilder.TypeDefinitionManager;
         }
 
         protected override void OnModelCreating(Microsoft.EntityFrameworkCore.ModelBuilder modelBuilder)
@@ -25,7 +23,5 @@ namespace OdataToEntity.EfCore.DynamicDataContext
 
             _dynamicModelBuilder.Build(modelBuilder);
         }
-
-        public DynamicTypeDefinitionManager TypeDefinitionManager { get; }
     }
 }

@@ -14,10 +14,10 @@ namespace OdataToEntity.Parsers
         private readonly struct PropertyExpressionKey : IEqualityComparer<PropertyExpressionKey>
         {
             private readonly int _hashCode;
-            private readonly List<MemberInfo> _propertyInfos;
+            private readonly MemberInfo[] _propertyInfos;
             public static readonly PropertyExpressionKey Comparer = new PropertyExpressionKey();
 
-            private PropertyExpressionKey(List<MemberInfo> memberInfos, int hashCode)
+            private PropertyExpressionKey(MemberInfo[] memberInfos, int hashCode)
             {
                 _propertyInfos = memberInfos;
                 _hashCode = hashCode;
@@ -25,10 +25,10 @@ namespace OdataToEntity.Parsers
 
             public bool Equals(PropertyExpressionKey x, PropertyExpressionKey y)
             {
-                if (x._propertyInfos.Count != y._propertyInfos.Count)
+                if (x._propertyInfos.Length != y._propertyInfos.Length)
                     return false;
 
-                for (int i = 0; i < x._propertyInfos.Count; i++)
+                for (int i = 0; i < x._propertyInfos.Length; i++)
                     if (x._propertyInfos[i] != y._propertyInfos[i])
                         return false;
 
@@ -48,7 +48,7 @@ namespace OdataToEntity.Parsers
                     memberInfos.Add(propertyExpression.Member);
                     hashCode = Cache.UriCompare.OeCacheComparer.CombineHashCodes(hashCode, propertyExpression.Member.GetHashCode());
                 }
-                return new PropertyExpressionKey(memberInfos, hashCode);
+                return new PropertyExpressionKey(memberInfos.ToArray(), hashCode);
             }
         }
 
@@ -56,7 +56,7 @@ namespace OdataToEntity.Parsers
         private readonly static ConcurrentDictionary<PropertyExpressionKey, Func<Object?, Object?>> _lambdas =
             new ConcurrentDictionary<PropertyExpressionKey, Func<Object?, Object?>>(new PropertyExpressionKey());
 
-        private OePropertyAccessor(IEdmProperty edmProperty, Func<Object?, Object?> accessor, MemberExpression propertyExpression, bool skipToken)
+        private OePropertyAccessor(IEdmProperty edmProperty, Func<Object?, Object?> accessor, Expression propertyExpression, bool skipToken)
         {
             EdmProperty = edmProperty;
             _accessor = accessor;
@@ -82,6 +82,17 @@ namespace OdataToEntity.Parsers
                 _lambdas[propertyExpressionKey] = lambda;
             }
             return new OePropertyAccessor(edmProperty, lambda, propertyExpression, skipToken);
+        }
+        public static OePropertyAccessor CreatePropertyAccessor(IEdmProperty edmProperty, MethodCallExpression indexExpression, ParameterExpression parameter, bool skipToken)
+        {
+            EdmPrimitiveTypeKind primitiveKind = edmProperty.Type.PrimitiveKind();
+            Type propertyType = PrimitiveTypeHelper.GetClrType(primitiveKind);
+            if (propertyType.IsValueType && edmProperty.Type.IsNullable)
+                propertyType = typeof(Nullable<>).MakeGenericType(propertyType);
+
+            var lambda = (Func<Object?, Object?>)Expression.Lambda(indexExpression, parameter).Compile();
+            UnaryExpression convertExpression = Expression.Convert(indexExpression, propertyType);
+            return new OePropertyAccessor(edmProperty, lambda, convertExpression, skipToken);
         }
         public static OePropertyAccessor[] CreateFromTuple(Type tupleType, IReadOnlyList<IEdmProperty> edmProperties, int groupItemIndex)
         {
@@ -110,18 +121,30 @@ namespace OdataToEntity.Parsers
             ParameterExpression parameter = Expression.Parameter(typeof(Object));
             UnaryExpression instance = Expression.Convert(parameter, clrType);
             var propertyAccessors = new List<OePropertyAccessor>();
-            foreach (IEdmStructuralProperty edmProperty in entitySet.EntityType().StructuralProperties())
+            if (typeof(OeIndexerProperty).IsAssignableFrom(clrType))
             {
-                PropertyInfo? propertyInfo = clrType.GetPropertyIgnoreCaseOrNull(edmProperty);
-                if (propertyInfo == null)
+                InterfaceMapping interfaceMapping = clrType.GetInterfaceMap(typeof(OeIndexerProperty));
+                foreach (IEdmStructuralProperty edmProperty in entitySet.EntityType().StructuralProperties())
                 {
-                    if (!(edmProperty is OeEdmStructuralShadowProperty))
-                        throw new InvalidOperationException("Property " + edmProperty.Name + " not found in clr type " + clrType.Name);
-                }
-                else
-                {
-                    MemberExpression expression = Expression.Property(instance, propertyInfo);
+                    MethodCallExpression expression = Expression.Call(instance, interfaceMapping.TargetMethods[0], Expression.Constant(edmProperty.Name));
                     propertyAccessors.Add(CreatePropertyAccessor(edmProperty, expression, parameter, false));
+                }
+            }
+            else
+            {
+                foreach (IEdmStructuralProperty edmProperty in entitySet.EntityType().StructuralProperties())
+                {
+                    PropertyInfo? propertyInfo = clrType.GetPropertyIgnoreCaseOrNull(edmProperty);
+                    if (propertyInfo == null)
+                    {
+                        if (!(edmProperty is OeEdmStructuralShadowProperty))
+                            throw new InvalidOperationException("Property " + edmProperty.Name + " not found in clr type " + clrType.Name);
+                    }
+                    else
+                    {
+                        MemberExpression expression = Expression.Property(instance, propertyInfo);
+                        propertyAccessors.Add(CreatePropertyAccessor(edmProperty, expression, parameter, false));
+                    }
                 }
             }
             return propertyAccessors.ToArray();
@@ -132,7 +155,7 @@ namespace OdataToEntity.Parsers
         }
 
         public IEdmProperty EdmProperty { get; }
-        internal MemberExpression PropertyExpression { get; }
+        internal Expression PropertyExpression { get; }
         public bool SkipToken { get; }
         public ODataTypeAnnotation? TypeAnnotation { get; }
     }

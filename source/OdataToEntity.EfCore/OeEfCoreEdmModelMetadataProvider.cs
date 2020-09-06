@@ -140,7 +140,7 @@ namespace OdataToEntity.EfCore
             {
                 var properties = new List<PropertyInfo>();
                 foreach (IProperty efProperty in efEntityType.GetDeclaredProperties())
-                    if (efProperty.PropertyInfo == null || efProperty.PropertyInfo.DeclaringType == type)
+                    if (efProperty.PropertyInfo == null || efProperty.PropertyInfo.DeclaringType == type || efProperty.IsIndexerProperty())
                         properties.Add(GetPropertyInfo(efProperty));
                 foreach (INavigation navigation in efEntityType.GetDeclaredNavigations())
                     if (navigation.PropertyInfo == null || navigation.PropertyInfo.DeclaringType == type)
@@ -152,7 +152,7 @@ namespace OdataToEntity.EfCore
         }
         private PropertyInfo GetPropertyInfo(IPropertyBase efProperty)
         {
-            if (efProperty.IsShadowProperty())
+            if (efProperty.IsShadowProperty() || efProperty.IsIndexerProperty())
                 return CreateShadowProperty(efProperty);
 
             if (efProperty.PropertyInfo == null)
