@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore.Metadata;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 
@@ -7,8 +8,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
     public sealed class DynamicTypeDefinition
     {
         private int _collectionFieldIndex;
-        private readonly Dictionary<String, String> _navigationPropertyNames;
-        private int _singleFieldIndex;
+        private readonly Dictionary<INavigation, (Type ClrType, String? FieldName)> _navigations;
 
         public DynamicTypeDefinition(Type dynamicTypeType, String entityName, String tableEdmName, bool isQueryType)
         {
@@ -17,28 +17,26 @@ namespace OdataToEntity.EfCore.DynamicDataContext
             TableEdmName = tableEdmName;
             IsQueryType = isQueryType;
 
-            _navigationPropertyNames = new Dictionary<String, String>();
+            _navigations = new Dictionary<INavigation, (Type ClrType, String? FieldName)>();
         }
 
-        public String GetCollectionFiledName(String navigationPropertyName)
+        internal String? AddNavigationProperty(INavigation navigation, Type clrType)
         {
-            if (_navigationPropertyNames.TryGetValue(navigationPropertyName, out String? fieldName))
-                return fieldName;
+            if (_navigations.TryGetValue(navigation, out (Type ClrType, String? FieldName) value))
+                return value.FieldName;
 
-            _collectionFieldIndex++;
-            fieldName = "CollectionNavigation" + _collectionFieldIndex.ToString(CultureInfo.InvariantCulture);
-            _navigationPropertyNames.Add(navigationPropertyName, fieldName);
+            String? fieldName = null;
+            if (navigation.IsCollection)
+            {
+                _collectionFieldIndex++;
+                fieldName = "CollectionNavigation" + _collectionFieldIndex.ToString(CultureInfo.InvariantCulture);
+            }
+            _navigations.Add(navigation, (clrType, fieldName));
             return fieldName;
         }
-        public String GetSingleFieldName(String navigationPropertyName)
+        public Type GetNavigationPropertyClrType(INavigation navigation)
         {
-            if (_navigationPropertyNames.TryGetValue(navigationPropertyName, out String? fieldName))
-                return fieldName;
-
-            _singleFieldIndex++;
-            fieldName = "SingleNavigation" + _singleFieldIndex.ToString(CultureInfo.InvariantCulture);
-            _navigationPropertyNames.Add(navigationPropertyName, fieldName);
-            return fieldName;
+            return _navigations[navigation].ClrType;
         }
 
         public Type DynamicTypeType { get; }

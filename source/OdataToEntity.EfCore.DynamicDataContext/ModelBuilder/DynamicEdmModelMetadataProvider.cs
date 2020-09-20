@@ -35,5 +35,14 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
             }
             return properties ?? (IReadOnlyList<PropertyInfo>)Array.Empty<PropertyInfo>();
         }
+        protected override PropertyInfo GetPropertyInfo(IPropertyBase efProperty)
+        {
+            Type propertyClrType;
+            if (efProperty is INavigation navigation)
+                propertyClrType = _typeDefinitionManager.GetDynamicTypeDefinition(navigation.DeclaringEntityType.ClrType).GetNavigationPropertyClrType(navigation);
+            else
+                propertyClrType = efProperty.ClrType;
+            return base.CreateShadowProperty(efProperty, propertyClrType);
+        }
     }
 }

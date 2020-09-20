@@ -121,14 +121,14 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
                         Type propertyType = typeof(IEnumerable<>).MakeGenericType(dependentEntityType.ClrType);
                         var shadowProperty = new Infrastructure.OeShadowPropertyInfo(principalEntityType.ClrType, propertyType, propertyName);
                         Navigation navigation = fkey.HasPrincipalToDependent(shadowProperty, ConfigurationSource.Explicit);
-                        navigation.SetField(dynamicTypeDefinition.GetCollectionFiledName(propertyName), ConfigurationSource.Explicit);
+                        String? fieldName = dynamicTypeDefinition.AddNavigationProperty(navigation, propertyType);
+                        navigation.SetField(fieldName, ConfigurationSource.Explicit);
                     }
                 }
                 else
                 {
-                    var shadowProperty = new Infrastructure.OeShadowPropertyInfo(dependentEntityType.ClrType, principalEntityType.ClrType, propertyName);
-                    Navigation navigation = fkey.SetDependentToPrincipal(shadowProperty, ConfigurationSource.Explicit);
-                    navigation.SetField(dynamicTypeDefinition.GetSingleFieldName(propertyName), ConfigurationSource.Explicit);
+                    var navigation = fkey.SetDependentToPrincipal(propertyName, ConfigurationSource.Explicit);
+                    dynamicTypeDefinition.AddNavigationProperty(navigation, principalEntityType.ClrType);
                 }
             }
         }

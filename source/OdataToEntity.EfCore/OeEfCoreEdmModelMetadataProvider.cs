@@ -22,11 +22,11 @@ namespace OdataToEntity.EfCore
             _shadowProperties = new Dictionary<IPropertyBase, Infrastructure.OeShadowPropertyInfo>();
         }
 
-        private Infrastructure.OeShadowPropertyInfo CreateShadowProperty(IPropertyBase efProperty)
+        protected Infrastructure.OeShadowPropertyInfo CreateShadowProperty(IPropertyBase efProperty, Type propertyClrType)
         {
             if (!_shadowProperties.TryGetValue(efProperty, out Infrastructure.OeShadowPropertyInfo? shadowProperty))
             {
-                shadowProperty = new Infrastructure.OeShadowPropertyInfo(efProperty.DeclaringType.ClrType, efProperty.ClrType, efProperty.Name);
+                shadowProperty = new Infrastructure.OeShadowPropertyInfo(efProperty.DeclaringType.ClrType, propertyClrType, efProperty.Name);
                 _shadowProperties.Add(efProperty, shadowProperty);
             }
             return shadowProperty;
@@ -150,10 +150,10 @@ namespace OdataToEntity.EfCore
 
             return base.GetProperties(type);
         }
-        private PropertyInfo GetPropertyInfo(IPropertyBase efProperty)
+        protected virtual PropertyInfo GetPropertyInfo(IPropertyBase efProperty)
         {
-            if (efProperty.IsShadowProperty() || efProperty.IsIndexerProperty())
-                return CreateShadowProperty(efProperty);
+            if (efProperty.IsShadowProperty())
+                return CreateShadowProperty(efProperty, efProperty.ClrType);
 
             if (efProperty.PropertyInfo == null)
                 return efProperty.DeclaringType.ClrType.GetPropertyIgnoreCase(efProperty.Name);

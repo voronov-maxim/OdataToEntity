@@ -79,27 +79,6 @@ namespace OdataToEntity.EfCore.DynamicDataContext.Types
         internal IEnumerable<DynamicType>? CollectionNavigation58;
         internal IEnumerable<DynamicType>? CollectionNavigation59;
         internal IEnumerable<DynamicType>? CollectionNavigation60;
-
-        internal DynamicType? SingleNavigation1;
-        internal DynamicType? SingleNavigation2;
-        internal DynamicType? SingleNavigation3;
-        internal DynamicType? SingleNavigation4;
-        internal DynamicType? SingleNavigation5;
-        internal DynamicType? SingleNavigation6;
-        internal DynamicType? SingleNavigation7;
-        internal DynamicType? SingleNavigation8;
-        internal DynamicType? SingleNavigation9;
-        internal DynamicType? SingleNavigation10;
-        internal DynamicType? SingleNavigation21;
-        internal DynamicType? SingleNavigation22;
-        internal DynamicType? SingleNavigation23;
-        internal DynamicType? SingleNavigation24;
-        internal DynamicType? SingleNavigation25;
-        internal DynamicType? SingleNavigation26;
-        internal DynamicType? SingleNavigation27;
-        internal DynamicType? SingleNavigation28;
-        internal DynamicType? SingleNavigation29;
-        internal DynamicType? SingleNavigation30;
 #pragma warning restore 0649
     }
 }
