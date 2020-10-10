@@ -60,7 +60,7 @@ namespace OdataToEntity.AspNetCore
         }
         public static IEdmModel GetEdmModel(this HttpContext httpContext)
         {
-            return httpContext.RequestServices.GetService<IEdmModel>() ?? throw new ArgumentNullException("Use AddOdataToEntityMvc for register IEdmModel");
+            return httpContext.RequestServices.GetService<IEdmModel>() ?? throw new InvalidOperationException("Use AddOdataToEntityMvc for register IEdmModel");
         }
     }
 }

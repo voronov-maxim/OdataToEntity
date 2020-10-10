@@ -18,6 +18,15 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
             _httpContextAccessor = httpContextAccessor;
         }
 
+        [HttpGet("$count")]
+        public async Task<string> Count()
+        {
+            Query.OeModelBoundProvider modelBoundProvider = _httpContextAccessor.HttpContext.CreateModelBoundProvider();
+            var parser = new OeAspQueryParser(_httpContextAccessor.HttpContext, modelBoundProvider);
+            Model.OrderContext orderContext = parser.GetDbContext<Model.OrderContext>();
+            int? count = await parser.ExecuteScalar<int>(orderContext.Orders).ConfigureAwait(false);
+            return count.ToString();
+        }
         [HttpDelete("{id}")]
         public void Delete(OeDataContext dataContext, Model.Order order)
         {

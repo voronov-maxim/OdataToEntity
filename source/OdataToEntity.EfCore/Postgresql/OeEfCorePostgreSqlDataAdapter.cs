@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.OData.Edm;
 using System.Linq.Expressions;
 
 namespace OdataToEntity.EfCore.Postgresql
@@ -18,10 +19,10 @@ namespace OdataToEntity.EfCore.Postgresql
             base.IsDatabaseNullHighestValue = true;
         }
 
-        protected override Expression TranslateExpression(Expression expression)
+        protected override Expression TranslateExpression(IEdmModel edmModel, Expression expression)
         {
             expression = new OeDateTimeOffsetMembersVisitor().Visit(expression);
-            return base.TranslateExpression(expression);
+            return base.TranslateExpression(edmModel, expression);
         }
     }
 }

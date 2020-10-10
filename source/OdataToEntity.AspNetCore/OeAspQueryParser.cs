@@ -47,15 +47,15 @@ namespace OdataToEntity.AspNetCore
             if (odataUri.Path.LastSegment is OperationSegment)
                 return OeOperationHelper.ApplyBoundFunction(_queryContext);
 
+            if (odataUri.Path.LastSegment is CountSegment)
+            {
+                headers.ResponseContentType = OeRequestHeaders.TextDefault.MimeType;
+                int count = _dataAdapter!.ExecuteScalar<int>(_dataContext!, _queryContext);
+                return Infrastructure.AsyncEnumeratorHelper.ToAsyncEnumerable(Task.FromResult((Object)count));
+            }
+
             if (source != null)
                 _queryContext.QueryableSource = e => e == _queryContext.EntryFactory!.EntitySet ? source : null;
-
-            if (_queryContext.ODataUri.Path.LastSegment is CountSegment)
-            {
-                headers.ResponseContentType = OeRequestHeaders.TextDefault.ContentType;
-                int count = _dataAdapter!.ExecuteScalar<int>(_dataContext!, _queryContext);
-                return (IAsyncEnumerable<Object>)Infrastructure.AsyncEnumeratorHelper.ToAsyncEnumerable(Task.FromResult(count));
-            }
 
             return _dataAdapter!.Execute(_dataContext!, _queryContext);
         }

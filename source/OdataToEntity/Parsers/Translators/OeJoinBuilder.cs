@@ -56,21 +56,7 @@ namespace OdataToEntity.Parsers.Translators
             Type outerType = OeExpressionHelper.GetCollectionItemType(outerSource.Type);
             Type innerType = OeExpressionHelper.GetCollectionItemType(innerSource.Type);
 
-            LambdaExpression groupJoinOuterKeySelector = GetGroupJoinOuterKeySelector(outerType, navigationProperty, joinPath);
-            LambdaExpression groupJoinInnerKeySelector = GetGroupJoinInnerKeySelector(innerType, navigationProperty);
-            if (groupJoinOuterKeySelector.ReturnType != groupJoinInnerKeySelector.ReturnType)
-            {
-                Expression innerBody = CoerceExpression(groupJoinOuterKeySelector.Body, groupJoinInnerKeySelector.Body);
-                if (innerBody.Type != groupJoinInnerKeySelector.ReturnType)
-                    groupJoinInnerKeySelector = Expression.Lambda(innerBody, groupJoinInnerKeySelector.Parameters[0]);
-
-                if (innerBody.Type != groupJoinOuterKeySelector.ReturnType)
-                {
-                    Expression outerBody = CoerceExpression(innerBody, groupJoinOuterKeySelector.Body);
-                    groupJoinOuterKeySelector = Expression.Lambda(outerBody, groupJoinOuterKeySelector.Parameters[0]);
-                }
-            }
-
+            (LambdaExpression groupJoinOuterKeySelector, LambdaExpression groupJoinInnerKeySelector) = GetJoinKeySelector(outerType, innerType, joinPath, navigationProperty);
             LambdaExpression groupJoinResultSelect = GetGroupJoinResultSelector(outerType, innerType, manyToMany);
 
             MethodInfo groupJoinMethodInfo = OeMethodInfoHelper.GetGroupJoinMethodInfo(outerType, innerType, groupJoinOuterKeySelector.ReturnType, groupJoinResultSelect.ReturnType);
@@ -208,6 +194,24 @@ namespace OdataToEntity.Parsers.Translators
 
             NewExpression newTupleExpression = OeExpressionHelper.CreateTupleExpression(expressions);
             return Expression.Lambda(newTupleExpression, parameterExpressions);
+        }
+        internal (LambdaExpression outer, LambdaExpression inner) GetJoinKeySelector(Type outerType, Type innerType, IReadOnlyList<IEdmNavigationProperty> joinPath, IEdmNavigationProperty navigationProperty)
+        {
+            LambdaExpression outerKeySelector = GetGroupJoinOuterKeySelector(outerType, navigationProperty, joinPath);
+            LambdaExpression innerKeySelector = GetGroupJoinInnerKeySelector(innerType, navigationProperty);
+            if (outerKeySelector.ReturnType != innerKeySelector.ReturnType)
+            {
+                Expression innerBody = CoerceExpression(outerKeySelector.Body, innerKeySelector.Body);
+                if (innerBody.Type != innerKeySelector.ReturnType)
+                    innerKeySelector = Expression.Lambda(innerBody, innerKeySelector.Parameters[0]);
+
+                if (innerBody.Type != outerKeySelector.ReturnType)
+                {
+                    Expression outerBody = CoerceExpression(innerBody, outerKeySelector.Body);
+                    outerKeySelector = Expression.Lambda(outerBody, outerKeySelector.Parameters[0]);
+                }
+            }
+            return (outerKeySelector, innerKeySelector);
         }
         private static IReadOnlyList<IEdmNavigationProperty> GetJoinPath(SingleValuePropertyAccessNode propertyNode)
         {

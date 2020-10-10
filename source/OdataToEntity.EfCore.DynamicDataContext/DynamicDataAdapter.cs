@@ -1,5 +1,6 @@
 ﻿using Microsoft.OData.Edm;
 using OdataToEntity.ModelBuilder;
+using OdataToEntity.Parsers;
 using System;
 using System.Linq.Expressions;
 
@@ -46,12 +47,16 @@ namespace OdataToEntity.EfCore.DynamicDataContext
         {
             return TypeDefinitionManager.CreateDynamicDbContext();
         }
-        protected override Expression TranslateExpression(Expression expression)
+        protected override Expression TranslateExpression(IEdmModel edmModel, Expression expression)
         {
+            var collectionNavigationVisitor = new OeCollectionNavigationVisitor(edmModel, expression);
+            expression = collectionNavigationVisitor.Visit(expression);
             expression = _expressionVisitor == null ? expression : _expressionVisitor.Visit(expression);
-            return base.TranslateExpression(expression);
+
+            return base.TranslateExpression(edmModel, expression);
         }
 
+        public override Type DataContextType => TypeDefinitionManager.DynamicDbContextType;
         public override Db.OeEntitySetAdapterCollection EntitySetAdapters => _dynamicEntitySetAdapters;
         public DynamicTypeDefinitionManager TypeDefinitionManager { get; }
     }

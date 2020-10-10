@@ -85,11 +85,7 @@ namespace OdataToEntity.Parsers
                 {
                     IQueryable? query = null;
                     if (_queryableSource != null)
-                    {
                         query = _queryableSource(enumerableStub.EntitySet);
-                        if (query != null && query.Expression is MethodCallExpression)
-                            return query.Expression;
-                    }
 
                     if (query == null)
                     {

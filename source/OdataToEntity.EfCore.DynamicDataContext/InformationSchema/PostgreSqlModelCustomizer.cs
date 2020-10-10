@@ -29,7 +29,10 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                 entityType.SetTableName(entityType.GetTableName().ToLowerInvariant());
 
                 foreach (IMutableProperty property in entityType.GetProperties())
-                    property.SetColumnName(property.GetColumnName().ToLowerInvariant());
+                {
+                    var storeObjectIdentifier = StoreObjectIdentifier.Table(entityType.GetTableName(), entityType.GetSchema());
+                    property.SetColumnName(property.GetColumnName(storeObjectIdentifier).ToLowerInvariant());
+                }
             }
 
             Expression<Func<Parameter, bool>> parameterFilter = t => t.SpecificSchema != "pg_catalog" && t.SpecificSchema != "information_schema";

@@ -66,6 +66,8 @@ namespace OdataToEntity.AspNetCore
                     }
                     else if (template[template.Length - 1] == ')' && template.IndexOf('(') > 1)
                         action.Selectors[i].AttributeRouteModel.Template = controllerTemplate + "/" + template;
+                    else
+                        action.Selectors[i].AttributeRouteModel.Template = controllerTemplate + "/" + template;
                 }
             }
         }

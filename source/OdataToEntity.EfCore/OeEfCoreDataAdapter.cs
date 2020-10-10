@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.OData;
+using Microsoft.OData.Edm;
 using OdataToEntity.Parsers;
 using System;
 using System.Collections.Generic;
@@ -329,7 +330,7 @@ namespace OdataToEntity.EfCore
             {
                 Expression expression = queryContext.CreateExpression(new OeConstantToVariableVisitor());
                 expression = OeEnumerableToQuerableVisitor.Translate(expression);
-                expression = TranslateExpression(expression);
+                expression = TranslateExpression(queryContext.EdmModel, expression);
                 IQueryable entitySet = queryContext.EntitySetAdapter.GetEntitySet(dataContext);
                 IQueryable query = entitySet.Provider.CreateQuery(queryContext.TranslateSource(dataContext, expression));
                 asyncEnumerable = ((IQueryable<Object>)query).AsAsyncEnumerable();
@@ -338,7 +339,7 @@ namespace OdataToEntity.EfCore
                 {
                     expression = queryContext.CreateCountExpression(query.Expression);
                     countExpression = (MethodCallExpression)OeEnumerableToQuerableVisitor.Translate(expression);
-                    countExpression = (MethodCallExpression)TranslateExpression(countExpression);
+                    countExpression = (MethodCallExpression)TranslateExpression(queryContext.EdmModel, countExpression);
                 }
             }
 
@@ -358,7 +359,7 @@ namespace OdataToEntity.EfCore
             IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dataContext);
             Expression expression = queryContext.CreateExpression(new OeConstantToVariableVisitor());
             expression = OeEnumerableToQuerableVisitor.Translate(expression);
-            expression = TranslateExpression(expression);
+            expression = TranslateExpression(queryContext.EdmModel, expression);
             return query.Provider.Execute<TResult>(queryContext.TranslateSource(dataContext, expression));
         }
         private static Db.OeEntitySetAdapterCollection GetEntitySetAdapters(Db.OeDataAdapter dataAdapter)
@@ -389,9 +390,9 @@ namespace OdataToEntity.EfCore
             {
                 var parameterVisitor = new OeConstantToParameterVisitor();
                 Expression expression = queryContext.CreateExpression(parameterVisitor);
+                expression = TranslateExpression(queryContext.EdmModel, expression);
                 expression = queryContext.TranslateSource(dbContext, expression);
                 expression = OeEnumerableToQuerableVisitor.Translate(expression);
-                expression = TranslateExpression(expression);
 
                 queryExecutor = dbContext.CreateAsyncQueryExecutor<TResult>(expression);
                 if (queryContext.EntryFactory == null)
@@ -400,7 +401,7 @@ namespace OdataToEntity.EfCore
                 {
                     countExpression = queryContext.CreateCountExpression(expression);
                     countExpression = (MethodCallExpression)OeEnumerableToQuerableVisitor.Translate(countExpression);
-                    countExpression = (MethodCallExpression)TranslateExpression(countExpression);
+                    countExpression = (MethodCallExpression)TranslateExpression(queryContext.EdmModel, countExpression);
                 }
 
                 cacheContext = queryContext.CreateCacheContext(parameterVisitor.ConstantToParameterMapper);
@@ -435,7 +436,7 @@ namespace OdataToEntity.EfCore
             var dbContext = (T)dataContext;
             return dbContext.SaveChangesAsync(cancellationToken);
         }
-        protected virtual Expression TranslateExpression(Expression expression)
+        protected virtual Expression TranslateExpression(IEdmModel edmModel, Expression expression)
         {
             return expression;
         }

@@ -82,16 +82,32 @@ namespace OdataToEntity
         {
             return edmModel.GetEdmModel(entitySet.Container);
         }
-        public static IEdmModel? GetEdmModel(this IEdmModel edmModel, IEdmEntityType entityType)
+        public static IEdmModel? GetEdmModel(this IEdmModel edmModel, IEdmEntityType edmEntityType)
         {
             foreach (IEdmSchemaElement element in edmModel.SchemaElements)
-                if (element == entityType)
+                if (element == edmEntityType)
                     return edmModel;
 
             foreach (IEdmModel refModel in edmModel.ReferencedModels)
                 if (refModel is EdmModel)
                 {
-                    IEdmModel? foundModel = GetEdmModel(refModel, entityType);
+                    IEdmModel? foundModel = GetEdmModel(refModel, edmEntityType);
+                    if (foundModel != null)
+                        return foundModel;
+                }
+
+            return null;
+        }
+        public static IEdmModel? GetEdmModel(this IEdmModel edmModel, Type clrEntityType)
+        {
+            foreach (IEdmSchemaElement element in edmModel.SchemaElements)
+                if (element is IEdmEntityType edmEntityType && edmModel.GetClrType(edmEntityType) == clrEntityType)
+                    return edmModel;
+
+            foreach (IEdmModel refModel in edmModel.ReferencedModels)
+                if (refModel is EdmModel)
+                {
+                    IEdmModel? foundModel = GetEdmModel(refModel, clrEntityType);
                     if (foundModel != null)
                         return foundModel;
                 }
