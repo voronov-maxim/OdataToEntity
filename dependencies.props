@@ -8,9 +8,9 @@
     <JsonNetVersion>12.0.3</JsonNetVersion>
     <NetStandardVersion>net5.0</NetStandardVersion>
     <NetCoreAppVersion>net5.0</NetCoreAppVersion>
-    <NetCoreVersion>3.1.6</NetCoreVersion>
+    <NetCoreVersion>3.1.8</NetCoreVersion>
     <NpgsqlVersion>5.0.0-*</NpgsqlVersion>
-    <ODataLibVersion>7.7.1</ODataLibVersion>
+    <ODataLibVersion>7.7.2</ODataLibVersion>
     <OdataToEntityVersion>2.5.0</OdataToEntityVersion>
     <SystemInteractiveAsyncVersion>4.1.1</SystemInteractiveAsyncVersion>
     <TestSdkVersion>16.7.1</TestSdkVersion>
