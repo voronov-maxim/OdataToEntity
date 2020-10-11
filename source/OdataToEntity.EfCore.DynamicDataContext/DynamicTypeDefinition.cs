@@ -1,14 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore.Metadata;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 
 namespace OdataToEntity.EfCore.DynamicDataContext
 {
     public sealed class DynamicTypeDefinition
     {
-        private int _collectionFieldIndex;
-        private readonly Dictionary<INavigation, (Type ClrType, String? FieldName)> _navigations;
+        private readonly Dictionary<INavigation, Type> _navigations;
 
         public DynamicTypeDefinition(Type dynamicTypeType, String entityName, String tableEdmName, bool isQueryType)
         {
@@ -17,26 +15,17 @@ namespace OdataToEntity.EfCore.DynamicDataContext
             TableEdmName = tableEdmName;
             IsQueryType = isQueryType;
 
-            _navigations = new Dictionary<INavigation, (Type ClrType, String? FieldName)>();
+            _navigations = new Dictionary<INavigation, Type>();
         }
 
-        internal String? AddNavigationProperty(INavigation navigation, Type clrType)
+        internal void AddNavigationProperty(INavigation navigation, Type clrType)
         {
-            if (_navigations.TryGetValue(navigation, out (Type ClrType, String? FieldName) value))
-                return value.FieldName;
-
-            String? fieldName = null;
-            if (navigation.IsCollection)
-            {
-                _collectionFieldIndex++;
-                fieldName = "CollectionNavigation" + _collectionFieldIndex.ToString(CultureInfo.InvariantCulture);
-            }
-            _navigations.Add(navigation, (clrType, fieldName));
-            return fieldName;
+            if (!_navigations.TryGetValue(navigation, out _))
+                _navigations.Add(navigation, clrType);
         }
         public Type GetNavigationPropertyClrType(INavigation navigation)
         {
-            return _navigations[navigation].ClrType;
+            return _navigations[navigation];
         }
 
         public Type DynamicTypeType { get; }
