@@ -1,5 +1,4 @@
-﻿using Pluralize.NET;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 
@@ -23,7 +22,6 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         public String PrincipalConstraintName { get; }
 
         public static Dictionary<(String, String), List<Navigation>> GetNavigations(
-            Pluralizer pluralizer,
             IReadOnlyList<ReferentialConstraint> referentialConstraints,
             IReadOnlyDictionary<(String constraintSchema, String constraintName), IReadOnlyList<KeyColumnUsage>> keyColumns,
             IReadOnlyDictionary<(String tableSchema, String tableName), String> tableFullNameEdmNames,
@@ -52,7 +50,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                     if (selfReferences)
                         dependentNavigationName = "Parent";
                     else
-                        dependentNavigationName = pluralizer.Singularize(dependentEdmName);
+                        dependentNavigationName = Humanizer.InflectorExtensions.Singularize(dependentEdmName);
 
                     (String, String, String) dependentKey = (fkey.ConstraintSchema, dependentKeyColumn.TableName, principalKeyColumn.TableName);
                     if (navigationCounter.TryGetValue(dependentKey, out List<IReadOnlyList<KeyColumnUsage>>? columnsList))
@@ -78,7 +76,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                     if (dependentKeyColumn.TableSchema == principalKeyColumn.TableSchema && dependentKeyColumn.TableName == principalKeyColumn.TableName)
                         principalNavigationName = "Children";
                     else
-                        principalNavigationName = pluralizer.Pluralize(principalEdmName);
+                        principalNavigationName = Humanizer.InflectorExtensions.Pluralize(principalEdmName);
 
                     (String, String, String) principalKey = (fkey.ConstraintSchema, principalKeyColumn.TableName, dependentKeyColumn.TableName);
                     if (navigationCounter.TryGetValue(principalKey, out List<IReadOnlyList<KeyColumnUsage>>? columnsList))

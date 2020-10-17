@@ -1,5 +1,4 @@
-﻿using Pluralize.NET;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -131,7 +130,6 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             Dictionary<(String tableSchema, String tableName), List<Column>> tableColumns = GetTableColumns(informationSchema);
             Dictionary<(String tableSchema, String tableName), List<(String constraintName, bool isPrimary)>> keyConstraintNames = GetKeyConstraintNames(informationSchema);
             Dictionary<(String, String), List<Navigation>> tableNavigations = Navigation.GetNavigations(
-                new Pluralizer(),
                 referentialConstraints,
                 keyColumns,
                 tableFullNameEdmNames,

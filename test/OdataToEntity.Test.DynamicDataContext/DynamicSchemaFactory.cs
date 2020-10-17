@@ -1,7 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
 using OdataToEntity.EfCore.DynamicDataContext.InformationSchema;
-using OdataToEntity.EfCore.DynamicDataContext.ModelBuilder;
 using System;
 
 namespace OdataToEntity.EfCore.DynamicDataContext
@@ -15,12 +13,8 @@ namespace OdataToEntity.EfCore.DynamicDataContext
         {
             if (provider == null)
                 throw new ArgumentNullException(nameof(provider));
-
-            if (connectionString == null)
-                throw new ArgumentNullException(nameof(connectionString));
-
             _provider = provider.ToLowerInvariant();
-            _connectionString = connectionString;
+            _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
         }
 
         public ProviderSpecificSchema CreateSchema(bool useRelationalNulls)

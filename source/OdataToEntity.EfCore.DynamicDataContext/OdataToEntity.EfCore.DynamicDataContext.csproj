@@ -31,9 +31,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Humanizer.Core" Version="2.8.26" />
     <PackageReference Include="Microsoft.OData.Core" Version="$(ODataLibVersion)" />
     <PackageReference Include="Microsoft.OData.Edm" Version="$(ODataLibVersion)" />
-    <PackageReference Include="Pluralize.NET" Version="1.0.2" />
   </ItemGroup>
 
 </Project>
