@@ -46,17 +46,17 @@ namespace OdataToEntity.Test.DynamicDataContext.AspServer
             bool useRelationalNulls = Configuration.GetValue<bool>("OdataToEntity:UseRelationalNulls");
             String? informationSchemaMappingFileName = Configuration.GetValue<String>("OdataToEntity:InformationSchemaMappingFileName");
             String? filter = Configuration.GetValue<String>("OdataToEntity:Filter");
-            String? schemaFilterMode = Configuration.GetValue<String>("OdataToEntity:SchemaFilterMode");
-            String[]? schemaFilter = Configuration.GetSection("OdataToEntity:SchemaFilter").Get<String[]>();
+            String[]? includedSchemas = Configuration.GetSection("OdataToEntity:IncludedSchemas").Get<String[]>();
+            String[]? excludedSchemas = Configuration.GetSection("OdataToEntity:ExcludedSchemas").Get<String[]>();
 
             if (!String.IsNullOrEmpty(basePath) && basePath[0] != '/')
                 basePath = "/" + basePath;
 
             var informationSchemaSettings = new InformationSchemaSettings();
-            if (schemaFilterMode != null)
-                informationSchemaSettings.SchemaFilterMode = Enum.Parse<DbSchemaFilterMode>(schemaFilterMode, true);
-            if (schemaFilter != null)
-                informationSchemaSettings.SchemaFilter = new HashSet<String>(schemaFilter);
+            if (includedSchemas != null)
+                informationSchemaSettings.IncludedSchemas = new HashSet<String>(includedSchemas);
+            if (excludedSchemas != null)
+                informationSchemaSettings.ExcludedSchemas = new HashSet<String>(excludedSchemas);
             if (filter != null)
                 informationSchemaSettings.ObjectFilter = Enum.Parse<DbObjectFilter>(filter, true);
             if (informationSchemaMappingFileName != null)

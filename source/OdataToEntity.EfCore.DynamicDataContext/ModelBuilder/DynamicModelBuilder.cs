@@ -42,7 +42,10 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
 
                 var dynamicTypeDefinition = TypeDefinitionManager.GetOrAddDynamicTypeDefinition(tableEdmName, isQueryType);
                 String tableSchema = MetadataProvider.GetTableSchema(tableEdmName);
-                EntityTypeBuilder entityTypeBuilder = modelBuilder.Entity(dynamicTypeDefinition.DynamicTypeType).ToTable(tableEdmName, tableSchema);
+                String tableDbName = tableEdmName;
+                if (tableDbName.StartsWith(tableSchema + "."))
+                    tableDbName = tableDbName.Substring(tableSchema.Length + 1);
+                EntityTypeBuilder entityTypeBuilder = modelBuilder.Entity(dynamicTypeDefinition.DynamicTypeType).ToTable(tableDbName, tableSchema);
 
                 entityType = (EntityType)entityTypeBuilder.Metadata;
                 entityType.IsKeyless = isQueryType;

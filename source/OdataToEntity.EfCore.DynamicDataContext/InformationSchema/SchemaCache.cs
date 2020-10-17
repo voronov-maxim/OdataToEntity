@@ -107,18 +107,15 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 
                 IQueryable<Parameter> parametersQuery = schemaContext.Parameters;
                 IQueryable<Routine> routinesQuery = schemaContext.Routines;
-                if (informationSchemaSettings.SchemaFilter != null && informationSchemaSettings.SchemaFilter.Count > 0)
+                if (informationSchemaSettings.IncludedSchemas != null && informationSchemaSettings.IncludedSchemas.Count > 0)
                 {
-                    if (informationSchemaSettings.SchemaFilterMode == DbSchemaFilterMode.Normal)
-                    {
-                        parametersQuery = parametersQuery.Where(t => informationSchemaSettings.SchemaFilter.Contains(t.SpecificSchema));
-                        routinesQuery = routinesQuery.Where(t => informationSchemaSettings.SchemaFilter.Contains(t.RoutineSchema));
-                    }
-                    else
-                    {
-                        parametersQuery = parametersQuery.Where(t => !informationSchemaSettings.SchemaFilter.Contains(t.SpecificSchema));
-                        routinesQuery = routinesQuery.Where(t => !informationSchemaSettings.SchemaFilter.Contains(t.RoutineSchema));
-                    }
+                    parametersQuery = parametersQuery.Where(t => informationSchemaSettings.IncludedSchemas.Contains(t.SpecificSchema));
+                    routinesQuery = routinesQuery.Where(t => informationSchemaSettings.IncludedSchemas.Contains(t.RoutineSchema));
+                }
+                if (informationSchemaSettings.ExcludedSchemas != null && informationSchemaSettings.ExcludedSchemas.Count > 0)
+                {
+                    parametersQuery = parametersQuery.Where(t => !informationSchemaSettings.ExcludedSchemas.Contains(t.SpecificSchema));
+                    routinesQuery = routinesQuery.Where(t => !informationSchemaSettings.ExcludedSchemas.Contains(t.RoutineSchema));
                 }
 
                 try

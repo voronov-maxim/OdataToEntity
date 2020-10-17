@@ -31,7 +31,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         }
 
         public static SchemaCache Create(ProviderSpecificSchema informationSchema, InformationSchemaSettings informationSchemaSettings)
-        { 
+        {
             IEqualityComparer<String> comparer = informationSchema.IsCaseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
             TupleStringComparer tupleComparer = informationSchema.IsCaseSensitive ? TupleStringComparer.Ordinal : TupleStringComparer.OrdinalIgnoreCase;
 
@@ -52,19 +52,17 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 
                 IQueryable<Table> tableQuery = schemaContext.Tables.AsQueryable();
                 IQueryable<ReferentialConstraint> referentialConstraintsQuery = schemaContext.ReferentialConstraints;
-                if (informationSchemaSettings.SchemaFilter != null && informationSchemaSettings.SchemaFilter.Count > 0)
+                if (informationSchemaSettings.IncludedSchemas != null && informationSchemaSettings.IncludedSchemas.Count > 0)
                 {
-                    if (informationSchemaSettings.SchemaFilterMode == DbSchemaFilterMode.Normal)
-                    {
-                        tableQuery = tableQuery.Where(t => informationSchemaSettings.SchemaFilter.Contains(t.TableSchema));
-                        referentialConstraintsQuery = referentialConstraintsQuery.Where(t => informationSchemaSettings.SchemaFilter.Contains(t.ConstraintSchema));
-                    }
-                    else
-                    {
-                        tableQuery = tableQuery.Where(t => !informationSchemaSettings.SchemaFilter.Contains(t.TableSchema));
-                        referentialConstraintsQuery = referentialConstraintsQuery.Where(t => !informationSchemaSettings.SchemaFilter.Contains(t.ConstraintSchema));
-                    }
+                    tableQuery = tableQuery.Where(t => informationSchemaSettings.IncludedSchemas.Contains(t.TableSchema));
+                    referentialConstraintsQuery = referentialConstraintsQuery.Where(t => informationSchemaSettings.IncludedSchemas.Contains(t.ConstraintSchema));
                 }
+                if (informationSchemaSettings.ExcludedSchemas != null && informationSchemaSettings.ExcludedSchemas.Count > 0)
+                {
+                    tableQuery = tableQuery.Where(t => !informationSchemaSettings.ExcludedSchemas.Contains(t.TableSchema));
+                    referentialConstraintsQuery = referentialConstraintsQuery.Where(t => !informationSchemaSettings.ExcludedSchemas.Contains(t.ConstraintSchema));
+                }
+
                 List<Table> tables = tableQuery.ToList();
                 referentialConstraints = referentialConstraintsQuery.ToList();
 
@@ -74,7 +72,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                     if (tableEdmNameFullNames.ContainsKey(tableName))
                     {
                         fixTableNames.Add(table);
-                        tableName = table.TableSchema + table.TableName;
+                        tableName = table.TableSchema + "." + table.TableName;
                     }
 
                     if (dbNameTableMappings != null)
@@ -123,7 +121,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                 }
 
                 foreach (Table fixTableName in fixTableNames)
-                    tableEdmNameFullNames[fixTableName.TableSchema + fixTableName.TableName] = (fixTableName.TableSchema, fixTableName.TableName, fixTableName.TableType == "VIEW");
+                    tableEdmNameFullNames[fixTableName.TableSchema + "." + fixTableName.TableName] = (fixTableName.TableSchema, fixTableName.TableName, fixTableName.TableType == "VIEW");
             }
             finally
             {
@@ -220,13 +218,10 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                 List<KeyColumnUsage>? columns = null;
 
                 IQueryable<KeyColumnUsage> keyColumnQueryable = schemaContext.KeyColumnUsage.AsQueryable();
-                if (informationSchemaSettings.SchemaFilter != null && informationSchemaSettings.SchemaFilter.Count > 0)
-                {
-                    if (informationSchemaSettings.SchemaFilterMode == DbSchemaFilterMode.Normal)
-                        keyColumnQueryable = keyColumnQueryable.Where(t => informationSchemaSettings.SchemaFilter.Contains(t.TableSchema));
-                    else
-                        keyColumnQueryable = keyColumnQueryable.Where(t => !informationSchemaSettings.SchemaFilter.Contains(t.TableSchema));
-                }
+                if (informationSchemaSettings.IncludedSchemas != null && informationSchemaSettings.IncludedSchemas.Count > 0)
+                    keyColumnQueryable = keyColumnQueryable.Where(t => informationSchemaSettings.IncludedSchemas.Contains(t.TableSchema));
+                if (informationSchemaSettings.ExcludedSchemas != null && informationSchemaSettings.ExcludedSchemas.Count > 0)
+                    keyColumnQueryable = keyColumnQueryable.Where(t => !informationSchemaSettings.ExcludedSchemas.Contains(t.TableSchema));
                 foreach (KeyColumnUsage keyColumn in keyColumnQueryable.OrderBy(t => t.TableSchema).ThenBy(t => t.TableName).ThenBy(t => t.ConstraintName).ThenBy(t => t.OrdinalPosition))
                 {
                     if (constraintSchema != keyColumn.ConstraintSchema || constraintName != keyColumn.ConstraintName)
