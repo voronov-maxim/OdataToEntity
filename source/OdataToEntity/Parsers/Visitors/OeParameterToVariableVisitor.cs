@@ -27,10 +27,7 @@ namespace OdataToEntity.Parsers
             int i = 0;
             foreach (KeyValuePair<String, ConstantExpression> constantExpression in _constantExpressions)
                 constantExpressions[i++] = constantExpression.Value;
-            NewExpression tupleNew = OeExpressionHelper.CreateTupleExpression(constantExpressions);
-
-            var tupleCtor = (Func<Object>)Expression.Lambda(tupleNew).Compile();
-            Object tuple = tupleCtor();
+            Object tuple = OeExpressionHelper.GetTuple(constantExpressions);
 
             IReadOnlyList<MemberExpression> tupleProperties = OeExpressionHelper.GetPropertyExpressions(Expression.Constant(tuple));
             _propertyExpressions = new Dictionary<String, MemberExpression>(tupleProperties.Count);

@@ -7,6 +7,7 @@ using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace OdataToEntity.Parsers
 {
@@ -173,6 +174,34 @@ namespace OdataToEntity.Parsers
             }
             return arguments;
         }
+        public static ITuple GetTuple(IReadOnlyList<ConstantExpression> constantExpressions)
+        {
+            int i = 0;
+            return GetTuple(constantExpressions, ref i);
+        }
+        private static ITuple GetTuple(IReadOnlyList<ConstantExpression> constantExpressions, ref int i)
+        {
+            int length = constantExpressions.Count - i;
+            if (length > 8)
+                length = 8;
+
+            var arguments = new Object?[length];
+            var typeArguments = new Type[length];
+            for (int j = 0; i < constantExpressions.Count; i++, j++)
+                if (j == 7)
+                {
+                    Object rest = GetTuple(constantExpressions, ref i);
+                    arguments[j] = rest;
+                    typeArguments[j] = rest.GetType();
+                }
+                else
+                {
+                    arguments[j] = constantExpressions[i].Value;
+                    typeArguments[j] = constantExpressions[i].Type;
+                }
+            Type tupleType = OeExpressionHelper.GetTupleType(typeArguments);
+            return (ITuple)Activator.CreateInstance(tupleType, arguments)!;
+        }
         public static Type GetTupleType(Type[] typeArguments)
         {
             Type tupleType;
@@ -204,7 +233,7 @@ namespace OdataToEntity.Parsers
                         tupleType = typeof(Tuple<,,,,,,,>);
                         if (typeArguments.Length > 8 || !IsTupleType(typeArguments[7]))
                         {
-                            Type[] restTypeArguments = new Type[typeArguments.Length - 7];
+                            var restTypeArguments = new Type[typeArguments.Length - 7];
                             Array.Copy(typeArguments, 7, restTypeArguments, 0, restTypeArguments.Length);
                             Type restType = GetTupleType(restTypeArguments);
                             Array.Resize(ref typeArguments, 8);

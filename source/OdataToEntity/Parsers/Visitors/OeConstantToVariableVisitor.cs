@@ -31,10 +31,7 @@ namespace OdataToEntity.Parsers
             IReadOnlyList<ConstantExpression> constantExpressions,
             IReadOnlyDictionary<ConstantExpression, ConstantNode> constantsMapping)
         {
-            NewExpression tupleNew = OeExpressionHelper.CreateTupleExpression(constantExpressions);
-            var tupleCtor = (Func<Object>)Expression.Lambda(tupleNew).Compile();
-            Object tuple = tupleCtor();
-
+            Object tuple = OeExpressionHelper.GetTuple(constantExpressions);
             return OeExpressionHelper.GetPropertyExpressions(Expression.Constant(tuple));
         }
         protected override Expression VisitConstant(ConstantExpression node)
