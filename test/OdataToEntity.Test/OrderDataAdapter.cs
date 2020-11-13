@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using Microsoft.OData.Edm;
+using System.Linq.Expressions;
 
 namespace OdataToEntity.Test.Model
 {
@@ -9,7 +10,7 @@ namespace OdataToEntity.Test.Model
         {
         }
 
-        protected override Expression TranslateExpression(Expression expression)
+        protected override Expression TranslateExpression(IEdmModel edmModel, Expression expression)
         {
             return new SQLiteVisitor().Visit(expression);
         }

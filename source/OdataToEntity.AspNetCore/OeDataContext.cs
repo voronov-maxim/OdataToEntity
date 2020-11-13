@@ -8,7 +8,6 @@ using OdataToEntity.Parsers;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Security.Permissions;
 using System.Threading.Tasks;
 
 namespace OdataToEntity.AspNetCore

@@ -1,13 +1,11 @@
 ﻿using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.OData.Edm;
 using System;
 using System.Collections.Concurrent;
-using OdataToEntity.EfCore;
 
 namespace OdataToEntity.Test.Model
 {
@@ -19,7 +17,7 @@ namespace OdataToEntity.Test.Model
         {
             return DbFixtureInitDb.CreateEdmModel();
         }
-        public static DbContextOptions Create(String databaseName)
+        public static DbContextOptions<OrderContext> Create(String databaseName)
         {
             return Create<OrderContext>(databaseName);
         }
@@ -27,7 +25,7 @@ namespace OdataToEntity.Test.Model
         {
             throw new NotSupportedException();
         }
-        public static DbContextOptions Create<T>(String databaseName) where T : DbContext
+        public static DbContextOptions<T> Create<T>(String databaseName) where T : DbContext
         {
             var optionsBuilder = new DbContextOptionsBuilder<T>();
             optionsBuilder.UseSqlite(GetConnection(databaseName));

@@ -15,7 +15,6 @@ namespace OdataToEntity.Parsers
         {
             private readonly int _hashCode;
             private readonly MemberInfo[] _propertyInfos;
-            public static readonly PropertyExpressionKey Comparer = new PropertyExpressionKey();
 
             private PropertyExpressionKey(MemberInfo[] memberInfos, int hashCode)
             {

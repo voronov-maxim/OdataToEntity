@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using OdataToEntity.EfCore.DynamicDataContext.Types;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -133,13 +132,13 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
                 }
             }
         }
-        private static Func<DynamicType, bool> GetDefaultValueFunc(IPropertyBase propertyBase)
+        private static Delegate GetDefaultValueFunc(IProperty property)
         {
-            ParameterExpression parameterExpression = Expression.Parameter(typeof(DynamicType));
-            Expression expression = PropertyBase.CreateMemberAccess(propertyBase, parameterExpression, propertyBase.PropertyInfo);
-            expression = Expression.Convert(expression, propertyBase.ClrType);
-            expression = expression.MakeHasDefaultValue(propertyBase);
-            return Expression.Lambda<Func<DynamicType, bool>>(expression, new[] { parameterExpression }).Compile();
+            ParameterExpression parameterExpression = Expression.Parameter(property.DeclaringEntityType.ClrType);
+            Expression expression = PropertyBase.CreateMemberAccess(property, parameterExpression, property.PropertyInfo);
+            expression = Expression.Convert(expression, property.ClrType);
+            expression = expression.MakeHasDefaultValue(property);
+            return Expression.Lambda(expression, new[] { parameterExpression }).Compile();
         }
 
         public DynamicMetadataProvider MetadataProvider { get; }

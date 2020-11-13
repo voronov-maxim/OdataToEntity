@@ -82,21 +82,17 @@ namespace OdataToEntity.EfCore
             {
                 var context = (DbContext)dataContext;
                 EntityEntry<TEntity> entityEntry = context.Add(CreateEntity(context, entry));
-                InternalEntityEntry internalEntry = entityEntry.GetInfrastructure();
-                AddInstanceAnnotation(entry, internalEntry);
+                AddInstanceAnnotation(entry, entityEntry);
 
                 IReadOnlyList<IProperty> keyProperties = _entityType.FindPrimaryKey().Properties;
                 for (int i = 0; i < keyProperties.Count; i++)
                     if (keyProperties[i].ValueGenerated == ValueGenerated.OnAdd)
-                    {
-                        Object value = internalEntry.GetCurrentValue(keyProperties[i]);
-                        internalEntry.SetTemporaryValue(keyProperties[i], value, false);
-                    }
+                        entityEntry.Property(keyProperties[i].Name).IsTemporary = true;
             }
-            private static void AddInstanceAnnotation(ODataResourceBase entry, InternalEntityEntry internalEntityEntry)
+            private static void AddInstanceAnnotation(ODataResourceBase entry, EntityEntry entityEntry)
             {
-                entry.InstanceAnnotations.Add(new ODataInstanceAnnotation("ef.InternalEntityEntryValue",
-                    new Infrastructure.OeOdataValue<InternalEntityEntry>(internalEntityEntry)));
+                var odataValue = new Infrastructure.OeOdataValue<EntityEntry>(entityEntry);
+                entry.InstanceAnnotations.Add(new ODataInstanceAnnotation("ef.EntityEntryValue", odataValue));
             }
             public override void AttachEntity(Object dataContext, ODataResourceBase entry)
             {
@@ -105,15 +101,15 @@ namespace OdataToEntity.EfCore
                 if (internalEntry == null)
                 {
                     TEntity entity = CreateEntity(context, entry);
-                    internalEntry = context.Attach(entity).GetInfrastructure();
-                    AddInstanceAnnotation(entry, internalEntry);
+                    EntityEntry entityEntry = context.Attach(entity);
+                    AddInstanceAnnotation(entry, entityEntry);
 
-                    IKey key = _entityType.FindPrimaryKey();
+                    IReadOnlyList<IProperty> keyProperties = _entityType.FindPrimaryKey().Properties;
                     foreach (ODataProperty odataProperty in entry.Properties)
                     {
                         IProperty property = _entityType.FindProperty(odataProperty.Name);
-                        if (!key.Properties.Contains(property))
-                            internalEntry.SetPropertyModified(property);
+                        if (!keyProperties.Contains(property))
+                            entityEntry.Property(property.Name).IsModified = true;
                     }
                 }
                 else
@@ -168,11 +164,11 @@ namespace OdataToEntity.EfCore
             }
             private Object[] GetKeyValues(ODataResourceBase entity)
             {
-                IKey key = _entityType.FindPrimaryKey();
-                var keyValues = new Object[key.Properties.Count];
+                IReadOnlyList<IProperty> keyProperties = _entityType.FindPrimaryKey().Properties;
+                var keyValues = new Object[keyProperties.Count];
                 for (int i = 0; i < keyValues.Length; i++)
                 {
-                    String keyName = key.Properties[i].Name;
+                    String keyName = keyProperties[i].Name;
                     foreach (ODataProperty odataProperty in entity.Properties)
                         if (String.Compare(odataProperty.Name, keyName, StringComparison.OrdinalIgnoreCase) == 0)
                         {
@@ -232,12 +228,12 @@ namespace OdataToEntity.EfCore
             public override void UpdateEntityAfterSave(Object dataContext, ODataResourceBase resource)
             {
                 foreach (ODataInstanceAnnotation instanceAnnotation in resource.InstanceAnnotations)
-                    if (instanceAnnotation.Value is Infrastructure.OeOdataValue<InternalEntityEntry> internalEntry)
+                    if (instanceAnnotation.Value is Infrastructure.OeOdataValue<EntityEntry> entityEntry)
                     {
-                        PropertyValues propertyValues = internalEntry.Value.ToEntityEntry().CurrentValues;
+                        PropertyValues propertyValues = entityEntry.Value.CurrentValues;
                         foreach (ODataProperty odataProperty in resource.Properties)
                         {
-                            IProperty property = internalEntry.Value.EntityType.FindProperty(odataProperty.Name);
+                            IProperty property = entityEntry.Value.Property(odataProperty.Name).Metadata;
                             if (property.ValueGenerated != ValueGenerated.Never || property.IsForeignKey())
                                 odataProperty.Value = OeEdmClrHelper.CreateODataValue(propertyValues[property]);
                         }

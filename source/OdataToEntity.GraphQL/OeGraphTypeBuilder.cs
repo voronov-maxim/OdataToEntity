@@ -97,13 +97,21 @@ namespace OdataToEntity.GraphQL
                 {
                     if (fieldType.Type == null)
                     {
+                        String name;
                         IGraphType resolvedType = fieldType.ResolvedType;
                         if (resolvedType is NonNullGraphType nonNullGraphType)
+                        {
                             resolvedType = nonNullGraphType.ResolvedType;
+                            name = resolvedType.Name;
+                        }
+                        else if (resolvedType is ListGraphType listGraphType)
+                            name = listGraphType.ResolvedType.Name;
+                        else
+                            name = resolvedType.Name;
 
                         Type inputObjectGraphType = typeof(InputObjectGraphType<>).MakeGenericType(resolvedType.GetType());
                         var inputObjectGraph = (IInputObjectGraphType)Activator.CreateInstance(inputObjectGraphType)!;
-                        queryArgument = new QueryArgument(inputObjectGraphType) { Name = resolvedType.Name, ResolvedType = inputObjectGraph };
+                        queryArgument = new QueryArgument(inputObjectGraphType) { Name = name, ResolvedType = inputObjectGraph };
                     }
                     else
                     {
