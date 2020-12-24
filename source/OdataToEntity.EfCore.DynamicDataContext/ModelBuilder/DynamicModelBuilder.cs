@@ -50,8 +50,6 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
                 entityType.IsKeyless = isQueryType;
                 foreach (DynamicPropertyInfo property in MetadataProvider.GetStructuralProperties(tableEdmName))
                 {
-                    DynamicTypeDefinition typeDefinition = TypeDefinitionManager.GetDynamicTypeDefinition(entityType.ClrType);
-
                     var efProperty = (Property)entityType.AddIndexerProperty(property.Name, property.Type);
                     efProperty.SetIsNullable(property.IsNullable, ConfigurationSource.Explicit);
 
