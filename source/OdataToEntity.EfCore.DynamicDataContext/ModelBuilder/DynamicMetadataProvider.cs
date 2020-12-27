@@ -111,9 +111,9 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
         {
             return _schemaCache.GetTableEdmNames();
         }
-        public String GetTableSchema(String tableEdmName)
+        public (String tableSchema, String tableName) GetTableFullName(String tableEdmName)
         {
-            return _schemaCache.GetTableFullName(tableEdmName).tableSchema;
+            return _schemaCache.GetTableFullName(tableEdmName);
         }
 
         public ProviderSpecificSchema InformationSchema { get; }

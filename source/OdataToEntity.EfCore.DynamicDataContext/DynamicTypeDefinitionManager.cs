@@ -69,15 +69,15 @@ namespace OdataToEntity.EfCore.DynamicDataContext
         {
             return GetDynamicTypeDefinition(_tableEdmNameTypes[tableEdmName]);
         }
-        public IQueryable<DynamicType> GetQueryable(DynamicDbContext dynamicDbContext, String tableEdmName)
+        public IQueryable<Parsers.OeDynamicType> GetQueryable(DynamicDbContext dynamicDbContext, String tableEdmName)
         {
             return GetQueryable(dynamicDbContext, _tableEdmNameTypes[tableEdmName]);
         }
-        public static IQueryable<DynamicType> GetQueryable(DynamicDbContext dynamicDbContext, Type dynamicTypeType)
+        public static IQueryable<Parsers.OeDynamicType> GetQueryable(DynamicDbContext dynamicDbContext, Type dynamicTypeType)
         {
             Type dbSetType = typeof(EntityQueryable<>).MakeGenericType(new Type[] { dynamicTypeType });
             ConstructorInfo ctor = dbSetType.GetConstructor(new Type[] { typeof(IAsyncQueryProvider) })!;
-            return (IQueryable<DynamicType>)ctor.Invoke(new Object[] { dynamicDbContext.GetDependencies().QueryProvider });
+            return (IQueryable<Parsers.OeDynamicType>)ctor.Invoke(new Object[] { dynamicDbContext.GetDependencies().QueryProvider });
         }
         internal DynamicTypeDefinition GetOrAddDynamicTypeDefinition(String tableEdmName, bool isQueryType)
         {
@@ -85,7 +85,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
                 return GetDynamicTypeDefinition(dynamicTypeType);
 
             _dynamicTypeIndex++;
-            dynamicTypeType = Type.GetType(typeof(DynamicType).FullName + _dynamicTypeIndex.ToString(CultureInfo.InvariantCulture));
+            dynamicTypeType = Type.GetType("OdataToEntity.EfCore.DynamicDataContext.Types.DynamicType" + _dynamicTypeIndex.ToString(CultureInfo.InvariantCulture));
             if (dynamicTypeType == null)
                 throw new InvalidProgramException("Cannot create DynamicType index " + _dynamicTypeIndex.ToString(CultureInfo.InvariantCulture) + " out of range");
 

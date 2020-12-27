@@ -42,10 +42,10 @@ namespace OdataToEntity.Parsers
                 MemberExpression propertyExpression = Translators.OeOrderByTranslator.GetPropertyExpression(joinBuilder, source, instance, orderByClause.Expression);
                 IEdmStructuralProperty edmProperty = GetEdmProperty(orderByClause.Expression, propertyExpression.Type);
                 OePropertyAccessor accessor;
-                if (typeof(OeIndexerProperty).IsAssignableFrom(propertyExpression.Expression!.Type))
+                if (typeof(OeDynamicType).IsAssignableFrom(propertyExpression.Expression!.Type))
                 {
-                    InterfaceMapping interfaceMapping = propertyExpression.Expression!.Type.GetInterfaceMap(typeof(OeIndexerProperty));
-                    MethodCallExpression expression = Expression.Call(propertyExpression.Expression!, interfaceMapping.TargetMethods[0], Expression.Constant(edmProperty.Name));
+                    PropertyInfo indexProperty = typeof(OeDynamicType).GetProperty("Item")!;
+                    MethodCallExpression expression = Expression.Call(propertyExpression.Expression!, indexProperty.GetGetMethod()!, Expression.Constant(edmProperty.Name));
                     accessor = OePropertyAccessor.CreatePropertyAccessor(edmProperty, expression, parameter, true);
                 }
                 else

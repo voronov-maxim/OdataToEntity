@@ -1,14 +1,13 @@
-﻿using OdataToEntity.Parsers;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
-namespace OdataToEntity.EfCore.DynamicDataContext.Types
+namespace OdataToEntity.Parsers
 {
-    public abstract class DynamicType : OeIndexerProperty
+    public abstract class OeDynamicType
     {
         private readonly Dictionary<String, Object> _indexedProperties;
 
-        protected DynamicType()
+        protected OeDynamicType()
         {
             _indexedProperties = new Dictionary<String, Object>();
         }

@@ -66,7 +66,6 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         {
             _modelCustomizer.Customize(modelBuilder, context);
 
-            GetDatabaseName(context);
             String databaseName = GetDatabaseName(context);
             foreach (IMutableEntityType entityType in modelBuilder.Model.GetEntityTypes())
                 entityType.SetQueryFilter(GetFilter(entityType.ClrType, databaseName));

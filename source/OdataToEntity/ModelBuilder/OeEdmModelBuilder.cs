@@ -168,7 +168,7 @@ namespace OdataToEntity.ModelBuilder
                     baseClrTypes.Push(clrType);
                     clrType = clrType.BaseType!;
                 }
-                while (!(clrType == typeof(Object) || clrType == typeof(ValueType)));
+                while (!(clrType == typeof(Object) || clrType == typeof(ValueType) || clrType == typeof(Parsers.OeDynamicType)));
 
                 EdmEntityType? edmType = null;
                 foreach (Type baseClrType in baseClrTypes)

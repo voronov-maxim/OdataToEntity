@@ -40,14 +40,14 @@ namespace OdataToEntity.Infrastructure
         public override Module Module => DeclaringType.Module;
         public override String Name { get; }
         public override Type PropertyType { get; }
-        public override Type ReflectedType => throw new NotSupportedException();
+        public override Type? ReflectedType => throw new NotSupportedException();
 
         public override MethodInfo[] GetAccessors(bool nonPublic) => throw new NotSupportedException();
         public override Object[] GetCustomAttributes(bool inherit) => Array.Empty<Attribute>();
         public override Object[] GetCustomAttributes(Type attributeType, bool inherit) => Array.Empty<Attribute>();
-        public override MethodInfo GetGetMethod(bool nonPublic) => _getMethodInfo;
+        public override MethodInfo? GetGetMethod(bool nonPublic) => _getMethodInfo;
         public override ParameterInfo[] GetIndexParameters() => Array.Empty<ParameterInfo>();
-        public override MethodInfo GetSetMethod(bool nonPublic) => _setMethodInfo;
+        public override MethodInfo? GetSetMethod(bool nonPublic) => _setMethodInfo;
         public override Object? GetValue(Object? obj, BindingFlags invokeAttr, Binder? binder, Object?[]? index, CultureInfo? culture) => throw new NotSupportedException();
         public override bool IsDefined(Type attributeType, bool inherit) => false;
         public override void SetValue(Object? obj, Object? value, BindingFlags invokeAttr, Binder? binder, Object?[]? index, CultureInfo? culture) => throw new NotSupportedException();

@@ -120,12 +120,12 @@ namespace OdataToEntity.Parsers
             ParameterExpression parameter = Expression.Parameter(typeof(Object));
             UnaryExpression instance = Expression.Convert(parameter, clrType);
             var propertyAccessors = new List<OePropertyAccessor>();
-            if (typeof(OeIndexerProperty).IsAssignableFrom(clrType))
+            if (clrType.BaseType == typeof(OeDynamicType))
             {
-                InterfaceMapping interfaceMapping = clrType.GetInterfaceMap(typeof(OeIndexerProperty));
+                PropertyInfo indexProperty = clrType.GetProperty("Item")!;
                 foreach (IEdmStructuralProperty edmProperty in entitySet.EntityType().StructuralProperties())
                 {
-                    MethodCallExpression expression = Expression.Call(instance, interfaceMapping.TargetMethods[0], Expression.Constant(edmProperty.Name));
+                    MethodCallExpression expression = Expression.Call(instance, indexProperty.GetGetMethod()!, Expression.Constant(edmProperty.Name));
                     propertyAccessors.Add(CreatePropertyAccessor(edmProperty, expression, parameter, false));
                 }
             }
