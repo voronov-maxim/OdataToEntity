@@ -20,8 +20,8 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
         public override IReadOnlyList<PropertyInfo> GetManyToManyProperties(Type clrType)
         {
             List<PropertyInfo>? properties = null;
-            String tableEdmName = _typeDefinitionManager.GetDynamicTypeDefinition(clrType).TableEdmName;
-            foreach ((String navigationName, String manyToManyTarget) in _dynamicMetadataProvider.GetManyToManyProperties(tableEdmName))
+            TableFullName tableFullName = _typeDefinitionManager.GetDynamicTypeDefinition(clrType).TableFullName;
+            foreach ((String navigationName, TableFullName manyToManyTarget) in _dynamicMetadataProvider.GetManyToManyProperties(tableFullName))
             {
                 if (properties == null)
                     properties = new List<PropertyInfo>();

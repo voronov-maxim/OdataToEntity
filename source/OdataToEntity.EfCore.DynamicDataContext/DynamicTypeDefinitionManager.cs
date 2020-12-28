@@ -21,7 +21,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
         private readonly Func<DynamicDbContext> _dynamicDbContextCtor;
         private static int _dynamicDbContextIndex;
         private int _dynamicTypeIndex;
-        private readonly Dictionary<String, Type> _tableEdmNameTypes;
+        private readonly Dictionary<TableFullName, Type> _tableEdmNameTypes;
 
         private DynamicTypeDefinitionManager(Type dynamicDbContextType, ProviderSpecificSchema informationSchema)
         {
@@ -38,7 +38,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
             _dynamicDbContextCtor = Expression.Lambda<Func<DynamicDbContext>>(ctor).Compile();
 
             _dynamicTypeDefinitions = new Dictionary<Type, DynamicTypeDefinition>();
-            _tableEdmNameTypes = new Dictionary<String, Type>(informationSchema.IsCaseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase);
+            _tableEdmNameTypes = new Dictionary<TableFullName, Type>(informationSchema.IsCaseSensitive ? TableFullName.OrdinalComparer : TableFullName.OrdinalIgnoreCaseComparer);
         }
 
         public static DynamicTypeDefinitionManager Create(DynamicMetadataProvider metadataProvider)
@@ -65,23 +65,13 @@ namespace OdataToEntity.EfCore.DynamicDataContext
         {
             return _dynamicTypeDefinitions[dynamicTypeType];
         }
-        public DynamicTypeDefinition GetDynamicTypeDefinition(String tableEdmName)
+        public DynamicTypeDefinition GetDynamicTypeDefinition(in TableFullName tableFullName)
         {
-            return GetDynamicTypeDefinition(_tableEdmNameTypes[tableEdmName]);
+            return GetDynamicTypeDefinition(_tableEdmNameTypes[tableFullName]);
         }
-        public IQueryable<Parsers.OeDynamicType> GetQueryable(DynamicDbContext dynamicDbContext, String tableEdmName)
+        internal DynamicTypeDefinition GetOrAddDynamicTypeDefinition(in TableFullName tableFullName, bool isQueryType, String tableEdmName)
         {
-            return GetQueryable(dynamicDbContext, _tableEdmNameTypes[tableEdmName]);
-        }
-        public static IQueryable<Parsers.OeDynamicType> GetQueryable(DynamicDbContext dynamicDbContext, Type dynamicTypeType)
-        {
-            Type dbSetType = typeof(EntityQueryable<>).MakeGenericType(new Type[] { dynamicTypeType });
-            ConstructorInfo ctor = dbSetType.GetConstructor(new Type[] { typeof(IAsyncQueryProvider) })!;
-            return (IQueryable<Parsers.OeDynamicType>)ctor.Invoke(new Object[] { dynamicDbContext.GetDependencies().QueryProvider });
-        }
-        internal DynamicTypeDefinition GetOrAddDynamicTypeDefinition(String tableEdmName, bool isQueryType)
-        {
-            if (_tableEdmNameTypes.TryGetValue(tableEdmName, out Type? dynamicTypeType))
+            if (_tableEdmNameTypes.TryGetValue(tableFullName, out Type? dynamicTypeType))
                 return GetDynamicTypeDefinition(dynamicTypeType);
 
             _dynamicTypeIndex++;
@@ -89,8 +79,8 @@ namespace OdataToEntity.EfCore.DynamicDataContext
             if (dynamicTypeType == null)
                 throw new InvalidProgramException("Cannot create DynamicType index " + _dynamicTypeIndex.ToString(CultureInfo.InvariantCulture) + " out of range");
 
-            var dynamicTypeDefinition = new DynamicTypeDefinition(dynamicTypeType, tableEdmName, tableEdmName, isQueryType);
-            _tableEdmNameTypes.Add(tableEdmName, dynamicTypeType);
+            var dynamicTypeDefinition = new DynamicTypeDefinition(dynamicTypeType, tableFullName, isQueryType, tableEdmName);
+            _tableEdmNameTypes.Add(tableFullName, dynamicTypeType);
             _dynamicTypeDefinitions.Add(dynamicTypeType, dynamicTypeDefinition);
             return dynamicTypeDefinition;
         }

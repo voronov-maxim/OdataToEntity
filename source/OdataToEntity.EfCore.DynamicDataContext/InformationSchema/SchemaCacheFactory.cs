@@ -6,37 +6,14 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 {
     public static class SchemaCacheFactory
     {
-        private sealed class TupleStringComparer : IEqualityComparer<(String, String)>
-        {
-            private readonly StringComparer _stringComparer;
-            public static readonly TupleStringComparer Ordinal = new TupleStringComparer(StringComparer.Ordinal);
-            public static readonly TupleStringComparer OrdinalIgnoreCase = new TupleStringComparer(StringComparer.OrdinalIgnoreCase);
-
-            private TupleStringComparer(StringComparer stringComparer)
-            {
-                _stringComparer = stringComparer;
-            }
-
-            public bool Equals((String, String) x, (String, String) y)
-            {
-                return _stringComparer.Compare(x.Item1, y.Item1) == 0 && _stringComparer.Compare(x.Item2, y.Item2) == 0;
-            }
-            public int GetHashCode((String, String) obj)
-            {
-                int h1 = _stringComparer.GetHashCode(obj.Item1);
-                int h2 = _stringComparer.GetHashCode(obj.Item2);
-                return (h1 << 5) + h1 ^ h2;
-            }
-        }
-
         public static SchemaCache Create(ProviderSpecificSchema informationSchema, InformationSchemaSettings informationSchemaSettings)
         {
             IEqualityComparer<String> comparer = informationSchema.IsCaseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
-            TupleStringComparer tupleComparer = informationSchema.IsCaseSensitive ? TupleStringComparer.Ordinal : TupleStringComparer.OrdinalIgnoreCase;
+            IEqualityComparer<TableFullName> tableNameComparer = informationSchema.IsCaseSensitive ? TableFullName.OrdinalComparer : TableFullName.OrdinalIgnoreCaseComparer;
 
-            var tableEdmNameFullNames = new Dictionary<String, (String tableSchema, String tableName, bool isQueryType)>(comparer);
-            var tableFullNameEdmNames = new Dictionary<(String tableSchema, String tableName), String>(tupleComparer);
-            var navigationMappings = new Dictionary<(String tableSchema, String tableName), IReadOnlyList<NavigationMapping>>(tupleComparer);
+            var tableEdmNameFullNames = new Dictionary<String, (TableFullName, bool isQueryType)>(comparer);
+            var tableFullNameEdmNames = new Dictionary<TableFullName, String>(tableNameComparer);
+            var navigationMappings = new Dictionary<TableFullName, IReadOnlyList<NavigationMapping>>(tableNameComparer);
             Dictionary<(String constraintSchema, String constraintName), IReadOnlyList<KeyColumnUsage>> keyColumns = GetKeyColumns(informationSchema, informationSchemaSettings);
             List<ReferentialConstraint> referentialConstraints;
 
@@ -105,7 +82,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                                         }
                                     }
 
-                                navigationMappings.Add((table.TableSchema, table.TableName), tableMapping.Navigations);
+                                navigationMappings.Add(new TableFullName(table.TableSchema, table.TableName), tableMapping.Navigations);
                             }
                         }
                         else
@@ -115,21 +92,25 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                         }
                     }
 
-                    tableEdmNameFullNames.Add(tableName, (table.TableSchema, table.TableName, table.TableType == "VIEW"));
-                    tableFullNameEdmNames.Add((table.TableSchema, table.TableName), tableName);
+                    var tableFullName = new TableFullName(table.TableSchema, table.TableName);
+                    tableEdmNameFullNames.Add(tableName, (tableFullName, table.TableType == "VIEW"));
+                    tableFullNameEdmNames.Add(tableFullName, tableName);
                 }
 
                 foreach (Table fixTableName in fixTableNames)
-                    tableEdmNameFullNames[fixTableName.TableSchema + "." + fixTableName.TableName] = (fixTableName.TableSchema, fixTableName.TableName, fixTableName.TableType == "VIEW");
+                {
+                    var fixTableFullName = new TableFullName(fixTableName.TableSchema, fixTableName.TableName);
+                    tableEdmNameFullNames[fixTableName.TableSchema + "." + fixTableName.TableName] = (fixTableFullName, fixTableName.TableType == "VIEW");
+                }
             }
             finally
             {
                 schemaContext.Dispose();
             }
 
-            Dictionary<(String tableSchema, String tableName), List<Column>> tableColumns = GetTableColumns(informationSchema);
-            Dictionary<(String tableSchema, String tableName), List<(String constraintName, bool isPrimary)>> keyConstraintNames = GetKeyConstraintNames(informationSchema);
-            Dictionary<(String, String), List<Navigation>> tableNavigations = Navigation.GetNavigations(
+            Dictionary<TableFullName, List<Column>> tableColumns = GetTableColumns(informationSchema);
+            Dictionary<TableFullName, List<(String constraintName, bool isPrimary)>> keyConstraintNames = GetKeyConstraintNames(informationSchema);
+            Dictionary<TableFullName, List<Navigation>> tableNavigations = Navigation.GetNavigations(
                 referentialConstraints,
                 keyColumns,
                 tableFullNameEdmNames,
@@ -146,9 +127,9 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                 keyConstraintNames,
                 tableNavigations);
         }
-        private static Dictionary<(String tableSchema, String tableName), List<(String constraintName, bool isPrimary)>> GetKeyConstraintNames(ProviderSpecificSchema informationSchema)
+        private static Dictionary<TableFullName, List<(String constraintName, bool isPrimary)>> GetKeyConstraintNames(ProviderSpecificSchema informationSchema)
         {
-            var keyConstraintNames = new Dictionary<(String tableSchema, String tableName), List<(String constraintName, bool isPrimary)>>();
+            var keyConstraintNames = new Dictionary<TableFullName, List<(String constraintName, bool isPrimary)>>();
             SchemaContext schemaContext = informationSchema.GetSchemaContext();
             try
             {
@@ -164,7 +145,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                     if (tableSchema != tableConstraint.TableSchema || tableName != tableConstraint.TableName)
                     {
                         if (constraints != null)
-                            keyConstraintNames.Add((tableSchema!, tableName!), constraints);
+                            keyConstraintNames.Add(new TableFullName(tableSchema!, tableName!), constraints);
 
                         tableSchema = tableConstraint.TableSchema;
                         tableName = tableConstraint.TableName;
@@ -174,7 +155,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                 }
 
                 if (constraints != null)
-                    keyConstraintNames.Add((tableSchema!, tableName!), constraints);
+                    keyConstraintNames.Add(new TableFullName(tableSchema!, tableName!), constraints);
             }
             finally
             {
@@ -244,19 +225,20 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 
             return keyColumns;
         }
-        private static Dictionary<(String tableSchema, String tableName), List<Column>> GetTableColumns(ProviderSpecificSchema informationSchema)
+        private static Dictionary<TableFullName, List<Column>> GetTableColumns(ProviderSpecificSchema informationSchema)
         {
-            var tableColumns = new Dictionary<(String tableSchema, String tableName), List<Column>>();
+            var tableColumns = new Dictionary<TableFullName, List<Column>>();
             SchemaContext schemaContext = informationSchema.GetSchemaContext();
             var dbGeneratedColumns = informationSchema.GetDbGeneratedColumns().ToDictionary(t => (t.TableSchema, t.TableName, t.ColumnName));
             try
             {
                 foreach (Column column in schemaContext.Columns)
                 {
-                    if (!tableColumns.TryGetValue((column.TableSchema, column.TableName), out List<Column>? columns))
+                    var tableFullName = new TableFullName(column.TableSchema, column.TableName);
+                    if (!tableColumns.TryGetValue(tableFullName, out List<Column>? columns))
                     {
                         columns = new List<Column>();
-                        tableColumns.Add((column.TableSchema, column.TableName), columns);
+                        tableColumns.Add(tableFullName, columns);
                     }
 
                     Type? clrType = informationSchema.GetColumnClrType(column.DataType);

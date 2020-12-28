@@ -24,9 +24,9 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
         {
             _schemaCache.Dispose();
         }
-        public DynamicDependentPropertyInfo GetDependentProperties(String tableEdmName, String navigationPropertyName)
+        public DynamicDependentPropertyInfo GetDependentProperties(in TableFullName tableFullName, String navigationPropertyName)
         {
-            IReadOnlyList<Navigation> navigations = _schemaCache.GetNavigations(tableEdmName);
+            IReadOnlyList<Navigation> navigations = _schemaCache.GetNavigations(tableFullName);
             if (navigations.Count > 0)
                 foreach (Navigation navigation in navigations)
                     if (navigation.NavigationName == navigationPropertyName)
@@ -36,38 +36,31 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
                         var principalPropertyNames = new List<String>(principal.Select(p => p.ColumnName));
                         var dependentPropertyNames = new List<String>(dependent.Select(p => p.ColumnName));
 
-                        String? principalEdmName = _schemaCache.GetTableEdmName(principal[0].TableSchema, principal[0].TableName);
-                        if (principalEdmName == null)
-                            throw new InvalidOperationException($"Table {principal[0].TableSchema}.{principal[0].TableName} not found");
-
-                        String? dependentEdmName = _schemaCache.GetTableEdmName(dependent[0].TableSchema, dependent[0].TableName);
-                        if (dependentEdmName == null)
-                            throw new InvalidOperationException($"Table {dependent[0].TableSchema}.{dependent[0].TableName} not found");
-
-                        return new DynamicDependentPropertyInfo(principalEdmName, dependentEdmName, principalPropertyNames, dependentPropertyNames, navigation.IsCollection);
+                        var principalFullName = new TableFullName(principal[0].TableSchema, principal[0].TableName);
+                        var dependentFullName = new TableFullName(dependent[0].TableSchema, dependent[0].TableName);
+                        return new DynamicDependentPropertyInfo(principalFullName, dependentFullName, principalPropertyNames, dependentPropertyNames, navigation.IsCollection);
                     }
 
-            throw new InvalidOperationException("Navigation property " + navigationPropertyName + " not found in table " + tableEdmName);
+            throw new InvalidOperationException("Navigation property " + navigationPropertyName + " not found in table " + tableFullName);
         }
-        public IReadOnlyList<(String NavigationName, String ManyToManyTarget)> GetManyToManyProperties(String tableEdmName)
+        public IReadOnlyList<(String NavigationName, TableFullName ManyToManyTarget)> GetManyToManyProperties(in TableFullName tableFullName)
         {
-            return _schemaCache.GetManyToManyProperties(tableEdmName);
+            return _schemaCache.GetManyToManyProperties(tableFullName);
         }
-        public IEnumerable<String> GetNavigationProperties(String tableEdmName)
+        public IEnumerable<String> GetNavigationProperties(TableFullName tableFullName)
         {
-            foreach (Navigation navigation in _schemaCache.GetNavigations(tableEdmName))
+            foreach (Navigation navigation in _schemaCache.GetNavigations(tableFullName))
                 yield return navigation.NavigationName;
         }
-        public (String[] propertyNames, bool isPrimary)[] GetKeys(String tableEdmName)
+        public (String[] propertyNames, bool isPrimary)[] GetKeys(in TableFullName tableFullName)
         {
-            IReadOnlyList<(String constraintName, bool isPrimary)> constraints = _schemaCache.GetKeyConstraintNames(tableEdmName);
+            IReadOnlyList<(String constraintName, bool isPrimary)> constraints = _schemaCache.GetKeyConstraintNames(tableFullName);
             if (constraints.Count > 0)
             {
-                (String tableSchema, _) = _schemaCache.GetTableFullName(tableEdmName);
                 var keys = new (String[] propertyNames, bool isPrimary)[constraints.Count];
                 for (int i = 0; i < constraints.Count; i++)
                 {
-                    IReadOnlyList<KeyColumnUsage> keyColumns = _schemaCache.GetKeyColumns(tableSchema, constraints[i].constraintName);
+                    IReadOnlyList<KeyColumnUsage> keyColumns = _schemaCache.GetKeyColumns(tableFullName.Schema, constraints[i].constraintName);
                     var key = new String[keyColumns.Count];
                     for (int j = 0; j < key.Length; j++)
                         key[j] = keyColumns[j].ColumnName;
@@ -83,9 +76,9 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
         {
             return _schemaCache.GetRoutines(typeDefinitionManager, _informationSchemaSettings);
         }
-        public IEnumerable<DynamicPropertyInfo> GetStructuralProperties(String tableName)
+        public IEnumerable<DynamicPropertyInfo> GetStructuralProperties(TableFullName tableFullName)
         {
-            foreach (Column column in _schemaCache.GetColumns(tableName))
+            foreach (Column column in _schemaCache.GetColumns(tableFullName))
             {
                 DatabaseGeneratedOption databaseGenerated;
                 if (column.IsIdentity)
@@ -103,17 +96,13 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
                 yield return new DynamicPropertyInfo(column.ColumnName, propertyType, isNullabe, databaseGenerated);
             }
         }
-        public String GetTableEdmName(String entityName)
+        public String GetTableEdmName(in TableFullName tableFullName)
         {
-            return entityName;
+            return _schemaCache.GetTableEdmName(tableFullName);
         }
-        public IEnumerable<(String tableEdmName, bool isQueryType)> GetTableEdmNames()
+        public IEnumerable<(TableFullName tableFullName, bool isQueryType)> GetTableFullNames()//zzz
         {
-            return _schemaCache.GetTableEdmNames();
-        }
-        public (String tableSchema, String tableName) GetTableFullName(String tableEdmName)
-        {
-            return _schemaCache.GetTableFullName(tableEdmName);
+            return _schemaCache.GetTableFullNames();
         }
 
         public ProviderSpecificSchema InformationSchema { get; }

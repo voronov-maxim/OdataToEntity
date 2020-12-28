@@ -13,39 +13,39 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
 {
     public class DynamicModelBuilder
     {
-        private readonly Dictionary<String, EntityType> _entityTypes;
+        private readonly Dictionary<TableFullName, EntityType> _entityTypes;
 
         public DynamicModelBuilder(DynamicMetadataProvider metadataProvider, DynamicTypeDefinitionManager typeDefinitionManager)
         {
             MetadataProvider = metadataProvider;
             TypeDefinitionManager = typeDefinitionManager;
 
-            _entityTypes = new Dictionary<String, EntityType>();
+            _entityTypes = new Dictionary<TableFullName, EntityType>();
         }
 
         public void Build(Microsoft.EntityFrameworkCore.ModelBuilder modelBuilder)
         {
-            foreach ((String tableEdmName, bool isQueryType) in MetadataProvider.GetTableEdmNames())
+            foreach ((TableFullName tableFullName, bool isQueryType) in MetadataProvider.GetTableFullNames())
             {
-                CreateEntityType(modelBuilder, tableEdmName, isQueryType);
-                CreateNavigationProperties(modelBuilder, tableEdmName);
+                CreateEntityType(modelBuilder, tableFullName, isQueryType);
+                CreateNavigationProperties(modelBuilder, tableFullName);
             }
         }
-        private EntityType CreateEntityType(Microsoft.EntityFrameworkCore.ModelBuilder modelBuilder, String tableEdmName, bool isQueryType)
+        private EntityType CreateEntityType(Microsoft.EntityFrameworkCore.ModelBuilder modelBuilder, in TableFullName tableFullName, bool isQueryType)
         {
-            if (!_entityTypes.TryGetValue(tableEdmName, out EntityType? entityType))
+            if (!_entityTypes.TryGetValue(tableFullName, out EntityType? entityType))
             {
-                (String[] propertyNames, bool isPrimary)[] keys = MetadataProvider.GetKeys(tableEdmName);
+                (String[] propertyNames, bool isPrimary)[] keys = MetadataProvider.GetKeys(tableFullName);
                 if (keys.Length == 0)
                     isQueryType = true;
 
-                var dynamicTypeDefinition = TypeDefinitionManager.GetOrAddDynamicTypeDefinition(tableEdmName, isQueryType);
-                (String tableSchema, String tableName) = MetadataProvider.GetTableFullName(tableEdmName);
-                EntityTypeBuilder entityTypeBuilder = modelBuilder.Entity(dynamicTypeDefinition.DynamicTypeType).ToTable(tableName, tableSchema);
+                String tableEdmName = MetadataProvider.GetTableEdmName(tableFullName);
+                var dynamicTypeDefinition = TypeDefinitionManager.GetOrAddDynamicTypeDefinition(tableFullName, isQueryType, tableEdmName);
+                EntityTypeBuilder entityTypeBuilder = modelBuilder.Entity(dynamicTypeDefinition.DynamicTypeType).ToTable(tableFullName.Name, tableFullName.Schema);
 
                 entityType = (EntityType)entityTypeBuilder.Metadata;
                 entityType.IsKeyless = isQueryType;
-                foreach (DynamicPropertyInfo property in MetadataProvider.GetStructuralProperties(tableEdmName))
+                foreach (DynamicPropertyInfo property in MetadataProvider.GetStructuralProperties(tableFullName))
                 {
                     var efProperty = (Property)entityType.AddIndexerProperty(property.Name, property.Type);
                     efProperty.SetIsNullable(property.IsNullable, ConfigurationSource.Explicit);
@@ -68,7 +68,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
                         else
                             entityTypeBuilder.HasAlternateKey(propertyNames);
 
-                _entityTypes.Add(tableEdmName, entityType);
+                _entityTypes.Add(tableFullName, entityType);
             }
 
             return entityType;
@@ -81,14 +81,14 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
                 hasDefaultValue.SetValue(propertyGetter, GetDefaultValueFunc(efProperty));
             }
         }
-        private void CreateNavigationProperties(Microsoft.EntityFrameworkCore.ModelBuilder modelBuilder, String tableEdmName)
+        private void CreateNavigationProperties(Microsoft.EntityFrameworkCore.ModelBuilder modelBuilder, in TableFullName tableFullName)
         {
-            foreach (String propertyName in MetadataProvider.GetNavigationProperties(tableEdmName))
+            foreach (String propertyName in MetadataProvider.GetNavigationProperties(tableFullName))
             {
-                DynamicDependentPropertyInfo dependentInfo = MetadataProvider.GetDependentProperties(tableEdmName, propertyName);
+                DynamicDependentPropertyInfo dependentInfo = MetadataProvider.GetDependentProperties(tableFullName, propertyName);
 
-                EntityType dependentEntityType = CreateEntityType(modelBuilder, MetadataProvider.GetTableEdmName(dependentInfo.DependentEntityName), false);
-                EntityType principalEntityType = CreateEntityType(modelBuilder, MetadataProvider.GetTableEdmName(dependentInfo.PrincipalEntityName), false);
+                EntityType dependentEntityType = CreateEntityType(modelBuilder, dependentInfo.DependentTableName, false);
+                EntityType principalEntityType = CreateEntityType(modelBuilder, dependentInfo.PrincipalTableName, false);
 
                 var dependentProperties = new Property[dependentInfo.DependentPropertyNames.Count];
                 for (int i = 0; i < dependentProperties.Length; i++)
@@ -110,7 +110,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
                         fkey = dependentEntityType.AddForeignKey(dependentProperties, pkey, principalEntityType, ConfigurationSource.Explicit, ConfigurationSource.Explicit);
                 }
 
-                DynamicTypeDefinition dynamicTypeDefinition = TypeDefinitionManager.GetDynamicTypeDefinition(tableEdmName);
+                DynamicTypeDefinition dynamicTypeDefinition = TypeDefinitionManager.GetDynamicTypeDefinition(tableFullName);
                 if (dependentInfo.IsCollection)
                 {
                     if (!dependentEntityType.IsKeyless)

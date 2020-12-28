@@ -8,10 +8,10 @@ namespace OdataToEntity.EfCore.DynamicDataContext
     {
         private readonly Dictionary<INavigation, Type> _navigations;
 
-        public DynamicTypeDefinition(Type dynamicTypeType, String entityName, String tableEdmName, bool isQueryType)
+        public DynamicTypeDefinition(Type dynamicTypeType, in TableFullName tableFullName, bool isQueryType, String tableEdmName)
         {
             DynamicTypeType = dynamicTypeType;
-            EntityName = entityName;
+            TableFullName = tableFullName;
             TableEdmName = tableEdmName;
             IsQueryType = isQueryType;
 
@@ -29,8 +29,8 @@ namespace OdataToEntity.EfCore.DynamicDataContext
         }
 
         public Type DynamicTypeType { get; }
-        public String EntityName { get; }
         public bool IsQueryType { get; }
         public String TableEdmName { get; }
+        public TableFullName TableFullName { get; }
     }
 }

@@ -21,25 +21,27 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         public bool IsCollection { get; }
         public String PrincipalConstraintName { get; }
 
-        public static Dictionary<(String, String), List<Navigation>> GetNavigations(
+        public static Dictionary<TableFullName, List<Navigation>> GetNavigations(
             IReadOnlyList<ReferentialConstraint> referentialConstraints,
             IReadOnlyDictionary<(String constraintSchema, String constraintName), IReadOnlyList<KeyColumnUsage>> keyColumns,
-            IReadOnlyDictionary<(String tableSchema, String tableName), String> tableFullNameEdmNames,
-            IReadOnlyDictionary<(String tableSchema, String tableName), IReadOnlyList<NavigationMapping>> navigationMappings,
-            IReadOnlyDictionary<(String tableSchema, String tableName), List<Column>> tableColumns)
+            IReadOnlyDictionary<TableFullName, String> tableFullNameEdmNames,
+            IReadOnlyDictionary<TableFullName, IReadOnlyList<NavigationMapping>> navigationMappings,
+            IReadOnlyDictionary<TableFullName, List<Column>> tableColumns)
         {
-            var tableNavigations = new Dictionary<(String tableSchema, String tableName), List<Navigation>>();
+            var tableNavigations = new Dictionary<TableFullName, List<Navigation>>();
             var navigationCounter = new Dictionary<(String, String, String), List<IReadOnlyList<KeyColumnUsage>>>();
             foreach (ReferentialConstraint fkey in referentialConstraints)
             {
                 IReadOnlyList<KeyColumnUsage> dependentKeyColumns = keyColumns[(fkey.ConstraintSchema, fkey.ConstraintName)];
 
                 KeyColumnUsage dependentKeyColumn = dependentKeyColumns[0];
-                if (!tableFullNameEdmNames.TryGetValue((dependentKeyColumn.TableSchema, dependentKeyColumn.TableName), out String? principalEdmName))
+                var dependentFullName = new TableFullName(dependentKeyColumn.TableSchema, dependentKeyColumn.TableName);
+                if (!tableFullNameEdmNames.TryGetValue(dependentFullName, out String? principalEdmName))
                     continue;
 
                 KeyColumnUsage principalKeyColumn = keyColumns[(fkey.UniqueConstraintSchema, fkey.UniqueConstraintName)][0];
-                if (!tableFullNameEdmNames.TryGetValue((principalKeyColumn.TableSchema, principalKeyColumn.TableName), out String? dependentEdmName))
+                var principalFullName = new TableFullName(principalKeyColumn.TableSchema, principalKeyColumn.TableName);
+                if (!tableFullNameEdmNames.TryGetValue(principalFullName, out String? dependentEdmName))
                     continue;
 
                 bool selfReferences = false;
@@ -66,7 +68,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                         navigationCounter[dependentKey] = columnsList;
                     }
 
-                    List<Column> dependentColumns = tableColumns[(dependentKeyColumn.TableSchema, dependentKeyColumn.TableName)];
+                    List<Column> dependentColumns = tableColumns[dependentFullName];
                     dependentNavigationName = GetUniqueName(dependentColumns, dependentNavigationName, columnsList.Count);
                 }
 
@@ -95,7 +97,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                         navigationCounter[principalKey] = columnsList;
                     }
 
-                    List<Column> principalColumns = tableColumns[(principalKeyColumn.TableSchema, principalKeyColumn.TableName)];
+                    List<Column> principalColumns = tableColumns[principalFullName];
                     principalNavigationName = GetUniqueName(principalColumns, principalNavigationName, columnsList.Count);
                 }
 
@@ -105,12 +107,12 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 
             return tableNavigations;
 
-            static void AddNavigation(Dictionary<(String tableSchema, String tableName), List<Navigation>> tableNavigations,
+            static void AddNavigation(Dictionary<TableFullName, List<Navigation>> tableNavigations,
                 ReferentialConstraint fkey, KeyColumnUsage keyColumn, String navigationName, bool isCollection)
             {
                 if (!String.IsNullOrEmpty(navigationName))
                 {
-                    (String tableName, String tableSchema) tableFullName = (keyColumn.TableSchema, keyColumn.TableName);
+                    var tableFullName = new TableFullName(keyColumn.TableSchema, keyColumn.TableName);
                     if (!tableNavigations.TryGetValue(tableFullName, out List<Navigation>? principalNavigations))
                     {
                         principalNavigations = new List<Navigation>();
@@ -143,10 +145,11 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                         counter++;
                 return counter;
             }
-            static String? GetNavigationMappingName(IReadOnlyDictionary<(String tableSchema, String tableName), IReadOnlyList<NavigationMapping>> navigationMappings,
+            static String? GetNavigationMappingName(IReadOnlyDictionary<TableFullName, IReadOnlyList<NavigationMapping>> navigationMappings,
                 ReferentialConstraint fkey, KeyColumnUsage keyColumn)
             {
-                if (navigationMappings.TryGetValue((keyColumn.TableSchema, keyColumn.TableName), out IReadOnlyList<NavigationMapping>? tableNavigationMappings))
+                var tableFullName = new TableFullName(keyColumn.TableSchema, keyColumn.TableName);
+                if (navigationMappings.TryGetValue(tableFullName, out IReadOnlyList<NavigationMapping>? tableNavigationMappings))
                     for (int i = 0; i < tableNavigationMappings.Count; i++)
                     {
                         NavigationMapping navigationMapping = tableNavigationMappings[i];

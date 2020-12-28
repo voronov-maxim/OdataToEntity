@@ -5,20 +5,20 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
 {
     public readonly struct DynamicDependentPropertyInfo
     {
-        public DynamicDependentPropertyInfo(String principalEntityName, String dependentEntityName,
+        public DynamicDependentPropertyInfo(in TableFullName principalTableName, in TableFullName dependentTableName,
             IReadOnlyList<String> principalPropertyNames, IReadOnlyList<String> dependentPropertyNames, bool isCollection)
         {
-            PrincipalEntityName = principalEntityName;
-            DependentEntityName = dependentEntityName;
+            PrincipalTableName = principalTableName;
+            DependentTableName = dependentTableName;
             PrincipalPropertyNames = principalPropertyNames;
             DependentPropertyNames = dependentPropertyNames;
             IsCollection = isCollection;
         }
 
-        public String DependentEntityName { get; }
+        public TableFullName DependentTableName { get; }
         public IReadOnlyList<String> DependentPropertyNames { get; }
         public bool IsCollection { get; }
-        public String PrincipalEntityName { get; }
+        public TableFullName PrincipalTableName { get; }
         public IReadOnlyList<String> PrincipalPropertyNames { get; }
     }
 }
