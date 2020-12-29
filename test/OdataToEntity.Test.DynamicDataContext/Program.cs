@@ -31,11 +31,12 @@ namespace OdataToEntity.Test.DynamicDataContext
 
             InformationSchemaSettings informationSchemaSettings = GetSettings();
             ProviderSpecificSchema providerSchema = CreateSchemaSqlServer(true);
+            var factory = new EmitDynamicTypeDefinitionManagerFactory();
 
             EdmModel dynamicEdmModel;
             using (var metadataProvider = providerSchema.CreateMetadataProvider(informationSchemaSettings))
             {
-                DynamicTypeDefinitionManager typeDefinitionManager = DynamicTypeDefinitionManager.Create(metadataProvider);
+                DynamicTypeDefinitionManager typeDefinitionManager = factory.Create(metadataProvider);
                 var dataAdapter = new DynamicDataAdapter(typeDefinitionManager);
                 dynamicEdmModel = dataAdapter.BuildEdmModel(metadataProvider);
             }

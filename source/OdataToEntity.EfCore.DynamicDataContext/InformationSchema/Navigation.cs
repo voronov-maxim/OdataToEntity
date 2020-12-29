@@ -24,7 +24,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         public static Dictionary<TableFullName, List<Navigation>> GetNavigations(
             IReadOnlyList<ReferentialConstraint> referentialConstraints,
             IReadOnlyDictionary<(String constraintSchema, String constraintName), IReadOnlyList<KeyColumnUsage>> keyColumns,
-            IReadOnlyDictionary<TableFullName, String> tableFullNameEdmNames,
+            IReadOnlyDictionary<TableFullName, (String tableEdmName, bool isQueryType)> tableFullNameEdmNames,
             IReadOnlyDictionary<TableFullName, IReadOnlyList<NavigationMapping>> navigationMappings,
             IReadOnlyDictionary<TableFullName, List<Column>> tableColumns)
         {
@@ -36,12 +36,12 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 
                 KeyColumnUsage dependentKeyColumn = dependentKeyColumns[0];
                 var dependentFullName = new TableFullName(dependentKeyColumn.TableSchema, dependentKeyColumn.TableName);
-                if (!tableFullNameEdmNames.TryGetValue(dependentFullName, out String? principalEdmName))
+                if (!tableFullNameEdmNames.TryGetValue(dependentFullName, out (String principalEdmName, bool _) p))
                     continue;
 
                 KeyColumnUsage principalKeyColumn = keyColumns[(fkey.UniqueConstraintSchema, fkey.UniqueConstraintName)][0];
                 var principalFullName = new TableFullName(principalKeyColumn.TableSchema, principalKeyColumn.TableName);
-                if (!tableFullNameEdmNames.TryGetValue(principalFullName, out String? dependentEdmName))
+                if (!tableFullNameEdmNames.TryGetValue(principalFullName, out (String dependentEdmName, bool _) d))
                     continue;
 
                 bool selfReferences = false;
@@ -52,7 +52,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                     if (selfReferences)
                         dependentNavigationName = "Parent";
                     else
-                        dependentNavigationName = Humanizer.InflectorExtensions.Singularize(dependentEdmName);
+                        dependentNavigationName = Humanizer.InflectorExtensions.Singularize(d.dependentEdmName);
 
                     (String, String, String) dependentKey = (fkey.ConstraintSchema, dependentKeyColumn.TableName, principalKeyColumn.TableName);
                     if (navigationCounter.TryGetValue(dependentKey, out List<IReadOnlyList<KeyColumnUsage>>? columnsList))
@@ -78,7 +78,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                     if (dependentKeyColumn.TableSchema == principalKeyColumn.TableSchema && dependentKeyColumn.TableName == principalKeyColumn.TableName)
                         principalNavigationName = "Children";
                     else
-                        principalNavigationName = Humanizer.InflectorExtensions.Pluralize(principalEdmName);
+                        principalNavigationName = Humanizer.InflectorExtensions.Pluralize(p.principalEdmName);
 
                     (String, String, String) principalKey = (fkey.ConstraintSchema, principalKeyColumn.TableName, dependentKeyColumn.TableName);
                     if (navigationCounter.TryGetValue(principalKey, out List<IReadOnlyList<KeyColumnUsage>>? columnsList))

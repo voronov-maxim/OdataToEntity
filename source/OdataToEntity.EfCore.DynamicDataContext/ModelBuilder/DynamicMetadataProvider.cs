@@ -100,9 +100,13 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
         {
             return _schemaCache.GetTableEdmName(tableFullName);
         }
-        public IEnumerable<(TableFullName tableFullName, bool isQueryType)> GetTableFullNames()//zzz
+        public IEnumerable<TableFullName> GetTableFullNames()
         {
             return _schemaCache.GetTableFullNames();
+        }
+        public bool IsQueryType(in TableFullName tableFullName)
+        {
+            return _schemaCache.IsQueryType(tableFullName);
         }
 
         public ProviderSpecificSchema InformationSchema { get; }

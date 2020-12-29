@@ -13,30 +13,26 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         private List<OeOperationConfiguration>? _routines;
         private readonly Dictionary<TableFullName, List<Column>> _tableColumns;
         private readonly Dictionary<TableFullName, List<Navigation>> _tableNavigations;
-        private readonly Dictionary<String, (TableFullName, bool isQueryType)> _tableEdmNameFullNames;
-        private readonly Dictionary<TableFullName, String> _tableFullNameEdmNames;
+        private readonly Dictionary<TableFullName, (String tableEdmName, bool isQueryType)> _tableFullNameEdmNames;
 
         private readonly ProviderSpecificSchema _informationSchema;
 
         internal SchemaCache(
             ProviderSpecificSchema informationSchema,
             Dictionary<(String constraintSchema, String constraintName), IReadOnlyList<KeyColumnUsage>> keyColumns,
-            Dictionary<String, (TableFullName, bool isQueryType)> tableEdmNameFullNames,//zzz swap isQueryType
-            Dictionary<TableFullName, String> tableFullNameEdmNames, ///zzz swap isQueryType
-            Dictionary<TableFullName, IReadOnlyList<NavigationMapping>> navigationMappings,
+            Dictionary<TableFullName, (String tableEdmName, bool isQueryType)> tableFullNameEdmNames,
             Dictionary<TableFullName, List<Column>> tableColumns,
             Dictionary<TableFullName, List<(String constraintName, bool isPrimary)>> keyConstraintNames,
-            Dictionary<TableFullName, List<Navigation>> tableNavigations)
+            Dictionary<TableFullName, List<Navigation>> tableNavigations,
+            Dictionary<TableFullName, List<(String NavigationName, TableFullName ManyToManyTarget)>> manyToManyProperties)
         {
             _informationSchema = informationSchema;
             _keyColumns = keyColumns;
-            _tableEdmNameFullNames = tableEdmNameFullNames;
             _tableFullNameEdmNames = tableFullNameEdmNames;
             _tableColumns = tableColumns;
             _keyConstraintNames = keyConstraintNames;
             _tableNavigations = tableNavigations;
-
-            _manyToManyProperties = GetManyToManyProperties(navigationMappings, tableEdmNameFullNames);
+            _manyToManyProperties = manyToManyProperties;
         }
 
         public void Dispose()
@@ -64,33 +60,6 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                 return tableManyToManyProperties;
 
             return Array.Empty<(String NavigationName, TableFullName ManyToManyTarget)>();
-        }
-        private static Dictionary<TableFullName, List<(String NavigationName, TableFullName ManyToManyTarget)>> GetManyToManyProperties(
-            Dictionary<TableFullName, IReadOnlyList<NavigationMapping>> navigationMappings,
-            Dictionary<String, (TableFullName, bool isQueryType)> tableEdmNameFullNames)
-        {
-            var manyToManyProperties = new Dictionary<TableFullName, List<(String NavigationName, TableFullName ManyToManyTarget)>>();
-            foreach (KeyValuePair<TableFullName, IReadOnlyList<NavigationMapping>> pair in navigationMappings)
-                for (int i = 0; i < pair.Value.Count; i++)
-                {
-                    NavigationMapping navigationMapping = pair.Value[i];
-                    if (!String.IsNullOrEmpty(navigationMapping.ManyToManyTarget))
-                    {
-                        if (!manyToManyProperties.TryGetValue(pair.Key, out List<(String NavigationName, TableFullName ManyToManyTarget)>? manyToManies))
-                        {
-                            manyToManies = new List<(String NavigationName, TableFullName ManyToManyTarget)>();
-                            manyToManyProperties.Add(pair.Key, manyToManies);
-                        }
-
-                        if (navigationMapping.NavigationName == null)
-                            throw new InvalidOperationException("For ManyToManyTarget" + navigationMapping.ManyToManyTarget + " NavigationName must be not null");
-
-                        TableFullName manyToManyTarget = tableEdmNameFullNames[navigationMapping.ManyToManyTarget].Item1;
-                        manyToManies.Add((navigationMapping.NavigationName, manyToManyTarget));
-                    }
-                }
-
-            return manyToManyProperties;
         }
         public IReadOnlyList<Navigation> GetNavigations(in TableFullName tableFullName)
         {
@@ -218,11 +187,15 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         }
         public String GetTableEdmName(in TableFullName tableFullName)
         {
-            return _tableFullNameEdmNames[tableFullName];
+            return _tableFullNameEdmNames[tableFullName].tableEdmName;
         }
-        public ICollection<(TableFullName tableFullName, bool isQueryType)> GetTableFullNames()
+        public ICollection<TableFullName> GetTableFullNames()
         {
-            return _tableEdmNameFullNames.Values;
+            return _tableFullNameEdmNames.Keys;
+        }
+        public bool IsQueryType(in TableFullName tableFullName)
+        {
+            return _tableFullNameEdmNames[tableFullName].isQueryType;
         }
     }
 }

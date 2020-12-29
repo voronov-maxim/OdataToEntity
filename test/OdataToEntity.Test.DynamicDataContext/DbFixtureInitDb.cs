@@ -58,10 +58,11 @@ namespace OdataToEntity.Test
             //ProviderSpecificSchema providerSchema = DynamicDataContext.Program.CreateSchemaPostgreSql(useRelationalNulls);
             //ProviderSpecificSchema providerSchema = DynamicDataContext.Program.CreateSchemaMySql(useRelationalNulls);
 
+            var factory = new DynamicTypeDefinitionManagerFactory();
             InformationSchemaSettings informationSchemaSettings = DynamicDataContext.Program.GetSettings();
             using (var metadataProvider = providerSchema.CreateMetadataProvider(informationSchemaSettings))
             {
-                var typeDefinitionManager = DynamicTypeDefinitionManager.Create(metadataProvider);
+                var typeDefinitionManager = factory.Create(metadataProvider);
                 var dataAdapter = new DynamicDataAdapter(typeDefinitionManager);
                 return dataAdapter.BuildEdmModel(metadataProvider);
             }

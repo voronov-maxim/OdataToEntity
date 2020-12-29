@@ -25,19 +25,18 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
 
         public void Build(Microsoft.EntityFrameworkCore.ModelBuilder modelBuilder)
         {
-            foreach ((TableFullName tableFullName, bool isQueryType) in MetadataProvider.GetTableFullNames())
+            foreach (TableFullName tableFullName in MetadataProvider.GetTableFullNames())
             {
-                CreateEntityType(modelBuilder, tableFullName, isQueryType);
+                CreateEntityType(modelBuilder, tableFullName);
                 CreateNavigationProperties(modelBuilder, tableFullName);
             }
         }
-        private EntityType CreateEntityType(Microsoft.EntityFrameworkCore.ModelBuilder modelBuilder, in TableFullName tableFullName, bool isQueryType)
+        private EntityType CreateEntityType(Microsoft.EntityFrameworkCore.ModelBuilder modelBuilder, in TableFullName tableFullName)
         {
             if (!_entityTypes.TryGetValue(tableFullName, out EntityType? entityType))
             {
                 (String[] propertyNames, bool isPrimary)[] keys = MetadataProvider.GetKeys(tableFullName);
-                if (keys.Length == 0)
-                    isQueryType = true;
+                bool isQueryType = keys.Length == 0 ? true : MetadataProvider.IsQueryType(tableFullName);
 
                 String tableEdmName = MetadataProvider.GetTableEdmName(tableFullName);
                 var dynamicTypeDefinition = TypeDefinitionManager.GetOrAddDynamicTypeDefinition(tableFullName, isQueryType, tableEdmName);
@@ -87,8 +86,8 @@ namespace OdataToEntity.EfCore.DynamicDataContext.ModelBuilder
             {
                 DynamicDependentPropertyInfo dependentInfo = MetadataProvider.GetDependentProperties(tableFullName, propertyName);
 
-                EntityType dependentEntityType = CreateEntityType(modelBuilder, dependentInfo.DependentTableName, false);
-                EntityType principalEntityType = CreateEntityType(modelBuilder, dependentInfo.PrincipalTableName, false);
+                EntityType dependentEntityType = CreateEntityType(modelBuilder, dependentInfo.DependentTableName);
+                EntityType principalEntityType = CreateEntityType(modelBuilder, dependentInfo.PrincipalTableName);
 
                 var dependentProperties = new Property[dependentInfo.DependentPropertyNames.Count];
                 for (int i = 0; i < dependentProperties.Length; i++)

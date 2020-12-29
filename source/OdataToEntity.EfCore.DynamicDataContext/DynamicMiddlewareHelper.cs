@@ -7,12 +7,20 @@ namespace OdataToEntity.EfCore.DynamicDataContext
     {
         public static IEdmModel CreateEdmModel(ProviderSpecificSchema providerSchema, InformationSchemaSettings informationSchemaSettings)
         {
+            return CreateEdmModel(providerSchema, informationSchemaSettings, new DynamicTypeDefinitionManagerFactory());
+        }
+        public static IEdmModel CreateEdmModel(ProviderSpecificSchema providerSchema, InformationSchemaSettings informationSchemaSettings, DynamicTypeDefinitionManagerFactory factory)
+        {
             using (var metadataProvider = providerSchema.CreateMetadataProvider(informationSchemaSettings))
             {
-                DynamicTypeDefinitionManager typeDefinitionManager = DynamicTypeDefinitionManager.Create(metadataProvider);
+                DynamicTypeDefinitionManager typeDefinitionManager = factory.Create(metadataProvider);
                 var dataAdapter = new DynamicDataAdapter(typeDefinitionManager);
                 return dataAdapter.BuildEdmModel(metadataProvider);
             }
+        }
+        public static IEdmModel CreateEdmModelViaEmit(ProviderSpecificSchema providerSchema, InformationSchemaSettings informationSchemaSettings)
+        {
+            return CreateEdmModel(providerSchema, informationSchemaSettings, new EmitDynamicTypeDefinitionManagerFactory());
         }
     }
 }

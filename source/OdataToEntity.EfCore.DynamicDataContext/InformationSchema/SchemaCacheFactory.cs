@@ -11,8 +11,8 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             IEqualityComparer<String> comparer = informationSchema.IsCaseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
             IEqualityComparer<TableFullName> tableNameComparer = informationSchema.IsCaseSensitive ? TableFullName.OrdinalComparer : TableFullName.OrdinalIgnoreCaseComparer;
 
-            var tableEdmNameFullNames = new Dictionary<String, (TableFullName, bool isQueryType)>(comparer);
-            var tableFullNameEdmNames = new Dictionary<TableFullName, String>(tableNameComparer);
+            var tableEdmNameFullNames = new Dictionary<String, TableFullName>(comparer);
+            var tableFullNameEdmNames = new Dictionary<TableFullName, (String tableEdmName, bool isQueryType)>(tableNameComparer);
             var navigationMappings = new Dictionary<TableFullName, IReadOnlyList<NavigationMapping>>(tableNameComparer);
             Dictionary<(String constraintSchema, String constraintName), IReadOnlyList<KeyColumnUsage>> keyColumns = GetKeyColumns(informationSchema, informationSchemaSettings);
             List<ReferentialConstraint> referentialConstraints;
@@ -93,14 +93,14 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                     }
 
                     var tableFullName = new TableFullName(table.TableSchema, table.TableName);
-                    tableEdmNameFullNames.Add(tableName, (tableFullName, table.TableType == "VIEW"));
-                    tableFullNameEdmNames.Add(tableFullName, tableName);
+                    tableEdmNameFullNames.Add(tableName, tableFullName);
+                    tableFullNameEdmNames.Add(tableFullName, (tableName, table.TableType == "VIEW"));
                 }
 
                 foreach (Table fixTableName in fixTableNames)
                 {
                     var fixTableFullName = new TableFullName(fixTableName.TableSchema, fixTableName.TableName);
-                    tableEdmNameFullNames[fixTableName.TableSchema + "." + fixTableName.TableName] = (fixTableFullName, fixTableName.TableType == "VIEW");
+                    tableEdmNameFullNames[fixTableName.TableSchema + "." + fixTableName.TableName] = fixTableFullName;
                 }
             }
             finally
@@ -109,7 +109,6 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             }
 
             Dictionary<TableFullName, List<Column>> tableColumns = GetTableColumns(informationSchema);
-            Dictionary<TableFullName, List<(String constraintName, bool isPrimary)>> keyConstraintNames = GetKeyConstraintNames(informationSchema);
             Dictionary<TableFullName, List<Navigation>> tableNavigations = Navigation.GetNavigations(
                 referentialConstraints,
                 keyColumns,
@@ -120,12 +119,33 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             return new SchemaCache(
                 informationSchema,
                 keyColumns,
-                tableEdmNameFullNames,
                 tableFullNameEdmNames,
-                navigationMappings,
                 tableColumns,
-                keyConstraintNames,
-                tableNavigations);
+                GetKeyConstraintNames(informationSchema),
+                tableNavigations,
+                GetManyToManyProperties(navigationMappings, tableEdmNameFullNames));
+        }
+        private static String? GetFKeyConstraintName(List<ReferentialConstraint> referentialConstraints,
+            Dictionary<(String constraintSchema, String constraintName), IReadOnlyList<KeyColumnUsage>> keyColumns, String tableSchema, String tableName1, String tableName2)
+        {
+            foreach (ReferentialConstraint fkey in referentialConstraints)
+            {
+                KeyColumnUsage dependentKeyColumns = keyColumns[(fkey.ConstraintSchema, fkey.ConstraintName)][0];
+                KeyColumnUsage principalKeyColumn = keyColumns[(fkey.UniqueConstraintSchema, fkey.UniqueConstraintName)][0];
+
+                if (String.Compare(dependentKeyColumns.TableSchema, tableSchema, StringComparison.OrdinalIgnoreCase) == 0)
+                {
+                    if (String.Compare(dependentKeyColumns.TableName, tableName1, StringComparison.OrdinalIgnoreCase) == 0 &&
+                        String.Compare(principalKeyColumn.TableName, tableName2, StringComparison.OrdinalIgnoreCase) == 0)
+                        return fkey.ConstraintName;
+
+                    if (String.Compare(dependentKeyColumns.TableName, tableName2, StringComparison.OrdinalIgnoreCase) == 0 &&
+                        String.Compare(principalKeyColumn.TableName, tableName1, StringComparison.OrdinalIgnoreCase) == 0)
+                        return fkey.ConstraintName;
+                }
+            }
+
+            return null;
         }
         private static Dictionary<TableFullName, List<(String constraintName, bool isPrimary)>> GetKeyConstraintNames(ProviderSpecificSchema informationSchema)
         {
@@ -162,28 +182,6 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                 schemaContext.Dispose();
             }
             return keyConstraintNames;
-        }
-        private static String? GetFKeyConstraintName(List<ReferentialConstraint> referentialConstraints,
-            Dictionary<(String constraintSchema, String constraintName), IReadOnlyList<KeyColumnUsage>> keyColumns, String tableSchema, String tableName1, String tableName2)
-        {
-            foreach (ReferentialConstraint fkey in referentialConstraints)
-            {
-                KeyColumnUsage dependentKeyColumns = keyColumns[(fkey.ConstraintSchema, fkey.ConstraintName)][0];
-                KeyColumnUsage principalKeyColumn = keyColumns[(fkey.UniqueConstraintSchema, fkey.UniqueConstraintName)][0];
-
-                if (String.Compare(dependentKeyColumns.TableSchema, tableSchema, StringComparison.OrdinalIgnoreCase) == 0)
-                {
-                    if (String.Compare(dependentKeyColumns.TableName, tableName1, StringComparison.OrdinalIgnoreCase) == 0 &&
-                        String.Compare(principalKeyColumn.TableName, tableName2, StringComparison.OrdinalIgnoreCase) == 0)
-                        return fkey.ConstraintName;
-
-                    if (String.Compare(dependentKeyColumns.TableName, tableName2, StringComparison.OrdinalIgnoreCase) == 0 &&
-                        String.Compare(principalKeyColumn.TableName, tableName1, StringComparison.OrdinalIgnoreCase) == 0)
-                        return fkey.ConstraintName;
-                }
-            }
-
-            return null;
         }
         private static Dictionary<(String constraintSchema, String constraintName), IReadOnlyList<KeyColumnUsage>> GetKeyColumns(
             ProviderSpecificSchema informationSchema, InformationSchemaSettings informationSchemaSettings)
@@ -224,6 +222,33 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             }
 
             return keyColumns;
+        }
+        private static Dictionary<TableFullName, List<(String NavigationName, TableFullName ManyToManyTarget)>> GetManyToManyProperties(
+            Dictionary<TableFullName, IReadOnlyList<NavigationMapping>> navigationMappings,
+            Dictionary<String, TableFullName> tableEdmNameFullNames)
+        {
+            var manyToManyProperties = new Dictionary<TableFullName, List<(String NavigationName, TableFullName ManyToManyTarget)>>();
+            foreach (KeyValuePair<TableFullName, IReadOnlyList<NavigationMapping>> pair in navigationMappings)
+                for (int i = 0; i < pair.Value.Count; i++)
+                {
+                    NavigationMapping navigationMapping = pair.Value[i];
+                    if (!String.IsNullOrEmpty(navigationMapping.ManyToManyTarget))
+                    {
+                        if (!manyToManyProperties.TryGetValue(pair.Key, out List<(String NavigationName, TableFullName ManyToManyTarget)>? manyToManies))
+                        {
+                            manyToManies = new List<(String NavigationName, TableFullName ManyToManyTarget)>();
+                            manyToManyProperties.Add(pair.Key, manyToManies);
+                        }
+
+                        if (navigationMapping.NavigationName == null)
+                            throw new InvalidOperationException("For ManyToManyTarget" + navigationMapping.ManyToManyTarget + " NavigationName must be not null");
+
+                        TableFullName manyToManyTarget = tableEdmNameFullNames[navigationMapping.ManyToManyTarget];
+                        manyToManies.Add((navigationMapping.NavigationName, manyToManyTarget));
+                    }
+                }
+
+            return manyToManyProperties;
         }
         private static Dictionary<TableFullName, List<Column>> GetTableColumns(ProviderSpecificSchema informationSchema)
         {
