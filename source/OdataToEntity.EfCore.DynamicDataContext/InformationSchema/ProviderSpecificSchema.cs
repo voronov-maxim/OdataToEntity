@@ -21,8 +21,9 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
         {
             return CreateMetadataProvider(new InformationSchemaSettings());
         }
-        public virtual DynamicMetadataProvider CreateMetadataProvider(InformationSchemaSettings informationSchemaSettings)
+        public DynamicMetadataProvider CreateMetadataProvider(InformationSchemaSettings informationSchemaSettings)
         {
+            DefaultSchema = informationSchemaSettings.DefaultSchema;
             return new DynamicMetadataProvider(this, informationSchemaSettings);
         }
         public void Dispose()
@@ -37,6 +38,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             return (SchemaContext)new DbContextLease(_schemaContextPool, true).Context;
         }
 
+        public String? DefaultSchema { get; private set; }
         public bool IsCaseSensitive { get; protected set; }
         public DbContextOptions<DynamicDbContext> DynamicDbContextOptions { get; }
         public ExpressionVisitor? ExpressionVisitor { get; protected set; }

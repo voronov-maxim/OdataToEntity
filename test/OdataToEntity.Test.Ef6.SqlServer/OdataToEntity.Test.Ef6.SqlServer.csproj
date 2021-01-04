@@ -23,7 +23,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="$(EfCoreVersion)" />
     <PackageReference Include="Newtonsoft.Json" Version="$(JsonNetVersion)" />
     <PackageReference Include="xunit" Version="$(XunitVersion)" />
-    <PackageReference Include="xunit.runner.visualstudio" version="$(XunitVersion)" />
+    <PackageReference Include="xunit.runner.visualstudio" version="$(XunitVSVersion)" />
   </ItemGroup>
   
   <ItemGroup>

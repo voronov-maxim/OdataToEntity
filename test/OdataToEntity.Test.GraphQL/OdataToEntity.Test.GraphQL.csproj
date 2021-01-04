@@ -20,13 +20,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="GraphQL" Version="3.1.6" />
-    <PackageReference Include="GraphQL.NewtonsoftJson" Version="3.1.6" />
+    <PackageReference Include="GraphQL" Version="3.2.0" />
+    <PackageReference Include="GraphQL.NewtonsoftJson" Version="3.2.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$(EfCoreVersion)" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="$(EfCoreVersion)" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />
     <PackageReference Include="xunit" Version="$(XunitVersion)" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="$(XunitVersion)" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="$(XunitVSVersion)" />
   </ItemGroup>
 
   <ItemGroup>

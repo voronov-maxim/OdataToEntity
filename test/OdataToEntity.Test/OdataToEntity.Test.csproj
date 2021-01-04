@@ -35,7 +35,7 @@
     <PackageReference Include="Microsoft.OData.Edm" Version="$(ODataLibVersion)" />
     <PackageReference Include="Newtonsoft.Json" Version="$(JsonNetVersion)" />
     <PackageReference Include="xunit" Version="$(XunitVersion)" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="$(XunitVersion)" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="$(XunitVSVersion)" />
   </ItemGroup>
 
   <ItemGroup>

@@ -3,7 +3,6 @@ using OdataToEntity.EfCore.DynamicDataContext;
 using OdataToEntity.EfCore.DynamicDataContext.InformationSchema;
 using OdataToEntity.Test;
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -69,6 +68,7 @@ namespace OdataToEntity.Test.DynamicDataContext
         {
             return new InformationSchemaSettings
             {
+                DefaultSchema = "dbo",
                 ObjectFilter = DbObjectFilter.Mapping,
                 Operations = new OperationMapping[]
                 {

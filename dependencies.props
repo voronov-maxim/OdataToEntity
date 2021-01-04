@@ -16,5 +16,6 @@
     <TestSdkVersion>16.8.3</TestSdkVersion>
     <Version>$(OdataToEntityVersion)</Version>
     <XunitVersion>2.4.1</XunitVersion>
+    <XunitVSVersion>2.4.3</XunitVSVersion>
   </PropertyGroup>
 </Project>

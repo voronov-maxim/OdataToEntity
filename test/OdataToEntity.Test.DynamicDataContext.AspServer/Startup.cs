@@ -46,6 +46,7 @@ namespace OdataToEntity.Test.DynamicDataContext.AspServer
             bool useRelationalNulls = Configuration.GetValue<bool>("OdataToEntity:UseRelationalNulls");
             String? informationSchemaMappingFileName = Configuration.GetValue<String>("OdataToEntity:InformationSchemaMappingFileName");
             String? filter = Configuration.GetValue<String>("OdataToEntity:Filter");
+            String? defaultSchema = Configuration.GetSection("OdataToEntity:DefaultSchema").Get<String>();
             String[]? includedSchemas = Configuration.GetSection("OdataToEntity:IncludedSchemas").Get<String[]>();
             String[]? excludedSchemas = Configuration.GetSection("OdataToEntity:ExcludedSchemas").Get<String[]>();
 
@@ -53,6 +54,8 @@ namespace OdataToEntity.Test.DynamicDataContext.AspServer
                 basePath = "/" + basePath;
 
             var informationSchemaSettings = new InformationSchemaSettings();
+            if (!String.IsNullOrEmpty(defaultSchema))
+                informationSchemaSettings.DefaultSchema = defaultSchema;
             if (includedSchemas != null)
                 informationSchemaSettings.IncludedSchemas = new HashSet<String>(includedSchemas);
             if (excludedSchemas != null)
@@ -62,7 +65,7 @@ namespace OdataToEntity.Test.DynamicDataContext.AspServer
             if (informationSchemaMappingFileName != null)
             {
                 String json = File.ReadAllText(informationSchemaMappingFileName);
-                var informationSchemaMapping = Newtonsoft.Json.JsonConvert.DeserializeObject<InformationSchemaMapping>(json);
+                var informationSchemaMapping = System.Text.Json.JsonSerializer.Deserialize<InformationSchemaMapping>(json)!;
                 informationSchemaSettings.Operations = informationSchemaMapping.Operations;
                 informationSchemaSettings.Tables = informationSchemaMapping.Tables;
             }

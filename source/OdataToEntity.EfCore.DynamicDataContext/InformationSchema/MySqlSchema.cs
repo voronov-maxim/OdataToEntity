@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Query;
-using OdataToEntity.EfCore.DynamicDataContext.ModelBuilder;
 using System;
 using System.Collections.Generic;
 
@@ -16,10 +15,6 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             base.OperationAdapter = new OeMySqlEfCoreOperationAdapter(typeof(DynamicDbContext));
         }
 
-        public override DynamicMetadataProvider CreateMetadataProvider(InformationSchemaSettings informationSchemaSettings)
-        {
-            return new DynamicMetadataProvider(this, informationSchemaSettings);
-        }
         private static DbContextPool<SchemaContext> CreatePool(DbContextOptions<DynamicDbContext> dynamicDbContextOptions)
         {
             var optionsBuilder = new DbContextOptionsBuilder<SchemaContext>();

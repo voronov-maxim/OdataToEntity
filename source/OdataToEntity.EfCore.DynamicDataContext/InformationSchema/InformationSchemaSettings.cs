@@ -5,6 +5,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
 {
     public sealed class InformationSchemaSettings
     {
+        public String? DefaultSchema { get; set; }
         public ISet<String>? ExcludedSchemas { get; set; }
         public ISet<String>? IncludedSchemas { get; set; }
         public DbObjectFilter ObjectFilter { get; set; }

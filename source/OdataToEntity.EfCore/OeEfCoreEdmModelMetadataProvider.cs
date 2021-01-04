@@ -105,7 +105,7 @@ namespace OdataToEntity.EfCore
         {
             foreach (EntityType efEntityType in GetEntityTypes(principalNavigation))
             {
-                Navigation navigation = efEntityType.FindNavigation(principalNavigation);
+                Navigation navigation = efEntityType.FindNavigation(principalNavigation.Name);
                 if (navigation != null)
                 {
                     var propertyInfos = new PropertyInfo[navigation.ForeignKey.PrincipalKey.Properties.Count];
