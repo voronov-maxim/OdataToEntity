@@ -733,6 +733,19 @@ namespace OdataToEntity.Test
         }
         [Theory]
         [InlineData(0)]
+        //[InlineData(1, Skip = "OdataLib bug #1974")]
+        public async Task FilterDollarIt(int pageSize)
+        {
+            var parameters = new QueryParameters<Order, Object>()
+            {
+                RequestUri = "Orders?$expand=Items($filter=$it/Status eq 'Processing')&$orderby=Id",
+                Expression = t => t.OrderBy(o => o.Id).Include(o => o.Items.Where(i => i.Order.Status == OrderStatus.Processing)),
+                PageSize = pageSize,
+            };
+            await Fixture.Execute(parameters).ConfigureAwait(false);
+        }
+        [Theory]
+        [InlineData(0)]
         [InlineData(1)]
         public async Task FilterEnum(int pageSize)
         {

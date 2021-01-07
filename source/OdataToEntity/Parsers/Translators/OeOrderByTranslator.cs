@@ -52,7 +52,7 @@ namespace OdataToEntity.Parsers.Translators
             if (sortProperty is SingleValueOpenPropertyAccessNode openPropertyNode)
             {
                 var propertyExpression = (MemberExpression)joinBuilder.Visitor.TranslateNode(openPropertyNode);
-                var replaceParameterVisitor = new ReplaceParameterVisitor(joinBuilder.Visitor.Parameter, parameterExpression);
+                var replaceParameterVisitor = new ReplaceParameterVisitor(parameterExpression, joinBuilder.Visitor.Parameter);
                 return (MemberExpression)replaceParameterVisitor.Visit(propertyExpression);
             }
 

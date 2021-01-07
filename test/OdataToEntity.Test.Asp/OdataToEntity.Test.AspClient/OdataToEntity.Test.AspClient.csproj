@@ -20,6 +20,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$(EfCoreVersion)" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="$(EfCoreVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="$(NetCoreVersion)" />
     <PackageReference Include="Microsoft.OData.Client" version="$(ODataLibVersion)" />
     <PackageReference Include="Microsoft.OData.Core" version="$(ODataLibVersion)" />
     <PackageReference Include="Microsoft.OData.Edm" version="$(ODataLibVersion)" />

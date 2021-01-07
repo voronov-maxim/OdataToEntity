@@ -22,11 +22,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="linq2db" Version="3.1.6" />
-    <PackageReference Include="linq2db.SqlServer" Version="3.1.6" />
+    <PackageReference Include="linq2db" Version="3.2.3" />
+    <PackageReference Include="linq2db.SqlServer" Version="3.2.3" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$(EfCoreVersion)" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="$(EfCoreVersion)" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="$(NetCoreVersion)" />
     <PackageReference Include="Newtonsoft.Json" Version="$(JsonNetVersion)" />
     <PackageReference Include="xunit" Version="$(XunitVersion)" />
     <PackageReference Include="xunit.runner.visualstudio" version="$(XunitVSVersion)" />

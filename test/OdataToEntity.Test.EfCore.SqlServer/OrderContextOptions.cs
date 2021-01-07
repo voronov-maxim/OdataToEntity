@@ -1,9 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Internal;
+using Microsoft.Extensions.Logging;
 using Microsoft.OData.Edm;
 using OdataToEntity.EfCore;
-using System;
 
 namespace OdataToEntity.Test.Model
 {
@@ -54,6 +52,7 @@ namespace OdataToEntity.Test.Model
         {
             var optionsBuilder = new DbContextOptionsBuilder<T>();
             optionsBuilder = optionsBuilder.UseSqlServer(@"Server=.\sqlexpress;Initial Catalog=OdataToEntity;Trusted_Connection=Yes;", opt => opt.UseRelationalNulls(useRelationalNulls));
+            optionsBuilder.UseLoggerFactory(LoggerFactory.Create(builder => { builder.AddConsole().SetMinimumLevel(LogLevel.None); }));
             return optionsBuilder.Options;
         }
         public static DbContextOptions<T> CreateOptions<T>(DbContext dbContext) where T : DbContext

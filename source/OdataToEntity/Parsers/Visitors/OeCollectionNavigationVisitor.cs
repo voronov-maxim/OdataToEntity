@@ -32,7 +32,7 @@ namespace OdataToEntity.Parsers
                 (LambdaExpression outerKeySelector, LambdaExpression innerKeySelector) =
                     joinBuilder.GetJoinKeySelector(outerType, innerType, Array.Empty<IEdmNavigationProperty>(), navigationProperty);
 
-                var replaceParameterVisitor = new ReplaceParameterVisitor(outerKeySelector.Parameters[0], _outerParameterExpression);
+                var replaceParameterVisitor = new ReplaceParameterVisitor(_outerParameterExpression, outerKeySelector.Parameters[0]);
                 Expression outerKeyExpression = replaceParameterVisitor.Visit(outerKeySelector.Body);
                 IReadOnlyList<MemberExpression> outerKeyProperties;
                 IReadOnlyList<MemberExpression> innerKeyProperties;

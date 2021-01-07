@@ -16,7 +16,7 @@ namespace OdataToEntity.Parsers
         {
         }
 
-        private static MethodInfo GetQuerableMethodInfo(MethodInfo enumerableMethodInfo, ReadOnlyCollection<Expression> arguments)
+        private static MethodInfo GetQueryableMethodInfo(MethodInfo enumerableMethodInfo, ReadOnlyCollection<Expression> arguments)
         {
             var enumerableTypes = new Type[arguments.Count - 1];
             for (int i = 1; i < arguments.Count; i++)
@@ -78,15 +78,32 @@ namespace OdataToEntity.Parsers
         }
         protected override Expression VisitLambda<T>(Expression<T> node)
         {
-            node = (Expression<T>)base.VisitLambda(node);
-            if (node.ReturnType.IsGenericType && node.ReturnType.GetGenericTypeDefinition() == typeof(ICollection<>))
+            if (node.ReturnType.IsGenericType)
+            {
+                Expression body = base.Visit(node.Body);
+
+                Type genericType = node.ReturnType.GetGenericTypeDefinition();
+                if (genericType == typeof(ICollection<>))
+                    return CreateLambda(node, body);
+
+                if (body != node.Body)
+                {
+                    if (node.ReturnType == body.Type)
+                        return node.Update(body, node.Parameters) ?? throw new InvalidOperationException("Cannot convert expression to IQueryable type");
+
+                    if (genericType == typeof(IOrderedEnumerable<>))
+                        return CreateLambda(node, body);
+                }
+            }
+            return node;
+
+            static LambdaExpression CreateLambda(Expression<T> node, Expression body)
             {
                 Type[] arguments = node.Type.GetGenericArguments();
                 arguments[arguments.Length - 1] = typeof(IEnumerable<>).MakeGenericType(node.ReturnType.GetGenericArguments());
                 Type delegateType = node.Type.GetGenericTypeDefinition().MakeGenericType(arguments);
-                return Expression.Lambda(delegateType, node.Body, node.Parameters);
+                return Expression.Lambda(delegateType, body, node.Parameters);
             }
-            return node;
         }
         protected override Expression VisitMethodCall(MethodCallExpression node)
         {
@@ -101,8 +118,8 @@ namespace OdataToEntity.Parsers
                 genericTypeDefinition == typeof(IOrderedEnumerable<>))
                 return Expression.Call(base.Visit(node.Object), node.Method, arguments);
 
-            MethodInfo querableMethodInfo = GetQuerableMethodInfo(node.Method, arguments);
-            return Expression.Call(querableMethodInfo, arguments);
+            MethodInfo queryableMethodInfo = GetQueryableMethodInfo(node.Method, arguments);
+            return Expression.Call(queryableMethodInfo, arguments);
         }
     }
 }

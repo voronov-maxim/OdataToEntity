@@ -4,18 +4,25 @@ namespace OdataToEntity.Parsers
 {
     public sealed class ReplaceParameterVisitor : ExpressionVisitor
     {
-        private readonly ParameterExpression _parameter;
+        private readonly ParameterExpression? _parameter;
         private readonly Expression _source;
 
-        public ReplaceParameterVisitor(ParameterExpression parameter, Expression source)
+        public ReplaceParameterVisitor(Expression source)
         {
-            _parameter = parameter;
             _source = source;
+        }
+        public ReplaceParameterVisitor(Expression source, ParameterExpression parameter)
+        {
+            _source = source;
+            _parameter = parameter;
         }
 
         protected override Expression VisitParameter(ParameterExpression node)
         {
-            return node == _parameter ? _source : base.VisitParameter(node);
+            if (_parameter == null)
+                return node.Type == _source.Type ? _source : base.VisitParameter(node);
+            else
+                return node == _parameter ? _source : base.VisitParameter(node);
         }
     }
 }

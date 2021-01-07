@@ -8,7 +8,7 @@ using System.Reflection;
 
 namespace OdataToEntity.Parsers
 {
-    public sealed class OeQueryNodeVisitor : QueryNodeVisitor<Expression>
+    public class OeQueryNodeVisitor : QueryNodeVisitor<Expression>
     {
         private readonly Dictionary<ConstantExpression, ConstantNode> _constants;
         private ParameterExpression _parameter;
@@ -273,19 +273,6 @@ namespace OdataToEntity.Parsers
 
             return Expression.Property(source, propertyInfo);
         }
-        public override Expression Visit(SingleValuePropertyAccessNode nodeIn)
-        {
-            Expression e;
-            if (TuplePropertyByAliasName == null)
-            {
-                e = TranslateNode(nodeIn.Source);
-                PropertyInfo property = e.Type.GetPropertyIgnoreCase(nodeIn.Property);
-                return Expression.Property(e, property);
-            }
-
-            Expression source = TranslateNode(nodeIn.Source);
-            return TuplePropertyByAliasName(source, nodeIn);
-        }
         public override Expression Visit(SingleValueFunctionCallNode nodeIn)
         {
             return OeFunctionBinder.Bind(this, nodeIn);
@@ -295,6 +282,17 @@ namespace OdataToEntity.Parsers
             Expression source = TranslateNode(nodeIn.Source);
             if (TuplePropertyByAliasName == null)
                 throw new InvalidOperationException("Cannot transalte SingleValueOpenPropertyAccessNode " + nameof(TuplePropertyByAliasName) + " is null");
+
+            return TuplePropertyByAliasName(source, nodeIn);
+        }
+        public override Expression Visit(SingleValuePropertyAccessNode nodeIn)
+        {
+            Expression source = TranslateNode(nodeIn.Source);
+            if (TuplePropertyByAliasName == null)
+            {
+                PropertyInfo property = source.Type.GetPropertyIgnoreCase(nodeIn.Property);
+                return Expression.Property(source, property);
+            }
 
             return TuplePropertyByAliasName(source, nodeIn);
         }

@@ -28,19 +28,30 @@ namespace OdataToEntity.Parsers.Translators
             public IEdmTypeReference Type { get; }
         }
 
-        private sealed class ReplaceParameterVisitor : ExpressionVisitor
+        private sealed class DollarItVisitor : OeQueryNodeVisitor
         {
-            private readonly Expression _source;
+            private readonly IEdmModel _edmModel;
 
-            public ReplaceParameterVisitor(Expression source)
+            public DollarItVisitor(OeQueryNodeVisitor parentVisitor, ParameterExpression parameter, IEdmModel edmModel)
+                : base(parentVisitor, parameter)
             {
-                _source = source;
+                _edmModel = edmModel;
             }
 
-            protected override Expression VisitParameter(ParameterExpression node)
+            public override Expression Visit(SingleValuePropertyAccessNode nodeIn)
             {
-                return node.Type == _source.Type ? _source : base.VisitParameter(node);
+                //Quirk ODataLib bug #1973
+                if (base.Parameter.Type.GetPropertyIgnoreCaseOrNull(nodeIn.Property) != null)
+                    return base.Visit(nodeIn);
+
+                IsDollarIt = true;
+                Type sourceType = _edmModel.GetClrType(nodeIn.Source.TypeReference.Definition);
+                ParameterExpression source = Expression.Parameter(sourceType, "$it");
+                PropertyInfo property = sourceType.GetPropertyIgnoreCase(nodeIn.Property);
+                return Expression.Property(source, property);
             }
+
+            public bool IsDollarIt { get; private set; }
         }
 
         private readonly IEdmModel _edmModel;
@@ -270,7 +281,7 @@ namespace OdataToEntity.Parsers.Translators
             PropertyInfo navigationClrProperty = clrEntityType.GetPropertyIgnoreCase(navigationItem.EdmProperty);
 
             Type itemType = OeExpressionHelper.GetCollectionItemTypeOrNull(navigationClrProperty.PropertyType) ?? navigationClrProperty.PropertyType;
-            var visitor = new OeQueryNodeVisitor(_joinBuilder.Visitor, Expression.Parameter(itemType));
+            var visitor = new DollarItVisitor(_joinBuilder.Visitor, Expression.Parameter(itemType), _edmModel);
             var expressionBuilder = new OeExpressionBuilder(_joinBuilder, visitor);
 
             IEdmNavigationProperty navigationProperty = navigationItem.EdmProperty;
@@ -286,7 +297,7 @@ namespace OdataToEntity.Parsers.Translators
             innerSource = expressionBuilder.ApplyFilter(innerSource, item.FilterOption);
 
             long? top = GetTop(navigationItem, item.TopOption);
-            if (top == null && item.SkipOption == null)
+            if (top == null && item.SkipOption == null && visitor.IsDollarIt == false)
                 return innerSource;
 
             OrderByClause orderByClause = item.OrderByOption;

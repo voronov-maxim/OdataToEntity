@@ -238,7 +238,7 @@ namespace OdataToEntity.Parsers.Translators
             if (Visitor.Parameter == parameter)
                 return propertyExpression;
 
-            var replaceParameterVisitor = new ReplaceParameterVisitor(Visitor.Parameter, parameter);
+            var replaceParameterVisitor = new ReplaceParameterVisitor(parameter, Visitor.Parameter);
             return (MemberExpression)replaceParameterVisitor.Visit(propertyExpression);
         }
         internal MemberExpression? GetJoinPropertyExpression(Expression source, Expression parameter, IReadOnlyList<IEdmNavigationProperty> joinPath, IEdmProperty edmProperty)
