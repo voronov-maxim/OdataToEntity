@@ -19,6 +19,7 @@ namespace OdataToEntity.Test.Model
 
         public OrderDataAdapter(bool allowCache, bool useRelationalNulls) : base(new Cache.OeQueryCache(allowCache))
         {
+            LinqToDB.Common.Configuration.Linq.CompareNullsAsValues = !useRelationalNulls;
         }
 
         public static ModelBuilder.OeEdmModelMetadataProvider CreateMetadataProvider()
@@ -38,6 +39,7 @@ namespace OdataToEntity.Test.Model
 
         public Order2DataAdapter(bool allowCache, bool useRelationalNulls) : base(new Cache.OeQueryCache(allowCache))
         {
+            LinqToDB.Common.Configuration.Linq.CompareNullsAsValues = !useRelationalNulls;
         }
     }
 }
