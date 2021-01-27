@@ -15,6 +15,7 @@ namespace OdataToEntity.Parsers
         private static MethodInfo? _countMethodInfo;
         private static MethodInfo? _defaultIfEmpty;
         private static MethodInfo? _distinctMethodInfo;
+        private static MethodInfo? _firstMethodInfo;
         private static MethodInfo? _groupByMethodInfo;
         private static MethodInfo? _groupByMethodInfo2;
         private static MethodInfo? _groupJoinMethodInfo;
@@ -94,6 +95,15 @@ namespace OdataToEntity.Parsers
                 _distinctMethodInfo = func.GetMethodInfo().GetGenericMethodDefinition();
             }
             return _distinctMethodInfo.MakeGenericMethod(type);
+        }
+        public static MethodInfo GetFirstMethodInfo(Type sourceType)
+        {
+            if (_firstMethodInfo == null)
+            {
+                Func<IEnumerable<Object>, Func<Object, bool>, Object> func = Enumerable.First;
+                _firstMethodInfo = func.GetMethodInfo().GetGenericMethodDefinition();
+            }
+            return _firstMethodInfo.MakeGenericMethod(sourceType);
         }
         public static MethodInfo GetGroupByMethodInfo(Type sourceType, Type keyType)
         {

@@ -112,7 +112,7 @@ namespace OdataToEntity.ModelBuilder
         }
         public static bool IsNullable(Type clrType)
         {
-            return clrType.IsClass || (clrType.IsGenericType && clrType.GetGenericTypeDefinition() == typeof(Nullable<>));
+            return (clrType.IsClass || clrType.IsInterface) || (clrType.IsGenericType && clrType.GetGenericTypeDefinition() == typeof(Nullable<>));
         }
 
     }

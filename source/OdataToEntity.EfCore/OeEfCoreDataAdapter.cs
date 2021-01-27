@@ -71,7 +71,8 @@ namespace OdataToEntity.EfCore
                 {
                     Type entityType = property.PropertyType.GetGenericArguments()[0];
                     bool isDbQuery = efModel.FindEntityType(entityType).FindPrimaryKey() == null;
-                    entitySetAdapters.Add(CreateEntitySetAdapter(entityType, property.Name, isDbQuery));
+                    Db.OeEntitySetAdapter entitySetAdapter = CreateEntitySetAdapter(entityType, property.Name, isDbQuery);
+                    entitySetAdapters.Add(entitySetAdapter);
                 }
 
             return new Db.OeEntitySetAdapterCollection(entitySetAdapters.ToArray());

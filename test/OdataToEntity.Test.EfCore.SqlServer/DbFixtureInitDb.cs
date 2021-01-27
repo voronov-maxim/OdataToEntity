@@ -23,6 +23,10 @@ namespace OdataToEntity.Test
         {
             return new OrderContext(OrderContextOptions.Create(_useRelationalNulls));
         }
+        public override TContext CreateContext<TContext>()
+        {
+            return (TContext)(Object)CreateContext();
+        }
         internal static EdmModel CreateOeEdmModel(bool useRelationalNulls)
         {
             var dataAdapter = new OrderDataAdapter(true, useRelationalNulls);
@@ -69,7 +73,11 @@ namespace OdataToEntity.Test
 
         public override OrderContext CreateContext()
         {
-            return new OrderContext(OrderContextOptions.Create(_useRelationalNulls));
+            return new OrderContext(OrderContextOptions.Create(_useRelationalNulls)); ;
+        }
+        public override TContext CreateContext<TContext>()
+        {
+            return (TContext)(Object)CreateContext();
         }
         public override async Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
         {

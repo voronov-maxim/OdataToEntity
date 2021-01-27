@@ -35,26 +35,17 @@ namespace OdataToEntity.ModelBuilder
         {
             if (_keyProperties.Count == 0)
             {
-                PropertyInfo? key = ClrType.GetPropertyIgnoreCaseOrNull("id");
-                if (key != null)
+                PropertyInfo? key = OeModelBuilderHelper.GetConventionalKeyProperty(ClrType);
+                if (key == null)
                 {
-                    var edmProperty = (EdmStructuralProperty)EdmType.GetPropertyIgnoreCase(key.Name);
-                    _keyProperties.Add(new KeyValuePair<PropertyInfo, EdmStructuralProperty>(key, edmProperty));
-                }
-                else
-                {
-                    key = ClrType.GetPropertyIgnoreCaseOrNull(ClrType.Name + "id");
-                    if (key == null)
-                    {
-                        if (EdmType.Key().Any() || ClrType.IsAbstract)
-                            return;
+                    if (EdmType.Key().Any() || ClrType.IsAbstract)
+                        return;
 
-                        throw new InvalidOperationException("Key property not matching");
-                    }
-
-                    var edmProperty = (EdmStructuralProperty)EdmType.GetPropertyIgnoreCase(key.Name);
-                    _keyProperties.Add(new KeyValuePair<PropertyInfo, EdmStructuralProperty>(key, edmProperty));
+                    throw new InvalidOperationException("Key property not matching");
                 }
+
+                var edmProperty = (EdmStructuralProperty)EdmType.GetPropertyIgnoreCase(key.Name);
+                _keyProperties.Add(new KeyValuePair<PropertyInfo, EdmStructuralProperty>(key, edmProperty));
             }
 
             if (_keyProperties.Count == 1)

@@ -49,7 +49,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
         }
         protected override Expression TranslateExpression(IEdmModel edmModel, Expression expression)
         {
-            var collectionNavigationVisitor = new OeCollectionNavigationVisitor(edmModel, expression);
+            var collectionNavigationVisitor = new OeCollectionNavigationVisitor(edmModel);
             expression = collectionNavigationVisitor.Visit(expression);
             expression = _expressionVisitor == null ? expression : _expressionVisitor.Visit(expression);
 

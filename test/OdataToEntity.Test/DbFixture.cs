@@ -28,6 +28,7 @@ namespace OdataToEntity.Test
             DbEdmModel = OrderContextOptions.BuildDbEdmModel(OeEdmModel, useRelationalNulls);
         }
 
+        public abstract TContext CreateContext<TContext>();
         public abstract OrderContext CreateContext();
         private static OeModelBoundProvider CreateModelBoundProvider(IEdmModel edmModel)
         {
