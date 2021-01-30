@@ -7,7 +7,7 @@ using System.Linq.Expressions;
 
 namespace OdataToEntity.Parsers
 {
-    public sealed class OeConstantToParameterVisitor : OeConstantToVariableVisitor
+    public class OeConstantToParameterVisitor : OeConstantToVariableVisitor
     {
         private readonly Dictionary<ConstantNode, OeQueryCacheDbParameterDefinition> _constantToParameterMapper;
         private OeQueryCacheDbParameterValue[]? _parameterValues;

@@ -13,7 +13,7 @@ namespace OdataToEntity.Test.Model
     {
         private IEdmModel _edmModel;
 
-        public OrderDataAdapter() : base(new InMemoryOrderContext(), new Cache.OeQueryCache(false))
+        public OrderDataAdapter() : base(new InMemoryOrderContext(), new Cache.OeQueryCache(true))
         {
             _edmModel = null!;
         }

@@ -329,7 +329,7 @@ namespace OdataToEntity.Parsers
         }
         public static bool IsTupleType(Type type)
         {
-            return typeof(System.Runtime.CompilerServices.ITuple).IsAssignableFrom(type);
+            return typeof(ITuple).IsAssignableFrom(type);
         }
         public static MemberExpression ReplaceParameter(MemberExpression propertyExpression, Expression newParameter)
         {

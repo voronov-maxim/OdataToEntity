@@ -18,7 +18,7 @@ namespace OdataToEntity.Parsers
             _constantExpressions = new List<ConstantExpression>();
         }
 
-        public Expression Translate(Expression expression, IReadOnlyDictionary<ConstantExpression, ConstantNode> constantMappings)
+        public virtual Expression Translate(Expression expression, IReadOnlyDictionary<ConstantExpression, ConstantNode> constantMappings)
         {
             base.Visit(expression);
             if (_constantExpressions.Count == 0)

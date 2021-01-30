@@ -48,17 +48,15 @@ namespace OdataToEntity.InMemory
         {
             IEnumerable enumerable;
             MethodCallExpression? countExpression = null;
-            if (base.QueryCache.AllowCache && false)
-            {
-                enumerable = GetFromCache<Object>(queryContext, out countExpression);
-            }
+            if (base.QueryCache.AllowCache)
+                enumerable = GetFromCache<Object>(queryContext, dataContext, out countExpression);
             else
             {
+                var constantToVariableVisitor = new InMemoryConstantToVariableVisitor();
                 Expression expression = queryContext.CreateExpression(out IReadOnlyDictionary<ConstantExpression, ConstantNode> constants);
                 expression = new OeSingleNavigationVisitor(queryContext.EdmModel).Visit(expression);
                 expression = new OeCollectionNavigationVisitor(queryContext.EdmModel).Visit(expression);
                 expression = new NullPropagationVisitor().Visit(expression);
-                expression = new OeConstantToVariableVisitor().Translate(expression, constants);
                 expression = queryContext.TranslateSource(dataContext, expression);
                 var func = (Func<IEnumerable>)Expression.Lambda(expression).Compile();
                 enumerable = func();
@@ -69,7 +67,6 @@ namespace OdataToEntity.InMemory
 
             if (countExpression != null)
             {
-                countExpression = (MethodCallExpression)new NullPropagationVisitor().Visit(countExpression);
                 var func = (Func<int>)Expression.Lambda(countExpression).Compile();
                 queryContext.TotalCountOfItems = func();
             }
@@ -78,57 +75,84 @@ namespace OdataToEntity.InMemory
         }
         public override TResult ExecuteScalar<TResult>(Object dataContext, OeQueryContext queryContext)
         {
-            Expression expression = queryContext.CreateExpression(out IReadOnlyDictionary<ConstantExpression, ConstantNode> constants);
-            expression = new OeSingleNavigationVisitor(queryContext.EdmModel).Visit(expression);
-            expression = new OeCollectionNavigationVisitor(queryContext.EdmModel).Visit(expression);
-            expression = new NullPropagationVisitor().Visit(expression);
-            expression = new OeConstantToVariableVisitor().Translate(expression, constants);
-            expression = queryContext.TranslateSource(dataContext, expression);
-            var func = (Func<TResult>)Expression.Lambda(expression).Compile();
-            return func();
+            Cache.OeCacheContext cacheContext = queryContext.CreateCacheContext();
+            Cache.OeQueryCacheItem? queryCacheItem = base.QueryCache.GetQuery(cacheContext);
+
+            InMemoryScalarExecutor<TResult> executor;
+            IReadOnlyList<Cache.OeQueryCacheDbParameterValue> parameterValues;
+            if (queryCacheItem == null)
+            {
+                var variableVisitor = new InMemoryConstantToVariableVisitor();
+                Expression expression = queryContext.CreateExpression(out IReadOnlyDictionary<ConstantExpression, ConstantNode> constants);
+                expression = variableVisitor.Translate(expression, constants);
+                expression = new OeSingleNavigationVisitor(queryContext.EdmModel).Visit(expression);
+                expression = new OeCollectionNavigationVisitor(queryContext.EdmModel).Visit(expression);
+                expression = new NullPropagationVisitor().Visit(expression);
+                expression = queryContext.TranslateSource(dataContext, expression);
+                var query = (Func<TResult>)Expression.Lambda(expression).Compile();
+
+                cacheContext = queryContext.CreateCacheContext(variableVisitor.ConstantToParameterMapper);
+                executor = new InMemoryScalarExecutor<TResult>(query, variableVisitor.ParameterValues, variableVisitor.Parameters);
+                base.QueryCache.AddQuery(cacheContext, (query, variableVisitor.Parameters), null, queryContext.EntryFactory);
+                parameterValues = variableVisitor.ParameterValues;
+            }
+            else
+            {
+                executor = (InMemoryScalarExecutor<TResult>)queryCacheItem.Query;
+                queryContext.EntryFactory = queryCacheItem.EntryFactory;
+                parameterValues = cacheContext.ParameterValues;
+            }
+
+            lock (executor)
+            {
+                for (int i = 0; i < parameterValues.Count; i++)
+                    executor[parameterValues[i].ParameterName] = parameterValues[i].ParameterValue;
+                return executor.Execute();
+            }
         }
-        private IEnumerable<TResult> GetFromCache<TResult>(OeQueryContext queryContext, out MethodCallExpression? countExpression)
+        private IEnumerable GetFromCache<TResult>(OeQueryContext queryContext, Object dataContext, out MethodCallExpression? countExpression)
         {
             Cache.OeCacheContext cacheContext = queryContext.CreateCacheContext();
             Cache.OeQueryCacheItem? queryCacheItem = base.QueryCache.GetQuery(cacheContext);
 
+            InMemoryExecutor executor;
             IReadOnlyList<Cache.OeQueryCacheDbParameterValue> parameterValues;
-            if (queryCacheItem == null || true)
+            if (queryCacheItem == null)
             {
-                var variableVisitor = new OeConstantToVariableVisitor();
-                Expression expression = queryContext.CreateExpression(variableVisitor);
-                expression = queryContext.TranslateSource(_dataContext, expression);
+                var variableVisitor = new InMemoryConstantToVariableVisitor();
+                Expression expression = queryContext.CreateExpression(out IReadOnlyDictionary<ConstantExpression, ConstantNode> constants);
+                expression = variableVisitor.Translate(expression, constants);
+                expression = new OeSingleNavigationVisitor(queryContext.EdmModel).Visit(expression);
+                expression = new OeCollectionNavigationVisitor(queryContext.EdmModel).Visit(expression);
+                expression = new NullPropagationVisitor().Visit(expression);
+                expression = queryContext.TranslateSource(dataContext, expression);
+                var query = (Func<IEnumerable>)Expression.Lambda(expression).Compile();
 
                 if (queryContext.EntryFactory == null)
                     countExpression = null;
                 else
-                {
                     countExpression = queryContext.CreateCountExpression(expression);
-                }
 
-                //cacheContext = queryContext.CreateCacheContext(variableVisitor.ConstantToParameterMapper);
-                //base.QueryCache.AddQuery(cacheContext, expression, countExpression, queryContext.EntryFactory);
-                //parameterValues = variableVisitor.ParameterValues;
+                cacheContext = queryContext.CreateCacheContext(variableVisitor.ConstantToParameterMapper);
+                executor = new InMemoryExecutor(query, variableVisitor.ParameterValues, variableVisitor.Parameters);
+                base.QueryCache.AddQuery(cacheContext, executor, countExpression, queryContext.EntryFactory);
+                parameterValues = variableVisitor.ParameterValues;
             }
             else
             {
+                executor = (InMemoryExecutor)queryCacheItem.Query;
                 queryContext.EntryFactory = queryCacheItem.EntryFactory;
                 countExpression = queryCacheItem.CountExpression;
                 parameterValues = cacheContext.ParameterValues;
             }
 
-            //foreach (Cache.OeQueryCacheDbParameterValue parameterValue in parameterValues)
-            //    efQueryContext.AddParameter(parameterValue.ParameterName, parameterValue.ParameterValue);
-
-            if (queryContext.IsQueryCount() && countExpression != null)
-            {
-                countExpression = (MethodCallExpression)queryContext.TranslateSource(_dataContext, countExpression);
-                //countExpression = (MethodCallExpression)new OeParameterToVariableVisitor().Translate(countExpression, parameterValues);
-            }
-            else
+            if (!queryContext.IsQueryCount())
                 countExpression = null;
 
-            return null!;// queryExecutor(efQueryContext);
+            executor.Wait();
+            for (int i = 0; i < parameterValues.Count; i++)
+                executor[parameterValues[i].ParameterName] = parameterValues[i].ParameterValue;
+            return executor;
         }
         public override Task<int> SaveChangesAsync(Object dataContext, CancellationToken cancellationToken)
         {
