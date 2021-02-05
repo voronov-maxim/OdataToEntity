@@ -1,4 +1,5 @@
-﻿using Microsoft.OData.Edm;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.OData.Edm;
 using OdataToEntity.Test.Model;
 using System;
 using System.Threading.Tasks;
@@ -7,6 +8,8 @@ namespace OdataToEntity.Test
 {
     public abstract class DbFixtureInitDb : DbFixture
     {
+        private bool _initialized;
+
         protected DbFixtureInitDb(Type _, bool __, ModelBoundTestKind modelBoundTestKind)
             : this(modelBoundTestKind)
         {
@@ -20,17 +23,17 @@ namespace OdataToEntity.Test
         {
             throw new NotImplementedException();
         }
-        public override InMemoryOrderContext CreateContext<InMemoryOrderContext>()
+        public InMemory.InMemoryOrderContext CreateInMemoryContext()
         {
             Db.OeDataAdapter dataAdapter = base.OeEdmModel.GetDataAdapter(typeof(InMemory.InMemoryOrderContext));
-            return (InMemoryOrderContext)dataAdapter.CreateDataContext();
+            return (InMemory.InMemoryOrderContext)dataAdapter.CreateDataContext();
         }
         internal static IEdmModel CreateEdmModel()
         {
             IEdmModel orderEdmModel = new OrderDataAdapter().BuildEdmModel();
             IEdmModel order2EdmModel = new Order2DataAdapter().BuildEdmModel(orderEdmModel);
-            ExecuteBatchAsync(orderEdmModel, "ManyColumns").GetAwaiter().GetResult();
             ExecuteBatchAsync(order2EdmModel, "Add").GetAwaiter().GetResult();
+            ExecuteBatchAsync(orderEdmModel, "ManyColumns").GetAwaiter().GetResult();
             return order2EdmModel;
         }
         public override async Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
@@ -39,9 +42,14 @@ namespace OdataToEntity.Test
             Task t2 = base.Execute(parameters);
             await Task.WhenAll(t1, t2).ConfigureAwait(false);
         }
-        public override Task Initalize()
+        public async override Task Initalize()
         {
-            return Task.CompletedTask;
+            if (_initialized)
+                return;
+
+            _initialized = true;
+            using (var dbContext = new OrderContext(OrderContextOptions.Create(false)))
+                await dbContext.Database.ExecuteSqlRawAsync("dbo.Initialize");
         }
 
         protected internal override bool IsSqlite => true;
@@ -49,6 +57,8 @@ namespace OdataToEntity.Test
 
     public abstract class ManyColumnsFixtureInitDb : DbFixture
     {
+        private bool _initialized;
+
         protected ManyColumnsFixtureInitDb(Type _, bool __, ModelBoundTestKind modelBoundTestKind)
             : base(DbFixtureInitDb.CreateEdmModel(), modelBoundTestKind, false)
         {
@@ -58,14 +68,19 @@ namespace OdataToEntity.Test
         {
             throw new NotImplementedException();
         }
-        public override InMemoryOrder2Context CreateContext<InMemoryOrder2Context>()
+        public InMemory.InMemoryOrder2Context CreateInMemoryContext()
         {
             Db.OeDataAdapter dataAdapter = base.OeEdmModel.GetDataAdapter(typeof(InMemory.InMemoryOrder2Context));
-            return (InMemoryOrder2Context)dataAdapter.CreateDataContext();
+            return (InMemory.InMemoryOrder2Context)dataAdapter.CreateDataContext();
         }
-        public override Task Initalize()
+        public async override Task Initalize()
         {
-            return Task.CompletedTask;
+            if (_initialized)
+                return;
+
+            _initialized = true;
+            using (var dbContext = new OrderContext(OrderContextOptions.Create(false)))
+                await dbContext.Database.ExecuteSqlRawAsync("dbo.InitializeManyColumns");
         }
 
         protected internal override bool IsSqlite => true;

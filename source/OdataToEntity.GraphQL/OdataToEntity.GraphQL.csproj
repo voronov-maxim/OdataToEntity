@@ -27,7 +27,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="GraphQL" Version="3.2.0" />
+    <PackageReference Include="GraphQL" Version="3.3.2" />
   </ItemGroup>
 
   <ItemGroup>

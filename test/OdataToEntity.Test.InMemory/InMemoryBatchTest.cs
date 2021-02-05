@@ -13,7 +13,7 @@ namespace OdataToEntity.Test
             var fixture = new RDBNull_DbFixtureInitDb();
             await fixture.Initalize().ConfigureAwait(false);
 
-            using (var orderContext = fixture.CreateContext<InMemory.InMemoryOrderContext>())
+            using (var orderContext = fixture.CreateInMemoryContext())
             {
                 Assert.Equal(8, orderContext.Categories.Count());
                 Assert.Equal(4, orderContext.Customers.Count());
@@ -43,7 +43,7 @@ namespace OdataToEntity.Test
             await fixture.Initalize().ConfigureAwait(false);
 
             await DbFixture.ExecuteBatchAsync(fixture.OeEdmModel, "Delete").ConfigureAwait(false);
-            using (var orderContext = fixture.CreateContext<InMemory.InMemoryOrderContext>())
+            using (var orderContext = fixture.CreateInMemoryContext())
             {
                 Assert.Equal(5, orderContext.Categories.Count());
                 Assert.Equal(4, orderContext.Customers.Count());
@@ -63,7 +63,7 @@ namespace OdataToEntity.Test
             await fixture.Initalize().ConfigureAwait(false);
 
             await DbFixture.ExecuteBatchAsync(fixture.OeEdmModel, "Update").ConfigureAwait(false);
-            using (var orderContext = fixture.CreateContext<InMemory.InMemoryOrderContext>())
+            using (var orderContext = fixture.CreateInMemoryContext())
             {
                 var category = orderContext.Categories.Single(t => t.Name == "sombrero jacket");
                 Assert.Equal("jackets", orderContext.Categories.Single(t => t.Id == category.ParentId).Name);

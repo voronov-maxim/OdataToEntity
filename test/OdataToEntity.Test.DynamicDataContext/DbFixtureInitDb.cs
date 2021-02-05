@@ -41,10 +41,6 @@ namespace OdataToEntity.Test
                 dataAdapter.CloseDataContext(dbContext);
             }
         }
-        public override TContext CreateContext<TContext>()
-        {
-            return (TContext)(Object)CreateContext();
-        }
         internal static EdmModel CreateEdmModel(Type fixtureType, bool useRelationalNulls)
         {
             return _edmModels.GetOrAdd(fixtureType, t => CreateEdmModel(useRelationalNulls));
@@ -152,10 +148,6 @@ namespace OdataToEntity.Test
         public override OrderContext CreateContext()
         {
             throw new NotImplementedException();
-        }
-        public override TContext CreateContext<TContext>()
-        {
-            return (TContext)(Object)CreateContext();
         }
         public override async Task Execute<T, TResult>(QueryParameters<T, TResult> parameters)
         {

@@ -51,7 +51,7 @@ namespace OdataToEntity.Test.Model
         public static DbContextOptions<T> Create<T>(bool useRelationalNulls) where T : DbContext
         {
             var optionsBuilder = new DbContextOptionsBuilder<T>();
-            optionsBuilder = optionsBuilder.UseSqlServer(@"Server=.\sqlexpress;Initial Catalog=InMemoryOdataToEntity;Trusted_Connection=Yes;", opt => opt.UseRelationalNulls(useRelationalNulls));
+            optionsBuilder = optionsBuilder.UseSqlServer(@"Server=.\sqlexpress;Initial Catalog=OdataToEntity;Trusted_Connection=Yes;", opt => opt.UseRelationalNulls(useRelationalNulls));
             optionsBuilder.UseLoggerFactory(LoggerFactory.Create(builder => { builder.AddConsole().SetMinimumLevel(LogLevel.None); }));
             return optionsBuilder.Options;
         }

@@ -1,5 +1,4 @@
 ﻿using Microsoft.OData;
-using OdataToEntity.Parsers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -15,6 +14,7 @@ namespace OdataToEntity.InMemory
         private readonly Type _clrEntityType;
         private readonly Func<Object, Object[], bool> _comparer;
         private readonly String[] _keyNames;
+        private PropertyInfo? _sourcePropertyInfo;
         private Func<IEnumerable, Object, bool>? _tryAddToCollection;
 
         public InMemoryEntitySetAdapter(Type clrEntityType, String entitySetName, IReadOnlyList<PropertyInfo> keys)
@@ -36,7 +36,8 @@ namespace OdataToEntity.InMemory
             IEnumerable source = GetSource(dataContext);
             if (source is IList list)
             {
-                list.Add(entity);
+                lock (list)
+                    list.Add(entity);
                 return;
             }
 
@@ -48,13 +49,14 @@ namespace OdataToEntity.InMemory
         public override void AttachEntity(Object dataContext, ODataResourceBase entry)
         {
             Object entity = FindEntity(GetSource(dataContext), entry);
-            foreach (ODataProperty property in entry.Properties)
-                if (Array.IndexOf(_keyNames, property.Name) == -1)
-                {
-                    PropertyInfo propertyInfo = EntityType.GetProperty(property.Name)!;
-                    Object clrValue =  OeEdmClrHelper.GetClrValue(propertyInfo.PropertyType, property.Value);
-                    propertyInfo.SetValue(entity, clrValue);
-                }
+            lock (entity)
+                foreach (ODataProperty property in entry.Properties)
+                    if (Array.IndexOf(_keyNames, property.Name) == -1)
+                    {
+                        PropertyInfo propertyInfo = EntityType.GetProperty(property.Name)!;
+                        Object clrValue = OeEdmClrHelper.GetClrValue(propertyInfo.PropertyType, property.Value);
+                        propertyInfo.SetValue(entity, clrValue);
+                    }
         }
         private Object CreateEntity(ODataResourceBase entry)
         {
@@ -146,9 +148,13 @@ namespace OdataToEntity.InMemory
         }
         private IEnumerable? GetSourceOrNull(Object dataContext)
         {
-            //zzz performance
-            PropertyInfo propertyInfo = dataContext.GetType().GetProperty(EntitySetName)!;
-            return (IEnumerable?)propertyInfo.GetValue(dataContext);
+            PropertyInfo? sourcePropertyInfo = Volatile.Read(ref _sourcePropertyInfo);
+            if (sourcePropertyInfo == null)
+            {
+                sourcePropertyInfo = dataContext.GetType().GetProperty(EntitySetName)!;
+                Volatile.Write(ref _sourcePropertyInfo, sourcePropertyInfo);
+            }
+            return (IEnumerable?)sourcePropertyInfo.GetValue(dataContext);
         }
         public override void RemoveEntity(Object dataContext, ODataResourceBase entry)
         {
@@ -161,7 +167,10 @@ namespace OdataToEntity.InMemory
 
             IEnumerable source = GetSource(dataContext);
             if (source is IList list)
-                list.RemoveAt(FindIndex(list, entry));
+            {
+                lock (list)
+                    list.RemoveAt(FindIndex(list, entry));
+            }
             else
                 throw new InvalidOperationException("Can only remove from the list");
         }
@@ -182,7 +191,8 @@ namespace OdataToEntity.InMemory
         {
             if (source is ICollection<T> collection)
             {
-                collection.Add(entity);
+                lock (collection)
+                    collection.Add(entity);
                 return true;
             }
 
