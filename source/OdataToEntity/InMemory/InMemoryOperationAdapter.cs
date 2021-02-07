@@ -4,11 +4,11 @@ using System.Threading;
 
 namespace OdataToEntity.InMemory
 {
-    internal sealed class OeInMemoryOperationAdapter : Db.OeOperationAdapter
+    internal sealed class InMemoryOperationAdapter : Db.OeOperationAdapter
     {
-        public static readonly Db.OeOperationAdapter Instance = new OeInMemoryOperationAdapter();
+        public static readonly Db.OeOperationAdapter Instance = new InMemoryOperationAdapter();
 
-        private OeInMemoryOperationAdapter() : base(typeof(Object), false)
+        private InMemoryOperationAdapter() : base(typeof(Object), false)
         {
         }
 

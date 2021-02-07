@@ -41,6 +41,10 @@ namespace OdataToEntity.InMemory
         {
             _enumerator!.Reset();
         }
+        public void SetDataContext(Object dataContext)
+        {
+            _parameters[0] = dataContext;
+        }
         public void Wait()
         {
             _mutex.Wait();
@@ -49,8 +53,8 @@ namespace OdataToEntity.InMemory
         public Object Current => _enumerator!.Current;
         public Object? this[String parameterName]
         {
-            get => _parameters[Array.IndexOf(_parameterNames, parameterName)];
-            set => _parameters[Array.IndexOf(_parameterNames, parameterName)] = value;
+            get => _parameters[Array.IndexOf(_parameterNames, parameterName) + 1];
+            set => _parameters[Array.IndexOf(_parameterNames, parameterName) + 1] = value;
         }
     }
 }

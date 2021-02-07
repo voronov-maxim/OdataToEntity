@@ -21,13 +21,13 @@ namespace OdataToEntity.InMemory
             base.Visit(expression);
             if (_constantExpressions.Count == 0)
             {
-                _parameters = Array.Empty<Object>();
+                _parameters = new Object[1];
                 return expression;
             }
 
             base.TranslateParameters(_constantExpressions, constantMappings);
 
-            _parameters = new Object[_constantExpressions.Count];
+            _parameters = new Object[_constantExpressions.Count + 1]; //first element in memory DataContext
             return base.Visit(expression);
         }
         protected override Expression VisitConstant(ConstantExpression node)
@@ -49,7 +49,7 @@ namespace OdataToEntity.InMemory
             if (index == -1)
                 return node;
 
-            BinaryExpression parameter = Expression.ArrayIndex(Expression.Constant(_parameters), Expression.Constant(index));
+            BinaryExpression parameter = Expression.ArrayIndex(Expression.Constant(_parameters), Expression.Constant(index + 1));
             return Expression.Convert(parameter, node.Type);
         }
         protected override Expression VisitUnary(UnaryExpression node)
@@ -60,7 +60,7 @@ namespace OdataToEntity.InMemory
                 if (index == -1)
                     return node;
 
-                Expression parameter = Expression.ArrayIndex(Expression.Constant(_parameters), Expression.Constant(index));
+                Expression parameter = Expression.ArrayIndex(Expression.Constant(_parameters), Expression.Constant(index + 1));
                 if (node.Type == typeof(int?) && (Nullable.GetUnderlyingType(constant.Type) ?? constant.Type).IsEnum)
                     parameter = Expression.Convert(parameter, constant.Type);
                 return Expression.Convert(parameter, node.Type);

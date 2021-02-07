@@ -9,10 +9,11 @@ using System.Threading;
 
 namespace OdataToEntity.InMemory
 {
-    internal sealed class InMemoryEntitySetAdapter : Db.OeEntitySetAdapter
+    public sealed class InMemoryEntitySetAdapter : Db.OeEntitySetAdapter
     {
         private readonly Type _clrEntityType;
         private readonly Func<Object, Object[], bool> _comparer;
+        private IQueryable? _inMemoryQueryableWrapper;
         private readonly String[] _keyNames;
         private PropertyInfo? _sourcePropertyInfo;
         private Func<IEnumerable, Object, bool>? _tryAddToCollection;
@@ -135,18 +136,26 @@ namespace OdataToEntity.InMemory
         }
         public override IQueryable GetEntitySet(Object dataContext)
         {
-            IEnumerable? source = GetSourceOrNull(dataContext);
-            if (source == null)
-                source = Array.CreateInstance(EntityType, 0);
-
-            return new OeInMemoryQueryableWrapper(source, EntityType);
+            IQueryable? inMemoryQueryableWrapper = Volatile.Read(ref _inMemoryQueryableWrapper);
+            if (inMemoryQueryableWrapper == null)
+            {
+                var parameters = (Object?[])dataContext;
+                Type type = typeof(InMemoryQueryableWrapper<>).MakeGenericType(EntityType);
+                inMemoryQueryableWrapper = (IQueryable)Activator.CreateInstance(type, new Object[] { this, parameters })!;
+                Volatile.Write(ref _inMemoryQueryableWrapper, inMemoryQueryableWrapper);
+            }
+            return inMemoryQueryableWrapper;
         }
-        private IEnumerable GetSource(Object dataContext)
+        public IEnumerable GetSource(Object dataContext)
         {
             IEnumerable? source = GetSourceOrNull(dataContext);
             return source ?? throw new InvalidOperationException("Source is null");
         }
         private IEnumerable? GetSourceOrNull(Object dataContext)
+        {
+            return (IEnumerable?)GetSourcePropertyInfo(dataContext).GetValue(dataContext);
+        }
+        private PropertyInfo GetSourcePropertyInfo(Object dataContext)
         {
             PropertyInfo? sourcePropertyInfo = Volatile.Read(ref _sourcePropertyInfo);
             if (sourcePropertyInfo == null)
@@ -154,7 +163,7 @@ namespace OdataToEntity.InMemory
                 sourcePropertyInfo = dataContext.GetType().GetProperty(EntitySetName)!;
                 Volatile.Write(ref _sourcePropertyInfo, sourcePropertyInfo);
             }
-            return (IEnumerable?)sourcePropertyInfo.GetValue(dataContext);
+            return sourcePropertyInfo;
         }
         public override void RemoveEntity(Object dataContext, ODataResourceBase entry)
         {

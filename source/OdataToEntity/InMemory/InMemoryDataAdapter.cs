@@ -10,16 +10,16 @@ using System.Threading.Tasks;
 
 namespace OdataToEntity.InMemory
 {
-    public class OeInMemoryDataAdapter<T> : Db.OeDataAdapter where T : notnull
+    public class InMemoryDataAdapter<T> : Db.OeDataAdapter where T : notnull
     {
         private static Db.OeEntitySetAdapterCollection _entitySetAdapters = CreateEntitySetAdapters();
         private readonly T _dataContext;
 
-        public OeInMemoryDataAdapter(T dataContext) : this(dataContext, null)
+        public InMemoryDataAdapter(T dataContext) : this(dataContext, null)
         {
         }
-        public OeInMemoryDataAdapter(T dataContext, Cache.OeQueryCache? queryCache)
-            : base(queryCache, OeInMemoryOperationAdapter.Instance)
+        public InMemoryDataAdapter(T dataContext, Cache.OeQueryCache? queryCache)
+            : base(queryCache, InMemoryOperationAdapter.Instance)
         {
             _dataContext = dataContext;
         }
@@ -125,7 +125,7 @@ namespace OdataToEntity.InMemory
                 expression = new OeSingleNavigationVisitor(queryContext.EdmModel).Visit(expression);
                 expression = new OeCollectionNavigationVisitor(queryContext.EdmModel).Visit(expression);
                 expression = new NullPropagationVisitor().Visit(expression);
-                expression = queryContext.TranslateSource(dataContext, expression);
+                expression = new InMemorySourceVisitor(queryContext.EdmModel, variableVisitor.Parameters).Visit(expression);
                 var query = (Func<IEnumerable>)Expression.Lambda(expression).Compile();
 
                 if (queryContext.EntryFactory == null)
@@ -150,6 +150,7 @@ namespace OdataToEntity.InMemory
                 countExpression = null;
 
             executor.Wait();
+            executor.SetDataContext(dataContext);
             for (int i = 0; i < parameterValues.Count; i++)
                 executor[parameterValues[i].ParameterName] = parameterValues[i].ParameterValue;
             return executor;
