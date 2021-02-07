@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace OdataToEntity.Test.Model
 {
-    public sealed class OrderDataAdapter : OeInMemoryDataAdapter<InMemoryOrderContext>
+    public sealed class OrderDataAdapter : InMemoryDataAdapter<InMemoryOrderContext>
     {
         private IEdmModel _edmModel;
 
@@ -24,13 +24,13 @@ namespace OdataToEntity.Test.Model
         }
         public override Task<int> SaveChangesAsync(Object dataContext, CancellationToken cancellationToken)
         {
-            foreach (Db.OeEntitySetAdapter entitySetAdapter in base.EntitySetAdapters)
+            foreach (InMemoryEntitySetAdapter entitySetAdapter in base.EntitySetAdapters)
                 if (!entitySetAdapter.IsDbQuery)
                 {
                     foreach (PropertyInfo key in ModelBuilder.OeModelBuilderHelper.GetKeyProperties(entitySetAdapter.EntityType))
                     {
                         if (key.PropertyType == typeof(int))
-                            foreach (Object entity in entitySetAdapter.GetEntitySet(dataContext))
+                            foreach (Object entity in entitySetAdapter.GetSource(dataContext))
                             {
                                 var id = (int)key.GetValue(entity);
                                 if (id < 0)
@@ -51,7 +51,7 @@ namespace OdataToEntity.Test.Model
 
                                 PropertyInfo clrProperty = entitySetAdapter.EntityType.GetProperty(edmProperty.Name)!;
                                 if (clrProperty.PropertyType == typeof(int) || clrProperty.PropertyType == typeof(int?))
-                                    foreach (Object entity in entitySetAdapter.GetEntitySet(dataContext))
+                                    foreach (Object entity in entitySetAdapter.GetSource(dataContext))
                                     {
                                         var id = (int?)clrProperty.GetValue(entity);
                                         if (id < 0)
@@ -69,7 +69,7 @@ namespace OdataToEntity.Test.Model
         }
     }
 
-    public sealed class Order2DataAdapter : OeInMemoryDataAdapter<InMemoryOrder2Context>
+    public sealed class Order2DataAdapter : InMemoryDataAdapter<InMemoryOrder2Context>
     {
         public Order2DataAdapter() : base(new InMemoryOrder2Context(), new Cache.OeQueryCache(false))
         {
