@@ -191,20 +191,19 @@ namespace OdataToEntity.Linq2Db
                         {
                             List<PropertyInfo> dependentProperties = GetDependentProperties(_orderedTableTypes[j].ClrTableType, navigationBinding.NavigationProperty);
                             OeLinq2DbTable? targetTable = GetTable(_orderedTableTypes[j].ClrTableType);
-                            if (targetTable == null)
-                                throw new InvalidOperationException("Not found table for clr type " + _orderedTableTypes[j].ClrTableType);
+                            if (targetTable != null)
+                            {
+                                targetTable.UpdateIdentities(dependentProperties[0], table.Identities);
+                                if (targetTable.IsKey(dependentProperties[0]))
+                                    foreach (PropertyInfo dependentProperty in GetDependentProperties(dependentProperties[0], _orderedTableTypes, j))
+                                    {
+                                        OeLinq2DbTable? fkeyTable = GetTable(dependentProperty.DeclaringType!);
+                                        if (fkeyTable == null)
+                                            throw new InvalidOperationException("Not found table for clr type " + dependentProperty.DeclaringType);
 
-                            targetTable.UpdateIdentities(dependentProperties[0], table.Identities);
-
-                            if (targetTable.IsKey(dependentProperties[0]))
-                                foreach (PropertyInfo dependentProperty in GetDependentProperties(dependentProperties[0], _orderedTableTypes, j))
-                                {
-                                    OeLinq2DbTable? fkeyTable = GetTable(dependentProperty.DeclaringType!);
-                                    if (fkeyTable == null)
-                                        throw new InvalidOperationException("Not found table for clr type " + dependentProperty.DeclaringType);
-
-                                    fkeyTable.UpdateIdentities(dependentProperty, table.Identities);
-                                }
+                                        fkeyTable.UpdateIdentities(dependentProperty, table.Identities);
+                                    }
+                            }
 
                             break;
                         }
