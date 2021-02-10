@@ -43,7 +43,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             foreach (Table table in tables)
             {
                 String tableName;
-                if (informationSchemaSettings.DefaultSchema != null && String.Compare(informationSchemaSettings.DefaultSchema, table.TableName, comparison) == 0)
+                if (informationSchemaSettings.DefaultSchema != null && String.Compare(informationSchemaSettings.DefaultSchema, table.TableSchema, comparison) == 0)
                     tableName = table.TableName;
                 else
                     tableName = table.TableSchema + "." + table.TableName;
