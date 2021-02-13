@@ -1,6 +1,5 @@
 ﻿using LinqToDB;
 using LinqToDB.Data;
-using Microsoft.OData;
 using Microsoft.OData.Edm;
 using OdataToEntity.Parsers;
 using System;
@@ -50,46 +49,6 @@ namespace OdataToEntity.Linq2Db
                 _parameters.Add(node, parameter);
                 return parameter;
             }
-        }
-
-        private sealed class TableAdapterImpl<TEntity> : Db.OeEntitySetAdapter where TEntity : class
-        {
-            private readonly Func<T, ITable<TEntity>> _getEntitySet;
-
-            public TableAdapterImpl(Func<T, ITable<TEntity>> getEntitySet, String entitySetName, bool isDbQuery)
-            {
-                _getEntitySet = getEntitySet;
-                EntitySetName = entitySetName;
-                IsDbQuery = isDbQuery;
-            }
-
-            public override void AddEntity(Object dataContext, ODataResourceBase entry)
-            {
-                var entity = (TEntity)OeEdmClrHelper.CreateEntity(EntityType, entry);
-                GetTable(dataContext).Insert(entity);
-            }
-            public override void AttachEntity(Object dataContext, ODataResourceBase entry)
-            {
-                var entity = (TEntity)OeEdmClrHelper.CreateEntity(EntityType, entry);
-                GetTable(dataContext).Update(entity, entry.Properties.Select(p => p.Name));
-            }
-            private static OeLinq2DbTable<TEntity> GetTable(Object dataContext)
-            {
-                if (dataContext is IOeLinq2DbDataContext dc)
-                    return (OeLinq2DbTable<TEntity>)dc.DataContext.GetTable<TEntity>();
-
-                throw new InvalidOperationException(dataContext.GetType().ToString() + "must implement " + nameof(IOeLinq2DbDataContext));
-            }
-            public override IQueryable GetEntitySet(Object dataContext) => _getEntitySet((T)dataContext);
-            public override void RemoveEntity(Object dataContext, ODataResourceBase entry)
-            {
-                var entity = (TEntity)OeEdmClrHelper.CreateEntity(EntityType, entry);
-                GetTable(dataContext).Delete(entity);
-            }
-
-            public override Type EntityType => typeof(TEntity);
-            public override String EntitySetName { get; }
-            public override bool IsDbQuery { get; }
         }
 
         private IEdmModel? _edmModel;
@@ -160,7 +119,7 @@ namespace OdataToEntity.Linq2Db
             if (tableAttribute == null)
                 throw new InvalidOperationException(typeof(TEntity).Name + " missing TableAttribute");
 
-            return new TableAdapterImpl<TEntity>(getEntitySet, property.Name, tableAttribute.IsView);
+            return new OeLinq2DbSetAdapter<T, TEntity>(getEntitySet, property.Name, tableAttribute.IsView);
         }
         public override IAsyncEnumerable<Object> Execute(Object dataContext, OeQueryContext queryContext)
         {

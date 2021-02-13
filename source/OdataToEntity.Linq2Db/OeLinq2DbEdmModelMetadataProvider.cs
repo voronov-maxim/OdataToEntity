@@ -88,26 +88,32 @@ namespace OdataToEntity.Linq2Db
         }
         public override bool IsDatabaseGenerated(PropertyInfo propertyInfo)
         {
-            return propertyInfo.GetCustomAttribute(typeof(IdentityAttribute)) != null;
+            return propertyInfo.IsDefined(typeof(IdentityAttribute));
         }
-        public override bool IsKey(PropertyInfo propertyInfo) => propertyInfo.GetCustomAttribute(typeof(PrimaryKeyAttribute)) != null;
+        public override bool IsKey(PropertyInfo propertyInfo)
+        {
+            return propertyInfo.IsDefined(typeof(PrimaryKeyAttribute));
+        }
         public override bool IsNotMapped(PropertyInfo propertyInfo)
         {
-            if (propertyInfo.GetCustomAttribute(typeof(ColumnAttribute)) != null)
+            if (propertyInfo.IsDefined(typeof(ColumnAttribute)))
                 return false;
-            if (propertyInfo.GetCustomAttribute(typeof(PrimaryKeyAttribute)) != null)
+            if (propertyInfo.IsDefined(typeof(PrimaryKeyAttribute)))
                 return false;
-            if (propertyInfo.GetCustomAttribute(typeof(AssociationAttribute)) != null)
+            if (propertyInfo.IsDefined(typeof(AssociationAttribute)))
                 return false;
 
             return true;
         }
-        public override bool IsRequired(PropertyInfo propertyInfo) => IsRequiredLinq2Db(propertyInfo);
+        public override bool IsRequired(PropertyInfo propertyInfo)
+        {
+            return IsRequiredLinq2Db(propertyInfo);
+        }
         internal static bool IsRequiredLinq2Db(PropertyInfo propertyInfo)
         {
             Type clrType = propertyInfo.PropertyType;
             bool isNullable = clrType.IsClass || (clrType.IsGenericType && clrType.GetGenericTypeDefinition() == typeof(Nullable<>));
-            return !isNullable || propertyInfo.GetCustomAttribute(typeof(NotNullAttribute)) != null;
+            return !isNullable || propertyInfo.IsDefined(typeof(NotNullAttribute));
         }
     }
 }

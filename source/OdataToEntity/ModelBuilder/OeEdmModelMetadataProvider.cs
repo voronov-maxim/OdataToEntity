@@ -90,16 +90,16 @@ namespace OdataToEntity.ModelBuilder
         }
         public virtual bool IsKey(PropertyInfo propertyInfo)
         {
-            return propertyInfo.GetCustomAttribute(typeof(KeyAttribute)) != null;
+            return propertyInfo.IsDefined(typeof(KeyAttribute));
         }
         public virtual bool IsNotMapped(PropertyInfo propertyInfo)
         {
-            return propertyInfo.GetCustomAttribute(typeof(NotMappedAttribute)) != null;
+            return propertyInfo.IsDefined(typeof(NotMappedAttribute));
         }
         public virtual bool IsRequired(PropertyInfo propertyInfo)
         {
             return !PrimitiveTypeHelper.IsNullable(propertyInfo.PropertyType) ||
-                propertyInfo.GetCustomAttribute(typeof(RequiredAttribute)) != null ||
+                propertyInfo.IsDefined(typeof(RequiredAttribute)) ||
                 IsKey(propertyInfo);
         }
         public void SortClrPropertyByOrder(PropertyInfo[] clrProperties)

@@ -3,7 +3,7 @@
     <ComponentModelAnnotations>5.0.0</ComponentModelAnnotations>
     <CoreFxVersion>5.0.1</CoreFxVersion>
     <CSharpVersion>8.0</CSharpVersion>
-    <EfCoreVersion>5.0.2</EfCoreVersion>
+    <EfCoreVersion>5.0.3</EfCoreVersion>
     <FrameworkVersion>net48</FrameworkVersion>
     <JsonNetVersion>12.0.3</JsonNetVersion>
     <NetStandardVersion>net5.0</NetStandardVersion>

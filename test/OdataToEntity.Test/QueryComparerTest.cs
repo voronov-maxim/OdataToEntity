@@ -99,7 +99,7 @@ namespace OdataToEntity.Test
             var methodNames = new List<String>();
             foreach (MethodInfo methodInfo in selectTest.GetType().GetMethods().Where(m => m.GetCustomAttributes(typeof(FactAttribute), false).Count() == 1))
             {
-                if (methodInfo.GetCustomAttribute(typeof(NotPerformanceCahe)) != null)
+                if (methodInfo.IsDefined(typeof(NotPerformanceCahe)))
                     continue;
 
                 Func<SelectTest, Task> testMethod;

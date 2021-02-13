@@ -23,7 +23,7 @@ namespace OdataToEntity.ModelBuilder
         {
             List<PropertyInfo>? keys = null;
             foreach (PropertyInfo property in entityType.GetProperties())
-                if (property.GetCustomAttribute(typeof(KeyAttribute)) != null)
+                if (property.IsDefined(typeof(KeyAttribute)))
                 {
                     if (keys == null)
                         keys = new List<PropertyInfo>();
