@@ -163,6 +163,8 @@ namespace OdataToEntity.Parsers
                 Object? value;
                 if (segmentParameter.Value is ConstantNode constantNode)
                     value = OeEdmClrHelper.GetValue(edmModel, constantNode.Value);
+                 else if (segmentParameter.Value is ConvertNode convertNode)
+                    value = OeEdmClrHelper.GetValue(edmModel, ((ConstantNode)convertNode.Source).Value);
                 else if (segmentParameter.Value is ParameterAliasNode parameterAliasNode)
                     value = OeEdmClrHelper.GetValue(edmModel, ((ConstantNode)parameterAliasNodes[parameterAliasNode.Alias]).Value);
                 else
