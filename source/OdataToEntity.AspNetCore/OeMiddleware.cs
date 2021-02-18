@@ -27,19 +27,13 @@ namespace OdataToEntity.AspNetCore
             EdmModel = edmModel;
         }
 
-        private static bool GetCsdlSchema(IEdmModel edmModel, Stream stream)
+        private static async Task WriteMetadata(IEdmModel edmModel, Stream stream)
         {
-            using (var memoryStream = new MemoryStream()) //kestrel allow only async operation
-            {
-                using (XmlWriter xmlWriter = XmlWriter.Create(memoryStream))
-                    if (!CsdlWriter.TryWriteCsdl(edmModel, xmlWriter, CsdlTarget.OData, out IEnumerable<EdmError> errors))
-                        return false;
-
-                memoryStream.Position = 0;
-                memoryStream.CopyToAsync(stream);
-            }
-
-            return false;
+            var writerSettings = new ODataMessageWriterSettings();
+            writerSettings.EnableMessageStreamDisposal = false;
+            IODataResponseMessage message = new Infrastructure.OeInMemoryMessage(stream, null);
+            using (var writer = new ODataMessageWriter((IODataResponseMessageAsync)message, writerSettings, edmModel))
+                await writer.WriteMetadataDocumentAsync();
         }
         private static void GetJsonSchema(IEdmModel edmModel, Stream stream)
         {
@@ -74,7 +68,7 @@ namespace OdataToEntity.AspNetCore
             if (httpContext.Request.PathBase == _apiPath)
             {
                 if (httpContext.Request.Path == "/$metadata")
-                    InvokeMetadata(httpContext);
+                    await InvokeMetadata(httpContext);
                 else if (httpContext.Request.Path == "/$batch")
                     await InvokeBatch(httpContext).ConfigureAwait(false);
                 else if (httpContext.Request.Path == "/$json-schema")
@@ -133,10 +127,10 @@ namespace OdataToEntity.AspNetCore
             httpContext.Response.ContentType = "application/schema+json";
             GetJsonSchema(EdmModel, httpContext.Response.Body);
         }
-        private void InvokeMetadata(HttpContext httpContext)
+        private Task InvokeMetadata(HttpContext httpContext)
         {
             httpContext.Response.ContentType = "application/xml";
-            GetCsdlSchema(EdmModel, httpContext.Response.Body);
+            return WriteMetadata(EdmModel, httpContext.Response.Body);
         }
         private Task InvokeServiceDocument(HttpContext httpContext)
         {

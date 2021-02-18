@@ -1,40 +1,19 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.OData;
 using Microsoft.OData.Edm;
-using Microsoft.OData.Edm.Csdl;
-using Microsoft.OData.Edm.Validation;
-using System.Collections.Generic;
 using System.IO;
-using System.Xml;
+using System.Threading.Tasks;
 
 namespace OdataToEntity.AspNetCore
 {
     public class OeMetadataController : ControllerBase
     {
-        protected void GetCsdlSchema()
-        {
-            base.HttpContext.Response.ContentType = "application/xml";
-            GetCsdlSchema(base.HttpContext.GetEdmModel(), base.HttpContext.Response.Body);
-        }
-        protected void GetJsonSchema()
+        protected void WriteJsonSchema()
         {
             base.HttpContext.Response.ContentType = "application/schema+json";
-            GetJsonSchema(base.HttpContext.GetEdmModel(), base.HttpContext.Response.Body);
+            WriteJsonSchema(base.HttpContext.GetEdmModel(), base.HttpContext.Response.Body);
         }
-        private static bool GetCsdlSchema(IEdmModel edmModel, Stream stream)
-        {
-            using (var memoryStream = new MemoryStream()) //kestrel allow only async operation
-            {
-                using (XmlWriter xmlWriter = XmlWriter.Create(memoryStream))
-                    if (!CsdlWriter.TryWriteCsdl(edmModel, xmlWriter, CsdlTarget.OData, out IEnumerable<EdmError> errors))
-                        return false;
-
-                memoryStream.Position = 0;
-                memoryStream.CopyToAsync(stream);
-            }
-
-            return false;
-        }
-        private static void GetJsonSchema(IEdmModel edmModel, Stream stream)
+        private static void WriteJsonSchema(IEdmModel edmModel, Stream stream)
         {
             using (var memoryStream = new MemoryStream()) //kestrel allow only async operation
             {
@@ -43,6 +22,19 @@ namespace OdataToEntity.AspNetCore
                 memoryStream.Position = 0;
                 memoryStream.CopyToAsync(stream);
             }
+        }
+        protected Task WriteMetadata()
+        {
+            base.HttpContext.Response.ContentType = "application/xml";
+            return WriteMetadata(base.HttpContext.GetEdmModel(), base.HttpContext.Response.Body);
+        }
+        private static async Task WriteMetadata(IEdmModel edmModel, Stream stream)
+        {
+            var writerSettings = new ODataMessageWriterSettings();
+            writerSettings.EnableMessageStreamDisposal = false;
+            IODataResponseMessage message = new Infrastructure.OeInMemoryMessage(stream, null);
+            using (var writer = new ODataMessageWriter((IODataResponseMessageAsync)message, writerSettings, edmModel))
+                await writer.WriteMetadataDocumentAsync();
         }
     }
 }

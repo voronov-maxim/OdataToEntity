@@ -10,8 +10,8 @@
     <NetCoreAppVersion>net5.0</NetCoreAppVersion>
     <NetCoreVersion>5.0.0</NetCoreVersion>
     <NpgsqlVersion>5.0.2</NpgsqlVersion>
-    <ODataLibVersion>7.8.1</ODataLibVersion>
-    <OdataToEntityVersion>2.6.1</OdataToEntityVersion>
+    <ODataLibVersion>7.8.2</ODataLibVersion>
+    <OdataToEntityVersion>2.7.0</OdataToEntityVersion>
     <SystemInteractiveAsyncVersion>5.0.0</SystemInteractiveAsyncVersion>
     <TestSdkVersion>16.8.3</TestSdkVersion>
     <Version>$(OdataToEntityVersion)</Version>
