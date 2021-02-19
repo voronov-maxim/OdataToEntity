@@ -2,15 +2,11 @@
 using Microsoft.Extensions.Primitives;
 using Microsoft.OData;
 using Microsoft.OData.Edm;
-using Microsoft.OData.Edm.Csdl;
-using Microsoft.OData.Edm.Validation;
 using Microsoft.OData.UriParser;
 using OdataToEntity.Parsers;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using System.Xml;
 
 namespace OdataToEntity.AspNetCore
 {
@@ -27,13 +23,19 @@ namespace OdataToEntity.AspNetCore
             EdmModel = edmModel;
         }
 
-        private static async Task WriteMetadata(IEdmModel edmModel, Stream stream)
+        private static void WriteMetadata(IEdmModel edmModel, Stream stream)
         {
-            var writerSettings = new ODataMessageWriterSettings();
-            writerSettings.EnableMessageStreamDisposal = false;
-            IODataResponseMessage message = new Infrastructure.OeInMemoryMessage(stream, null);
-            using (var writer = new ODataMessageWriter((IODataResponseMessageAsync)message, writerSettings, edmModel))
-                await writer.WriteMetadataDocumentAsync();
+            using (var memoryStream = new MemoryStream()) //kestrel allow only async operation
+            {
+                var writerSettings = new ODataMessageWriterSettings();
+                writerSettings.EnableMessageStreamDisposal = false;
+                IODataResponseMessage message = new Infrastructure.OeInMemoryMessage(memoryStream, null);
+                using (var writer = new ODataMessageWriter((IODataResponseMessageAsync)message, writerSettings, edmModel))
+                    writer.WriteMetadataDocument();
+
+                memoryStream.Position = 0;
+                memoryStream.CopyToAsync(stream);
+            }
         }
         private static void GetJsonSchema(IEdmModel edmModel, Stream stream)
         {
@@ -68,7 +70,7 @@ namespace OdataToEntity.AspNetCore
             if (httpContext.Request.PathBase == _apiPath)
             {
                 if (httpContext.Request.Path == "/$metadata")
-                    await InvokeMetadata(httpContext);
+                    InvokeMetadata(httpContext);
                 else if (httpContext.Request.Path == "/$batch")
                     await InvokeBatch(httpContext).ConfigureAwait(false);
                 else if (httpContext.Request.Path == "/$json-schema")
@@ -127,10 +129,10 @@ namespace OdataToEntity.AspNetCore
             httpContext.Response.ContentType = "application/schema+json";
             GetJsonSchema(EdmModel, httpContext.Response.Body);
         }
-        private Task InvokeMetadata(HttpContext httpContext)
+        private void InvokeMetadata(HttpContext httpContext)
         {
             httpContext.Response.ContentType = "application/xml";
-            return WriteMetadata(EdmModel, httpContext.Response.Body);
+            WriteMetadata(EdmModel, httpContext.Response.Body);
         }
         private Task InvokeServiceDocument(HttpContext httpContext)
         {
