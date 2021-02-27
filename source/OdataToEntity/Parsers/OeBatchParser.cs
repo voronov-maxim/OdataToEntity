@@ -42,14 +42,14 @@ namespace OdataToEntity.Parsers
         }
         public async Task ExecuteAsync(Stream requestStream, Stream responseStream, String contentType, CancellationToken cancellationToken)
         {
-            OeBatchMessage batchMessage = await OeBatchMessage.CreateBatchMessageAsync(_edmModel, _baseUri, requestStream, contentType, _serviceProvider);
+            OeBatchMessage batchMessage = await OeBatchMessage.CreateBatchMessageAsync(_edmModel, _baseUri, requestStream, contentType, _serviceProvider).ConfigureAwait(false);
             if (batchMessage.Changeset == null)
                 await ExecuteOperationAsync(batchMessage.Operation, cancellationToken).ConfigureAwait(false);
             else
                 await ExecuteChangesetAsync(batchMessage.Changeset, cancellationToken).ConfigureAwait(false);
 
             var batchWriter = new Writers.OeBatchWriter(_edmModel, _baseUri);
-            await batchWriter.WriteBatchAsync(responseStream, batchMessage);
+            await batchWriter.WriteBatchAsync(responseStream, batchMessage).ConfigureAwait(false);
         }
         private async Task ExecuteChangesetAsync(IReadOnlyList<OeOperationMessage> changeset, CancellationToken cancellationToken)
         {

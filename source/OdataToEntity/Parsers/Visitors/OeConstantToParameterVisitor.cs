@@ -19,7 +19,7 @@ namespace OdataToEntity.Parsers
 
         protected override IReadOnlyList<Expression> TranslateParameters(
             IReadOnlyList<ConstantExpression> constantExpressions,
-            IReadOnlyDictionary<ConstantExpression, ConstantNode> constantMappings)
+            IReadOnlyDictionary<ConstantExpression, ConstantNode> constantsMappings)
         {
             var parameters = new ParameterExpression[constantExpressions.Count];
             _parameterValues = new OeQueryCacheDbParameterValue[constantExpressions.Count];
@@ -28,7 +28,7 @@ namespace OdataToEntity.Parsers
                 ConstantExpression constantExpression = constantExpressions[i];
                 String parameterName = "__p_" + i.ToString(CultureInfo.InvariantCulture);
 
-                ConstantNode constantNode = constantMappings[constantExpression];
+                ConstantNode constantNode = constantsMappings[constantExpression];
                 _constantToParameterMapper.Add(constantNode, new OeQueryCacheDbParameterDefinition(parameterName, constantExpression.Type));
 
                 _parameterValues[i] = new OeQueryCacheDbParameterValue(parameterName, constantExpression.Value);

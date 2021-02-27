@@ -57,7 +57,7 @@ namespace OdataToEntity.Writers
             using (ODataMessageWriter messageWriter = new ODataMessageWriter(responseMessage, settings, queryContext.EdmModel))
             {
                 ODataUtils.SetHeadersForPayload(messageWriter, ODataPayloadKind.ResourceSet);
-                ODataWriter writer = await messageWriter.CreateODataResourceSetWriterAsync(entryFactory.EntitySet, entryFactory.EdmEntityType);
+                ODataWriter writer = await messageWriter.CreateODataResourceSetWriterAsync(entryFactory.EntitySet, entryFactory.EdmEntityType).ConfigureAwait(false);
                 var odataWriter = new OeODataWriter(queryContext, writer, cancellationToken);
                 await odataWriter.WriteAsync(entryFactory, asyncEnumerator).ConfigureAwait(false);
             }

@@ -49,7 +49,7 @@ namespace OdataToEntity.Parsers
                         {
                             headers.ResponseContentType = OeRequestHeaders.TextDefault.ContentType;
                             byte[] buffer = System.Text.Encoding.UTF8.GetBytes(asyncEnumerator.Current.ToString()!);
-                            await responseStream.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
+                            await responseStream.WriteAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
                         }
                         else
                             headers.ResponseContentType = null;

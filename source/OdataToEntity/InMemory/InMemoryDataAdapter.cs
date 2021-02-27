@@ -12,7 +12,7 @@ namespace OdataToEntity.InMemory
 {
     public class InMemoryDataAdapter<T> : Db.OeDataAdapter where T : notnull
     {
-        private static Db.OeEntitySetAdapterCollection _entitySetAdapters = CreateEntitySetAdapters();
+        private static readonly Db.OeEntitySetAdapterCollection _entitySetAdapters = CreateEntitySetAdapters();
         private readonly T _dataContext;
 
         public InMemoryDataAdapter(T dataContext) : this(dataContext, null)

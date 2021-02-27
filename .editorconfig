@@ -15,11 +15,19 @@ dotnet_diagnostic.CA1012.severity = silent
 # IDE0063: Use simple 'using' statement
 csharp_prefer_simple_using_statement = true:silent
 
+# CA1010: Generic interface should also be implemented
+dotnet_diagnostic.CA1010.severity = silent
+
+# CA1062: Validate arguments of public methods
+dotnet_diagnostic.CA1062.severity = silent
+
+# CA1063: Implement IDisposable correctly
+dotnet_diagnostic.CA1063.severity = silent
+
 # CA1815: Properties should not return arrays
 dotnet_diagnostic.CA1815.severity = silent
 
 # CA1819: Properties should not return arrays
 dotnet_diagnostic.CA1819.severity = silent
 
-# CA1063: Implement IDisposable correctly
-dotnet_diagnostic.CA1063.severity = silent
+

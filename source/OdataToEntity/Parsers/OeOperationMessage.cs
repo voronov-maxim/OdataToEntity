@@ -92,7 +92,7 @@ namespace OdataToEntity.Parsers
 
         public static async ValueTask<OeOperationMessage> CreateAsync(IEdmModel edmModel, Uri baseUri, ODataBatchReader reader, IServiceProvider? serviceProvider)
         {
-            ODataBatchOperationRequestMessage batchRequest = await reader.CreateOperationRequestMessageAsync();
+            ODataBatchOperationRequestMessage batchRequest = await reader.CreateOperationRequestMessageAsync().ConfigureAwait(false);
             var (entitySet, resource) = await (new ResourceFactory(edmModel, baseUri, serviceProvider)).CreateEntryAsync(batchRequest).ConfigureAwait(false);
             return new OeOperationMessage(entitySet, resource, batchRequest, batchRequest.ContentId);
         }

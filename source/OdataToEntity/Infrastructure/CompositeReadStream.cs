@@ -50,7 +50,7 @@ namespace OdataToEntity.Infrastructure
             {
                 offset += readCount;
                 count -= readCount;
-                readCount += await _requestStream.ReadAsync(buffer, offset, count);
+                readCount += await _requestStream.ReadAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
             }
 
             return readCount;

@@ -48,7 +48,7 @@ namespace OdataToEntity.Writers
         }
         private async ValueTask WriteBatchOperationAsync(ODataBatchWriter writer, OeOperationMessage operation)
         {
-            ODataBatchOperationResponseMessage operationMessage = await writer.CreateOperationResponseMessageAsync(operation.ContentId);
+            ODataBatchOperationResponseMessage operationMessage = await writer.CreateOperationResponseMessageAsync(operation.ContentId).ConfigureAwait(false);
             operationMessage.SetHeader("Location", operation.RequestUrl.AbsoluteUri);
             operationMessage.SetHeader(ODataConstants.ContentTypeHeader, operation.ContentType);
             operationMessage.StatusCode = (int)operation.StatusCode;

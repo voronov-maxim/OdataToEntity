@@ -44,7 +44,7 @@ namespace OdataToEntity.Parsers
 
             return GetJoin(outer, innerSource, edmNavigationProperty);
         }
-        private MethodCallExpression GetJoin(Expression outerSource, Expression innerSource, IEdmNavigationProperty navigationProperty)
+        private static MethodCallExpression GetJoin(Expression outerSource, Expression innerSource, IEdmNavigationProperty navigationProperty)
         {
             Type innerType = OeExpressionHelper.GetCollectionItemType(innerSource.Type);
 

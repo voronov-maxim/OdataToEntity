@@ -20,14 +20,14 @@ namespace OdataToEntity.InMemory
             if (strA == null || strB == null)
                 return -1;
 
-            return String.Compare(strA, strB);
+            return String.CompareOrdinal(strA, strB);
         }
         private static int StringComapreLess(String? strA, String? strB)
         {
             if (strA == null || strB == null)
                 return 1;
 
-            return String.Compare(strA, strB);
+            return String.CompareOrdinal(strA, strB);
         }
         protected override Expression VisitMember(MemberExpression node)
         {

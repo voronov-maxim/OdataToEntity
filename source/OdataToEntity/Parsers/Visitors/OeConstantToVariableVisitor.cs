@@ -29,7 +29,7 @@ namespace OdataToEntity.Parsers
         }
         protected virtual IReadOnlyList<Expression> TranslateParameters(
             IReadOnlyList<ConstantExpression> constantExpressions,
-            IReadOnlyDictionary<ConstantExpression, ConstantNode> constantsMapping)
+            IReadOnlyDictionary<ConstantExpression, ConstantNode> constantsMappings)
         {
             Object tuple = OeExpressionHelper.GetTuple(constantExpressions);
             return OeExpressionHelper.GetPropertyExpressions(Expression.Constant(tuple));
