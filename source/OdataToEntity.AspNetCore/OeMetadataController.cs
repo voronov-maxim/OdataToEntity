@@ -2,6 +2,7 @@
 using Microsoft.OData;
 using Microsoft.OData.Edm;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace OdataToEntity.AspNetCore
 {
@@ -22,24 +23,18 @@ namespace OdataToEntity.AspNetCore
                 memoryStream.CopyToAsync(stream);
             }
         }
-        protected void WriteMetadata()
+        protected Task WriteMetadataAsync()
         {
             base.HttpContext.Response.ContentType = "application/xml";
-            WriteMetadata(base.HttpContext.GetEdmModel(), base.HttpContext.Response.Body);
+            return WriteMetadataAsync(base.HttpContext.GetEdmModel(), base.HttpContext.Response.Body);
         }
-        private static void WriteMetadata(IEdmModel edmModel, Stream stream)
+        private static async Task WriteMetadataAsync(IEdmModel edmModel, Stream stream)
         {
-            using (var memoryStream = new MemoryStream()) //kestrel allow only async operation
-            {
-                var writerSettings = new ODataMessageWriterSettings();
-                writerSettings.EnableMessageStreamDisposal = false;
-                IODataResponseMessage message = new Infrastructure.OeInMemoryMessage(memoryStream, null);
-                using (var writer = new ODataMessageWriter((IODataResponseMessageAsync)message, writerSettings, edmModel))
-                    writer.WriteMetadataDocument();
-
-                memoryStream.Position = 0;
-                memoryStream.CopyToAsync(stream);
-            }
+            var writerSettings = new ODataMessageWriterSettings();
+            writerSettings.EnableMessageStreamDisposal = false;
+            IODataResponseMessage message = new Infrastructure.OeInMemoryMessage(stream, null);
+            using (var writer = new ODataMessageWriter((IODataResponseMessageAsync)message, writerSettings, edmModel))
+                await writer.WriteMetadataDocumentAsync().ConfigureAwait(false);
         }
     }
 }

@@ -23,19 +23,13 @@ namespace OdataToEntity.AspNetCore
             EdmModel = edmModel;
         }
 
-        private static void WriteMetadata(IEdmModel edmModel, Stream stream)
+        private static async Task WriteMetadataAsync(IEdmModel edmModel, Stream stream)
         {
-            using (var memoryStream = new MemoryStream()) //kestrel allow only async operation
-            {
-                var writerSettings = new ODataMessageWriterSettings();
-                writerSettings.EnableMessageStreamDisposal = false;
-                IODataResponseMessage message = new Infrastructure.OeInMemoryMessage(memoryStream, null);
-                using (var writer = new ODataMessageWriter((IODataResponseMessageAsync)message, writerSettings, edmModel))
-                    writer.WriteMetadataDocument();
-
-                memoryStream.Position = 0;
-                memoryStream.CopyToAsync(stream);
-            }
+            var writerSettings = new ODataMessageWriterSettings();
+            writerSettings.EnableMessageStreamDisposal = false;
+            IODataResponseMessage message = new Infrastructure.OeInMemoryMessage(stream, null);
+            using (var writer = new ODataMessageWriter((IODataResponseMessageAsync)message, writerSettings, edmModel))
+                await writer.WriteMetadataDocumentAsync().ConfigureAwait(false);
         }
         private static void GetJsonSchema(IEdmModel edmModel, Stream stream)
         {
@@ -51,7 +45,7 @@ namespace OdataToEntity.AspNetCore
         {
             return null;
         }
-        private static async Task GetServiceDocument(IEdmModel edmModel, Uri baseUri, Stream stream)
+        private static async Task GetServiceDocumentAsync(IEdmModel edmModel, Uri baseUri, Stream stream)
         {
             var settings = new ODataMessageWriterSettings()
             {
@@ -70,13 +64,13 @@ namespace OdataToEntity.AspNetCore
             if (httpContext.Request.PathBase == _apiPath)
             {
                 if (httpContext.Request.Path == "/$metadata")
-                    InvokeMetadata(httpContext);
+                    await InvokeMetadataAsync(httpContext).ConfigureAwait(false);
                 else if (httpContext.Request.Path == "/$batch")
-                    await InvokeBatch(httpContext).ConfigureAwait(false);
+                    await InvokeBatchAsync(httpContext).ConfigureAwait(false);
                 else if (httpContext.Request.Path == "/$json-schema")
                     InvokeJsonSchema(httpContext);
                 else if (httpContext.Request.Path == "" || httpContext.Request.Path == "/")
-                    await InvokeServiceDocument(httpContext).ConfigureAwait(false);
+                    await InvokeServiceDocumentAsync(httpContext).ConfigureAwait(false);
                 else
                     await InvokeApi(httpContext).ConfigureAwait(false);
             }
@@ -117,7 +111,7 @@ namespace OdataToEntity.AspNetCore
                 }
             }
         }
-        private async Task InvokeBatch(HttpContext httpContext)
+        private async Task InvokeBatchAsync(HttpContext httpContext)
         {
             httpContext.Response.ContentType = httpContext.Request.ContentType;
             var parser = new OeParser(UriHelper.GetBaseUri(httpContext.Request), EdmModel);
@@ -129,15 +123,15 @@ namespace OdataToEntity.AspNetCore
             httpContext.Response.ContentType = "application/schema+json";
             GetJsonSchema(EdmModel, httpContext.Response.Body);
         }
-        private void InvokeMetadata(HttpContext httpContext)
+        private Task InvokeMetadataAsync(HttpContext httpContext)
         {
             httpContext.Response.ContentType = "application/xml";
-            WriteMetadata(EdmModel, httpContext.Response.Body);
+            return WriteMetadataAsync(EdmModel, httpContext.Response.Body);
         }
-        private Task InvokeServiceDocument(HttpContext httpContext)
+        private Task InvokeServiceDocumentAsync(HttpContext httpContext)
         {
             httpContext.Response.ContentType = "application/schema+json";
-            return GetServiceDocument(EdmModel, UriHelper.GetBaseUri(httpContext.Request), httpContext.Response.Body);
+            return GetServiceDocumentAsync(EdmModel, UriHelper.GetBaseUri(httpContext.Request), httpContext.Response.Body);
         }
 
         protected IEdmModel EdmModel { get; }

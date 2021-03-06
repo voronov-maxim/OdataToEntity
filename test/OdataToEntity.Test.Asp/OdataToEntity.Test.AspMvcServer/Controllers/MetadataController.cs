@@ -7,9 +7,9 @@ namespace OdataToEntity.Test.AspMvcServer.Controllers
     public class MetadataController : OeMetadataController
     {
         [Route("api/$metadata")]
-        public void GetMetadata()
+        public async Task GetMetadata()
         {
-            base.WriteMetadata();
+            await base.WriteMetadataAsync().ConfigureAwait(false);
         }
         [Route("api/$json-schema")]
         public void GetJson()
