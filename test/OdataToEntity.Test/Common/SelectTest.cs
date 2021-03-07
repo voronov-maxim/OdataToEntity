@@ -733,7 +733,7 @@ namespace OdataToEntity.Test
         }
         [Theory]
         [InlineData(0)]
-        //[InlineData(1, Skip = "OdataLib bug #1974")]
+        [InlineData(1)]
         public async Task FilterDollarIt(int pageSize)
         {
             var parameters = new QueryParameters<Order, Object>()

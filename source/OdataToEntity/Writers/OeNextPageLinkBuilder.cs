@@ -10,6 +10,32 @@ namespace OdataToEntity.Writers
 {
     public readonly struct OeNextPageLinkBuilder
     {
+        private sealed class FixDollarIt : OeQueryNodeTranslator
+        {
+            private readonly ResourceRangeVariable _rangeVariable;
+
+            public FixDollarIt(ResourceRangeVariable rangeVariable)
+            {
+                _rangeVariable = rangeVariable;
+            }
+
+            public override QueryNode Visit(ResourceRangeVariableReferenceNode node)
+            {
+                if (_rangeVariable.NavigationSource != node.RangeVariable.NavigationSource)
+                    foreach (IEdmNavigationPropertyBinding propertyBinding in _rangeVariable.NavigationSource.NavigationPropertyBindings)
+                        if (propertyBinding.Target == node.RangeVariable.NavigationSource)
+                        {
+                            EdmMultiplicity multiplicity = propertyBinding.NavigationProperty.TargetMultiplicity();
+                            if (multiplicity == EdmMultiplicity.One || multiplicity == EdmMultiplicity.ZeroOrOne)
+                            {
+                                var rangeVariableNode = new ResourceRangeVariableReferenceNode("", _rangeVariable);
+                                return new SingleNavigationNode(rangeVariableNode, propertyBinding.NavigationProperty, propertyBinding.Path);
+                            }
+                        }
+                return node;
+            }
+        }
+
         private readonly OeQueryContext _queryContext;
 
         public OeNextPageLinkBuilder(OeQueryContext queryContext)
@@ -149,6 +175,12 @@ namespace OdataToEntity.Writers
 
             var entitytSet = (IEdmEntitySet)((ResourceRangeVariable)filterClause.RangeVariable).NavigationSource;
             var pathSegments = new ODataPathSegment[] { new EntitySetSegment(entitytSet) };
+
+            if (filterClause.RangeVariable is ResourceRangeVariable rangeVariable)
+            {
+                var expression = new FixDollarIt(rangeVariable).Visit(filterClause.Expression);
+                filterClause = new FilterClause((SingleValueNode)expression, filterClause.RangeVariable);
+            }
 
             var odataUri = new ODataUri()
             {
