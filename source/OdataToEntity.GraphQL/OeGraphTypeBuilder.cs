@@ -99,18 +99,34 @@ namespace OdataToEntity.GraphQL
                     {
                         String name;
                         IGraphType resolvedType = fieldType.ResolvedType;
+                        IComplexGraphType? complexGraphType = null;
                         if (resolvedType is NonNullGraphType nonNullGraphType)
                         {
                             resolvedType = nonNullGraphType.ResolvedType;
                             name = resolvedType.Name;
+                            complexGraphType = resolvedType as IComplexGraphType;
                         }
                         else if (resolvedType is ListGraphType listGraphType)
+                        {
                             name = listGraphType.ResolvedType.Name;
+                            complexGraphType = listGraphType.ResolvedType as IComplexGraphType;
+                        }
                         else
+                        {
                             name = resolvedType.Name;
+                            complexGraphType = resolvedType as IComplexGraphType;
+                        }
+
+                        if (complexGraphType == null)
+                            continue;
 
                         Type inputObjectGraphType = typeof(InputObjectGraphType<>).MakeGenericType(resolvedType.GetType());
                         var inputObjectGraph = (IInputObjectGraphType)Activator.CreateInstance(inputObjectGraphType)!;
+                        inputObjectGraph.Description = name;
+                        foreach (FieldType typeField in complexGraphType.Fields)
+                            if (typeField.ResolvedType == null || typeField.ResolvedType.IsInputType())
+                                inputObjectGraph.AddField(typeField);
+
                         queryArgument = new QueryArgument(inputObjectGraphType) { Name = name, ResolvedType = inputObjectGraph };
                     }
                     else

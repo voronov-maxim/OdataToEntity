@@ -64,7 +64,7 @@ namespace OdataToEntity.EfCore
             var commandParameters = new RelationalCommandParameterObject(connection, parameterValues, null, dbContext, null);
             if (Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(returnType) == null)
             {
-                Task<Object> scalarResult = command.ExecuteScalarAsync(commandParameters);
+                Task<Object> scalarResult = command.ExecuteScalarAsync(commandParameters, cancellationToken);
                 return Infrastructure.AsyncEnumeratorHelper.ToAsyncEnumerable(scalarResult);
             }
 

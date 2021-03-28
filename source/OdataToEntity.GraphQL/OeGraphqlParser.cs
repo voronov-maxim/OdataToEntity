@@ -2,7 +2,6 @@
 using GraphQL.Types;
 using Microsoft.OData;
 using Microsoft.OData.Edm;
-using OdataToEntity.Db;
 using System;
 using System.Threading.Tasks;
 
@@ -14,6 +13,7 @@ namespace OdataToEntity.GraphQL
         {
             EdmModel = edmModel;
             Schema = new OeSchemaBuilder(edmModel).Build();
+            Schema.Initialize();
         }
 
         public Task<ExecutionResult> Execute(String query)
@@ -28,17 +28,13 @@ namespace OdataToEntity.GraphQL
                 options.Inputs = inputs;
                 options.Query = query;
                 options.Schema = schema;
+                options.ThrowOnUnhandledException = true;
             }).ConfigureAwait(false);
         }
         public Uri GetOdataUri(String query)
         {
-            return GetOdataUri(query, null);
-        }
-        public Uri GetOdataUri(String query, Inputs? inputs)
-        {
             var context = new ResolveFieldContext()
             {
-                Arguments = inputs,
                 Schema = Schema
             };
             var translator = new OeGraphqlAstToODataUri(EdmModel, context);

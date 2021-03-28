@@ -209,7 +209,12 @@ namespace OdataToEntity.Test.GraphQL
         {
             FieldInfo fieldInfo = typeof(TestResults).GetField(memberName);
             var expected = (String)fieldInfo.GetValue(null);
-            String formated = new ExecutionResult { Data = JObject.Parse(expected) }.ToStringAsync().GetAwaiter().GetResult();
+            String formated = new ExecutionResult
+            {
+                Data = JObject.Parse(expected),
+                Executed = true
+            }.ToStringAsync().GetAwaiter().GetResult();
+            
             Xunit.Assert.Equal(formated, SortJson(result));
         }
         private static String SortJson(String json)

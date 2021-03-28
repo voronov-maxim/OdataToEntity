@@ -118,7 +118,7 @@ namespace OdataToEntity.Test.GraphQL
                   hero {
                     id
                     name
-                    voice(birthday: ""1951-09-25"") {
+                    voice(birthday: ""1951-09-25T00:00:00.000Z"") {
                         name
                         birthday
                     }
@@ -136,7 +136,7 @@ namespace OdataToEntity.Test.GraphQL
                {
                   hero {
                     name
-                    actor(birthday: ""1951-09-25"") {
+                    actor(birthday: ""1951-09-25T00:00:00.000Z"") {
                         name
                         birthday
                     }

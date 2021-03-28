@@ -8,7 +8,7 @@ namespace OdataToEntity.GraphQL
     {
         public static String GetName(this INamedNode namedNode)
         {
-            return (namedNode.Name ?? throw new InvalidOperationException("Name is null")).Value ?? throw new InvalidOperationException("Name value is null");
+            return (namedNode.Name ?? throw new InvalidOperationException("Name is null")).Value.ToString();
         }
         public static List<ASTNode> GetSelections(this GraphQLSelectionSet selectionSet)
         {

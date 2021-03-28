@@ -131,13 +131,15 @@ namespace OdataToEntity.GraphQL
             if (graphValue is GraphQLScalarValue scalarValue)
             {
                 if (typeReference.IsString())
-                    return scalarValue.Value;
+                    return scalarValue.Value.ToString();
 
-                return ODataUriUtils.ConvertFromUriLiteral(scalarValue.Value, ODataVersion.V4, _edmModel, typeReference);
+                return ODataUriUtils.ConvertFromUriLiteral(scalarValue.Value.ToString(), ODataVersion.V4, _edmModel, typeReference);
             }
-            else if (graphValue is GraphQLVariable variable)
-                return _context.Arguments[variable.GetName()];
-            else if (graphValue is null)
+
+            if (graphValue is GraphQLVariable variable)
+                return _context.Arguments[variable.GetName()].Value;
+
+            if (graphValue is null)
                 return null;
 
             throw new NotSupportedException("Argument " + graphValue.GetType().Name + " not supported");
@@ -217,9 +219,7 @@ namespace OdataToEntity.GraphQL
         }
         public ODataUri Translate(String query)
         {
-            var parser = new Parser(new Lexer());
-            GraphQLDocument document = parser.Parse(new Source(query));
-
+            GraphQLDocument document = Parser.Parse(new ROM(query.AsMemory()));
             GraphQLFieldSelection selection = GetSelection(document);
             IEdmEntitySet entitySet = GetEntitySet(selection);
             SelectExpandClause selectExpandClause = BuildSelectExpandClause(entitySet, selection.SelectionSet ?? throw new InvalidOperationException("SelectionSet is null"));
