@@ -104,7 +104,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
                 {
                     propertyInfo = entityType.GetProperty("SpecificSchema");
                     if (propertyInfo == null)
-                        throw new InvalidOperationException("Unknow MySql schema");
+                        throw new InvalidOperationException("Unknown MySql schema");
                 }
             }
 

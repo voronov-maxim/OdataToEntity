@@ -32,7 +32,7 @@ namespace OdataToEntity.Test.Model
             IQueryable<Customer> customers = boundParameter.ApplyFilter(orderContext.Customers, orderContext);
             IQueryable<Order> orders = customers.SelectMany(c => c.Orders).Where(o => orderNames.Contains(o.Name));
             IQueryable result = boundParameter.ApplySelect(orders, orderContext);
-            List<Order> orderList = boundParameter.Materialize(result).ToListAsync().GetAwaiter().GetResult();
+            List<Order> orderList = Infrastructure.AsyncEnumeratorHelper.GetResult(boundParameter.Materialize(result).ToListAsync());
 
             boundParameter.CloseDataContext(orderContext);
             return orderList;

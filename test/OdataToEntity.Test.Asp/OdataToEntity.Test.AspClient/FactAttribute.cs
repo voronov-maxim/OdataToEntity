@@ -38,7 +38,7 @@ namespace Xunit
         public static void Equal(int expected, int actual)
         {
             if (expected != actual)
-                throw new InvalidOperationException($"expected: {expected.ToString()} actual: {actual.ToString()}");
+                throw new InvalidOperationException($"expected: {expected} actual: {actual}");
         }
         public static void Equal(String expected, String actual)
         {
@@ -58,7 +58,7 @@ namespace Xunit
                 return;
 
             if (!expected.Equals(actual))
-                throw new InvalidOperationException($"expected: {expected.ToString()} actual: {actual.ToString()}");
+                throw new InvalidOperationException($"expected: {expected} actual: {actual}");
         }
         public static void Equal<T>(IEnumerable<T> expected, IEnumerable<T> actual)
         {

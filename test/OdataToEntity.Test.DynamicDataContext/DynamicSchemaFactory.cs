@@ -44,7 +44,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext
         private DbContextOptions<DynamicDbContext> CreateOptionsMySql(bool useRelationalNulls)
         {
             var optionsBuilder = new DbContextOptionsBuilder<DynamicDbContext>();
-            optionsBuilder.UseMySql(_connectionString, opt => opt.UseRelationalNulls(useRelationalNulls));
+            optionsBuilder.UseMySql(_connectionString, ServerVersion.AutoDetect(_connectionString), opt => opt.UseRelationalNulls(useRelationalNulls));
             //optionsBuilder.ReplaceService<IConventionSetBuilder, DynamicConventionSetBuilder>();
             return optionsBuilder.Options;
         }

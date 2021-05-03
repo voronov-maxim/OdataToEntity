@@ -31,7 +31,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Humanizer.Core" Version="2.8.26" />
+    <PackageReference Include="Humanizer.Core" Version="2.9.9" />
     <PackageReference Include="Microsoft.OData.Core" Version="$(ODataLibVersion)" />
     <PackageReference Include="Microsoft.OData.Edm" Version="$(ODataLibVersion)" />
   </ItemGroup>

@@ -21,39 +21,23 @@ namespace OdataToEntity.Cache.UriCompare
             if (node1.Kind != node2.Kind)
                 return false;
 
-            switch (node1.Kind)
+            return node1.Kind switch
             {
-                case QueryNodeKind.All:
-                    return Visit((AllNode)node1, (AllNode)node2);
-                case QueryNodeKind.Any:
-                    return Visit((AnyNode)node1, (AnyNode)node2);
-                case QueryNodeKind.BinaryOperator:
-                    return Visit((BinaryOperatorNode)node1, (BinaryOperatorNode)node2);
-                case QueryNodeKind.CollectionNavigationNode:
-                    return Visit((CollectionNavigationNode)node1, (CollectionNavigationNode)node2);
-                case QueryNodeKind.Constant:
-                    return Visit((ConstantNode)node1, (ConstantNode)node2);
-                case QueryNodeKind.Convert:
-                    return Visit((ConvertNode)node1, (ConvertNode)node2);
-                case QueryNodeKind.Count:
-                    return node1 is CountNode
-                        ? Visit((CountNode)node1, (CountNode)node2)
-                        : Visit((CountVirtualPropertyNode)node1, (CountVirtualPropertyNode)node1);
-                case QueryNodeKind.In:
-                    return Visit((InNode)node1, (InNode)node2);
-                case QueryNodeKind.ResourceRangeVariableReference:
-                    return Visit((ResourceRangeVariableReferenceNode)node1, (ResourceRangeVariableReferenceNode)node2);
-                case QueryNodeKind.SingleNavigationNode:
-                    return Visit((SingleNavigationNode)node1, (SingleNavigationNode)node2);
-                case QueryNodeKind.SingleValueFunctionCall:
-                    return Visit((SingleValueFunctionCallNode)node1, (SingleValueFunctionCallNode)node2);
-                case QueryNodeKind.SingleValueOpenPropertyAccess:
-                    return Visit((SingleValueOpenPropertyAccessNode)node1, (SingleValueOpenPropertyAccessNode)node2);
-                case QueryNodeKind.SingleValuePropertyAccess:
-                    return Visit((SingleValuePropertyAccessNode)node1, (SingleValuePropertyAccessNode)node2);
-            }
-
-            throw new NotSupportedException("node kind " + node1.Kind.ToString());
+                QueryNodeKind.All => Visit((AllNode)node1, (AllNode)node2),
+                QueryNodeKind.Any => Visit((AnyNode)node1, (AnyNode)node2),
+                QueryNodeKind.BinaryOperator => Visit((BinaryOperatorNode)node1, (BinaryOperatorNode)node2),
+                QueryNodeKind.CollectionNavigationNode => Visit((CollectionNavigationNode)node1, (CollectionNavigationNode)node2),
+                QueryNodeKind.Constant => Visit((ConstantNode)node1, (ConstantNode)node2),
+                QueryNodeKind.Convert => Visit((ConvertNode)node1, (ConvertNode)node2),
+                QueryNodeKind.Count => node1 is CountNode ? Visit((CountNode)node1, (CountNode)node2) : Visit((CountVirtualPropertyNode)node1, (CountVirtualPropertyNode)node1),
+                QueryNodeKind.In => Visit((InNode)node1, (InNode)node2),
+                QueryNodeKind.ResourceRangeVariableReference => Visit((ResourceRangeVariableReferenceNode)node1, (ResourceRangeVariableReferenceNode)node2),
+                QueryNodeKind.SingleNavigationNode => Visit((SingleNavigationNode)node1, (SingleNavigationNode)node2),
+                QueryNodeKind.SingleValueFunctionCall => Visit((SingleValueFunctionCallNode)node1, (SingleValueFunctionCallNode)node2),
+                QueryNodeKind.SingleValueOpenPropertyAccess => Visit((SingleValueOpenPropertyAccessNode)node1, (SingleValueOpenPropertyAccessNode)node2),
+                QueryNodeKind.SingleValuePropertyAccess => Visit((SingleValuePropertyAccessNode)node1, (SingleValuePropertyAccessNode)node2),
+                _ => throw new NotSupportedException("node kind " + node1.Kind.ToString()),
+            };
         }
         public bool Compare(RangeVariable rangeVariable1, RangeVariable rangeVariable2)
         {

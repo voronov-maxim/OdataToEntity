@@ -31,7 +31,8 @@ namespace OdataToEntity.EfCore.DynamicDataContext
             _dynamicDbContextCtor = Expression.Lambda<Func<DynamicDbContext>>(ctor).Compile();
 
             _dynamicTypeType2DynamicTypeDefinitions = new Dictionary<Type, DynamicTypeDefinition>();
-            _tableFullName2DynamicTypeDefinitions = new Dictionary<TableFullName, DynamicTypeDefinition>();
+            _tableFullName2DynamicTypeDefinitions = new Dictionary<TableFullName, DynamicTypeDefinition>(
+                informationSchema.IsCaseSensitive ? TableFullName.OrdinalComparer : TableFullName.OrdinalIgnoreCaseComparer);
         }
 
         internal static DynamicTypeDefinitionManager Create(DynamicMetadataProvider metadataProvider, Type dynamicDbContextType)

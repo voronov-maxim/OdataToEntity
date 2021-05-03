@@ -122,6 +122,15 @@ namespace OdataToEntity.Infrastructure
 
         public static readonly IAsyncEnumerable<Object> Empty = new EmptyAsyncEnumerator();
 
+        public static T GetResult<T>(this ValueTask<T> valueTask)
+        {
+            return valueTask.IsCompleted ? valueTask.Result : valueTask.AsTask().GetAwaiter().GetResult();
+        }
+        public static void GetResult(this ValueTask valueTask)
+        {
+            if (!valueTask.IsCompleted) 
+                valueTask.AsTask().GetAwaiter().GetResult();
+        }
         public static IAsyncEnumerable<Object> ToAsyncEnumerable(IEnumerable enumerable)
         {
             return new EnumeratorAdapter(enumerable);

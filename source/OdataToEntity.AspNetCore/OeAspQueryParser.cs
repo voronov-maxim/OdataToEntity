@@ -81,7 +81,7 @@ namespace OdataToEntity.AspNetCore
             if (OeExpressionHelper.IsPrimitiveType(typeof(T)) || _queryContext == null || (_queryContext.EntryFactory != null && !_queryContext.EntryFactory.IsTuple))
                 return Infrastructure.AsyncEnumeratorHelper.ToAsyncEnumerable<T>(asyncEnumerable, cancellationToken);
 
-            return new Db.OeEntityAsyncEnumeratorAdapter<T>(asyncEnumerable.GetAsyncEnumerator(), _queryContext);
+            return new Db.OeEntityAsyncEnumeratorAdapter<T>(asyncEnumerable.GetAsyncEnumerator(cancellationToken), _queryContext);
         }
         public async Task<T?> ExecuteScalar<T>(IQueryable? source = null) where T : struct
         {

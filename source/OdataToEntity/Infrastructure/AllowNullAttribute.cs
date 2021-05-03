@@ -12,6 +12,7 @@ namespace System.Diagnostics.CodeAnalysis
     internal sealed class MaybeNullAttribute : Attribute
     {
     }
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter, Inherited = false)]
     internal sealed class NotNullAttribute : Attribute
     {
     }

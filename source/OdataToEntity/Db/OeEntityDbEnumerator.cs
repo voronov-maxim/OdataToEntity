@@ -36,7 +36,7 @@ namespace OdataToEntity.Db
                 asyncEnumerable = Infrastructure.AsyncEnumeratorHelper.ToAsyncEnumerable(Task.FromResult(navigationValue));
 
             IAsyncEnumerator<Object?> asyncEnumerator = asyncEnumerable.GetAsyncEnumerator(cancellationToken);
-            asyncEnumerator.MoveNextAsync().GetAwaiter().GetResult();
+            Infrastructure.AsyncEnumeratorHelper.GetResult(asyncEnumerator.MoveNextAsync());
             return new OeEntityDbEnumerator(asyncEnumerator, entryFactory, this);
         }
         public ValueTask DisposeAsync()

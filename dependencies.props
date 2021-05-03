@@ -1,19 +1,19 @@
 ﻿<Project>
   <PropertyGroup> 
     <ComponentModelAnnotations>5.0.0</ComponentModelAnnotations>
-    <CoreFxVersion>5.0.1</CoreFxVersion>
+    <CoreFxVersion>5.0.2</CoreFxVersion>
     <CSharpVersion>8.0</CSharpVersion>
-    <EfCoreVersion>5.0.3</EfCoreVersion>
+    <EfCoreVersion>5.0.5</EfCoreVersion>
     <FrameworkVersion>net48</FrameworkVersion>
     <JsonNetVersion>12.0.3</JsonNetVersion>
     <NetStandardVersion>net5.0</NetStandardVersion>
     <NetCoreAppVersion>net5.0</NetCoreAppVersion>
     <NetCoreVersion>5.0.0</NetCoreVersion>
-    <NpgsqlVersion>5.0.2</NpgsqlVersion>
+    <NpgsqlVersion>5.0.5.1</NpgsqlVersion>
     <ODataLibVersion>7.8.3</ODataLibVersion>
     <OdataToEntityVersion>2.7.0</OdataToEntityVersion>
     <SystemInteractiveAsyncVersion>5.0.0</SystemInteractiveAsyncVersion>
-    <TestSdkVersion>16.9.1</TestSdkVersion>
+    <TestSdkVersion>16.9.4</TestSdkVersion>
     <Version>$(OdataToEntityVersion)</Version>
     <XunitVersion>2.4.1</XunitVersion>
     <XunitVSVersion>2.4.3</XunitVSVersion>

@@ -56,7 +56,7 @@ namespace OdataToEntity.AspNetCore
 
                     context.HttpContext.Response.ContentType = context.HttpContext.Request.ContentType;
                     var batchWriter = new Writers.OeBatchWriter(modelState.DataContext.EdmModel, UriHelper.GetBaseUri(context.HttpContext.Request));
-                    batchWriter.WriteOperationAsync(context.HttpContext.Response.Body, operation).GetAwaiter().GetResult();
+                    Infrastructure.AsyncEnumeratorHelper.GetResult(batchWriter.WriteOperationAsync(context.HttpContext.Response.Body, operation));
                 }
                 finally
                 {

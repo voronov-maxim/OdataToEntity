@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Query;
+using Microsoft.EntityFrameworkCore.Storage;
 using System;
 using System.Collections.Generic;
 
@@ -20,6 +21,7 @@ namespace OdataToEntity.EfCore.DynamicDataContext.InformationSchema
             var optionsBuilder = new DbContextOptionsBuilder<SchemaContext>();
             optionsBuilder.ReplaceService<IModelCustomizer, MySqlModelCustomizer>();
             optionsBuilder.ReplaceService<IEntityMaterializerSource, MySqlModelCustomizer.MySqlEntityMaterializerSource>();
+            optionsBuilder.ReplaceService<ISqlGenerationHelper, MySqlSqlGenerationHelper>();
 
             var schemaOptions = (DbContextOptions<SchemaContext>)optionsBuilder.CreateOptions(dynamicDbContextOptions);
             return new DbContextPool<SchemaContext>(schemaOptions);

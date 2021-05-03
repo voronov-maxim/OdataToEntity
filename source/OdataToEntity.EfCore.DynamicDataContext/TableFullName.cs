@@ -25,11 +25,14 @@ namespace OdataToEntity.EfCore.DynamicDataContext
             public bool Equals(TableFullName x, TableFullName y)
             {
                 return String.Compare(x.Name, y.Name, StringComparison.OrdinalIgnoreCase) == 0 &&
-                    String.Compare(x.Schema, y.Schema, StringComparison.InvariantCultureIgnoreCase) == 0;
+                    String.Compare(x.Schema, y.Schema, StringComparison.OrdinalIgnoreCase) == 0;
             }
             public int GetHashCode(TableFullName obj)
             {
-                return obj.GetHashCode();
+                int h1 = obj.Name.GetHashCode(StringComparison.OrdinalIgnoreCase);
+                int h2 = obj.Schema.GetHashCode(StringComparison.OrdinalIgnoreCase);
+                uint num = (uint)(h1 << 5) | ((uint)h1 >> 27);
+                return ((int)num + h1) ^ h2;
             }
         }
 

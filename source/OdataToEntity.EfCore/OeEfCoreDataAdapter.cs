@@ -120,7 +120,7 @@ namespace OdataToEntity.EfCore
         public override TResult ExecuteScalar<TResult>(Object dataContext, OeQueryContext queryContext)
         {
             if (base.QueryCache.AllowCache)
-                return GetFromCache<TResult>(queryContext, (DbContext)dataContext, out _).SingleAsync().GetAwaiter().GetResult();
+                return Infrastructure.AsyncEnumeratorHelper.GetResult(GetFromCache<TResult>(queryContext, (DbContext)dataContext, out _).SingleAsync());
 
             IQueryable query = queryContext.EntitySetAdapter.GetEntitySet(dataContext);
             Expression expression = queryContext.CreateExpression(new OeConstantToVariableVisitor());
