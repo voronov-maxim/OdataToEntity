@@ -313,6 +313,22 @@ namespace OdataToEntity.Test
         [InlineData(1, false)]
         [InlineData(0, true)]
         [InlineData(1, true)]
+        public async Task ExpandAndSelect(int pageSize, bool navigationNextLink)
+        {
+            var parameters = new QueryParameters<Order, Object>()
+            {
+                RequestUri = "Orders?$expand=AltCustomer,Customer,Items($orderby=Id),ShippingAddresses($orderby=Id)&$select=AltCustomerCountry,AltCustomerId,CustomerCountry,CustomerId,Date,Id,Name,Status&$orderby=Id",
+                Expression = t => t.Select(o => new { o.AltCustomer, o.Customer, o.Items, o.AltCustomerCountry, o.AltCustomerId, o.CustomerCountry, o.CustomerId, o.Date, o.Id, o.Name, o.ShippingAddresses, o.Status }).OrderBy(o => o.Id),
+                NavigationNextLink = navigationNextLink,
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters).ConfigureAwait(false);
+        }
+        [Theory]
+        [InlineData(0, false)]
+        [InlineData(1, false)]
+        [InlineData(0, true)]
+        [InlineData(1, true)]
         public async Task ExpandCollectionSingleSelectNestedName(int pageSize, bool navigationNextLink)
         {
             var parameters = new QueryParameters<Customer, Object>()
@@ -335,48 +351,51 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
-        [Theory]
-        [InlineData(0, false)]
-        [InlineData(1, false)]
-        [InlineData(0, true)]
-        [InlineData(1, true)]
-        public async Task ExpandManyToMany(int pageSize, bool navigationNextLink)
-        {
-            var parameters = new QueryParameters<Customer, Object>()
-            {
-                RequestUri = "Customers?$expand=AltOrders,ShippingAddresses,Orders&$orderby=Country,Id",
-                Expression = t => t.Include(c => c.AltOrders).Include(c => c.ShippingAddresses).Include(c => c.Orders).Include(c => c.CustomerShippingAddresses)
-                .ThenInclude(csa => csa.ShippingAddress)
-                .OrderBy(c => c.Country).ThenBy(c => c.Id)
-                .Select(c => new Customer()
-                {
-                    Address = c.Address,
-                    AltOrders = c.AltOrders,
-                    Country = c.Country,
-                    Id = c.Id,
-                    Name = c.Name,
-                    Sex = c.Sex,
-                    Orders = c.Orders,
-                    ShippingAddresses = c.CustomerShippingAddresses.Select(csa => csa.ShippingAddress).ToList()
-                }),
-                NavigationNextLink = navigationNextLink,
-                PageSize = pageSize
-            };
-            await Fixture.Execute(parameters).ConfigureAwait(false);
-        }
-        [Theory]
-        [InlineData(0, false)]
-        [InlineData(1, false)]
-        [InlineData(0, true)]
-        [InlineData(1, true)]
-        public async Task ExpandAndSelect(int pageSize, bool navigationNextLink)
+        [Fact]
+        public async Task ExpandCount()
         {
             var parameters = new QueryParameters<Order, Object>()
             {
-                RequestUri = "Orders?$expand=AltCustomer,Customer,Items($orderby=Id),ShippingAddresses($orderby=Id)&$select=AltCustomerCountry,AltCustomerId,CustomerCountry,CustomerId,Date,Id,Name,Status&$orderby=Id",
-                Expression = t => t.Select(o => new { o.AltCustomer, o.Customer, o.Items, o.AltCustomerCountry, o.AltCustomerId, o.CustomerCountry, o.CustomerId, o.Date, o.Id, o.Name, o.ShippingAddresses, o.Status }).OrderBy(o => o.Id),
-                NavigationNextLink = navigationNextLink,
-                PageSize = pageSize
+                RequestUri = "Orders?$expand=Items/$count",
+                Expression = t => t.Include(o => o.Items).Select(o => new
+                {
+                    AltCustomerCountry = o.AltCustomerCountry,
+                    AltCustomerId = o.AltCustomerId,
+                    CustomerCountry = o.CustomerCountry,
+                    CustomerId = o.CustomerId,
+                    Date = o.Date,
+                    Id = o.Id,
+                    Items = new[] { new { count = o.Items.Count() } },
+                    Name = o.Name,
+                    Status = o.Status
+                }),
+                NavigationNextLink = false,
+                PageSize = 0
+            };
+            await Fixture.Execute(parameters).ConfigureAwait(false);
+        }
+        [Fact]
+        public async Task ExpandExpandCountExpand()
+        {
+            var parameters = new QueryParameters<Order, Object>()
+            {
+                RequestUri = "Orders?$expand=Customer,Items/$count,AltCustomer",
+                Expression = t => t.Include(o => o.Items).Include(o => o.Customer).Include(o => o.AltCustomer).Select(o => new
+                {
+                    AltCustomer = o.AltCustomer,
+                    AltCustomerCountry = o.AltCustomerCountry,
+                    AltCustomerId = o.AltCustomerId,
+                    Customer = o.Customer,
+                    CustomerCountry = o.CustomerCountry,
+                    CustomerId = o.CustomerId,
+                    Date = o.Date,
+                    Id = o.Id,
+                    Items = new[] { new { count = o.Items.Count() } },
+                    Name = o.Name,
+                    Status = o.Status
+                }),
+                NavigationNextLink = false,
+                PageSize = 0
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
@@ -487,6 +506,35 @@ namespace OdataToEntity.Test
             {
                 RequestUri = "Customers?$expand=Orders($filter=Status eq OdataToEntity.Test.Model.OrderStatus'Processing')&$orderby=Country,Id",
                 Expression = t => t.Include(c => c.Orders.Where(o => o.Status == OrderStatus.Processing)).OrderBy(c => c.Country).ThenBy(c => c.Id),
+                NavigationNextLink = navigationNextLink,
+                PageSize = pageSize
+            };
+            await Fixture.Execute(parameters).ConfigureAwait(false);
+        }
+        [Theory]
+        [InlineData(0, false)]
+        [InlineData(1, false)]
+        [InlineData(0, true)]
+        [InlineData(1, true)]
+        public async Task ExpandManyToMany(int pageSize, bool navigationNextLink)
+        {
+            var parameters = new QueryParameters<Customer, Object>()
+            {
+                RequestUri = "Customers?$expand=AltOrders,ShippingAddresses,Orders&$orderby=Country,Id",
+                Expression = t => t.Include(c => c.AltOrders).Include(c => c.ShippingAddresses).Include(c => c.Orders).Include(c => c.CustomerShippingAddresses)
+                .ThenInclude(csa => csa.ShippingAddress)
+                .OrderBy(c => c.Country).ThenBy(c => c.Id)
+                .Select(c => new Customer()
+                {
+                    Address = c.Address,
+                    AltOrders = c.AltOrders,
+                    Country = c.Country,
+                    Id = c.Id,
+                    Name = c.Name,
+                    Sex = c.Sex,
+                    Orders = c.Orders,
+                    ShippingAddresses = c.CustomerShippingAddresses.Select(csa => csa.ShippingAddress).ToList()
+                }),
                 NavigationNextLink = navigationNextLink,
                 PageSize = pageSize
             };

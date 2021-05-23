@@ -71,7 +71,11 @@ namespace OdataToEntity.Parsers
                 LinkAccessor = (Func<Object, Object>)linkAccessor.Compile();
             }
             if (accessors.Length > 0)
-                _equalityComparer = new Infrastructure.OeEntryEqualityComparer(GetKeyExpressions(entitySet, accessors));
+            {
+                IReadOnlyList<Expression> expressions = accessors.Length == 1 && accessors[0].EdmProperty == OeEdmClrHelper.CountProperty ?
+                    new[] { accessors[0].PropertyExpression } : GetKeyExpressions(entitySet, accessors);
+                _equalityComparer = new Infrastructure.OeEntryEqualityComparer(expressions);
+            }
         }
 
         public ODataResource CreateEntry(Object? entity)

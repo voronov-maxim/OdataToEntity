@@ -302,6 +302,30 @@ namespace OdataToEntity.Cache.UriCompare
                 return ODataPathComparer.Compare(pathItem1.SelectedPath, pathItem2.SelectedPath);
             }
 
+            if (selectItem1 is ExpandedCountSelectItem countItem1)
+            {
+                var countItem2 = (ExpandedCountSelectItem)selectItem2;
+
+                if (countItem1.CountOption != countItem2.CountOption)
+                    return false;
+
+                if (countItem1.NavigationSource != countItem2.NavigationSource)
+                    return false;
+
+                if (!CompareFilter(countItem1.FilterOption, countItem2.FilterOption, false))
+                    return false;
+
+                if (!CompareOrderBy(countItem1.OrderByOption, countItem2.OrderByOption, false))
+                    return false;
+
+                if (!ODataPathComparer.Compare(countItem1.PathToNavigationProperty, countItem2.PathToNavigationProperty))
+                    return false;
+
+                path = new ODataPath(path.Union(countItem2.PathToNavigationProperty));
+                return CompareSkip(countItem1.SkipOption, countItem2.SkipOption, path) &&
+                    CompareTop(countItem1.TopOption, countItem2.TopOption, path);
+            }
+
             if (selectItem1 is OePageSelectItem pageItem1)
             {
                 var pageItem2 = (OePageSelectItem)selectItem2;
@@ -491,6 +515,12 @@ namespace OdataToEntity.Cache.UriCompare
                     hash = CombineHashCodes(hash, typeof(OePageSelectItem).GetHashCode());
                 else if (selectItem is OeNextLinkSelectItem)
                     hash = CombineHashCodes(hash, typeof(OeNextLinkSelectItem).GetHashCode());
+                else if (selectItem is ExpandedCountSelectItem countSelectItem)
+                {
+                    hash = CombineHashCodes(hash, countSelectItem.NavigationSource.Name.GetHashCode());
+                    if (countSelectItem.FilterOption != null)
+                        hash = CombineHashCodes(hash, typeof(FilterClause).GetHashCode());
+                }
                 else
                     throw new InvalidOperationException("Unknown SelectItem " + selectItem.GetType().ToString());
             }

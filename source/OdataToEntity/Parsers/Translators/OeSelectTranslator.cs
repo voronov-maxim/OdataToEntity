@@ -108,9 +108,15 @@ namespace OdataToEntity.Parsers.Translators
                     navigationItem.AlreadyUsedInBuildExpression = true;
 
                     ODataPathSegment segment = navigationItem.NavigationSelectItem.PathToNavigationProperty.LastSegment;
-                    IEdmNavigationProperty navigationProperty = (((NavigationPropertySegment)segment).NavigationProperty);
-                    Expression innerSource = GetInnerSource(navigationItem);
-                    source = _joinBuilder.Build(_edmModel, source, innerSource, navigationItem.Parent.GetJoinPath(), navigationProperty);
+                    IEdmNavigationProperty navigationProperty = ((NavigationPropertySegment)segment).NavigationProperty;
+                    Expression innerSource = GetInnerSource(source, navigationItem);
+                    if (navigationItem.NavigationSelectItem is ExpandedCountSelectItem)
+                    {
+                        _joinBuilder.AddJoinPathExpandCount();
+                        source = innerSource;
+                    }
+                    else
+                        source = _joinBuilder.Build(_edmModel, source, innerSource, navigationItem.Parent.GetJoinPath(), navigationProperty);
                 }
             }
 
@@ -126,14 +132,15 @@ namespace OdataToEntity.Parsers.Translators
 
             List<OeNavigationSelectItem> navigationItems = FlattenNavigationItems(_rootNavigationItem, false);
             for (int i = 1; i < navigationItems.Count; i++)
-            {
-                ExpandedNavigationSelectItem item = navigationItems[i].NavigationSelectItem;
-                if (item.OrderByOption != null && item.TopOption == null && item.SkipOption == null)
+                if (navigationItems[i].Kind == OeNavigationSelectItemKind.Normal)
                 {
-                    IReadOnlyList<IEdmNavigationProperty> joinPath = navigationItems[i].GetJoinPath();
-                    source = OeOrderByTranslator.BuildNested(_joinBuilder, source, _joinBuilder.Visitor.Parameter, item.OrderByOption, joinPath);
+                    ExpandedReferenceSelectItem item = navigationItems[i].NavigationSelectItem;
+                    if (item.OrderByOption != null && item.TopOption == null && item.SkipOption == null)
+                    {
+                        IReadOnlyList<IEdmNavigationProperty> joinPath = navigationItems[i].GetJoinPath();
+                        source = OeOrderByTranslator.BuildNested(_joinBuilder, source, _joinBuilder.Visitor.Parameter, item.OrderByOption, joinPath);
+                    }
                 }
-            }
 
             return source;
         }
@@ -272,7 +279,7 @@ namespace OdataToEntity.Parsers.Translators
             while (stack.Count > 0);
             return navigationItems;
         }
-        private Expression GetInnerSource(OeNavigationSelectItem navigationItem)
+        private Expression GetInnerSource(Expression source, OeNavigationSelectItem navigationItem)
         {
             if (navigationItem.Parent == null)
                 throw new InvalidOperationException("Inner source cannot exist for root item");
@@ -293,8 +300,14 @@ namespace OdataToEntity.Parsers.Translators
             IEdmEntitySet innerEntitySet = OeEdmClrHelper.GetEntitySet(_edmModel, navigationProperty);
             Expression innerSource = OeEnumerableStub.CreateEnumerableStubExpression(itemType, innerEntitySet);
 
-            ExpandedNavigationSelectItem item = navigationItem.NavigationSelectItem;
+            ExpandedReferenceSelectItem item = navigationItem.NavigationSelectItem;
             innerSource = expressionBuilder.ApplyFilter(innerSource, item.FilterOption);
+
+            var crossApplyBuilder = new OeCrossApplyBuilder(_edmModel, expressionBuilder);
+            var entitySet = (IEdmEntitySet)navigationItem.Parent.EntitySet;
+
+            if (navigationItem.NavigationSelectItem is ExpandedCountSelectItem)
+                return crossApplyBuilder.BuildExpandCount(source, innerSource, navigationItem);
 
             long? top = GetTop(navigationItem, item.TopOption);
             if (top == null && item.SkipOption == null && visitor.IsDollarIt == false)
@@ -304,11 +317,8 @@ namespace OdataToEntity.Parsers.Translators
             if (navigationItem.PageSize > 0)
                 orderByClause = OeSkipTokenParser.GetUniqueOrderBy(navigationItem.EntitySet, item.OrderByOption, null);
 
-            var entitySet = (IEdmEntitySet)navigationItem.Parent.EntitySet;
-            Expression source = OeEnumerableStub.CreateEnumerableStubExpression(navigationClrProperty.DeclaringType!, entitySet);
-
-            var crossApplyBuilder = new OeCrossApplyBuilder(_edmModel, expressionBuilder);
-            return crossApplyBuilder.Build(source, innerSource, navigationItem.Path, orderByClause, item.SkipOption, top);
+            Expression outerSource = OeEnumerableStub.CreateEnumerableStubExpression(navigationClrProperty.DeclaringType!, entitySet);
+            return crossApplyBuilder.Build(outerSource, innerSource, navigationItem.Path, orderByClause, item.SkipOption, top);
         }
         private static long? GetTop(OeNavigationSelectItem navigationItem, long? top)
         {

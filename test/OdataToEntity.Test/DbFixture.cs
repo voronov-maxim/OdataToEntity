@@ -133,14 +133,8 @@ namespace OdataToEntity.Test
                     TypeConverter converter = TypeDescriptor.GetConverter(typeof(TResult));
                     return new Object[] { converter.ConvertFromString(new StreamReader(response).ReadToEnd()) };
                 }
-                else if (typeof(TResult) == typeof(Object) && (requestUri.Contains("$apply=") || requestUri.Contains("$compute=")))
                 {
                     responseReader = new OpenTypeResponseReader(TestHelper.GetEdmModel(DbEdmModel, odataUri.Path), ServiceProvider);
-                    result = responseReader.Read(response).Cast<Object>().ToList();
-                }
-                else
-                {
-                    responseReader = new ResponseReader(TestHelper.GetEdmModel(DbEdmModel, odataUri.Path), ServiceProvider);
                     result = responseReader.Read(response).Cast<Object>().ToList();
                 }
 

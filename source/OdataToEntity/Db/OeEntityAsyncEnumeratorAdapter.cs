@@ -111,7 +111,7 @@ namespace OdataToEntity.Db
             if (!_isMoveNext)
                 return false;
 
-            T entity = default;
+            T? entity = default;
             bool isEntityNull = true;
             if (_dbEnumerator.Current != null)
             {

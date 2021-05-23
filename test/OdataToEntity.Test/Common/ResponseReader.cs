@@ -1,6 +1,5 @@
 ﻿using Microsoft.OData;
 using Microsoft.OData.Edm;
-using Microsoft.OData.UriParser;
 using Newtonsoft.Json;
 using OdataToEntity.Parsers;
 using System;
@@ -147,10 +146,10 @@ namespace OdataToEntity.Test
             Type itemType = OeExpressionHelper.GetCollectionItemTypeOrNull(type);
             return (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(itemType));
         }
-        protected Object CreateEntity(ODataResource resource, IReadOnlyList<NavigationInfo> navigationProperties)
+        protected virtual Object CreateEntity(ODataResourceBase resource, IReadOnlyList<NavigationInfo> navigationProperties)
         {
             Db.OeEntitySetAdapter entitySetAdapter = TestHelper.FindEntitySetAdapterByTypeName(EntitySetAdapters, resource.TypeName);
-            Object entity = OeEdmClrHelper.CreateEntity(entitySetAdapter.EntityType, resource);
+            Object entity = CreateEntity(entitySetAdapter.EntityType, resource);
             Dictionary<PropertyInfo, NavigationInfo> propertyInfos = null;
 
             foreach (NavigationInfo navigationInfo in navigationProperties)
@@ -186,9 +185,13 @@ namespace OdataToEntity.Test
 
             return entity;
         }
-        protected virtual Object CreateRootEntity(ODataResource resource, IReadOnlyList<NavigationInfo> navigationProperties, Type entityType)
+        protected virtual Object CreateEntity(Type entityType, ODataResourceBase resource)
         {
-            return CreateEntity(resource, navigationProperties);
+            return OeEdmClrHelper.CreateEntity(entityType, resource);
+        }
+        protected virtual ResponseReader CreateNavigationPropertyReader(IServiceProvider serviceProvider)
+        {
+            return new ResponseReader(EdmModel, serviceProvider);
         }
         public async Task FillNextLinkProperties(OeParser parser, CancellationToken token)
         {
@@ -203,7 +206,7 @@ namespace OdataToEntity.Test
                             await parser.ExecuteGetAsync(requestUri, OeRequestHeaders.JsonDefault, response, token).ConfigureAwait(false);
                             response.Position = 0;
 
-                            var navigationPropertyReader = new ResponseReader(EdmModel, _serviceProvider);
+                            ResponseReader navigationPropertyReader = CreateNavigationPropertyReader(_serviceProvider);
                             AddItems(navigationPropertyEntity.Key, propertyResourceSet.Key, navigationPropertyReader.Read(response));
                             await navigationPropertyReader.FillNextLinkProperties(parser, token).ConfigureAwait(false);
 
@@ -291,7 +294,7 @@ namespace OdataToEntity.Test
 
                             if (reader.Item != null)
                                 if (stack.Count == 0)
-                                    yield return CreateRootEntity((ODataResource)stackItem.Item, stackItem.NavigationProperties, entitySetMetaAdatpter.EntityType);
+                                    yield return CreateEntity((ODataResource)stackItem.Item, stackItem.NavigationProperties);
                                 else
                                     stack.Peek().AddEntry(CreateEntity((ODataResource)stackItem.Item, stackItem.NavigationProperties));
                             break;

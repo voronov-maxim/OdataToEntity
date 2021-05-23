@@ -1,5 +1,6 @@
 ﻿using Microsoft.OData;
 using Microsoft.OData.Edm;
+using OdataToEntity.Parsers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -19,17 +20,29 @@ namespace OdataToEntity.Test
         {
             var openType = (SortedDictionary<String, Object>)entity;
             Object propertyValue = openType[propertyInfo.Name];
-            if (propertyValue is IList list)
-                foreach (Object value in values)
-                    list.Add(value);
-            else
+            if (propertyValue is SortedDictionary<String, Object>)
             {
-                IEnumerator enumerator = values.GetEnumerator();
-                if (enumerator.MoveNext())
-                    openType[propertyInfo.Name] = enumerator.Current;
+                if (OeExpressionHelper.GetCollectionItemTypeOrNull(propertyInfo.PropertyType) == null)
+                    foreach (Object value in values)
+                    {
+                        if (value is not SortedDictionary<String, Object> dict)
+                            dict = (SortedDictionary<String, Object>)new OpenTypeConverter(Array.Empty<EfInclude>()).ToOpenType(value);
+                        openType[propertyInfo.Name] = dict;
+                    }
+                else
+                    throw new InvalidOperationException("Unsupported type value");
             }
+            else if (propertyValue is IList<SortedDictionary<String, Object>> list)
+                foreach (Object value in values)
+                {
+                    if (value is not SortedDictionary<String, Object> dict)
+                        dict = (SortedDictionary<String, Object>)new OpenTypeConverter(Array.Empty<EfInclude>()).ToOpenType(value);
+                    list.Add(dict);
+                }
+            else
+                throw new InvalidOperationException("Unsupported type value");
         }
-        protected override Object CreateRootEntity(ODataResource resource, IReadOnlyList<NavigationInfo> navigationProperties, Type entityType)
+        protected override Object CreateEntity(Type entityType, ODataResourceBase resource)
         {
             var openType = new SortedDictionary<String, Object>(StringComparer.Ordinal);
 
@@ -44,6 +57,14 @@ namespace OdataToEntity.Test
                 else
                     openType.Add(property.Name, property.Value);
 
+            return openType;
+        }
+        protected override Object CreateEntity(ODataResourceBase resource, IReadOnlyList<NavigationInfo> navigationProperties)
+        {
+            Db.OeEntitySetAdapter entitySetAdapter = TestHelper.FindEntitySetAdapterByTypeName(EntitySetAdapters, resource.TypeName);
+            Type entityType = entitySetAdapter.EntityType;
+            var openType = (SortedDictionary<String, Object>)CreateEntity(entityType, resource);
+
             Dictionary<PropertyInfo, NavigationInfo> propertyInfos = null;
             foreach (NavigationInfo navigationInfo in navigationProperties)
             {
@@ -55,9 +76,9 @@ namespace OdataToEntity.Test
                     if (value == null && navigationInfo.NextPageLink != null)
                     {
                         if (navigationInfo.IsCollection)
-                            value = ResponseReader.CreateCollection(clrProperty.PropertyType);
+                            value = new List<SortedDictionary<String, Object>>();
                         else
-                            value = Activator.CreateInstance(clrProperty.PropertyType);
+                            value = new SortedDictionary<String, Object>();
                     }
                     base.NavigationProperties.Add(value, navigationInfo);
 
@@ -72,18 +93,22 @@ namespace OdataToEntity.Test
                 if (value == null)
                 {
                     PropertyInfo clrProprety = entityType.GetProperty(navigationInfo.Name);
-                    Type type = Parsers.OeExpressionHelper.GetCollectionItemTypeOrNull(clrProprety.PropertyType);
+                    Type type = OeExpressionHelper.GetCollectionItemTypeOrNull(clrProprety.PropertyType);
                     if (type == null)
                         type = clrProprety.PropertyType;
 
-                    if (Parsers.OeExpressionHelper.IsEntityType(type))
-                        value = clrProprety.PropertyType;
+                    if (OeExpressionHelper.IsEntityType(type))
+                        value = DBNull.Value;
                 }
 
                 openType.Add(navigationInfo.Name, value);
             }
 
             return openType;
+        }
+        protected override ResponseReader CreateNavigationPropertyReader(IServiceProvider serviceProvider)
+        {
+            return new OpenTypeResponseReader(base.EdmModel, serviceProvider);
         }
         public override IEnumerable Read(Stream response)
         {

@@ -43,7 +43,7 @@ namespace OdataToEntity.Writers
             _queryContext = queryContext;
         }
 
-        private static ODataUri GetCountODataUri(IEdmModel edmModel, OeEntryFactory entryFactory, ExpandedNavigationSelectItem item, Object? value)
+        private static ODataUri GetCountODataUri(IEdmModel edmModel, OeEntryFactory entryFactory, ExpandedReferenceSelectItem item, Object? value)
         {
             FilterClause? filterClause = GetFilter(edmModel, entryFactory, item, value);
             if (filterClause == null)
@@ -58,7 +58,7 @@ namespace OdataToEntity.Writers
                 Path = new ODataPath(pathSegments),
             };
         }
-        private static FilterClause? GetFilter(IEdmModel edmModel, OeEntryFactory entryFactory, ExpandedNavigationSelectItem item, Object? value)
+        private static FilterClause? GetFilter(IEdmModel edmModel, OeEntryFactory entryFactory, ExpandedReferenceSelectItem item, Object? value)
         {
             SingleValueNode filterExpression;
             ResourceRangeVariableReferenceNode refNode;
@@ -153,11 +153,11 @@ namespace OdataToEntity.Writers
             }
             return keys;
         }
-        public Uri? GetNavigationUri(OeEntryFactory entryFactory, ExpandedNavigationSelectItem item, Object? value)
+        public Uri? GetNavigationUri(OeEntryFactory entryFactory, ExpandedReferenceSelectItem item, Object? value)
         {
             return GetNavigationUri(entryFactory, item, item.OrderByOption, value, null);
         }
-        private Uri? GetNavigationUri(OeEntryFactory entryFactory, ExpandedNavigationSelectItem item, OrderByClause orderByClause, Object? value, String? skipToken)
+        private Uri? GetNavigationUri(OeEntryFactory entryFactory, ExpandedReferenceSelectItem item, OrderByClause orderByClause, Object? value, String? skipToken)
         {
             bool? queryCount = item.CountOption;
             long? top = item.TopOption;
@@ -188,7 +188,7 @@ namespace OdataToEntity.Writers
                 OrderBy = orderByClause,
                 Path = new ODataPath(pathSegments),
                 QueryCount = queryCount,
-                SelectAndExpand = item.SelectAndExpand,
+                SelectAndExpand = (item as ExpandedNavigationSelectItem)?.SelectAndExpand,
                 Skip = item.SkipOption,
                 SkipToken = skipToken,
                 Top = top
@@ -222,7 +222,7 @@ namespace OdataToEntity.Writers
         public Uri? GetNextPageLinkNavigation(Db.IOeDbEnumerator dbEnumerator, int readCount, long? totalCount, Object value)
         {
             var entryFactory = (OeNavigationEntryFactory)dbEnumerator.EntryFactory;
-            ExpandedNavigationSelectItem navigationSelectItem = entryFactory.NavigationSelectItem;
+            ExpandedReferenceSelectItem navigationSelectItem = entryFactory.NavigationSelectItem;
 
             if (navigationSelectItem.GetPageSize() == 0 || readCount == 0 || (totalCount != null && readCount >= totalCount))
                 return null;

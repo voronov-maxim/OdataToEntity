@@ -15,14 +15,14 @@ namespace OdataToEntity.Parsers.Translators
             _notSelected = notSelected;
         }
 
-        private OeNavigationSelectItem AddOrGetNavigationItem(OeNavigationSelectItem parentNavigationItem, ExpandedNavigationSelectItem item, bool isExpand)
+        private OeNavigationSelectItem AddOrGetNavigationItem(OeNavigationSelectItem parentNavigationItem, ExpandedReferenceSelectItem item, bool isExpand)
         {
             IEdmEntitySetBase entitySet = OeEdmClrHelper.GetEntitySet(_edmModel, item);
 
             OeNavigationSelectItemKind kind;
             if (_notSelected)
                 kind = OeNavigationSelectItemKind.NotSelected;
-            else if (item.SelectAndExpand.IsNextLink())
+            else if (item is ExpandedNavigationSelectItem expanded && expanded.SelectAndExpand.IsNextLink())
                 kind = OeNavigationSelectItemKind.NextLink;
             else
                 kind = OeNavigationSelectItemKind.Normal;
@@ -38,6 +38,8 @@ namespace OdataToEntity.Parsers.Translators
                 Translate(parentNavigationItem, pathSelectItem);
             else if (item is OePageSelectItem pageSelectItem)
                 Translate(parentNavigationItem, pageSelectItem);
+            else if (item is ExpandedCountSelectItem expandedCountSelectItem)
+                Translate(parentNavigationItem, expandedCountSelectItem);
             else
                 throw new InvalidOperationException("Unknown SelectItem type " + item.GetType().Name);
         }
@@ -51,6 +53,10 @@ namespace OdataToEntity.Parsers.Translators
             }
 
             parentNavigationItem.PageSize = pageSelectItem.PageSize;
+        }
+        private void Translate(OeNavigationSelectItem parentNavigationItem, ExpandedCountSelectItem item)
+        {
+            AddOrGetNavigationItem(parentNavigationItem, item, true);
         }
         private void Translate(OeNavigationSelectItem parentNavigationItem, ExpandedNavigationSelectItem item)
         {

@@ -19,7 +19,7 @@ namespace OdataToEntity.Parsers.Translators
         private readonly IEdmNavigationProperty? _edmProperty;
         private OeEntryFactory? _entryFactory;
         private readonly List<OeNavigationSelectItem> _navigationItems;
-        private ExpandedNavigationSelectItem? _navigationSelectItem;
+        private ExpandedReferenceSelectItem? _navigationSelectItem;
         private readonly List<OeStructuralSelectItem> _structuralItems;
         private readonly List<OeStructuralSelectItem> _structuralItemsNotSelected;
 
@@ -38,7 +38,7 @@ namespace OdataToEntity.Parsers.Translators
         {
             Kind = OeNavigationSelectItemKind.Normal;
         }
-        public OeNavigationSelectItem(IEdmEntitySetBase entitySet, OeNavigationSelectItem parent, ExpandedNavigationSelectItem item, OeNavigationSelectItemKind kind)
+        public OeNavigationSelectItem(IEdmEntitySetBase entitySet, OeNavigationSelectItem parent, ExpandedReferenceSelectItem item, OeNavigationSelectItemKind kind)
             : this(entitySet, CreatePath(parent.Path, item.PathToNavigationProperty))
         {
             _edmProperty = ((NavigationPropertySegment)item.PathToNavigationProperty.LastSegment).NavigationProperty;
@@ -54,21 +54,21 @@ namespace OdataToEntity.Parsers.Translators
                 foreach (IEdmStructuralProperty keyProperty in EntitySet.EntityType().Key())
                     AddStructuralItem(keyProperty, notSelected);
 
-            if (_navigationSelectItem != null)
+            if (_navigationSelectItem is ExpandedNavigationSelectItem expanded)
             {
-                OrderByClause orderByClause = OeSkipTokenParser.GetUniqueOrderBy(EntitySet, _navigationSelectItem.OrderByOption, null);
-                if (_navigationSelectItem.OrderByOption != orderByClause)
+                OrderByClause orderByClause = OeSkipTokenParser.GetUniqueOrderBy(EntitySet, expanded.OrderByOption, null);
+                if (expanded.OrderByOption != orderByClause)
                     _navigationSelectItem = new ExpandedNavigationSelectItem(
-                        _navigationSelectItem.PathToNavigationProperty,
-                        _navigationSelectItem.NavigationSource,
-                        _navigationSelectItem.SelectAndExpand,
-                        _navigationSelectItem.FilterOption,
+                        expanded.PathToNavigationProperty,
+                        expanded.NavigationSource,
+                        expanded.SelectAndExpand,
+                        expanded.FilterOption,
                         orderByClause,
-                        _navigationSelectItem.TopOption,
-                        _navigationSelectItem.SkipOption,
-                        _navigationSelectItem.CountOption,
-                        _navigationSelectItem.SearchOption,
-                        _navigationSelectItem.LevelsOption);
+                        expanded.TopOption,
+                        expanded.SkipOption,
+                        expanded.CountOption,
+                        expanded.SearchOption,
+                        expanded.LevelsOption);
             }
 
             foreach (OeNavigationSelectItem childNavigationItem in _navigationItems)
@@ -219,7 +219,7 @@ namespace OdataToEntity.Parsers.Translators
         }
         public OeNavigationSelectItemKind Kind { get; private set; }
         public IReadOnlyList<OeNavigationSelectItem> NavigationItems => _navigationItems;
-        public ExpandedNavigationSelectItem NavigationSelectItem => _navigationSelectItem ?? throw new InvalidOperationException(nameof(NavigationSelectItem) + " missing for when Parent is null");
+        public ExpandedReferenceSelectItem NavigationSelectItem => _navigationSelectItem ?? throw new InvalidOperationException(nameof(NavigationSelectItem) + " missing for when Parent is null");
         public int PageSize { get; set; }
         public OeNavigationSelectItem? Parent { get; }
         public ODataPath Path { get; }

@@ -9,7 +9,20 @@ namespace OdataToEntity.Parsers.Translators
 {
     public sealed class OeJoinBuilder
     {
+        private sealed class ExpandCountNavigationProeprty : IEdmNavigationProperty
+        {
+            public IEdmNavigationProperty Partner => throw new NotImplementedException();
+            public EdmOnDeleteAction OnDelete => throw new NotImplementedException();
+            public bool ContainsTarget => throw new NotImplementedException();
+            public IEdmReferentialConstraint ReferentialConstraint => throw new NotImplementedException();
+            public EdmPropertyKind PropertyKind => throw new NotImplementedException();
+            public IEdmTypeReference Type => throw new NotImplementedException();
+            public IEdmStructuredType DeclaringType => throw new NotImplementedException();
+            public string Name => throw new NotImplementedException();
+        }
+
         private readonly List<IEdmNavigationProperty[]> _joinPaths;
+        private static readonly IEdmNavigationProperty[] ExpandCountJoinPath = new[] { new ExpandCountNavigationProeprty() };
 
         public OeJoinBuilder(OeQueryNodeVisitor visitor)
         {
@@ -24,6 +37,10 @@ namespace OdataToEntity.Parsers.Translators
                 newJoinPath[i] = joinPath[i];
             newJoinPath[newJoinPath.Length - 1] = navigationProperty;
             _joinPaths.Add(newJoinPath);
+        }
+        internal void AddJoinPathExpandCount()
+        {
+            _joinPaths.Add(ExpandCountJoinPath);
         }
         public MethodCallExpression Build(IEdmModel edmModel, Expression outerSource, Expression innerSource,
             IReadOnlyList<IEdmNavigationProperty> joinPath, IEdmNavigationProperty navigationProperty)
@@ -257,7 +274,7 @@ namespace OdataToEntity.Parsers.Translators
             var propertyTranslator = new OePropertyTranslator(source);
             return propertyTranslator.Build(propertyExpression, edmProperty);
         }
-        private Expression? GetJoinPropertyExpression(Expression source, IReadOnlyList<IEdmNavigationProperty> joinPath)
+        internal Expression? GetJoinPropertyExpression(Expression source, IReadOnlyList<IEdmNavigationProperty> joinPath)
         {
             if (joinPath.Count == 0)
             {

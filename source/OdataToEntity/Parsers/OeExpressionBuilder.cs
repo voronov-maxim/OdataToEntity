@@ -106,7 +106,7 @@ namespace OdataToEntity.Parsers
             Visitor.ChangeParameterType(Expression.Parameter(sourceItemType));
             return source;
         }
-        public Expression ApplyOrderBy(Expression source, OrderByClause orderByClause)
+        public Expression ApplyOrderBy(Expression source, OrderByClause? orderByClause)
         {
             if (orderByClause == null)
                 return source;
@@ -173,6 +173,7 @@ namespace OdataToEntity.Parsers
         }
 
         public IReadOnlyDictionary<ConstantExpression, ConstantNode> Constants => Visitor.Constans;
+        internal Translators.OeJoinBuilder JoinBuilder => _joinBuilder;
         private Type ParameterType => Visitor.Parameter.Type;
         private OeQueryNodeVisitor Visitor { get; }
     }

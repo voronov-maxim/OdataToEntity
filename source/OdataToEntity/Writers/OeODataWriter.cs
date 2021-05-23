@@ -125,7 +125,7 @@ namespace OdataToEntity.Writers
 
             await _writer.WriteEndAsync().ConfigureAwait(false);
         }
-        private async Task WriteNavigationNextLink(OeEntryFactory parentEntryFactory, ExpandedNavigationSelectItem item, Object? value)
+        private async Task WriteNavigationNextLink(OeEntryFactory parentEntryFactory, ExpandedReferenceSelectItem item, Object? value)
         {
             Uri? nextPageLink = new OeNextPageLinkBuilder(_queryContext).GetNavigationUri(parentEntryFactory, item, value);
             if (nextPageLink == null)

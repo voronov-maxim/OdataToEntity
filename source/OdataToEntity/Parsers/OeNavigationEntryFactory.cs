@@ -15,7 +15,7 @@ namespace OdataToEntity.Parsers
             IReadOnlyList<OeNavigationEntryFactory> navigationLinks,
             LambdaExpression? linkAccessor,
             IEdmNavigationProperty edmNavigationProperty,
-            ExpandedNavigationSelectItem navigationSelectItem,
+            ExpandedReferenceSelectItem navigationSelectItem,
             bool nextLink)
             : base(entitySet, accessors, skipTokenAccessors, navigationLinks, linkAccessor)
         {
@@ -48,7 +48,7 @@ namespace OdataToEntity.Parsers
         }
 
         public IEdmNavigationProperty EdmNavigationProperty { get; }
-        public ExpandedNavigationSelectItem NavigationSelectItem { get; }
+        public ExpandedReferenceSelectItem NavigationSelectItem { get; }
         public bool NextLink { get; }
     }
 }

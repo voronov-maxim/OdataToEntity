@@ -128,7 +128,7 @@ namespace OdataToEntity.Test
 
             return openTypes;
         }
-        private Object ToOpenType(Object entity)
+        public Object ToOpenType(Object entity)
         {
             if (entity == null)
                 return null;
@@ -142,7 +142,7 @@ namespace OdataToEntity.Test
                 foreach (KeyValuePair<String, Object> pair in dictionary)
                 {
                     Object value = pair.Value;
-                    if (value is Type)//navigation property null value
+                    if (value == DBNull.Value)//navigation property null value
                         continue;
 
                     if (value is Decimal d)

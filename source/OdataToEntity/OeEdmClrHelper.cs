@@ -196,7 +196,7 @@ namespace OdataToEntity
                 throw new InvalidOperationException();
             return entitySet;
         }
-        public static IEdmEntitySetBase GetEntitySet(IEdmModel edmModel, ExpandedNavigationSelectItem item)
+        public static IEdmEntitySetBase GetEntitySet(IEdmModel edmModel, ExpandedReferenceSelectItem item)
         {
             var entitySet = (IEdmEntitySetBase)item.NavigationSource;
             if (entitySet == null)
@@ -234,9 +234,9 @@ namespace OdataToEntity
 
             return null;
         }
-        public static int GetPageSize(this ExpandedNavigationSelectItem navigationSelectItem)
+        public static int GetPageSize(this ExpandedReferenceSelectItem referenceSelectItem)
         {
-            return navigationSelectItem.SelectAndExpand.GetPageSize();
+            return referenceSelectItem is ExpandedNavigationSelectItem expandedSelectItem ? expandedSelectItem.SelectAndExpand.GetPageSize() : 0;
         }
         public static int GetPageSize(this ODataUri odataUri)
         {
@@ -385,5 +385,8 @@ namespace OdataToEntity
 
             return false;
         }
+
+        public static readonly IEdmStructuralProperty CountProperty = new EdmStructuralProperty(
+            PrimitiveTypeHelper.TupleEdmType, "count", EdmCoreModel.Instance.GetPrimitive(EdmPrimitiveTypeKind.Int32, true));
     }
 }
