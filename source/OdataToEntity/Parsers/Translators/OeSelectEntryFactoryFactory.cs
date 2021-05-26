@@ -85,17 +85,26 @@ namespace OdataToEntity.Parsers.Translators
         }
         private static OePropertyAccessor[] GetAccessors(Type clrEntityType, OeNavigationSelectItem navigationItem)
         {
-            ParameterExpression parameter = Expression.Parameter(typeof(Object));
-            UnaryExpression typedAccessorParameter = Expression.Convert(parameter, clrEntityType);
-            IReadOnlyList<MemberExpression> propertyExpressions = OeExpressionHelper.GetPropertyExpressions(typedAccessorParameter);
+            ParameterExpression parameter;
+            UnaryExpression typedAccessorParameter;
+            IReadOnlyList<MemberExpression> propertyExpressions;
 
             if (navigationItem.AllSelected)
             {
                 if (navigationItem.Parent != null && navigationItem.NavigationSelectItem is ExpandedCountSelectItem)
+                {
+                    parameter = Expression.Parameter(typeof(Object));
+                    typedAccessorParameter = Expression.Convert(parameter, clrEntityType);
+                    propertyExpressions = OeExpressionHelper.GetPropertyExpressions(typedAccessorParameter);
                     return new[] { OePropertyAccessor.CreatePropertyAccessor(OeEdmClrHelper.CountProperty, propertyExpressions[0], parameter, false) };
+                }
                 else
                     return OePropertyAccessor.CreateFromType(clrEntityType, navigationItem.EntitySet);
             }
+
+            parameter = Expression.Parameter(typeof(Object));
+            typedAccessorParameter = Expression.Convert(parameter, clrEntityType);
+            propertyExpressions = OeExpressionHelper.GetPropertyExpressions(typedAccessorParameter);
 
             IReadOnlyList<OeStructuralSelectItem> structuralItems = navigationItem.GetStructuralItemsWithNotSelected();
             var accessors = new OePropertyAccessor[structuralItems.Count];

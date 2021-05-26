@@ -52,7 +52,7 @@ namespace OdataToEntity.Parsers
                 if (arguments[1] == returnType)
                     return methodInfo;
             }
-            Func<IEnumerable<Object>, Func<Object, Object>, Object> aggFunc = methodName switch
+            Func<IEnumerable<Object>, Func<Object, Object>, Object?> aggFunc = methodName switch
             {
                 nameof(Enumerable.Max) => Enumerable.Max,
                 nameof(Enumerable.Min) => Enumerable.Min,

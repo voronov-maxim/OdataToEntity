@@ -134,7 +134,7 @@ namespace OdataToEntity
                     return new ODataMessageInfo();
                 if (serviceType == typeof(ODataPayloadValueConverter))
                     return _payloadValueConverter;
-                if (serviceType == typeof(IJsonWriterFactory))
+                if (serviceType == typeof(IJsonWriterFactory) || serviceType == typeof(IJsonWriterFactoryAsync))
                     return new DefaultJsonWriterFactory(ODataStringEscapeOption.EscapeOnlyControls);
                 if (serviceType == typeof(IJsonReaderFactory))
                     return _containerBuilder.JsonReaderFactory;

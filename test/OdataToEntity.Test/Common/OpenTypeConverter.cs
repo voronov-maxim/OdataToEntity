@@ -141,6 +141,9 @@ namespace OdataToEntity.Test
                 var openType = new SortedDictionary<String, Object>(StringComparer.Ordinal);
                 foreach (KeyValuePair<String, Object> pair in dictionary)
                 {
+                    if (pair.Key == "Dummy")
+                        continue;
+
                     Object value = pair.Value;
                     if (value == DBNull.Value)//navigation property null value
                         continue;
