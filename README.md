@@ -58,7 +58,9 @@ EdmModel rootModel = rootDataAdapter.BuildEdmModel(refModel);
 By default used cached queries parsed to expression tree, which on existing tests allows you to increase the performance up to three times. For disable this feature, you need pass in base constructor *OeDataAdapter* parameter *new OeQueryCache(false)*. The query is parameterized (i.e. constant expressions are replaced with variables) except null value, therefore for best performance must use database null semantics. For Ef Core method *UseRelationalNulls* class *RelationalDbContextOptionsBuilder<TBuilder, TExtension>*, for Ef6 property *UseDatabaseNullSemantics* class *DbContextConfiguration*.
 ```c#
 //Create adapter data access, where OrderContext your DbContext
-var dataAdapter = new OeEfCoreDataAdapter<Model.OrderContext>();
+var optionsBuilder = new DbContextOptionsBuilder<Model.OrderContext>();
+optionsBuilder = optionsBuilder.UseSqlServer(@"Server=.\sqlexpress;Initial Catalog=OdataToEntity;Trusted_Connection=Yes");
+var dataAdapter = new OeEfCoreDataAdapter<Model.OrderContext>(optionsBuilder.Options);
 //Create query parser
 var parser = new OeParser(new Uri("http://dummy"), dataAdapter.BuildEdmModel());
 //Query
