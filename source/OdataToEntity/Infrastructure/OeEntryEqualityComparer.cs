@@ -9,6 +9,13 @@ namespace OdataToEntity.Infrastructure
 {
     public readonly struct OeEntryEqualityComparer : IEqualityComparer<Object>, IComparer<Object>, IComparer
     {
+        private sealed class ExpandCountComparer : IEqualityComparer<Object>, IComparer<Object>
+        {
+            public int Compare(Object? x, Object? y) => 1;
+            public new bool Equals(Object? x, Object? y) => false;
+            public int GetHashCode(Object obj) => obj.GetHashCode();
+        }
+
         private sealed class TypedEqualityComparer<T> : IEqualityComparer<T>, IComparer<T> where T : notnull
         {
             private readonly OeEntryEqualityComparer _entryEqualityComparer;
@@ -25,6 +32,8 @@ namespace OdataToEntity.Infrastructure
 
         private readonly Func<Object, Object, int>[] _propertyComparers;
         private readonly Func<Object, int>[] _propertyGetHashCodes;
+
+        public static readonly IEqualityComparer<Object> ExpandCountEqualityComparer = new ExpandCountComparer();
 
         public OeEntryEqualityComparer(IReadOnlyList<Expression> propertyExpressions)
         {

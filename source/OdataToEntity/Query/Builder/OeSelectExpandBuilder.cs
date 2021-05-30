@@ -70,6 +70,15 @@ namespace OdataToEntity.Query.Builder
                         selectItems.Add(CreateNavigationSelectItem(navigationSelectITem));
                         properties.Add(segment.NavigationProperty);
                     }
+                    else if (selectItem is ExpandedCountSelectItem countSelectItem)
+                    {
+                        var segment = (NavigationPropertySegment)countSelectItem.PathToNavigationProperty.LastSegment;
+                        if (settings != null && settings.GetPropertySetting(segment.NavigationProperty, OeModelBoundKind.Select) == SelectExpandType.Disabled)
+                            continue;
+
+                        selectItems.Add(countSelectItem);
+                        properties.Add(segment.NavigationProperty);
+                    }
                     else if (selectItem is PathSelectItem pathSelectItem)
                     {
                         IEdmProperty property;

@@ -72,9 +72,10 @@ namespace OdataToEntity.Parsers
             }
             if (accessors.Length > 0)
             {
-                IReadOnlyList<Expression> expressions = accessors.Length == 1 && accessors[0].EdmProperty == OeEdmClrHelper.CountProperty ?
-                    new[] { accessors[0].PropertyExpression } : GetKeyExpressions(entitySet, accessors);
-                _equalityComparer = new Infrastructure.OeEntryEqualityComparer(expressions);
+                if (IsExpandCount(accessors))
+                    _equalityComparer = Infrastructure.OeEntryEqualityComparer.ExpandCountEqualityComparer;
+                else
+                    _equalityComparer = new Infrastructure.OeEntryEqualityComparer(GetKeyExpressions(entitySet, accessors));
             }
         }
 
@@ -130,7 +131,7 @@ namespace OdataToEntity.Parsers
         protected OePropertyAccessor[] GetAccessorsFromTuple(IEdmModel edmModel)
         {
             OePropertyAccessor[] accessors = _allAccessors;
-            if (IsTuple)
+            if (IsTuple && IsExpandCount(accessors) == false)
             {
                 OePropertyAccessor[] propertyAccessors = OePropertyAccessor.CreateFromType(edmModel.GetClrType(EntitySet), EntitySet);
                 accessors = new OePropertyAccessor[_allAccessors.Length];
@@ -234,6 +235,10 @@ namespace OdataToEntity.Parsers
                 return null;
 
             return LinkAccessor == null ? value : LinkAccessor(value);
+        }
+        private static bool IsExpandCount(OePropertyAccessor[] accessors)
+        {
+            return accessors.Length == 1 && accessors[0].EdmProperty == OeEdmClrHelper.CountProperty;
         }
 
         public OePropertyAccessor[] Accessors { get; }

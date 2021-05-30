@@ -81,6 +81,10 @@ namespace OdataToEntity.Test
                 if (parameters.RequestUri.Contains("$compute=") && (parameters.RequestUri.Contains("ceiling(") || parameters.RequestUri.Contains("hour(")))
                     throw new NotSupportedException("$compute and function not suported");
 
+                if (parameters.RequestUri.EndsWith("$expand=Items/$count") ||
+                    parameters.RequestUri.EndsWith("$expand=Customer,Items/$count,AltCustomer"))
+                    throw new NotSupportedException("$count in $expand not supported");
+
                 fromOe = await ExecuteOeViaHttpClient(parameters, null);
                 TestWriteException(e, ConsoleColor.Green);
             }

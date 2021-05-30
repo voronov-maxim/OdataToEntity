@@ -351,11 +351,16 @@ namespace OdataToEntity.Test
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
-        [Fact]
-        public async Task ExpandCount()
+        [Theory]
+        [InlineData(0, false)]
+        [InlineData(1, false)]
+        [InlineData(0, true)]
+        [InlineData(1, true)]
+        public async Task ExpandCount(int pageSize, bool navigationNextLink)
         {
             var parameters = new QueryParameters<Order, Object>()
             {
+                //RequestUri = "Orders?$expand=Items/$count&$orderby=Name",
                 RequestUri = "Orders?$expand=Items/$count",
                 Expression = t => t.Include(o => o.Items).Select(o => new
                 {
@@ -369,13 +374,17 @@ namespace OdataToEntity.Test
                     Name = o.Name,
                     Status = o.Status
                 }),
-                NavigationNextLink = false,
-                PageSize = 0
+                NavigationNextLink = navigationNextLink,
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
-        [Fact]
-        public async Task ExpandExpandCountExpand()
+        [Theory]
+        [InlineData(0, false)]
+        [InlineData(1, false)]
+        [InlineData(0, true)]
+        [InlineData(1, true)]
+        public async Task ExpandExpandCountExpand(int pageSize, bool navigationNextLink)
         {
             var parameters = new QueryParameters<Order, Object>()
             {
@@ -394,8 +403,8 @@ namespace OdataToEntity.Test
                     Name = o.Name,
                     Status = o.Status
                 }),
-                NavigationNextLink = false,
-                PageSize = 0
+                NavigationNextLink = navigationNextLink,
+                PageSize = pageSize
             };
             await Fixture.Execute(parameters).ConfigureAwait(false);
         }
