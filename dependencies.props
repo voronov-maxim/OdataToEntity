@@ -5,7 +5,7 @@
     <CSharpVersion>9.0</CSharpVersion>
     <EfCoreVersion>5.0.6</EfCoreVersion>
     <FrameworkVersion>net48</FrameworkVersion>
-    <JsonNetVersion>12.0.3</JsonNetVersion>
+    <JsonNetVersion>13.0.1</JsonNetVersion>
     <NetStandardVersion>net5.0</NetStandardVersion>
     <NetCoreAppVersion>net5.0</NetCoreAppVersion>
     <NetCoreVersion>5.0.0</NetCoreVersion>

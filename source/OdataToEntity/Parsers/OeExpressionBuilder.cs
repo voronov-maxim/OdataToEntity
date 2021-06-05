@@ -125,7 +125,7 @@ namespace OdataToEntity.Parsers
                 MetadataLevel = queryContext.MetadataLevel,
                 SkipTokenNameValues = queryContext.SkipTokenNameValues
             };
-            source = selectTranslator.Build(source, ref selectTranslatorParameters, out _entryFactoryFactory);
+            source = selectTranslator.Build(source, in selectTranslatorParameters, out _entryFactoryFactory);
 
             ChangeParameterType(source);
             return source;

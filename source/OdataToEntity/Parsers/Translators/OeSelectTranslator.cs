@@ -67,7 +67,7 @@ namespace OdataToEntity.Parsers.Translators
             _rootNavigationItem = new OeNavigationSelectItem(odataUri);
         }
 
-        public Expression Build(Expression source, ref OeSelectTranslatorParameters parameters, out OeEntryFactoryFactory entryFactoryFactory)
+        public Expression Build(Expression source, in OeSelectTranslatorParameters parameters, out OeEntryFactoryFactory entryFactoryFactory)
         {
             entryFactoryFactory = new OeSelectEntryFactoryFactory(_rootNavigationItem);
 
@@ -332,7 +332,8 @@ namespace OdataToEntity.Parsers.Translators
             if (!root.HasNavigationItems())
                 return source;
 
-            ParameterExpression parameter = Expression.Parameter(OeExpressionHelper.GetCollectionItemType(source.Type));
+            Type itemType = OeExpressionHelper.GetCollectionItemType(source.Type);
+            ParameterExpression parameter = Expression.Parameter(itemType);
             IReadOnlyList<MemberExpression> joins = OeExpressionHelper.GetPropertyExpressions(parameter);
             var newJoins = new Expression[joins.Count];
 
@@ -369,6 +370,9 @@ namespace OdataToEntity.Parsers.Translators
             }
 
             NewExpression newSelectorBody = OeExpressionHelper.CreateTupleExpression(newJoins);
+            if (newSelectorBody.Type == itemType)
+                return source;
+
             MethodInfo selectMethodInfo = OeMethodInfoHelper.GetSelectMethodInfo(parameter.Type, newSelectorBody.Type);
             LambdaExpression newSelector = Expression.Lambda(newSelectorBody, parameter);
 
