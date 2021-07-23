@@ -3,15 +3,15 @@
     <ComponentModelAnnotations>5.0.0</ComponentModelAnnotations>
     <CoreFxVersion>5.0.2</CoreFxVersion>
     <CSharpVersion>9.0</CSharpVersion>
-    <EfCoreVersion>5.0.6</EfCoreVersion>
+    <EfCoreVersion>5.0.8</EfCoreVersion>
     <FrameworkVersion>net48</FrameworkVersion>
     <JsonNetVersion>13.0.1</JsonNetVersion>
     <NetStandardVersion>net5.0</NetStandardVersion>
     <NetCoreAppVersion>net5.0</NetCoreAppVersion>
     <NetCoreVersion>5.0.0</NetCoreVersion>
-    <NpgsqlVersion>5.0.6</NpgsqlVersion>
+    <NpgsqlVersion>5.0.7</NpgsqlVersion>
     <ODataLibVersion>7.9.0</ODataLibVersion>
-    <OdataToEntityVersion>2.7.0</OdataToEntityVersion>
+    <OdataToEntityVersion>2.8.0</OdataToEntityVersion>
     <SystemInteractiveAsyncVersion>5.0.0</SystemInteractiveAsyncVersion>
     <TestSdkVersion>16.10.0</TestSdkVersion>
     <Version>$(OdataToEntityVersion)</Version>

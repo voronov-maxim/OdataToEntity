@@ -123,8 +123,8 @@ namespace OdataToEntity.AspNetCore
         }
         private T GetService<T>()
         {
-            return (T)base.HttpContext.RequestServices.GetService(typeof(T))
-                ?? throw new InvalidOperationException("Type " + typeof(T).FullName + " not register in HttpContext.RequestServices");
+            return (T)(base.HttpContext.RequestServices.GetService(typeof(T))
+                ?? throw new InvalidOperationException("Type " + typeof(T).FullName + " not register in HttpContext.RequestServices"));
         }
         protected virtual async Task<int> SaveChangesAsync(Object dataContext)
         {
